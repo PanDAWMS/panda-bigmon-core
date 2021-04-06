@@ -23,6 +23,7 @@
 .skipped { color:darkgrey }
 .notcheckedskipped { color:darkgrey }
 .debug { color:darkgrey }
+.pending { color:#deb900 }
 .waiting { color:#deb900 }
 .sent { color:#deb900 }
 .holding { color:#FF9933 }
@@ -36,7 +37,6 @@
 .approved { color:#47D147 }
 .topreprocess { color:#47D147 }
 .preprocessing { color:#47D147 }
-.prepared { color:#47D147 }
 .starting { color:#47D147 }
 .submitting { color:#47D147 }
 .scouting { color:#47D147 }
@@ -45,13 +45,14 @@
 .merging { color:#34a934 }
 .transferring { color:#34a934 }
 .activated { color:#3b8e67 }
+.prepared { color:#3b8e67 }
 .ready { color:#3b8e67 }
 .assigning { color:#099999 }
 .scheduled { color:#099999 }
 .assigned { color:#099999 }
 .defined { color:#2174bb }
-.registered { color:grey }
-.pending { color:grey }
+.registered { color:#2174bb }
+.staging { color:#551cfe }
 .toretry { color:grey }
 .toincexec { color:grey }
 .rerefine { color:grey }
@@ -126,11 +127,12 @@
 
 .defined_fill { color:black;  background-color:#e6f0f6; position: static; }
 .queued_fill { color:black;  background-color:#e6f0f6; position: static; }
+.registered_fill { color:black;  background-color:#e6f0f6; position: static;  }
 
 .paused_fill { color:black;  background-color:#edeeef; position: static; }
-.pending_fill { color:black;  background-color:#edeeef; position: static; }
 .passed_fill { color: black; background-color:#edeeef; position: static;}
-.registered_fill { color:black;  background-color:#edeeef; position: static;  }
+
+.staging_fill { color:black;  background-color:#f1e8ff }
 
 .warning_fill { color:black;  background-color:#FFCB2F }
 
@@ -142,6 +144,7 @@
 .throttled_fill { color:black; background-color:#FFE38E; position: static; }
 .exhausted_fill { color:black; background-color:#FFE38E; position: static; }
 
+.pending_fill { color:black;  background-color:#FFF5D6; position: static; }
 .waiting_fill { color:black; background-color:#FFF5D6 }
 .sent_fill { color:black; background-color:#FFF5D6 }
 

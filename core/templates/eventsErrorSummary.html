@@ -1,6 +1,7 @@
-<table class="fresh-table">
-  <thead>
-    <tr class="tablesection">
+<p></p>
+<table class="fresh-table unstriped">
+  <tbody>
+    <tr>
         <th> Error code </th>
         <th> N events </th>
         <th> N jobs</th>
@@ -8,19 +9,17 @@
         <th> Error description</th>
         <th> Most affected jobs</th>
     </tr>
-  </thead>
-  <tbody>
     {% for error in errors %}
     	<tr>
             <td class="alarm"> {{ error.error_code }}</td>
-            <td class='failed_fill'> <b>{{ error.nevents }}</b></td>
-            <td class='failed_fill'><b>{{ error.njobs }}</b></td>
-            <td class='failed_fill'><b>{{ error.nerrors }}</b></td>
+            <td class='failed_fill'>{{ error.nevents }}</td>
+            <td class='failed_fill'>{{ error.njobs }}</td>
+            <td class='failed_fill'>{{ error.nerrors }}</td>
             <td class="alarm">{{ error.error_description }}</td>
             <td>
             {% if error.pandaidlist|length > 0 %}
                 {% for pandaidin in error.pandaidlist %}
-                    <a href="{% url 'jobInfo' pandaidin %}" style="color:red">{{ pandaidin }}</a>
+                    <a href="{% url 'jobInfo' pandaidin %}">{{ pandaidin }}</a>
                     {% if forloop.last %} {% else %} , {% endif %}
                 {% endfor %}
             {% endif %}

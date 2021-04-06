@@ -26,16 +26,16 @@ def getiDDSInfoForTask(jeditaskid):
 
     new_cur = connection.cursor()
     new_cur.execute(
-        """ select r.request_id, r.scope, r.name, r.request_type, r.transform_tag, r.workload_id, r.status, r.created_at request_created_at, r.updated_at request_updated_at, tr.transform_id, tr.transform_status, tr.in_status, tr.in_total_files, tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files, tr.out_created_at, tr.out_updated_at
-            from atlas_idds.requests r
-             join atlas_idds.req2transforms rt on (r.request_id=rt.request_id and r.workload_id={0})
-             join (
-                select t.transform_id, t.status transform_status, in_coll.status in_status, in_coll.total_files in_total_files, in_coll.processed_files in_processed_files,
-                out_coll.status out_status, out_coll.total_files out_total_files, out_coll.processed_files out_processed_files, out_coll.out_created_at, out_coll.out_updated_at
-                from atlas_idds.transforms t
-                join (select coll_id , transform_id, status, total_files, processed_files from atlas_idds.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
-                join (select coll_id , transform_id, status, total_files, processed_files, created_at out_created_at, updated_at out_updated_at from atlas_idds.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
-                ) tr on (rt.transform_id=tr.transform_id)
+        """
+     select r.request_id, r.scope, r.name, r.request_type, r.transform_tag, r.workload_id, r.status, r.created_at request_created_at, r.updated_at request_updated_at, tr.transform_id, tr.transform_status, tr.in_status, tr.in_total_files, tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files, tr.out_created_at, tr.out_updated_at
+         from ATLAS_IDDS.requests r
+          join (
+             select t.request_id, t.transform_id, t.workload_id, t.status transform_status, in_coll.status in_status, in_coll.total_files in_total_files, in_coll.processed_files in_processed_files,
+             out_coll.status out_status, out_coll.total_files out_total_files, out_coll.processed_files out_processed_files, out_coll.created_at out_created_at, out_coll.updated_at out_updated_at
+             from ATLAS_IDDS.transforms t
+             left join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at from ATLAS_IDDS.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
+             left join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at from ATLAS_IDDS.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
+          ) tr on (r.request_id=tr.request_id and tr.workload_id={0})
             """.format(int(jeditaskid)))
 
     transformationWithNested = dictfetchall(new_cur)
@@ -43,14 +43,17 @@ def getiDDSInfoForTask(jeditaskid):
     if len(transformationWithNested) > 0:
         transformationWithNested = {k.lower(): v for k, v in transformationWithNested[0].items()}
         map = subtitleValue.substitleMap
+
         transformationWithNested['status'] = map['requests']['status'][transformationWithNested['status']]
         transformationWithNested['request_type'] = map['requests']['request_type'][
             transformationWithNested['request_type']]
         transformationWithNested['transform_status'] = map['requests']['transform_status'][
             transformationWithNested['transform_status']]
-        transformationWithNested['in_status'] = map['requests']['in_status'][transformationWithNested['in_status']]
-        transformationWithNested['out_status'] = map['requests']['out_status'][transformationWithNested['out_status']]
-        if transformationWithNested['out_total_files'] != 0:
+        if transformationWithNested['in_status'] is not None:
+            transformationWithNested['in_status'] = map['requests']['in_status'][transformationWithNested['in_status']]
+        if transformationWithNested['out_status'] is not None:
+            transformationWithNested['out_status'] = map['requests']['out_status'][transformationWithNested['out_status']]
+        if transformationWithNested['out_total_files'] != 0 and transformationWithNested['out_total_files'] is not None:
             transformationWithNested['pctprocessed'] = int(100. * transformationWithNested['out_processed_files'] / transformationWithNested['out_total_files'])
         else:
             transformationWithNested['pctprocessed'] = 0

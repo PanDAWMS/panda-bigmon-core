@@ -1,0 +1,35 @@
+{% if retries|length > 0 %}
+  {% if direction == 'upstream' %}
+    <div class="card bp-container-simple secondary">
+      <div class="card-divider">
+        <p>This job is a descendent of upstream job(s), with relationship shown</p>
+      </div>
+      <div class="card-section">
+        <p>
+        {% for retry in retries %}
+            <a href="{% url 'jobInfo' retry.oldpandaid %}">{{ retry.oldpandaid }}</a>:{% if retry.relationtype %}{{ retry.relationtype }}{% else %}retry{% endif %}
+        {% endfor %}
+        </p>
+      </div>
+    </div>
+  {% elif direction == 'downstream' %}
+    <div class="card bp-container-simple secondary">
+      <div class="card-divider">
+        <p>This job has descendents downstream, with relationship shown</p>
+      </div>
+      <div class="card-section">
+        <p>
+        {% for retry in retries %}
+            <a href="{% url 'jobInfo' retry.newpandaid %}">{{ retry.newpandaid }}</a>:{% if retry.relationtype %}{{ retry.relationtype }}{% else %}retry{% endif %}
+        {% endfor %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+{% else %}
+  <div class="card bp-container-simple info">
+    <div class="card-divider">
+      <p>No {{ direction }} jobs found for the job</p>
+    </div>
+  </div>
+{% endif %}

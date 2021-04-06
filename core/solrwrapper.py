@@ -50,10 +50,10 @@ def parceQuery(query):
 def makeQuerySolr(query, table, limit):
     si = sunburnt.SolrInterface(solrconnectionURL+table)
     expr = parceQuery(query)
-    print expr
-    print "Solr query started:", datetime.datetime.now().time()
+    print(expr)
+    print("Solr query started:", datetime.datetime.now().time())
     lenq = si.query(eval(expr)).paginate(start=0, rows=limit).execute()
-    print  "Solr query finished:",datetime.datetime.now().time()
+    print("Solr query finished:",datetime.datetime.now().time())
     return lenq
 
 def addDocSolr(docs, table, maxAddBunchSize):

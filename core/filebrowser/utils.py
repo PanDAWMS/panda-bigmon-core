@@ -683,26 +683,39 @@ def list_file_directory(logdir, limit=1000):
                 tardir = entry
                 continue
     if not len(tardir):
-        err = "Problem with tarball, could not find expected directory"
-        _logger.error('{} (got {}).'.format(err, logdir))
-        return files, err, tardir
+        err = "Problem with tarball, could not find expected tarball directory. "
+        _logger.warning('{} (got {}).'.format(err, logdir))
+        # try to show any xml, json and txt files that are not in tarball directory
+        filtered_filelist = []
+        if len(filelist) > 0:
+            for entry in filelist:
+                if entry.endswith('.xml') or entry.endswith('.json') or entry.endswith('.txt'):
+                    filtered_filelist.append(entry)
+        if len(filtered_filelist) == 0:
+            err += ' Tried to look for files in top dir, but found nothing'
+            _logger.error('{} (got {}).'.format(err, logdir))
+            _logger.debug('Contents of untared log file: \n {}'.format(filelist))
+            return files, err, tardir
+        else:
+            err += "However, a few files has been found in a topdir, so showing them."
+            _logger.info('A few files found in a topdir, will show them to user')
 
     # Now list the contents of the tarball directory:
     try:
         contents = []
         dobrake = False
-        for walk_root, walk_dirs, walk_files in \
-            os.walk(os.path.join(logdir, tardir), followlinks=False):
+        _logger.debug('Walking through directory:')
+        for walk_root, walk_dirs, walk_files in os.walk(os.path.join(logdir, tardir), followlinks=False):
             #_logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
-
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
                 if len(contents) > limit:
                     dobrake = True
+                    _logger.debug('Number of files added to contents reached the limit : {}'.format(limit))
                     break
             if dobrake:
                 break
-        _logger.debug(contents)
+        _logger.debug('Contents: \n {}'.format(contents))
         fileStats = {}
         linkStats = {}
         linkName = {}
@@ -729,8 +742,10 @@ def list_file_directory(logdir, limit=1000):
                     f_content['modification'] = str(time.strftime(filebrowserDateTimeFormat, time.gmtime(fileStats[f][8])))
                     f_content['size'] = fileStats[f][6]
                     f_content['name'] = os.path.basename(f)
-                    f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f))
+                    f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f) + '/')
+                    f_content['dirname'] = f_content['dirname'][:-1] if f_content['dirname'].endswith('/') else f_content['dirname']
             files.append(f_content)
+            _logger.debug('Files to be shown: \n {}'.format(files))
     except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
@@ -744,7 +759,7 @@ def list_file_directory(logdir, limit=1000):
     if status != 0:
         return files, output, tardir
     else:
-        return files, '', tardir
+        return files, err, tardir
 
 
 def fetch_file(pfn, guid, unpack=True, listfiles=True):
@@ -819,7 +834,7 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
         errtxt += err
 
     ### get command to copy file
-    cmd = 'export RUCIO_ACCOUNT=atlpan; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase;source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh; source ${ATLAS_LOCAL_ROOT_BASE}/utilities/oldAliasSetup.sh python; source ${ATLAS_LOCAL_ROOT_BASE}/utilities/oldAliasSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_x509_proxy(),logdir,scope,lfn)
+    cmd = 'export RUCIO_ACCOUNT=atlpan; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase;source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh; source ${ATLAS_LOCAL_ROOT_BASE}/utilities/oldAliasSetup.sh "python 2.7.9-x86_64-slc6-gcc48"; source ${ATLAS_LOCAL_ROOT_BASE}/utilities/oldAliasSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_x509_proxy(),logdir,scope,lfn)
     if not len(cmd):
         _logger.warning('Command to fetch the file is empty!')
 

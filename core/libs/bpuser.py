@@ -3,8 +3,13 @@ Created on 18.12.2018
 :author Tatiana Korchuganova
 User specific functions
 """
+import json
+
 from django.db import connection
-from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qs
+from urllib.parse import unquote, urlparse
+
+from core.common.models import BPUser, BPUserSettings
+
 
 def get_relevant_links(userid, fields):
 
@@ -114,3 +119,126 @@ def get_relevant_links(userid, fields):
                     link['otherparams'].append(dict(param=param.split('=')[0], value=param.split('=')[1],
                                                     importance=flag))
     return links
+
+
+def filterErrorData(request, data, **kwargs):
+
+    if 'standard_errorfields' in kwargs:
+        standard_errorfields = kwargs['standard_errorfields']
+    else:
+        standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
+            'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
+            'workinggroup', 'reqid', 'computingelement']
+
+    defaultErrorsPreferences = {
+        'jobattr': standard_errorfields,
+    }
+
+    defaultErrorsPreferences['tables'] = {
+        'jobattrsummary': 'Job attribute summary',
+        'errorsummary': 'Overall error summary',
+        'siteerrorsummary': 'Site error summary',
+        'usererrorsummary': 'User error summary',
+        'taskerrorsummary': 'Task error summary'
+    }
+    userids = BPUser.objects.filter(email=request.user.email).values('id')
+    userid = userids[0]['id']
+    try:
+        userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
+        userPreferences = json.loads(userSetting.preferences)
+    except:
+        saveUserSettings(request, 'errors')
+        userSetting = BPUserSettings.objects.get(page='errors', userid=userid)
+        userPreferences = json.loads(userSetting.preferences)
+        # userPreferences = defaultErrorsPreferences
+
+    userPreferences['defaulttables'] = defaultErrorsPreferences['tables']
+    userPreferences['defaultjobattr'] = defaultErrorsPreferences['jobattr']
+    ###TODO Temporary fix. Need to redesign
+    userPreferences['jobattr'].append('reqid')
+    userPreferences['jobattr'].append('computingelement')
+
+    data['userPreferences'] = userPreferences
+    if 'tables' in userPreferences:
+        if 'jobattrsummary' in userPreferences['tables']:
+            if 'jobattr' in userPreferences:
+                sumd_new = []
+                for attr in userPreferences['jobattr']:
+                    for field in data['sumd']:
+                        if attr == field['field']:
+                            sumd_new.append(field)
+                            continue
+                data['sumd'] = sorted(sumd_new, key=lambda x: x['field'])
+        else:
+            try:
+                del data['sumd']
+            except:
+                pass
+        if 'errorsummary' not in userPreferences['tables']:
+            try:
+                del data['errsByCount']
+            except:
+                pass
+        if 'siteerrorsummary' not in userPreferences['tables']:
+            try:
+                del data['errsBySite']
+            except:
+                pass
+        if 'usererrorsummary' not in userPreferences['tables']:
+            try:
+                del data['errsByUser']
+            except:
+                pass
+        if 'taskerrorsummary' not in userPreferences['tables']:
+            try:
+                del data['errsByTask']
+            except:
+                pass
+
+    return data
+
+
+def saveUserSettings(request, page, **kwargs):
+
+    if 'standard_errorfields' in kwargs:
+        standard_errorfields = kwargs['standard_errorfields']
+    else:
+        standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
+            'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
+            'workinggroup', 'reqid', 'computingelement']
+
+    if page == 'errors':
+        errorspage_tables = ['jobattrsummary', 'errorsummary', 'siteerrorsummary', 'usererrorsummary',
+                            'taskerrorsummary']
+        preferences = {}
+        if 'jobattr' in request.session['requestParams']:
+            preferences["jobattr"] = request.session['requestParams']['jobattr'].split(",")
+            try:
+                del request.session['requestParams']['jobattr']
+            except:
+                pass
+        else:
+            preferences["jobattr"] = standard_errorfields
+        if 'tables' in request.session['requestParams']:
+            preferences['tables'] = request.session['requestParams']['tables'].split(",")
+            try:
+                del request.session['requestParams']['tables']
+            except:
+                pass
+        else:
+            preferences['tables'] = errorspage_tables
+        query = {}
+        query['page']= str(page)
+        if request.user.is_authenticated:
+            userids = BPUser.objects.filter(email=request.user.email).values('id')
+            userid = userids[0]['id']
+            try:
+                userSetting = BPUserSettings.objects.get(page=page, userid=userid)
+                userSetting.preferences = json.dumps(preferences)
+                userSetting.save(update_fields=['preferences'])
+            except BPUserSettings.DoesNotExist:
+                userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
+                userSetting.save()
+
+
+

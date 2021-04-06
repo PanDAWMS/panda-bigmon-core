@@ -1,0 +1,446 @@
+{% extends "_base_core.html" %}
+{% load static %}{% load common_tags %}{% load humanize %}
+{% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
+{% block subtitle %}PanDA user <b>{{ user }}</b>{% endblock %}
+{% block time_window %}
+    Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static "js/datatables/Buttons-1.2.4/css/buttons.foundation.min.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/dataTables.buttons.min.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.foundation.min.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.colVis.min.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
+{% endblock %}
+
+
+{% block body %}
+
+<p>
+{# {{ viewParams.selection|safe }} #}
+{% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
+</p>
+
+
+{% if request.user and request.user.is_authenticated and links and links|length > 0 %}
+
+  <div class="card bp-container-simple">
+  <div class="card-divider"><p>Inspired by your visits history:</p></div>
+  <div class="card-section">
+    {% for category, linkslist in links.items %}
+      <p><b>{{ category | title }}:</b></p>
+      <ul class="no-bullet uservisits">
+        {% for link in linkslist %}
+          {% if link.keyparams|length > 0 %}
+            <a href={{ link.url }}>
+              {% for param in link.keyparams %}
+                {% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}
+                {% if param.param == 'status' %}<span class="{{ param.value }}">{{ param.param }}:{{ param.value }}</span>
+                {% elif param.param == 'jeditaskid' or param.param == 'taskid' %}
+                  {% if category != 'task' %}{{ param.param }}:{% endif %}<b>{{ param.value }}</b>
+                {% elif param.param == 'pandaid' %}<b>{{ param.value }}</b>
+                {% elif param.param == 'jobstatus' or param.param == 'status' %}<span class="{{ param.value }}">{{ param.value }}</span>
+                {% elif param.param == 'site' %}<b>{{param.value}}</b>
+                {% elif param.param == 'cloud' %}{{ param.param }}:<b>{{ param.value }}</b>
+                {% else %}{{ param.param }}:{{ param.value }}
+                {% endif %}
+                {% if forloop.last and link.keyparams|length > 1 %}){% else %}{% endif %}
+              {% endfor %}</a>
+          {% else %}<a href={{ link.url }}>{{ link.pagename }}</a>
+          {% endif %}
+        {% if forloop.last %}{% else %},&emsp;{% endif %}
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  </div>
+  </div>
+{% endif %}
+
+
+{% if tasks|length > 0 %}
+  <div id="plots" data-ng-controller="userTaskSummaryPlotsController">
+  <div class="card bp-container-simple secondary">
+    <div class="card-divider"><p>User activity overview:</p></div>
+    <div class="card-section">
+      <p>
+        {% for m in metrics %}
+          <span class="label medium {% if m.class and m.class|length > 0 %}{{ m.class }}{% else %} neutral {% endif %}">{{ m.title }}: <b>{{ m.value | intcomma }}</b> {{ m.unit }}</span>
+        {% endfor %}
+      </p>
+      <div class="c3-chart-block" ng-repeat="plot in userinfo.uts_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
+    </div>
+  </div>
+  </div>
+
+
+  <div class="card bp-container-simple secondary" id="container_tasks">
+  <div class="card-divider"><p>{{ tasks|length }} tasks listed:</p></div>
+  <div class="card-section">
+    <table class="data-table" id="taskstable">
+        <thead></thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+    </table>
+  </div>
+  </div>
+
+{% else %}
+  <div class="card bp-container-simple info">
+  <div class="card-divider"><p>No tasks were found.</p></div>
+  </div>
+{% endif %}
+
+
+
+{% endblock %}
+
+{% block js_body_page %}
+
+<script src="{% static 'js/d3jsplot.js' %}"></script>
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+
+
+<script type="text/javascript">
+
+var plot_data = {{ plots|safe }};
+  app.controller('userTaskSummaryPlotsController', function($scope) {
+    $scope.userinfo = {};
+    $scope.userinfo.uts_plots = {
+      plot_data: plot_data,
+      charts: {}
+    };
+
+    $scope.userinfo.uts_plots.plot_data.forEach((item) => {
+      item.options.size = [getWidth()/$scope.userinfo.uts_plots.plot_data.length - 20 , 300]
+    });
+
+    $scope.userinfo.uts_plots.build = function () {
+      $scope.userinfo.uts_plots.plot_data.forEach((item) => {
+        if (item.type === 'pie') {
+          $scope.userinfo.uts_plots.charts[item.name + "_chart"] = draw_donut(
+            item.data,
+            item.name + "_chart",
+            item.title,
+            item.options,
+          );
+        }
+        else if (item.type === 'bar') {
+          $scope.userinfo.uts_plots.charts[item.name + "_chart"] = draw_bar(
+            item.data,
+            item.name + "_chart",
+            item.title,
+            item.options)
+        }
+      });
+    };
+
+
+  })
+  .directive('jcplotDirective', function ($timeout) {
+      var template = '<div id="{$plot.name$}_chart"></div>';
+      return {
+          template: template,
+          scope: {
+              plot: '=',
+              parent: '=',
+          },
+          link: function (scope, element, attrs) {
+            $timeout(() => {
+              element.ready(() => {
+                if (scope.plot.type === 'pie') {
+                  scope.parent.userinfo.uts_plots.charts[scope.plot.name + "_chart"] = draw_donut(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.title,
+                    scope.plot.options)
+                }
+                else if (scope.plot.type === 'bar') {
+                  scope.parent.userinfo.uts_plots.charts[scope.plot.name + "_chart"] = draw_bar(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.title,
+                    scope.plot.options)
+                }
+              });
+            });
+          }
+      };
+  });
+
+
+  $(document).ready(function() {
+
+    var tasks_list = {{ tasks|safe }};
+    var tasksTable = buildTasksTable(tasks_list);
+
+  });
+
+  
+function buildTasksTable(data) {
+  var tasksTable = $('#taskstable').DataTable({
+    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+    "iDisplayLength": 20,
+    "paging": true,
+    "scrollX": true,
+    "aaSorting": [[0, 'desc']],
+    "columnDefs": [
+        {"type": "num-html", "targets": [0,3,4,5,6,9,10,11,12,13,14,16,17] }
+    ],
+    "data": data,
+    "buttons": [
+      {
+        extend: 'colvisGroup',
+        text: 'Minimize view',
+        hide: [ 4,10,11,12,13,14, ],
+      },
+      {
+        extend: 'colvisGroup',
+        text: 'Show all metrics',
+        show: ':hidden',
+      }
+    ],
+    "aoColumns": [
+      {
+        title: "Task ID",
+        data: "jeditaskid",
+        sDefaultContent: "-",
+        render: function(data, type, row, meta) {
+          if (data) {
+            return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Type",
+        data: "tasktype",
+        sDefaultContent: "-",
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0) {
+            return (data !== 'prod') ? 'analy' : 'prod';
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Task name",
+        data: "taskname",
+        sDefaultContent: "-",
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0) {
+            return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "N files total",
+        data: "nfiles",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "N files done",
+        data: "nfilesfinished",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "N files failed",
+        data: "nfilesfailed",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "Progress, %",
+        data: "pctfinished",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "Status (PS2)",
+        data: "superstatus",
+        sDefaultContent: "-",
+        className: 'state',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return '<a href="{{ xurl }}superstatus=' + data + '">' + data + '</a>'
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Status (JEDI)",
+        data: "status",
+        sDefaultContent: "-",
+        className: 'state',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return '<a href="{{ xurl }}status=' + data + '">' + data + '</a>'
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Age, days",
+        data: "age",
+        sDefaultContent: "-",
+        className: 'num',
+      },
+      {
+        title: "Queue time, hours",
+        data: "job_queuetime",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Wall time, hours",
+        data: "job_walltime",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Max PSS/core, GB",
+        data: "job_maxpss_per_actualcorecount",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Jobs efficiency",
+        data: "job_efficiency",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Jobs attempts",
+        data: "job_attemptnr",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data) {
+            return data;
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Task logged status",
+        data: "errordialog",
+        sDefaultContent: "-",
+        className: 'alert',
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0) {
+            return data.replace(/\_/g, '_<wbr>');
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+      {
+        title: "Jobs failure, %",
+        data: "job_failed",
+        sDefaultContent: "-",
+        className: 'num',
+        render: function(data, type, row, meta) {
+          if (data && data > 0) {
+            return '<a href="{% url 'errorSummary' %}?jeditaskid=' + row['jeditaskid'] + '">' + data + '</a>'
+          }
+          else {
+            return 0
+          }
+        },
+      },
+      {
+        title: 'Top job errors, count [code] "sample message"',
+        data: "top_errors",
+        sDefaultContent: "-",
+        className: 'alert',
+        render: function(data, type, row, meta) {
+          if (data && data.length > 0 && row['status'] !== 'done') {
+            return data.replace(/\./g, '.<wbr>');
+          }
+          else {
+            return '-'
+          }
+        },
+      },
+    ],
+    createdRow: function ( row, data, index ) {
+        $('td', row).eq(7).addClass(data['superstatus'] + '_fill');
+        $('td', row).eq(8).addClass(data['status'] + '_fill');
+    },
+  });
+
+  tasksTable.columns( [ 4,10,11,12,13,14, ] ).visible( false );
+  tasksTable.buttons().container()
+      .appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
+
+  return tasksTable
+}
+
+</script>
+{% endblock %}
+
+
+{% block help %}
+{% include "userInfoHelp.html" with view='dash' %}
+{% include "taskInfoHelp.html" with show='all' %}
+{% endblock %}

@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block subtitle %}PanDA jobs {{ viewParams.selection|safe }}
 {% if showwarn and njobs%}
@@ -147,7 +147,10 @@
 <table>
 <tr class='tablesection'><th colspan=20> Job attribute summary, sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
+<tr><th>
+  <p>{{ fdict.field }} ({{ fdict.list|length }})</p>
+  {% if fdict.stats %}{% if fdict.stats.sum %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}{% endif %}
+</th>
     <td><div class="comment more">
         {% for item in fdict.list %}
             {% if fdict.field == 'jeditaskid' and item.kname != 'Not specified' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
@@ -155,12 +158,16 @@
             {% elif fdict.field  == 'harvesterinstance' %} {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'durationmin' %} {% if item.kvalue > 0 %} {{ item.kname }} <a href="{{nodurminurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a> {% endif %}
             {% elif fdict.field == 'produsername' %} <a href="{% url 'userInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
-            {% else %}
-                {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
-                {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
-                    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}> ({{ item.kvalue }}) </a>
+            {% elif fdict.field == 'eventservicestatus' %} ({{ item.kvalue }})
+            {% elif fdict.field == 'container_name' and request.session.xurls and fdict.field in request.session.xurls %} {{ item.kname }} <a href="{{ request.session.xurls.container_name }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
+            {% elif fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'>{{ item.kname }}</span>
+                {% if item.kname == 'closed:toreassign' %}
+                  <a href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign">({{ item.kvalue }})</a>
+                {% else %}
+                  <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
                 {% endif %}
+            {% else %}
+                {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
             {% endif %}
         {% endfor %}
         </div>
@@ -296,10 +303,8 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 	<th>Mod</th>
 	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
 	<th>Priority</th>
-    <th>N input events (N input files)</th>
-    {% if requestParams.jeditaskid  %}
-        <th>Maximum <br>PSS</th>
-    {% endif %}
+  <th>N input events (N input files)</th>
+  <th>Max PSS/core, GB</th>
 	<th>Job info</th>
 </tr>
     {% for job in jobList %}
@@ -325,7 +330,6 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 		<td> {% if job.reqid %} <a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
 		{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
 		<td><font size=-1><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></font></td>
-
 		<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
 		<td><font size=-1>{{ job.creationtime }}</font></td>
 		<td><font size=-1>{{ job.waittime }}</font></td>
@@ -333,14 +337,12 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 		<td><font size=-1>{{ job.modificationtime }}</font></td>
 		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'> {{job.computingsitestatus}}</span> {{job.computingsitecomment}} </font></td>
 		<td>{{ job.currentpriority }}</td>
-        <td>{{ job.nevents }} ({{ job.ninputs }})</td>
-        {% if requestParams.jeditaskid  %}
-        <td><font size=-1>{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</font></td>
-         {% endif %}
+    <td>{{ job.nevents }} ({{ job.ninputs }})</td>
+    <td>{% if 'maxpssgbpercore' in job and job.maxpssgbpercore %}{{ job.maxpssgbpercore }}{% endif %}</td>
 		<td class="wrap">{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
 		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
 		</td>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan=12> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></font>  #{{ job.attemptnr }}
+	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan="20"> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></font>  #{{ job.attemptnr }}
     </td></tr>
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan="20" class='highlightcell'> Datasets: {% if job.proddblock %} <b> In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> {% endif %} <b> Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
 
@@ -470,7 +472,7 @@ function DisplayErrorMessagesListTableData() {
 
 $(document).ready(function () {
 
-    $(".comment").shorten();
+    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
 
     DisplayErrorCountListTableData();
     DisplayErrorMessagesListTableData();
@@ -494,8 +496,8 @@ $(document).ready(function () {
 </script>
 {% endblock %}
 
-{% block helptext %}
-{% include "jobListHelp.html" with helptitle="Job list help" %}
-{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
+{% block help %}
+{% include "jobListHelp.html" %}
+{% include "jobInfoHelp.html" with show="all" %}
 {% endblock %}
 

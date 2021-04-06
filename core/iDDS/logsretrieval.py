@@ -4,8 +4,10 @@ from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
 import tempfile
 from os.path import basename
 from core.settings import IDDS_HOST
-
+from core.filebrowser import ruciowrapper
+from core.libs.exlib import getDataSetsForATask
 c = Client(IDDS_HOST)
+import tarfile, os
 
 def downloadlog(request):
     initRequest(request)
@@ -20,6 +22,30 @@ def downloadlog(request):
     else:
         return JsonResponse({'error': 'no workloadid provided'}, safe=False)
 
+def get_hpo_metrics_ds(taskid):
+    datasets = getDataSetsForATask(taskid, type='output')
+    # we assume here only one output dataset
+    if (len(datasets) > 0):
+        return datasets[0]['datasetname']
+
+def archive_metric_files(basedir):
+    with tarfile.open(basedir +'/'+ 'download.tar.gz', 'w') as archive:
+        for i in os.listdir(basedir):
+            if 'metric' in i:
+                archive.add(basedir+'/'+i, arcname=i)
+
+def downloadhpometrics(request):
+    initRequest(request)
+    if 'workloadid' in request.session['requestParams']:
+        workloadid = int(request.session['requestParams']['workloadid'])
+        ds_name = get_hpo_metrics_ds(workloadid)
+        rw = ruciowrapper.ruciowrapper()
+        down_results = rw.download_ds(ds_name)
+        if 'basedir' in down_results:
+            archive_metric_files(down_results['basedir'])
+            return getfile(down_results['basedir'] + '/download.tar.gz')
+        else:
+            return JsonResponse(down_results, safe=False)
 
 
 def getfile(file_location):

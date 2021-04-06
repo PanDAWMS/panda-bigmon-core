@@ -71,6 +71,16 @@
   </div>
 {% endif %}
 
+<div class="callout primary" data-closable>
+  <h5><b>This is a new version of task profile page!</b></h5>
+  <p>The plot shows the progress of a task in time.</p>
+  <p>Only successfully finished jobs are shown by default. You can use multi-select inputs on the top
+    to include build and merge jobs types ended up in failed, cancelled and closed states to the plot.</p>
+  <p>Also you can select a task progress unit: job or events. It will be applied to y axis. </p>
+  <p>The plot is interactive, if one hover a point the extra information as pandaid of a job will be shown in tooltip.
+    You can click on legend items to hide points associated to its category. </p>
+</div>
+
 {% endblock %}
 
 {% block js_body_page %}

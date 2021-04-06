@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.core.cache import cache
-import json, re
+import json, re, os
 from pprint import pprint
 from collections import defaultdict
 from operator import itemgetter, attrgetter
@@ -32,7 +32,7 @@ def globalviewDemo(request):
     majorwarn_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-lightbulb">ICON35</span></div>'
     error_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="ERROR" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-close">ICON36</span></div>'
     radiooff_icon='<div class="ui-widget ui-state-default" style="display:inline-block";> <span title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
-    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
+    di_res = {'-1': clock_icon, 'N/A': radiooff_icon, '0': check_icon, '1': error_icon, '2': majorwarn_icon,'3': error_icon, '4': minorwarn_icon, '10': clock_icon}
 
     query = """
     select n.nname as \"BRANCH\", n.ngroup as \"GROUP\", platf.pl,
@@ -54,12 +54,12 @@ def globalviewDemo(request):
     TO_CHAR(j.ecvkv,'DD-MON HH24:MI') as \"CVMCL\", j.SCVKV as \"S.CVMCL\",
     platf.lartwebarea,
     TO_CHAR(j.ela,'DD-MON HH24:MI') as \"LA\",
-    j.erla,j.sula
+    j.erla,j.sula, j.eim, j.sim, j.vext, j.suff, platf.webarea
     from nightlies@ATLR.CERN.CH n inner join
       ( releases@ATLR.CERN.CH a inner join
         ( jobstat@ATLR.CERN.CH j inner join projects@ATLR.CERN.CH p on j.projid = p.projid) on a.nid=j.nid and a.relid=j.relid )
       on n.nid=a.nid,
-    (select arch||'-'||os||'-'||comp||'-'||opt as pl, jid, lartwebarea from jobs@ATLR.CERN.CH ) platf,
+    (select arch||'-'||os||'-'||comp||'-'||opt as pl, jid, lartwebarea, webarea from jobs@ATLR.CERN.CH ) platf,
     (select ncompl as nc, ner as nc_er, npb as nc_pb, jid, projid from cstat@ATLR.CERN.CH ) cs,
     (select ncompl as nt, ner as nt_er, npb as nt_pb, jid, projid from tstat@ATLR.CERN.CH ) ts
      WHERE
@@ -73,9 +73,6 @@ def globalviewDemo(request):
           """
     new_cur.execute(query)
     result = new_cur.fetchall()
-
-    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
-    
     first_row = result[0]
     rows_s = []
     dd = defaultdict(list)
@@ -127,6 +124,9 @@ def globalviewDemo(request):
     reslt3 = []
     for row in reslt2:
         list9 = []
+        m_ncompl =  row[16]
+        if m_ncompl == None or m_ncompl == 'N/A' or m_ncompl <= 0:
+            row[17]='N/A'; row[18]='N/A';
         a0001 = str(row[17]) + ' (' + str(row[18]) + ')'
         m_tcompl = row[19]
         if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
@@ -152,10 +152,14 @@ def globalviewDemo(request):
         lartwebarea=row[29]
         if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDir\
 ectory/gitwww/GITWebArea/nightlies"        
-        erla=row[31];sula=row[32]
+        erla=row[31];sula=row[32]; eim=row[33]; sim=row[34]; vext=row[35]; area_suffix=row[36]; webarea_cur=row[37]
         if erla == None or erla == '': erla='N/A'
         if sula == None or sula == '': sula='N/A'
-
+        if eim == None or eim == '': eim='N/A'
+        if sim == None or sim == '': sim='N/A'
+        if vext == None or vext == '': vext = '0'
+        if webarea_cur == None: webarea_cur = ''
+        if area_suffix == None: area_suffix = '';
         brname = row[0]
         link_brname = brname
         link_to_ciInfo = reverse('BuildCI')
@@ -165,11 +169,13 @@ ectory/gitwww/GITWebArea/nightlies"
         else:
             link_brname = "<a href=\"" + link_to_nInfo + "?nightly=" + brname + "\">" + brname + "</a>"
 
-        key_cache_transf=brname + '_' + row[14]
+        rname=row[14]
+        rname_trun = re.sub(r'\([^)]*\)', '', rname)
+        key_cache_transf=brname + '_' + rname
         val_cache_transf,nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
         if val_cache_transf != 'N/A' and nightly_name_art != 'N/A': 
             vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch=" 
-            val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + row[14] + "\">" + val_cache_transf + "</a>"
+            val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + rname + "\">" + val_cache_transf + "</a>"
 
         local_art_res=''
         if sula == 'N/A' and erla == 'N/A':
@@ -181,19 +187,32 @@ ectory/gitwww/GITWebArea/nightlies"
             local_art_res=local_art_res+'<B><span style="color: red">'+ str(erla)+'</span></B>'
             arrk=re.split('_',brname)
             branch=arrk[0]
-            loares="<a href=\""+lartwebarea+"/"+branch+"/"+row[14]+"/"+row[15]+"/"+row[2]+"/"+row[15]+"/art.log.html\">"
+            loares="<a href=\""+lartwebarea+"/"+branch+"/"+rname+"/"+row[15]+"/"+row[2]+"/"+row[15]+"/art.log.html\">"
             local_art_res=loares+local_art_res+"</a>"
 
+        image_res='N/A'
+        if sim == 'N/A' or eim == 'N/A':
+            image_res='N/A'
+        elif sim == 0 or sim == 1 or sim == 2 or sim == 3 or sim == 4:
+            image_res = di_res.get(str(sim), str(sim))
+            if str(vext) == '1' :
+                image_res= "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_image_build.html' + "\">" + image_res + "</a>"
+            if isinstance(eim, datetime):
+                image_res = image_res+" "+eim.strftime('%d-%b %H:%M').upper()
+        else:
+            image_res = di_res.get(str(sim), str(sim))
         list9.append(row[1]);
         list9.append(link_brname);
-        list9.append(row[14]);
+        list9.append(rname);
         list9.append(row[9]);
         list9.append(a0001);
         list9.append(a0002);
         list9.append(local_art_res);
         list9.append(val_cache_transf);
         list9.append(tt_cv_clie);
-        list9.append(row[33]);
+        list9.append(image_res);
+        list9.append(row[38]);
+
         reslt3.append(list9)
 
 #    if dict_from_cache:

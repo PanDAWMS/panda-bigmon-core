@@ -16,8 +16,8 @@ from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F
 
-
-from core.views import login_customrequired, initRequest, extensibleURL, removeParam
+from core.auth.utils import login_customrequired
+from core.views import initRequest, extensibleURL, removeParam
 from core.views import DateEncoder
 from core.art.artMail import send_mail_art
 from core.art.modelsART import ARTTests, ReportEmails, ARTResultsQueue
@@ -77,6 +77,7 @@ def art(request):
     data = {
             'request': request,
             'viewParams': request.session['viewParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'packages': sorted(package_list, key=str.lower),
             'branches': [b['branch'] for b in branches],
             'ntags': [t['nightly_tag_date'] for t in ntags]
@@ -177,6 +178,7 @@ def artOverview(request):
             'request': request,
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'artpackages': artpackagesdict,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
@@ -287,6 +289,7 @@ def artTasks(request):
             'request': request,
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'arttasks' : arttasksdict,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
@@ -406,6 +409,8 @@ def artJobs(request):
     reportTo = {'mail': [], 'jira': {}}
     gitlabids = list(sorted(set([x['gitlabid'] for x in jobs if 'gitlabid' in x and x['gitlabid'] is not None])))
     linktoplots = []
+    eos_art_link = 'https://atlas-art-data.web.cern.ch/atlas-art-data/'
+    link_prefix = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
 
     artjobsdict={}
 
@@ -436,7 +441,6 @@ def artJobs(request):
                 jobdict = {}
                 jobdict['jobstatus'] = job['jobstatus']
                 jobdict['origpandaid'] = job['origpandaid']
-                jobdict['linktext'] = job[art_aggr_order[1]] + '/' + job['nightly_tag'] + '/' + job['package'] + '/' + job['testname'][:-3]
                 jobdict['ntagtime'] = job['nightly_tag'][-5:]
                 jobdict['computingsite'] = job['computingsite']
                 jobdict['guid'] = job['guid']
@@ -466,8 +470,19 @@ def artJobs(request):
                         job['extrainfo'] = json.loads(job['extrainfo'])
                     except:
                         job['extrainfo'] = {}
-                if 'html' in job['extrainfo']:
-                    jobdict['htmllink'] = jobdict['linktext'] + '/' + job['extrainfo']['html']
+
+                jobdict['linktext'] = '{}/{}/{}/{}/'.format(job[art_aggr_order[1]], job['nightly_tag'],
+                                                            job['package'], job['testname'][:-3])
+                jobdict['eoslink'] = link_prefix + jobdict['linktext']
+                if 'html' in job['extrainfo'] and job['extrainfo']['html']:
+                    if job['extrainfo']['html'].startswith('http'):
+                        jobdict['htmllink'] = job['extrainfo']['html'] + jobdict['linktext']
+                        # replace eoslink
+                        # TODO: temporary dirty fix until ART begins to send a proper eos path
+                        if not job['extrainfo']['html'].startswith(eos_art_link):
+                            jobdict['eoslink'] = '/'.join(job['extrainfo']['html'].split('/', 4)[:4]) + '/art/' + jobdict['linktext']
+                    else:
+                        jobdict['htmllink'] = link_prefix + jobdict['linktext'] + job['extrainfo']['html'] + '/'
 
                 finalresult, extraparams = get_final_result(job)
 
@@ -544,6 +559,7 @@ def artJobs(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
             'artjobs': artjobslist,
             'testdirectories': testdirectories,
             'noviewurl': noviewurl,
@@ -641,7 +657,7 @@ def updateARTJobList(request):
                 except:
                     _logger.exception('Exception was caught while transforming pandaid from str to int.' + str(sr))
                     pandaid = -1
-                if pandaid > 0:
+                if pandaid > 0 and sr[pandaid] is not None:
                     subResultsDict[pandaid] = json.dumps(sr[pandaid])
 
             # insert subresults to special table

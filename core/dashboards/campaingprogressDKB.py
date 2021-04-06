@@ -9,7 +9,7 @@ import operator
 from django.http import JsonResponse
 import numpy as np
 import humanize
-from core.views import login_customrequired
+from core.auth.utils import login_customrequired
 import urllib3
 import json
 

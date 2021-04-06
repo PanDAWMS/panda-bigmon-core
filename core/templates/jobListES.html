@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA ES jobs{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA Event Service jobs {{ viewParams.selection|safe }}
@@ -138,19 +138,23 @@
 <table>
 <tr class='tablesection'><th colspan=20> Job attribute summary       Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
+<tr><th>
+  <p>{{ fdict.field }} ({{ fdict.list|length }})</p>
+  {% if fdict.stats %}{% if fdict.stats.sum %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}{% endif %}</th>
     <td><div class="comment more">
         {% for item in fdict.list %}
             {% if fdict.field == 'jeditaskid' and item.kname != 'Not specified' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}">{{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" > ({{ item.kvalue }}) </a>
             {% elif fdict.field == 'produsername' %} <a href="{% url 'userInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
-
-            {% else %}
-                {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
-                {% if fdict.field == 'eventservicestatus' %} ({{ item.kvalue }}) {% else %}
-                    <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a>
+            {% elif fdict.field == 'container_name' and request.session.xurls and fdict.field in request.session.xurls %} {{ item.kname }} <a href="{{ request.session.xurls.container_name }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
+            {% elif fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'>{{ item.kname }}</span>
+                {% if item.kname == 'closed:toreassign' %}
+                  <a href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign">({{ item.kvalue }})</a>
+                {% else %}
+                  <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
                 {% endif %}
+            {% else %}
+                {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
             {% endif %}
         {% endfor %}
         </div>
@@ -187,13 +191,13 @@
 <a name="joblist"></a> Job list
 {% if display_limit  and display_limit < njobs %}
 <font size=-1>Only the most recent {{ display_limit }} jobs (sorted by PandaID) are shown. Remove the limit and sort by 
-<a href="{{nosorturl}}">PandaID</a>, 
+<a href="{{nosorturl}}sortby=pandaid">PandaID</a>,
 {% else %}
 Sort by 
 {% if sortby == "PandaID" %}
 <b>PandaID</b>,
 {% else %}
-<a href="{{nosorturl}}">PandaID</a>, 
+<a href="{{nosorturl}}sortby=pandaid">PandaID</a>,
 {% endif %}
 {% endif %}
 
@@ -321,14 +325,14 @@ function toggleComparisonList(buttonid, value) {
 }
 
 	$(document).ready(function() {
-	    $(".comment").shorten();
+	    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
 	});
 
 </script>
 {% endblock %}
 
-{% block helptext %}
-{% include "jobListHelp.html" with helptitle="Job list help" %}
-{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
+{% block help %}
+{% include "jobListHelp.html"  %}
+{% include "jobInfoHelp.html" with show="all" %}
 {% endblock %}
 

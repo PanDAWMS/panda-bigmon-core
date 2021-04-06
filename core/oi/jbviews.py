@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
-
-from core.views import initRequest, login_customrequired, DateEncoder
+from core.auth.utils import login_customrequired
+from core.views import initRequest, DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import parse_datetime
 
@@ -171,11 +171,12 @@ def jbhome(request):
 
     url_no_computetype = removeParam(request.get_full_path(), 'computetype')
 
+    request.session['timerange'] = [starttime.strftime(OI_DATETIME_FORMAT), endtime.strftime(OI_DATETIME_FORMAT)]
     data = {
         'request': request,
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
-        'timerange': [starttime.strftime(OI_DATETIME_FORMAT), endtime.strftime(OI_DATETIME_FORMAT)],
+        'timerange': request.session['timerange'],
         'message': message,
         'mesures': [],
         'metric': metric,

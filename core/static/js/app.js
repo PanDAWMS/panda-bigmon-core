@@ -39,5 +39,33 @@ function disable_input(item, options) {
     for (let i = 0; i < els.length; i++) { els[i].disabled = false; }
 }
 
+(function ($) {
+  $.fn.goTo = function () {
+      $('html, body').animate({
+          scrollTop: $(this).offset().top + 'px'
+      }, 'fast');
+      return this;
+  }
+})(jQuery);
 
+function getWidth() {
+  return Math.min(
+    document.body.scrollWidth,
+    document.documentElement.scrollWidth,
+    document.body.offsetWidth,
+    document.documentElement.offsetWidth,
+    document.documentElement.clientWidth
+  );
+}
 
+function getNCharsShorten() {
+  let nChars = 1000;
+  let width = getWidth();
+  if (width >= 1440) {
+      nChars = 4000;
+  }
+  else if (width >= 1024) {
+      nChars = 2500;
+  }
+  return nChars
+}

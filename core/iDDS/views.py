@@ -5,11 +5,11 @@ from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 from django.template.defaulttags import register
 from django.db.models import Q, F
-
-from core.views import initRequest, login_customrequired, DateEncoder
+from core.auth.utils import login_customrequired
+from core.views import initRequest, DateEncoder
 from core.iDDS.models import Transforms, Collections, Requests, Req2transforms, Processings, Contents
 from core.iDDS.useconstants import SubstitleValue
-from core.iDDS.rawsqlquery import getRequests
+from core.iDDS.rawsqlquery import getRequests, getTransforms
 from core.iDDS.algorithms import generate_requests_summary, parse_request, getiDDSInfoForTask
 from core.libs.exlib import lower_dicts_in_list
 from django.core.cache import cache
@@ -112,25 +112,28 @@ def transforms(request):
     initRequest(request)
     query = Q()
     if 'requestid' in request.session['requestParams']:
-        query = Q(request_id_fk=request.session['requestParams']['requestid'])
-    iDDStransforms = list(Req2transforms.objects.select_related('transform_id_fk').filter(query)
-                          .values('transform_id_fk__transform_id',
-                                  'transform_id_fk__transform_type',
-                                  'transform_id_fk__transform_tag',
-                                  'transform_id_fk__priority',
-                                  'transform_id_fk__safe2get_output_from_input',
-                                  'transform_id_fk__status',
-                                  'transform_id_fk__substatus',
-                                  'transform_id_fk__locking',
-                                  'transform_id_fk__retries',
-                                  'transform_id_fk__created_at',
-                                  'transform_id_fk__updated_at',
-                                  'transform_id_fk__started_at',
-                                  'transform_id_fk__finished_at',
-                                  'transform_id_fk__expired_at',
-                                  'transform_id_fk__transform_metadata',
+        values = getTransforms(request.session['requestParams']['requestid'])
+        queries = [Q(transform_id=value['TRANSFORM_ID']) for value in values]
+        query = queries.pop()
+        for item in queries:
+            query |= item
+    iDDStransforms = list(Transforms.objects.filter(query)
+                          .values('transform_id',
+                                  'transform_type',
+                                  'transform_tag',
+                                  'priority',
+                                  'safe2get_output_from_input',
+                                  'status',
+                                  'substatus',
+                                  'locking',
+                                  'retries',
+                                  'created_at',
+                                  'updated_at',
+                                  'started_at',
+                                  'finished_at',
+                                  'expired_at',
+                                  'transform_metadata',
                                   ))
-    subtitleValue.replace('transforms', iDDStransforms)
     return JsonResponse({'data': iDDStransforms}, encoder=DateEncoder, safe=False)
 
 
@@ -144,5 +147,3 @@ def getiDDSInfoForTaskRequest(request):
         transformationWithNested = getiDDSInfoForTask(jeditaskid)
 
     return JsonResponse({'data': transformationWithNested}, encoder=DateEncoder, safe=False)
-
-

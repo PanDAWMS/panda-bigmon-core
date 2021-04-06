@@ -60,7 +60,7 @@
       $interpolateProvider.endSymbol('$}');
       });
     app.config(['$compileProvider', function ($compileProvider) {
-      $compileProvider.debugInfoEnabled(false);
+      $compileProvider.debugInfoEnabled(true);
       }]);
   </script>
   {% endblock %}
@@ -101,29 +101,32 @@
             {% if viewParams.MON_VO == 'ATLAS' %}
                 <li><a>Region view</a>
                     <ul class="submenu menu">
-                        <li><a href="{% url 'dashboard' %}">All jobs</a></li>
-                        <li><a href="{% url 'dashAnalysis' %}">Analysis jobs</a></li>
-                        <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs</a></li>
+                        <li><a href="{% url 'dashRegion' %}">All jobs</a></li>
+                        <li><a href="{% url 'dashRegion' %}?jobtype=analy&splitby=jobtype">Analysis jobs</a></li>
+                        <li><a href="{% url 'dashRegion' %}?jobtype=prod&splitby=jobtype">Production jobs</a></li>
                         <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Event Service jobs</a></li>
                     </ul>
                 </li>
                 <li><a>World view</a>
                     <ul class="submenu menu">
-                        <li><a href="{% url 'dashProduction' %}?cloudview=world">Production jobs</a></li>
+                        <li><a href="{% url 'dashWorld' %}">Production jobs</a></li>
                         <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service jobs</a></li>
                     </ul>
                 </li>
                 <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
                 <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
                 <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
-                <li><a href="{% url 'worldHS06s' %}">World HS06s</a></li>
+                <li><a>Data Carousel</a>
+                    <ul class="submenu menu">
+                        <li><a href="{% url 'dataCarouselleDashBoard' %}">Dashboard</a></li>
+                        <li><a href="{% url 'datacartails' %}">Staging Tails</a></li>
+                    </ul>
+                </li>
+                <li><a href="{% url 'iddsmain' %}">iDDS</a></li>
                 <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
                 <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>
                 <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
-                <li><a href="{% url 'dataCarouselleDashBoard' %}">Data Carousel</a></li>
                 <li><a href="{% url 'BuildGlobal' %}">Nightlies and CI</a></li>
-
-
             {% else %}
                 <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
                 <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
@@ -139,9 +142,15 @@
                 <li><a href="{% url 'taskList' %}?tasktype=anal&display_limit=300">Analysis</a></li>
                 <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
                 <li><a href="{% url 'taskList' %}?eventservice=eventservice&display_limit=300">Event service</a></li>
-                <li><a href="{% url 'runningProdTasks' %}?preset=MC">All running MC production</a></li>
-                <li><a href="{% url 'runningProdTasks' %}?preset=DPD">All running derivation production</a></li>
-                <li><a href="{% url 'runningProdTasks' %}?preset=DATA">All running reprocessing production</a></li>
+                <li><a href="{% url 'taskList' %}?container_name=all&display_limit=300">Containerized</a></li>
+                <li><a>Running production</a>
+                    <ul class="submenu menu">
+                        <li><a href="{% url 'runningProdTasks' %}">All</a></li>
+                        <li><a href="{% url 'runningProdTasks' %}?preset=MC">MC production</a></li>
+                        <li><a href="{% url 'runningProdTasks' %}?preset=DPD">Derivation production</a></li>
+                        <li><a href="{% url 'runningProdTasks' %}?preset=DATA">Reprocessing production</a></li>
+                    </ul>
+                </li>
             {% endif %}
         </ul>
         </li>
@@ -155,6 +164,7 @@
                 <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
                 <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
                 <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
+                <li><a href="{% url 'jobList' %}?container_name=all&display_limit=300">Containerized</a></li>
                 <li><a href="{% url 'status_summary-index' %}">Status Summary</a></li>
             {% endif %}
             <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>
@@ -164,7 +174,7 @@
         <li class="has-submenu">
         <a href="#">Errors</a>
         <ul class="submenu menu vertical">
-            <li><a href="{% url 'errorSummary' %}?sortby=count">All</a></li>
+            <li><a href="{% url 'errorSummary' %}?sortby=count&display_limit=20">All</a></li>
             {% if viewParams.MON_VO == 'ATLAS' %}
                 <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count&display_limit=20">Analysis</a></li>
                 <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count&display_limit=20">Production</a></li>
@@ -460,22 +470,76 @@
 
     <div class="column small-6 medium-3 large-2 right">
         {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
-        {% if built != None %} {{ built }}, {% endif %} <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}"> Refresh</a>
+        {% if built != None %} {{ built }}, {% endif %} <a onclick="refreshPage('{{ request.session.notimestampurl }}')"> Refresh</a>
     </div>
 </div>
 <!-- End sub-title -->
 
 <!-- Main Grid Section -->
-<div class="large-12 columns" id="content">
+<div class="large-12 columns body-content" id="content">
 {% block body %}
 
 {% endblock %}
-</div>
 
 {% block bottom_info %}
 {% comment %} {% if query %} Query: <i>{{ query }}</i> {% endif %}  {% endcomment %}
 {% endblock %}
 <!-- End Main Grid Section -->
+
+<!-- Help section -->
+
+{% block help %}{% endblock %}
+
+<table width=1000 class="hide-for-small">
+<a name="doc"></a>
+
+{% block helptext %}
+
+{% endblock %}
+</table>
+
+<img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
+
+{% if debuginfo %}
+<p>********** DEBUG:<br>
+{{ debuginfo|safe }}
+<br><br>********** Request:<br>{{ request }}
+<br><br>********** Session:<br>
+{% for key, val in request.session.items %}
+{{ key }} = {{ val }} <br>
+{% endfor %}
+</p>
+{% endif %}
+
+</div>
+
+
+<!-- Footer -->
+<footer>
+
+<div class="footer-wrap">
+  <div class="sub-footer row collapse">
+    <div class="column small-4">
+      <p>Brought to you by the PanDA team.</p>
+    </div>
+    <div class="column small-8 right">
+      <p>All times are in UTC. Page may be cached, check the build time above.</p>
+    </div>
+  </div>
+  <div class="footer row collapse">
+    <div class="columns small-3">
+      <img src="{% static "images/panda-verysmall-notext.png" %}"><p style="display: inline"><a target="_blank" href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA docs</a></p>
+    </div>
+    <div class="columns small-9">
+      <p>Contact us via <a href="mailto:atlas-adc-pandamon-support@cern.ch">e-mail</a>,
+        <a target="_blank" href="https://its.cern.ch/jira/projects/ATLASPANDA/"><img src="{% static 'images/jira-logo.png' %}"></a>, or
+        <a target="_blank" href="https://mattermost.web.cern.ch/adcvcr/channels/adc-bigpanda"><img src="{% static 'images/mattermost-logo.png' %}"> Mattermost</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+</footer>
 
 <!-- Body JS  -->
 {% block js_body %}
@@ -547,11 +611,26 @@
         };
 
         $scope.update = function() {
-            var query = notimerangeurl;
-            var timeparamname = (location.pathname.indexOf('jobsbuster') > -1) ? 'endtime' : 'date';
-
-            query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
-            query += timeparamname + '_to=' + $scope.timewindow.selection.to;
+            let query = notimerangeurl;
+            if (location.pathname.indexOf('jobsbuster') > -1) {
+              let timeparamname = 'endtime';
+              query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
+              query += timeparamname + '_to=' + $scope.timewindow.selection.to;
+            }
+            else {
+              switch ($scope.timewindow.data.quick) {
+                case 'hours':
+                  query += 'hours=' + $scope.timewindow.data.hours;
+                  break;
+                case 'days':
+                  query += 'days=' + $scope.timewindow.data.days;
+                  break;
+                case 'custom':
+                  query += 'date_from=' + $scope.timewindow.selection.from + '&';
+                  query += 'date_to=' + $scope.timewindow.selection.to;
+                  break;
+              }
+            }
             window.location = query;
         };
       }]);
@@ -611,8 +690,8 @@
                       url = "?user=";
                       break;
                   case 'dataset':
-                      urlBase = "{% url 'datasetInfo' %}" ;
-                      url = "?dataset=";
+                      urlBase = "{% url 'datasetList' %}" ;
+                      url = "?datasetname=";
                       break;
                   case 'filename':
                       urlBase = "{% url 'fileInfo' %}" ;
@@ -624,6 +703,11 @@
           }
 
           window.location = urlBase + url;
+      }
+
+      function refreshPage(notimeurl) {
+        let d = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit'});
+        window.location = notimeurl + 'timestamp=' + d;
       }
 
       function clearComparisonList(object) {
@@ -687,49 +771,5 @@
   {% block extra_js %}{% endblock %}
 {% endblock %}
 <!-- End Body JS  -->
-
-<!-- Footer -->
-<footer>
-<div class="large-12 columns">
-{% block bottom_copy %}
-
-  {% block help %}{% endblock %}
-
-<table width=1000 class="hide-for-small">
-<a name="doc"></a>
-
-{% block helptext %}
-
-{% endblock %}
-</table>
-
-<img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
-
-{% if debuginfo %}
-<p>********** DEBUG:<br>
-{{ debuginfo|safe }}
-<br><br>********** Request:<br>{{ request }}
-<br><br>********** Session:<br>
-{% for key, val in request.session.items %}
-{{ key }} = {{ val }} <br>
-{% endfor %}
-</p>
-{% endif %}
-
-
-<div class="row left-aligned">
-     <div class="small-4 left-aligned column">
-            <table borderwidth=0>
-            <tr><td valign="bottom">
-          <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-verysmall-notext.png" %}"></a></td>
-          <td valign="bottom"><font size=-1>Brought to you by the PanDA team. <br> All times are in UTC. Page may be cached; check the build time above.
-          <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a></font></td>
-          </tr></table>
-     </div>
-    <div class="column small-8"></div>
-</div>
-{% endblock %}
-</div>
-</footer>
 </body>
 </html>

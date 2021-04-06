@@ -1,12 +1,12 @@
-<tr class="docsection"><th><a name="jobInfoHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
-
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Job information:</p></div>
+<div class="card-section">
 <p>
 <ul>
 {% if show == 'all' or  job.jobstatus == 'pending' %} <li>  Status <b class='pending'>pending</b> indicates that the job record has been injected into the PanDA DB but PanDA has not yet dealt with it. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'defined' %} <li>  Status <b class='defined'>defined</b> indicates that the job has been received by PanDA and the process of assigning it for execution has begun. {% endif %}
-{% if show == 'all' or job.jobstatus == 'waiting' %} <li>  Status <b class='waiting'>waiting</b> indicates that data handling preparations for the job are underway and have to be completed before the job can be activated. {% endif %}
-{% if show == 'all' or job.jobstatus == 'assigned' %} <li>  Status <b class='assigned'>assigned</b> indicates the job has been assigned to a site ({{ job.computingsite }}) and preparations to have the input data ready are underway (e.g. subscriptions, tape staging). {% endif %}
+{% if show == 'all' or  job.jobstatus == 'waiting' %} <li>  Status <b class='waiting'>waiting</b> indicates that data handling preparations for the job are underway and have to be completed before the job can be activated. {% endif %}
+{% if show == 'all' or  job.jobstatus == 'assigned' %} <li>  Status <b class='assigned'>assigned</b> indicates the job has been assigned to a site ({{ job.computingsite }}) and preparations to have the input data ready are underway (e.g. subscriptions, tape staging). {% endif %}
 {% if show == 'all' or  job.jobstatus == 'throttled' %} <li>  Status <b class='throttled'>throttled</b> indicates that dispatch of the job has been postponed due to heavy network use by other jobs. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'activated' %} <li>  Status <b class='activated'>activated</b> indicates that the job is ready to be dispatched to a pilot at the site where it will run, {{ job.computingsite }}. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'sent' %} <li>  Status <b class='sent'>sent</b> indicates that the job was sent to a pilot for execution but the pilot has not yet acknowledged receipt. If this state persists for any length of time, all is not well with the job.{% endif %}
@@ -15,8 +15,7 @@
 {% if show == 'all' or  job.jobstatus == 'holding' %} <li>  Status <b class='holding'>holding</b> indicates that the job has completed but output validation and processing (eg. registering outputs in datasets) is still underway. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'transferring' %} <li>  Status <b class='transferring'>transferring</b> indicates that transferring of outputs to their final destination after job completion is underway. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'merging' %} <li>  Status <b class='transferring'>merging</b> indicates that job is waiting while the correspondent merge job is done and merged files are transferred to the final destination. {% endif %}
-
-    {% if show == 'all' or  job.jobstatus == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates that the job has successfully completed. {% endif %}
+{% if show == 'all' or  job.jobstatus == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates that the job has successfully completed. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates that the job has failed at some stage. Information on where the error occurred and with what error condition can be found in the job parameters table. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'cancelled' %} <li>  Status <b class='cancelled'>cancelled</b> indicates that the job has been cancelled, either by the user or by the system. Further information may be available in the job parameters table. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'closed' %} <li>  Status <b class='closed'>closed</b> terminated by the system before completing the allocated workload. E.g., killed to be reassigned to another site.{% endif %}
@@ -24,7 +23,7 @@
 </p>
 
 <p>
-If you want to list multiple specific jobs, use a URL of the form .../jobs/?pandaid=firstid,secondid,...
+If you want to list multiple specific jobs, use a URL of the form <code>.../jobs/?pandaid=firstid,secondid,...</code>
 </p>
 
 {% if job.attemptnr > 0 %}
@@ -41,7 +40,6 @@ For information on PanDA job states and their transitions <a href='https://twiki
 If you're wondering how job priority is calculated, <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaAthena#Job_priority">see here</a>.
 </p>
 
-
 <p>
 For interpretation of event range status <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_event_status">see here</a>.
 </p>
@@ -56,4 +54,18 @@ Note that the --debugMode option is available as a pathena/prun option, it cause
 
 {% endif %}
 
-</td>
+<h1>API</h1>
+<p>
+  Job data can be retrieved in JSON format with <code>curl</code> so that it can be used programmatically.
+  See <a href="{% url 'helpPage' %}?#apiHelp">API section</a> in complete help page how to do it from either lxplus or outside CERN.
+  <b>Use this carefully</b>, do not for example put scripts in crons that do heavy retrieval of job data this way.
+  If you have systematic needs for PanDA job data, tell us what they are. Do <b>*not*</b> use web page scraping.
+</p>
+
+<p>
+  By default you will get 2 dictionaries: "job" and "files". For EventService jobs an extra "dsfiles" is provided, which contains event ranges information.
+</p>
+
+
+</div>
+</div>

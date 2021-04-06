@@ -2,14 +2,14 @@ from requests import post, get
 from json import loads
 from core.settings.local import GRAFANA as token
 from django.http import JsonResponse
-from core.views import login_customrequired, initRequest,  DateTimeEncoder
 from core.libs.exlib import dictfetchall
 from django.db import connection
 from django.utils import timezone
 from datetime import timedelta
 from core.settings import defaultDatetimeFormat
 from django.shortcuts import render_to_response
-from core.views import login_customrequired, initRequest, setupView
+from core.auth.utils import login_customrequired
+from core.views import initRequest, setupView
 import pandas as pd
 
 

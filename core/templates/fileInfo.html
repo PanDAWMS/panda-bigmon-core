@@ -84,23 +84,7 @@ PanDA file <b>{{ filename }}</b> not found.
 
 {% endblock %}
 
-<tr class="docsection"><th> File query </th></tr>
-<tr><td class="doctextlight">
 
-{% if files.0.oldfiletable %}
-
-<p>
-This is a 'pre-JEDI' PanDA file record.
-</p>
-
-{% else %}
-
-<p>
-This is a PanDA JEDI file.
-</p>
-
-{% endif %}
-
-{% block helptext %}
-{% include "fileInfoHelp.html" with helptitle="File detail page help" %}
+{% block help %}
+{% include "fileInfoHelp.html" %}
 {% endblock %}

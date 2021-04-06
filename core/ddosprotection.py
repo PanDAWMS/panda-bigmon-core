@@ -40,6 +40,10 @@ class DDOSMiddleware(object):
         self.get_response = get_response
 
     def __call__(self, request):
+        try:
+            _logger.info('Request: {}'.format(request.get_full_path()))
+        except:
+            _logger.exception('Can not get full path of request')
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         try:
             x_referer = request.META.get('HTTP_REFERER')

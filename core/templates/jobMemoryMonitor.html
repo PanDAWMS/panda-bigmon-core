@@ -20,13 +20,32 @@
 
 {% block body %}
 
+<div data-ng-controller="prMonController">
 {% if error|length == 0 %}
+  <div ng-show="prmon.is_data_loaded" class="ng-hide normal">
+    <b>Hardware information:</b>
+    <ul>
+      <li ng-repeat="hw in prmon.hw_info">
+        {$ hw.type $}: {$ hw.str $}
+      </li>
+    </ul>
+  </div>
   <div class="card bp-container-simple">
     <div class="card-divider">
       <p>Resource utilization plots:</p>
     </div>
     <div class="card-section">
-      <div id="prmon_plots_placeholder"></div>
+      <div ng-bind-html="prmon.message"></div>
+      {% if processor_type  == 'gpu' %}
+        <div class="row c3-plots-row">
+          <div class="column small-12 medium-6 c3-chart-block" id="ng_chart"></div>
+          <div class="column small-12 medium-6 c3-chart-block" id="gpu_memory_chart"></div>
+        </div>
+        <div class="row c3-plots-row">
+          <div class="column small-12 medium-6 c3-chart-block" id="gpu_res_chart"></div>
+          <div class="column small-12 medium-6 c3-chart-block" id="gpu_memory_rate_chart"></div>
+        </div>
+      {% endif %}
       <div class="row c3-plots-row">
         <div class="column small-12 medium-6 c3-chart-block" id="np_nt_chart"></div>
         <div class="column small-12 medium-6 c3-chart-block" id="cpu_rate_chart"></div>
@@ -41,7 +60,8 @@
       </div>
     </div>
   </div>
-  <p>Represented data metrics were collected using <a href="https://github.com/HSF/prmon">prmon</a> program.</p>
+  <p>Represented data metrics were collected using <a href="https://github.com/HSF/prmon">prmon</a> program
+    <span ng-bind-html="prmon.prmon_info"></span></p>
 {% else %}
   <p>
   <div class="callout alert" data-closable>
@@ -52,6 +72,7 @@
     </button>
   </div>
 {% endif %}
+</div>
 
 {% endblock %}
 
@@ -59,24 +80,44 @@
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script>
   var charts = {};
-  window.addEventListener('resize', onWindowResize);
-  $(document).ready(function () {
-    let divid = 'prmon_plots_placeholder';
-    let pandaid = '{{ pandaid }}';
-    $('#' + divid).html("<img src='{% static "images/load.gif" %}'>  ");
-    $.ajax({
-      url: '{% url 'getPrMonPlotsData' pandaid %}',
-      data: {},
-      async: true
-    })
-    .done(function (response) {
-        $('#' + divid).html("");
-      if (response.error.length > 0) {$('#' + divid).html(response.error);}
-      else {
-        charts = buildPlots(response.plotsDict);
-      }
-    });
+  app.controller('prMonController', function($scope, $http, $sce) {
+    $scope.prmon = {};
+    $scope.prmon.is_data_loaded = false;
+    $scope.prmon.plot_data = {};
+    $scope.prmon.hw_info = [];
+    $scope.prmon.prmon_info = '';
+    $scope.prmon.message = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
+    $scope.prmon.url_path = "{% url 'getPrMonPlotsData' pandaid %}";
+
+
+    $scope.prmon.fetch = function () {
+      $http.get($scope.prmon.url_path).then(
+        function (response) {
+          if (response.status === 200) {
+            $scope.prmon.message = $sce.trustAsHtml(response.data.error);
+            if (response.data.error.length === 0) {
+              if (response.data.hwInfo.length > 0) {
+                $scope.prmon.hw_info = response.data.hwInfo;
+                $scope.prmon.is_data_loaded = true;
+              }
+              if (response.data.prmonInfo.length > 0) {
+                $scope.prmon.prmon_info = $sce.trustAsHtml(response.data.prmonInfo);
+              }
+              $scope.prmon.plot_data = response.data.plotsDict;
+              charts = buildPlots($scope.prmon.plot_data);
+            }
+          }
+          else {
+            $scope.prmon.message = $sce.trustAsHtml("<p>Failed to get data :( </p>");
+          }
+        },
+      );
+    };
+
+    $scope.prmon.fetch();
   });
+
+  window.addEventListener('resize', onWindowResize);
 
   function buildPlots(data) {
     let values = data;

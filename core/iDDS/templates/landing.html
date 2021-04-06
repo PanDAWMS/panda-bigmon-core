@@ -277,21 +277,21 @@ var processing_table = $('#processing_table').DataTable({
 var transform_table = $('#transform_table').DataTable({
     scrollX: true,
     columns: [
-        { data: "transform_id_fk__transform_id", title: "transform_id", className: "num" },
-        { data: "transform_id_fk__transform_type", title: "transform_type" },
-        { data: "transform_id_fk__transform_tag", title: "transform_tag" },
-        { data: "transform_id_fk__priority", title: "priority", className: "num" },
-        { data: "transform_id_fk__safe2get_output_from_input", title: "safe2get_output_from_input" },
-        { data: "transform_id_fk__status", title: "status" },
-        { data: "transform_id_fk__substatus", title: "substatus" },
-        { data: "transform_id_fk__locking", title: "locking" },
-        { data: "transform_id_fk__retries", title: "retries" },
-        { data: "transform_id_fk__created_at", title: "created_at" },
-        { data: "transform_id_fk__updated_at", title: "updated_at" },
-        { data: "transform_id_fk__started_at", title: "started_at" },
-        { data: "transform_id_fk__finished_at", title: "finished_at" },
-        { data: "transform_id_fk__expired_at", title: "expired_at" },
-        { data: "transform_id_fk__transform_metadata", title: "transform_metadata" },
+        { data: "transform_id", title: "transform_id", className: "num" },
+        { data: "transform_type", title: "transform_type" },
+        { data: "transform_tag", title: "transform_tag" },
+        { data: "priority", title: "priority", className: "num" },
+        { data: "safe2get_output_from_input", title: "safe2get_output_from_input" },
+        { data: "status", title: "status" },
+        { data: "substatus", title: "substatus" },
+        { data: "locking", title: "locking" },
+        { data: "retries", title: "retries" },
+        { data: "created_at", title: "created_at" },
+        { data: "updated_at", title: "updated_at" },
+        { data: "started_at", title: "started_at" },
+        { data: "finished_at", title: "finished_at" },
+        { data: "expired_at", title: "expired_at" },
+        { data: "transform_metadata", title: "transform_metadata" },
     ],
     "processing": true,
     language: {
@@ -365,7 +365,7 @@ $('#transform_table tbody').on( 'click', 'tr', function () {
                 node.hidden = true;
             else node.hidden = false;
         } else {
-            loadCollectionByReq(data.transform_id_fk__transform_id);
+            loadCollectionByReq(data.transform_id);
         }
     });
 });
@@ -458,4 +458,8 @@ function loadTransformByReq(requestID) {
 
 </script>
 
+{% endblock %}
+
+{% block help %}
+  {% include 'iddsHelp.html' %}
 {% endblock %}

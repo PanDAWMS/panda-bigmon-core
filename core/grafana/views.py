@@ -8,11 +8,13 @@ from django.shortcuts import render_to_response
 from django.template import loader
 from django.utils import encoding
 
-from core.grafana.Grafana import Grafana
-from core.grafana.Query import Query
+from core.grafana.GrafanaES import Grafana
+from core.grafana.QueryES import Query
+
 from core.grafana.data_tranformation import stacked_hist, pledges_merging
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.views import login_customrequired, initRequest, DateTimeEncoder, DateEncoder
+from core.auth.utils import login_customrequired
+from core.views import initRequest, DateTimeEncoder, DateEncoder
 
 colours_codes = {
     "0": "#AE3C51",
@@ -246,12 +248,9 @@ def grafana_api(request):
 
                 return response
 
-
     except Exception as ex:
-
         result.append(ex)
     return JsonResponse(result)
-
 
 def grab_children(data, parent=None, child=None):
     if child is None:
@@ -262,7 +261,6 @@ def grab_children(data, parent=None, child=None):
         else:
             child.append([parent, key, value])
     return child
-
 
 #@login_customrequired
 def pledges(request):
@@ -432,3 +430,27 @@ def pledges(request):
         setCacheEntry(request, "pledges", json.dumps(data, cls=DateEncoder), 60 * 60 * 24 * 30)
         return HttpResponse(t.render({"date_from": starttime, "date_to": endtime, "days": total_days}, request),
                             content_type='text/html')
+
+def grafana_api_es(request):
+    valid, response = initRequest(request)
+
+    group_by = None
+    split_series = None
+
+    if 'groupby' in request.session['requestParams']:
+        groupby_params = request.session['requestParams']['groupby'].split(',')
+        if 'time' in groupby_params:
+            pass
+        else:
+            group_by = groupby_params[0]
+            if len(groupby_params) > 1:
+                split_series = groupby_params[1]
+            else:
+                split_series = group_by
+
+    result = []
+
+    q = Query()
+    q = q.request_to_query(request)
+    result = Grafana().get_data(q)
+    return JsonResponse(result)

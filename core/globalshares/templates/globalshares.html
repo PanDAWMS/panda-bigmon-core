@@ -32,18 +32,54 @@
 {% endblock %}
 
 {% block body %}
-  <div class="c3-plots-row row" data-ng-controller="chartGSController">
-    <div class="column medium-4" id="pieChartGS"></div>
-    <div class="column medium-8">
-      <fieldset class="inline-input">
-        <legend>Accounted resource types for Actual HS06:</legend>
-        <label ng-repeat="rt in gs.selection.resourceType">
-          <input type="checkbox" ng-model="rt.selected" ng-change="gs.update()">{$ rt.name $}</label>
-      </fieldset>
-      <div id="barChartGSSplit"></div>
+
+  <div data-ng-controller="chartGSController">
+  <ul class="tabs gs" data-tabs data-active-collapse="true" id="gs-tabs">
+    <li class="tabs-title"><a href="#panel_gs_level1" ng-click="gs.enable_panel('level1')">Level 1</a></li>
+    <li class="tabs-title is-active"><a href="#panel_gs_level2" ng-click="gs.enable_panel('level2')">Level 2</a></li>
+    <li class="tabs-title"><a href="#panel_gs_level3" ng-click="gs.enable_panel('level3')">Level 3</a></li>
+  </ul>
+  <div class="tabs-content" data-tabs-content="gs-tabs">
+    <div class="tabs-panel" id="panel_gs_level1">
+      <div class="c3-plots-row row" >
+        <div class="column medium-4" id="pieChartGS_level1"></div>
+        <div class="column medium-8">
+          <fieldset class="inline-input">
+            <legend>Accounted resource types for Actual HS06:</legend>
+            <label ng-repeat="rt in gs.selection.resourceType">
+              <input type="checkbox" ng-model="rt.selected" ng-change="gs.update('level1')">{$ rt.name $}</label>
+          </fieldset>
+          <div id="barChartGSSplit_level1"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs-panel is-active" id="panel_gs_level2">
+      <div class="c3-plots-row row" >
+        <div class="column medium-4" id="pieChartGS_level2"></div>
+        <div class="column medium-8">
+          <fieldset class="inline-input">
+            <legend>Accounted resource types for Actual HS06:</legend>
+            <label ng-repeat="rt in gs.selection.resourceType">
+              <input type="checkbox" ng-model="rt.selected" ng-change="gs.update('level2')">{$ rt.name $}</label>
+          </fieldset>
+          <div id="barChartGSSplit_level2"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs-panel" id="panel_gs_level3">
+      <div class="c3-plots-row row" >
+        <div class="column medium-4" id="pieChartGS_level3"></div>
+        <div class="column medium-8">
+          <fieldset class="inline-input">
+            <legend>Accounted resource types for Actual HS06:</legend>
+            <label ng-repeat="rt in gs.selection.resourceType">
+              <input type="checkbox" ng-model="rt.selected" ng-change="gs.update('level3')">{$ rt.name $}</label>
+          </fieldset>
+          <div id="barChartGSSplit_level3"></div>
+        </div>
+      </div>
     </div>
   </div>
-
 
   <table class="unstriped bp-table">
     <thead>
@@ -62,14 +98,15 @@
     <tbody>
     {% for row in tablerows %}
       <tr {% if row.level1 %} class="l1" {% elif row.level2 %} class="l2" {% elif row.level3 %} class="l3" {% endif %}>
-          <td>{{ row.level1 }} {% if row.gshare and row.level1 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-            {% endif %}</td>
-          <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level2 }}</a>
-              {% else %}{{ row.level2 }} {% endif %} {% if row.gshare and row.level2 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-            {% endif %}</td>
-          <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level3 }}</a>
-              {% else %}{{ row.level3 }} {% endif %} {% if row.gshare and row.level3 and row.resources%}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>
-            {% endif %}</td>
+          <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level1 }}</a> {% else %}{{ row.level1 }}{% endif %}
+              {% if row.gshare and row.level1 and row.resources %}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>{% endif %}
+          </td>
+          <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level2 }}</a> {% else %}{{ row.level2 }} {% endif %}
+              {% if row.gshare and row.level2 and row.resources %}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>{% endif %}
+          </td>
+          <td>{% if row.link %} <a href="{% url "jobList" %}{{ row.link }}" target="_blank">{{ row.level3 }}</a>{% else %}{{ row.level3 }} {% endif %}
+              {% if row.gshare and row.level3 and row.resources %}  <a href="javascript:ReverseDisplay('{{ row.gshare }}','resourcelink{{ row.gshare }}')" id="resourcelink{{ row.gshare }}">+</a>{% endif %}
+          </td>
           <td class="num">
               {% if row.executing %}{{ row.executing|floatformat:2|intcomma }} {% else %} 0.00 {% endif %}</td>
           <td class="num">
@@ -291,6 +328,10 @@
 
 {% endblock %}
 
+{% block help %}
+  {% include 'gsHelp.html' %}
+{% endblock %}
+
 {% block js_body_page %}
   <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
   <script>
@@ -302,29 +343,37 @@
       $scope.gs = {
         selection: {
           resourceType: [],
+          tab: 'level2'
         },
-        charts: {
-          pie: {
-            options: {
-              colors: 'gs',
-              size:[getWidth()*4/12-40, 20*gsPlotData.pieChartActualHS06.length]
-            },
-            data: gsPlotData.pieChartActualHS06
+      };
+      $scope.gs.charts = {
+        pie: {
+          options: {
+            colors: 'gs',
+            size:[getWidth()*4/12-40, 20*gsPlotData['level3'].pieChartActualHS06.length-20]
           },
-          barSplit: {
-            options: {
-              colors: 'gs',
-              size: [getWidth()*8/12-40,20*gsPlotData.barChartActualVSTarget.length],
-              labels: ['', 'HS06']
-            },
-            data: []
-          }
+          data: [],
+        },
+        barSplit: {
+          options: {
+            colors: 'gs',
+            size: [getWidth()*8/12-40,20*gsPlotData['level3'].pieChartActualHS06.length-20],
+            labels: ['', 'HS06']
+          },
+          data: []
         }
       };
 
-      gsPlotData.barChartActualVSTargetSplit.resourceTypeList.forEach(function (item) {
-        $scope.gs.selection.resourceType.push({name: item, selected: true});
-      });
+      $scope.gs.updateResources = function updateResources() {
+        $scope.gs.selection.resourceType = [];
+        gsPlotData[$scope.gs.selection.tab].barChartActualVSTarget.resourceTypeList.forEach(function (item) {
+          $scope.gs.selection.resourceType.push({name: item, selected: true});
+        });
+      };
+
+      $scope.gs.fillPieChartData = function fillPieChartData() {
+        $scope.gs.charts.pie.data = gsPlotData[$scope.gs.selection.tab].pieChartActualHS06;
+      };
 
       $scope.gs.selectedItems = function selectedItems() {
           return $scope.gs.selection.resourceType.filter(obj => obj.selected).map(obj => obj.name);
@@ -332,13 +381,14 @@
 
       $scope.gs.getSplitData = function getSplitData() {
         $scope.gs.charts.barSplit.data = [['GS', ], ['Actual',], ['Target',]];
+        let level = $scope.gs.selection.tab;
         let selectedRT = $scope.gs.selectedItems();
         let tmpList = [];
-        Object.keys(gsPlotData.barChartActualVSTargetSplit.data).forEach(function (gsname) {
-          let tmpDict = {'GS':gsname, 'Actual':0, 'Target':gsPlotData.barChartActualVSTargetSplit.data[gsname].Target};
-          Object.keys(gsPlotData.barChartActualVSTargetSplit.data[gsname].Actual).forEach(function (rtname) {
+        Object.keys(gsPlotData[level].barChartActualVSTarget.data).forEach(function (gsname) {
+          let tmpDict = {'GS':gsname, 'Actual':0, 'Target':gsPlotData[level].barChartActualVSTarget.data[gsname].Target};
+          Object.keys(gsPlotData[level].barChartActualVSTarget.data[gsname].Actual).forEach(function (rtname) {
             if (selectedRT.includes(rtname)) {
-              tmpDict.Actual += gsPlotData.barChartActualVSTargetSplit.data[gsname].Actual[rtname];
+              tmpDict.Actual += gsPlotData[level].barChartActualVSTarget.data[gsname].Actual[rtname];
             }
           });
           tmpList.push(tmpDict)
@@ -362,9 +412,16 @@
         });
       };
 
-      $scope.gs.getSplitData();
-      $scope.gs.charts.pie.chart = draw_donut($scope.gs.charts.pie.data, "pieChartGS", 'Actual HS06', $scope.gs.charts.pie.options);
-      $scope.gs.charts.barSplit.chart = draw_bar_cat($scope.gs.charts.barSplit.data, 'barChartGSSplit', 'Actual VS Target HS06', $scope.gs.charts.barSplit.options);
+      $scope.gs.enable_panel = function enable_panel(id) {
+        $scope.gs.selection.tab = id;
+        $scope.gs.fillPieChartData();
+        $scope.gs.updateResources();
+        $scope.gs.getSplitData();
+        $scope.gs.charts.pie.chart = draw_donut($scope.gs.charts.pie.data, "pieChartGS_" + $scope.gs.selection.tab, 'Actual HS06', $scope.gs.charts.pie.options);
+        $scope.gs.charts.barSplit.chart = draw_bar_cat($scope.gs.charts.barSplit.data, 'barChartGSSplit_' + $scope.gs.selection.tab, 'Actual VS Target HS06', $scope.gs.charts.barSplit.options);
+      };
+
+      $scope.gs.enable_panel($scope.gs.selection.tab);
 
       var appWindow = angular.element($window);
       appWindow.bind('resize', function () {

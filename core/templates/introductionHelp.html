@@ -1,0 +1,71 @@
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Help:</p></div>
+<div class="card-section">
+
+<p>
+Contextual help for monitor pages can be found at the bottom of each page.
+Use the help menu in the upper right corner to navigate directly.
+  All the monitor-internal help documentation is gathered on a <a href="{% url 'helpPage' %}">complete help page</a> available in the <b>Help menu</b> at upper right.
+</p>
+
+<p>
+Bookmarking pages of interest to you is recommended. Save that useful drill-down rather than doing all the clicking again.
+  All monitor pages are bookmarkable (the full specification of the page is in the URL).
+  The most relevant links based on your visit history can be found on the top of <a href="{% url 'userInfo' %}">My BigPanDA</a> page.
+  Not all the capability is expressed explicitly on the interface at present (partly deliberately to go easy on the DB).
+  You can often extend the depth and breadth of queries with options like <code>&days=N</code>, <code>&limit=N</code> on the URL.
+</p>
+
+{% comment %}
+<p>
+The monitor has a secure https mode. If you go to <a href='https://bigpanda.cern.ch'>https://bigpanda.cern.ch</a> and you have configured your browser to present your grid certificate, the monitor will automatically recognize and authenticate you if you have run PanDA jobs with that cert. This authentication will enable you to access non-public information in the monitor and invoke actions through the interface (once available). 
+</p>
+{% endcomment %}
+
+<p>
+If you need to use PanDA data programmatically, json dumps are available.
+  See <b>API</b> section or search on 'curl' in the in the <a href="{% url 'helpPage' %}#apiHelp">complete help page</a>.
+  Use with caution; do not pull huge amounts of data, especially systematically.
+  Do not use web scraping, use these json dumps. If you need to extract other information, tell us.
+</p>
+
+<p>
+Send your suggestions and requests for the PanDA monitor to <a href="mailto:atlas-adc-pandamon-support@cern.ch">PanDA monitor support</a>.</p>
+{% if viewParams.MON_VO == 'ATLAS' %}
+  <p>Problem reports for which you want assistance ASAP should be sent (as ever) to <b>the distributed analysis support team (DAST)</b> list,
+    <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">hn-atlas-dist-analysis-help@cern.ch</a>, not the monitor support list.</p>
+{% endif %}
+
+
+<p>
+PanDA is described and (kind of) documented on the <a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA twiki</a>.
+JEDI documentation can be found <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI">here</a>.
+</p>
+
+{% if viewParams.MON_VO == 'ATLAS' %}
+
+<p>
+Use the <a href="https://groups.cern.ch/group/hn-atlas-dist-analysis-help">hn-atlas-dist-analysis-help e-group</a>
+  to learn about distributed analysis problems and their reported solutions and to report problems of your own.
+</p>
+
+<p>
+  A <a href='https://twiki.cern.ch/twiki/bin/view/AtlasComputing/AtlasDAST'>distributed analysis shift team (DAST)</a> provides user support for distributed analysis.
+</p>
+
+<p>
+  The <a href='https://atlas-adc-elisa.cern.ch/elisa/display?logbook=ADC'>ATLAS Distributed Computing Operations Logbook</a> logs service issues with PanDA and much else.
+</p>
+
+<p>
+  Issues with ATLAS PanDA itself are tracked in the <a href="https://its.cern.ch/jira/browse/ATLASPANDA">JIRA ATLASPANDA project</a>.
+</p>
+
+<p>
+  Other ATLAS PanDA specifics can be found on the <a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/PanDA">ATLAS-internal PanDA twiki</a>.
+</p>
+
+{% endif %}
+
+</div>
+</div>

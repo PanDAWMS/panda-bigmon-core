@@ -1,0 +1,33 @@
+<a name="helpQA"></a>
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Q&amp;A</p></div>
+<div class="card-section">
+
+<p>
+  Please look at <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaAthena#FAQ">FAQ section</a> of <b>How to submit Athena jobs to PanDA</b> twiki
+  for information regarding performing Distributed Analysis on GRID.
+</p>
+
+<p>Below the tips of PanDA monitoring usage are:</p>
+
+<dl>
+
+<dt> The status of the task is failed but all input/output have the status running?
+<dd> Failed jobs remain in the active table while other jobs are still running. The idea is to allow users to retry
+failed jobs while the task is still running. They finally go to the archived table and file status is updated
+at the same time.
+
+<dt> The status of the task is running but the % of finished or failed jobs is 0 even though one job finished and one failed?
+<dd> The finished job was a build job, so there was no successful jobs. The failed job was going to be retried and thus it was not counted as a failure at that time. 
+
+<dt> My task failed because input data is only available on tape?
+<dd> You cannot process data directly from tape.
+
+<dt> How can I see my job logs from the task page?
+  <dd> Click on job counts in <b>States of jobs in this task</b> table or follow one of links in <b>Show jobs</b> blue drop-down box,
+  then on a job PandaID link and then the log files link in the box.
+
+</dl>
+
+</div>
+</div>

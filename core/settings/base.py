@@ -135,6 +135,7 @@ INSTALLED_APPS_BIGPANDAMON_CORE = (
     'core.pbm.templatetags',
     #    'core.graphic', #NOT-IMPLEMENTED
     'core.gspread',
+    'core.mlflowdynamic',
     'django.contrib.staticfiles',
 )
 COMMON_INSTALLED_APPS = \
@@ -191,6 +192,7 @@ INSTALLED_APPS_BIGPANDAMON_core = (
     'core.buildmonitor',
     'core.oi',
     'core.iDDS',
+    'core.mlflowdynamic',
 )
 
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core
@@ -227,3 +229,4 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 AUTH_USER_MODEL = 'common.BPUser'
 
 DKB_CAMPAIGN_URL = 'http://aiatlas172.cern.ch:5080/campaign/stat'
+ML_FLOW_UPSTREAM = 'https://bigpanda-mlflow.web.cern.ch/'

@@ -391,6 +391,7 @@ class JediAuxStatusMintaskid(models.Model):
     class Meta:
         db_table = u'jedi_aux_status_mintaskid'
 
+
 class JediDatasetContents(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
     datasetid = models.BigIntegerField(db_column='DATASETID')
@@ -422,6 +423,7 @@ class JediDatasetContents(models.Model):
     class Meta:
         db_table = u'jedi_dataset_contents'
         unique_together = ('jeditaskid', 'datasetid', 'fileid')
+
 
 class JediDatasets(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
@@ -461,6 +463,7 @@ class JediDatasets(models.Model):
         db_table = u'jedi_datasets'
         unique_together = ('jeditaskid', 'datasetid')
 
+
 class JediEvents(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
     pandaid = models.BigIntegerField(db_column='PANDAID')
@@ -481,6 +484,18 @@ class JediEvents(models.Model):
     class Meta:
         db_table = u'jedi_events'
         unique_together = ('jeditaskid', 'pandaid', 'fileid', 'job_processid')
+
+
+class JediDatasetLocality(models.Model):
+    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
+    datasetid = models.BigIntegerField(db_column='DATASETID')
+    rse = models.CharField(max_length=1000, db_column='RSE', blank=True)
+    timestamp = models.DateTimeField(db_column='TIMESTAMP')
+
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."jedi_dataset_locality"'
+        unique_together = ('jeditaskid', 'datasetid', 'rse')
+
 
 class JediJobparamsTemplate(models.Model):
     jeditaskid = models.BigIntegerField(primary_key=True, db_column='JEDITASKID')
@@ -586,6 +601,12 @@ class JediTasksBase(models.Model):
     diskio = models.IntegerField(null=True, db_column='DISKIO', blank=True)
     diskiounit = models.CharField(max_length=96, db_column='DISKIOUNIT', blank=True)
     container_name = models.CharField(max_length=200, db_column='CONTAINER_NAME', blank=True)
+    attemptnr = models.IntegerField(null=True, db_column='ATTEMPTNR', blank=True)
+
+    def get_fields_by_type(self, ftype='integer'):
+        field_list = [str(f.name) for f in self._meta.fields if ftype in str(f.description).lower()]
+        return field_list
+
     class Meta:
         abstract = True
 

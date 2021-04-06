@@ -15,10 +15,10 @@ from django.utils import timezone
 
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import is_timestamp
-
-from core.views import login_customrequired, initRequest, setupView, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
+from core.auth.utils import login_customrequired
+from core.views import initRequest, setupView, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
 from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
-
+from core.harvester.utils import isHarvesterJob
 
 from core.settings.local import dbaccess, defaultDatetimeFormat
 
@@ -913,37 +913,6 @@ def harvestermon(request):
         else:
             return HttpResponse(json.dumps(instanceDictionary, cls=DateTimeEncoder), content_type='application/json')
 
-def isHarvesterJob(pandaid):
-
-    jobHarvesterInfo = []
-
-    sqlQuery = """
-    SELECT workerid,HARVESTERID, BATCHLOG, COMPUTINGELEMENT FROM (SELECT 
-      a.PANDAID,
-      a.workerid,
-      a.HARVESTERID,
-      b.BATCHLOG,
-      b.COMPUTINGELEMENT
-      FROM ATLAS_PANDA.HARVESTER_REL_JOBS_WORKERS a,
-      ATLAS_PANDA.HARVESTER_WORKERS b
-      WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {0}
-  """
-    sqlQuery = sqlQuery.format(str(pandaid))
-
-    cur = connection.cursor()
-    cur.execute(sqlQuery)
-
-    job = cur.fetchall()
-
-    if len(job) == 0:
-        return False
-
-    columns = [str(column[0]).lower() for column in cur.description]
-
-    for pid in job:
-        jobHarvesterInfo.append(dict(zip(columns, pid)))
-
-    return jobHarvesterInfo
 
 def workersJSON(request):
 
@@ -1223,7 +1192,7 @@ def query_to_dicts(query_string, *query_args):
     return
 
 
-def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields=''):
+def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='', **kwargs):
     '''
     Get jobs list for the particular harvester instance and worker
     :param request: request object
@@ -1235,7 +1204,7 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
     '''
 
     jobsList = []
-
+    renamed_fields = {'resourcetype': 'resource_type'}
     qjobstatus = ''
 
     if instance != '':
@@ -1249,7 +1218,11 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
         qworkerid = 'is not null'
 
     if fields != '':
-        values = fields
+        values = list(fields)
+        for k, v in renamed_fields.items():
+            if k in values:
+                values.remove(k)
+                values.append(v)
     else:
         if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
@@ -1261,7 +1234,18 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='')
                 elif f.name !='jobparameters' and f.name != 'metadata':
                     values.append(f.name)
         else:
-            values = 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss', 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount','schedulerid'
+            values = (
+                'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime',
+                'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime',
+                'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid',
+                'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag',
+                'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode',
+                'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag',
+                'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'destinationse', 'homepackage',
+                'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'computingelement', 'proddblock',
+                'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss',
+                'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount',
+                'schedulerid')
 
     sqlQuery = """
     SELECT DISTINCT {2} FROM

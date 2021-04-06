@@ -59,7 +59,7 @@
 <a href="{% url 'jobList' %}?computingsite={{site.siteid}}&hours={{njobhours}}&display_limit=100">jobs</a>, <a href="{% url 'errorSummary' %}?computingsite={{site.siteid}}">job errors</a>
 </td>
 <td>
-<a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!(timeEvent,fields.type,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(language:lucene,query:'(fields.type:%22atlasanaljobbroker%22%20OR%20fields.type:%22atlasprodjobbroker%22)%20AND%20site:%22{{site.siteid}}%22'),sort:!('@timestamp',desc))">brokerage actions</a>
+<a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!(timeEvent,fields.type,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'(fields.type:%22atlasanaljobbroker%22%20OR%20fields.type:%22atlasprodjobbroker%22)%20AND%20site:%22{{site.siteid}}%22'),sort:!('@timestamp',desc))">brokerage actions</a>
 </td>
 <td>
 <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:'Job%20brokerage',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),panels:!((gridData:(h:2,i:'4',w:3,x:0,y:0),id:e9b265f0-6627-11e7-9c82-4bf763932475,panelIndex:'4',type:visualization,version:'6.2.4'),(gridData:(h:8,i:'5',w:12,x:0,y:18),id:c3a4f160-50aa-11e9-a744-833d910adbcf,panelIndex:'5',type:visualization,version:'6.2.4'),(gridData:(h:6,i:'6',w:3,x:0,y:5),id:'991ce6b0-aa5d-11ea-88a6-cd72c8759873',panelIndex:'6',type:visualization,version:'6.2.4'),(gridData:(h:11,i:'7',w:9,x:3,y:0),id:'5c7b65a0-aa5e-11ea-88a6-cd72c8759873',panelIndex:'7',type:visualization,version:'6.2.4'),(gridData:(h:7,i:'8',w:12,x:0,y:11),id:b7c043e0-aa5e-11ea-88a6-cd72c8759873,panelIndex:'8',type:search,version:'6.2.4'),(gridData:(h:3,i:'9',w:3,x:0,y:2),id:'6c76ff00-aa68-11ea-88a6-cd72c8759873',panelIndex:'9',type:visualization,version:'6.2.4')),query:(language:lucene,query:'site.keyword:%20%2F{{ site.siteid }}%5C%2F.*%2F%20OR%20site.keyword:%20%22{{ site.siteid }}%22'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)">brokerage actions (dashboard)</a>
@@ -156,8 +156,8 @@ No site specified.
 {% endblock %}
 
 
-{% block helptext %}
-{% include "siteInfoHelp.html" with helptitle="Site information page" %}
-{% include "siteListHelp.html" with helptitle="Site, clouds, queues, tiers etc." %}
+{% block help %}
+{% include "siteInfoHelp.html" %}
+{% include "siteListHelp.html" %}
 {% endblock %}
 

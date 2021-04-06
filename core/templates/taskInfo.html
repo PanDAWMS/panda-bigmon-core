@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-{% load static %}{% load common_tags %}
+{% load static %}{% load common_tags %}{% load humanize %}
 {% block page_title %} {{ jeditaskid }} task  {% endblock %}
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
@@ -20,159 +20,208 @@
 {% block body %}
 
 {% if columns %}
-
-  <table data-ng-app="" data-ng-controller="iDDSGeneralInfo">
-    <tr bgcolor='lightcyan'>
+  <div class="table-scroll">
+  <table class="fresh-table unstriped" data-ng-app="" data-ng-controller="iDDSGeneralInfo">
+    <thead>
+      <tr>
         <th colspan=20> {{ jeditaskid }} task: {{ taskname }} </th>
-    </tr>
-    <tr bgcolor='lightcyan'>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
         <th>Task ID</th>
-        {% if task.deftreqid %}
-            <th> Request</th>
-        {% endif %}
-        {% if task.reqid != task.jeditaskid and not task.deftreqid %}
-            <th>Jobset</th>
-        {% endif %}
-        <th>Type</th>
-        <th>Working Group</th>
-        <th>User</th>
-        <th>Destination</th>
         {% if task.campaign %}
             <th> Campaign</th>
         {% endif %}
-        <th>Task status</th>
-        {% if task.superstatus %}
-        {% if task.superstatus != task.status %}
-        <th> Detailed JEDI status</th>
+        {% if task.deftreqid %}
+            <th> Request</th>
         {% endif %}
+        <th>Type</th>
+        <th>Processing type</th>
+        {% if task.workinggroup %}
+          <th>Working Group</th>
+        {% endif %}
+        <th>User</th>
+        <th>Nucleus</th>
+        <th>Task status</th>
+        {% if task.superstatus and task.superstatus != task.status %}
+            <th> Detailed JEDI status</th>
         {% endif %}
         {% if task.idds_info and task.idds_info.task_type == 'hpo' %}
-            <th>  HP points |  <span class='finished'>finished</span></th>
+            <th class="num"> HP points
+              <br><span class='finished'>finished</span></th>
             {% if task.dsinfo %}
-            <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
-                    class='done'>done</span><br> <span class='failed'>failed</span></th>
+              <th class="num">HS06*sec
+                <br><span class="closed">Expected</span>
+                <br> Total<br><span class='done'>done</span>
+                <br> <span class='failed'>failed</span>
+              </th>
             {% endif %}
         {% else %}
-        {% if task.dsinfo %}
-            <th> Nevents | <span class='finished'>used</span></th>
-            <th style="white-space: nowrap">HS06*sec<br> Expected<br> Total<br><span
-                    class='done'>done</span><br> <span class='failed'>failed</span></th>
-            <th> Ninputfiles | <span class='finished'>finished</span> | <span class='failed'>failed</span></th>
+          {% if task.dsinfo %}
+            <th class="num">N input events <br><span class='finished'>used</span></th>
+            <th class="num">N output events</th>
+            <th class="num">HS06*sec
+                <br> <span class="closed">Expected</span>
+                <br> Total<br><span class='done'>done</span>
+                <br> <span class='failed'>failed</span>
+            </th>
+            <th class="num"> Ninputfiles
+                <br><span class='finished'>finished</span>
+                <br><span class='failed'>failed</span>
+            </th>
+          {% endif %}
         {% endif %}
-        {% endif %}
-        <th>Created</th>
-        <th>Modified</th>
+        <th>Time stamps:
+          <br><span class="defined">created</span>
+          <br><span class="closed">last modified</span>
+        </th>
         <th>Cores</th>
         <th>Priority</th>
+        <th>Attempt</th>
         <th>Parent</th>
         {% if task.ticketid %}
             <th>Tracker</th>
         {% endif %}
-    </tr>
-    <tr>
+      </tr>
+      <tr>
         <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
                target="_blank">{{ task.jeditaskid }}</a></td>
-        {% if task.deftreqid %}
-            <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/"
-                   target="_blank">{{ task.deftreqid }}</a></td>
-        {% endif %}
-        {% if task.reqid != task.jeditaskid and not task.deftreqid %}
-            <td>{{ task.reqid }}</td>
-        {% endif %}
-        <td>{% if task.tasktype == 'anal' %} analy {% else %} {{ task.tasktype }} {% endif %}</td>
-        <td>{% if task.workinggroup %} {{ task.workinggroup }} {% endif %} </td>
-        <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
-        <td>{{ task.destination }}</td>
         {% if task.campaign %}
             <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td>
         {% endif %}
+        {% if task.deftreqid %}
+            <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
+                   target="_blank">{{ task.deftreqid }}</a></td>
+        {% endif %}
+        <td>{% if task.tasktype == 'anal' %} analy {% else %} {{ task.tasktype }} {% endif %}</td>
+        <td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>
+        {% if task.workinggroup %}
+          <td> {{ task.workinggroup }} </td>
+        {% endif %}
+        <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
+        <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
         <td class='{{ task.status }}_fill'>
-            {% if task.superstatus %}
-            <b><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-                  class="{{ task.superstatus }}_tooltip">{{ task.superstatus }}</a></b>
-            {% if task.superstatus != task.status %}
-                <td class='{{ task.status }}'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-                        class="{{ task.status }}_tooltip">{{ task.status }}</a></td>{% endif %} {% else %}
+          {% if task.superstatus %}
             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
-               class="{{ task.superstatus }}_tooltip">{{ task.status }}</a>
-            {% endif %}
+                  class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</a>
+          {% else %}
+            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+               class="bp_tooltip task_{{ task.status }}"><b>{{ task.status }}</b></a>
+          {% endif %}
         </td>
-            {% if task.idds_info and task.idds_info.task_type == 'hpo' %}
-                <td>
-                <div ng-show="loading">LOADING...</div>
-                <div ng-cloak ng-show="!loading">
-                <span ng-bind="iddsjson.out_total_files">
-                    <span>{$ iddsjson.out_total_files $}</span>
-                </span>
-                    <span>{$ iddsjson.out_total_files $}</span> |
-                    <span class='finished'><span>{$ iddsjson.out_total_files $}</span> (<span>{$ iddsjson.pctprocessed $}</span>%) </span>
-                </div>
-                </td>
+        {% if task.superstatus and task.superstatus != task.status %}
+          <td class='{{ task.status }}_fill'>
+            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+               class="bp_tooltip task_{{ task.status }}"><b>{{ task.status }}</b></a>
+          </td>
+        {% endif %}
+        {% if task.idds_info and task.idds_info.task_type == 'hpo' %}
+          <td class="num">
+            <div ng-show="loading">LOADING...</div>
+            <div ng-cloak ng-show="!loading">
+              <span ng-bind="iddsjson.out_total_files">
+                <span>{$ iddsjson.out_total_files $}</span>
+              </span>
+{#              <span>{$ iddsjson.out_total_files $}</span>#}
+              <br><span class='finished'><span>{$ iddsjson.out_total_files $}</span> (<span>{$ iddsjson.pctprocessed $}</span>%) </span>
+            </div>
+          </td>
 
-                {% if task.dsinfo %}
-                    <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
-                    class='finished'>{{ task.totevprochs06 }}</span><br><span
-                    class='failed'>{{ task.failedevprochs06 }}</span></td>
-                {% endif %}
-        {% else %}
-        {% if task.dsinfo %}
-            <td> {{ task.totev }} |
-                <span class='finished'>{{ task.totevproc }} ({{ task.pctfinished|floatformat }}%)</span></td>
-            <td style="text-align:right;"> {{ task.totevhs06 }}<br>{{ task.currenttotevhs06 }}<br><span
-                    class='finished'>{{ task.totevprochs06 }}</span><br><span
-                    class='failed'>{{ task.failedevprochs06 }}</span></td>
-            <td> {{ task.dsinfo.nfiles }} |
-                <span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
-                {% if task.dsinfo.nfilesfailed > 0 %} |
-                    <span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>  {% endif %}
+          {% if task.dsinfo %}
+            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
+              <br>{{ task.currenttotevhs06 | intcomma }}
+              <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
+              <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span>
             </td>
+          {% endif %}
+        {% else %}
+          {% if task.dsinfo %}
+            <td class="num"> {{ task.totev | intcomma }}
+              <br><span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span>
+            </td>
+            <td class="num"> {{ task.totevoutput | intcomma }}</td>
+            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
+              <br>{{ task.currenttotevhs06 | intcomma }}
+              <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
+              <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span>
+            </td>
+            <td class="num"> {{ task.dsinfo.nfiles }}
+              <br><span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
+              {% if task.dsinfo.nfilesfailed > 0 %}
+                <br><span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>
+              {% endif %}
+            </td>
+          {% endif %}
         {% endif %}
-        {% endif %}
-        <td>{{ task.creationdate }}</td>
-        <td>{{ task.modificationtime }}</td>
+        <td>{% if task.creationdate %}<span class="defined">{{ task.creationdate }}</span>{% else %}&mdash;{% endif %}
+          <br>{% if task.modificationtime %}<span class="closed">{{ task.modificationtime }}</span>{% else %}&mdash;{% endif %}
+        </td>
         <td>{{ task.corecount }}</td>
+        <td>{{ task.attemptnr }}</td>
         <td>{{ task.taskpriority }}</td>
-        <td><a href="{% url 'taskInfo' task.parent_tid %}">{% if task.parent_tid != task.jeditaskid %}
-            {{ task.parent_tid }} {% endif %}</a></td>
+        <td>
+          {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
+            <a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>
+          {% else %}&mdash;{% endif %}
+        </td>
         {% if task.ticketid %}
             <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a>
             </td>
         {% endif %}
-    </tr>
+      </tr>
+    </tbody>
   </table>
+  </div>
 
-  <p></p>
+  {% if task.errordialog %}
+    <div class="card bp-container-simple warning">
+      {% if logtxt %}
+        <div class="card-divider">
+          <h5>Logged status: {{ task.errordialog|safe }}</h5>
+        </div>
+        <div class="card-section scrollable">
+          <pre>
+          {{ logtxt }}
+          </pre>
+        </div>
+      {% else %}
+        <div class="card-divider errorlog">
+          <h5>Logged status: {{ task.errordialog|safe }}</h5>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
 
-  <div class="dropdownplots">
-      <button class="dropdownbutton">Task extra info</button>
-      <div id="dropdown-plotchoice" class="dropdown-plot">
+  <div class="bp-container-wrapper">
+  <div class="bp-dropdown-button">
+      <button class="dropdown">Task extra info</button>
+      <div class="dropdown-items">
           {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-              <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Drop mode</a>
+              <a {% if 'dropmode' in warning %}class="disabled"{% endif %} href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
           {% else %}
-              <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Nodrop mode</a>
+              <a href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
           {% endif %}
           {% if vomode == 'atlas' %}
               {% if task.tasktype == 'prod' %}
                   <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
-                     target="_blank">Prod Task view (to manage task)</a>
+                     target="_blank">Manage Prod Task</a>
                   <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
               {% elif  task.tasktype == 'anal' %}
                   <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=analysis&task_id={{ task.jeditaskid }}"
-                     target="_blank">Prod Task view (to manage task)</a>
+                     target="_blank">Manage Prod Task</a>
                   <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
               {% endif %}
+              <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Task
+                  brokerage </a>
+              <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22{% if task.brokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Job
+                  brokerage </a>
+              <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc))">Action
+                  logger</a>
+              <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',desc))">Retrial
+                  Module logger</a>
           {% endif %}
-          <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),filters:!(),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4&type=histogram">Task
-              brokerage </a>
-
-          <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,message),filters:!(),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22{% if taskbrokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4&type=histogram">Job
-              brokerage </a>
-
-          <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',asc))">Action
-              logger</a>
-          <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!('timeEvent',logName,fields.type,logLevel,message),index:'5cff0440-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('timeEvent',desc))">Retrial
-              Module logger</a>
-          <a href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}">Error summary</a>
+          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}">Error summary</a>
           {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
               <a href="{% url 'taskInfo' task.parent_tid %}">Parent task {{ task.parent_tid }}</a>
           {% endif %}
@@ -183,74 +232,62 @@
       </div>
   </div>
 
-  <div class="dropdownplots">
-      <button class="dropdownbutton">Show jobs</button>
-      <div id="dropdown-plotchoice" class="dropdown-plot">
-          {% if jobsummary %}
-              <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">All
-                  (including retries)</a>
-              <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=drop&display_limit=100">All (retries
-                  dropped)</a>
-              <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&specialhandling=sj">Scouts</a>
-              <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
-              <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
+  <div class="bp-dropdown-button">
+    <button class="dropdown">Show jobs</button>
+    <div class="dropdown-items">
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">All (including retries)</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=drop&display_limit=100">All (retries dropped)</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&specialhandling=sj">Scouts</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
+    </div>
+  </div>
+
+  <div class="bp-dropdown-button">
+      <button class="dropdown">Task parameters and help</button>
+      <div class="dropdown-items">
+          <a href="#statuslog" onclick="toggleStatusLog() ">Show task status log</a>
+          <a href="#jobparams">Jump to job parameters</a>
+          {% if jobscoutids|length > 0 %}
+              <a href="#scouts">Jump to scout jobs</a>
           {% endif %}
+          {% if taskparams %}
+              <a href="#taskparamsprodsys">Jump to ProdSys task parameters</a>
+          {% endif %}
+          <a href="#taskparamsjedi">Jump to PanDA/JEDI task parameters</a>
+          <a href="#help">Jump to help</a>
       </div>
   </div>
 
-  <div class="dropdownplots">
-      <button class="dropdownbutton">Task parameters and help</button>
-      <div id="dropdown-plotchoice" class="dropdown-plot">
-          <a onclick="loadStatusLog('{{ jeditaskid }}')">Task status log</a>
-          <a href="#jobparams">Job parameters</a>
-          {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 %}
-              <a href="#scouts">Scout jobs</a>
-          {% endif %}
-          {% if taskparaml %}
-              <a href="#taskparamsprodsys">Prodsys task parameters</a>
-          {% endif %}
-          <a href="#taskparamsjedi">PanDA/JEDI task parameters</a>
-          <a href="#help">Help</a>
+  <div class="bp-dropdown-button">
+      <button class="dropdown">Memory & walltime usage</button>
+      <div class="dropdown-items">
+          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="#plots" onclick="togglePlots();">Memory and walltime usage</a>
+          <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_a_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Memory and walltime usage (Kibana)</span></a>
       </div>
   </div>
 
-  <div class="dropdownplots">
-      <button class="dropdownbutton">Memory & walltime usage</button>
-      <div id="dropdown-plotchoice" class="dropdown-plot">
-          <a style="cursor: pointer;" href="#jobsconsumptionplots" onclick="showPlots('c3-chart-block');">Memory
-              and Walltime usage</a>
-          <a href="http://atlas-kibana-panda.mwt2.org:5601/app/kibana#/dashboard/BP_a_task?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:absolute,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:BP_Walltime_all_jobs,panelIndex:1,row:1,size_x:6,size_y:3,type:visualization),(col:7,id:BP_Walltime_failed_jobs,panelIndex:2,row:1,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_all_jobs,panelIndex:3,row:4,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_failed_jobs,panelIndex:4,row:4,size_x:6,size_y:3,type:visualization),(col:1,id:BP_MAX_PSS_per_core_all_jobs,panelIndex:5,row:7,size_x:6,size_y:3,type:visualization),(col:7,id:BP_MAX_PSS_per_core_failed_jobs,panelIndex:6,row:7,size_x:6,size_y:3,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_a_task,uiState:(P-1:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!t))))"
-             target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)<span class="tooltip-text">This Kibana instance is read-only. If you do not have access please contact Ilija Vukotic [ivukotic@cern.ch].</span></span></a>
-      </div>
-  </div>
-
-  <div class="dropdownplots">
-      <button class="dropdownbutton">Other plots</button>
-      <div id="dropdown-plotchoice" class="dropdown-plot">
+  <div class="bp-dropdown-button">
+      <button class="dropdown">Other plots</button>
+      <div class="dropdown-items">
           {% if not task.tasktype == 'anal' %}
               <a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Gantt diagram)</a>
               <a href="{% url 'taskchain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Tree diagram)</a>
           {% endif %}
-          {% if showtaskprof == True %}
-              <a href="{% url 'taskprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Profile</a>
-              <a href="{% url 'taskProfileMonitor' task.jeditaskid %}" target="_blank">Task Profile (New)</a>
-          {% endif %}
-          <a href="http://atlas-kibana-panda.mwt2.org:5601/app/kibana#/dashboard/9058c590-200d-11e7-84dc-8d3ed2710506?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(filters:!(),options:(darkTheme:!t),panels:!((col:1,id:'3f4fa5d0-2001-11e7-a8cf-1bce3a1c32b4',panelIndex:1,row:1,size_x:3,size_y:3,type:visualization),(col:4,id:'94d395c0-2001-11e7-a8cf-1bce3a1c32b4',panelIndex:3,row:1,size_x:5,size_y:4,type:visualization),(col:1,id:'88c1ea50-2003-11e7-983d-8109a2d43cab',panelIndex:4,row:5,size_x:6,size_y:5,type:visualization),(col:9,id:c3a6e3c0-2001-11e7-a8cf-1bce3a1c32b4,panelIndex:5,row:1,size_x:4,size_y:4,type:visualization),(col:7,id:'88e76c50-2006-11e7-983d-8109a2d43cab',panelIndex:6,row:5,size_x:6,size_y:5,type:visualization),(col:1,id:b2c68750-2005-11e7-983d-8109a2d43cab,panelIndex:7,row:10,size_x:5,size_y:3,type:visualization),(col:6,id:f0d9a450-2005-11e7-983d-8109a2d43cab,panelIndex:8,row:10,size_x:6,size_y:3,type:visualization),(col:1,id:c9e1f1d0-2006-11e7-983d-8109a2d43cab,panelIndex:9,row:13,size_x:2,size_y:3,type:visualization),(col:3,id:'7c88d960-2008-11e7-983d-8109a2d43cab',panelIndex:10,row:13,size_x:10,size_y:3,type:visualization),(col:9,id:'12a10860-2008-11e7-983d-8109a2d43cab',panelIndex:12,row:16,size_x:4,size_y:3,type:visualization),(col:5,id:'0b3a75d0-2007-11e7-983d-8109a2d43cab',panelIndex:13,row:16,size_x:4,size_y:3,type:visualization),(col:1,id:'52964850-2007-11e7-983d-8109a2d43cab',panelIndex:14,row:16,size_x:4,size_y:3,type:visualization),(col:1,id:b07c2fe0-200a-11e7-983d-8109a2d43cab,panelIndex:15,row:19,size_x:12,size_y:4,type:visualization),(col:1,id:'039a7c60-2009-11e7-983d-8109a2d43cab',panelIndex:16,row:23,size_x:12,size_y:5,type:visualization)),query:(query_string:(analyze_wildcard:!t,lowercase_expanded_terms:!f,query:'jeditaskid:{{ task.jeditaskid }}')),title:BP_ES_task,uiState:(P-1:(vis:(legendOpen:!f)),P-10:(vis:(legendOpen:!f)),P-13:(vis:(legendOpen:!f)),P-14:(vis:(legendOpen:!f)),P-15:(vis:(legendOpen:!f)),P-16:(spy:(mode:(fill:!f,name:!n)),vis:(legendOpen:!f)),P-3:(vis:(legendOpen:!f)),P-4:(vis:(legendOpen:!f)),P-5:(vis:(legendOpen:!f)),P-6:(vis:(legendOpen:!f)),P-7:(vis:(legendOpen:!f)),P-8:(vis:(legendOpen:!f)),P-9:(vis:(legendOpen:!f))))"
-             target="_blank"><span class="tooltip-upper">ES task dashboard (Kibana)<span class="tooltip-text">This Kibana instance is read-only. If you do not have access please contact Ilija Vukotic [ivukotic@cern.ch].</span></span></a>
+          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'taskProfileMonitor' task.jeditaskid %}" target="_blank">Task Profile</a>
+         <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_a_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Memory and walltime usage (Kibana)</span></a>
       </div>
   </div>
-
 
   {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
       {% if not task.status in finalstatelist %}
           <div style="float: right">
-              <a onclick="javascript:killtasks({{ task.jeditaskid }}, 0);" class='killbutton'>Finish</a>
-              <a onclick="javascript:killtasks({{ task.jeditaskid }}, 1);" class='killbutton'>Abort</a>
+              <a onclick="killtasks({{ task.jeditaskid }}, 0);" class='bp-button kill'>Finish</a>
+              <a onclick="killtasks({{ task.jeditaskid }}, 1);" class='bp-button kill'>Abort</a>
           </div>
       {% endif %}
   {% endwith %}
-
-  <p></p>
+  </div>
 
   {% if warning.dropmode %}
       <div class="callout warning" data-closable>
@@ -261,152 +298,87 @@
         </button>
       </div>
   {% endif %}
+  {% if warning.archive %}
+      <div class="callout warning" data-closable>
+        <h5>Warning! </h5>
+        <p>{{ warning.archive }}</p>
+          <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+              <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+  {% endif %}
 
-  {% if task.tasktype == 'anal' %}
-    {% if jobsummary or jobsummaryBuild %}
-        <table>
-            <tr bgcolor="lightcyan">
-                <th colspan="20">Job status summary </th>
-            </tr>
-            <tr>
-                <th>Job type</th>
-                {% for state in jobsummary %}
-                    <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
-                {% endfor %}
-            </tr>
-            {% if jobsummary %}
-            <tr>
-                <th>Run</th>
-                {% for state in jobsummary %}
-                    <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                            {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&prodsourcelabel=user&jobstatus={{ state.name }}&display_limit=100">
-                            <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
-                    </td>
-                {% endfor %}
-            </tr>
-            {% endif %}
-            {% if jobsummaryBuild %}
-            <tr>
-                <th>Build</th>
-                {% for state in jobsummaryBuild %}
-                    <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                            {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&prodsourcelabel=panda&transformation=build*&jobstatus={{ state.name }}&display_limit=100">
-                            <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
-                    </td>
-                {% endfor %}
-            </tr>
-            {% endif %}
-            {% if jobsummaryPMERGE %}
-            <tr>
-                <th>PMerge</th>
-                {% for state in jobsummaryPMERGE %}
-                    <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                        {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
-                                class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
-                    </td>
-                {% endfor %}
-            </tr>
-            {% endif %}
-        </table>
+  {% if jobsummary %}
+    {% if requestParams.warning %}
+      <div class="callout small alert">
+        <p style="color:brown">{{ requestParams.warning }}</p>
+      </div>
     {% endif %}
+    <div class="table-scroll">
+    <table class="fresh-table unstriped">
+      <thead>
+        <tr>
+            <th colspan=20>
+                <b>States of jobs in this task {% if mode %}[{{ mode }} mode]{% endif %}</b>
+            </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th></th>
+            {% for state in jobsummary.0.job_state_counts %}
+              <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
+            {% endfor %}
+        </tr>
+        {% for job_category_states in jobsummary %}
+          <tr>
+            <th>{{ job_category_states.value | title }}</th>
+            {% for state in job_category_states.job_state_counts %}
+              <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
+                    {% if state.count > 0 %}
+                        <b> <a {% if 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ mode }}{% if job_category_states.value == 'build' %}&transformation=build*{% elif job_category_states.value == 'merge' %}&processingtype=pmerge{% else %}&processingtype=!pmerge&prodsourcelabel={% if task.tasktype == 'prod' %}managed{% else %}user{% endif %}{% endif %}&display_limit=100">
+                            <span class='{{ state.name }}_fill'>{% if state.count > 0 %} {{ state.count }} {% endif %}</span></a> </b>
+                    {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
   {% else %}
-    {% if jobsummary %}
+    <div class="card bp-container-simple info">
+      <div class="card-divider">
+        <p>No jobs were found for the task</p>
+      </div>
+    </div>
+  {% endif %}
 
-        {% if requestParams.warning %}
-            <div class="callout small alert">
-            <p style="color:brown">{{ requestParams.warning }}</p>
-            {#    Go to correspondent <a href="{% url 'jobListP' %}?jeditaskid={{ jeditaskid }}&mode=drop"> jobsss page</a>#}
-            </div>
-        {% endif %}
-
-        <table>
-            <tr bgcolor="lightcyan">
-                <th colspan=20>
-                    <b>States of jobs in this task (merge jobs excluded)</b>                 <a
-                        href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&mode=nodrop&display_limit=100">Show
-                    all jobs</a>
-                    {% if requestParams.mode and requestParams.mode == 'nodrop' %}
-                        <a style="cursor: pointer;" href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
-                    {% else %}
-                        <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
-                    {% endif %}
-                </th>
-            </tr>
-            <tr>
-                {% for state in jobsummary %}
-                    <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
-                {% endfor %}
-            </tr>
-            <tr>
-                {% for state in jobsummary %}
-                    {% if newjobsummary_test %}
-                        {% for newstate in newjobsummary_test %}
-                            {% if forloop.counter == forloop.parentloop.counter %}
-                                <td {% if state.count > 0 or newstate.count > 0 %}
-                                    class='{{ state.name }}_fill' {% endif %}>
-                                    {% if state.count > 0 or newstate.count > 0 %}
-                                        <b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
-                                            <span class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
-                                        </b> {% endif %} </td>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                            {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}{% ifequal requestParams.mode 'nodrop' %}&mode=nodrop{% endifequal %}{% ifequal requestParams.mode 'drop' %}&mode=drop{% endifequal %}&jobstatus={{ state.name }}&display_limit=100">
-                            <span class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
-                        </td>
-                    {% endif %}
-                {% endfor %}
-            </tr>
-        </table>
-    {% endif %}
-
-    {% if jobsummaryPMERGE %}
-        <table>
-            <tr bgcolor="lightcyan">
-                <th colspan=20>
-                    <b>States of pmerge jobs in this task</b>
-                    <a href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&processingtype=pmerge&display_limit=100">Show jobs</a>
-                </th>
-            </tr>
-            <tr>
-                {% for state in jobsummaryPMERGE %}
-                    <td class="{{ state.name }}"><b> {{ state.name }} </b></td>
-                {% endfor %}
-            </tr>
-            <tr>
-                {% for state in jobsummaryPMERGE %}
-                    {% if newjobsummaryPMERGE_test %}
-                        {% for newstate in newjobsummaryPMERGE_test %}
-                            {% if forloop.counter == forloop.parentloop.counter %}
-                                <td {% if state.count > 0 or newstate.count > 0 %}
-                                    class='{{ state.name }}_fill' {% endif %}>
-                                    {% if state.count > 0 or newstate.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
-                                            class='{{ state.name }}_fill'>{{ state.count }} ({{ newstate.count }})</span></a>
-                                    </b> {% endif %}
-                                </td>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                            {% if state.count > 0 %}<b> <a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus={{ state.name }}&display_limit=100&processingtype=pmerge"><span
-                                    class='{{ state.name }}_fill'>{{ state.count }}</span></a> </b> {% endif %}
-                        </td>
-                    {% endif %}
-                {% endfor %}
-            </tr>
-        </table>
-    {% endif %}
+  {% if jobscoutids|length > 0 %}
+    <table class="fresh-table unstriped">
+      <tbody>
+        <tr>
+          <th><b> Scout jobs: </b></th>
+          {% for scout_metric, pandaids in jobscoutids.items %}
+            <td><b>{{ scout_metric }}:</b>
+              {% for job in pandaids %}
+                <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a>{% if forloop.last %}{% else %}, {% endif %}
+              {% endfor %}
+            </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
   {% endif %}
 
   {% if warning.memoryleaksuspicion %}
       <p></p>
       <div class="callout warning" data-closable>
         <h5>Warning! {{ warning.memoryleaksuspicion.message }}</h5>
-        <p>At least one of jobs in this task consumed more max PSS than it is limited by a computing site. Please check the next top memory consumed jobs and their memory and IO usage plots: </p>
+        <p>At least one of jobs in this task consumed more max PSS/core than it is limited by a computing site. Please check the next top memory consumed jobs and their memory and IO usage plots: </p>
         <ul>
         {% for job in warning.memoryleaksuspicion.jobs %}
-          <li style="font-size: smaller"> <a class="blacklink bold hover" href="{% url 'jobInfo' job.pandaid %}">{{ job.pandaid }}</a> job consumed {{ job.jobmaxrss }} MB out of {{ job.sitemaxrss }} MB limited by <a class="blacklink bold hover" href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a>, see <a class="blacklink bold hover" target="_blank" href="{% url 'prMonPlots' job.pandaid %}">plots</a>
+          <li style="font-size: smaller"> <a class="blacklink bold hover" href="{% url 'jobInfo' job.pandaid %}">{{ job.pandaid }}</a> job consumed {{ job.jobmaxpss_percore }} MB per core out of {{ job.sitemaxrss_percore }} MB per core limited by <a class="blacklink bold hover" href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a>, see <a class="blacklink bold hover" target="_blank" href="{% url 'prMonPlots' job.pandaid %}">plots</a>
         {% endfor %}
         </ul>
         <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
@@ -415,106 +387,100 @@
       </div>
   {% endif %}
 
-  {% if task.errordialog %}
-    <p></p>
-      {% if logtxt %}
-          <div class="card scrollable">
-              <div class="card-divider errorlog">
-                  <h5>Logged status: {{ task.errordialog|safe }}</h5>
-              </div>
-              <div class="card-section errorlog">
-                <pre>
-                {{ logtxt }}
-                </pre>
-              </div>
-          </div>
-      {% else %}
-          <div class="card-divider errorlog">
-              <h5>Logged status: {{ task.errordialog|safe }}</h5>
-          </div>
-      {% endif %}
-  {% endif %}
-
-  <p></p>
-
-  <div id="div-statuslog"></div>
-
-  <p></p>
-
-  <div id="jobsconsumptionplots"></div>
-  <div>
-    {% for plot, data in plotsDict.items %}
-        <div class="c3-chart-block" id="{{ plot }}_chart" style="display: none"></div>
-    {% endfor %}
-    <br style="clear: both">
+  <div id="statuslog" ng-app="taskInfoAppSL" ng-controller="TaskStatusLogController">
+    <div class="card bp-container-simple secondary ng-hide" ng-hide="status_log.is_hidden">
+    <div class="card-divider"><p>Task status history</p></div>
+    <div class="card-section">
+      <p ng-bind-html="status_log.message"></p>
+      <div class="c3-chart-block" id="tsl_plot"></div>
+      <table class="data-table left-aligned nowrap" id="taskstatuslogtable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
   </div>
 
-  {% if inctrs %}
-      <table>
-          <tr bgcolor='lightcyan'>
-              <th>Input containers</th>
-          </tr>
-          {% for dsrec in inctrs %}
-              <tr>
-                  <td><font size=-1><a href="{% url 'datasetList' %}?containername={{ dsrec }}&jeditaskid={{ jeditaskid }}">{{ dsrec }}</a></font>
-                  </td>
-              </tr>
-          {% endfor %}
-      </table>
-  {% endif %}
 
-  {% if outctrs %}
-      <table>
-          <tr bgcolor='lightcyan'>
-              <th>Output containers</th>
-          </tr>
-          {% for dsrec in outctrs %}
-              <tr>
-                <td>
-                    <a href="{% url 'datasetList' %}?containername={{ dsrec }}&jeditaskid={{ jeditaskid }}">{{ dsrec }}</a>
-                </td>
-              </tr>
-          {% endfor %}
-      </table>
-  {% endif %}
+  <div id="plots" data-ng-controller="jobConsumptionPlotsController">
+  <div class="card bp-container-simple secondary ng-hide" ng-hide="taskinfo.jc_plots.selection.is_hidden">
+    <div class="card-divider"><p>Job consumption plots:</p></div>
+    <div class="card-section">
 
+      <fieldset class="inline">
+        <legend>Job category:</legend>
+        <label ng-repeat="option in taskinfo.jc_plots.options.category"><input type="radio" ng-value="option" ng-model="taskinfo.jc_plots.selection.category" ng-change="taskinfo.jc_plots.rebuild()">{$ option $}</label>
+      </fieldset>
 
-  <div id="dsStageDiv" class="badevents" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
+      <div class="c3-chart-block" ng-repeat="plot in taskinfo.jc_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
+    </div>
+  </div>
+  </div>
+
+  <div id="dsStageDiv" class="fresh-table badevents" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
   <table>
-      <tr bgcolor='lightcyan'>
-          <th colspan=20> Dataset staging information</th>
-      </tr>
-
+    <thead>
+      <tr><th colspan=20>Dataset staging information</th></tr>
+    </thead>
+    <tbody>
       <tr>
-           <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid }}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a></th>
+           <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid }}"><i class="fi-graph-trend"></i></a></th>
            <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
       </tr>
-
       <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">
            <th>{$ key $}</th>
            <td>{$ value $}</td>
       </tr>
+    </tbody>
   </table>
   </div>
 
   {% if task.idds_info %}
-      <div id="iDDsDiv" class="badevents" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
-      <table>
-          <tr bgcolor='lightcyan'>
-              <th colspan=20>iDDS information</th>
-          </tr>
-
+    <div id="iDDsDiv" class="badevents" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
+      <table class="fresh-table">
+        <thead>
+          <tr><th colspan=20>iDDS information</th></tr>
+        </thead>
+        <tbody>
           <tr ng-repeat="(key, value) in iddsjson" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">
-               <th>{$ key $}</th>
-               <td>{$ value $}</td>
+             <th>{$ key $}</th>
+             <td>{$ value $}</td>
           </tr>
+        </tbody>
       </table>
-      </div>
+    </div>
   {% endif %}
 
+  {% if inctrs or outctrs %}
+    <table class="fresh-table unstriped">
+    <thead>
+      <tr><th colspan=20>Containers</th></tr>
+    </thead>
+    <tbody>
+      {% if inctrs %}
+        <tr><th>Input:</th></tr>
+        {% for dsrec in inctrs %}
+          <tr>
+              <td class="wrap-words"><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></td>
+          </tr>
+        {% endfor %}
+      {% endif %}
+      {% if outctrs %}
+        <tr><th>Output:</th></tr>
+        {% for dsrec in outctrs %}
+          <tr>
+              <td class="wrap-words"><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></td>
+          </tr>
+        {% endfor %}
+      {% endif %}
+    </tbody>
+    </table>
+  {% endif %}
 
   {% if datasets %}
-      <h4>Dataset processing information</h4>
+    <div class="card bp-container-simple secondary" id="container_dst">
+    <div class="card-divider"><p>Dataset processing information:</p></div>
+    <div class="card-section">
       <table class="data-table left-aligned nowrap" id="datasetstable">
           <thead>
           <tr>
@@ -527,135 +493,87 @@
               <th>Nfiles failed</th>
               <th>%</th>
               <th>Links</th>
+              <th>RSE</th>
           </tr>
           </thead>
           <tbody></tbody>
       </table>
+    </div>
+    </div>
   {% else %}
       <p>No datasets were found for this task</p>
   {% endif %}
 
-  {% if sumd %}
-      <table>
-          {% for fdict in sumd %}
-              <tr>
-                  <th> {{ fdict.field }} </th>
-                  <td>
-                      {% for item in fdict.list %}
-                          {% if fdict.field == 'status' %} <span class='{{ item.kname }}'> {% else %}
-                              <span> {% endif %}  {{ item.kname }} </span>
-                          <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
-                      {% endfor %}
-                  </td>
-              </tr>
-          {% endfor %}
-      </table>
-  {% endif %}
 
   {% if jobparams %}
-      <table class="fixed">
-          <a name="jobparams"></a>
-          <tr bgcolor='lightcyan'>
-              <th> Job parameters</th>
-          </tr>
-          {% for p in jobparams %}
-              <tr>
-                  <td class="wrap-words">{{ p|safe }}</td>
-              </tr>
-          {% endfor %}
-      </table>
-      <p></p>
+    <a name="jobparams"></a>
+    <table class="fresh-table">
+      <thead>
+        <tr><th colspan=20> Job parameters</th></tr>
+      </thead>
+      <tbody>
+        {% for p in jobparams %}
+            <tr>
+                <td class="wrap-words">{{ p|safe }}</td>
+            </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   {% endif %}
 
-  {% if jobscoutids.cputimescoutjob|length > 0 or jobscoutids.walltimescoutjob|length > 0 or jobscoutids.ramcountscoutjob|length > 0 or jobscoutids.outdiskcountscoutjob|length > 0 or jobscoutids.iointensityscoutjob|length > 0 %}
-      <a name="scouts"></a>
-      <table>
-          <tr>
-              <td bgcolor='lightcyan'><b> Scout jobs: </b></td>
-              {% if jobscoutids.walltimescoutjob and jobscoutids.walltimescoutjob|length > 0 %}
-                  <td>Walltime:
-                      {% for job in jobscoutids.walltimescoutjob %}
-                          <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                      {% else %} , {% endif %}
-                      {% endfor %}
-                  </td>{% endif %}
-              {% if jobscoutids.cputimescoutjob and jobscoutids.cputimescoutjob|length %}
-                  <td>CPU time:
-                      {% for job in jobscoutids.cputimescoutjob %}
-                          <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                      {% else %} , {% endif %}
-                      {% endfor %}
-                  </td>{% endif %}
-              {% if jobscoutids.ramcountscoutjob and jobscoutids.ramcountscoutjob|length %}
-                  <td>RAM count:
-                      {% for job in jobscoutids.ramcountscoutjob %}
-                          <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                      {% else %} , {% endif %}
-                      {% endfor %}
-                  </td>{% endif %}
-              {% if jobscoutids.outdiskcountscoutjob and jobscoutids.outdiskcountscoutjob|length %}
-                  <td>Out disk count:
-                      {% for job in jobscoutids.outdiskcountscoutjob %}
-                          <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                      {% else %} , {% endif %}
-                      {% endfor %}
-                  </td>{% endif %}
-              {% if jobscoutids.iointensityscoutjob and jobscoutids.iointensityscoutjob|length %}
-                  <td>IO intensity:
-                      {% for job in jobscoutids.iointensityscoutjob %}
-                          <a href="{% url 'jobInfo' %}?pandaid={{ job }}">{{ job }}</a> {% if forloop.last %}
-                      {% else %} , {% endif %}
-                      {% endfor %}
-                  </td>{% endif %}
-          </tr>
-      </table>
+
+  {% if taskparams %}
+    <a name="taskparamsprodsys"></a>
+    <table class="fresh-table">
+      <thead>
+        <tr><th colspan=20> Prodsys task parameters</th></tr>
+      </thead>
+      <tbody>
+        {% for p in taskparams %}
+            {% if p.name != 'jobParameters' and p.name != 'log' %}
+                <tr>
+                    <td class="bold">{{ p.name }}</td>
+                    <td class="wrap-words">{% if not p.value is None and not p.value == '' %} {{ p.value }} {% else %}&mdash;{% endif %}</td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
   {% endif %}
 
-  {% if taskparaml %}
-      <table>
-          <a name="taskparamsprodsys"></a>
-          <tr bgcolor='lightcyan'>
-              <th colspan=20> Prodsys task parameters</th>
-          </tr>
-          {% for p in taskparaml %}
-              {% if p.name != 'jobParameters' and p.name != 'log' %}
-                  <tr>
-                      <th> {{ p.name }} </th>
-                      <td>{% if p.value != None %} {{ p.value }} {% endif %}</td>
-                  </tr>
-              {% endif %}
-          {% endfor %}
-      </table>
-      <p>
-  {% endif %}
-
-  {% if columns %}
   <a name="taskparamsjedi"></a>
-      <table>
-          <tr bgcolor='lightcyan'>
-              <th colspan=20> PanDA/JEDI task parameters</th>
+  <table  class="fresh-table">
+    <thead>
+      <tr>
+          <th colspan=20> PanDA/JEDI task parameters</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for col in columns %}
+          <tr>
+              <td class="bold">{{ col.name }}</td>
+              <td class="wrap-words">
+                {% if not col.value is None and not col.value == '' %}
+                  {% if col.name == 'cputimescoutjob' %}
+                    <a href="{% url 'jobInfo' %}?pandaid={{ col.value }}">{{ col.value }}</a>
+                  {% else %}
+                    {{ col.value }}
+                  {% endif %}
+                {% else %} &mdash;
+                {% endif %}
+              </td>
           </tr>
-          {% for col in columns %}
-              <tr>
-                  <th {% if col.name == 'cputime' or col.name == 'cputimeunit' or col.name == 'cpuefficiency' or col.name == 'basewalltime' or col.name == 'outdiskcount' or col.name == 'outdiskunit' or col.name == 'workdiskcount' or col.name == 'workdiskunit' %}
-                              bgcolor='HoneyDew' {% endif %}> {{ col.name }} </th>
-                  <td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td>
-              </tr>
-          {% endfor %}
-      </table>
-  {% else %}
-      <p>
-          PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}:{% endif %} <b>{{ taskname }}</b> not found.
-      </p>
+      {% endfor %}
+    </tbody>
+  </table>
 
-      {% if viewParams.MON_VO == 'ATLAS' %}
+{% else %}
 
-          <p> Note that task info pages are currently only available for JEDI tasks in the new monitor.
-          </p><p>
-          You can however get a job listing for any task in quick search.
-      {% endif %}
-
+  <p>PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}{% endif %} {% if task.taskname %}:<b>{{ task.taskname }}</b> not found.{% endif %}</p>
+  {% if viewParams.MON_VO == 'ATLAS' %}
+    <p>You can however get a job listing for any task in quick search.</p>
   {% endif %}
+
 {% endif %}
 
 {% endblock %}
@@ -663,7 +581,6 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script>
-
     app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
         $scope.iddsjson = "";
         $scope.getiDDs = function () {
@@ -678,13 +595,12 @@
                         $scope.iddsjson = iddsjson['data'];
                         idds_data = iddsjson['data'];
                         $rootScope.$emit('idds_info', idds_data);
+                        $('#iDDsDiv').show();
                     }
                 });
         };
         var init = function () {
             $scope.getiDDs();
-            var displaydiv = document.getElementById('iDDsDiv');
-            displaydiv.style.display = "";
         };
         init();
     });
@@ -720,28 +636,234 @@
         init();
     });
 
-    var jobconsump_charts;
-    window.addEventListener('resize', onWindowResize);
+    var jc_plot_data = {{ plotsDict|safe }};
+    app.controller('jobConsumptionPlotsController', function($scope) {
+      $scope.taskinfo = {};
+      $scope.taskinfo.jc_plots = {
+        selection: {
+          category: '',
+          is_hidden: true,
+          mode: ''
+        },
+        options: {
+          category: []
+        },
+        plot_data: jc_plot_data,
+        charts: {}
+      };
+
+      if (Object.keys($scope.taskinfo.jc_plots.plot_data).length > 1) {
+        Object.keys($scope.taskinfo.jc_plots.plot_data[1].data.data).forEach((key) => {
+          $scope.taskinfo.jc_plots.options.category.push(key);
+        });
+        $scope.taskinfo.jc_plots.options.category.sort();
+        if ($scope.taskinfo.jc_plots.options.category.includes('run')) {
+          $scope.taskinfo.jc_plots.selection.category = 'run';
+        }
+        else {
+          $scope.taskinfo.jc_plots.selection.category = 'all';
+        }
+      }
+
+      $scope.taskinfo.jc_plots.build = function () {
+        $scope.taskinfo.jc_plots.plot_data.forEach((item) => {
+          if (item.data.details.type === 'pie') {
+            $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_donut(item.data.data[$scope.taskinfo.jc_plots.selection.category]['columns'], item.name + "_chart", item.data.details.title, item.data.details)
+          }
+          else if (item.data.details.type === 'stack_bar') {
+            $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_stacked_bar_hist(item.data.data[$scope.taskinfo.jc_plots.selection.category], item.data.details, item.name + "_chart");
+          }
+        })
+      };
+
+      $scope.taskinfo.jc_plots.rebuild = function () {
+        $scope.taskinfo.jc_plots.destroy();
+        $scope.taskinfo.jc_plots.build();
+      };
+
+      $scope.taskinfo.jc_plots.destroy = function () {
+        let plot_names = Object.keys($scope.taskinfo.jc_plots.charts);
+        plot_names.forEach((item) => {
+          if ($scope.taskinfo.jc_plots.charts[item]) {
+            $scope.taskinfo.jc_plots.charts[item] = $scope.taskinfo.jc_plots.charts[item].destroy();
+          }
+        });
+      };
+
+      $scope.taskinfo.jc_plots.toggle = function () {
+        if ($scope.taskinfo.jc_plots.options.category.length > 0) {
+          ($scope.taskinfo.jc_plots.selection.is_hidden) ? $scope.taskinfo.jc_plots.selection.is_hidden = false : $scope.taskinfo.jc_plots.selection.is_hidden = true;
+        }
+      };
+
+    })
+    .directive('jcplotDirective', function ($timeout) {
+        var template = '<div id="{$plot.name$}_chart"></div>';
+        return {
+            template: template,
+            scope: {
+                plot: '=',
+                parent: '=',
+            },
+            link: function (scope, element, attrs) {
+              $timeout(() => {
+                element.ready(() => {
+                  if (scope.plot.data.details.type === 'pie') {
+                    if ('size' in scope.plot.data.details) {scope.plot.data.details.size[0] = getWidth();}
+                    scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_donut(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category]['columns'], scope.plot.name + "_chart", scope.plot.data.details.title, scope.plot.data.details)
+                  }
+                  else if (scope.plot.data.details.type === 'stack_bar') {
+                    scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category], scope.plot.data.details, scope.plot.name + "_chart");
+                  }
+                });
+              });
+            }
+        };
+    });
+
+    app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
+        $scope.status_log = {
+          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+          data: [],
+          is_hidden: true,
+          data_table: "",
+          plot_data: {
+            columns: [],
+            ext: {
+              xs: {},
+              size: [getWidth() - 40, 400],
+              colors: "task_states",
+              labels: ['Time', 'Task attempt'],
+            },
+          },
+          plot: "",
+        };
+        $scope.status_log.get = function () {
+            $http({
+                    url: "{% url 'gettaskstatuslog' jeditaskid %}",
+                    method: "GET",
+                    params: {'json':1}
+                }
+            ).then(function success(response) {
+                $scope.status_log.message = "";
+                $scope.status_log.data = angular.fromJson(response.data);
+                if ($scope.status_log.data.length > 0) {
+                  $scope.status_log.buildPlot();
+                  $scope.status_log.buildDataTable();
+                }
+                else {
+                  $scope.status_log.message = $sce.trustAsHtml("No data received :(");
+                }
+              },
+              function error(response) {
+                console.log(response);
+                $scope.status_log.message = $sce.trustAsHtml('Failed to load data :( ');
+              }
+            );
+        };
+        $scope.status_log.buildDataTable = function () {
+            $scope.status_log.data_table = $('#taskstatuslogtable').dataTable({
+                "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+                "paging": true,
+                "scrollX": true,
+                "aaSorting": [[1,'asc']],
+                "data": $scope.status_log.data,
+                "aoColumns": [
+                    {
+                        title: "Attempt",
+                        data: "attemptnr",
+                        sDefaultContent: "-",
+                    },
+                    {
+                        title: "Time",
+                        data: "modiftime_str",
+                        sDefaultContent: "-",
+                    },
+                    {
+                        title: "Status",
+                        data: "status",
+                        sDefaultContent: "-",
+                        className: 'state',
+                    },
+                    {
+                        title: "Duration, d:h:m:s",
+                        data: "duration",
+                        sDefaultContent: "-",
+                    },
+                    {
+                        title: "Modification host",
+                        data: "modificationhost",
+                        sDefaultContent: "-",
+                    },
+                    {
+                        title: "Reason",
+                        data: "reason",
+                        sDefaultContent: "-",
+                    },
+
+                ],
+                "createdRow": function ( row, data, index ) {
+                    $('td', row).eq(2).addClass(data['status'] + '_fill');
+                }
+              })
+        };
+        $scope.status_log.buildPlot = function() {
+            if ($scope.status_log.data.length > 0) {
+                let tmp_obj = {};
+                $scope.status_log.plot_data.columns.push(['x', ]);
+                $scope.status_log.data.forEach((item) => {
+                    tmp_obj[item.status] = [item.status, ];
+                    $scope.status_log.plot_data.columns[0].push(item.modiftime_str);
+                });
+                $scope.status_log.data.forEach((item) => {
+                  Object.keys(tmp_obj).forEach((key) => {
+                    (item.status === key) ? tmp_obj[key].push(item.attemptnr+1) : tmp_obj[key].push(0);
+                  });
+                });
+                Object.keys(tmp_obj).forEach((key) => {
+                  $scope.status_log.plot_data.columns.push([key, ...tmp_obj[key]]);
+                })
+            }
+            $scope.status_log.plot = draw_steps($scope.status_log.plot_data.columns, 'tsl_plot', 'Task statuses transition', $scope.status_log.plot_data.ext);
+        };
+        $scope.status_log.toggle = function() {
+            $scope.status_log.is_hidden = false;
+            $scope.status_log.get();
+        };
+    });
 
     $(document).ready(function () {
-        buildDatasetsTable();
+        var dataset_list = {{ datasets|safe }};
+        buildDatasetsTable(dataset_list);
         var url = window.location.href;
-        if (url.indexOf("#jobsconsumptionplots") > -1) {
-            jobconsump_charts = showPlots('c3-chart-block');
-            {#        $('#jobsconsumptionplots').goTo();#}
+        if (url.indexOf("#plots") > -1) {
+            togglePlots();
+        }
+        if (url.indexOf("#statuslog") > -1) {
+            toggleStatusLog();
         }
     });
 
-function toggleDetailDisplay(className) {
-    let el = document.getElementsByClassName(className);
-    for (let i = 0; i < el.length; i++) {
-        el[i].style.display = (el[i].style.display === "none") ? "" : "none";
+function togglePlots() {
+  let scope = angular.element(document.getElementById('plots')).scope();
+  scope.$apply(function(){
+        scope.taskinfo.jc_plots.toggle();
+  });
+}
+
+function toggleStatusLog() {
+    let scope = angular.element(document.getElementById('statuslog')).scope();
+    if (scope.status_log.is_hidden) {
+      scope.$apply(function () {
+        scope.status_log.toggle();
+      });
     }
 }
 
+
 function killtasks(taskID, action) {
-    var message = ''
-    if (action == 0)
+    var message = '';
+    if (action === 0)
         message = 'Are you sure you want to FINISH this task?'
     else
         message = 'Are you sure you want to ABORT this task?'
@@ -751,79 +873,30 @@ function killtasks(taskID, action) {
             data: {'task': taskID, 'action': action},
             async: true
         })
-            .done(function (response) {
-                var parcedResponse = $.parseJSON(response);
-                alert(parcedResponse.detail);
-                location.reload();
-            });
+        .done(function (response) {
+            if (typeof response === 'string') {
+                response = $.parseJSON(response);
+            }
+            alert(response.detail);
+            location.reload();
+        });
     } else {
         // Do nothing!
     }
 }
 
-function loadStatusLog(jeditaskid) {
-
-    $('#div-statuslog').html("<img src='{% static "images/load.gif" %}'>  ");
-    $.ajax({
-        url: '{% url 'gettaskstatuslog' jeditaskid %}',
-        data: '',
-        async: true,
-    }).done(function (response) {
-        $('#div-statuslog').html(response);
-    });
-
-}
-
-
-function showPlots(classname) {
-    let el = document.getElementsByClassName(classname);
-    let flag = 0;
-    for (let i = 0; i < el.length; i++) {
-        flag = (el[i].innerHTML) ? flag : flag + 1;
-    }
-    if (flag > 0) {
-        $("#jobsconsumptionplots").html("<img src='{% static "images/load.gif" %}'>  ");
-        jobconsump_charts = buildJCPlots();
-        $("#jobsconsumptionplots").html("");
-        toggleDetailDisplay(classname);
-    }
-    else {
-        toggleDetailDisplay(classname);
-    }
-    }
-
-function buildJCPlots() {
-    var charts = {};
-    var values = {{ plotsDict|safe }};
-
-    Object.keys(values).forEach(function (key) {
-        charts[key + "_chart"] = draw_bar_hist(values[key], key + "_chart");
-    });
-    return charts
-}
-
-function buildDatasetsTable() {
+function buildDatasetsTable(data) {
 
   $('#datasetstable').dataTable({
     //"bRetrieve": true,
-    "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
     "paging": true,
     "scrollX": true,
-    "aaSorting": [[0,'asc']],
+    "aaSorting": [[1,'asc']],
     "columnDefs": [
         {"type": "num-html", "targets": [4,5,6,7] }
     ],
-
-    "ajax": {
-        "processing": true,
-        "url": "{% url 'taskInfo' task.jeditaskid %}?transkey={{ transkey }}&dt",
-        "dataSrc" : function ( data ) {
-          if ( data === null ) {
-            return alert('The data was not loaded. Please press "Reload" button on the top right corner of page');
-          }
-          return data;
-        }
-    },
+    "data": data,
     "aoColumns": [
         {
             "data": "datasetname",
@@ -907,6 +980,10 @@ function buildDatasetsTable() {
             }
 
         },
+        {
+            "data": "rse",
+            sDefaultContent: "-",
+        },
 
     ],
     "createdRow": function ( row, data, index ) {
@@ -915,18 +992,12 @@ function buildDatasetsTable() {
   })
 }
 
-function onWindowResize() {
-    // get chart vars to apply resizing
-    Object.keys(jobconsump_charts).forEach(function (key) {
-      jobconsump_charts[key].resize({width:getWidth()/3-20});
-    })
-}
 
 </script>
 
 {% endblock %}
 
-{% block helptext %}
-    <a name="help"></a>
-    {% include "taskInfoHelp.html" with helptitle="Task detail page help" %}
+{% block help %}
+  <a name="help"></a>
+  {% include "taskInfoHelp.html" %}
 {% endblock %}

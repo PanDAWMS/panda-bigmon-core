@@ -44,7 +44,6 @@ TEMPLATES = [
             join(dirname(core.__file__), 'templates'),
             join(dirname(core.filebrowser.__file__), 'templates'),
             join(dirname(core.pbm.__file__), 'templates'),
-
         ],
         'OPTIONS': {
             'context_processors': [
@@ -284,7 +283,7 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'bigpandamon-filebrowser':{
-            'handlers': ['logfile-filebrowser'],
+            'handlers': ['logfile-filebrowser', 'logfile-error'],
             'level': 'DEBUG',
         },
         'bigpandamon-pbm':{

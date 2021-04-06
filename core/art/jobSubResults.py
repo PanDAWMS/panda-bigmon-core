@@ -76,7 +76,7 @@ def subresults_getter(url_params_str):
 
     http = urllib3.PoolManager()
     resp = http.request('GET', base_url + fb_path + url_params_str, timeout=300)
-    if resp and len(resp.data) > 0:
+    if resp and resp.status == 200 and len(resp.data) > 0:
         try:
             data = json.loads(resp.data)
             tardir = data['tardir']
@@ -87,6 +87,9 @@ def subresults_getter(url_params_str):
         except:
             _logger.exception('Exception was caught while seeking artReport.json in logs for PanDA job: {}'.format(str(pandaid)))
             return {pandaid: subresults_dict}
+    elif resp and resp.status == 429:
+        _logger.info('Too many requests to filebrowser, return None for now, will try in next loop. PanDA job : {}'.format(str(pandaid)))
+        return {pandaid: None}
     else:
         _logger.exception('Exception was caught while downloading logs using Rucio for PanDA job: {}'.format(str(pandaid)))
         return {pandaid: subresults_dict}
@@ -230,7 +233,7 @@ def get_final_result(job):
     except:
         pass
     try:
-        extraParamsDict['subresults'] = job['result']['result'] if 'result' in job['result'] else []
+        extraParamsDict['subresults'] = job['result']['result'] if 'result' in job['result'] else None
     except:
         pass
     try:

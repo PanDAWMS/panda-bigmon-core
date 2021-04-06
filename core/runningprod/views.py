@@ -12,9 +12,11 @@ from django.utils.cache import patch_response_headers
 
 from core.settings import defaultDatetimeFormat
 from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
-from core.views import login_customrequired, initRequest, setupView, DateEncoder, removeParam, taskSummaryDict, preprocessWildCardString
+from core.auth.utils import login_customrequired
+from core.views import initRequest, setupView, DateEncoder, removeParam, preprocessWildCardString, taskSummaryDict
+from core.utils import is_json_request
 
-from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType
+from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots
 from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
 
 
@@ -22,34 +24,19 @@ from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsMo
 def runningProdTasks(request):
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
 
-    if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']):
+    if 'dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']:
         tk = request.session['requestParams']['tk']
         data = getCacheEntry(request, tk, isData=True)
         return HttpResponse(data, content_type='application/json')
+
     # Here we try to get cached data
     data = getCacheEntry(request, "runningProdTasks")
     # data = None
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        if 'ages' in data:
-            data['ages'] = preparePlotData(data['ages'])
-        if 'neventsFStasksSum' in data:
-            data['neventsFStasksSum'] = preparePlotData(data['neventsFStasksSum'])
-        if 'neventsAFIItasksSum' in data:
-            data['neventsAFIItasksSum'] = preparePlotData(data['neventsAFIItasksSum'])
-        if 'neventsByProcessingType' in data:
-            data['neventsByProcessingType'] = preparePlotData(data['neventsByProcessingType'])
-        if 'aslotsByType' in data:
-            data['aslotsByType'] = preparePlotData(data['aslotsByType'])
-        if 'neventsByTaskStatus' in data:
-            data['neventsByTaskStatus'] = preparePlotData(data['neventsByTaskStatus'])
-        if 'neventsByTaskPriority' in data:
-            data['neventsByTaskPriority'] = preparePlotData(data['neventsByTaskPriority'])
-        if 'neventsByStatus' in data:
-            data['neventsByStatus'] = preparePlotData(data['neventsByStatus'])
         response = render_to_response('runningProdTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -172,105 +159,28 @@ def runningProdTasks(request):
     qtime = datetime.now()
     task_list = [t for t in tasks]
     ntasks = len(tasks)
-    slots = 0
-    aslots = 0
-    ages = []
-    neventsAFIItasksSum = {}
-    neventsFStasksSum = {}
-    neventsByProcessingType = {}
-    neventsByTaskStatus = {}
-    neventsByTaskPriority = {}
-    aslotsByType = {}
-    neventsTotSum = 0
-    neventsUsedTotSum = 0
-    neventsToBeUsedTotSum = 0
-    neventsRunningTotSum = 0
-    rjobs1coreTot = 0
-    rjobs8coreTot = 0
-    for task in task_list:
-        task['rjobs'] = 0 if task['rjobs'] is None else task['rjobs']
-        task['percentage'] = 0 if task['percentage'] is None else round(100 * task['percentage'],1)
-        neventsTotSum += task['nevents'] if task['nevents'] is not None else 0
-        neventsUsedTotSum += task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
-        neventsToBeUsedTotSum += task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
-        neventsRunningTotSum += task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
-        slots += task['slots'] if task['slots'] else 0
-        aslots += task['aslots'] if task['aslots'] else 0
-        if not task['processingtype'] in aslotsByType.keys():
-            aslotsByType[str(task['processingtype'])] = 0
-        aslotsByType[str(task['processingtype'])] += task['aslots'] if task['aslots'] else 0
 
-        if not task['status'] in neventsByTaskStatus.keys():
-            neventsByTaskStatus[str(task['status'])] = 0
-        neventsByTaskStatus[str(task['status'])] += task['nevents'] if task['nevents'] is not None else 0
+    # clean task list
+    task_list = clean_running_task_list(task_list)
 
-        if not task['priority'] in neventsByTaskPriority.keys():
-            neventsByTaskPriority[task['priority']] = 0
-        neventsByTaskPriority[task['priority']] += task['nevents'] if task['nevents'] is not None else 0
+    # produce required plots
+    plots_dict = prepare_plots(task_list, productiontype=productiontype)
 
-        if task['corecount'] == 1:
-            rjobs1coreTot += task['rjobs']
-        if task['corecount'] == 8:
-            rjobs8coreTot += task['rjobs']
-        task['age'] = round(
-            (datetime.now() - task['creationdate']).days + (datetime.now() - task['creationdate']).seconds / 3600. / 24,
-            1)
-        ages.append(task['age'])
-        if len(task['campaign'].split(':')) > 1:
-            task['cutcampaign'] = task['campaign'].split(':')[1]
-        else:
-            task['cutcampaign'] = task['campaign'].split(':')[0]
-        if 'reqid' in task and 'jeditaskid' in task and task['reqid'] == task['jeditaskid']:
-            task['reqid'] = None
-        if 'runnumber' in task:
-            task['inputdataset'] = task['runnumber']
-        else:
-            task['inputdataset'] = None
+    # get param summaries for select drop down menus
+    sumd = taskSummaryDict(request, task_list, ['status', 'workinggroup', 'cutcampaign', 'processingtype'])
 
-        if task['inputdataset'] and task['inputdataset'].startswith('00'):
-            task['inputdataset'] = task['inputdataset'][2:]
-        task['outputtypes'] = ''
+    # get global sum
+    gsum = {
+        'nevents': sum([t['nevents'] for t in task_list]),
+        'aslots': sum([t['aslots'] for t in task_list]),
+        'ntasks': len(task_list)
+    }
 
-        if 'outputdatasettype' in task:
-            outputtypes = task['outputdatasettype'].split(',')
-        else:
-            outputtypes = []
-        if len(outputtypes) > 0:
-            for outputtype in outputtypes:
-                task['outputtypes'] += outputtype.split('_')[1] + ' ' if '_' in outputtype else ''
-        if productiontype == 'MC':
-            if  task['simtype'] == 'AFII':
-                if not task['processingtype'] in neventsAFIItasksSum.keys():
-                    neventsAFIItasksSum[str(task['processingtype'])] = 0
-                neventsAFIItasksSum[str(task['processingtype'])] += task['nevents'] if task['nevents'] is not None else 0
-            elif task['simtype'] == 'FS':
-                if not task['processingtype'] in neventsFStasksSum.keys():
-                    neventsFStasksSum[str(task['processingtype'])] = 0
-                neventsFStasksSum[str(task['processingtype'])] += task['nevents'] if task['nevents'] is not None else 0
-        else:
-            if not task['processingtype'] in neventsByProcessingType.keys():
-                neventsByProcessingType[str(task['processingtype'])] = 0
-            neventsByProcessingType[str(task['processingtype'])] += task['nevents'] if task['nevents'] is not None else 0
-        if 'hashtags' in task and len(task['hashtags']) > 1:
-            task['hashtaglist'] = []
-            for hashtag in task['hashtags'].split(','):
-                task['hashtaglist'].append(hashtag)
-
-    neventsByStatus = {}
-    neventsByStatus['done'] = neventsUsedTotSum
-    neventsByStatus['running'] = neventsRunningTotSum
-    neventsByStatus['waiting'] = neventsToBeUsedTotSum - neventsRunningTotSum
-
-    plotageshistogram = 1
-    if sum(ages) == 0: plotageshistogram = 0
-    sumd = taskSummaryDict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
-
-    ### Putting list of tasks to cache separately for dataTables plugin
+    # putting list of tasks to cache separately for dataTables plugin
     transactionKey = random.randrange(100000000)
     setCacheEntry(request, transactionKey, json.dumps(task_list, cls=DateEncoder), 60 * 30, isData=True)
 
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    if is_json_request(request):
         if 'snap' in request.session['requestParams'] and len(request.session['requestParams']) == 2:
             snapdata = prepareNeventsByProcessingType(task_list)
             if saveNeventsByProcessingType(snapdata, qtime):
@@ -289,31 +199,17 @@ def runningProdTasks(request):
             'xurl': xurl,
             'nosorturl': nosorturl,
             'nohashtagurl': nohashtagurl,
-            'tasks': task_list,
-            'ntasks': ntasks,
             'sortby': sortby,
-            'ages': ages,
-            'slots': slots,
-            'aslots': aslots,
-            'aslotsByType' : aslotsByType,
-            'sumd': sumd,
-            'neventsUsedTotSum': round(neventsUsedTotSum / 1000000., 1),
-            'neventsTotSum': round(neventsTotSum / 1000000., 1),
-            'neventsWaitingTotSum': round((neventsToBeUsedTotSum - neventsRunningTotSum)/1000000., 1),
-            'neventsRunningTotSum': round(neventsRunningTotSum / 1000000., 1),
-            'rjobs1coreTot': rjobs1coreTot,
-            'rjobs8coreTot': rjobs8coreTot,
-            'neventsAFIItasksSum': neventsAFIItasksSum,
-            'neventsFStasksSum': neventsFStasksSum,
-            'neventsByProcessingType': neventsByProcessingType,
-            'neventsByTaskStatus': neventsByTaskStatus,
-            'neventsByTaskPriority': neventsByTaskPriority,
-            'neventsByStatus' : neventsByStatus,
-            'plotageshistogram': plotageshistogram,
-            'productiontype' : json.dumps(productiontype),
             'built': datetime.now().strftime("%H:%M:%S"),
             'transKey': transactionKey,
             'qtime': qtime,
+
+            'productiontype': json.dumps(productiontype),
+            # 'tasks': task_list,
+            # 'ntasks': ntasks,
+            'sumd': sumd,
+            'gsum': gsum,
+            'plots': plots_dict,
         }
         response = render_to_response('runningProdTasks.html', data, content_type='text/html')
         setCacheEntry(request, "runningProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -404,10 +300,17 @@ def prodNeventsTrend(request):
         newDict['values'] = sorted(newDict['values'], key=lambda k: k['timestamp'])
         plot_data.append(newDict)
 
+
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
 
-        dump = json.dumps(plot_data, cls=DateEncoder)
+        plot_data_list = [['timestamp'],]
+        plot_data_list[0].extend([point['timestamp'] for point in plot_data[0]['values']])
+        for i, line in enumerate(plot_data):
+            plot_data_list.append([line['state']])
+            plot_data_list[i+1].extend([point['nevents'] for point in plot_data[i]['values']])
+
+        dump = json.dumps(plot_data_list, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
         data = {

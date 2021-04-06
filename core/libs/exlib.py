@@ -1,9 +1,126 @@
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch
 import math, random, datetime
+import numpy as np
 from django.db import connection
 from dateutil.parser import parse
 from datetime import datetime
 from core.settings.local import dbaccess
+
+import core.constants as const
+
+
+def drop_duplicates(object_list, **kwargs):
+    """
+    Dropping duplicates base on ID. By default id = pandaid.
+    :param object_list: list of dicts
+    :param kwargs: id: name of id param
+    :return: unique_object_list: list of dicts
+    """
+    id_param = 'pandaid'
+    if 'id' in kwargs:
+        id_param = kwargs['id']
+
+    object_dict = {}
+    unique_object_list = []
+    for obj in object_list:
+        id = obj[id_param]
+        drop_flag = False
+        if id in object_dict:
+            # This is a duplicate. Drop it.
+            drop_flag = True
+        else:
+            object_dict[id] = 1
+        if not drop_flag:
+            unique_object_list.append(obj)
+
+    return unique_object_list
+
+
+def add_job_category(jobs):
+    """
+    Determine which category job belong to among: build, run or merge and add 'category' param to dict of a job
+    Need 'processingtype', 'eventservice' and 'transformation' params to make a decision
+    :param jobs: list of dicts
+    :return: jobs: list of updated dicts
+    """
+
+    for job in jobs:
+        if 'transformation' in job and 'build' in job['transformation']:
+            job['category'] = 'build'
+        elif 'processingtype' in job and job['processingtype'] == 'pmerge':
+            job['category'] = 'merge'
+        elif 'eventservice' in job and (job['eventservice'] == 2 or job['eventservice'] == 'esmerge'):
+            job['category'] = 'merge'
+        else:
+            job['category'] = 'run'
+
+    return jobs
+
+
+def job_states_count_by_param(jobs, **kwargs):
+    """
+    Counting jobs in different states and group by provided param
+    :param jobs:
+    :param kwargs:
+    :return:
+    """
+    param = 'category'
+    if 'param' in kwargs:
+        param = kwargs['param']
+
+    job_states_count_dict = {}
+    param_values = list(set([job[param] for job in jobs if param in job]))
+
+    if len(param_values) > 0:
+        for pv in param_values:
+            job_states_count_dict[pv] = {}
+            for state in const.JOB_STATES:
+                job_states_count_dict[pv][state] = 0
+
+    for job in jobs:
+        job_states_count_dict[job[param]][job['jobstatus']] += 1
+
+    job_summary_dict = {}
+    for pv, data in job_states_count_dict.items():
+        if pv not in job_summary_dict:
+            job_summary_dict[pv] = []
+
+            for state in const.JOB_STATES:
+                statecount = {
+                    'name': state,
+                    'count': job_states_count_dict[pv][state],
+                }
+                job_summary_dict[pv].append(statecount)
+
+    # dict -> list
+    job_summary_list = []
+    for key, val in job_summary_dict.items():
+        tmp_dict = {
+            'param': param,
+            'value': key,
+            'job_state_counts': val,
+        }
+        job_summary_list.append(tmp_dict)
+
+    return job_summary_list
+
+
+def getDataSetsForATask(taskid, type = None):
+    query = {
+        'jeditaskid': taskid
+    }
+    if type:
+        query['type']=type
+    ret = []
+    dsets = JediDatasets.objects.filter(**query).values()
+    for dset in dsets:
+        ret.append({
+            'datasetname': dset['datasetname'],
+            'type': dset['type']
+        })
+    return ret
+
+
 
 
 def fileList(jobs):
@@ -92,6 +209,53 @@ def fileList(jobs):
     return newjobs
 
 
+def get_file_info(job_list, **kwargs):
+    """
+    Enrich job_list dicts by file information. By default: filename (lfn) and size
+    :param job_list: list of dicts
+    :return: job_list
+    """
+    file_info = []
+    fquery = {}
+    if 'type' in kwargs and kwargs['type']:
+        fquery['type'] = kwargs['type']
+    is_archive = False
+    if 'is_archive' in kwargs and kwargs['is_archive']:
+        is_archive = kwargs['is_archive']
+    fvalues = ('pandaid', 'type', 'lfn', 'fsize')
+
+    pandaids = []
+    if len(job_list) > 0:
+        pandaids.extend([job['pandaid'] for job in job_list if 'pandaid' in job and job['pandaid']])
+
+    if len(pandaids) > 0:
+        tk = insert_to_temp_table(pandaids)
+        extra = "pandaid in (select ID from {} where TRANSACTIONKEY = {})".format(get_tmp_table_name(), tk)
+
+        file_info.extend(Filestable4.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
+
+        if is_archive:
+            file_info.extend(FilestableArch.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
+
+    file_info_dict = {}
+    if len(file_info) > 0:
+        for file in file_info:
+            if file['pandaid'] not in file_info_dict:
+                file_info_dict[file['pandaid']] = []
+            file_info_dict[file['pandaid']].append(file)
+
+        for job in job_list:
+            if job['pandaid'] in file_info_dict:
+                for file in file_info_dict[job['pandaid']]:
+                    if file['type'] + 'filename' not in job:
+                        job[file['type'] + 'filename'] = ''
+                        job[file['type'] + 'filesize'] = 0
+                    job[file['type'] + 'filename'] += file['lfn'] + ','
+                    job[file['type'] + 'filesize'] += file['fsize'] if isinstance(file['fsize'], int) else 0
+
+    return job_list
+
+
 def insert_to_temp_table(list_of_items, transactionKey = -1):
     """Inserting to temp table
     :param list_of_items
@@ -150,7 +314,6 @@ def get_event_status_summary(pandaids, eventservicestatelist):
         summary[evstat] = ev['COUNTSTAT']
 
     return summary
-
 
 
 def dictfetchall(cursor):
@@ -244,3 +407,116 @@ def lower_dicts_in_list(input_list):
     return output_list
 
 
+def get_job_queuetime(job):
+    """
+    :param job: dict of job params, starttime and creationtime is obligatory
+    :return: queuetime in seconds or None if not enough data provided
+    """
+    queueutime = None
+
+    if 'starttime' in job and job['starttime'] is not None:
+        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
+    else:
+        starttime = None
+    if 'creationtime' in job and job['creationtime'] is not None:
+        creationtime = parse_datetime(job['creationtime']) if not isinstance(job['creationtime'], datetime) else job['creationtime']
+    else:
+        creationtime = None
+
+    if starttime and creationtime:
+        queueutime = (starttime-creationtime).total_seconds()
+
+    return queueutime
+
+
+def convert_bytes(n_bytes, output_unit='MB'):
+    """
+    Convert bytes to KB, MB etc
+    :param n_bytes: int
+    :param output_unit: str
+    :return: output
+    """
+    output = 0
+    multipliers_dict = {
+        'KB': 1.0/1000,
+        'MB': 1.0/1000000,
+        'GB': 1.0/1000000000,
+        'TB': 1.0/1000000000000,
+        'KiB': 1.0/1024,
+        'MiB': 1.0/1024/1024,
+        'GiB': 1.0/1024/1024/1024,
+        'TiB': 1.0/1024/1024/1024/1024,
+    }
+    if output_unit in multipliers_dict.keys():
+        output = n_bytes*multipliers_dict[output_unit]
+
+    return output
+
+
+def convert_hs06(input, unit):
+    """
+    taking into account cputimeunit
+    :param cputime: int
+    :param unit: str
+    :return:
+    """
+    output = 0
+    multipliers_dict = {
+        'HS06sPerEvent': 1,
+        'mHS06sPerEvent': 1.0/1000,
+    }
+    if unit in multipliers_dict:
+        output = input * multipliers_dict[unit]
+
+    return output
+
+
+def split_into_intervals(input_data, **kwargs):
+    """
+    Split numeric values list into intervals for sumd
+    :param input_data: list
+    :return: output_data: list of dicts
+    """
+    N_BIN_MAX = 20
+    minstep = 1
+    if 'minstep' in kwargs and kwargs['minstep'] and isinstance(kwargs['minstep'], int):
+        minstep = kwargs['minstep']
+
+    output_data = []
+    data_dict = {}
+    if isinstance(input_data, list):
+        for v in input_data:
+            if v not in data_dict:
+                data_dict[v] = 0
+            data_dict[v] += 1
+
+    kys = list(data_dict.keys())
+
+    # find range bounds
+    rangebounds = []
+    if min(kys) == 0:
+        output_data.append({'kname': '0-0', 'kvalue': data_dict[0]})
+        dstep = minstep if (max(kys) - min(kys) + 1) / N_BIN_MAX < minstep else int(round_to_n((max(kys) - min(kys) + 1) / N_BIN_MAX, 1))
+        rangebounds.extend([lb for lb in range(min(kys) + 1, max(kys) + dstep, dstep)])
+    else:
+        dstep = minstep if (max(kys) - min(kys)) / N_BIN_MAX < minstep else int(round_to_n((max(kys) - min(kys)) / N_BIN_MAX, 1))
+        rangebounds.extend([lb - 1 for lb in range(min(kys), max(kys) + dstep, dstep)])
+    if len(rangebounds) == 1:
+        rangebounds.append(rangebounds[0] + dstep)
+
+    # split list into calculated ranges
+    bins, ranges = np.histogram(input_data, bins=rangebounds)
+    for i, bin in enumerate(bins):
+        if bin != 0:
+            output_data.append({'kname': str(ranges[i]) + '-' + str(ranges[i + 1]), 'kvalue': bin})
+
+    return output_data
+
+
+def round_to_n(x, n):
+    if not x:
+        return 0
+    power = - int(math.floor(math.log10(abs(x)))) + (n - 1)
+    factor = (10 ** power)
+
+    return round(x * factor) / factor

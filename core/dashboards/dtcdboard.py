@@ -10,7 +10,8 @@ from django.db import connection
 from django.utils.cache import patch_response_headers
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import dictfetchall
-from core.views import login_customrequired, initRequest, setupView, DateEncoder, setCacheData
+from core.auth.utils import login_customrequired
+from core.views import initRequest, setupView, DateEncoder, setCacheData
 from core.common.models import JediTasksOrdered
 from core.schedresource.models import Schedconfig
 from core.settings.local import dbaccess
@@ -18,6 +19,7 @@ import pandas as pd
 import numpy as np
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
+from core.schedresource.utils import getCRICSEs
 
 @never_cache
 @login_customrequired
@@ -115,6 +117,12 @@ def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
         data.append([time, count])
     return data
 
+def substitudeRSEbreakdown(rse):
+    rses = getCRICSEs().get(rse, [])
+    final_string = ""
+    for rse in rses:
+        final_string += "&var-src_endpoint=" + rse
+    return final_string
 
 @never_cache
 def getDTCSubmissionHist(request):
@@ -136,38 +144,47 @@ def getDTCSubmissionHist(request):
     for task, dsdata in staginData.items():
         epltime = None
         timelistSubmitted.append(dsdata['start_time'])
+        source_rse_breakdown = substitudeRSEbreakdown(dsdata['source_rse'])
+        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0,
+                                                             "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0,
+                                                             "files_done":0, "source_rse_breakdown": source_rse_breakdown})
 
-        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0, "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0, "files_done":0})
+        if dsdata['occurence'] == 1:
+            dictSE["files_done"] += dsdata['staged_files']
+            dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
 
-        dictSE["files_done"] += dsdata['staged_files']
-        dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
+            # Build the summary by SEs and create lists for histograms
+            if dsdata['end_time'] != None:
+                dictSE["ds_done"]+=1
+                epltime = dsdata['end_time'] - dsdata['start_time']
+                timelistIntervalfin.append(epltime)
 
-        # Build the summary by SEs and create lists for histograms
-        if dsdata['end_time'] != None:
-            dictSE["ds_done"]+=1
-            epltime = dsdata['end_time'] - dsdata['start_time']
-            timelistIntervalfin.append(epltime)
-
-        elif dsdata['status'] != 'queued':
-            epltime = timezone.now() - dsdata['start_time']
-            timelistIntervalact.append(epltime)
-            dictSE["ds_active"]+=1
-            if dsdata['staged_files'] >= dsdata['total_files']*0.9:
-                dictSE["ds_90pdone"] += 1
-        elif dsdata['status'] == 'queued':
-            dictSE["ds_queued"] += 1
-            dictSE["files_q"] += (dsdata['total_files'] - dsdata['staged_files'])
-            epltime = timezone.now() - dsdata['start_time']
-            timelistIntervalqueued.append(epltime)
+            elif dsdata['status'] != 'queued':
+                epltime = timezone.now() - dsdata['start_time']
+                timelistIntervalact.append(epltime)
+                dictSE["ds_active"]+=1
+                if dsdata['staged_files'] >= dsdata['total_files']*0.9:
+                    dictSE["ds_90pdone"] += 1
+            elif dsdata['status'] == 'queued':
+                dictSE["ds_queued"] += 1
+                dictSE["files_q"] += (dsdata['total_files'] - dsdata['staged_files'])
+                epltime = timezone.now() - dsdata['start_time']
+                timelistIntervalqueued.append(epltime)
 
         progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
 
         summarytableDict[dsdata['source_rse']] = dictSE
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
-        detailsTable.append({'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'], 'status': dsdata['status'], 'total_files': dsdata['total_files'],
-                             'staged_files': dsdata['staged_files'], 'progress': int(round(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
-                             'source_rse': dsdata['source_rse'], 'elapsedtime': epltime, 'start_time': dsdata['start_time'], 'rse': dsdata['rse']})
+        detailsTable.append({'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'],
+                             'status': dsdata['status'], 'total_files': dsdata['total_files'],
+                             'staged_files': dsdata['staged_files'],
+                             'progress':
+                                 int(round(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
+                             'source_rse': dsdata['source_rse'], 'elapsedtime': epltime,
+                             'start_time': dsdata['start_time'], 'rse': dsdata['rse'], 'update_time':
+                                 dsdata['update_time'], 'update_time_sort': dsdata['update_time_sort'],
+                             'processingtype': dsdata['processingtype']})
 
     #For uniquiness
     selectSource = list({v['name']: v for v in selectSource}.values())
@@ -222,14 +239,11 @@ def getDTCSubmissionHist(request):
     finalvalue["selecttime"] = selectTime
     finalvalue["selectcampaign"] = selectCampaign
     finalvalue["detailstable"] = detailsTable
-
-
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
 
 
 def getStagingData(request):
-
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
     timewindow = query['modificationtime__castdate__range']
 
@@ -288,10 +302,11 @@ def getStagingData(request):
 
     new_cur.execute(
         """
-                SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE, t1.TOTAL_FILES, 
-                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID FROM ATLAS_DEFT.T_DATASET_STAGING t1
+                SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
+                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence, (CURRENT_TIMESTAMP-t1.UPDATE_TIME) as UPDATE_TIME, t4.processingtype FROM ATLAS_DEFT.T_DATASET_STAGING t1
                 INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
-                INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID %s 
+                INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
+                INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID %s 
         """ % selection
     )
     datasets = dictfetchall(new_cur)
@@ -299,5 +314,11 @@ def getStagingData(request):
         # Sort out requests by request on February 19, 2020
         if dataset['STATUS'] in ('staging', 'queued', 'done'):
             dataset = {k.lower(): v for k, v in dataset.items()}
+
+            if dataset.get('update_time'):
+                dataset['update_time_sort'] = int(dataset['update_time'].total_seconds())
+            else:
+                dataset['update_time_sort'] = None
+
             data[dataset['taskid']] = dataset
     return data

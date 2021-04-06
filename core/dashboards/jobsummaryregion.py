@@ -1,191 +1,104 @@
 """
 
 """
-import json
 import logging
-import urllib3
 import copy
 from datetime import datetime, timedelta
 
-from django.shortcuts import render_to_response
-from django.utils.cache import patch_response_headers
 from django.db import connection
 from django.db.models import Q, Count, Sum
-from django.core.cache import cache
 
-from core.libs.cache import getCacheEntry, setCacheEntry
-from core.views import login_customrequired, initRequest, setupView, DateEncoder
-from core.views import statelist as job_states_order
-
-from core.schedresource.models import SchedconfigJson
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.models import PandaJob
 
+from core.schedresource.utils import get_panda_queues
+
 from core.settings.local import defaultDatetimeFormat
+import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
 
 
-@login_customrequired
-def dashboard(request):
+def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
     """
-    A new job summary dashboard for regions that allows to split jobs in Grand Unified Queue
-    by analy|prod and resource types
-    Regions column order:
-        region, status, job type, resource type, Njobstotal, [Njobs by status]
-    Queues column order:
-        queue name, type [GU, U, Simple], region, status, job type, resource type, Njobstotal, [Njobs by status]
-    :param request: request
-    :return: HTTP response
+    Convert dict of region job summary to list
+    :param jsr_queues_dict: dict of region job summary
+    :param jsr_regions_dict: dict of queue job summary
+    :return: list of region job summary, list of queue job summary
     """
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    # Here we try to get cached data
-    data = getCacheEntry(request, "JobSummaryRegion")
-    data = None
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-
-    if 'splitby' in request.session['requestParams'] and request.session['requestParams']['splitby']:
-        split_by = request.session['requestParams']['splitby']
-    else:
-        split_by = None
-
-    if 'hours' in request.session['requestParams'] and request.session['requestParams']['hours']:
-        hours = int(request.session['requestParams']['hours'])
-    else:
-        hours = 12
-
-    jquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='job', wildCardExt=True)
-
-    # add queue related request params to query dict
-    if 'queuetype' in request.session['requestParams'] and request.session['requestParams']['queuetype']:
-        jquery['queuetype'] = request.session['requestParams']['queuetype']
-    if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
-        jquery['queuestatus'] = request.session['requestParams']['queuestatus']
-
-    # get job summary data
-    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery, job_states_order, extra=wildCardExtension)
-
-    # transform dict to list and filter out rows depending on split by request param
+    split_by = None
+    if 'split_by' in kwargs and kwargs['split_by']:
+        split_by = kwargs['split_by']
     jsr_queues_list = []
     jsr_regions_list = []
     for pq, params in jsr_queues_dict.items():
         for jt, resourcetypes in params['summary'].items():
             for rt, summary in resourcetypes.items():
-                if sum([v for k, v in summary.items() if k in job_states_order]) > 0:  # filter out rows with 0 jobs
-                    row = list()
-                    row.append(pq)
-                    row.append(params['pq_params']['pqtype'])
-                    row.append(params['pq_params']['region'])
-                    row.append(params['pq_params']['status'])
-                    row.append(jt)
-                    row.append(rt)
-                    row.append(summary['nwsubmitted'])
-                    row.append(summary['nwrunning'])
-                    row.append(summary['rcores'])
-                    row.append(sum([v for k, v in summary.items() if k in job_states_order]))
-                    if summary['failed'] + summary['finished'] > 0:
-                        row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
-                    else:
-                        row.append(0)
-                    for js in job_states_order:
-                        row.append(summary[js])
+                row = list()
+                row.append(pq)
+                row.append(params['pq_params']['pqtype'])
+                row.append(params['pq_params']['region'])
+                row.append(params['pq_params']['status'])
+                row.append(jt)
+                row.append(rt)
+                row.append(summary['nwsubmitted'])
+                row.append(summary['nwrunning'])
+                row.append(summary['rcores'])
+                row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
+                if summary['failed'] + summary['finished'] > 0:
+                    row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
+                else:
+                    row.append(0)
+                for js in const.JOB_STATES:
+                    row.append(summary[js])
 
-                    if split_by is None:
-                        if jt == 'all' and rt == 'all':
-                            jsr_queues_list.append(row)
-                    elif 'jobtype' in split_by and 'resourcetype' in split_by:
-                        if jt != 'all' and rt != 'all':
-                            jsr_queues_list.append(row)
-                    elif 'jobtype' in split_by and 'resourcetype' not in split_by:
-                        if jt != 'all' and rt == 'all':
-                            jsr_queues_list.append(row)
-                    elif 'jobtype' not in split_by and 'resourcetype' in split_by:
-                        if jt == 'all' and rt != 'all':
-                            jsr_queues_list.append(row)
+                if split_by is None:
+                    if jt == 'all' and rt == 'all':
+                        jsr_queues_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' in split_by:
+                    if jt != 'all' and rt != 'all':
+                        jsr_queues_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' not in split_by:
+                    if jt != 'all' and rt == 'all':
+                        jsr_queues_list.append(row)
+                elif 'jobtype' not in split_by and 'resourcetype' in split_by:
+                    if jt == 'all' and rt != 'all':
+                        jsr_queues_list.append(row)
 
     for reg, jobtypes in jsr_regions_dict.items():
         for jt, resourcetypes in jobtypes.items():
             for rt, summary in resourcetypes.items():
-                if sum([v for k, v in summary.items() if k in job_states_order]) > 0:  # filter out rows with 0 jobs
-                    row = list()
-                    row.append(reg)
-                    row.append(jt)
-                    row.append(rt)
-                    row.append(summary['nwsubmitted'])
-                    row.append(summary['nwrunning'])
-                    row.append(summary['rcores'])
-                    row.append(sum([v for k, v in summary.items() if k in job_states_order]))
-                    if summary['failed'] + summary['finished'] > 0:
-                        row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
-                    else:
-                        row.append(0)
-                    for js in job_states_order:
-                        row.append(summary[js])
+                row = list()
+                row.append(reg)
+                row.append(jt)
+                row.append(rt)
+                row.append(summary['nwsubmitted'])
+                row.append(summary['nwrunning'])
+                row.append(summary['rcores'])
+                row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
+                if summary['failed'] + summary['finished'] > 0:
+                    row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
+                else:
+                    row.append(0)
+                for js in const.JOB_STATES:
+                    row.append(summary[js])
 
-                    if split_by is None:
-                        if jt == 'all' and rt == 'all':
-                            jsr_regions_list.append(row)
-                    elif 'jobtype' in split_by and 'resourcetype' in split_by:
-                        if jt != 'all' and rt != 'all':
-                            jsr_regions_list.append(row)
-                    elif 'jobtype' in split_by and 'resourcetype' not in split_by:
-                        if jt != 'all' and rt == 'all':
-                            jsr_regions_list.append(row)
-                    elif 'jobtype' not in split_by and 'resourcetype' in split_by:
-                        if jt == 'all' and rt != 'all':
-                            jsr_regions_list.append(row)
-
-    select_params_dict = {}
-    select_params_dict['region'] = sorted(list(set([r[0] for r in jsr_regions_list])))
-    select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
-    select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
-
-    xurl = request.get_full_path()
-    if xurl.find('?') > 0:
-        xurl += '&'
-    else:
-        xurl += '?'
-
-    # overwrite view selection params
-    view_params_str = '<b>Manually entered params</b>: '
-    supported_params = {f.verbose_name: '' for f in PandaJob._meta.get_fields()}
-    interactive_params = ['hours', 'days', 'date_from', 'date_to', 'timestamp',
-                        'queuetype', 'queuestatus', 'jobtype', 'resourcetype', 'splitby', 'region']
-    for pn, pv in request.session['requestParams'].items():
-        if pn not in interactive_params and pn in supported_params:
-            view_params_str += '<b>{}=</b>{} '.format(str(pn), str(pv))
-    request.session['viewParams']['selection'] = view_params_str if not view_params_str.endswith(': ') else ''
-
-    data = {
-        'request': request,
-        'viewParams': request.session['viewParams'],
-        'requestParams': request.session['requestParams'],
-        'built': datetime.now().strftime("%H:%M:%S"),
-        'hours': hours,
-        'xurl': xurl,
-        'selectParams': select_params_dict,
-        'jobstates': job_states_order,
-        'regions': jsr_regions_list,
-        'queues': jsr_queues_list,
-        'timerange': jquery['modificationtime__castdate__range'],
-        'show': 'all',
-    }
-
-    response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
-    setCacheEntry(request, "JobSummaryRegion", json.dumps(data, cls=DateEncoder), 60 * 20)
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
+                if split_by is None:
+                    if jt == 'all' and rt == 'all':
+                        jsr_regions_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' in split_by:
+                    if jt != 'all' and rt != 'all':
+                        jsr_regions_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' not in split_by:
+                    if jt != 'all' and rt == 'all':
+                        jsr_regions_list.append(row)
+                elif 'jobtype' not in split_by and 'resourcetype' in split_by:
+                    if jt == 'all' and rt != 'all':
+                        jsr_regions_list.append(row)
+    return jsr_queues_list, jsr_regions_list
 
 
-def get_job_summary_region(query, job_states_order, extra='(1=1)'):
+def get_job_summary_region(query, **kwargs):
     """
     :param query: dict of query params for jobs retrieving
     :return: dict of groupings
@@ -193,71 +106,78 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
     jsr_queues_dict = {}
     jsr_regions_dict = {}
 
-    job_types = ['analy', 'prod', 'test']
+    job_types = ['analy', 'prod']
     resource_types = ['SCORE', 'MCORE', 'SCORE_HIMEM', 'MCORE_HIMEM']
     worker_metrics = ['nwrunning', 'nwsubmitted']
     extra_metrics = copy.deepcopy(worker_metrics)
     extra_metrics.append('rcores')
 
-    # get info from CRIC
-    try:
-        panda_queues_dict = get_CRIC_panda_queues()
-    except:
-        panda_queues_dict = None
-        _logger.error("[JSR] cannot get json from CRIC")
-
-    if not panda_queues_dict:
-        # get data from new SCHEDCONFIGJSON table
-        panda_queues_list = []
-        panda_queues_dict = {}
-        panda_queues_list.extend(SchedconfigJson.objects.values())
-        if len(panda_queues_list) > 0:
-            for pq in panda_queues_list:
-                try:
-                    panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
-                except:
-                    panda_queues_dict[pq['pandaqueue']] = None
-                    _logger.error("[JSR] cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
+    # get PQ info
+    panda_queues_dict = get_panda_queues()
 
     regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
 
+    if 'extra' in kwargs and len(kwargs['extra']) > 1:
+        extra = kwargs['extra']
+    else:
+        extra = '(1=1)'
+    if 'region' in kwargs and kwargs['region'] != 'all':
+        region = kwargs['region']
+        regions_list = [region]
+    else:
+        region = 'all'
+    if 'jobtype' in kwargs and kwargs['jobtype'] != 'all':
+        jobtype = kwargs['jobtype']
+        job_types = [kwargs['jobtype']]
+    else:
+        jobtype = 'all'
+    if 'resourcetype' in kwargs and kwargs['resourcetype'] != 'all':
+        resourcetype = kwargs['jobtype']
+        resource_types = [kwargs['resourcetype']]
+    else:
+        resourcetype = 'all'
+
     # filter out queues by queue related selection params
     pq_to_remove = []
+    if jobtype != 'all':
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if not is_jobtype_match_queue(jobtype, params)])
+    if region != 'all':
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['cloud'] != region])
     if 'queuestatus' in query:
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['status'] != query['queuestatus']])
     if 'queuetype' in query:
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['type'] != query['queuetype']])
+    if 'queuegocname' in query:
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['gocname'] != query['queuegocname']])
+        regions_list = list(set(regions_list).intersection([params['cloud'] for pqn, params in panda_queues_dict.items() if params['gocname'] == query['queuegocname']]))
     if len(pq_to_remove) > 0:
         for pqr in list(set(pq_to_remove)):
             del panda_queues_dict[pqr]
 
     # create template structure for grouping by queue
     for pqn, params in panda_queues_dict.items():
-        jsr_queues_dict[pqn] = {'pq_params': {}, 'summary': {}}
+        jsr_queues_dict[pqn] = {'pq_params': {}, 'summary': {'all': {'all': {}}}}
         jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type']
         jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud']
         jsr_queues_dict[pqn]['pq_params']['status'] = params['status']
         for jt in job_types:
-            jsr_queues_dict[pqn]['summary'][jt] = {}
-            jsr_queues_dict[pqn]['summary']['all'] = {}
-            for rt in resource_types:
-                jsr_queues_dict[pqn]['summary'][jt][rt] = {}
-                jsr_queues_dict[pqn]['summary'][jt]['all'] = {}
-                jsr_queues_dict[pqn]['summary']['all'][rt] = {}
-                jsr_queues_dict[pqn]['summary']['all']['all'] = {}
-                for js in job_states_order:
-                    jsr_queues_dict[pqn]['summary'][jt][rt][js] = 0
-                    jsr_queues_dict[pqn]['summary'][jt]['all'][js] = 0
-                    jsr_queues_dict[pqn]['summary']['all'][rt][js] = 0
-                    jsr_queues_dict[pqn]['summary']['all']['all'][js] = 0
+            if is_jobtype_match_queue(jt, params):
+                jsr_queues_dict[pqn]['summary'][jt] = {}
+                for rt in resource_types:
+                    jsr_queues_dict[pqn]['summary'][jt][rt] = {}
+                    jsr_queues_dict[pqn]['summary'][jt]['all'] = {}
+                    jsr_queues_dict[pqn]['summary']['all'][rt] = {}
+                    for js in const.JOB_STATES:
+                        jsr_queues_dict[pqn]['summary'][jt][rt][js] = 0
+                        jsr_queues_dict[pqn]['summary'][jt]['all'][js] = 0
+                        jsr_queues_dict[pqn]['summary']['all'][rt][js] = 0
+                        jsr_queues_dict[pqn]['summary']['all']['all'][js] = 0
 
-                for em in extra_metrics:
-                    jsr_queues_dict[pqn]['summary'][jt][rt][em] = 0
-                    jsr_queues_dict[pqn]['summary'][jt]['all'][em] = 0
-                    jsr_queues_dict[pqn]['summary']['all'][rt][em] = 0
-                    jsr_queues_dict[pqn]['summary']['all']['all'][em] = 0
-
-
+                    for em in extra_metrics:
+                        jsr_queues_dict[pqn]['summary'][jt][rt][em] = 0
+                        jsr_queues_dict[pqn]['summary'][jt]['all'][em] = 0
+                        jsr_queues_dict[pqn]['summary']['all'][rt][em] = 0
+                        jsr_queues_dict[pqn]['summary']['all']['all'][em] = 0
 
     # create template structure for grouping by region
     for r in regions_list:
@@ -270,7 +190,7 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
                 jsr_regions_dict[r][jt]['all'] = {}
                 jsr_regions_dict[r]['all'][rt] = {}
                 jsr_regions_dict[r]['all']['all'] = {}
-                for js in job_states_order:
+                for js in const.JOB_STATES:
                     jsr_regions_dict[r][jt][rt][js] = 0
                     jsr_regions_dict[r][jt]['all'][js] = 0
                     jsr_regions_dict[r]['all'][rt][js] = 0
@@ -293,7 +213,7 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
 
     # fill template with real values of job states counts
     for row in jsq:
-        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in job_types and row['resourcetype'] in resource_types and row['jobstatus'] in job_states_order and 'count' in row:
+        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in jsr_queues_dict[row['computingsite']]['summary'] and row['resourcetype'] in resource_types and row['jobstatus'] in const.JOB_STATES and 'count' in row:
             jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_queues_dict[row['computingsite']]['summary']['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
@@ -318,7 +238,7 @@ def get_job_summary_region(query, job_states_order, extra='(1=1)'):
 
     # fill template with real values of n workers stats
     for row in wsq:
-        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in job_types and row['resourcetype'] in resource_types:
+        if row['computingsite'] in jsr_queues_dict and row['jobtype'] in jsr_queues_dict[row['computingsite']]['summary'] and row['resourcetype'] in resource_types:
             for wm in worker_metrics:
                 jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']][row['resourcetype']][wm] += int(row[wm])
                 jsr_queues_dict[row['computingsite']]['summary']['all'][row['resourcetype']][wm] += int(row[wm])
@@ -346,45 +266,54 @@ def get_job_summary_split(query, extra):
             extra_str += "))"
         elif '__icontains' in qn or '__contains' in qn and qn.replace('__icontains', '').replace('__contains', '') in fields:
             extra_str += " and (" + fields[qn.replace('__icontains', '').replace('__contains', '')] + " LIKE '%%" + qvs + "%%')"
+        elif '__startswith' in qn and qn.replace('__startswith', '') in fields:
+            extra_str += " and (" + fields[qn.replace('__startswith', '')] + " LIKE '" + qvs + "%%')"
+        elif '__endswith' in qn and qn.replace('__endswith', '') in fields:
+            extra_str += " and (" + fields[qn.replace('__endswith', '')] + " LIKE '%%" + qvs + "')"
         elif qn in fields:
             extra_str += " and (" + fields[qn] + "= '" + qvs + "' )"
 
     # get jobs groupings, the jobsactive4 table can keep failed analysis jobs for up to 7 days, so splitting the query
     query_raw = """
-        select computingsite, resource_type as resourcetype, prodsourcelabel, jobstatus, 
+        select computingsite, resource_type as resourcetype, prodsourcelabel, transform, jobstatus, 
             count(pandaid) as count, sum(rcores) as rcores, round(sum(walltime)) as walltime
         from  (
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
-            case when jobstatus in ('finished', 'failed') then (ja4.endtime-ja4.starttime)*60*60*24 else 0 end as walltime
+            case when jobstatus in ('finished', 'failed') then (ja4.endtime-ja4.starttime)*60*60*24 else 0 end as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
-        case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime
+            case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.jobsactive4 jav4 where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and 
             jobstatus in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
-        case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime
+            case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
-        select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime
+        select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.jobswaiting4 jw4 where {1}
         union
-        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime
+        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from ATLAS_PANDA.jobsdefined4 jd4  where {1}
         )
-        GROUP BY computingsite, prodsourcelabel, resource_type, jobstatus
-        order by computingsite, prodsourcelabel, resource_type, jobstatus
+        GROUP BY computingsite, prodsourcelabel, transform, resource_type, jobstatus
+        order by computingsite, prodsourcelabel, transform, resource_type, jobstatus
     """.format(query['modificationtime__castdate__range'][0], extra_str)
 
     cur = connection.cursor()
     cur.execute(query_raw)
     job_summary_tuple = cur.fetchall()
-    job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'jobstatus', 'count', 'rcores', 'walltime']
+    job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'transform', 'jobstatus', 'count', 'rcores', 'walltime']
     summary = [dict(zip(job_summary_header, row)) for row in job_summary_tuple]
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
-    summary = prodsourcelabel_to_jobtype(summary)
+    summary = identify_jobtype(summary)
 
     return summary
 
@@ -417,50 +346,131 @@ def get_workers_summary_split(query, **kwargs):
         worker_summary = HarvesterWorkerStats.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
-    worker_summary = prodsourcelabel_to_jobtype(worker_summary, field_name='jobtype')
+    worker_summary = identify_jobtype(worker_summary, field_name='jobtype')
 
     return list(worker_summary)
 
 
-def get_CRIC_panda_queues():
-    """Get PanDA queues config from CRIC"""
-    panda_queues_dict = cache.get('pandaQueues')
-    if not panda_queues_dict:
-        panda_queues_dict = {}
-        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
-        http = urllib3.PoolManager()
-        data = {}
-        try:
-            r = http.request('GET', url)
-            data = json.loads(r.data.decode('utf-8'))
-            for pq, params in data.items():
-                if 'vo_name' in params and params['vo_name'] == 'atlas':
-                    panda_queues_dict[pq] = params
-        except Exception as exc:
-            print (exc)
-
-        cache.set('pandaQueues', panda_queues_dict, 3600)
-
-    return panda_queues_dict
-
-
-def prodsourcelabel_to_jobtype(list_of_dict, field_name='prodsourcelabel'):
-    """Translate prodsourcelabel values to descriptive analy|prod job types"""
+def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
+    """
+    Translate prodsourcelabel values to descriptive analy|prod job types
+    The base param is prodsourcelabel, but to identify which HC test template a job belong to we need transformation.
+    If transformation ends with '.py' - prod, if it is PanDA server URL - analy.
+    Using this as complementary info to make a decision.
+    """
 
     psl_to_jt = {
         'panda': 'analy',
         'user': 'analy',
         'managed': 'prod',
-        'prod_test': 'test',
-        'ptest': 'test',
-        'install': 'test',
-        'rc_alrb': 'test',
-        'rc_test2': 'test',
+        'prod_test': 'prod',
+        'ptest': 'prod',
+        'rc_alrb': 'analy',
+        'rc_test2': 'analy',
     }
+
+    trsfrm_to_jt = {
+        'run': 'analy',
+        'py': 'prod',
+    }
+
     new_list_of_dict = []
     for row in list_of_dict:
         if field_name in row and row[field_name] in psl_to_jt.keys():
             row['jobtype'] = psl_to_jt[row[field_name]]
+            if 'transform' in row and row['transform'] in trsfrm_to_jt and row[field_name] in ('rc_alrb', 'rc_test2'):
+                row['jobtype'] = trsfrm_to_jt[row['transform']]
             new_list_of_dict.append(row)
 
     return new_list_of_dict
+
+
+def prettify_json_output(jsr_queues_dict, jsr_regions_dict, **kwargs):
+    """
+    Remove queues|regions with 0 jobs, add links to jobs page if requested
+    :param jsr_queues_dict:
+    :param jsr_regions_dict:
+    :return:
+    """
+    region_summary = {}
+    queue_summary = {}
+
+    is_add_link = False
+    if 'extra' in kwargs and 'links' in kwargs['extra'] and kwargs['extra']['links'] is True:
+        is_add_link = True
+    if 'hours' in kwargs:
+        hours = kwargs['hours']
+    else:
+        hours = 12
+
+    base_url = 'https://bigpanda.cern.ch'
+    jobs_path = '/jobs/?hours=' + str(hours)
+
+    for rn, rdict in jsr_regions_dict.items():
+        for jt, jtdict in rdict.items():
+            for rt, rtdict in jtdict.items():
+                if sum([rtdict[js] for js in const.JOB_STATES if js in rtdict]) > 0:
+                    if rn not in region_summary:
+                        region_summary[rn] = {}
+                    if jt not in region_summary[rn]:
+                        region_summary[rn][jt] = {}
+                    if rt not in region_summary[rn][jt]:
+                        region_summary[rn][jt][rt] = []
+                    for js in const.JOB_STATES:
+                        temp_dict = {
+                            'jobstatus': js,
+                            'count': rtdict[js]
+                        }
+                        if is_add_link:
+                            temp_dict['job_link'] = base_url + jobs_path + '&region=' + rn + '&jobstatus=' + js
+                            if jt != 'all':
+                                temp_dict['job_link'] += '&jobtype=' + jt
+                            if rt != 'all':
+                                temp_dict['job_link'] += '&resourcetype=' + rt
+                        region_summary[rn][jt][rt].append(temp_dict)
+
+    for qn, qdict in jsr_queues_dict.items():
+        for jt, jtdict in qdict['summary'].items():
+            for rt, rtdict in jtdict.items():
+                if sum([rtdict[js] for js in const.JOB_STATES if js in rtdict]) > 0:
+                    if qn not in queue_summary:
+                        queue_summary[qn] = qdict['pq_params']
+                        queue_summary[qn]['job_summary'] = {}
+                    if jt not in queue_summary[qn]['job_summary']:
+                        queue_summary[qn]['job_summary'][jt] = {}
+                    if rt not in queue_summary[qn]['job_summary'][jt]:
+                        queue_summary[qn]['job_summary'][jt][rt] = []
+                    for js in const.JOB_STATES:
+                        temp_dict = {
+                            'jobstatus': js,
+                            'count': rtdict[js]
+                        }
+                        if is_add_link:
+                            temp_dict['job_link'] = base_url + jobs_path + '&computingsite=' + qn + '&jobstatus=' + js
+                            if jt != 'all':
+                                temp_dict['job_link'] += '&jobtype=' + jt
+                            if rt != 'all':
+                                temp_dict['job_link'] += '&resourcetype=' + rt
+                        queue_summary[qn]['job_summary'][jt][rt].append(temp_dict)
+
+    return queue_summary, region_summary
+
+
+def is_jobtype_match_queue(jobtype, pq_dict):
+    """
+    Check if analy/prod job can be run in a PanDA queue
+    :param jobtype: str: analy or prod
+    :param pq_dict: dict: PQ info
+    :return: bool
+    """
+    pq_type = pq_dict['type'] if 'type' in pq_dict else 'unified'
+    pq_jt_matrix = {
+        'unified': ('prod', 'analy'),
+        'production': ('prod',),
+        'analysis': ('analy',),
+        'special': ('prod',),
+    }
+    if pq_type in pq_jt_matrix and jobtype in pq_jt_matrix[pq_type]:
+        return True
+
+    return False

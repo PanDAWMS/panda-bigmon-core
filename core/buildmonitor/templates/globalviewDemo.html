@@ -41,6 +41,7 @@
                 <th>ART<BR>LOCAL</th>
                 <th>ART<BR>GRID</th>
                 <th>CVMFS<BR>(on client)</th>
+                <th>IMAGE<BR>(developing)</th>
                 <th>ORDER string</th>
      </thead>
      <tbody></tbody>
@@ -55,14 +56,14 @@
 var json=JSON.stringify({{ reslt3 | safe }});
 
 var globaldisplayTable = $('#firstGlobalExample').dataTable({
-"order": [[9, 'asc']],
+"order": [[10, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "data": JSON.parse(json),
 
 "columnDefs": [
        {
-                "targets": [ 9 ],
+                "targets": [ 10 ],
                 "visible": false,
                 "searchable": false
        }],
@@ -72,10 +73,11 @@ var globaldisplayTable = $('#firstGlobalExample').dataTable({
                  if ( v4 > 6 ) { $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( /\s/.test(v4) )  { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
-                 else { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( ! /\D/.test(v4) ) { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
                  if ( v5 > 0 && v5 <= 5 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v5 > 5 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v5 != 'N/A' )  { $('td:eq(5)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( ! /\D/.test(v5) )  { $('td:eq(5)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(5)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 
 /*
