@@ -33,7 +33,7 @@ def get_job_list(query, **kwargs):
         'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid',
         'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite',
         'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr',
-        'processingtype', 'transformation', 'creationtime'
+        'processingtype', 'transformation', 'creationtime', 'diskio'
     ]
     if 'values' in kwargs:
         values.extend(kwargs['values'])
@@ -78,6 +78,7 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
     """
     metrics_dict = {
         'maxpss_per_actualcorecount': {'total': [], 'group_by': {}, 'agg': 'median'},
+        'diskio': {'total': [], 'group_by': {}, 'agg': 'median'},
         'walltime': {'total': [], 'group_by': {}, 'agg': 'median'},
         'queuetime': {'total': [], 'group_by': {}, 'agg': 'median'},
         'failed': {'total': [], 'group_by': {}, 'agg': 'average'},
@@ -98,6 +99,8 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
                 if 'maxpss' in job and job['maxpss'] and isinstance(job['maxpss'], int) and (
                         'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
                     job['maxpss_per_actualcorecount'] = convert_bytes(1.0*job['maxpss']/job['actualcorecount'], output_unit='MB')
+
+                job['diskio'] = job['diskio'] if 'diskio' in job and job['diskio'] is not None else 0
 
                 job['walltime'] = get_job_walltime(job)
                 job['queuetime'] = get_job_queuetime(job)

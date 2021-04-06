@@ -431,13 +431,31 @@ class PandaJobArch(models.Model):
         abstract = True
 
 
+class Jobsarchived_y2014(PandaJobArch):
+    class Meta:
+        db_table = u'y2015_jobsarchived'
+        app_label = 'pandaarch'
+
+
 class Jobsarchived_y2015(PandaJobArch):
     class Meta:
         db_table = u'"atlas_pandaarch"."y2015_jobsarchived"'
         app_label = 'pandaarch'
 
 
-class Jobsarchived_y2014(PandaJobArch):
+class Jobsarchived_y2016(PandaJobArch):
     class Meta:
-        db_table = u'y2015_jobsarchived'
-        app_label = 'pandaarch'
+        db_table = u'"atlas_pandaarch"."y2016_jobsarchived"'
+        # app_label = 'pandaarch'
+
+
+class Jobsarchived_y2017(PandaJobArch):
+    class Meta:
+        db_table = u'"atlas_pandaarch"."y2017_jobsarchived"'
+        # app_label = 'pandaarch'
+
+
+class Jobsarchived_y2018(PandaJobArch):
+    class Meta:
+        db_table = u'"atlas_pandaarch"."y2018_jobsarchived"'
+        # app_label = 'pandaarch'
