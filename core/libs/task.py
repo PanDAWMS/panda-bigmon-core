@@ -16,6 +16,10 @@ from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp
 from core.pandajob.utils import get_pandajob_models_by_year
 
 import core.constants as const
+
+from core.libs.elasticsearch import create_esatlas_connection
+from elasticsearch_dsl import Search
+
 from core.settings.local import defaultDatetimeFormat
 
 _logger = logging.getLogger('bigpandamon')
@@ -515,7 +519,7 @@ def build_stack_histogram(data_raw, **kwargs):
 
 def event_summary_for_task(mode, query, **kwargs):
     """
-    Event summary for a ES task.
+    Event summary for a task.
     If drop mode, we need a transaction key (tk_dj) to except job retries. If it is not provided we do it here.
     :param mode: str (drop or nodrop)
     :param query: dict
@@ -530,11 +534,14 @@ def event_summary_for_task(mode, query, **kwargs):
         extra = '(1=1)'
         extra, tk_dj = insert_dropped_jobs_to_tmp_table(query, extra)
 
-    eventservicestatelist = list(copy.deepcopy(const.EVENT_STATES))
+    eventservicestatelist = [
+        'ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal', 'merged',
+        'corrupted'
+    ]
     eventslist = []
     essummary = dict((key, 0) for key in eventservicestatelist)
 
-    _logger.info('getting events states summary')
+    print ('getting events states summary')
     if mode == 'drop':
         jeditaskid = query['jeditaskid']
         # explicit time window for better searching over partitioned JOBSARCHIVED
@@ -579,10 +586,10 @@ def event_summary_for_task(mode, query, **kwargs):
         new_cur.execute(equerystr, {'tid': jeditaskid, 'tkdj': tk_dj})
 
         evtable = dictfetchall(new_cur)
+
         for ev in evtable:
             essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
-
-    elif mode == 'nodrop':
+    if mode == 'nodrop':
         event_counts = []
         equery = {'jeditaskid': query['jeditaskid']}
         event_counts.extend(
@@ -674,11 +681,9 @@ def input_summary_for_task(taskrec, dsets):
     A dictionary with tk as key and list of input files IDs that is needed for jobList view filter
     """
     jeditaskid = taskrec['jeditaskid']
-    task_creationdate = taskrec['creationdate']
-    if isinstance(taskrec['creationdate'], str):
-        task_creationdate = parse_datetime(taskrec['creationdate'])
     # Getting statuses of inputfiles
-    if task_creationdate < datetime.strptime('2018-10-22 10:00:00', defaultDatetimeFormat):
+    if datetime.strptime(taskrec['creationdate'], defaultDatetimeFormat) < \
+            datetime.strptime('2018-10-22 10:00:00', defaultDatetimeFormat):
         ifsquery = """
             select  
             ifs.jeditaskid,
@@ -735,7 +740,7 @@ def input_summary_for_task(taskrec, dsets):
     else:
         ifsquery = {}
         ifsquery['jeditaskid'] = jeditaskid
-        indsids = [ds['datasetid'] for ds in dsets if ds['type'] == 'input' and (ds['masterid'] is None or ds['masterid'] == '')]
+        indsids = [ds['datasetid'] for ds in dsets if ds['type'] == 'input' and ds['masterid'] is None]
         ifsquery['datasetid__in'] = indsids if len(indsids) > 0 else [-1,]
         inputfiles_list = []
         inputfiles_list.extend(JediDatasetContents.objects.filter(**ifsquery).values())
@@ -1210,3 +1215,28 @@ def get_prod_slice_by_taskid(jeditaskid):
     if task_prod_info:
         slice = task_prod_info[0][3]
     return slice
+
+def get_logs_by_taskid(jeditaskid):
+
+    tasks_logs = []
+
+    connection = create_esatlas_connection()
+
+    s = Search(using=connection, index='atlas_jedilogs-*')
+
+    s = s.filter('term', **{'jediTaskID': jeditaskid})
+
+    s.aggs.bucket('logName', 'terms', field='logName.keyword', size=1000) \
+        .bucket('type', 'terms', field='fields.type.keyword') \
+        .bucket('logLevel', 'terms', field='logLevel.keyword')
+
+    response = s.execute()
+
+    for agg in response['aggregations']['logName']['buckets']:
+        for types in agg['type']['buckets']:
+            type = types['key']
+            for levelnames in types['logLevel']['buckets']:
+                levelname = levelnames['key']
+                tasks_logs.append({'jediTaskID': jeditaskid, 'logname': type, 'loglevel': levelname,
+                                   'lcount': str(levelnames['doc_count'])})
+    return tasks_logs

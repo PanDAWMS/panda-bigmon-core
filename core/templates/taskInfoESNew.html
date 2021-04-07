@@ -19,6 +19,7 @@
   <!-- Load d3.js and c3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
+  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
 {% endblock %}
 {% block subtitle %}Event Service task {{ jeditaskid }}{% if task.site %} at {{ task.site }} {% endif %}, input-centric view {% endblock %}
 
@@ -207,6 +208,7 @@
 
           <a style="cursor: pointer;" onclick="buildInputFilesTable();">Show task inputs list </a>
           <a style="cursor: pointer;" onclick="buildEventChunkTable();">Show jobset relationships</a>
+          <a href="#tasklogs" onclick="toggleTaskLogs() ">Show task logs from ElasticSearch</a>
           {% if eventssummary|length > 0 %}
             <a style="cursor: pointer;" onclick="toggleHiddenEventsStates();">Show all events states</a>
           {% endif %}
@@ -455,6 +457,18 @@
       </fieldset>
 
       <div class="c3-chart-block" ng-repeat="plot in taskinfo.jc_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
+    </div>
+  </div>
+  </div>
+
+  <div id="tasklogs" ng-app="taskInfoAppSL" ng-controller="TaskLogsController">
+    <div class="card bp-container-simple secondary ng-hide" ng-hide="task_logs.is_hidden">
+    <div class="card-divider"><p>Task logs for {{ jeditaskid|safe }} from <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'jediTaskID:{{ jeditaskid|safe }}'),sort:!('@timestamp',desc))" target="_blank">es-atlas</a></p></div>
+    <div class="card-section">
+      <table class="data-table left-aligned nowrap" id="tasklogstable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
     </div>
   </div>
   </div>
@@ -742,6 +756,86 @@
           }
       };
   });
+
+  app.controller('TaskLogsController', function ($scope, $http, $sce) {
+       $scope.task_logs = {
+          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+          data: [],
+          is_hidden: true,
+          data_table: "",
+          plot_data: {
+            columns: [],
+            ext: {
+              xs: {},
+              size: [getWidth() - 40, 400],
+              colors: "task_states",
+              labels: ['Time', 'Task attempt'],
+            },
+          },
+          plot: "",
+        };
+       $scope.task_logs.get = function () {
+            $http({
+                    url: "{% url 'gettasklogs' jeditaskid %}",
+                    method: "GET",
+                    params: {'json':1}
+                }
+            ).then(function success(response) {
+                $scope.task_logs.message = "";
+                $scope.task_logs.data = angular.fromJson(response.data);
+                if ($scope.task_logs.data.length > 0) {
+                  $scope.task_logs.buildDataTable();
+                }
+                else {
+                  $scope.task_logs.message = $sce.trustAsHtml("No data received :(");
+                }
+              },
+              function error(response) {
+                console.log(response);
+                $scope.task_logs.message = $sce.trustAsHtml('Failed to load data :( ');
+              }
+            );
+       };
+       $scope.task_logs.buildDataTable = function () {
+            $scope.task_logs.data_table = $('#tasklogstable').dataTable({
+                "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+                "paging": true,
+                "scrollX": true,
+                "aaSorting": [[1,'asc']],
+                "data": $scope.task_logs.data,
+                {#rowsGroup: [0],#}
+                "aoColumns": [
+                    {
+                        title: "LogName",
+                        data: "logname",
+                        sDefaultContent: "-",
+                        "render": function (data, type, full, meta) {
+                            return '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + '</a>'
+                        }
+                    },
+                    {
+                        title: "LogLevel",
+                        data: "loglevel",
+                        sDefaultContent: "-",
+                        "render": function (data, type, full, meta) {
+                            return '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
+                        }
+                    },
+                    {
+                        title: "#",
+                        data: "lcount",
+                        sDefaultContent: "-",
+
+                    }
+
+                ],
+              })
+        };
+       $scope.task_logs.toggle = function() {
+            $scope.task_logs.is_hidden = false;
+            $scope.task_logs.get();
+        };
+    });
 
   function togglePlots(jeditaskid, mode, es, infotype) {
     let scope = angular.element(document.getElementById('plots')).scope();
@@ -1220,8 +1314,18 @@
           $('#plots').goTo();
           togglePlots('{{ jeditaskid }}', 'drop', '{{ eventservice }}', 'plots', 'plots');
       }
+      if (url.indexOf("#tasklogs") > -1) {
+          toggleTaskLogs();
+      }
   });
-
+    function toggleTaskLogs() {
+        let scope = angular.element(document.getElementById('tasklogs')).scope();
+        if (scope.task_logs.is_hidden) {
+          scope.$apply(function () {
+            scope.task_logs.toggle();
+          });
+        }
+    }
 </script>
 {% endblock %}
 

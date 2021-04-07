@@ -113,10 +113,11 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
-    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag
+    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
+from core.libs.elasticsearch import create_esatlas_connection
 from core.harvester.utils import isHarvesterJob
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -125,6 +126,8 @@ from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_j
 from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs
 
 from django.template.context_processors import csrf
+
+from elasticsearch_dsl import Search
 
 @register.filter(takes_context=True)
 def get_count(dict, key):
@@ -9582,60 +9585,27 @@ def incidentList(request):
 
 def esatlasPandaLoggerJson(request):
     valid, response = initRequest(request)
-    if not valid: return response
-    from elasticsearch import Elasticsearch
 
-    esHost = None
-    esPort = None
-    esUser = None
-    esPassword = None
+    if not valid:
+        return response
 
-    if 'esHost' in ES:
-        esHost = ES['esHost']
-    if 'esPort' in ES:
-        esPort = ES['esPort']
-    if 'esUser' in ES:
-        esUser = ES['esUser']
-    if 'esPassword' in ES:
-        esPassword = ES['esPassword']
+    connection = create_esatlas_connection()
 
-    es = Elasticsearch(
-        [{'host': esHost, 'port': int(esPort)}],
-        http_auth=(esUser,esPassword),
-        use_ssl=True,
-        verify_certs=False,
-        timeout=30,
-        max_retries=10,
-        retry_on_timeout=True,
-    )
+    s = Search(using=connection, index='atlas_jedilogs-*')
 
-    jedi = {}
-    logindexjedi = 'atlas_jedilogs-*'
-    res = es.search(index=logindexjedi, stored_fields=['jediTaskID', 'type', 'logLevel'], body={
-        "aggs": {
-            "jediTaskID": {
-                "terms": {"field": "jediTaskID", "size": 500},
-                "aggs": {
-                    "type": {
-                        "terms": {"field": "fields.type.keyword"},
-                        "aggs": {
-                            "logLevel": {
-                                "terms": {"field": "logLevel.keyword"}
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    })
+    s.aggs.bucket('jediTaskID', 'terms', field='jediTaskID', size=1000)\
+        .bucket('type', 'terms', field='fields.type.keyword') \
+        .bucket('logLevel', 'terms', field='logLevel.keyword')
+
+    res = s.execute()
+
     print('query completed')
 
     jdListFinal = []
+
     for agg in res['aggregations']['jediTaskID']['buckets']:
-        jdlist = {}
         name = agg['key']
         for types in agg['type']['buckets']:
-            jdlist = {}
             type = types['key']
             for levelnames in types['logLevel']['buckets']:
                 jdlist = {}
@@ -9651,44 +9621,22 @@ def esatlasPandaLoggerJson(request):
 
 def esatlasPandaLogger(request):
     valid, response = initRequest(request)
-    if not valid: return response
-    from elasticsearch import Elasticsearch
-    esHost = None
-    esPort = None
-    esUser = None
-    esPassword = None
+    if not valid:
+        return response
 
-    if 'esHost' in ES:
-        esHost = ES['esHost']
-    if 'esPort' in ES:
-        esPort = ES['esPort']
-    if 'esUser' in ES:
-        esUser = ES['esUser']
-    if 'esPassword' in ES:
-        esPassword = ES['esPassword']
-
-    es = Elasticsearch(
-        [{'host': esHost, 'port': int(esPort)}],
-        http_auth=(esUser,esPassword),
-        use_ssl=True,
-        verify_certs=False,
-        timeout=30,
-        max_retries=10,
-        retry_on_timeout=True,
-    )
+    connection = create_esatlas_connection()
 
     today = time.strftime("%Y.%m.%d")
-    pandaDesc = {
-        "panda.log.RetrialModule":["cat1","Retry module to apply rules on failed jobs"],
 
-        "panda.log.Serveraccess":["cat2","Apache request log"],
-        "panda.log.Servererror":["cat2","Apache errors"],
+    pandaDesc = {
+        "panda.log.RetrialModule": ["cat1","Retry module to apply rules on failed jobs"],
+
+        "panda.log.Serveraccess": ["cat2","Apache request log"],
+        "panda.log.Servererror": ["cat2","Apache errors"],
         "panda.log.PilotRequests": ["cat2", "Pilot requests"],
-        "panda.log.Entry":["cat2","Entry point to the PanDA server"],
+        "panda.log.Entry": ["cat2","Entry point to the PanDA server"],
         "panda.log.UserIF": ["cat2", "User interface"],
         "panda.log.DBProxy": ["cat2", "Filtered messages of DB interactions"],
-
-
 
         "panda.log.Adder": ["cat3", "Add output files to datasets and trigger output aggregation"],
         "panda.log.Finisher": ["cat3", "Finalization procedures for jobs"],
@@ -9714,14 +9662,14 @@ def esatlasPandaLogger(request):
 
         "panda.log.Panda": ["cat8", "Some messages are redirected here"],
     }
-    pandaCat = ['cat1','cat2','cat3','cat4','cat5','cat6','cat7','cat8']
+    pandaCat = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6', 'cat7', 'cat8']
 
     jediDesc = {
-        "panda.log.AtlasProdTaskBroker":["cat1","Production task brokerage"],
-        "panda.log.TaskBroker":["cat7","Task brokerage factory"],
-        "panda.log.AtlasProdJobBroker":["cat1","Production job brokerage"],
+        "panda.log.AtlasProdTaskBroker": ["cat1","Production task brokerage"],
+        "panda.log.TaskBroker": ["cat7","Task brokerage factory"],
+        "panda.log.AtlasProdJobBroker": ["cat1","Production job brokerage"],
         "panda.log.AtlasAnalJobBroker": ["cat1", "Analysis job brokerage"],
-        "panda.log.JobBroker":["cat7","Job brokerage factory"],
+        "panda.log.JobBroker": ["cat7","Job brokerage factory"],
 
 
         "panda.log.AtlasProdJobThrottler": ["cat2", "Throttles generation of production jobs based on defined limits"],
@@ -9751,44 +9699,29 @@ def esatlasPandaLogger(request):
     }
     jediCat = ['cat1','cat2','cat3','cat4','cat5','cat6','cat7']
 
-    logindexpanda = 'atlas_pandalogs-'
-    logindexjedi = 'atlas_jedilogs-'
-
-    indices = [logindexpanda,logindexjedi]
+    indices = ['atlas_pandalogs-', 'atlas_jedilogs-']
 
     panda = {}
     jedi = {}
+
     for index in indices:
-        res = es.search(index=index + str(today), stored_fields=['logName', 'type', 'logLevel'], body={
-            "aggs": {
-                "logName": {
-                    "terms": {"field": "logName.keyword","size": 100},
-                    "aggs": {
-                        "type": {
-                            "terms": {"field": "fields.type.keyword","size": 100},
-                            "aggs": {
-                                "logLevel": {
-                                    "terms": {"field": "logLevel.keyword"}
-                                }
-                            }
-                        }
-                 }
-                }
-            }
-        }
-        )
+        s = Search(using=connection, index=index + str(today))
+
+        s.aggs.bucket('logName', 'terms', field='logName.keyword', size=1000) \
+            .bucket('type', 'terms', field='fields.type.keyword', size=1000) \
+            .bucket('logLevel', 'terms', field='logLevel.keyword')
+
+        res = s.execute()
 
         if index == "atlas_pandalogs-":
             for cat in pandaCat:
-                panda[cat]={}
+                panda[cat] = {}
             for agg in res['aggregations']['logName']['buckets']:
                 if agg['key'] not in pandaDesc:
                     pandaDesc[agg['key']] = [panda.keys()[-1], "New log type. No description"]
                 cat = pandaDesc[agg['key']][0]
-                    #desc = pandaDesc[agg['key']][1]
                 name = agg['key']
                 panda[cat][name] = {}
-                #panda[cat][name]['desc'] = pandaDesc[agg['key']][1]
                 for types in agg['type']['buckets']:
                     type = types['key']
                     panda[cat][name][type] = {}
@@ -9799,7 +9732,7 @@ def esatlasPandaLogger(request):
                         panda[cat][name][type][levelname]['lcount'] = str(levelnames['doc_count'])
         elif index == "atlas_jedilogs-":
             for cat in jediCat:
-                jedi[cat]={}
+                jedi[cat] = {}
             for agg in res['aggregations']['logName']['buckets']:
                 if agg['key'] not in jediDesc:
                     jediDesc[agg['key']] = [jedi.keys()[-1], "New log type. No description"]
@@ -9830,75 +9763,6 @@ def esatlasPandaLogger(request):
         'json' not in request.session['requestParams'])):
         response = render_to_response('esatlasPandaLogger.html', data, content_type='text/html')
         return response
-
-def esPandaLogger(request):
-    valid, response = initRequest(request)
-    if not valid: return response
-    from elasticsearch import Elasticsearch
-
-    es = Elasticsearch(
-        hosts=[{'host': 'aianalytics01.cern.ch', 'port': 9200}],
-        use_ssl=False,
-        retry_on_timeout=True,
-        max_retries=3
-    )
-
-    today = time.strftime("%Y-%m-%d")
-    logindex = 'pandalogger-' + str(today)
-    logindexdev = 'pandaloggerdev-' + str(today)
-
-    # check if dev index exists
-    indexdev = es.indices.exists(index=logindexdev)
-
-    if indexdev:
-        indices = [logindex, logindexdev]
-    else:
-        indices = [logindex]
-    res = es.search(index=indices, stored_fields=['@message.name', '@message.Type', '@message.levelname'], body={
-        "aggs": {
-            "name": {
-                "terms": {"field": "@message.name"},
-                "aggs": {
-                    "type": {
-                        "terms": {"field": "@message.Type"},
-                        "aggs": {
-                            "levelname": {
-                                "terms": {"field": "@message.levelname"}
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-                    )
-
-    log = {}
-    for agg in res['aggregations']['name']['buckets']:
-        name = agg['key']
-        log[name] = {}
-        for types in agg['type']['buckets']:
-            type = types['key']
-            log[name][type] = {}
-            for levelnames in types['levelname']['buckets']:
-                levelname = levelnames['key']
-                log[name][type][levelname] = {}
-                log[name][type][levelname]['levelname'] = levelname
-                log[name][type][levelname]['lcount'] = str(levelnames['doc_count'])
-    # print log
-    data = {
-        'request': request,
-        'viewParams': request.session['viewParams'],
-        'requestParams': request.session['requestParams'],
-        'user': None,
-        'log': log,
-    }
-
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
-        response = render_to_response('esPandaLogger.html', data, content_type='text/html')
-        return response
-
 
 def pandaLogger(request):
     valid, response = initRequest(request)
@@ -11828,6 +11692,33 @@ def getTaskStatusLog(request, jeditaskid=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+@never_cache
+def getTaskLogs(request, jeditaskid=None):
+    """
+    A view to asynchronously load task logs from ElasticSearch storage
+    :param request:
+    :param jeditaskid:
+    :return: json
+    """
+    valid, response = initRequest(request)
+
+    if not valid: return response
+
+    try:
+        jeditaskid = int(jeditaskid)
+    except:
+        HttpResponse(status=404, content_type='text/html')
+
+    tasklogs = get_logs_by_taskid(jeditaskid)
+
+    response = HttpResponse(json.dumps(tasklogs, cls=DateEncoder), content_type='application/json')
+
+    # if is_json_request(request):
+    #     response = HttpResponse(json.dumps(tasklogs, cls=DateEncoder), content_type='application/json')
+    # else:
+    #     HttpResponse(status=404, content_type='text/html')
+
+    return response
 
 ### API ###
 def getSites(request):
