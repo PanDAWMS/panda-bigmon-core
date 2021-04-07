@@ -49,14 +49,18 @@ class DDOSMiddleware(object):
             x_referer = request.META.get('HTTP_REFERER')
         except:
             x_referer = ''
-        dbtotalsess, dbactivesess = 0, 0
+
         cursor = connection.cursor()
-        cursor.execute("SELECT SUM(NUM_ACTIVE_SESS), SUM(NUM_SESS) FROM ATLAS_DBA.COUNT_PANDAMON_SESSIONS")
-        rows = cursor.fetchall()
-        for row in rows:
-            dbactivesess = row[0]
-            dbtotalsess = row[1]
-            break
+        dbtotalsess, dbactivesess = 0, 0
+        try:
+            cursor.execute("SELECT SUM(NUM_ACTIVE_SESS), SUM(NUM_SESS) FROM ATLAS_DBA.COUNT_PANDAMON_SESSIONS")
+            rows = cursor.fetchall()
+            for row in rows:
+                dbactivesess = row[0]
+                dbtotalsess = row[1]
+                break
+        except:
+            _logger.warning('Failed to get connections number from ATLAS_DBA')
 
         sqlRequest = "SELECT ATLAS_PANDABIGMON.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
         cursor.execute(sqlRequest)
