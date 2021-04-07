@@ -9718,7 +9718,7 @@ def esatlasPandaLogger(request):
                 panda[cat] = {}
             for agg in res['aggregations']['logName']['buckets']:
                 if agg['key'] not in pandaDesc:
-                    pandaDesc[agg['key']] = [panda.keys()[-1], "New log type. No description"]
+                    pandaDesc[agg['key']] = [list(panda.keys())[-1], "New log type. No description"]
                 cat = pandaDesc[agg['key']][0]
                 name = agg['key']
                 panda[cat][name] = {}
@@ -9735,7 +9735,7 @@ def esatlasPandaLogger(request):
                 jedi[cat] = {}
             for agg in res['aggregations']['logName']['buckets']:
                 if agg['key'] not in jediDesc:
-                    jediDesc[agg['key']] = [jedi.keys()[-1], "New log type. No description"]
+                    jediDesc[agg['key']] = [list(jedi.keys())[-1], "New log type. No description"]
                 cat = jediDesc[agg['key']][0]
                 name = agg['key']
                 jedi[cat][name] = {}
