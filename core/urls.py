@@ -240,6 +240,7 @@ urlpatterns = [
     re_path(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
     re_path(r'^api/tasks_plots$', tasksPlots.getJobsData, name='tasksplots'),
     re_path(r'^api/get_hc_tests/', coremon_views.get_hc_tests, name='gethctests'),
+    re_path(r'^api/user_dash/(?P<agg>.*)/$', coremon_views.userDashApi, name='userdashapi'),
 
     ### MLFlow
     re_path(r'^mlflow/', include('core.mlflowdynamic.urls'), name='mlflowdynamic')

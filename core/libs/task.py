@@ -74,23 +74,23 @@ def cleanTaskList(tasks, **kwargs):
 
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
-        dsquery = {}
-        dsquery['type__in'] = ['input', 'pseudo_input']
-        dsquery['masterid__isnull'] = True
-        taskl = []
-        for t in tasks:
-            taskl.append(t['jeditaskid'])
-        # dsquery['jeditaskid__in'] = taskl
-
-        # Backend dependable
-        random.seed()
-        transactionKey = random.randrange(1000000)
-        tmpTableName = get_tmp_table_name()
-        new_cur = connection.cursor()
-        for id in taskl:
-            new_cur.execute("INSERT INTO {}(ID,TRANSACTIONKEY) VALUES ({},{})".format(tmpTableName, id, transactionKey))
-        extra = "JEDITASKID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})".format(tmpTableName, transactionKey)
+        N_MAX_IN_QUERY = 100
         dvalues = ('jeditaskid', 'nfiles', 'nfilesfinished', 'nfilesfailed')
+        dsquery = {
+            'type__in': ['input', 'pseudo_input'],
+            'masterid__isnull': True,
+        }
+        extra = '(1=1)'
+
+        taskl = [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
+
+        if len(taskl) <= N_MAX_IN_QUERY:
+            dsquery['jeditaskid__in'] = taskl
+        else:
+            # Backend dependable
+            tk = insert_to_temp_table(taskl)
+            extra = "JEDITASKID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})".format(get_tmp_table_name(), tk)
+
         dsets = JediDatasets.objects.filter(**dsquery).extra(where=[extra]).values(*dvalues)
         dsinfo = {}
         if len(dsets) > 0:

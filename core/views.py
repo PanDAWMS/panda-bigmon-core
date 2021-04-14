@@ -106,9 +106,10 @@ from core.auth.utils import login_customrequired, grant_rights, deny_rights
 from core.utils import is_json_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
-from core.libs.exlib import insert_to_temp_table, dictfetchall, is_timestamp, parse_datetime, get_job_walltime, \
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
+from core.libs.exlib import is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
-    add_job_category, convert_bytes, convert_hs06, get_tmp_table_name, split_into_intervals
+    add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
@@ -4154,7 +4155,7 @@ def userInfo(request, user=''):
         requestParams[escapeInput(param.strip())] = escapeInput(request.session['requestParams'][param.strip()].strip())
     request.session['requestParams'] = requestParams
 
-    ## Tasks owned by the user
+    # Tasks owned by the user
     query = setupView(request, hours=days*24, limit=999999, querytype='task')
 
     if userQueryTask is None:
@@ -4162,19 +4163,17 @@ def userInfo(request, user=''):
         tasks = JediTasks.objects.filter(**query).values()
     else:
         tasks = JediTasks.objects.filter(**query).filter(userQueryTask).values()
+    _logger.info('Got tasks: {}'.format(time.time() - request.session['req_init_time']))
 
     tasks = cleanTaskList(tasks, sortby=sortby, add_datasets_info=True)
-    ntasks = len(tasks)
-    tasksumd = taskSummaryDict(request, tasks)
+    _logger.info('Cleaned tasks and loading datasets info: {}'.format(time.time() - request.session['req_init_time']))
 
     if 'display_limit_tasks' not in request.session['requestParams']:
         display_limit_tasks = 100
     else:
         display_limit_tasks = int(request.session['requestParams']['display_limit_tasks'])
     ntasksmax = display_limit_tasks
-    url_nolimit_tasks = removeParam(extensibleURL(request), 'display_limit_tasks', mode='extensible') + "display_limit_tasks=" + str(ntasks)
-
-    tasks = getTaskScoutingInfo(tasks, ntasksmax)
+    url_nolimit_tasks = removeParam(extensibleURL(request), 'display_limit_tasks', mode='extensible') + "display_limit_tasks=" + str(len(tasks))
 
     # consumed cpu hours stats for a user
     if len(tasks) > 0:
@@ -4182,6 +4181,7 @@ def userInfo(request, user=''):
     else:
         panda_user_name = fullname if fullname != '' else user.strip()
     userstats = get_panda_user_stats(panda_user_name)
+    _logger.info('Got user statistics: {}'.format(time.time() - request.session['req_init_time']))
 
     # getting most relevant links based on visit statistics
     links = {}
@@ -4204,40 +4204,11 @@ def userInfo(request, user=''):
 
         plots = prepare_user_dash_plots(tasks)
 
-        # jobs summary
-        jquery = {
-            'jobstatus__in': ['finished', 'failed', ],
-            'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t and t['jeditaskid']]
-        }
-        err_fields = [
-            'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag',
-            'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
-            'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
-            'produsername'
-        ]
-        jobs = get_job_list(jquery, values=err_fields)
+        # put list of tasks to cache for further usage
+        tk_taskids = random.randrange(100000000)
+        setCacheEntry(request, tk_taskids, json.dumps(tasks, cls=DateTimeEncoder), 60 * 30, isData=True)
 
-        request.session['requestParams']['sortby'] = 'count'
-        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, {}, False, flist=[])
-
-        metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
-
-        for task in tasks:
-            for metric in metrics:
-                if task['jeditaskid'] in metrics[metric]['group_by']:
-                    task['job_' + metric] = metrics[metric]['group_by'][task['jeditaskid']]
-                else:
-                    task['job_' + metric] = ''
-            for task_errs in errs_by_task:
-                if task['jeditaskid'] == task_errs['name']:
-                    link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(task['jeditaskid'])
-                    task['top_errors'] = '<br>'.join(
-                        ['<a href="{}{}={}">{}</a> [{}] "{}"'.format(
-                            link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag']
-                        ) for err in task_errs['errorlist']][:2])
-
-        # prepare relevant metrics to show
-        metrics_total = {m: v['total'] for m, v in metrics.items() if 'total' in v}
+        metrics_total = {}
         if userstats:
             metrics_total['cpua7'] = userstats['cpua7'] if 'cpua7' in userstats else 0
             metrics_total['cpup7'] = userstats['cpup7'] if 'cpup7' in userstats else 0
@@ -4266,10 +4237,12 @@ def userInfo(request, user=''):
                 'viewParams': request.session['viewParams'],
                 'requestParams': request.session['requestParams'],
                 'timerange': request.session['timerange'],
+                'built': datetime.now().strftime("%H:%M:%S"),
+                'tk': tk_taskids,
                 'xurl': xurl,
                 'user': user,
                 'links': links,
-                'tasks': tasks,
+                'ntasks': len(tasks),
                 'plots': plots,
                 'metrics': metrics_total,
                 'userstats': userstats,
@@ -4278,6 +4251,13 @@ def userInfo(request, user=''):
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
     else:
+        tasks = getTaskScoutingInfo(tasks, ntasksmax)
+        _logger.info('Tasks scouting info loaded: {}'.format(time.time() - request.session['req_init_time']))
+
+        ntasks = len(tasks)
+        tasksumd = taskSummaryDict(request, tasks)
+        _logger.info('Tasks summary generated: {}'.format(time.time() - request.session['req_init_time']))
+
         ## Jobs
         limit = 5000
         query, extra_query_str, LAST_N_HOURS_MAX = setupView(request, hours=72, limit=limit, querytype='job', wildCardExt=True)
@@ -4417,7 +4397,7 @@ def userInfo(request, user=''):
                 'ntasks': ntasks,
                 'tasksumd': tasksumd,
                 'built': datetime.now().strftime("%H:%M:%S"),
-                'links' : links,
+                'links': links,
             }
             data.update(getContextVariables(request))
             response = render_to_response('userInfo.html', data, content_type='text/html')
@@ -4428,6 +4408,109 @@ def userInfo(request, user=''):
             del request.session['TLAST']
             resp = sumd
             return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='application/json')
+
+
+def userDashApi(request, agg=None):
+    """
+
+    :param agg: str: type of aggregation to return
+    :return: JSON
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    AVAILABLE_AGGS = ['initial', 'cons_plots', 'overall_errors']
+    data = {'msg': '', 'data': {}}
+
+    if agg is None or agg not in AVAILABLE_AGGS:
+        data['msg'] += 'ERROR! Invalid agg passed.'
+        return HttpResponse(json.dumps(data, default=datetime_handler), content_type='application/json')
+
+    tk = None
+    if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
+        tk = int(request.session['requestParams']['tk'])
+    else:
+        data['msg'] += 'ERROR! Invalid transaction key passed. Please try to reload the page.'
+        return HttpResponse(json.dumps(data, default=datetime_handler), content_type='application/json')
+
+    # getting top errors by task and metrics for labels
+    if agg == 'initial':
+        # get taskids from cache
+        tasks_str = getCacheEntry(request, tk, isData=True)
+        if data is not None:
+            tasks = json.loads(tasks_str)
+        else:
+            tasks = []
+        _logger.info('Got {} tasks from cache: {}'.format(len(tasks), time.time() - request.session['req_init_time']))
+
+        # jobs summary
+        jquery = {
+            'jobstatus__in': ['finished', 'failed', ],
+            'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
+        }
+        err_fields = [
+            'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag',
+            'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
+            'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
+            'produsername'
+        ]
+        jobs = get_job_list(jquery, values=err_fields)
+        _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
+
+        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, {}, False, flist=[])
+        errs_by_task_dict = {}
+        for err in errs_by_task:
+            if err['name'] not in errs_by_task_dict:
+                errs_by_task_dict[err['name']] = err
+        _logger.info('Got error summaries: {}'.format(time.time() - request.session['req_init_time']))
+
+        metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
+        _logger.info('Calculated jobs metrics: {}'.format(time.time() - request.session['req_init_time']))
+
+        for t in tasks:
+            for metric in metrics:
+                if t['jeditaskid'] in metrics[metric]['group_by']:
+                    t['job_' + metric] = metrics[metric]['group_by'][t['jeditaskid']]
+                else:
+                    t['job_' + metric] = ''
+            if t['jeditaskid'] in errs_by_task_dict:
+                link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
+                t['top_errors'] = '<br>'.join(
+                    ['<a href="{}{}={}">{}</a> [{}] "{}"'.format(
+                        link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag']
+                    ) for err in errs_by_task_dict[t['jeditaskid']]['errorlist']][:2])
+        _logger.info('Jobs metrics added to tasks: {}'.format(time.time() - request.session['req_init_time']))
+
+        # prepare relevant metrics to show
+        metrics_total = {m: v['total'] for m, v in metrics.items() if 'total' in v}
+        metrics_total = humanize_metrics(metrics_total)
+
+        data['data']['metrics'] = metrics_total
+        data['data']['tasks_metrics'] = tasks
+
+        import sys
+        print('Size of raw data: {} MB'.format(sys.getsizeof(json.dumps(tasks, default=datetime_handler))*1.0/1024/1024))
+
+        task_list_table_headers = [
+            'jeditaskid', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished',
+            'superstatus', 'status', 'age',
+            'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
+            'errordialog', 'job_failed', 'top_errors',
+        ]
+        tasks_to_show = []
+        for t in tasks:
+            tmp_list = []
+            for h in task_list_table_headers:
+                if h in t:
+                    tmp_list.append(t[h])
+                else:
+                    tmp_list.append("-")
+            tasks_to_show.append(tmp_list)
+        print('Size of data: {} MB'.format(sys.getsizeof(json.dumps(tasks_to_show, default=datetime_handler)) * 1.0 / 1024 / 1024))
+        data['data']['tasks_metrics'] = tasks_to_show
+
+    return HttpResponse(json.dumps(data, default=datetime_handler), content_type='application/json')
 
 
 @login_customrequired
