@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from core.views import initRequest, DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import parse_datetime

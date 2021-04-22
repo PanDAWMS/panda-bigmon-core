@@ -15,10 +15,10 @@ from django.utils import timezone
 
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import is_timestamp
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
 from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
-from core.harvester.utils import isHarvesterJob
+
 
 from core.settings.local import dbaccess, defaultDatetimeFormat
 
@@ -1381,3 +1381,20 @@ def getCeHarvesterJobs(request, computingelment, fields=''):
         jobList.append(dict(zip(columns, job)))
 
     return jobList
+
+
+
+def getHarversterWorkersForTask(request):
+    valid, response = initRequest(request)
+    if not valid: return response
+    if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
+        try:
+            jeditaskid = int(request.session['requestParams']['jeditaskid'])
+        except:
+            return HttpResponse(status=400)
+
+        data = get_harverster_workers_for_task(jeditaskid)
+        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+    return HttpResponse(status=400)

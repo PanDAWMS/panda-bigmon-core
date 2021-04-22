@@ -7,7 +7,7 @@ import logging
 from django.http import HttpResponseRedirect
 
 from core.utils import is_json_request
-from core.common.models import BPUser
+from core.oauth.models import BPUser
 
 _logger = logging.getLogger('bigpandamon-error')
 

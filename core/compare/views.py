@@ -17,14 +17,14 @@ from django.db import connection, transaction, DatabaseError
 
 from django.utils.cache import patch_cache_control, patch_response_headers
 
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
 from core.views import initRequest, setupView, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
 from core.pandajob.models import Jobsactive4, Jobsarchived4, Jobswaiting4, Jobsdefined4, Jobsarchived
-from core.common.models import BPUser
+from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison, job_info_getter
 

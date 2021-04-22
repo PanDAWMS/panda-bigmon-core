@@ -8,6 +8,18 @@
     {% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
 
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+    <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 
     {{ res }}
@@ -167,11 +179,8 @@
             </div>
         </div>
 
-        <link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
-        <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
-        <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
-        <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-        <script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
+
+
 
         <script type="text/javascript">
 

@@ -13,7 +13,7 @@ from core.grafana.QueryES import Query
 
 from core.grafana.data_tranformation import stacked_hist, pledges_merging
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from core.views import initRequest, DateTimeEncoder, DateEncoder
 
 colours_codes = {

@@ -161,7 +161,7 @@ def index_data(request):
             query_merge[new_key] = schedconfig_exclude_query[key]
 
     ### set request response data
-    data = { \
+    data = {
         'errors_GET': errors_GET,
         'starttime': starttime,
         'endtime': endtime,

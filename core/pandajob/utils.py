@@ -34,3 +34,36 @@ def get_pandajob_models_by_year(timewindow):
 
     return pandajob_models
 
+
+def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
+    """
+    Translate prodsourcelabel values to descriptive analy|prod job types
+    The base param is prodsourcelabel, but to identify which HC test template a job belong to we need transformation.
+    If transformation ends with '.py' - prod, if it is PanDA server URL - analy.
+    Using this as complementary info to make a decision.
+    """
+
+    psl_to_jt = {
+        'panda': 'analy',
+        'user': 'analy',
+        'managed': 'prod',
+        'prod_test': 'prod',
+        'ptest': 'prod',
+        'rc_alrb': 'analy',
+        'rc_test2': 'analy',
+    }
+
+    trsfrm_to_jt = {
+        'run': 'analy',
+        'py': 'prod',
+    }
+
+    new_list_of_dict = []
+    for row in list_of_dict:
+        if field_name in row and row[field_name] in psl_to_jt.keys():
+            row['jobtype'] = psl_to_jt[row[field_name]]
+            if 'transform' in row and row['transform'] in trsfrm_to_jt and row[field_name] in ('rc_alrb', 'rc_test2'):
+                row['jobtype'] = trsfrm_to_jt[row['transform']]
+            new_list_of_dict.append(row)
+
+    return new_list_of_dict

@@ -3,7 +3,7 @@
 
 import os,sys
 try:
-    execfile(os.environ['LOCAL_EXTRA_SETTINGS'])
+    exec(open(os.environ['LOCAL_EXTRA_SETTINGS']).read())
 except:
     print "Error with LOCAL_EXTRA_SETTINGS"
     sys.exit(1)

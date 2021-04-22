@@ -8,7 +8,6 @@ try:
 except ImportError:
     ENABLE_DEBUG_TOOLBAR = False
 
-
 ADMINS = (
     ('Sergey Podolsky', 'spadolski@bnl.gov'),
 )
@@ -29,21 +28,21 @@ USE_TZ = True
 # Site ID
 SITE_ID = 1
 
+VERSIONS = {
+    'core': core.__versionstr__,
+}
+
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # List of callables that know how to import templates from various sources.
 
-
 MIDDLEWARE = (
     'core.ddosprotection.DDOSMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
-#    'htmlmin.middleware.HtmlMinifyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    #'core.auth.CustomSessionMiddleware.CustomSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
 
@@ -52,22 +51,20 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
-    'htmlmin.middleware.MarkRequestMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
-    'core.auth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
+    'core.oauth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
 )
 
-ROOT_URLCONF = 'common.urls'
+ROOT_URLCONF = 'core.urls'
 
-### added
-
-
+# Auth
 AUTHENTICATION_BACKENDS = (
-    'core.auth.Cernauth2.Cernauth2',
+    'core.oauth.Cernauth2.Cernauth2',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
+AUTH_USER_MODEL = 'oauth.BPUser'
 
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
@@ -79,14 +76,12 @@ LOGIN_URL = 'login'
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/loginerror/'
 LOGIN_REDIRECT_URL = '/'
 
-
 # Google OAuth2 (google-oauth2)
 SOCIAL_AUTH_GOOGLE_OAUTH2_IGNORE_DEFAULT_SCOPE = True
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile'
 ]
-
 
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
@@ -102,7 +97,7 @@ SOCIAL_AUTH_PIPELINE = (
 
 # installed apps
 INSTALLED_APPS_DJANGO_FRAMEWORK = (
-    ### Django framework
+    # Django framework
     'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -113,89 +108,56 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
     'django.contrib.humanize',
 )
 
-SESSION_SERIALIZER = "core.libs.CustomJSONSerializer.CustomJSONSerializer"
-SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
-
 INSTALLED_APPS_DJANGO_PLUGINS = (
-    ### Django plugins
-    'rest_framework',  #pip install djangorestframework, version 2.3.10
-    'django_datatables_view',  #pip install django-datatables-view, version 1.6
-    'djangojs',  #pip install django.js, version 0.8.1
-)
-INSTALLED_APPS_BIGPANDAMON_CORE = (
-    ### BigPanDAmon core
-    'core.common',
-    'core.table',
-    'core.pandajob',
-    'core.schedresource',
-    'core.htcondor',
-    'core.datatables',
-    'core.filebrowser',
-    'core.pbm',
-    'core.pbm.templatetags',
-    #    'core.graphic', #NOT-IMPLEMENTED
-    'core.gspread',
-    'core.mlflowdynamic',
-    'django.contrib.staticfiles',
+    # Django plugins
+    'rest_framework',
+    'django_datatables_view',
+    'djangojs',
+    'django_extensions',
 )
 COMMON_INSTALLED_APPS = \
     INSTALLED_APPS_DJANGO_FRAMEWORK + \
     INSTALLED_APPS_DJANGO_PLUGINS
-# INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_CORE
 
 
-### Django.js config
+INSTALLED_APPS_BIGPANDAMON_CORE = (
+    # BigPanDAmon core
+    'core.oauth',
+    'core.common',
+    'core.pandajob',
+    'core.schedresource',
+    'core.dashboards',
+    'core.status_summary',
+)
+
+INSTALLED_APPS_EXTRA = [
+    # "core.admin",
+    "core.art",
+    "core.buildmonitor",
+    "core.compare",
+    "core.errorsscattering",
+    "core.filebrowser",
+    # "core.globalpage",
+    "core.globalshares",
+    "core.grafana",
+    "core.harvester",
+    "core.iDDS",
+    "core.mlflowdynamic",
+    "core.monitor",
+    "core.oi",
+    "core.pbm",
+    "core.reports",
+    "core.runningprod"
+]
+
+if len(INSTALLED_APPS_EXTRA) > 0:
+    INSTALLED_APPS_BIGPANDAMON_CORE += tuple([str(app_name) for app_name in INSTALLED_APPS_EXTRA])
+
+# Django.js config
 JS_I18N_APPS = ()
 JS_I18N_APPS_EXCLUDE = INSTALLED_APPS_BIGPANDAMON_CORE
 
-VERSIONS = {
-    'core': core.__versionstr__,
-}
-
-#TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-#    join(dirname(core.__file__), 'templates'),
-#    join(dirname(common.__file__), 'templates'),
-#    join(dirname(core.filebrowser.__file__), 'templates'),
-#    join(dirname(core.pbm.__file__), 'templates'),
-#    join(dirname(core.pbm.__file__), 'templates'),
-#)
-
-
-
-INSTALLED_APPS_BIGPANDAMON_core = (
-    ### BigPanDAmon core
-    'core.common',
-    #    'core.table',
-    #    'core.graphics', #NOT-IMPLEMENTED
-    'core.pandajob',
-    'core.schedresource',
-    'core.status_summary',
-    #    'core.htcondor', #NOT-NEEDED-IN-core
-    #    'core.task', #NOT-IMPLEMENTED
-    'core.filebrowser',
-    'core.pbm',
-    'core.pbm.templatetags',
-    'django_extensions',
-    'core.art',
-    'core.monitor',
-    'core.harvester',
-    'core.runningprod',
-    'core.globalshares',
-    'core.errorsscattering',
-    'core.compare',
-    'core.grafana',
-    'core.dashboards',
-    'core.globalpage',
-    'core.buildmonitor',
-    'core.oi',
-    'core.iDDS',
-    'core.mlflowdynamic',
-)
-
-INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_core
+INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_CORE
 
 if DEBUG and ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE += (
@@ -220,13 +182,13 @@ if DEBUG and ENABLE_DEBUG_TOOLBAR:
         # 'debug_toolbar.panels.logger.LoggingPanel',
     )
 
-ROOT_URLCONF = 'core.urls'
+
+SESSION_SERIALIZER = "core.libs.CustomJSONSerializer.CustomJSONSerializer"
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 
 # email
-EMAIL_SUBJECT_PREFIX = 'bigpandamon-core: '
+EMAIL_SUBJECT_PREFIX = '[BigPanDAmon]'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-AUTH_USER_MODEL = 'common.BPUser'
 
 DKB_CAMPAIGN_URL = 'http://aiatlas172.cern.ch:5080/campaign/stat'
 ML_FLOW_UPSTREAM = 'https://bigpanda-mlflow.web.cern.ch/'

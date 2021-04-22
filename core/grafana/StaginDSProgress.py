@@ -8,7 +8,7 @@ from django.utils import timezone
 from datetime import timedelta
 from core.settings import defaultDatetimeFormat
 from django.shortcuts import render_to_response
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
 import pandas as pd
 

@@ -638,19 +638,6 @@ class TasksStatusLog(models.Model):
         db_table = u'"ATLAS_PANDA"."TASKS_STATUSLOG"'
 
 
-class BPUser(AbstractUser):
-    is_tester = models.NullBooleanField(db_column='IS_TESTER', null=True, blank=False)
-    last_login = models.DateTimeField(db_column='LAST_LOGIN', auto_now_add=True, blank=False)
-    class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
-
-class BPUserSettings(models.Model):
-    userid = models.IntegerField(db_column='USERID', null=False )
-    page = models.CharField(db_column='PAGE', max_length=100, null=False)
-    preferences = models.CharField(db_column='PREFERENCES', max_length=4000)
-    class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."USER_SETTINGS"'
-
 #class BPToken(models.Model):
 #    key = models.CharField(max_length=40, primary_key=True)
 #    user = models.OneToOneField(BPUser)
@@ -1557,16 +1544,6 @@ class Redirect(models.Model):
     usetime = models.DateTimeField(db_column='USETIME')
     class Meta:
         db_table = u'redirect'
-
-class Visits(models.Model):
-    visitId = models.BigIntegerField(primary_key=True, db_column='VISITID')
-    url = models.CharField(null=True,db_column='URL', max_length=1000)
-    time = models.DateTimeField(db_column='TIME', null=False)
-    remote = models.CharField(null=True,db_column='REMOTE', max_length=20)
-    userid = models.IntegerField(null=True, db_column='USERID', blank=True)
-    service = models.IntegerField(null=True, db_column='SERVICE', blank=True)
-    class Meta:
-        db_table= u'"ATLAS_PANDABIGMON"."VISITS"'
 
 
 class RucioAccounts(models.Model):
@@ -2481,39 +2458,6 @@ class ProductionTask(models.Model):
     class Meta:
         #db_table = u'T_PRODUCTION_STEP'
         db_table = u'T_PRODUCTION_TASK'
-
-
-# class ARTTask(models.Model):
-#     art_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='ART_ID', primary_key=True)
-#     nightly_release_short = models.CharField(max_length=24, db_column='NIGHTLY_RELEASE_SHORT', null=True)
-#     project = models.CharField(max_length=256, db_column='PROJECT', null=True)
-#     platform = models.CharField(max_length=150, db_column='PLATFORM', null=True)
-#     nightly_tag = models.CharField(max_length=20, db_column='NIGHTLY_TAG', null=True)
-#     sequence_tag = models.CharField(max_length=150, db_column='SEQUENCE_TAG', null=False)
-#     package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)
-#     task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASK_ID')
-#     class Meta:
-#         db_table = u'"ATLAS_DEFT"."T_ART"'
-#
-# class ARTTest(models.Model):
-#     test_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TEST_ID', primary_key=True)
-#     test_index = models.DecimalField(decimal_places=0, max_digits=12, db_column='TEST_INDEX')
-#     test_name = models.CharField(max_length=24, db_column='TEST_NAME', null=True)
-#     art_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='ART_ID')
-#     class Meta:
-#         db_table = u'"ATLAS_DEFT"."T_ART_TEST_IN_TASKS"'
-#
-#
-# class ARTTasks(models.Model):
-#     package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)
-#     branch = models.CharField(max_length=150, db_column='BRANCH', null=True)
-#     ntag = models.DateTimeField(db_column='NTAG', null=True)
-#     nightly_tag = models.CharField(max_length=20, db_column='NIGHTLY_TAG', null=True)
-#     task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASK_ID')
-#     nfilesfinished = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESFINISHED')
-#     nfilesfailed = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESFAILED')
-#     class Meta:
-#         db_table = u'"ATLAS_PANDABIGMON"."ARTTasks"'
 
 
 class MCPattern(models.Model):

@@ -1,5 +1,5 @@
 
-#import cx_Oracle
+
 import pandas as pd
 import matplotlib.dates as md
 
@@ -11,6 +11,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import datetime
+
 
 class TaskProgressPlot:
 

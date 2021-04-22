@@ -711,7 +711,7 @@
       }
 
       function clearComparisonList(object) {
-          var newURL = document.getElementById('reloadlink').href;
+          var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/clearcomparison/',
               data: 'object='+object,
@@ -723,7 +723,7 @@
       }
 
       function grantRights(type) {
-          var newURL = document.getElementById('reloadlink').href;
+          var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/grantrights/',
               data: 'type='+type,
@@ -735,7 +735,7 @@
       }
 
       function denyRights(type) {
-          var newURL = document.getElementById('reloadlink').href;
+          var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/denyrights/',
               data: 'type='+type,

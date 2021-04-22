@@ -10,7 +10,7 @@ from sklearn.preprocessing import scale
 from core.views import initRequest, setupView, DateEncoder, setCacheData
 from django.shortcuts import render_to_response
 from django.views.decorators.cache import never_cache
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from django.db import connection
 from core.libs.exlib import dictfetchall
 from core.settings.local import dbaccess

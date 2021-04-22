@@ -18,7 +18,6 @@ from django.db.models import DateTimeField
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 from django.utils.decorators import available_attrs
 from django.http import HttpResponse, JsonResponse
-from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.db.models import Count, Sum, F, Value, FloatField
@@ -35,10 +34,10 @@ from django.conf import settings as djangosettings
 from django.db import connection
 from django.template.loaders.app_directories import get_app_template_dirs
 
-from core.common.utils import getPrefix, getContextVariables, QuerySetChain
+from core.common.utils import getPrefix, getContextVariables
 from core.settings import defaultDatetimeFormat
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, JobsWorldViewTaskType, CombinedWaitActDefArch4, PandaJob
+    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, CombinedWaitActDefArch4, PandaJob
 from core.schedresource.models import Schedconfig, SchedconfigJson
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -61,18 +60,17 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.common.models import BPUser, Visits, BPUserSettings
+from core.oauth.models import BPUser, Visits, BPUserSettings
 from core.compare.modelsCompare import ObjectsComparison
 from core.art.modelsART import ARTTests
 from core.filebrowser.ruciowrapper import ruciowrapper
 
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
-from core.settings.local import ES
 from core.settings.local import GRAFANA
 
 
-from core.TaskProgressPlot import TaskProgressPlot
+from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.ErrorCodes import ErrorCodes
 import hashlib
 
@@ -94,16 +92,12 @@ errorStages = {}
 
 from django.template.defaulttags import register
 
-#from django import template
-#register = template.Library()
-
-from core.reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
 from decimal import *
 
 from django.contrib.auth import logout as auth_logout
-from core.auth.utils import login_customrequired, grant_rights, deny_rights
+from core.oauth.utils import login_customrequired
 
-from core.utils import is_json_request
+from core.utils import is_json_request, extensibleURL
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
@@ -111,7 +105,7 @@ from core.libs.exlib import is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
     add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
-    job_summary_for_task_light, get_top_memory_consumers, get_harverster_workers_for_task, datasets_for_task, \
+    job_summary_for_task_light, get_top_memory_consumers, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
     get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid
@@ -119,7 +113,7 @@ from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection
-from core.harvester.utils import isHarvesterJob
+
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
@@ -253,29 +247,6 @@ class DateEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-@login_customrequired
-def grantRights(request):
-    valid, response = initRequest(request)
-    if not valid: return response
-
-    if 'type' in request.session['requestParams']:
-        rtype = request.session['requestParams']['type']
-        grant_rights(request, rtype)
-
-    return HttpResponse(status=204)
-
-
-@login_customrequired
-def denyRights(request):
-    valid, response = initRequest(request)
-    if not valid: return response
-
-    if 'type' in request.session['requestParams']:
-        rtype = request.session['requestParams']['type']
-        deny_rights(request, rtype)
-
-    return HttpResponse(status=204)
-
 
 def datetime_handler(x):
     import datetime
@@ -406,6 +377,7 @@ def initRequest(request, callselfmon = True):
     viewParams = {}
     # if not 'viewParams' in request.session:
     request.session['viewParams'] = viewParams
+    request.session['viewParams']['apps'] = list(djangosettings.INSTALLED_APPS)
 
     url = request.get_full_path()
     u = urlparse(url)
@@ -1266,55 +1238,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     return (query, extraQueryString, LAST_N_HOURS_MAX)
 
 
-def saveSettings(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-    data = {}
-    if 'page' in request.session['requestParams']:
-        page = request.session['requestParams']['page']
-        if page == 'errors':
-            errorspage_tables = ['jobattrsummary', 'errorsummary', 'siteerrorsummary', 'usererrorsummary',
-                                'taskerrorsummary']
-            preferences = {}
-            if 'jobattr' in request.session['requestParams']:
-                preferences["jobattr"] = request.session['requestParams']['jobattr'].split(",")
-                try:
-                    del request.session['requestParams']['jobattr']
-                    request.session.pop('jobattr')
-                except:
-                    pass
-            else:
-                preferences["jobattr"] = standard_errorfields
-            if 'tables' in request.session['requestParams']:
-                preferences['tables'] = request.session['requestParams']['tables'].split(",")
-                try:
-                    del request.session['requestParams']['tables']
-                    request.session.pop('tables')
-                except:
-                    pass
-            else:
-                preferences['tables'] = errorspage_tables
-            query = {}
-            query['page']= str(page)
-            if request.user.is_authenticated:
-                userids = BPUser.objects.filter(email=request.user.email).values('id')
-                userid = userids[0]['id']
-                try:
-                    userSetting = BPUserSettings.objects.get(page=page, userid=userid)
-                    userSetting.preferences = json.dumps(preferences)
-                    userSetting.save(update_fields=['preferences'])
-                except BPUserSettings.DoesNotExist:
-                    userSetting = BPUserSettings(page=page, userid=userid, preferences=json.dumps(preferences))
-                    userSetting.save()
-
-        return HttpResponse(status=204)
-    else:
-        data = {"error": "no jeditaskid supplied"}
-        return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
-
-
-
 def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
     doAddMetaStill = False
@@ -1955,23 +1878,6 @@ def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays
     suml = sorted(suml, key=lambda x: x['field'])
     return suml
 
-
-def extensibleURL(request, xurl=''):
-    """ Return a URL that is ready for p=v query extension(s) to be appended """
-    if xurl == '': xurl = request.get_full_path()
-    if xurl.endswith('/'):
-        if 'tag' or '/job/' or '/task/' in xurl:
-            xurl = xurl[0:len(xurl)]
-        else:
-            xurl = xurl[0:len(xurl) - 1]
-
-    if xurl.find('?') > 0:
-        xurl += '&'
-    else:
-        xurl += '?'
-    # if 'jobtype' in requestParams:
-    #    xurl += "jobtype=%s&" % requestParams['jobtype']
-    return xurl
 
 def mainPage(request):
     valid, response = initRequest(request)
@@ -3531,8 +3437,10 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             produsername = job[k]
 
     # get Harvester info
-    job['harvesterInfo'] = isHarvesterJob(job['pandaid'])
-    if job['harvesterInfo'] and len(job['harvesterInfo']) > 0:
+    if 'core.harvester' in djangosettings.INSTALLED_APPS:
+        from core.harvester.utils import isHarvesterJob
+        job['harvesterInfo'] = isHarvesterJob(job['pandaid'])
+    if 'harvesterInfo' in job and job['harvesterInfo'] and len(job['harvesterInfo']) > 0:
         job['harvesterInfo'] = job['harvesterInfo'][0]
     else:
         job['harvesterInfo'] = {}
@@ -7599,51 +7507,6 @@ def getErrorSummaryForEvents(request):
     return response
 
 
-@never_cache
-def report(request):
-    initRequest(request)
-    step = 0
-    response = None
-
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16':
-        reportGen = MC16aCPReport.MC16aCPReport()
-        response = reportGen.prepareReportJEDI(request)
-        return response
-
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16C':
-        reportGen = MC16aCPReport.MC16aCPReport()
-        response = reportGen.prepareReportJEDIMC16c(request)
-        return response
-
-
-    if 'requestParams' in request.session and 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign'].upper() == 'MC16A' and 'type' in request.session['requestParams'] and request.session['requestParams']['type'].upper() == 'DCC':
-        reportGen = MC16aCPReport.MC16aCPReport()
-        resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
-        dump = json.dumps(resp, cls=DateEncoder)
-        return HttpResponse(dump, content_type='application/json')
-
-
-    if 'requestParams' in request.session and 'obstasks' in request.session['requestParams']:
-        reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
-        response = reportGen.prepareReport(request)
-        return response
-
-    if 'requestParams' in request.session and 'titanreport' in request.session['requestParams']:
-        reportGen = TitanProgressReport.TitanProgressReport()
-        response = reportGen.prepareReport(request)
-        return response
-
-    if 'requestParams' in request.session and 'step' in request.session['requestParams']:
-        step = int(request.session['requestParams']['step'])
-    if step == 0:
-        response = render_to_response('reportWizard.html', {'nevents': 0}, content_type='text/html')
-    else:
-        if 'reporttype' in request.session['requestParams'] and request.session['requestParams']['reporttype'] == 'rep0':
-            reportGen = MC16aCPReport.MC16aCPReport()
-            response = reportGen.prepareReport()
-    return response
-
-
 def getBrokerageLog(request):
     iquery = {}
     iquery['type'] = 'prod_brokerage'
@@ -11419,33 +11282,6 @@ def initSelfMonitor(request):
     request.session["useragent"] = useragent
 
 
-@never_cache
-def statpixel(request):
-    valid, response = initRequest(request, callselfmon=False)
-
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    if 'HTTP_REFERER' in request.META:
-        url = request.META['HTTP_REFERER']
-        service = 0
-        userid = -1
-        if request.user.is_authenticated:
-            userids = BPUser.objects.filter(email=request.user.email).values('id')
-            userid = userids[0]['id']
-        Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
-
-    #user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'], email=request.session['ADFS_EMAIL'],
-    #                                  first_name=request.session['ADFS_FIRSTNAME'],
-    #                                  last_name=request.session['ADFS_LASTNAME'])
-
-    #this is a transparent gif pixel
-    pixel_= "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
-    response = HttpResponse(pixel_, content_type='image/gif')
-    return response
-
 #@cache_page(60 * 20)
 
 # taken from https://raw.githubusercontent.com/PanDAWMS/panda-server/master/pandaserver/taskbuffer/OraDBProxy.py
@@ -11820,129 +11656,6 @@ def getSites(request):
     mimetype = 'application/json'
     return HttpResponse(data, mimetype)
 
-def serverStatusHealth(request):
-    """
-    This function dymanically calculates status of a particular server in order to make it idle and give an opportunity
-    to restart wsgi daemon.
-
-    WSGIDaemonProcess: inactivity-timeout=60 (this is for nginx health) restart-interval=14400 (the last one is for guarging from blocking requests)
-
-    Nginx: https://www.nginx.com/resources/admin-guide/http-health-check/
-
-
-    match server_ok {
-        status 200;
-        header Content-Type = text/html;
-        body ~ "Normal operation";
-    }
-
-
-    location / {
-        proxy_pass http://backend;
-        health_check match=server_ok uri=/serverstatushealth/ interval=600 fails=10000 passes=1;
-    }
-
-    Then healthping = 10 min,
-    """
-
-    initRequest(request)
-    periodOfAllServWorkRestart = 15 #minutes.
-    restartTimeWindow = 5
-
-    debug = True
-
-    # Here we should load all the servers from the settingsdjangosettings.
-    # next is just for tests
-
-    data = getCacheEntry(request, "StatusHealth")
-
-    print ("serverStatusHealth ", datetime.now(), " runninghost:", request.session["hostname"], " ", data)
-
-    if data is None:
-        q = collections.deque()
-        q.append("aipanda100")
-        q.append("aipanda105")
-        q.append("aipanda106")
-        q.append("aipanda115")
-        q.append("aipanda116")
-        q.append("aipanda107")
-        q.append("aipanda108")
-        lastupdate = datetime.now()
-        data['q'] = pickle.dumps(q)
-        data['lastupdate'] = lastupdate
-        setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
-    else:
-        data = json.loads(data)
-        q = pickle.loads(data['q'])
-        lastupdate = datetime.strptime(data['lastupdate'], defaultDatetimeFormat)
-
-    # end of test filling
-
-    currenthost = q.popleft()
-    runninghost = request.session["hostname"]
-
-    if (currenthost == runninghost):
-        if (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart)) and \
-                        (datetime.now() - lastupdate) < timedelta(minutes=(periodOfAllServWorkRestart+restartTimeWindow)):
-            return HttpResponse("Awaiting restart", content_type='text/html')
-        elif (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart)) and \
-                        (datetime.now() - lastupdate) > timedelta(minutes=(periodOfAllServWorkRestart+restartTimeWindow)):
-            data = {}
-            q.append(currenthost)
-            data['q'] = pickle.dumps(q)
-            data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
-            setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
-            return HttpResponse("Normal operation", content_type='text/html')
-
-
-
-    # rows = subprocess.check_output('ps -eo cmd,lstart --sort=start_time | grep httpd', shell=True).split('\n')[:-2]
-    # print "serverStatusHealth ", datetime.now(), " rows:", rows
-    #
-    # if (currenthost == runninghost) and (datetime.now() - lastupdate) > timedelta(minutes=periodOfAllServWorkRestart):
-    #
-    #     if len(rows) > 0:
-    #         httpdStartTime = list(datefinder.find_dates(rows[0]))[0]
-    #         if (datetime.now() - httpdStartTime) < timedelta(minutes=periodOfAllServWorkRestart):
-    #
-    #             print "serverStatusHealth ", "httpdStartTime", httpdStartTime
-    #
-    #             data = {}
-    #             data['q'] = pickle.dumps(q)
-    #             data['lastupdate'] = datetime.now().strftime(defaultDatetimeFormat)
-    #             setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
-    #
-    #             print "serverStatusHealth ", "Normal operation0"
-    #             return HttpResponse("Normal operation", content_type='text/html')
-    #             # We think that wsgi daemon recently restarted and we can change order to the next server
-    #             # q.put(currenthost)
-    #             # q. put to cache
-    #             # lastupdate put to cache
-    #             # return success
-    #
-    #     # we return failed by default
-    #     print "serverStatusHealth ", "Awaiting restart"
-    #     return HttpResponse("Awaiting restart", content_type='text/html')
-    #
-    # print "serverStatusHealth ", "Normal operations1"
-    return HttpResponse("Normal operation", content_type='text/html')
-
-
-def getHarversterWorkersForTask(request):
-    valid, response = initRequest(request)
-    if not valid: return response
-    if 'requestParams' in request.session and 'jeditaskid' in request.session['requestParams']:
-        try:
-            jeditaskid = int(request.session['requestParams']['jeditaskid'])
-        except:
-            return HttpResponse(status=400)
-
-        data = get_harverster_workers_for_task(jeditaskid)
-        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-    return HttpResponse(status=400)
-
 
 @never_cache
 def get_hc_tests(request):
@@ -12111,44 +11824,7 @@ def get_hc_tests(request):
     return response
 
 
-@never_cache
-def loginauth2(request):
-    if 'next' in request.GET:
-        next = str(request.GET['next'])
-    elif 'HTTP_REFERER' in request.META:
-        next = extensibleURL(request, request.META['HTTP_REFERER'])
-    else:
-        next = '/'
-    response = render_to_response('login.html', {'request': request, 'next':next,}, content_type='text/html')
-    response.delete_cookie('sessionid')
-    return response
 
 
-def loginerror(request):
-    warning = """The login to BigPanDA monitor is failed. Cleaning of your browser cookies might help. 
-                 If the error is persistent, please write to """
-    response = render_to_response('login.html', {'request': request, 'warning': warning}, content_type='text/html')
-    #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
 
 
-@login_customrequired
-def testauth(request):
-    response = render_to_response('testauth.html', {'request': request,}, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
-
-
-def logout(request):
-    """Logs out user"""
-    auth_logout(request)
-    return redirect('/')
-
-
-def testip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    # if x_forwarded_for:
-    #     ip = x_forwarded_for.split(',')[0]
-    # else:
-    #     ip = request.META.get('REMOTE_ADDR')
-    return HttpResponse(json.dumps(x_forwarded_for, cls=DateTimeEncoder), content_type='application/json')

@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 import json
 from collections import defaultdict
 from operator import itemgetter, attrgetter
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):

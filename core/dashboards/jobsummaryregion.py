@@ -3,17 +3,14 @@
 """
 import logging
 import copy
-from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.db import connection
-from django.db.models import Q, Count, Sum
 
-from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.models import PandaJob
-
+from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
 
-from core.settings.local import defaultDatetimeFormat
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -206,10 +203,12 @@ def get_job_summary_region(query, **kwargs):
     jsq = get_job_summary_split(query, extra=extra)
 
     # get workers info
-    if 'computingsite__in' not in query:
-        # put full list of compitingsites to use index in workers table
-        query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
-    wsq = get_workers_summary_split(query)
+    if 'core.harvester' in settings.INSTALLED_APPS:
+        from core.harvester.utils import get_workers_summary_split
+        if 'computingsite__in' not in query:
+            # put full list of compitingsites to use index in workers table
+            query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
+        wsq = get_workers_summary_split(query)
 
     # fill template with real values of job states counts
     for row in jsq:
@@ -316,73 +315,6 @@ def get_job_summary_split(query, extra):
     summary = identify_jobtype(summary)
 
     return summary
-
-
-def get_workers_summary_split(query, **kwargs):
-    """Get statistics of submitted and running Harvester workers"""
-    N_HOURS = 100
-    wquery = {}
-    if 'computingsite__in' in query:
-        wquery['computingsite__in'] = query['computingsite__in']
-    if 'resourcetype' in query:
-        wquery['resourcetype'] = query['resourcetype']
-
-    if 'source' in kwargs and kwargs['source'] == 'HarvesterWorkers':
-        wquery['submittime__castdate__range'] = [
-            (datetime.utcnow()-timedelta(hours=N_HOURS)).strftime(defaultDatetimeFormat),
-            datetime.utcnow().strftime(defaultDatetimeFormat)
-        ]
-        wquery['status__in'] = ['running', 'submitted']
-        # wquery['jobtype__in'] = ['managed', 'user', 'panda']
-        w_running = Count('jobtype', filter=Q(status__exact='running'))
-        w_submitted = Count('jobtype', filter=Q(status__exact='submitted'))
-        w_values = ['computingsite', 'resourcetype', 'jobtype']
-        worker_summary = HarvesterWorkers.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
-    else:
-        wquery['jobtype__in'] = ['managed', 'user', 'panda']
-        w_running = Sum('nworkers', filter=Q(status__exact='running'))
-        w_submitted = Sum('nworkers', filter=Q(status__exact='submitted'))
-        w_values = ['computingsite', 'resourcetype', 'jobtype']
-        worker_summary = HarvesterWorkerStats.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
-
-    # Translate prodsourcelabel values to descriptive analy|prod job types
-    worker_summary = identify_jobtype(worker_summary, field_name='jobtype')
-
-    return list(worker_summary)
-
-
-def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
-    """
-    Translate prodsourcelabel values to descriptive analy|prod job types
-    The base param is prodsourcelabel, but to identify which HC test template a job belong to we need transformation.
-    If transformation ends with '.py' - prod, if it is PanDA server URL - analy.
-    Using this as complementary info to make a decision.
-    """
-
-    psl_to_jt = {
-        'panda': 'analy',
-        'user': 'analy',
-        'managed': 'prod',
-        'prod_test': 'prod',
-        'ptest': 'prod',
-        'rc_alrb': 'analy',
-        'rc_test2': 'analy',
-    }
-
-    trsfrm_to_jt = {
-        'run': 'analy',
-        'py': 'prod',
-    }
-
-    new_list_of_dict = []
-    for row in list_of_dict:
-        if field_name in row and row[field_name] in psl_to_jt.keys():
-            row['jobtype'] = psl_to_jt[row[field_name]]
-            if 'transform' in row and row['transform'] in trsfrm_to_jt and row[field_name] in ('rc_alrb', 'rc_test2'):
-                row['jobtype'] = trsfrm_to_jt[row['transform']]
-            new_list_of_dict.append(row)
-
-    return new_list_of_dict
 
 
 def prettify_json_output(jsr_queues_dict, jsr_regions_dict, **kwargs):

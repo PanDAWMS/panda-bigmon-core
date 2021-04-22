@@ -8,7 +8,7 @@ import json
 from django.db import connection
 from urllib.parse import unquote, urlparse
 
-from core.common.models import BPUser, BPUserSettings
+from core.oauth.models import BPUser, BPUserSettings
 
 
 def get_relevant_links(userid, fields):

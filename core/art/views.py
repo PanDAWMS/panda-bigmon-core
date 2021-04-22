@@ -16,7 +16,7 @@ from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F
 
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import DateEncoder
 from core.art.artMail import send_mail_art

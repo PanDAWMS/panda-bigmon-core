@@ -19,3 +19,20 @@ def is_json_request(request):
 
     return False
 
+
+def extensibleURL(request, xurl=''):
+    """ Return a URL that is ready for p=v query extension(s) to be appended """
+    if xurl == '':
+        xurl = request.get_full_path()
+    if xurl.endswith('/'):
+        if 'tag' or '/job/' or '/task/' in xurl:
+            xurl = xurl[0:len(xurl)]
+        else:
+            xurl = xurl[0:len(xurl) - 1]
+
+    if xurl.find('?') > 0:
+        xurl += '&'
+    else:
+        xurl += '?'
+
+    return xurl

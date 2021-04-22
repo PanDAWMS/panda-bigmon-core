@@ -10,7 +10,7 @@ from django.shortcuts import render_to_response, redirect
 
 from core.pandajob.models import Jobsarchived4, Jobsarchived
 
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from core.views import initRequest
 from core.filebrowser.views import get_job_log_file_path
 

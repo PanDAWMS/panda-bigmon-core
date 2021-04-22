@@ -12,7 +12,7 @@ from django.utils.cache import patch_response_headers
 
 from core.settings import defaultDatetimeFormat
 from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
-from core.auth.utils import login_customrequired
+from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView, DateEncoder, removeParam, preprocessWildCardString, taskSummaryDict
 from core.utils import is_json_request
 

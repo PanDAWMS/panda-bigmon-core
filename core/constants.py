@@ -71,3 +71,20 @@ TASK_STATES_FINAL = (
     'finished',
     'failed'
 )
+
+JOB_FIELDS_ERROR_VIEW = (
+    'cloud',
+    'computingelement',
+    'computingsite',
+    'eventservice',
+    'jeditaskid',
+    'jobstatus',
+    'processingtype',
+    'prodsourcelabel',
+    'produsername',
+    'specialhandling',
+    'taskid',
+    'transformation',
+    'reqid',
+    'workinggroup',
+)
