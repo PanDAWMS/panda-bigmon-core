@@ -104,7 +104,7 @@ urlpatterns = [
     re_path(r'^campprog/$', campaingprogressDKB.campaignProgressDash, name='campaignProgressDash'),
 
     # auth
-    re_path('', include('oauth.urls')),
+    re_path('', include('core.oauth.urls')),
     re_path(r'^csrftoken/$', coremon_views.getCSRFToken, name='getCSRFToken'),
 
     # support views for core
