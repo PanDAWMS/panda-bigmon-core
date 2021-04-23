@@ -377,7 +377,6 @@ def initRequest(request, callselfmon = True):
     viewParams = {}
     # if not 'viewParams' in request.session:
     request.session['viewParams'] = viewParams
-    request.session['viewParams']['apps'] = list(djangosettings.INSTALLED_APPS)
 
     url = request.get_full_path()
     u = urlparse(url)
