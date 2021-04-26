@@ -21,7 +21,7 @@ class Transforms(models.Model):
     expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
     transform_metadata = models.TextField(db_column='TRANSFORM_METADATA', blank=True)
     class Meta:
-        db_table = u'"ATLAS_IDDS"."TRANSFORMS"'
+        db_table = u'"DOMA_IDDS"."TRANSFORMS"'
 
 
 class Collections(models.Model):
@@ -48,7 +48,7 @@ class Collections(models.Model):
     expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
     coll_metadata = models.TextField(db_column='COLL_METADATA', blank=True)
     class Meta:
-        db_table = u'"ATLAS_IDDS"."COLLECTIONS"'
+        db_table = u'"DOMA_IDDS"."COLLECTIONS"'
 
 
 class Contents(models.Model):
@@ -75,7 +75,7 @@ class Contents(models.Model):
     expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
     content_metadata = models.TextField(db_column='content_metadata', blank=True)
     class Meta:
-        db_table = u'"ATLAS_IDDS"."CONTENTS"'
+        db_table = u'"DOMA_IDDS"."CONTENTS"'
 
 
 class Processings(models.Model):
@@ -95,7 +95,7 @@ class Processings(models.Model):
     processing_metadata = models.TextField(db_column='PROCESSING_METADATA', blank=True)
     output_metadata = models.TextField(db_column='OUTPUT_METADATA', blank=True)
     class Meta:
-        db_table = u'"ATLAS_IDDS"."PROCESSINGS"'
+        db_table = u'"DOMA_IDDS"."PROCESSINGS"'
 
 
 class Requests(models.Model):
@@ -118,14 +118,14 @@ class Requests(models.Model):
     request_metadata = models.TextField(db_column='REQUEST_METADATA', blank=True)
     processing_metadata = models.TextField(db_column='PROCESSING_METADATA', blank=True)
     class Meta:
-        db_table = u'"ATLAS_IDDS"."REQUESTS"'
+        db_table = u'"DOMA_IDDS"."REQUESTS"'
 
 
 class Req2transforms(models.Model):
     request_id_fk = models.ForeignKey(Requests, related_name='request_id_fk', on_delete=models.DO_NOTHING, db_column='REQUEST_ID')
     transform_id_fk = models.ForeignKey(Transforms, related_name='transform_id_fk', on_delete=models.DO_NOTHING, db_column='TRANSFORM_ID')
     class Meta:
-        db_table = u'"ATLAS_IDDS"."REQ2TRANSFORMS"'
+        db_table = u'"DOMA_IDDS"."REQ2TRANSFORMS"'
         unique_together = (('request_id_fk', 'transform_id_fk'),)
         managed = False
 

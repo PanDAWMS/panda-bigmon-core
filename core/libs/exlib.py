@@ -4,7 +4,7 @@ from django.db import connection
 from dateutil.parser import parse
 from datetime import datetime
 from core.settings.local import dbaccess
-
+from core.settings.base import BP_MON_SCHEMA
 
 def fileList(jobs):
     newjobs = []
@@ -111,7 +111,8 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
     executionData = []
     for item in list_of_items:
         executionData.append((item, transactionKey))
-    query = """INSERT INTO ATLAS_PANDABIGMON.TMP_IDS1Debug(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
+    tmpTableName = BP_MON_SCHEMA + ".TMP_IDS1DEBUG"
+    query = """INSERT INTO """+tmpTableName+"""(ID,TRANSACTIONKEY) VALUES (%s,%s)"""
     new_cur.executemany(query, executionData)
 
     return transactionKey

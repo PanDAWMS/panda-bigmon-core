@@ -44,11 +44,9 @@
         <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="button social google-plus">
           <i class="fi-social-google-plus" aria-hidden="true"></i> Log in with Google+
         </a><br>
-        {% if viewParams.MON_VO == 'ATLAS' %}
-            <a href="{% url 'social:begin' 'github' %}?next={{ next }}" class="button social github">
+        <a href="{% url 'social:begin' 'github' %}?next={{ next }}" class="button social github">
             <i class="fi-social-github" aria-hidden="true"></i> Log in with Github
-            </a><br>
-        {% endif %}
+        </a><br>
     </div>
      <div id='message' style="text-align:center; display:block; vertical-align: middle;padding-top: 50px;padding-bottom: 50px; display: none">
      Cookies disabled or your browser does not support it. Please check your browser settings or download a new version.
