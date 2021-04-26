@@ -936,6 +936,14 @@ fieldset.inline {
     background-color: #d3deed;
     color: #0a0a0a;
   }
+    .card.bp-container-simple.secondary .card-divider a {
+      color: #49668d;
+      border-bottom: 1px solid #49668d;
+    }
+      .card.bp-container-simple.secondary .card-divider a:hover {
+        color: #0a0a0a;
+        border-bottom: 1px solid #0a0a0a;
+      }
 
 .card.bp-container-simple.help {
   border: 1px solid #bce0cd;
