@@ -52,3 +52,28 @@ def getTransforms(requestid):
     rows = dictfetchall(cur)
     cur.close()
     return rows
+
+
+def getWorkFlowProgressItemized(query_params=None):
+    condition = '(1=1)'
+    sqlpar = {}
+
+    if query_params and len(query_params) > 0:
+        query_params = subtitleValue.replaceInverseKeys('requests', query_params)
+
+        if 'requestid' in query_params:
+            sqlpar['requestid'] = query_params['requestid']
+            condition = 'r.REQUEST_ID = :requestid'
+
+    sql =  """
+    SELECT r.REQUEST_ID, r.NAME as r_NAME, r.STATUS as r_STATUS, r.CREATED_AT as r_CREATED_AT, c.total_files, 
+    c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status FROM doma_idds.requests r LEFT JOIN doma_idds.collections c ON r.REQUEST_ID=c.REQUEST_ID
+    LEFT JOIN DOMA_IDDS.transforms t ON t.transform_id = c.transform_id 
+    LEFT JOIN doma_idds.processings p on p.transform_id=t.transform_id
+    where c.relation_type=0 and %s order by r.request_id desc
+    """ % condition
+    cur = connection.cursor()
+    cur.execute(sql, sqlpar)
+    rows = dictfetchall(cur)
+    cur.close()
+    return rows
