@@ -1,4 +1,4 @@
-from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch
+from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
 import math, random, datetime
 import numpy as np
 from django.db import connection
@@ -520,3 +520,27 @@ def round_to_n(x, n):
     factor = (10 ** power)
 
     return round(x * factor) / factor
+
+
+def getPilotCounts(view):
+    """ Getting pilots counts by PQ. """
+    query = {
+        # 'flag': view,
+        'hours': 3,
+    }
+    job_values = ('getjob', 'updatejob', 'nojob', 'getjobabs', 'updatejobabs', 'nojobabs')
+    values = ('site', 'lastmod') + job_values
+    rows = list(Sitedata.objects.filter(**query).values(*values))
+    pilotd = {}
+    if len(rows) > 0:
+        for r in rows:
+            site = r['site']
+            if not site in pilotd:
+                pilotd[site] = {}
+            for jb in job_values:
+                pilotd[site]['count_' + jb] = r[jb]
+            pilotd[site]['count'] = r['getjob']
+            pilotd[site]['count_abs'] = r['getjobabs']
+            pilotd[site]['time'] = r['lastmod']
+
+    return pilotd

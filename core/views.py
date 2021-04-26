@@ -103,7 +103,7 @@ from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
 from core.libs.exlib import is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
-    add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall
+    add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall, getPilotCounts
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
@@ -6326,7 +6326,8 @@ def dashRegion(request):
                                                                extra=extra_str,
                                                                region=region, 
                                                                jobtype=jobtype,
-                                                               resourcetype=resourcetype)
+                                                               resourcetype=resourcetype,
+                                                               split_by=split_by)
 
     if is_json_request(request):
         extra_info_params = ['links', ]
@@ -10701,23 +10702,6 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
         return txt, codesDescribed
     else:
         return txt
-
-
-def getPilotCounts(view):
-    query = {}
-    query['flag'] = view
-    query['hours'] = 3
-    rows = Sitedata.objects.filter(**query).values()
-    pilotd = {}
-    try:
-        for r in rows:
-            site = r['site']
-            if not site in pilotd: pilotd[site] = {}
-            pilotd[site]['count'] = r['getjob'] + r['updatejob']
-            pilotd[site]['time'] = r['lastmod']
-    except:
-        pass
-    return pilotd
 
 
 def taskNameDict(jobs):

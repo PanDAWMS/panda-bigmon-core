@@ -1653,9 +1653,12 @@ class Sitedata(models.Model):
     transferring = models.IntegerField(db_column='TRANSFERRING')
     getjob = models.IntegerField(db_column='GETJOB')
     updatejob = models.IntegerField(db_column='UPDATEJOB')
+    nojob = models.IntegerField(null=True, db_column='NOJOB', blank=True)
     lastmod = models.DateTimeField(db_column='LASTMOD')
     ncpu = models.IntegerField(null=True, db_column='NCPU', blank=True)
     nslot = models.IntegerField(null=True, db_column='NSLOT', blank=True)
+    getjobabs = models.IntegerField(db_column='GETJOBABS')
+    updatejobabs = models.IntegerField(db_column='UPDATEJOBABS')
     nojobabs = models.IntegerField(null=True, db_column='NOJOBABS', blank=True)
     class Meta:
         db_table = u'sitedata'

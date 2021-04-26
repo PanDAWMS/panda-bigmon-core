@@ -10,6 +10,7 @@ from django.db import connection
 from core.pandajob.models import PandaJob
 from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
+from core.libs.exlib import getPilotCounts
 
 import core.constants as const
 
@@ -38,6 +39,8 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
                 row.append(params['pq_params']['status'])
                 row.append(jt)
                 row.append(rt)
+                row.append(params['pq_pilots']['count'])
+                row.append(params['pq_pilots']['count_nojob'])
                 row.append(summary['nwsubmitted'])
                 row.append(summary['nwrunning'])
                 row.append(summary['rcores'])
@@ -133,6 +136,10 @@ def get_job_summary_region(query, **kwargs):
         resource_types = [kwargs['resourcetype']]
     else:
         resourcetype = 'all'
+    if 'split_by' in kwargs and kwargs['split_by']:
+        split_by = kwargs['split_by']
+    else:
+        split_by = None
 
     # filter out queues by queue related selection params
     pq_to_remove = []
@@ -151,12 +158,19 @@ def get_job_summary_region(query, **kwargs):
         for pqr in list(set(pq_to_remove)):
             del panda_queues_dict[pqr]
 
+    # get PanDA getJob, updateJob request counts
+    psq_dict = {}
+    if split_by is None and jobtype == 'all' and resourcetype == 'all':
+        psq_dict = getPilotCounts('all')
+
     # create template structure for grouping by queue
     for pqn, params in panda_queues_dict.items():
-        jsr_queues_dict[pqn] = {'pq_params': {}, 'summary': {'all': {'all': {}}}}
+        jsr_queues_dict[pqn] = {'pq_params': {}, 'pq_pilots': {},  'summary': {'all': {'all': {}}}}
         jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type']
         jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud']
         jsr_queues_dict[pqn]['pq_params']['status'] = params['status']
+        jsr_queues_dict[pqn]['pq_pilots']['count'] = psq_dict[pqn]['count_abs'] if pqn in psq_dict else -1
+        jsr_queues_dict[pqn]['pq_pilots']['count_nojob'] = psq_dict[pqn]['count_nojobabs'] if pqn in psq_dict else -1
         for jt in job_types:
             if is_jobtype_match_queue(jt, params):
                 jsr_queues_dict[pqn]['summary'][jt] = {}
@@ -203,6 +217,7 @@ def get_job_summary_region(query, **kwargs):
     jsq = get_job_summary_split(query, extra=extra)
 
     # get workers info
+    wsq = []
     if 'core.harvester' in settings.INSTALLED_APPS:
         from core.harvester.utils import get_workers_summary_split
         if 'computingsite__in' not in query:
