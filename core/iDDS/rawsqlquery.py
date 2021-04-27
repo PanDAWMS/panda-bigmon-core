@@ -66,7 +66,7 @@ def getWorkFlowProgressItemized(query_params=None):
             condition = 'r.REQUEST_ID = :requestid'
 
     sql =  """
-    SELECT r.REQUEST_ID, r.NAME as r_NAME, r.STATUS as r_STATUS, r.CREATED_AT as r_CREATED_AT, c.total_files, 
+    SELECT r.REQUEST_ID, r.NAME as r_NAME, r.STATUS as r_STATUS, r.CREATED_AT as r_CREATED_AT, r.CREATED_AT as r_CREATED_AT, c.total_files, 
     c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status FROM doma_idds.requests r LEFT JOIN doma_idds.collections c ON r.REQUEST_ID=c.REQUEST_ID
     LEFT JOIN DOMA_IDDS.transforms t ON t.transform_id = c.transform_id 
     LEFT JOIN doma_idds.processings p on p.transform_id=t.transform_id

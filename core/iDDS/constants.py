@@ -57,6 +57,12 @@ class RequestStatus(Enum):
     ToCancel = 7
     Cancelling = 8
     Cancelled = 9
+    ToSuspend = 10
+    Suspending = 11
+    Suspended = 12
+    ToResume = 13
+    Resuming = 14
+    Expired = 15
 
 
 class RequestLocking(Enum):
@@ -153,6 +159,21 @@ class ProcessingStatus(Enum):
     Finished = 4
     Failed = 5
     Lost = 6
+    Cancel = 7
+    FinishedOnStep = 8
+    FinishedOnExec = 9
+    TimeOut = 10
+    FinishedTerm = 11
+    ToCancel = 12
+    Cancelling = 13
+    Cancelled = 14
+    ToSuspend = 15
+    Suspending = 16
+    Suspended = 17
+    ToResume = 18
+    Resuming = 19
+    Expired = 20
+    SubFinished = 21
 
 
 class ProcessingLocking(Enum):
