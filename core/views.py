@@ -7999,7 +7999,7 @@ def taskInfo(request, jeditaskid=0):
             taskrec['currenttotevhs06'] = int(hs06sSum['total']) if 'total' in hs06sSum else None
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
-        taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid)
+        taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
 
     # datetime type -> str in order to avoid encoding errors in template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
