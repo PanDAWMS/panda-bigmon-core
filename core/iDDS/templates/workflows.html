@@ -117,19 +117,19 @@ var requests_table = $('#requests_table').DataTable({
 
                 switch(key) {
                   case 'Finished':
-                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="finished">'+key+'</span></a> ';
+                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="finished">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
                     break;
                   case 'Failed':
-                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="failed">'+key+'</span></a> ';
+                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="failed">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
                     break;
                   case 'Running':
-                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="running">'+key+'</span></a> ';
+                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="running">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
                     break;
                   case 'Submitted':
-                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="registered">'+key+'</span></a> ';
+                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="registered">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
                     break;
                   default:
-                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'">'+key+'</a> ';
+                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'">'+key+'('+row['tasks_statuses'][key]+')'+'</a> ';
                 }
             }
             return retVal;
