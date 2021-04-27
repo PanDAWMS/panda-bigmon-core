@@ -257,6 +257,8 @@ class Filestable4(models.Model):
     class Meta:
         db_table = u'filestable4'
         unique_together = ('row_id', 'modificationtime')
+        app_label = 'panda'
+
 
 class FilestableArch(models.Model):
     row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
@@ -287,6 +289,7 @@ class FilestableArch(models.Model):
     class Meta:
         db_table = u'filestable_arch'
         unique_together = ('row_id', 'modificationtime')
+        app_label = 'panda'
 
 class Groups(models.Model):
     id = models.IntegerField(primary_key=True, db_column='ID')
@@ -423,6 +426,7 @@ class JediDatasetContents(models.Model):
     class Meta:
         db_table = u'jedi_dataset_contents'
         unique_together = ('jeditaskid', 'datasetid', 'fileid')
+        app_label = 'jedi'
 
 
 class JediDatasets(models.Model):
@@ -462,6 +466,7 @@ class JediDatasets(models.Model):
     class Meta:
         db_table = u'jedi_datasets'
         unique_together = ('jeditaskid', 'datasetid')
+        app_label = 'jedi'
 
 
 class JediEvents(models.Model):
@@ -484,6 +489,7 @@ class JediEvents(models.Model):
     class Meta:
         db_table = u'jedi_events'
         unique_together = ('jeditaskid', 'pandaid', 'fileid', 'job_processid')
+        app_label = 'jedi'
 
 
 class JediDatasetLocality(models.Model):
@@ -495,6 +501,7 @@ class JediDatasetLocality(models.Model):
     class Meta:
         db_table = u'"ATLAS_PANDA"."jedi_dataset_locality"'
         unique_together = ('jeditaskid', 'datasetid', 'rse')
+        app_label = 'jedi'
 
 
 class JediJobparamsTemplate(models.Model):
@@ -502,6 +509,8 @@ class JediJobparamsTemplate(models.Model):
     jobparamstemplate = models.TextField(db_column='JOBPARAMSTEMPLATE', blank=True)
     class Meta:
         db_table = u'jedi_jobparams_template'
+        app_label = 'jedi'
+
 
 class JediJobRetryHistory(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
@@ -512,6 +521,8 @@ class JediJobRetryHistory(models.Model):
     class Meta:
         db_table = u'jedi_job_retry_history'
         unique_together = ('jeditaskid', 'oldpandaid', 'newpandaid')
+        app_label = 'jedi'
+
 
 class JediOutputTemplate(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
@@ -526,12 +537,16 @@ class JediOutputTemplate(models.Model):
     class Meta:
         db_table = u'jedi_output_template'
         unique_together = ('jeditaskid', 'datasetid', 'outtempid')
+        app_label = 'jedi'
+
 
 class JediTaskparams(models.Model):
     jeditaskid = models.BigIntegerField(primary_key=True, db_column='JEDITASKID')
     taskparams = models.TextField(db_column='TASKPARAMS', blank=True)
     class Meta:
         db_table = u'jedi_taskparams'
+        app_label = 'jedi'
+
 
 class JediTasksBase(models.Model):
     jeditaskid = models.BigIntegerField(primary_key=True, db_column='JEDITASKID')
@@ -613,10 +628,13 @@ class JediTasksBase(models.Model):
 class JediTasks(JediTasksBase):
     class Meta:
         db_table = u'jedi_tasks'
+        app_label = 'jedi'
+
 
 class JediTasksOrdered(JediTasksBase):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JEDI_TASKS_ORDERED"'
+        app_label = 'paandamon'
 
 
 class GetEventsForTask(models.Model):
@@ -636,6 +654,7 @@ class TasksStatusLog(models.Model):
     reason = models.CharField(max_length=600, db_column='REASON', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDA"."TASKS_STATUSLOG"'
+        app_label = 'jedi'
 
 
 #class BPToken(models.Model):
@@ -671,6 +690,8 @@ class JediWorkQueue(models.Model):
     variables = models.CharField(max_length=256, db_column='VARIABLES', blank=True) 
     class Meta:
         db_table = u'jedi_work_queue'
+        app_label = 'jedi'
+
 
 class Jobclass(models.Model):
     id = models.IntegerField(primary_key=True, db_column='ID')
@@ -691,6 +712,8 @@ class Jobparamstable(models.Model):
     class Meta:
         db_table = u'jobparamstable'
         unique_together = ('pandaid', 'modificationtime')
+        app_label = 'panda'
+
 
 class JobparamstableArch(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID')
@@ -698,6 +721,8 @@ class JobparamstableArch(models.Model):
     jobparameters = models.TextField(db_column='JOBPARAMETERS', blank=True)
     class Meta:
         db_table = u'jobparamstable_arch'
+        app_label = 'panda'
+
 
 class JobsStatuslog(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
@@ -710,6 +735,7 @@ class JobsStatuslog(models.Model):
     modiftime_extended = models.DateTimeField(db_column='MODIFTIME_EXTENDED')
     class Meta:
         db_table = u'"ATLAS_PANDA"."JOBS_STATUSLOG"'
+        app_label = 'panda'
 
 
 class Jobsarchived4WnlistStats(models.Model):
@@ -725,11 +751,13 @@ class Jobsarchived4WnlistStats(models.Model):
     class Meta:
         db_table = u'jobsarchived4_wnlist_stats'
 
+
 class Jobsdebug(models.Model):
     pandaid = models.BigIntegerField(primary_key=True, db_column='PANDAID')
     stdout = models.CharField(max_length=6144, db_column='STDOUT', blank=True)
     class Meta:
         db_table = u'jobsdebug'
+
 
 class Logstable(models.Model):
     pandaid = models.IntegerField(primary_key=True, db_column='PANDAID') 
@@ -739,6 +767,7 @@ class Logstable(models.Model):
     log4 = models.TextField(db_column='LOG4') 
     class Meta:
         db_table = u'logstable'
+
 
 class Members(models.Model):
     uname = models.CharField(max_length=90, db_column='UNAME', primary_key=True)
@@ -758,12 +787,14 @@ class Metatable(models.Model):
         db_table = u'metatable'
         unique_together = ('pandaid', 'modificationtime')
 
+
 class MetatableArch(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     metadata = models.TextField(db_column='METADATA', blank=True)
     class Meta:
         db_table = u'metatable_arch'
+
 
 class MvJobsactive4Stats(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column='ID')
@@ -1553,6 +1584,7 @@ class RucioAccounts(models.Model):
     create_time = models.DateTimeField(db_column='CREATE_TIME')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUCIO_ACCOUNTS"'
+        app_label = 'pandamon'
 
 
 class AllRequests(models.Model):
@@ -1572,6 +1604,7 @@ class AllRequests(models.Model):
     dbtotalsess = models.IntegerField(db_column='DBTOTALSESS')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ALL_REQUESTS_DAILY"'
+        app_label = 'pandamon'
 
 
 class Savedpages(models.Model):
@@ -1584,6 +1617,7 @@ class Savedpages(models.Model):
     class Meta:
         db_table = u'savedpages'
         unique_together = ('name', 'flag', 'hours')
+
 
 class Servicelist(models.Model):
     id = models.IntegerField(primary_key=True, db_column='ID')
@@ -1622,6 +1656,7 @@ class Siteaccess(models.Model):
     created = models.DateTimeField(null=True, db_column='CREATED', blank=True)
     class Meta:
         db_table = u'siteaccess'
+
 
 class Sitedata(models.Model):
     site = models.CharField(max_length=90, db_column='SITE', primary_key=True)
@@ -1663,6 +1698,8 @@ class Sitedata(models.Model):
     class Meta:
         db_table = u'sitedata'
         unique_together = ('site', 'flag', 'hours')
+        app_label = 'panda'
+
 
 class Siteddm(models.Model):
     name = models.CharField(max_length=180, primary_key=True, db_column='NAME')

@@ -10,11 +10,11 @@
 
 from .columns_config import COLUMNS, ORDER_COLUMNS, COL_TITLES, FILTERS
 
-
 from django.db import models
-models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
-                                 'primaryColumns', 'secondaryColumns', \
-                                 'columnTitles', 'filterFields',)
+models.options.DEFAULT_NAMES += (
+    'allColumns', 'orderColumns', 'primaryColumns', 'secondaryColumns', 'columnTitles', 'filterFields',
+)
+
 
 class MonitorUsers(models.Model):
     userid = models.BigIntegerField(db_column='ID')
@@ -25,6 +25,7 @@ class MonitorUsers(models.Model):
     isactive = models.SmallIntegerField(db_column='ISACTIVE') # Field name made lowercase.
     class Meta:
         db_table = u'MONITOR_USERS'
+        app_label = 'panda'
 
 
 class Getfailedjobshspec(models.Model):
@@ -32,12 +33,16 @@ class Getfailedjobshspec(models.Model):
     timeinhepspec = models.FloatField(default=None, db_column='TIMEINHEPSPEC')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETFAILEDJOBSHSPEC"'
+        app_label = 'pandamon'
+
 
 class Getfailedjobshspecarch(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
     timeinhepspec = models.FloatField(default=None, db_column='TIMEINHEPSPEC')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETFAILEDJOBSHSPECARCH"'
+        app_label = 'pandamon'
+
 
 
 class GetRWWithPrioJedi3DAYS(models.Model):
@@ -105,6 +110,7 @@ class GetRWWithPrioJedi3DAYS(models.Model):
 
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETRWWITHPRIOJEDI3DAYS"'
+        app_label = 'pandamon'
 
 
 class RemainedEventsPerCloud3dayswind(models.Model):
@@ -112,6 +118,8 @@ class RemainedEventsPerCloud3dayswind(models.Model):
     nrem = models.BigIntegerField(db_column='REMNORMEV')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."REMEVPCL3DAYSWIND"'
+        app_label = 'pandamon'
+
 
 class JobsWorldView(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
@@ -120,6 +128,8 @@ class JobsWorldView(models.Model):
     countjobsinstate = models.IntegerField(db_column='COUNTJOBSINSTATE')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
+        app_label = 'pandamon'
+
 
 class CombinedWaitActDefArch4(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID')
@@ -138,6 +148,8 @@ class CombinedWaitActDefArch4(models.Model):
     eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'
+        app_label = 'pandamon'
+
 
 class JobsWorldViewTaskType(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
@@ -148,6 +160,7 @@ class JobsWorldViewTaskType(models.Model):
     es = models.IntegerField(db_column='ES')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEWTASKTYPE"'
+        app_label = 'pandamon'
 
 
 class PandaJob(models.Model):
@@ -344,21 +357,25 @@ class PandaJob(models.Model):
 class Jobsactive4(PandaJob):
     class Meta:
         db_table = u'jobsactive4'
+        app_label = 'panda'
 
 
 class Jobsarchived(PandaJob):
     class Meta:
         db_table = u'jobsarchived'
+        app_label = 'panda'
 
 
 class Jobsarchived4(PandaJob):
     class Meta:
         db_table = u'jobsarchived4'
+        app_label = 'panda'
 
 
 class Jobsdefined4(PandaJob):
     class Meta:
         db_table = u'jobsdefined4'
+        app_label = 'panda'
 
     # __getitem__
     def __getitem__(self, name):
@@ -369,6 +386,7 @@ class Jobsdefined4(PandaJob):
 class Jobswaiting4(PandaJob):
     class Meta:
         db_table = u'jobswaiting4'
+        app_label = 'panda'
 
 
 # ATLARC DB
