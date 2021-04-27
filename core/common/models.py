@@ -85,6 +85,7 @@ class Cloudconfig(models.Model):
     fairshare = models.CharField(max_length=384, db_column='FAIRSHARE', blank=True)
     class Meta:
         db_table = u'cloudconfig'
+        app_label = 'panda'
 
 class Cloudspace(models.Model):
     cloud = models.CharField(max_length=60, db_column='CLOUD', primary_key=True)
@@ -125,6 +126,7 @@ class Datasets(models.Model):
     class Meta:
         db_table = u'datasets'
         unique_together = ('vuid', 'modificationdate')
+        app_label = 'panda'
 
 class DeftDataset(models.Model):
     dataset_id = models.CharField(db_column='DATASET_ID', primary_key=True, max_length=255) 
@@ -361,6 +363,7 @@ class Incidents(models.Model):
     description = models.CharField(max_length=600, db_column='DESCRIPTION', blank=True)
     class Meta:
         db_table = u'incidents'
+        app_label = 'panda'
 
 class InfomodelsSitestatus(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column='ID')
@@ -634,7 +637,7 @@ class JediTasks(JediTasksBase):
 class JediTasksOrdered(JediTasksBase):
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JEDI_TASKS_ORDERED"'
-        app_label = 'paandamon'
+        app_label = 'pandamon'
 
 
 class GetEventsForTask(models.Model):
@@ -643,6 +646,7 @@ class GetEventsForTask(models.Model):
     totev = models.BigIntegerField(db_column='totev')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETEVENTSFORTASK"'
+        app_label = 'pandamon'
 
 
 class TasksStatusLog(models.Model):
@@ -757,6 +761,7 @@ class Jobsdebug(models.Model):
     stdout = models.CharField(max_length=6144, db_column='STDOUT', blank=True)
     class Meta:
         db_table = u'jobsdebug'
+        app_label = 'panda'
 
 
 class Logstable(models.Model):
@@ -767,6 +772,7 @@ class Logstable(models.Model):
     log4 = models.TextField(db_column='LOG4') 
     class Meta:
         db_table = u'logstable'
+        app_label = 'panda'
 
 
 class Members(models.Model):
@@ -854,6 +860,7 @@ class Pandalog(models.Model):
     message = models.CharField(max_length=12000, db_column='MESSAGE', blank=True)
     class Meta:
         db_table = u'pandalog'
+        app_label = 'panda'
 
 class Passwords(models.Model):
     id = models.IntegerField(primary_key=True, db_column='ID')
