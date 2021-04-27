@@ -14,6 +14,8 @@ urlpatterns = [
     re_path(r'^processings/$', idds_views.processings, name='iddprocessings'),
     re_path(r'^contents/$', idds_views.iddsсontents, name='iddsсontents'),
     re_path(r'^contents/$', idds_views.iddsсontents, name='iddsсontents'),
-    re_path(r'^workflowprogress/$', idds_workflowprogress.get_workflow_progress, name='workflowprogressitems'),
+    #re_path(r'^wfprogressdata/$', idds_workflowprogress.get_workflow_progress_data, name='wfprogressdata'),
+    re_path(r'^wfprogress/$', idds_workflowprogress.wfprogress, name='workflowprogressitems'),
+
 ]
 

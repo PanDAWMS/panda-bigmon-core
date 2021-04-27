@@ -21,11 +21,10 @@ OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 subtitleValue = SubstitleValue()
 
-@login_customrequired
-def get_workflow_progress(request):
-    initRequest(request)
+def get_workflow_progress_data(request):
+    #initRequest(request)
     workflows_items = getWorkFlowProgressItemized()
-    workflows_pd = pd.DataFrame(workflows_items).astype({"WORKLOAD_ID":str}).groupby(['REQUEST_ID', 'R_STATUS', 'P_STATUS']).agg(
+    workflows_pd = pd.DataFrame(workflows_items).astype({"WORKLOAD_ID":str}).astype({"R_CREATED_AT":str}).groupby(['REQUEST_ID', 'R_STATUS', 'P_STATUS']).agg(
         PROCESSING_FILES_SUM=pd.NamedAgg(column="PROCESSING_FILES", aggfunc="sum"),
         PROCESSED_FILES_SUM=pd.NamedAgg(column="PROCESSED_FILES", aggfunc="sum"),
         TOTAL_FILES=pd.NamedAgg(column="TOTAL_FILES", aggfunc="sum"),
@@ -50,5 +49,23 @@ def get_workflow_progress(request):
         workflow['PROCESSING_FILES'] += workflow_group[3]
         workflow['TOTAL_FILES'] += workflow_group[5]
         workflow['REMAINING_FILES'] = workflow['TOTAL_FILES'] - workflow['PROCESSED_FILES']
-    return JsonResponse(workflows, encoder=DateEncoder, safe=False)
+    workflows = lower_dicts_in_list(list(workflows.values()))
+    #return JsonResponse(workflows, encoder=DateEncoder, safe=False)
+    return workflows
+
+
+@login_customrequired
+def wfprogress(request):
+    initRequest(request)
+    query_params = parse_request(request)
+    iDDSrequests = get_workflow_progress_data(None)
+    data = {
+        'iDDSrequests':iDDSrequests,
+        'request': request,
+        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+    }
+    response = render_to_response('workflows.html', data, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
 
