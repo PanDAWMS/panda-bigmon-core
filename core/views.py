@@ -2144,6 +2144,8 @@ def jobList(request, mode=None, param=None):
         noarchjobs = True
     warning = {}
     extraquery_files = ' '
+
+
     if 'fileid' in request.session['requestParams'] or 'ecstate' in request.session['requestParams']:
         if 'fileid' in request.session['requestParams'] and request.session['requestParams']['fileid']:
             fileid = request.session['requestParams']['fileid']
@@ -2202,7 +2204,24 @@ def jobList(request, mode=None, param=None):
     else:
         fileid = None
 
-    _logger.info('Specific params processing: {}'.format(time.time()-request.session['req_init_time']))
+    extraquery_tasks = ' '
+
+    if 'taskname' in request.session['requestParams'] and 'username' in request.session['requestParams']:
+        taskname = request.session['requestParams']['taskname']
+        taskusername = request.session['requestParams']['username']
+
+        if taskname.find('*') != -1:
+           taskname = taskname.replace('*', '%%')
+
+        if taskusername.find('*') != -1:
+           taskusername = taskusername.replace('*', '%%')
+
+        extraquery_tasks += """
+            jeditaskid in (
+            select jeditaskid from atlas_panda.jedi_tasks where taskname like '{}' and username like '{}'
+            ) """.format(taskname, taskusername)
+
+    _logger.info('Specific params processing: {}'.format(time.time() - request.session['req_init_time']))
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
 
@@ -2210,6 +2229,9 @@ def jobList(request, mode=None, param=None):
 
     if len(extraquery_files) > 1:
         wildCardExtension += ' AND ' + extraquery_files
+
+    if len(extraquery_tasks) > 1:
+        wildCardExtension += ' AND ' + extraquery_tasks
 
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
         data = {
