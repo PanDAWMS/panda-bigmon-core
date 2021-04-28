@@ -130,7 +130,7 @@ def humanize_metrics(metrics):
             'class': [],
         },
         'attemptnr': {
-            'title': ' Median number of job attempts',
+            'title': ' Average number of job attempts',
             'unit': '',
             'class': [],
         },

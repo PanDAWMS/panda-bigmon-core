@@ -4070,17 +4070,10 @@ def userInfo(request, user=''):
         tasks = JediTasks.objects.filter(**query).values()
     else:
         tasks = JediTasks.objects.filter(**query).filter(userQueryTask).values()
-    _logger.info('Got tasks: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.info('Got {} tasks: {}'.format(len(tasks), time.time() - request.session['req_init_time']))
 
     tasks = cleanTaskList(tasks, sortby=sortby, add_datasets_info=True)
     _logger.info('Cleaned tasks and loading datasets info: {}'.format(time.time() - request.session['req_init_time']))
-
-    if 'display_limit_tasks' not in request.session['requestParams']:
-        display_limit_tasks = 100
-    else:
-        display_limit_tasks = int(request.session['requestParams']['display_limit_tasks'])
-    ntasksmax = display_limit_tasks
-    url_nolimit_tasks = removeParam(extensibleURL(request), 'display_limit_tasks', mode='extensible') + "display_limit_tasks=" + str(len(tasks))
 
     # consumed cpu hours stats for a user
     if len(tasks) > 0:
@@ -4158,6 +4151,13 @@ def userInfo(request, user=''):
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
     else:
+        if 'display_limit_tasks' not in request.session['requestParams']:
+            display_limit_tasks = 100
+        else:
+            display_limit_tasks = int(request.session['requestParams']['display_limit_tasks'])
+        ntasksmax = display_limit_tasks
+        url_nolimit_tasks = removeParam(extensibleURL(request), 'display_limit_tasks', mode='extensible') + "display_limit_tasks=" + str(len(tasks))
+
         tasks = getTaskScoutingInfo(tasks, ntasksmax)
         _logger.info('Tasks scouting info loaded: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -4165,7 +4165,7 @@ def userInfo(request, user=''):
         tasksumd = taskSummaryDict(request, tasks)
         _logger.info('Tasks summary generated: {}'.format(time.time() - request.session['req_init_time']))
 
-        ## Jobs
+        # Jobs
         limit = 5000
         query, extra_query_str, LAST_N_HOURS_MAX = setupView(request, hours=72, limit=limit, querytype='job', wildCardExt=True)
         jobs = []
@@ -4365,7 +4365,7 @@ def userDashApi(request, agg=None):
         jobs = get_job_list(jquery, values=err_fields)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, {}, False, flist=[])
+        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, {}, False, flist=[], sortby='count')
         errs_by_task_dict = {}
         for err in errs_by_task:
             if err['name'] not in errs_by_task_dict:
@@ -4381,12 +4381,14 @@ def userDashApi(request, agg=None):
                     t['job_' + metric] = metrics[metric]['group_by'][t['jeditaskid']]
                 else:
                     t['job_' + metric] = ''
-            if t['jeditaskid'] in errs_by_task_dict:
+            if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
                 link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
                 t['top_errors'] = '<br>'.join(
                     ['<a href="{}{}={}">{}</a> [{}] "{}"'.format(
                         link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag']
                     ) for err in errs_by_task_dict[t['jeditaskid']]['errorlist']][:2])
+            else:
+                t['top_errors'] = -1
         _logger.info('Jobs metrics added to tasks: {}'.format(time.time() - request.session['req_init_time']))
 
         # prepare relevant metrics to show
@@ -4396,11 +4398,9 @@ def userDashApi(request, agg=None):
         data['data']['metrics'] = metrics_total
         data['data']['tasks_metrics'] = tasks
 
-        import sys
-        print('Size of raw data: {} MB'.format(sys.getsizeof(json.dumps(tasks, default=datetime_handler))*1.0/1024/1024))
-
+        # prepare data for datatable
         task_list_table_headers = [
-            'jeditaskid', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished',
+            'jeditaskid', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished',
             'superstatus', 'status', 'age',
             'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
             'errordialog', 'job_failed', 'top_errors',
@@ -4414,7 +4414,6 @@ def userDashApi(request, agg=None):
                 else:
                     tmp_list.append("-")
             tasks_to_show.append(tmp_list)
-        print('Size of data: {} MB'.format(sys.getsizeof(json.dumps(tasks_to_show, default=datetime_handler)) * 1.0 / 1024 / 1024))
         data['data']['tasks_metrics'] = tasks_to_show
 
     return HttpResponse(json.dumps(data, default=datetime_handler), content_type='application/json')
@@ -8696,6 +8695,12 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
     else:
         flist = copy.deepcopy(standard_errorfields)
 
+    sortby = 'count'
+    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
+        sortby = request.session['requestParams']['sortby']
+    elif 'sortby' in kwargs and kwargs['sortby']:
+        sortby = kwargs['sortby']
+
     for job in jobs:
         if not testjobs:
             if job['jobstatus'] not in ['failed', 'holding']: continue
@@ -8884,10 +8889,10 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsBySite[site]['errorlist'].append(errsBySite[site]['errors'][err])
-        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+        if sortby == 'count':
             errsBySite[site]['errorlist'] = sorted(errsBySite[site]['errorlist'], key=lambda x: -x['count'])
         errsBySiteL.append(errsBySite[site])
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+    if sortby == 'count':
         errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
 
     kys = list(errsByTask.keys())
@@ -8898,10 +8903,10 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsByTask[taskid]['errorlist'].append(errsByTask[taskid]['errors'][err])
-        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+        if sortby == 'count':
             errsByTask[taskid]['errorlist'] = sorted(errsByTask[taskid]['errorlist'], key=lambda x: -x['count'])
         errsByTaskL.append(errsByTask[taskid])
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+    if sortby == 'count':
         errsByTaskL = sorted(errsByTaskL, key=lambda x: -x['toterrors'])
 
     suml = []
@@ -8917,7 +8922,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
         suml.append(itemd)
     suml = sorted(suml, key=lambda x: x['field'])
 
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+    if sortby == 'count':
         for item in suml:
             item['list'] = sorted(item['list'], key=lambda x: -x['kvalue'])
 
