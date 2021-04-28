@@ -183,13 +183,13 @@ div.bp-selected-params p {
 }
 
 .callout.info {
-  background-color: #d3deed;
+  background-color: #e1faea;
 }
   .callout.info h5 {
     font-weight: bold;
   }
   .callout.info a {
-    color: #355681;
+    color: black;
     border-bottom: 1px dotted;
   }
 
