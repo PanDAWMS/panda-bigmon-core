@@ -14,6 +14,13 @@
 {% endblock %}
 {% block body %}
 
+<div class="callout info" data-closable>
+  <h5><b>Please participate in testing a completely new <a href="{{ xurl }}view=dash">MyBigPanDA page</a></b></h5>
+  <p>The new user dashboard focuses on the progress of your tasks and highlighting of possible problems. </p>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
 
 <p>
 {% if ntasks > 0 or njobsets > 0 or njobs > 0 %}

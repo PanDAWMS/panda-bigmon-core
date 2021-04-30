@@ -141,8 +141,6 @@ if len(settings.INSTALLED_APPS_EXTRA) > 0:
     for app_name in settings.INSTALLED_APPS_EXTRA:
         urlpatterns.append(re_path('', include('{}.urls'.format(app_name)), name=app_name))
 
-print('ddd')
-
 if settings.DEBUG:
     try:
         import debug_toolbar

@@ -83,7 +83,7 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
         'queuetime': {'total': [], 'group_by': {}, 'agg': 'median'},
         'failed': {'total': [], 'group_by': {}, 'agg': 'average'},
         'efficiency': {'total': [], 'group_by': {}, 'agg': 'median'},
-        'attemptnr': {'total': [], 'group_by': {}, 'agg': 'median'},
+        'attemptnr': {'total': [], 'group_by': {}, 'agg': 'average'},
         'walltime_loss': {'total': [], 'group_by': {}, 'agg': 'sum'},
         'cputime_loss': {'total': [], 'group_by': {}, 'agg': 'sum'},
     }

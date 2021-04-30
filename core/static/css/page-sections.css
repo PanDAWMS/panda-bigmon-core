@@ -182,6 +182,17 @@ div.bp-selected-params p {
   font-size: 0.875rem;
 }
 
+.callout.info {
+  background-color: #e1faea;
+}
+  .callout.info h5 {
+    font-weight: bold;
+  }
+  .callout.info a {
+    color: black;
+    border-bottom: 1px dotted;
+  }
+
 div.normal {
   font-size: 0.875rem;
 }

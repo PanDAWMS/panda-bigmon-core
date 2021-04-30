@@ -6,6 +6,8 @@ import matplotlib.dates as md
 import os
 from django.db import connection
 from core.common.models import JediTasks, TasksStatusLog
+from core.pandajob.models import Jobsarchived4, Jobsarchived
+from core.libs.job import add_job_category, drop_duplicates
 import io
 import matplotlib as mpl
 mpl.use('Agg')
@@ -117,62 +119,52 @@ class TaskProgressPlot:
         :param taskid:
         :return:
         """
-        qstr = """
-            SELECT starttime, creationtime, endtime, pandaid, processingtype, transformation, nevents, jobstatus
-            FROM (
-                SELECT starttime, creationtime, endtime, pandaid, processingtype, transformation, nevents, jobstatus 
-                FROM ATLAS_PANDAARCH.JOBSARCHIVED 
-                    WHERE JEDITASKID={0} and JOBSTATUS in ('finished', 'failed', 'closed', 'cancelled') 
-                UNION
-                SELECT starttime, creationtime, endtime, pandaid, processingtype, transformation, nevents, jobstatus  
-                FROM ATLAS_PANDA.JOBSARCHIVED4 
-                    WHERE JEDITASKID={0} and JOBSTATUS in ('finished', 'failed', 'closed', 'cancelled') 
-                ) t 
-            ORDER BY endtime asc
-        """.format(taskid)
-        cur = connection.cursor()
-        cur.execute(qstr)
-        rows = cur.fetchall()
-        tp_names = ['start', 'creation', 'end', 'pandaid', 'processingtype', 'transformation', 'nevents',
-                    'jobstatus', 'indx']
-        rows = [dict(zip(tp_names, row)) for row in rows]
+        jobs = []
+        jquery = {
+            'jeditaskid': taskid,
+            'jobstatus__in': ['finished', 'failed', 'closed', 'cancelled'],
+        }
+        jvalues = ('pandaid', 'processingtype', 'transformation', 'nevents', 'jobstatus',
+                    'starttime', 'creationtime', 'endtime',)
+        jobs.extend(Jobsarchived4.objects.filter(**jquery).values(*jvalues))
+        jobs.extend(Jobsarchived.objects.filter(**jquery).values(*jvalues))
+        jobs = drop_duplicates(jobs)
+        jobs = add_job_category(jobs)
+        jobs = sorted(jobs, key=lambda x: x['endtime'])
 
-        # add clear jobtype field and overwrite nevents to 0 for unfinished and build/merge jobs
-        job_types = ['build', 'run', 'merge']
+        # overwrite nevents to 0 for unfinished and build/merge jobs
+        job_categories = ['build', 'run', 'merge']
         job_timestamps = ['creation', 'start', 'end']
-        for r in rows:
-            if 'build' in r['transformation']:
-                r['jobtype'] = 'build'
-            elif r['processingtype'] == 'pmerge':
-                r['jobtype'] = 'merge'
+        for j in jobs:
+            if j['category'] in ('build', 'merge'):
+                j['nevents'] = 0
+            if j['jobstatus'] in ('failed', 'closed', 'cancelled'):
+                j['nevents'] = 0
+
+            j['creation'] = j['creationtime']
+            if j['starttime'] is None:
+                j['start'] = j['creation']
             else:
-                r['jobtype'] = 'run'
-
-            if r['jobtype'] in ('build', 'merge'):
-                r['nevents'] = 0
-            if r['jobstatus'] in ('failed', 'closed', 'cancelled'):
-                r['nevents'] = 0
-
-            if r['start'] is None:
-                r['start'] = r['creation']
+                j['start'] = j['starttime']
+            j['end'] = j['endtime']
 
         # create task profile dict
         task_profile_dict = {}
-        for jt in job_types:
-            task_profile_dict[jt] = []
+        for jc in job_categories:
+            task_profile_dict[jc] = []
         fin_i = 0
         fin_ev = 0
-        for r in rows:
+        for j in jobs:
             fin_i += 1
-            fin_ev += r['nevents']
+            fin_ev += j['nevents']
             temp = {}
             for jtm in job_timestamps:
-                temp[jtm] = r[jtm]
+                temp[jtm] = j[jtm]
             temp['nevents'] = fin_ev
             temp['indx'] = fin_i
-            temp['jobstatus'] = r['jobstatus']
-            temp['pandaid'] = r['pandaid']
-            task_profile_dict[r['jobtype']].append(temp)
+            temp['jobstatus'] = j['jobstatus']
+            temp['pandaid'] = j['pandaid']
+            task_profile_dict[j['category']].append(temp)
 
         return task_profile_dict
 

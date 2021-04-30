@@ -159,8 +159,8 @@
           <br>{% if task.modificationtime %}<span class="closed">{{ task.modificationtime }}</span>{% else %}&mdash;{% endif %}
         </td>
         <td>{{ task.corecount }}</td>
-        <td>{{ task.attemptnr }}</td>
         <td>{{ task.taskpriority }}</td>
+        <td>{{ task.attemptnr }}</td>
         <td>
           {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
             <a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>
