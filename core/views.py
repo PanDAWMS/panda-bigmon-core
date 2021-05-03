@@ -62,7 +62,6 @@ from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
 from core.oauth.models import BPUser, Visits, BPUserSettings
 from core.compare.modelsCompare import ObjectsComparison
-from core.art.modelsART import ARTTests
 from core.filebrowser.ruciowrapper import ruciowrapper
 
 from core.settings.local import dbaccess
@@ -3742,11 +3741,15 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             if job['pandaid'] in clist:
                 isincomparisonlist = True
 
-
     # if it is ART test, get test name
     art_test = []
-    artqueue = {'pandaid': pandaid}
-    art_test.extend(ARTTests.objects.filter(**artqueue).values())
+    if 'core.art' in djangosettings.INSTALLED_APPS:
+        try:
+            from core.art.modelsART import ARTTests
+        except ImportError:
+            _logger.exception('Failed to import ARTTests model')
+        artqueue = {'pandaid': pandaid}
+        art_test.extend(ARTTests.objects.filter(**artqueue).values())
 
     # datetime type -> str in order to avoid encoding errors on template
     datetime_job_param_names = ['creationtime', 'modificationtime', 'starttime', 'statechangetime', 'endtime']
