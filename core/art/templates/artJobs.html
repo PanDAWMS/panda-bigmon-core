@@ -13,12 +13,15 @@
 {% else %}
     <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
 {% endif %}
-{% if taskids|length == 1 %}
-    <div style="float: right">
-        <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
-    </div>
-{% endif %}
-    <br>
+
+<div style="float: right">
+  {% if taskids|length == 1 %}
+    <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
+  {% elif taskids|length >= 0 %}
+    <a href="{% url 'jobList' %}?jeditaskid={% for id in taskids %}{{ id }}{% if not forloop.last %}|{% endif %}{% endfor %}" class="button back-to-home">PanDA job list</a>
+  {% endif %}
+</div>
+<br>
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}

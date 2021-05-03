@@ -290,7 +290,7 @@ def artTasks(request):
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
-            'arttasks' : arttasksdict,
+            'arttasks': arttasksdict,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
         }
@@ -564,7 +564,7 @@ def artJobs(request):
             'testdirectories': testdirectories,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
-            'taskids' : jeditaskids,
+            'taskids': jeditaskids,
             'gitlabids': gitlabids,
             'outputcontainers': outputcontainers,
             'reportto': reportTo,
