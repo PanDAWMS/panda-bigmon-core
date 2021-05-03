@@ -197,7 +197,7 @@ class Schedconfig(models.Model):
         return fields
 
     class Meta:
-        db_table = u'schedconfig'
+        db_table = u'"ATLAS_PANDAMETA"."schedconfig"'
 
 
 class SchedconfigJson(models.Model):

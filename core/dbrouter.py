@@ -1,15 +1,15 @@
 class ProdMonDBRouter(object):
     def db_for_read(self, model, **hints):
         if model._meta.app_label == 'panda':
-            return 'default'
+            return 'panda'
         if model._meta.app_label == 'pandaarch':
             return 'panda_atlarc'
         if model._meta.app_label == 'pandamon':
             return 'default'
         if model._meta.app_label == 'harvester':
-            return 'default'
+            return 'panda'
         if model._meta.app_label == 'jedi':
-            return 'default'
+            return 'panda'
         if model._meta.app_label == "taskmon":
             return "deft_adcr"
         if model._meta.app_label == 'prodtask':
@@ -17,8 +17,8 @@ class ProdMonDBRouter(object):
         return None
 
     def db_for_write(self, model, **hints):
-        if model._meta.app_label == 'prodtask':
-            return 'deft'
+        # if model._meta.app_label == 'prodtask':
+        #     return 'deft'
         return None
 
     def allow_relation(self, obj1, obj2, **hints):
