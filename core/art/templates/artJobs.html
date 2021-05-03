@@ -17,7 +17,7 @@
 <div style="float: right">
   {% if taskids|length == 1 %}
     <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
-  {% elif taskids|length >= 0 %}
+  {% elif taskids|length >= 0 and taskids|length < 50 %}
     <a href="{% url 'jobList' %}?jeditaskid={% for id in taskids %}{{ id }}{% if not forloop.last %}|{% endif %}{% endfor %}" class="button back-to-home">PanDA job list</a>
   {% endif %}
 </div>
