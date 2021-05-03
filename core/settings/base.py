@@ -132,7 +132,7 @@ INSTALLED_APPS_BIGPANDAMON_CORE = (
 
 INSTALLED_APPS_EXTRA = [
     # "core.admin",
-    "core.art",
+    # "core.art",
     "core.buildmonitor",
     "core.compare",
     "core.errorsscattering",
@@ -142,11 +142,11 @@ INSTALLED_APPS_EXTRA = [
     "core.grafana",
     "core.harvester",
     "core.iDDS",
-    "core.mlflowdynamic",
+    # "core.mlflowdynamic",
     "core.monitor",
     "core.oi",
-    "core.pbm",
-    "core.reports",
+    # "core.pbm",
+    # "core.reports",
     "core.runningprod"
 ]
 
