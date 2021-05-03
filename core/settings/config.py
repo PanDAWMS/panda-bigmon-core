@@ -32,8 +32,19 @@ DATABASE_ROUTERS = [
     'core.dbrouter.ProdMonDBRouter',
     'core.pbm.dbrouter.PandaBrokerageMonDBRouter',
 ]
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# name spaces of DB tables per application
+DATABASE_NAME_SPACES = {
+    'bigpandamon': 'ATLAS_PANDABIGMON',
+    'pandajob': 'ATLAS_PANDA',
+    'pandaarchjob': 'ATLAS_PANDAARCH',
+    'schedresource': 'ATLAS_PANDAMETA',
+    'harvester': 'ATLAS_PANDA',
+    'jedi': 'ATLAS_PANDA',
+    'prodsys': 'ATLAS_DEFT',
+}
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TEMPLATES = [
     {
