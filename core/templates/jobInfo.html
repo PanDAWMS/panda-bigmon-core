@@ -211,12 +211,21 @@ This is attempt number {{ job.attemptnr }} for this job. To see a history of job
                </script>
 
             {% endif %}
-            <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">Payload stdout</a>
-            <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>Job cache tarball</a>
-            <script>
-              logLinksArray[logLinksArray.length] = "http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt"
-              logLinksArray[logLinksArray.length] ='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'
-            </script>
+            {% if payload_stdout %}
+              <a href='{{payload_stdout}}'>Payload stdout</a>
+              <a href='{{payload_stderr}}'>Payload stderr</a>
+              <script>
+                logLinksArray[logLinksArray.length] ='{{payload_stdout}}'
+                logLinksArray[logLinksArray.length] ='{{payload_stderr}}'
+              </script>
+            {% else %}
+              <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">Payload stdout</a>
+              <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>Job cache tarball</a>
+              <script>
+                logLinksArray[logLinksArray.length] = "http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt"
+                logLinksArray[logLinksArray.length] ='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'
+              </script>
+            {% endif %}  
           {% endif %}
         {% else %}
             <a>No logs available</a>

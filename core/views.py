@@ -4524,6 +4524,11 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
         stdout = job['pilotid'].split('|')[0]
+        if stdout.endswith('pilotlog.txt'):
+           payload_stdout = stdout.replace('pilotlog.txt','payload.stdout')
+           payload_stderr = payload_stdout.replace('.stdout', '.stderr')
+        else:
+           payload_stdout = payload_stderr = None
         stderr = stdout.replace('.out', '.err')
         stdlog = stdout.replace('.out', '.log')
         stdjdl = stdout.replace('.out', '.jdl')
@@ -4534,6 +4539,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         stdjdl = stdlog.replace('.log', '.jdl')
     else:
         stdout = stderr = stdlog = stdjdl = None
+        payload_stdout = payload_stderr = None
 
     # input,pseudo_input,output,log and alphabetically within those please
 
