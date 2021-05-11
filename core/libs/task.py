@@ -12,6 +12,7 @@ from core.common.models import JediEvents, JediDatasetContents, JediDatasets, Je
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4, Jobsarchived_y2015
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
     job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime
+from core.libs.job import parse_jobmetrics
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 from core.pandajob.utils import get_pandajob_models_by_year
 
@@ -131,9 +132,6 @@ def cleanTaskList(tasks, **kwargs):
 
             task['dsinfo'] = dstotals
             task.update(dstotals)
-
-
-
 
     if sortby is not None:
         if sortby == 'time-ascending':
@@ -274,6 +272,8 @@ def job_consumption_plots(jobs):
                                  'xlabel': 'N events', 'ylabel': 'N jobs'},
         'nevents_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Number of events',
                              'xlabel': 'N events', 'ylabel': 'N jobs'},
+        'resimevents_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Resim events (finished jobs)',
+                                'xlabel': 'N resim events', 'ylabel': 'N jobs'},
         'maxpss_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS (finished jobs)',
                             'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
         'maxpsspercore_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS/core (finished jobs)',
@@ -333,6 +333,8 @@ def job_consumption_plots(jobs):
         "GB": 1024.0 * 1024.0,
     }
 
+    jobs = parse_jobmetrics(jobs)
+
     # prepare data for plots
     for job in jobs:
         if job['actualcorecount'] is None:
@@ -391,6 +393,10 @@ def job_consumption_plots(jobs):
                 plots_data['stack_bar']['cputimeperevent' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                     job['cpuconsumptiontime'] / (job['nevents'] * 1.0)
                 )
+
+        if 'resimevents' in job and job['resimevents'] and isinstance(job['resimevents'], int) and job['jobstatus'] == 'finished':
+            plots_data['stack_bar']['resimevents' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                job['resimevents'])
 
     # remove empty categories
     cat_to_remove = {'build': True, 'run': True, 'merge': True}

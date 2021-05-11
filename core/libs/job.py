@@ -69,6 +69,25 @@ def get_job_list(query, **kwargs):
     return jobs
 
 
+def parse_jobmetrics(jobs):
+    """
+    Parse and add the metrics to job dicts
+    :param jobs: list
+    :return: jobs
+    """
+    for job in jobs:
+        if 'jobmetrics' in job and job['jobmetrics'] and len(job['jobmetrics']) > 0:
+            jobmetrics = {str(jm.split('=')[0]): jm.split('=')[1] for jm in job['jobmetrics'].split(' ')}
+            for jm in jobmetrics:
+                try:
+                    jobmetrics[jm] = int(jobmetrics[jm])
+                except:
+                    pass
+            job.update(jobmetrics)
+
+    return jobs
+
+
 def calc_jobs_metrics(jobs, group_by='jeditaskid'):
     """
     Calculate interesting metrics, e.g. avg maxpss/core, avg job walltime, avg job queuetime, failedpct
