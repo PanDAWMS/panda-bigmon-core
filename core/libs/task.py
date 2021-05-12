@@ -507,7 +507,7 @@ def job_consumption_plots(jobs):
                 convert_bytes(job['dbdata'], output_unit='MB')
             )
 
-        if 'resimevents' in job and job['resimevents'] and isinstance(job['resimevents'], int) and job['jobstatus'] == 'finished':
+        if 'resimevents' in job and job['resimevents'] and job['jobstatus'] == 'finished':
             plots_data['stack_bar']['resimevents' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                 job['resimevents'])
 

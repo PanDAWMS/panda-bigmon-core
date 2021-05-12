@@ -152,8 +152,8 @@
             <td class="num"> {{ task.totevoutput | intcomma }}</td>
             {% if task.transpath == 'ReSim_tf.py' %}
               <td class="num">
-                {{ task.resimeventspernevents_avgpercent | intcomma }}%
-                <br> {{ task.resimevents_sum | intcomma }}
+                {% if task.resimeventspernevents_avgpercent %}{{ task.resimeventspernevents_avgpercent | intcomma }}%{% else %}-{% endif %}
+                <br> {% if task.resimevents_sum %}{{ task.resimevents_sum | intcomma }}{% else %}-{% endif %}
               </td>
             {% endif %}
             <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
