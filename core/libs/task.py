@@ -11,7 +11,7 @@ from django.db.models import Count, Sum
 from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4, Jobsarchived_y2015
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
-    job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime
+    job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime, convert_bytes
 from core.libs.job import parse_jobmetrics
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 from core.pandajob.utils import get_pandajob_models_by_year
@@ -313,51 +313,101 @@ def job_consumption_plots(jobs):
     start_time = time.time()
     plots_dict = {}
     plot_details = {
-        'nevents_sum_finished': {'type': 'pie', 'group_by': 'computingsite', 'title': 'Number of events',
-                                 'xlabel': 'N events', 'ylabel': 'N jobs'},
-        'nevents_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Number of events',
-                             'xlabel': 'N events', 'ylabel': 'N jobs'},
-        'resimevents_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Resim events (finished jobs)',
-                                'xlabel': 'N resim events', 'ylabel': 'N jobs'},
-        'maxpss_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS (finished jobs)',
-                            'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
-        'maxpsspercore_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS/core (finished jobs)',
-                                   'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
-        'walltime_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime (finished jobs)',
-                              'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
-        'walltimeperevent_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime/event (finished jobs)',
-                                      'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
-        'queuetime_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Time to start (finished jobs)',
-                            'xlabel': 'Time to start, s', 'ylabel': 'N jobs'},
-        'hs06s_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'HS06s (finished jobs)',
-                           'xlabel': 'HS06s', 'ylabel': 'N jobs'},
-        'cputime_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time (finished jobs)',
-                             'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-        'cputimeperevent_finished': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time/event (finished jobs)',
-                                     'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-        'maxpss_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Maximum PSS (failed jobs)',
-                          'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
-        'maxpsspercore_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS/core (failed jobs)',
-                                 'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
-        'walltime_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime (failed jobs)',
-                            'xlabel': 'walltime, s', 'ylabel': 'N jobs'},
-        'queuetime_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Time to start (failed jobs)',
-                            'xlabel': 'Time to start, s', 'ylabel': 'N jobs'},
-        'walltimeperevent_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Walltime/event (failed jobs)',
-                                    'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
-        'hs06s_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'HS06s (failed jobs)',
-                         'xlabel': 'HS06s', 'ylabel': 'N jobs'},
-        'cputime_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time (failed jobs)',
-                           'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-        'cputimeperevent_failed': {'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'CPU time/event (failed jobs)',
-                                   'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'nevents_sum_finished': {
+            'type': 'pie', 'group_by': 'computingsite',
+            'title': 'Number of events', 'xlabel': 'N events', 'ylabel': 'N jobs'},
+        'nevents_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Number of events', 'xlabel': 'N events', 'ylabel': 'N jobs'},
+        'resimevents_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Resim events (finished jobs)', 'xlabel': 'N resim events', 'ylabel': 'N jobs'},
+        'maxpss_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Max PSS (finished jobs)', 'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
+        'maxpsspercore_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Max PSS/core (finished jobs)', 'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
+        'walltime_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Walltime (finished jobs)', 'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
+        'walltimeperevent_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Walltime/event (finished jobs)', 'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
+        'queuetime_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Time to start (finished jobs)', 'xlabel': 'Time to start, s', 'ylabel': 'N jobs'},
+        'hs06s_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'HS06s (finished jobs)', 'xlabel': 'HS06s', 'ylabel': 'N jobs'},
+        'cputime_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'CPU time (finished jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'cputimeperevent_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'CPU time/event (finished jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'dbtime_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'DB time (finished jobs)', 'xlabel': 'DB time, s', 'ylabel': 'N jobs'},
+        'dbdata_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'DB data (finished jobs)', 'xlabel': 'DB data, MB', 'ylabel': 'N jobs'},
+        'workdirsize_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Workdir size (finished jobs)', 'xlabel': 'Workdir, MB', 'ylabel': 'N jobs'},
+        'leak_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Memory leak (finished jobs)', 'xlabel': 'Memory leak, B/s', 'ylabel': 'N jobs'},
+        'nprocesses_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'N processes (finished jobs)', 'xlabel': 'N proceeses', 'ylabel': 'N jobs'},
 
-        'walltime_bycpuunit_finished': {'type': 'stack_bar', 'group_by': 'cpuconsumptionunit',
-                                        'title': 'Walltime (finished jobs)',
-                                        'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
-        'walltime_bycpuunit_failed': {'type': 'stack_bar', 'group_by': 'cpuconsumptionunit',
-                                      'title': 'Walltime (failed jobs)',
-                                      'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
+        'maxpss_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Maximum PSS (failed jobs)', 'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
+        'maxpsspercore_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS/core (failed jobs)',
+            'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
+        'walltime_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Walltime (failed jobs)', 'xlabel': 'walltime, s', 'ylabel': 'N jobs'},
+        'queuetime_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Time to start (failed jobs)', 'xlabel': 'Time to start, s', 'ylabel': 'N jobs'},
+        'walltimeperevent_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Walltime/event (failed jobs)', 'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
+        'hs06s_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'HS06s (failed jobs)', 'xlabel': 'HS06s', 'ylabel': 'N jobs'},
+        'cputime_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'CPU time (failed jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'cputimeperevent_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'CPU time/event (failed jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'dbtime_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'DB time (failed jobs)', 'xlabel': 'DB time, s', 'ylabel': 'N jobs'},
+        'dbdata_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'DB data (failed jobs)', 'xlabel': 'DB data, MB', 'ylabel': 'N jobs'},
+        'workdirsize_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Workdir size (failed jobs)', 'xlabel': 'Workdir, MB', 'ylabel': 'N jobs'},
+        'leak_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'Memory leak (failed jobs)', 'xlabel': 'Memory leak, B/s', 'ylabel': 'N jobs'},
+        'nprocesses_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'N processes (failed jobs)', 'xlabel': 'N proceeses', 'ylabel': 'N jobs'},
+
+        'walltime_bycpuunit_finished': {
+            'type': 'stack_bar', 'group_by': 'cpuconsumptionunit',
+            'title': 'Walltime (finished jobs)', 'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
+        'walltime_bycpuunit_failed': {
+            'type': 'stack_bar', 'group_by': 'cpuconsumptionunit',
+            'title': 'Walltime (failed jobs)', 'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
     }
 
     plots_data = {}
@@ -436,6 +486,26 @@ def job_consumption_plots(jobs):
                 plots_data['stack_bar']['cputimeperevent' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                     job['cpuconsumptiontime'] / (job['nevents'] * 1.0)
                 )
+        if 'leak' in job and job['leak'] is not None:
+            plots_data['stack_bar']['leak' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                job['leak']
+            )
+        if 'nprocesses' in job and job['nprocesses'] is not None and job['nprocesses'] > 0:
+            plots_data['stack_bar']['nprocesses' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                job['nprocesses']
+            )
+        if 'workdirsize' in job and job['workdirsize'] is not None and job['workdirsize'] > 0:
+            plots_data['stack_bar']['workdirsize' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                convert_bytes(job['workdirsize'], output_unit='MB')
+            )
+        if 'dbtime' in job and job['dbtime'] is not None and job['dbtime'] > 0:
+            plots_data['stack_bar']['dbtime' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                job['dbtime']
+            )
+        if 'dbdata' in job and job['dbdata'] is not None and job['dbdata'] > 0:
+            plots_data['stack_bar']['dbdata' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                convert_bytes(job['dbdata'], output_unit='MB')
+            )
 
         if 'resimevents' in job and job['resimevents'] and isinstance(job['resimevents'], int) and job['jobstatus'] == 'finished':
             plots_data['stack_bar']['resimevents' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
