@@ -25,7 +25,7 @@
   <table class="fresh-table unstriped" data-ng-app="" data-ng-controller="iDDSGeneralInfo">
     <thead>
       <tr>
-        <th colspan=20> {{ jeditaskid }} task: {{ taskname }} </th>
+        <th colspan=30> {{ jeditaskid }} task </th>
       </tr>
     </thead>
     <tbody>
@@ -62,12 +62,18 @@
           {% if task.dsinfo %}
             <th class="num">N input events <br><span class='finished'>used</span></th>
             <th class="num">N output events</th>
+            {% if task.transpath == 'ReSim_tf.py' %}
+              <th class="num">Resim events:
+                <br> average
+                <br> total
+              </th>
+            {% endif %}
             <th class="num">HS06*sec
                 <br> <span class="closed">Expected</span>
                 <br> Total<br><span class='done'>done</span>
                 <br> <span class='failed'>failed</span>
             </th>
-            <th class="num"> Ninputfiles
+            <th class="num"> N input files
                 <br><span class='finished'>finished</span>
                 <br><span class='failed'>failed</span>
             </th>
@@ -80,7 +86,9 @@
         <th>Cores</th>
         <th>Priority</th>
         <th>Attempt</th>
-        <th>Parent</th>
+        {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
+          <th>Parent</th>
+        {% endif %}
         {% if task.ticketid %}
             <th>Tracker</th>
         {% endif %}
@@ -89,7 +97,7 @@
         <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
                target="_blank">{{ task.jeditaskid }}</a></td>
         {% if task.campaign %}
-            <td><a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a></td>
+            <td><a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{% if task.campaign_cut %}{{ task.campaign_cut }}{% else %}{{ task.campaign }}{% endif %}</a></td>
         {% endif %}
         {% if task.deftreqid %}
             <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
@@ -142,6 +150,12 @@
               <br><span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span>
             </td>
             <td class="num"> {{ task.totevoutput | intcomma }}</td>
+            {% if task.transpath == 'ReSim_tf.py' %}
+              <td class="num">
+                {{ task.resimeventspernevents_avgpercent | intcomma }}%
+                <br> {{ task.resimevents_sum | intcomma }}
+              </td>
+            {% endif %}
             <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
               <br>{{ task.currenttotevhs06 | intcomma }}
               <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
@@ -161,14 +175,11 @@
         <td>{{ task.corecount }}</td>
         <td>{{ task.taskpriority }}</td>
         <td>{{ task.attemptnr }}</td>
-        <td>
-          {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
-            <a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>
-          {% else %}&mdash;{% endif %}
-        </td>
+        {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
+          <td><a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a></td>
+        {% endif %}
         {% if task.ticketid %}
-            <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a>
-            </td>
+            <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
         {% endif %}
       </tr>
     </tbody>

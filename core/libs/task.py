@@ -72,6 +72,8 @@ def cleanTaskList(tasks, **kwargs):
         if 'corecount' in task and task['corecount'] is None:
             task['corecount'] = 1
         task['age'] = get_task_age(task)
+        if 'campaign' in task:
+            task['campaign_cut'] = ':'.join(task['campaign'].split(':')[1:]) if ':' in task['campaign'] else task['campaign']
 
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
@@ -215,6 +217,10 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
     jobs = add_job_category(jobs)
     _logger.info("Determine job category: {} sec".format(time.time() - start_time))
 
+    # parse job metrics and add to job dict
+    jobs = parse_jobmetrics(jobs)
+    _logger.info("Parsed and added job metrics: {} sec".format(time.time() - start_time))
+
     # prepare data for job consumption plots
     plots_list = job_consumption_plots(jobs)
     _logger.info("Prepared job consumption plots: {} sec".format(time.time() - start_time))
@@ -233,7 +239,11 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
     scouts = get_task_scouts(jobs)
     _logger.info("Got scouts: {} sec".format(time.time() - start_time))
 
-    return plots_list, job_summary_list_ordered, scouts
+    # calculate metrics
+    metrics = calculate_metrics(jobs, metrics_names=[
+        'resimevents_avg', 'resimeventspernevents_avgpercent', 'resimevents_sum'])
+
+    return plots_list, job_summary_list_ordered, scouts, metrics
 
 
 def get_task_scouts(jobs):
@@ -264,8 +274,43 @@ def get_task_scouts(jobs):
     return scouts_dict
 
 
-def job_consumption_plots(jobs):
+def calculate_metrics(jobs, metrics_names):
+    """
+    Calculate job metrics for a task
+    :param jobs:
+    :param metrics_names:
+    :return:
+    """
+    metrics_def_dict = {mn: {'metric': mn.split('_')[0], 'agg': mn.split('_')[1], 'data': [], 'value': -1} for mn in metrics_names}
 
+    for job in jobs:
+        if job['category'] == 'run' and job['jobstatus'] == 'finished':
+            for mn, mdata in metrics_def_dict.items():
+                if 'per' in mdata['metric']:
+                    if mdata['metric'].split('per')[0] in job and mdata['metric'].split('per')[1] in job and job[mdata['metric'].split('per')[1]] > 0:
+                        mdata['data'].append(job[mdata['metric'].split('per')[0]]/(1.0*job[mdata['metric'].split('per')[1]]))
+                elif mdata['metric'] in job and job[mdata['metric']]:
+                    mdata['data'].append(job[mdata['metric']])
+
+    for mn, mdata in metrics_def_dict.items():
+        if 'avg' in mdata['agg']:
+            mdata['value'] = sum(mdata['data'])/(1.0*len(mdata['data'])) if len(mdata['data']) > 0 else -1
+        if 'sum' in mdata['agg']:
+            mdata['value'] = sum(mdata['data'])
+
+    metrics = {}
+    for mn, mdata in metrics_def_dict.items():
+        if mdata['value'] > 0:
+            if 'percent' in mdata['agg']:
+                metrics[mn] = round(mdata['value'] * 100.0, 2)
+            else:
+                metrics[mn] = round(mdata['value'], 2)
+
+    return metrics
+
+
+def job_consumption_plots(jobs):
+    start_time = time.time()
     plots_dict = {}
     plot_details = {
         'nevents_sum_finished': {'type': 'pie', 'group_by': 'computingsite', 'title': 'Number of events',
@@ -333,8 +378,6 @@ def job_consumption_plots(jobs):
         "GB": 1024.0 * 1024.0,
     }
 
-    jobs = parse_jobmetrics(jobs)
-
     # prepare data for plots
     for job in jobs:
         if job['actualcorecount'] is None:
@@ -398,6 +441,8 @@ def job_consumption_plots(jobs):
             plots_data['stack_bar']['resimevents' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                 job['resimevents'])
 
+    _logger.info("prepare plots data: {} sec".format(time.time() - start_time))
+
     # remove empty categories
     cat_to_remove = {'build': True, 'run': True, 'merge': True}
     for pt, td in plots_data.items():
@@ -433,6 +478,7 @@ def job_consumption_plots(jobs):
             if pm in td:
                 del plots_data[pt][pm]
                 del plot_details[pm]
+    _logger.info("clean up plots data: {} sec".format(time.time() - start_time))
 
     # prepare stack histogram data
     for pname, pd in plot_details.items():
@@ -468,6 +514,7 @@ def job_consumption_plots(jobs):
             if max([len(i['columns']) for i in plots_dict[pname]['data'].values()]) > 15:
                 plots_dict[pname]['details']['legend_position'] = 'bottom'
                 plots_dict[pname]['details']['size'] = [800, 300 + 20 * int(max([len(i['columns']) for i in plots_dict[pname]['data'].values()])/6)]
+    _logger.info("built plots: {} sec".format(time.time() - start_time))
 
     # transform dict to list
     plots_list = []
