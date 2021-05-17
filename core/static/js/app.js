@@ -58,6 +58,23 @@ function getWidth() {
   );
 }
 
+function getScreenCategory(width) {
+  let scrnCat = '';
+  let breakpoints = {
+    small: [0, 640],
+    medium: [640, 1280],
+    large: [1280, 99999],
+  };
+  for (const item in breakpoints) {
+    if (width >= breakpoints[item][0] && width < breakpoints[item][1]) {
+      scrnCat = item;
+    }
+  }
+  (scrnCat.length === 0) ? scrnCat = 'small' : scrnCat;
+
+  return scrnCat
+}
+
 function getNCharsShorten() {
   let nChars = 1000;
   let width = getWidth();

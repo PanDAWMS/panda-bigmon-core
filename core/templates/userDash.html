@@ -160,6 +160,10 @@
   var metrics = {{ metrics|safe }};
   app.controller('userDashController', function($scope, $http, $sce) {
     $scope.userinfo = {
+      page: {
+        width: getWidth(),
+        screen_cat: getScreenCategory(getWidth()),
+      },
       message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
       metrics: metrics,
       tasks: {
@@ -173,7 +177,12 @@
     };
 
     $scope.userinfo.uts_plots.plot_data.forEach((item) => {
-      item.options.size = [getWidth()/$scope.userinfo.uts_plots.plot_data.length - 20 , 300]
+      if ($scope.userinfo.page.screen_cat === 'small') {
+        item.options.size = [getWidth() - 40, 300];
+      }
+      else {
+        item.options.size = [getWidth() / $scope.userinfo.uts_plots.plot_data.length - 20, 300];
+      }
     });
 
     $scope.userinfo.uts_plots.build = function () {
@@ -286,7 +295,16 @@
           sDefaultContent: "-",
           render: function(data, type, row, meta) {
             if (data && data.length > 0) {
-              return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');
+              switch ($scope.userinfo.page.screen_cat) {
+                case 'small':
+                  return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');
+                case 'medium':
+                  return data.replace(/\./g, '.<wbr>');
+                case 'large':
+                  return data;
+                default:
+                  return data.replace(/\./g, '.<wbr>');
+              }
             }
             else {
               return '-'
