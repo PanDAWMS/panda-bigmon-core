@@ -564,10 +564,10 @@ function buildFilesTable(data) {
                 }
 
                 if (row['type'] !== 'pseudo_input' && ['defined', 'pending', 'waiting'].includes(job_status) === false ) {
-                  let dtstoken = '';
-                  (row['dsttoken']) ? dtstoken += row['dsttoken'] : dtstoken += '';
+                  let dsttoken = '';
+                  (row['dsttoken']) ? dsttoken += '&var-enr_filters=data.dst_token%7C%3D%7C' + row['dsttoken'] : dsttoken = '';
 
-                  links += ' <a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&from=now-30d&to=now&panelId=56&fullscreen&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=All&var-src_cloud=All&var-src_site=All&var-src_country=All&var-src_endpoint=All&var-columns=src_cloud&var-dst_cloud=All&var-dst_site=' + row['ddmsite'] + '&var-dst_country=All&var-dst_endpoint=All&var-rows=dst_cloud&var-enr_filters=data.name%7C%3D%7C' + row['lfn'] + '&var-enr_filters=data.scope%7C%3D%7C' + row['scope'] + dtstoken + '&var-measurement=ddm_transfer&var-retention_policy=raw" target="_blank"><div class="tooltip-right"><img src="/static/images/grafana.png" width=14 height=14 border=0><span container="body" class="tooltip-text">DDM Dash (Grafana)</span></div></a>';
+                  links += ' <a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&from=now-30d&to=now&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=All&var-src_cloud=All&var-src_site=All&var-src_country=All&var-src_endpoint=All&var-columns=src_cloud&var-dst_cloud=All&var-dst_site=' + row['ddmsite'] + '&var-dst_country=All&var-dst_endpoint=All&var-rows=dst_cloud&var-enr_filters=data.name%7C%3D%7C' + row['lfn'] + '&var-enr_filters=data.scope%7C%3D%7C' + row['scope'] + dsttoken + '&var-measurement=ddm_transfer&var-retention_policy=raw" target="_blank"><div class="tooltip-right"><img src="/static/images/grafana.png" width=14 height=14 border=0><span container="body" class="tooltip-text">DDM Dash (Grafana)</span></div></a>';
                 }
 
                 if (row['type'] === 'input' ) {
