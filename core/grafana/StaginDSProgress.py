@@ -23,7 +23,7 @@ def run_query(rules):
 
     rulequery = rulequery[:-3]
     paramQuery = """{"filter":[{"query_string":{"analyze_wildcard":true,"query":"data.event_type:rule_progress AND (%s)"}}]}""" % rulequery
-    query = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["monit_prod_rucio_raw_events*"]}\n{"size":500,"query":{"bool":"""+paramQuery+"""},"sort":{"metadata.timestamp":{"order":"desc","unmapped_type":"boolean"}},"script_fields":{},"docvalue_fields":["metadata.timestamp"]}\n"""
+    query = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["monit_prod_ddm_enr_transfer*"]}\n{"size":500,"query":{"bool":"""+paramQuery+"""},"sort":{"metadata.timestamp":{"order":"desc","unmapped_type":"boolean"}},"script_fields":{},"docvalue_fields":["metadata.timestamp"]}\n"""
     headers = token
     headers['Content-Type'] = 'application/json'
     headers['Accept'] = 'application/json'
@@ -31,6 +31,7 @@ def run_query(rules):
     request_url = "%s/%s" % (base, url)
     r = post(request_url, headers=headers, data=query)
     resultdict = {}
+
     if r.ok:
         results = loads(r.text)['responses'][0]['hits']['hits']
         for result in results:
