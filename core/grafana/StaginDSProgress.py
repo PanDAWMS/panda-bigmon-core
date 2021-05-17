@@ -90,9 +90,11 @@ def getStageProfileData(request):
     chunksize = 50
     chunks = [RRules[i:i + chunksize] for i in range(0, len(RRules), chunksize)]
     resDict = {}
-    for chunk in chunks:
-        resDict = {**resDict, **run_query(chunk)}
-
+    try: #TODO fix the query to Grafana
+        for chunk in chunks:
+            resDict = {**resDict, **run_query(chunk)}
+    except:
+        resDict = None
     """
     s1 = pd.Series([0,1], index=list('AB'))
     s2 = pd.Series([2,3], index=list('AC'))
