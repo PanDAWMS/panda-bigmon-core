@@ -105,18 +105,19 @@ def getStageProfileData(request):
     pandaDFs = {}
     RRuleNames = []
     result = []
-    for RRule, progEvents in resDict.items():
-        timesList = list(progEvents.keys())
-        progList = list(progEvents.values())
-        pandasDF = pd.Series(progList, index=timesList)
-        pandaDFs[RRule] = pandasDF
-        RRuleNames.append(RRule)
-    if pandaDFs:
-        result = pd.concat(pandaDFs.values(), join='outer', axis=1, sort=True)
-        result.index = pd.to_datetime(result.index)
-        result = result.resample('15min').last().reset_index().fillna(method='ffill').fillna(0)
-        result['index'] = result['index'].dt.strftime('%Y-%m-%d %H:%M:%S')
-        result = [['TimeStamp',] + RRuleNames] + result.values.tolist()
+    if resDict is not None:
+        for RRule, progEvents in resDict.items():
+            timesList = list(progEvents.keys())
+            progList = list(progEvents.values())
+            pandasDF = pd.Series(progList, index=timesList)
+            pandaDFs[RRule] = pandasDF
+            RRuleNames.append(RRule)
+        if pandaDFs:
+            result = pd.concat(pandaDFs.values(), join='outer', axis=1, sort=True)
+            result.index = pd.to_datetime(result.index)
+            result = result.resample('15min').last().reset_index().fillna(method='ffill').fillna(0)
+            result['index'] = result['index'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            result = [['TimeStamp',] + RRuleNames] + result.values.tolist()
     return JsonResponse(result, safe=False)
 
 @login_customrequired
