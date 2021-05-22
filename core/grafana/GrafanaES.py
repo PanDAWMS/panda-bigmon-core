@@ -141,15 +141,19 @@ class Grafana(object):
             prodsourcelabel = '(' + query_object.prodsourcelabel + ')'
         else:
             prodsourcelabel = query_object.prodsourcelabel
+        if '*' not in query_object.containername:
+            containername = '(' + query_object.containername + ')'
+        else:
+            containername = query_object.containername
 
         query_base = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["%s*"]}\n""" % (self._get_index(query_object.table))
         query_date = """{"size":0,"query":{"bool":{"filter":[{"range":{"metadata.timestamp":{"gte":%s,"lte":%s,"format":"epoch_millis"}}},""" % (startMillisec, endMillisec)
-        query_string = """{"query_string":{"analyze_wildcard":true,"query":"data.dst_experiment_site:%s AND data.dst_cloud:%s AND data.dst_country:%s AND data.dst_federation:%s AND data.adcactivity:%s AND data.resourcesreporting:%s AND data.actualcorecount:%s AND data.resource_type:%s AND data.workinggroup:%s AND data.inputfiletype:%s AND data.eventservice:%s AND data.inputfileproject:%s AND data.outputproject:%s AND data.jobstatus:%s AND data.computingsite:%s AND data.gshare:%s AND data.dst_tier:%s AND data.processingtype:%s AND ((NOT _exists_:data.nucleus) OR (data.nucleus:%s)) AND ((NOT _exists_:data.error_category) OR data.error_category:%s) AND ((NOT _exists_:data.prodsourcelabel) OR (data.prodsourcelabel:%s))"}}]}},""" % \
+        query_string = """{"query_string":{"analyze_wildcard":true,"query":"data.dst_experiment_site:%s AND data.dst_cloud:%s AND data.dst_country:%s AND data.dst_federation:%s AND data.adcactivity:%s AND data.resourcesreporting:%s AND data.actualcorecount:%s AND data.resource_type:%s AND data.workinggroup:%s AND data.inputfiletype:%s AND data.eventservice:%s AND data.inputfileproject:%s AND data.outputproject:%s AND data.jobstatus:%s AND data.computingsite:%s AND data.gshare:%s AND data.dst_tier:%s AND data.processingtype:%s AND ((NOT _exists_:data.nucleus) OR (data.nucleus:%s)) AND ((NOT _exists_:data.error_category) OR data.error_category:%s) AND ((NOT _exists_:data.prodsourcelabel) OR (data.prodsourcelabel:%s)) AND ((NOT _exists_:data.container_name) OR (data.container_name:%s))"}}]}},""" % \
                        (dst_experiment_site,
                        dst_cloud, dst_country,
                        dst_federation, adcactivity, resourcesreporting, actualcorecount, resource_type, workinggroup,
                        inputfiletype, eventservice, inputfileproject, outputproject, jobstatus, computingsite, gshare,
-                       dst_tier, processingtype, nucleus, error_category, prodsourcelabel)
+                       dst_tier, processingtype, nucleus, error_category, prodsourcelabel, containername)
 
         query_agg_query_time_template = """"aggs":{"time":{"date_histogram":{"interval":"%s","field":"metadata.timestamp","min_doc_count":0,"extended_bounds":{"min":%s,"max":%s},"format":"epoch_millis"},%s}}""" % (query_object.bin, startMillisec, endMillisec, '%s')
         query_agg_func_template = self._get_complete_metrics_function(query_object.field)

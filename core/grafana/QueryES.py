@@ -24,6 +24,7 @@ class Query(object):
                  nucleus="*",
                  error_category="*",
                  prodsourcelabel="*",
+                 containername="*",
                  starttime="",
                  endtime="",
                  grouping=['adcactivity'],
@@ -57,6 +58,8 @@ class Query(object):
         self.starttime = starttime
         self.endtime = endtime
         self.prodsourcelabel = prodsourcelabel
+        self.containername = containername
+
         if ',' in grouping:
             newgroups = ''
             groups = grouping.split(',')
@@ -176,6 +179,10 @@ class Query(object):
             self.prodsourcelabel = self._convert_parametres(request.session['requestParams']['prodsourcelabel'])
         else:
             self.prodsourcelabel = "*"
+        if 'containername' in request.session['requestParams']:
+            self.containername = self._convert_parametres(request.session['requestParams']['containername'])
+        else:
+            self.containername = "*"
         if 'date_from' in request.session['requestParams']:
             self.starttime = request.session['requestParams']['date_from']
         else:
