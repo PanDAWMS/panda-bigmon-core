@@ -8729,7 +8729,7 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
 
     for job in jobs:
         if not testjobs:
-            if job['jobstatus'] not in ['failed', 'holding']: continue
+            if job['jobstatus'] not in ['failed', 'holding', 'finished', 'closed', 'cancelled']: continue
         site = job['computingsite']
         #        if 'cloud' in request.session['requestParams']:
         #            if site in homeCloud and homeCloud[site] != request.session['requestParams']['cloud']: continue
