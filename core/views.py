@@ -1320,10 +1320,9 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             else:
                 job['produsername'] = 'Unknown'
         if job['transformation']: job['transformation'] = job['transformation'].split('/')[-1]
-        if (job['jobstatus'] == 'failed' or job['jobstatus'] == 'cancelled') and 'brokerageerrorcode' in job:
-            job['errorinfo'] = errorInfo(job, nchars=70)
-        else:
-            job['errorinfo'] = ''
+
+        job['errorinfo'] = errorInfo(job)
+
         job['jobinfo'] = ''
         if is_event_service(job):
             if 'taskbuffererrordiag' in job and job['taskbuffererrordiag'] is None:

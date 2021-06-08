@@ -152,8 +152,8 @@ def humanize_metrics(metrics):
             'alert': [2.5, 1000000]
         },
         'time': {
-            'warning': [24, 36],
-            'alert': [36, 1000000]
+            'warning': [36, 48],
+            'alert': [48, 1000000]
         },
         'walltime': {
             'warning': [1, 2],
