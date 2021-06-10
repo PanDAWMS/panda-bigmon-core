@@ -1250,31 +1250,6 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
         jobs = jobl
     for job in jobs:
         if is_event_service(job):
-            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 111:
-            #    job['taskbuffererrordiag'] = 'Rerun scheduled to pick up unprocessed events'
-            #    job['piloterrorcode'] = 0
-            #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-            # job['jobstatus'] = 'finished'
-            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 112:
-                #                job['taskbuffererrordiag'] = 'All events processed, merge job created'
-            #    job['piloterrorcode'] = 0
-            #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-            # job['jobstatus'] = 'finished'
-            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 114:
-            #    job['taskbuffererrordiag'] = 'No rerun to pick up unprocessed, at max attempts'
-            #    job['piloterrorcode'] = 0
-            #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-            # job['jobstatus'] = 'finished'
-            # if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 115:
-            #    job['taskbuffererrordiag'] = 'No events remaining, other jobs still processing'
-            #    job['piloterrorcode'] = 0
-            #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-            #    #job['jobstatus'] = 'finished'
-            #if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 116:
-            #    job['taskbuffererrordiag'] = 'No remaining event ranges to allocate'
-            #    job['piloterrorcode'] = 0
-            #    job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
-                # job['jobstatus'] = 'finished'
             if 'jobmetrics' in job:
                 pat = re.compile('.*mode\=([^\s]+).*HPCStatus\=([A-Za-z0-9]+)')
                 mat = pat.match(job['jobmetrics'])
@@ -2001,28 +1976,28 @@ def errorInfo(job, nchars=300, mode='html'):
     err1 = ''
     desc, codesDescribed = getErrorDescription(job, provideProcessedCodes=True)
 
-    if int(job['brokerageerrorcode']) != 0 and int(job['brokerageerrorcode']) not in codesDescribed:
+    if 'brokerageerrorcode' in job and int(job['brokerageerrorcode']) != 0 and int(job['brokerageerrorcode']) not in codesDescribed:
         errtxt += 'Brokerage error %s: %s <br>' % (job['brokerageerrorcode'], job['brokerageerrordiag'])
         if err1 == '': err1 = "Broker: %s" % job['brokerageerrordiag']
-    if int(job['ddmerrorcode']) != 0 and int(job['ddmerrorcode']) not in codesDescribed:
+    if 'ddmerrorcode' in job and int(job['ddmerrorcode']) != 0 and int(job['ddmerrorcode']) not in codesDescribed:
         errtxt += 'DDM error %s: %s <br>' % (job['ddmerrorcode'], job['ddmerrordiag'])
         if err1 == '': err1 = "DDM: %s" % job['ddmerrordiag']
-    if int(job['exeerrorcode']) != 0 and int(job['exeerrorcode']) not in codesDescribed:
+    if 'exeerrorcode' in job and int(job['exeerrorcode']) != 0 and int(job['exeerrorcode']) not in codesDescribed:
         errtxt += 'Executable error %s: %s <br>' % (job['exeerrorcode'], job['exeerrordiag'])
         if err1 == '': err1 = "Exe: %s" % job['exeerrordiag']
-    if int(job['jobdispatchererrorcode']) != 0 and int(job['jobdispatchererrorcode']) not in codesDescribed:
+    if 'jobdispatchererrorcode' in job and int(job['jobdispatchererrorcode']) != 0 and int(job['jobdispatchererrorcode']) not in codesDescribed:
         errtxt += 'Dispatcher error %s: %s <br>' % (job['jobdispatchererrorcode'], job['jobdispatchererrordiag'])
         if err1 == '': err1 = "Dispatcher: %s" % job['jobdispatchererrordiag']
-    if int(job['piloterrorcode']) != 0 and int(job['piloterrorcode']) not in codesDescribed:
+    if 'piloterrorcode' in job and int(job['piloterrorcode']) != 0 and int(job['piloterrorcode']) not in codesDescribed:
         errtxt += 'Pilot error %s: %s <br>' % (job['piloterrorcode'], job['piloterrordiag'])
         if err1 == '': err1 = "Pilot: %s" % job['piloterrordiag']
-    if int(job['superrorcode']) != 0 and int(job['superrorcode']) not in codesDescribed:
+    if 'superrorcode' in job and int(job['superrorcode']) != 0 and int(job['superrorcode']) not in codesDescribed:
         errtxt += 'Sup error %s: %s <br>' % (job['superrorcode'], job['superrordiag'])
         if err1 == '': err1 = job['superrordiag']
-    if int(job['taskbuffererrorcode']) != 0 and int(job['taskbuffererrorcode']) not in codesDescribed:
+    if 'taskbuffererrorcode' in job and int(job['taskbuffererrorcode']) != 0 and int(job['taskbuffererrorcode']) not in codesDescribed:
         errtxt += 'Task buffer error %s: %s <br>' % (job['taskbuffererrorcode'], job['taskbuffererrordiag'])
         if err1 == '': err1 = 'Taskbuffer: %s' % job['taskbuffererrordiag']
-    if job['transexitcode'] != '' and job['transexitcode'] is not None and int(job['transexitcode']) > 0 and int(job['transexitcode']) not in codesDescribed:
+    if 'transexitcode' in job and job['transexitcode'] != '' and job['transexitcode'] is not None and int(job['transexitcode']) > 0 and int(job['transexitcode']) not in codesDescribed:
         errtxt += 'Trf exit code %s.' % job['transexitcode']
         if err1 == '': err1 = 'Trf exit code %s' % job['transexitcode']
     if len(desc) > 0:
@@ -2037,6 +2012,7 @@ def errorInfo(job, nchars=300, mode='html'):
     if err1.find(' at ') >= 0: err1 = err1[:err1.find(' at ') - 1]
     if errtxt.find('lost heartbeat') >= 0: err1 = 'lost heartbeat'
     err1 = err1.replace('\n', ' ')
+
     if mode == 'html':
         return errtxt
     else:
