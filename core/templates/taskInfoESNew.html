@@ -809,7 +809,14 @@
                         data: "logname",
                         sDefaultContent: "-",
                         "render": function (data, type, full, meta) {
-                            return '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + '</a>'
+                            var link_to_kibana = ''
+                            if (full['logname']  == 'recoverlostfiles') {
+                                link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + ' (panda log)' + '</a>'
+                            }
+                            else {
+                                link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + '</a>'
+                            }
+                            return link_to_kibana
                         }
                     },
                     {
@@ -817,7 +824,14 @@
                         data: "loglevel",
                         sDefaultContent: "-",
                         "render": function (data, type, full, meta) {
-                            return '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
+                            var link_to_kibana = ''
+                            if (full['logname']  == 'recoverlostfiles') {
+                                link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
+                            }
+                            else {
+                                link_to_kibana =  '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
+                            }
+                            return link_to_kibana
                         }
                     },
                     {

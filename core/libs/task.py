@@ -1317,4 +1317,23 @@ def get_logs_by_taskid(jeditaskid):
                 levelname = levelnames['key']
                 tasks_logs.append({'jediTaskID': jeditaskid, 'logname': type, 'loglevel': levelname,
                                    'lcount': str(levelnames['doc_count'])})
+
+    s = Search(using=connection, index='atlas_pandalogs-*')
+
+    s = s.filter('term', **{'jediTaskID': jeditaskid})
+
+    s.aggs.bucket('logName', 'terms', field='logName.keyword', size=1000) \
+        .bucket('type', 'terms', field='fields.type.keyword') \
+        .bucket('logLevel', 'terms', field='logLevel.keyword')
+
+    response = s.execute()
+
+    for agg in response['aggregations']['logName']['buckets']:
+        for types in agg['type']['buckets']:
+            type = types['key']
+            for levelnames in types['logLevel']['buckets']:
+                levelname = levelnames['key']
+                tasks_logs.append({'jediTaskID': jeditaskid, 'logname': type, 'loglevel': levelname,
+                                   'lcount': str(levelnames['doc_count'])})
+
     return tasks_logs
