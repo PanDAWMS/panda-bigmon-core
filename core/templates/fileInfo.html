@@ -1,4 +1,19 @@
 {% extends "_base_core.html" %}
+{% load static %}
+{% load common_tags %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.css" rel="stylesheet">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <!-- Load d3.js and c3.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
+{% endblock %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA file {{ filename }} {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
@@ -15,8 +30,11 @@
 
 <p>
 
-<table>
-<tr class='tablesection'><th colspan=20> File {{ filename }} </th></tr>
+<table class="fresh-table unstriped">
+<thead>
+  <tr><th colspan=20> File {{ filename }} </th></tr>
+</thead>
+<tbody>
 <tr>
 	<th>Scope</th>
 	<th># events</th>
@@ -25,55 +43,57 @@
     <th>GUID</th>
 	<th>ID</th>
 </tr>
-	<tr>
-		<td>{{ frec.scope }}</td>
-		<td>{{ frec.nevents }}</td>
-		<td>{{ frec.fsizemb }}</td>
-		<td>{{ frec.creationdate }}</td>
-		<td>{{ frec.guid }}</td>
-		<td>{{ frec.fileid }}</td>
-	</tr>
+<tr>
+  <td>{{ frec.scope }}</td>
+  <td>{{ frec.nevents }}</td>
+  <td>{{ frec.fsizemb }}</td>
+  <td>{{ frec.creationdate }}</td>
+  <td>{{ frec.guid }}</td>
+  <td>{{ frec.fileid }}</td>
+</tr>
+</tbody>
 </table>
 
 {% if files|length > 0 %}
-
-<table>
-<tr class='tablesection'><th colspan=20> Occurrences of the file in processing (most recent jobs listed first)</th></tr>
-<tr>
-	<th>Dataset</th>
-	<th>Task</th>
-	<th>Type</th>
-	<th>Job</th>
-	<th>First<br>event</th>
-	<th>End<br>event</th>
-	<th>Status</th>
-    <th>Processing status</th>
-	<th>Attempt (max)</th>
-</tr>
-{% for f in files %}
-	<tr>
-		<td><font size=-1><a href="{% url 'fileInfo' %}?lfn={{ f.lfn }}&datasetname={{ f.datasetname }}">{{ f.datasetname }}</a></font></td>
-		<td>{% if f.jeditaskid %} <a href="{% url 'fileInfo' %}?lfn={{ f.lfn }}&jeditaskid={{ f.jeditaskid }}">{{ f.jeditaskid }}</a> {% endif %}</td>
-		<td>{{ f.type }}</td>
-		<td><a href="{% url 'jobInfo' %}?pandaid={{ f.pandaid }}">{{ f.pandaid }}</a></td>
-		<td>{{ f.startevent }}</td>
-		<td>{{ f.endevent }}</td>
-		<td class='{{frec.status}}'>{{ f.status }}</td>
-		<td class='{{frec.procstatus}}'>{{ f.procstatus }}</td>
-		<td>{% if f.attemptnr %} {{ f.attemptnr }} ({{ f.maxattempt }}){% endif %}</td>
-	</tr>
-{% endfor %}
-</table>
-
+<div class="card bp-container-simple secondary">
+  <div class="card-divider"><p>{{ files|length }} occurrences of the file found in processing</p></div>
+  <div class="card-section">
+    <div class="c3-chart-block" id="fpo_plot"></div>
+    <table class="data-table left-aligned" id="fileprococcurrences">
+      <thead>
+        <tr>
+          <th>Dataset</th>
+          <th>Task</th>
+          <th>Type</th>
+          <th>Job</th>
+          <th>Status</th>
+          <th>Processing status</th>
+          <th>Attempt</th>
+          <th>Max attempt</th>
+          <th>First event</th>
+          <th>End event</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
 {% endif %}
 
 <p>
 
-<table>
-<tr class='tablesection'><th colspan=20> File attributes (sample occurrence)</th></tr>
-{% for col in columns %}
-<tr><th>{{ col.name }} </th><td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td></tr>
-{% endfor %}
+<table class="fresh-table">
+<thead>
+  <tr><th colspan=20> File attributes (sample occurrence)</th></tr>
+</thead>
+<tbody>
+  {% for col in columns %}
+    <tr>
+      <th>{{ col.name }}</th>
+      <td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td>
+    </tr>
+  {% endfor %}
+</tbody>
 </table>
 
 {% else %}
@@ -87,4 +107,166 @@ PanDA file <b>{{ filename }}</b> not found.
 
 {% block help %}
 {% include "fileInfoHelp.html" %}
+{% endblock %}
+
+
+{% block js_body_page %}
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+<script>
+
+$(document).ready(function () {
+    var file_occ_list = {{ files|safe }};
+    var file_occ_plot_data = {{ plotData|safe }};
+    buildFileOccTable(file_occ_list);
+    buildFileOccPlot(file_occ_plot_data)
+});
+
+function buildFileOccPlot(plot_data) {
+    let options = plot_data.options;
+    options.size = [getWidth()-40, 300];
+    chart = draw_bar_timeseries(plot_data.data, 'fpo_plot', options);
+}
+
+function buildFileOccTable(data) {
+  let screenCat = getScreenCategory(getWidth());
+  $('#fileprococcurrences').dataTable({
+    //"bRetrieve": true,
+    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+    "paging": true,
+    "scrollX": true,
+    "aaSorting": [[1,'desc']],
+    "columnDefs": [
+        {"type": "num-html", "targets": [1,3,6,7,8,9] }
+    ],
+    "data": data,
+    "aoColumns": [
+        {
+            "data": "datasetname",
+            className: "text icons1",
+            sDefaultContent: "---",
+            "render": function(data, type, row, meta) {
+                if (data && data.length > 0) {
+                  if (row['type'] !== 'pseudo_input' && data) {
+                    switch (screenCat) {
+                      case 'small':
+                        return '<a href = "{% url 'fileInfo' %}?lfn=' + row['lfn'] + '&datasetname=' + row['datasetname'] + '">'+row['datasetname'].replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>')+'</a>';
+                      case 'medium':
+                        return '<a href = "{% url 'fileInfo' %}?lfn=' + row['lfn'] + '&datasetname=' + row['datasetname'] + '">'+row['datasetname'].replace(/\./g, '.<wbr>')+'</a>';
+                      case 'large':
+                        return '<a href = "{% url 'fileInfo' %}?lfn=' + row['lfn'] + '&datasetname=' + row['datasetname'] + '">'+row['datasetname']+'</a>';
+                      default:
+                        return '<a href = "{% url 'fileInfo' %}?lfn=' + row['lfn'] + '&datasetname=' + row['datasetname'] + '">'+row['datasetname'].replace(/\./g, '.<wbr>')+'</a>';
+                    }
+                  }
+                  else if (data) {
+                    return data
+                  }
+                  else {
+                    return '-'
+                  }
+                }
+                else {
+                  return '-'
+                }
+            }
+        },
+        {
+            "data": "jeditaskid",
+            sDefaultContent: "-",
+            "render": function(data, type, row, meta) {
+                if (data) {
+                  return '<a href = "{% url 'taskInfo' %}/' + row['jeditaskid'] + '/">' + row['jeditaskid'] + '</a>';
+                }
+                else {
+                  return '-'
+                }
+            },
+        },
+        {
+            "data": "type",
+            sDefaultContent: "-",
+        },
+        {
+            "data": "pandaid",
+            sDefaultContent: "-",
+            "render": function(data, type, row, meta) {
+                if (data && data > 0) {
+                  return '<a href = "{% url 'jobInfo' %}/' + row['pandaid'] + '/">' + row['pandaid'] + '</a>';
+                }
+                else {
+                  return '-'
+                }
+            },
+        },
+        {
+            "data": "status",
+            sDefaultContent: "-",
+            className: 'state',
+        },
+        {
+            "data": "procstatus",
+            sDefaultContent: "-",
+            className: 'state',
+        },
+        {
+            "data": "attemptnr",
+            sDefaultContent: "-",
+            className: 'num',
+            "render": function(data, type, row, meta) {
+                if (data && data >= 0) {
+                  return data
+                }
+                else {
+                  return '-'
+                }
+            },
+        },
+        {
+            "data": "maxattempt",
+            sDefaultContent: "-",
+            className: 'num',
+            "render": function(data, type, row, meta) {
+                if (data && data >= 0) {
+                  return data
+                }
+                else {
+                  return '-'
+                }
+            },
+        },
+        {
+            "data": "startevent",
+            sDefaultContent: "-",
+            className: 'num',
+            "render": function(data, type, row, meta) {
+                if (data && data >= 0) {
+                  return data
+                }
+                else {
+                  return '-'
+                }
+            },
+        },
+        {
+            "data": "endevent",
+            sDefaultContent: "-",
+            className: 'num',
+            "render": function(data, type, row, meta) {
+                if (data && data >= 0) {
+                  return data
+                }
+                else {
+                  return '-'
+                }
+            },
+        },
+    ],
+    "createdRow": function ( row, data, index ) {
+        $('td', row).eq(4).addClass(data['status'] + '_fill');
+        $('td', row).eq(5).addClass(data['procstatus'] + '_fill');
+    }
+  })
+}
+</script>
+
 {% endblock %}

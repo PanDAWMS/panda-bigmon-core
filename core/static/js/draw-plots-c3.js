@@ -43,6 +43,23 @@ function getWidth() {
   );
 }
 
+function getScreenCategory(width) {
+  let scrnCat = '';
+  let breakpoints = {
+    small: [0, 640],
+    medium: [640, 1280],
+    large: [1280, 99999],
+  };
+  for (const item in breakpoints) {
+    if (width >= breakpoints[item][0] && width < breakpoints[item][1]) {
+      scrnCat = item;
+    }
+  }
+  (scrnCat.length === 0) ? scrnCat = 'small' : scrnCat;
+
+  return scrnCat
+}
+
 function getPlotWidth() {
   // calculate plot width
   let padding = 20;
@@ -240,6 +257,8 @@ function draw_bar_timeseries(data, divid, ext) {
     if (ext.colors !== null && typeof ext.colors === 'object') {
       colors = ext.colors;
     }
+    let timeFormat = '%Y-%m-%d %H:%M:%S';
+    if (ext.timeFormat) {timeFormat = ext.timeFormat;}
     let axis_labels = ['', ''];
     if (ext.labels) {axis_labels = ext.labels;}
     let title = '';
@@ -248,7 +267,7 @@ function draw_bar_timeseries(data, divid, ext) {
         bindto: '#' + divid,
         data: {
             x: data[0][0],
-            xFormat: '%Y-%m-%d %H:%M:%S',
+            xFormat: timeFormat,
             columns: data,
             type: 'bar',
             colors: colors,
@@ -260,7 +279,7 @@ function draw_bar_timeseries(data, divid, ext) {
             x: {
                 type: 'timeseries',
                 tick: {
-                    format: '%Y-%m-%d %H:%M:%S',
+                    format: timeFormat,
                     rotate: -30,
                 },
                 label: {

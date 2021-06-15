@@ -10214,24 +10214,18 @@ def datasetList(request):
 
 @login_customrequired
 def fileInfo(request):
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        JediDatasetsTableName = "ATLAS_PANDA.JEDI_DATASETS"
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        JediDatasetsTableName = "JEDI_DATASETS"
-        tmpTableName = "TMP_IDS1"
-
-    random.seed()
-    transactionKey = random.randrange(1000000)
 
     valid, response = initRequest(request)
-    if not valid: return response
-    setupView(request, hours=365 * 24, limit=999999999)
-    query = {}
+    if not valid:
+        return response
+
     files = []
     frec = None
-    colnames = []
     columns = []
+
+    tquery = setupView(request, hours=365 * 24, limit=999999999, wildCardExt=False)
+    query = {'creationdate__castdate__range': tquery['modificationtime__castdate__range']}
+
     if 'filename' in request.session['requestParams']:
         file = request.session['requestParams']['filename']
         query['lfn'] = request.session['requestParams']['filename']
@@ -10246,23 +10240,6 @@ def fileInfo(request):
         query['guid'] = request.session['requestParams']['guid']
     else:
         file = None
-
-    startdate = None
-    if 'date_from' in request.session['requestParams']:
-        time_from_struct = time.strptime(request.session['requestParams']['date_from'], '%Y-%m-%d')
-        startdate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
-    if not startdate:
-        startdate = timezone.now() - timedelta(hours=365 * 24)
-    # startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = None
-    if 'date_to' in request.session['requestParams']:
-        time_from_struct = time.strptime(request.session['requestParams']['date_to'], '%Y-%m-%d')
-        enddate = datetime.utcfromtimestamp(time.mktime(time_from_struct))
-    if enddate == None:
-        enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
-
-    query['creationdate__range'] = [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]
-
     if 'pandaid' in request.session['requestParams'] and request.session['requestParams']['pandaid'] != '':
         query['pandaid'] = request.session['requestParams']['pandaid']
     if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid'] != '':
@@ -10275,12 +10252,12 @@ def fileInfo(request):
     if file or ('pandaid' in query and query['pandaid'] is not None) or ('jeditaskid' in query and query['jeditaskid'] is not None):
         files = JediDatasetContents.objects.filter(**query).values()
         if len(files) == 0:
-            del query['creationdate__range']
-            query['modificationtime__castdate__range'] = [startdate.strftime(defaultDatetimeFormat),
-                                                enddate.strftime(defaultDatetimeFormat)]
-            morefiles = Filestable4.objects.filter(**query).values()
+            fquery = {k: v for k, v in query.items() if k != 'creationdate__castdate__range' }
+            fquery['modificationtime__castdate__range'] = tquery['modificationtime__castdate__range']
+
+            morefiles = Filestable4.objects.filter(**fquery).values()
             if len(morefiles) == 0:
-                morefiles = FilestableArch.objects.filter(**query).values()
+                morefiles = FilestableArch.objects.filter(**fquery).values()
             if len(morefiles) > 0:
                 files = morefiles
                 for f in files:
@@ -10289,30 +10266,36 @@ def fileInfo(request):
                     f['datasetname'] = f['dataset']
                     f['oldfiletable'] = 1
 
-#        connection.enter_transaction_management()
-        new_cur = connection.cursor()
-        executionData = []
-        for id in files:
-            executionData.append((id['datasetid'], transactionKey))
-        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-        new_cur.executemany(query, executionData)
-#        connection.commit()
+    if len(files) > 0:
+        # get dataset names for files
+        dids = list(set([f['datasetid'] for f in files]))
+        N_MAX_WHERE_IN = 100
+        dquery = {}
+        extra = ' (1=1) '
+        if len(dids) < N_MAX_WHERE_IN:
+            dquery['datasetid__in'] = dids
+        else:
+            random.seed()
+            transactionKey = random.randrange(1000000)
+            tmpTableName = get_tmp_table_name()
+            insert_to_temp_table(dids, transactionKey)
+            extra += 'AND DATASETID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})'.format(tmpTableName, transactionKey)
 
-
-        new_cur.execute(
-            "SELECT DATASETNAME,DATASETID FROM %s WHERE DATASETID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-                JediDatasetsTableName, tmpTableName, transactionKey))
-        mrecs = dictfetchall(new_cur)
-        mrecsDict = {}
-        for mrec in mrecs:
-            mrecsDict[mrec['DATASETID']] = mrec['DATASETNAME']
+        datasets = JediDatasets.objects.filter(**dquery).extra(where=[extra]).values('datasetname', 'datasetid')
+        dataset_names_dict = {}
+        for d in datasets:
+            dataset_names_dict[d['datasetid']] = d['datasetname']
 
         for f in files:
             f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-            if 'datasetid' in f and f['datasetid'] in mrecsDict and mrecsDict[f['datasetid']]:
-                f['datasetname'] = mrecsDict[f['datasetid']]
+            if 'datasetid' in f and f['datasetid'] in dataset_names_dict and dataset_names_dict[f['datasetid']]:
+                f['datasetname'] = dataset_names_dict[f['datasetid']]
+            else:
+                f['datasetname'] = ''
 
-    if len(files) > 0:
+        # filter out files if dataset name in request params
+        if 'datasetname' in request.session['requestParams'] and request.session['requestParams']['datasetname']:
+            files = [f for f in files if f['datasetname'] == request.session['requestParams']['datasetname']]
 
         files = sorted(files, key=lambda x: x['pandaid'] if x['pandaid'] is not None else False, reverse=True)
         frec = files[0]
@@ -10327,38 +10310,63 @@ def fileInfo(request):
                     val = frec[k]
             else:
                 val = frec[k]
-            if frec[k] == None:
+            if frec[k] is None:
                 val = ''
                 continue
             pair = {'name': k, 'value': val}
             columns.append(pair)
-    del request.session['TFIRST']
-    del request.session['TLAST']
 
-    for file_ in files:
-        if 'startevent' in file_:
-            if (file_['startevent'] != None):
-                file_['startevent'] += 1
-        if 'endevent' in file_:
-            if (file_['endevent'] != None):
-                file_['endevent'] += 1
+        for f in files:
+            f['startevent'] = f['startevent'] + 1 if 'startevent' in f and f['startevent'] is not None else -1
+            f['endevent'] = f['endevent'] + 1 if 'endevent' in f and f['endevent'] is not None else -1
+            for p in ('maxattempt', 'attemptnr', 'pandaid'):
+                f[p] = f[p] if p in f and f[p] is not None else -1
+            if 'creationdate' in f and f['creationdate'] is not None:
+                f['creationdate'] = f['creationdate'].strftime(defaultDatetimeFormat)
 
-    if ((len(files) > 0) and ('jeditaskid' in files[0]) and ('startevent' in files[0]) and (
-        files[0]['jeditaskid'] != None)):
-        files = sorted(files, key=lambda k: (-k['jeditaskid'], k['startevent']))
-    if frec and 'creationdate' in frec and frec['creationdate'] is None:
-        frec['creationdate'] = frec['creationdate'].strftime(defaultDatetimeFormat)
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
+        del request.session['TFIRST']
+        del request.session['TLAST']
+
+        if frec and 'creationdate' in frec and frec['creationdate'] is None:
+            frec['creationdate'] = frec['creationdate'].strftime(defaultDatetimeFormat)
+
+        files_list = []
+        plot_data = []
+        if len(files) > 0:
+            # filter files params for a table
+            file_param_names = [
+                'lfn', 'datasetname', 'jeditaskid', 'pandaid', 'type', 'status', 'procstatus', 'creationdate',
+                'startevent', 'endevent', 'attemptnr', 'maxattempt'
+            ]
+            files_list = [{k: v for k, v in f.items() if k in file_param_names} for f in files]
+
+            # prepare data for a plot
+            plot_data = {
+                'data': [],
+                'options': {
+                    'timeFormat': '%Y-%m-%d',
+                    'labels': ['Date', 'Number of occurrences, daily']
+                }
+            }
+            df = pd.DataFrame([{'creationdate': f['creationdate'], 'pandaid': f['pandaid']} for f in files_list])
+            df['creationdate'] = pd.to_datetime(df['creationdate'])
+            df = df.groupby(pd.Grouper(freq='1D', key='creationdate')).count()
+            plot_data['data'] = [df.reset_index()['creationdate'].tolist(), df['pandaid'].values.tolist()]
+            plot_data['data'][0] = [t.strftime('%Y-%m-%d') for t in plot_data['data'][0]]
+            plot_data['data'][0].insert(0, plot_data['options']['labels'][0])
+            plot_data['data'][1].insert(0, plot_data['options']['labels'][1])
+
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'frec': frec,
-            'files': files,
+            'files': files_list,
             'filename': file,
             'columns': columns,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'plotData': plot_data,
         }
         data.update(getContextVariables(request))
         response = render_to_response('fileInfo.html', data, RequestContext(request))

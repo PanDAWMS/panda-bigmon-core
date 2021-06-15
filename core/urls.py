@@ -72,14 +72,14 @@ urlpatterns = [
     re_path(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
     re_path(r'^datatable/data/errorMessagesSummaryList', coremon_views.summaryErrorMessagesListJSON, name='summaryErrorMessagesListJSON'),
 
-    re_path(r'^fileInfo/$', coremon_views.fileInfo, name='fileInfo'),
-    re_path(r'^fileList/$', coremon_views.fileList, name='fileList'),
+    re_path(r'^fileInfo/$', coremon_views.fileInfo, name='fileInfoLegacy'),
+    re_path(r'^fileList/$', coremon_views.fileList, name='fileListLegacy'),
     re_path(r'^file/$', coremon_views.fileInfo, name='fileInfo'),
     re_path(r'^files/$', coremon_views.fileList, name='fileList'),
     re_path(r'^loadFileList/(?P<datasetid>.*)/$', coremon_views.loadFileList, name='loadFileList'),
 
-    re_path(r'^datasetInfo/$', coremon_views.datasetInfo, name='datasetInfo'),
-    re_path(r'^datasetList/$', coremon_views.datasetList, name='datasetList'),
+    re_path(r'^datasetInfo/$', coremon_views.datasetInfo, name='datasetInfoLegacy'),
+    re_path(r'^datasetList/$', coremon_views.datasetList, name='datasetListLegacy'),
     re_path(r'^dataset/$', coremon_views.datasetInfo, name='datasetInfo'),
     re_path(r'^datasets/$', coremon_views.datasetList, name='datasetList'),
 
@@ -87,7 +87,7 @@ urlpatterns = [
     re_path(r'^dash/analysis/$', coremon_views.dashAnalysis, name='dashAnalysis'),
     re_path(r'^dash/production/$', coremon_views.dashProduction, name='dashProduction'),
     re_path(r'^dash/objectstore/$', coremon_views.dashObjectStore, name='dashObjectStore'),
-    re_path(r'^new/dash/$', coremon_views.dashRegion, name='dashRegionNew'),  # legacy
+    re_path(r'^new/dash/$', coremon_views.dashRegion, name='dashRegionLegacy'),  # legacy
     re_path(r'^dash/region/$', coremon_views.dashRegion, name='dashRegion'),
     re_path(r'^dash/world/$', coremon_views.dashNucleus, name='dashWorld'),
     re_path(r'^dash/es/$', coremon_views.dashES, name='dashES'),
