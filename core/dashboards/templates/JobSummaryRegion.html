@@ -375,7 +375,22 @@ function buildRegionSummary(data, divid) {
           },
           {
             sDefaultContent: "---",
-            className: "alert num",
+            className: "num",
+            "render": function(data, type, row, meta) {
+              if (data && data > 0) {
+                let url_link = '<a target="_blank"';
+                (data > err_threshold) ? url_link += ' class="alert" ': url_link += ' ';
+                url_link += 'href = "{% url 'errorSummary' %}?hours=' + '{{ hours }}' + '&jobstatus=failed';
+                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '">'+row[7]+'</a>';
+                return url_link
+              }
+              else {
+                return data
+              }
+            }
           },
           {
             sDefaultContent: "---",
@@ -720,7 +735,21 @@ function buildQueueSummary(data, divid) {
       },
       {
         sDefaultContent: "---",
-        className: "alert num",
+        className: "num",
+        "render": function(data, type, row, meta) {
+          if (data && data > 0) {
+            let url_link = '<a target="_blank"';
+            (data > err_threshold) ? url_link += ' class="alert" ': url_link += '';
+            url_link += 'href = "{% url 'errorSummary' %}?hours=' + '{{ hours }}' + '&jobstatus=failed&computingsite=' + row[0];
+            (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+            (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+            url_link += '">'+row[12]+'</a>';
+            return url_link
+          }
+          else {
+            return data
+          }
+        }
       },
       {
         sDefaultContent: "---",
@@ -913,11 +942,6 @@ function buildQueueSummary(data, divid) {
         }
       },
     ],
-    "createdRow": function (row, data, index) {
-      if (data[12] > err_threshold) {
-        $('td', row).eq(12).addClass('bold');
-      }
-    },
   });
   queuesTable.columns( [ 6,7,8,9,10,13,14,15,17,19,20,22,27,28 ] ).visible( false );
   queuesTable.buttons().container()
