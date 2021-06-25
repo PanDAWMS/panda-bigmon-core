@@ -1062,10 +1062,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         else:
                             query['reqid'] = int(val)
                     elif param == 'transformation' or param == 'transpath':
-                        paramQuery = request.session['requestParams'][param]
-                        if paramQuery[0] == '*': paramQuery = paramQuery[1:]
-                        if paramQuery[-1] == '*': paramQuery = paramQuery[:-1]
-                        query['%s__contains' % param] = paramQuery
+                        if '*' not in request.session['requestParams'][param]:
+                            query[param] = request.session['requestParams'][param]
+                        else:
+                            query[param + '__contains'] = request.session['requestParams'][param].replace('*', '')
                     elif param == 'modificationhost' and request.session['requestParams'][param].find('@') < 0:
                         paramQuery = request.session['requestParams'][param]
                         if paramQuery[0] == '*': paramQuery = paramQuery[1:]
