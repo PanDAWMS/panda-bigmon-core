@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <h4>Warning about staging from {{ summary.SE }} in ATLAS Data Carousel</h4>
+</head>
+<body>
+
+<p>The Rucio rule <b>{{ summary.RR }}</b> started on <b>{{ summary.START_TIME }}</b> and used, in particular, by task <b><a href="{% url 'taskInfo' %}?jeditaskid={{ summary.TASKID }}">{{ summary.TASKID }}</a></b> is still lasting.</p>
+<p>Current progress is <b>{{ summary.STAGED_FILES }} out of {{ summary.TOT_FILES }}</b>files.</p>
+<p>Please perform necessary interventions if you found it wrong.</p>
+
+Truly yours,<br>
+Data Carousel Team
+
+</body>
+</html>
