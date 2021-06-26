@@ -195,4 +195,4 @@ ML_FLOW_UPSTREAM = 'https://bigpanda-mlflow.web.cern.ch/'
 
 DATA_CAROUSEL_MAIL_DELAY_DAYS = 14
 DATA_CAROUSEL_MAIL_REPEAT = 1
-DATA_CARUSEL_MAIL_RECIPIENTS = ['spadolski@bnl.gov']
+DATA_CARUSEL_MAIL_RECIPIENTS = ['siarhei.padolski@cern.ch']
