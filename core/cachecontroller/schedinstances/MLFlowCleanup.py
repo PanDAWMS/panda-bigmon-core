@@ -21,7 +21,10 @@ class MLFlowCleanup(BaseTasksProvider):
             return -1
         updatelist = []
         for r in rows:
-            self.cleanUpDeployement(r[0], r[1])
+            try:
+                self.cleanUpDeployement(r[0], r[1])
+            except Exception as e:
+                self.logger.error(e)
             updatelist.append({'jeditaskid':r[0], 'instanceurl':r[1]})
 
         if updatelist:

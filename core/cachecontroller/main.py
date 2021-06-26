@@ -61,7 +61,7 @@ schedule.every().day.at("09:00").do(run_threaded, artMails.execute)
 schedule.every().day.at("12:00").do(run_threaded, artMails.execute)
 schedule.every(2).hours.do(run_threaded, stageProgressCollector.execute)
 schedule.every(10).minutes.do(run_threaded, mlFlowCleanUp.execute)
-schedule.every(1).hours.do(run_threaded, dataCaruselMails.execute)
+schedule.every(10).minutes.do(run_threaded, dataCaruselMails.execute)
 
 while 1:
     schedule.run_pending()
