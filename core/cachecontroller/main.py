@@ -19,6 +19,8 @@ from schedinstances.DataCarouselMails import DataCarouselMails
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
 from settingscron import LOG_PATH
 
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
 
 logging.basicConfig(level=logging.DEBUG, filename=LOG_PATH, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 

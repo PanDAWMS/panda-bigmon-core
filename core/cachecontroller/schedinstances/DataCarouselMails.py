@@ -6,22 +6,15 @@ from core.cachecontroller.BaseTasksProvider import BaseTasksProvider
 from core.settings.base import DATA_CAROUSEL_MAIL_DELAY_DAYS, DATA_CARUSEL_MAIL_RECIPIENTS, DATA_CAROUSEL_MAIL_REPEAT
 from django.core.cache import cache
 
-# DEBUG
-
-#from django.core.wsgi import get_wsgi_application
-#application = get_wsgi_application()
-
-
-
 mail_template = "templated_email/dataCarouselStagingAlert.html"
 max_mail_attempts = 10
 
 class DataCarouselMails(BaseTasksProvider):
     lock = threading.RLock()
-    logger = logging.getLogger(__name__ + ' DataCaruselMails')
+    logger = logging.getLogger(__name__ + ' DataCarouselMails')
 
     def processPayload(self):
-        self.logger.info("DataCaruselMails started")
+        self.logger.info("DataCarouselMails started")
         try:
             query = """SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
                     t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence, (CURRENT_TIMESTAMP-t1.UPDATE_TIME) as UPDATE_TIME, t4.processingtype FROM ATLAS_DEFT.T_DATASET_STAGING t1
@@ -36,7 +29,7 @@ class DataCarouselMails(BaseTasksProvider):
             self.logger.error(e)
             return -1
         for r in rows:
-            self.logger.debug("DataCaruselMails processes this Rucio Rule: {}".format(r[5]))
+            self.logger.debug("DataCarouselMails processes this Rucio Rule: {}".format(r[5]))
             data = {"SE":r[8], "RR":r[5], "START_TIME":r[3], "TASKID":r[9], "TOT_FILES": r[6], "STAGED_FILES": r[2]}
             self.send_email(data)
         self.logger.info("DataCaruselMails finished")
