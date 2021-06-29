@@ -2,16 +2,18 @@
     filebrowser.urls
 
 """
-from django.conf.urls import include, url
-from django.conf import settings
-from django.conf.urls.static import static
-from django.contrib import admin
-### #FIXME admin.autodiscover()
+from django.urls import re_path
 
-import views as filebrowser_views
+from core.filebrowser import MemoryMonitorPlots as memmon
+from core.filebrowser import views as filebrowser_views
 
 urlpatterns = [
-    url(r'^$', filebrowser_views.index, name='filebrowser'),
-    url(r'^api/$', filebrowser_views.api_single_pandaid, name='filebrowser-api-single-pandaid'),
-    url(r'^delete/$', filebrowser_views.delete_files, name='filebrowser-delete'),
+    re_path(r'^filebrowser/$', filebrowser_views.index, name='filebrowser'),
+    re_path(r'^filebrowser/api/$', filebrowser_views.api_single_pandaid, name='filebrowser-api-single-pandaid'),
+    re_path(r'^filebrowser/delete/$', filebrowser_views.delete_files, name='filebrowser-delete'),
+
+    # prmon plots
+    re_path(r'^memoryplot/', memmon.getPlots, name='memoryplot'),
+    re_path(r'^prmonplots/(?P<pandaid>.*)/', memmon.prMonPlots, name='prMonPlots'),
+    re_path(r'^getprmonplotsdata/(?P<pandaid>.*)/', memmon.getPrMonPlotsData, name='getPrMonPlotsData'),
 ]

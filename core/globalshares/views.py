@@ -1,5 +1,7 @@
 from datetime import datetime
 import decimal
+
+import numpy as np
 import re
 from decimal import Decimal
 
@@ -11,10 +13,13 @@ from django.db import connection
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
-from core.views import initRequest, setupView, login_customrequired, endSelfMonitor, extensibleURL, DateEncoder
+from core.oauth.utils import login_customrequired
+from core.views import initRequest, setupView, extensibleURL, DateEncoder
+from core.schedresource.utils import get_pq_fairshare_policy, get_pq_resource_types
 import json
 
-import GlobalShares
+from core.globalshares import GlobalShares
+from core.globalshares.utils import get_gs_plots_data, get_child_elements, get_child_sumstats
 
 @login_customrequired
 def globalshares(request):
@@ -23,22 +28,14 @@ def globalshares(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        gsPlotData = {}
-        oldGsPlotData = data['gsPlotData']
-        for shareName, shareValue in oldGsPlotData.iteritems():
-            gsPlotData[str(shareName)] = int(shareValue)
-        data['gsPlotData'] = gsPlotData
 
     if not valid: return response
     setupView(request, hours=180 * 24, limit=9999999)
     gs, tablerows = __get_hs_leave_distribution()
-    gsPlotData = {}#{'Upgrade':130049 , 'Reprocessing default':568841, 'Data Derivations': 202962, 'Event Index': 143 }
 
-    for shareName, shareValue in gs.iteritems():
+    for shareName, shareValue in gs.items():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
         shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
-        gsPlotData[str(shareName)] = int(shareValue['executing'])
-
 
     for shareValue in tablerows:
         shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
@@ -66,6 +63,8 @@ def globalshares(request):
 
     resources_list, resources_dict = get_resources_gshare()
 
+    gsPlotData = get_gs_plots_data(tablerows, resources_dict, ordtablerows)
+
     newTablesRow =[]
     for ordValueLevel1 in sorted(ordtablerows['childlist']):
         for shareValue in tablerows:
@@ -73,6 +72,8 @@ def globalshares(request):
                 ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
                 shareValue['level'] = 'level1'
                 shareValue['gshare'] = ord1Short.replace(' ', '_')
+                if len(ordtablerows[ordValueLevel1]['childlist']) == 0:
+                    shareValue['link'] = '?gshare={}&display_limit=100'.format(ord1Short)
                 newTablesRow.append(shareValue)
                 tablerows.remove(shareValue)
                 if len(ordtablerows[ordValueLevel1]['childlist']) == 0:
@@ -114,13 +115,10 @@ def globalshares(request):
                         if 'level' in shareValue:
                             add_resources(ord3Short, newTablesRow, resources_list, shareValue['level'])
                         break
-
     tablerows = newTablesRow
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    ##self monitor
-    endSelfMonitor(request)
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         data = {
@@ -138,41 +136,15 @@ def globalshares(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(DecimalEncoder().encode(gs), content_type='text/html')
+        return HttpResponse(DecimalEncoder().encode(gs), content_type='application/json')
 
-
-def get_child_elements(tree,childsgsharelist):
-    for gshare in tree:
-        if gshare!='childlist':
-            shortGshare = re.sub('\[(.*)\]', '', gshare).rstrip()
-            if 'childlist' in tree[gshare] and len(tree[gshare]['childlist'])==0:#len(tree[gshare])==0:
-                childsgsharelist.append(shortGshare)
-            elif 'childlist' not in tree[gshare]:
-                childsgsharelist.append(shortGshare)
-            else:
-                get_child_elements(tree[gshare],childsgsharelist)
-
-def get_child_sumstats(childsgsharelist,resourcesdict,gshare):
-    parentgshare = {}
-    parentgshare[gshare] = {}
-    for child in childsgsharelist:
-        if child in resourcesdict:
-            for resource in resourcesdict[child]:
-                if resource not in parentgshare[gshare]:
-                    parentgshare[gshare][resource] = {}
-                    for k in resourcesdict[child][resource].keys():
-                        parentgshare[gshare][resource][k] = resourcesdict[child][resource][k]
-                else:
-                    for k in resourcesdict[child][resource].keys():
-                            parentgshare[gshare][resource][k] += resourcesdict[child][resource][k]
-    return parentgshare
 
 def get_resources_gshare():
     EXECUTING = 'executing'
     QUEUED = 'queued'
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
-    resourcesDictSites =get_agis_resources()
+    resourcesDictSites = get_pq_resource_types()
     sqlRequest = """
     SELECT gshare, computingsite, jobstatus_grouped, SUM(HS) 
     FROM (SELECT gshare, computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
@@ -215,6 +187,7 @@ def get_resources_gshare():
 
     return hs_distribution_list, hs_distribution_dict
 
+
 def resourcesDictToList(hs_distribution_dict):
     ignore = 0
     pled = 0
@@ -254,6 +227,7 @@ def resourcesDictToList(hs_distribution_dict):
                                      })
     return hs_distribution_list
 
+
 def add_resources(gshare,tableRows,resourceslist,level):
     gshare = str(gshare).replace('_', ' ')
     if gshare in resourceslist:
@@ -279,6 +253,7 @@ def add_resources(gshare,tableRows,resourceslist,level):
             if 'gshare' in row and gshare.replace(' ', '_') == row['gshare']:
                 row['resources'] = resourcesForGshare
 
+
 def get_shares(parents=''):
     comment = ' /* DBProxy.get_shares */'
     methodName = comment.split(' ')[-2].split('.')[-1]
@@ -296,7 +271,7 @@ def get_shares(parents=''):
         # Get top level shares
         sql += "WHERE parent IS NULL"
 
-    elif type(parents) == unicode:
+    elif type(parents) == np.unicode:
         # Get the children of a specific share
         var_map = {':parent': parents}
         sql += "WHERE parent = :parent"
@@ -320,6 +295,7 @@ def get_shares(parents=''):
 
     return resList
 
+
 def __load_branch(share):
     """
     Recursively load a branch
@@ -336,6 +312,7 @@ def __load_branch(share):
         node.children.append(__load_branch(child))
 
     return node
+
 
 def __get_hs_leave_distribution():
     """
@@ -397,28 +374,30 @@ def __get_hs_leave_distribution():
     stripTree(tree, rows)
     return hs_distribution_dict, rows
 
+
 def stripTree(node, rows):
     row = {}
-    if node.level > 0:
-        if node.level == 1:
-            row['level1'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-            row['level2'] = ''
-            row['level3'] = ''
-        if node.level == 2:
-            row['level1'] = ''
-            row['level2'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-            row['level3'] = ''
-        if node.level == 3:
-            row['level1'] = ''
-            row['level2'] = ''
-            row['level3'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-        row['executing'] = node.executing
-        row['pledged'] = node.pledged
-        row['delta'] = node.delta
-        row['queued'] = node.queued
-        row['ratio'] = node.ratio
-        row['value'] = node.value
-        rows.append(row)
+    if hasattr(node,'level'):
+        if node.level > 0:
+            if node.level == 1:
+                row['level1'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
+                row['level2'] = ''
+                row['level3'] = ''
+            if node.level == 2:
+                row['level1'] = ''
+                row['level2'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
+                row['level3'] = ''
+            if node.level == 3:
+                row['level1'] = ''
+                row['level2'] = ''
+                row['level3'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
+            row['executing'] = node.executing
+            row['pledged'] = node.pledged
+            row['delta'] = node.delta
+            row['queued'] = node.queued
+            row['ratio'] = node.ratio
+            row['value'] = node.value
+            rows.append(row)
     for item in node.children:
         stripTree(item, rows)
 
@@ -429,7 +408,7 @@ def getChildStat(node, hs_distribution_dict, level):
     delta = 0
     queued = 0
     ratio = 0
-    if node.name in hs_distribution_dict:
+    if node.name in hs_distribution_dict and len(node.children) == 0:
         executing = hs_distribution_dict[node.name]['executing']
         pledged = hs_distribution_dict[node.name]['pledged']
         delta = hs_distribution_dict[node.name]['executing'] - hs_distribution_dict[node.name]['pledged']
@@ -512,7 +491,8 @@ order by gshare, corecount, jobstatus
             corecount = 'Multicore (' + str(gs[1]) + ')'
         rowDict = {"gshare": gs[0], "corecount": corecount, "jobstatus": gs[2], "count": gs[3], "hs06":gs[4]}
         fullListGS.append(rowDict)
-    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+    return HttpResponse(json.dumps(fullListGS), content_type='application/json')
+
 
 def sharesDistributionJSON(request):
     fullListGS = []
@@ -556,7 +536,7 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
     cur = connection.cursor()
     cur.execute(sqlRequest)
     globalSharesList = cur.fetchall()
-    resources = get_agis_resources()
+    resources = get_pq_resource_types()
     hs06count  = 0
     for gs in globalSharesList:
         if gs[2] == 1:
@@ -574,7 +554,8 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
             hs06count= 0
         rowDict = {"gshare": gs[0],"computingsite": gs[1],"resources":resource, "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4], "hs06":gs[5],"hs06/count": hs06count}
         fullListGS.append(rowDict)
-    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+    return HttpResponse(json.dumps(fullListGS), content_type='application/json')
+
 
 def siteWorkQueuesJSON(request):
     fullListGS = []
@@ -626,7 +607,8 @@ order by COMPUTINGSITE,gshare, corecount, jobstatus
         else: corecount = 'Multicore ('+str(gs[2])+')'
         rowDict = {"computingsite": gs[0],"gshare": gs[1], "corecount": str(corecount), "jobstatus": gs[3], "count": gs[4]}
         fullListGS.append(rowDict)
-    return HttpResponse(json.dumps(fullListGS), content_type='text/html')
+    return HttpResponse(json.dumps(fullListGS), content_type='application/json')
+
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
@@ -634,37 +616,6 @@ class DecimalEncoder(json.JSONEncoder):
             return float(o)
         return super(DecimalEncoder, self).default(o)
 
-def get_agis_resources():
-    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
-    http = urllib3.PoolManager()
-    data = {}
-    try:
-        resourcesDict = {}
-        resourcesDictSites = {}
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            resourcesDict.setdefault(data[cs]['resource_type'], []).append(cs)
-            resourcesDictSites[data[cs]['siteid']] = data[cs]['resource_type']
-    except Exception as exc:
-        print exc.message
-    return resourcesDictSites
-
-def get_agis_fairsharepolicy():
-    url = "http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all&vo_name=atlas"
-    http = urllib3.PoolManager()
-    data = {}
-    try:
-        fairsharepolicyDict = {}
-        fairsharepolicyDictSites = {}
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            fairsharepolicyDict.setdefault(data[cs]['fairsharepolicy'], []).append(cs)
-            fairsharepolicyDictSites[data[cs]['siteid']] = data[cs]['fairsharepolicy']
-    except Exception as exc:
-        print exc.message
-    return fairsharepolicyDictSites
 
 def resourcesType(request):
     EXECUTING = 'executing'
@@ -672,7 +623,7 @@ def resourcesType(request):
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
     resourcesList = []
-    resourcesDictSites = get_agis_resources()
+    resourcesDictSites = get_pq_resource_types()
     sqlRequest = """SELECT computingsite, jobstatus_grouped, SUM(HS) 
     FROM (SELECT computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
     ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY computingsite, jobstatus_grouped"""
@@ -742,7 +693,8 @@ def resourcesType(request):
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
                                      'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
-    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
+
 
 def fairsharePolicy(request):
     EXECUTING = 'executing'
@@ -750,7 +702,7 @@ def fairsharePolicy(request):
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
     #sqlrequest ="""select SITEID, fairsharepolicy  from atlas_pandameta.schedconfig"""
-    fairsharepolicyDict = get_agis_fairsharepolicy()
+    fairsharepolicyDict = get_pq_fairshare_policy()
     newfairsharepolicyDict = {}
     fairsharepolicies = fairsharepolicyDict.values()
     for site in fairsharepolicyDict.keys():
@@ -818,10 +770,10 @@ def fairsharePolicy(request):
     total_hs =0
     for hs_entry in hs_distribution_dict.keys():
         sum_hs = 0
-        pled += hs_distribution_dict[hs_entry]['pledged']
-        ignore += hs_distribution_dict[hs_entry]['ignore']
-        executing += hs_distribution_dict[hs_entry]['executing']
-        queued += hs_distribution_dict[hs_entry]['queued']
+        pled += float(hs_distribution_dict[hs_entry]['pledged'])
+        ignore += float(hs_distribution_dict[hs_entry]['ignore'])
+        executing += float(hs_distribution_dict[hs_entry]['executing'])
+        queued += float(hs_distribution_dict[hs_entry]['queued'])
         sum_hs = float(hs_distribution_dict[hs_entry]['pledged']) + \
                  float(hs_distribution_dict[hs_entry]['ignore']) + \
                  float(hs_distribution_dict[hs_entry]['executing']) + \
@@ -832,9 +784,9 @@ def fairsharePolicy(request):
     hs_distribution_list = []
     for hs_entry in hs_distribution_dict.keys():
        # hs_distribution_dict[hs_entry]['pledged_percent'] = pled * 100 / hs_distribution_dict[hs_entry]['pledged']
-        hs_distribution_dict[hs_entry]['ignore_percent'] =  (hs_distribution_dict[hs_entry]['ignore']/ignore)* 100
-        hs_distribution_dict[hs_entry]['executing_percent'] =  (hs_distribution_dict[hs_entry]['executing'] /executing) * 100
-        hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
+        hs_distribution_dict[hs_entry]['ignore_percent'] = (float(hs_distribution_dict[hs_entry]['ignore'])/ignore)* 100
+        hs_distribution_dict[hs_entry]['executing_percent'] =  (float(hs_distribution_dict[hs_entry]['executing']) /executing) * 100
+        hs_distribution_dict[hs_entry]['queued_percent'] = (float(hs_distribution_dict[hs_entry]['queued'])/queued) * 100
         hs_distribution_list.append({'policy':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
                                      'ignore':hs_distribution_dict[hs_entry]['ignore'],
                                      'ignore_percent': round(hs_distribution_dict[hs_entry]['ignore_percent'],2),
@@ -845,11 +797,9 @@ def fairsharePolicy(request):
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
                                      'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
-    return  HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 
 
-
-    return None
 def coreTypes(request):
     EXECUTING = 'executing'
     QUEUED = 'queued'
@@ -936,5 +886,5 @@ def coreTypes(request):
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
                                      'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
-    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='text/html')
+    return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 

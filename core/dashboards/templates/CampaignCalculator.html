@@ -1,0 +1,143 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% load humanize %}
+
+{% block page_title %}Campaign duration calculator{% endblock %}
+{% block subtitle %}Campaign duration calculator {{ viewParams.selection|safe }} {% endblock %}
+
+
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block css_page %}
+  <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+    <div class="large-12 columns" ng-app="dataviewapp" data-ng-controller="dataviewctrl">
+     <div class="row">
+         <div id="selectionpane" class="small-6 columns">
+             <b>Select campaign/subcampaign</b>
+             <select id="campaigns" ng-model="selectedCampaign" ng-options="k as k for (k, v) in camp" ng-change="updateSubCampaign();">
+                 <option value="" disabled>Select Campaign</option>
+             </select>
+              <select id="subcampaigns" ng-model="selectedSubCampaign" ng-options="o as o for o in subcamp">
+                 <option value="" disabled>Select SubCampaign</option>
+             </select>
+             <a ng-click="loadInfoCampaign();" class="button primary"><img ng-show="showload" src="{% static "images/load.gif" %}" alt=""> Load information</a>
+         </div>
+     </div>
+
+     <div class="row" ng-repeat="step in steps">
+        <div class="panel callout radius" >
+              <h4>{$ step $}</h4>
+              <p>Processed events: {$ numberOfDoneEventsPerStep[step] $}</p>
+              <p>Currently processing events <sup>(<a href="#submtev">1</a>)</sup>: {$ numberOfSubmittedEventsPerStep[step] $}</p>
+              <p ng-show="doshowrem(step)">Remaining events <sup>(<a href="#remevt">2</a>)</sup>: {$ numberOfRemainingEventsPerStep[step] $}</p>
+              <p ng-show="doshowsub(step)">Estimation of completion time for remaining events: {$ remainingForSubmitting[step] $}</p>
+                <div ng-show="doshowsub(step)" class="success progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForSubmitted[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForSubmitted[step] $} percent" aria-valuemax="100">
+                  <span class="progress-meter" style="width: {$ progressForSubmitted[step] $}%">
+                    <p class="progress-meter-text">{$ progressForSubmitted[step] $}%</p>
+                  </span>
+                </div>
+              <p ng-show="doshowsubmax(step)">Estimation of completion time if all events from {$ stepWithMaxEvents $} used: {$ remainingForMaxPossible[step] $}</p>
+                 <div ng-show="doshowsubmax(step)" class="secondary progress" role="progressbar" tabindex="0" aria-valuenow="{$ progressForMax[step] $}" aria-valuemin="0" aria-valuetext="{$ progressForMax[step] $} percent" aria-valuemax="100">
+                  <span class="progress-meter" style="width: {$ progressForMax[step] $}%">
+                    <p class="progress-meter-text">{$ progressForMax[step] $}%</p>
+                  </span>
+                </div>
+            <p ng-show="doshowsub(step)">Current production performance<sup>(<a href="#remevt">3</a>)</sup>: {$ eventsPerDay[step] $} ev/day</p>
+         </div>
+    </div>
+
+    <h6 ng-show="steps" id="submtev"><sup>1</sup>Total Number of Events in currently active tasks</h6>
+    <h6 ng-show="steps" id="remevt"><sup>2</sup>Number of Unprocessed Events in currently active tasks</h6>
+    <h6 ng-show="steps" id="remevt"><sup>3</sup>Value of daily production rolling mean with 12 days window</h6>
+
+    </div>
+
+{% endblock %}
+
+{% block js_body_page %}
+<script src="{% static 'js/hideCells.js' %}"></script>
+<script>
+    app.service('Service', ['$http', service])
+        .controller('dataviewctrl', ['$scope', 'Service',controller]);
+
+    function service($http, $scope){
+        var get = function(requestparams) {
+         return $http({
+          method: 'GET',
+          url: '{% url 'campaignPredictionInfo' %}'+requestparams,
+          cache: false
+        })};
+        return {
+          get: get
+        }
+    }
+
+    function controller($scope, Service){
+        $scope.camp = {{ campaigns_info|safe }};
+        $scope.subcamp = new Array(0);
+        $scope.selectedCampaign = '';
+        $scope.selectedSubCampaign = '';
+        $scope.showload = false;
+
+        $scope.loadInfoCampaign = function(){
+            var request = "?campaign=" +$scope.selectedCampaign+ "&subcampaign="+$scope.selectedSubCampaign;
+            $scope.showload = true;
+            Service.get(request).then($scope.processResponceInfo);
+        };
+
+        $scope.processResponceInfo = function(response){
+            response = response.data;
+            $scope.remainingForSubmitting = response['remainingForSubmitting'];
+            $scope.remainingForMaxPossible = response['remainingForMaxPossible'];
+            $scope.numberOfDoneEventsPerStep = response['numberOfDoneEventsPerStep'];
+            $scope.numberOfSubmittedEventsPerStep = response['numberOfSubmittedEventsPerStep'];
+            $scope.numberOfRemainingEventsPerStep = response['numberOfRemainingEventsPerStep'];
+            $scope.numberOfTotalEventsPerStep = response['numberOfTotalEventsPerStep'];
+            $scope.steps = response['steps'];
+            $scope.subcampaign = response['subcampaign'];
+            $scope.campaign = response['campaign'];
+            $scope.progressForSubmitted = response['progressForSubmitted'];
+            $scope.stepWithMaxEvents = response['stepWithMaxEvents'];
+            $scope.eventsPerDay = response['eventsPerDay'];
+            $scope.progressForMax = response['progressForMax'];
+            $scope.showload = false;
+        };
+
+        $scope.updateSubCampaign = function(){
+            if ($scope.camp[$scope.selectedCampaign].length > 0)
+                $scope.subcamp = $scope.camp[$scope.selectedCampaign];
+            else $scope.subcamp = new Array(0);
+        };
+
+        $scope.doshowrem = function(step){
+            if ($scope.numberOfRemainingEventsPerStep[step] == "0")
+                return false;
+            return true;
+        };
+
+        $scope.doshowsub = function(step){
+            if (step in $scope.remainingForSubmitting)
+                return true;
+            return false;
+        };
+
+        $scope.doshowsubmax = function(step){
+            if ((step in $scope.remainingForSubmitting) && (step != $scope.stepWithMaxEvents))
+                return true;
+            return false;
+        };
+    }
+</script>
+{% endblock %}

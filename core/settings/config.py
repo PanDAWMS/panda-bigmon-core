@@ -1,13 +1,9 @@
-
+import os
 from os.path import dirname, join
 
 import core
-#import core.filebrowser
-#import core.pbm
-
-from core import admin
-
-from local import dbaccess, MY_SECRET_KEY
+from core import filebrowser, pbm, admin
+from core.settings.local import dbaccess, MY_SECRET_KEY, LOG_ROOT
 
 ALLOWED_HOSTS = [
     ### cern.ch
@@ -23,27 +19,32 @@ ALLOWED_HOSTS = [
     '127.0.0.1', '.localhost'
 ]
 
-
 ### VIRTUALENV
-VIRTUALENV_PATH = '/data/virtualenv2.7'
+VIRTUALENV_PATH = '/data/virtualenv37'
+
+IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
 
 ### WSGI
 #WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
 
 ### DB_ROUTERS for atlas's prodtask
-DATABASE_ROUTERS = [\
-    'core.dbrouter.ProdMonDBRouter', \
-    'core.pbm.dbrouter.PandaBrokerageMonDBRouter', \
+DATABASE_ROUTERS = [
+    'core.dbrouter.ProdMonDBRouter',
+    'core.pbm.dbrouter.PandaBrokerageMonDBRouter',
 ]
 
-STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    join(dirname(core.common.__file__), 'static'),
-#    join(dirname(core.__file__), 'static'),
-)
+# name spaces of DB tables per application
+DATABASE_NAME_SPACES = {
+    'bigpandamon': 'ATLAS_PANDABIGMON',
+    'pandajob': 'ATLAS_PANDA',
+    'pandaarchjob': 'ATLAS_PANDAARCH',
+    'schedresource': 'ATLAS_PANDAMETA',
+    'harvester': 'ATLAS_PANDA',
+    'jedi': 'ATLAS_PANDA',
+    'prodsys': 'ATLAS_DEFT',
+}
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TEMPLATES = [
     {
@@ -54,7 +55,6 @@ TEMPLATES = [
             join(dirname(core.__file__), 'templates'),
             join(dirname(core.filebrowser.__file__), 'templates'),
             join(dirname(core.pbm.__file__), 'templates'),
-
         ],
         'OPTIONS': {
             'context_processors': [
@@ -71,33 +71,33 @@ TEMPLATES = [
             'loaders':[
                 'django.template.loaders.filesystem.Loader',
                 'django.template.loaders.app_directories.Loader',
-            ]
+            ],
+            'libraries':{
+                'common_tags': 'core.templatetags.common_tags',
+
+                },
         },
     },
 ]
-STATIC_ROOT = join(dirname(core.__file__), 'static')
-#STATIC_ROOT = None
-MEDIA_ROOT = join(dirname(core.__file__), 'media')
+
+MEDIA_ROOT = join(BASE_DIR, 'media')
 STATIC_URL_BASE = '/static/'
 MEDIA_URL_BASE = '/media/'
 
+STATICFILES_DIRS = (
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    join(BASE_DIR, 'static'),
+#    join(dirname(core.__file__), 'static'),
+)
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = MY_SECRET_KEY
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-# DATABASES = {
-# #    'default': {
-# #        'ENGINE': 'django.db.backends.', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-# #        'NAME': '',                      # Or path to database file if using sqlite3.
-# #        'USER': '',                      # Not used with sqlite3.
-# #        'PASSWORD': '',                  # Not used with sqlite3.
-# #        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-# #        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-# #    }
-#     'default': defaultDatabase
-# }
 DATABASES = dbaccess
+
 
 ### URL_PATH_PREFIX for multi-developer apache/wsgi instance
 ### on EC2: URL_PATH_PREFIX = '/bigpandamon' or URL_PATH_PREFIX = '/developersprefix'
@@ -113,46 +113,55 @@ STATIC_URL = URL_PATH_PREFIX + STATIC_URL_BASE
 
 FILTER_UI_ENV = {
     ### default number of days of shown jobs active in last N days
-    'DAYS': 30, \
+    'DAYS': 30,
     ### default number of days for user activity of shown jobs active in last N days
-    'USERDAYS': 3, \
+    'USERDAYS': 3,
     ### max number of days of shown jobs active in last N days
-    'MAXDAYS': 300, \
+    'MAXDAYS': 300,
     ### max number of days for user activity of shown jobs active in last N days
-    'USERMAXDAYS': 60, \
+    'USERMAXDAYS': 60,
     ### default number of hours of shown jobs active in last N hours
-    'HOURS': 2, \
+    'HOURS': 2,
     ### wildcard for string pattern in filter form
-    'WILDCARDS': ['*'], \
+    'WILDCARDS': ['*'],
     ### wildcard for integer interval in filter form
-    'INTERVALWILDCARDS': [':'], \
+    'INTERVALWILDCARDS': [':'],
     ###
-    'EXPAND_BUTTON': { "mDataProp": None, "sTitle": "Details", \
-                       "sClass": "control center", "bVisible": True, \
-                       "bSortable": False, \
-                       "sDefaultContent": '<img src="' + STATIC_URL + \
-                                '/images/details_open.png' + '">' \
-            }, \
+    'EXPAND_BUTTON': {
+        "mDataProp": None,
+        "sTitle": "Details",
+        "sClass": "control center",
+        "bVisible": True,
+        "bSortable": False,
+        "sDefaultContent": '<img src="' + STATIC_URL + '/images/details_open.png' + '">',
+        },
 }
-#DEBUG=True
-#LOG_ROOT = '/data/bigpandamon_virtualhosts/core/logs'
-#LOG_ROOT = '/data/wenaus/logs'
-LOG_ROOT = '/data/wenaus/bigpandamon_virtualhosts/twrpm/logs'
+
 
 LOG_SIZE = 1000000000
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-#    'disable_existing_loggers': True,
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
-        }
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
     },
     'handlers': {
         'null': {
             'level':'DEBUG',
             'class':'logging.NullHandler',
+        },
+        'logfile-django': {
+            'level':'DEBUG',
+            'class':'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.django",
+            'maxBytes': LOG_SIZE,
+            'backupCount': 2,
+            'formatter': 'verbose',
         },
         'logfile-bigpandamon': {
             'level':'DEBUG',
@@ -162,13 +171,13 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
-        'logfile-django': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': LOG_ROOT + "/logfile.django",
+        'logfile-info': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.info",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
-            'formatter': 'verbose',
+            'formatter': 'full',
         },
         'logfile-error': {
             'level': 'ERROR',
@@ -237,21 +246,25 @@ LOGGING = {
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
-#            'class': 'django.utils.log.AdminEmailHandler'
             'class':'logging.StreamHandler',
-        }
+        },
+        'console': {
+            'level': 'INFO',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'full'
+        },
     },
     'loggers': {
         'django.request': {
-            'handlers': ['mail_admins'],
-#            'level': 'ERROR',
+            'handlers': ['mail_admins', 'logfile-django'],
             'level': 'DEBUG',
             'propagate': True,
         },
         'django': {
-            'handlers':['logfile-django','logfile-error'],
+            'handlers': ['logfile-django', 'logfile-error'],
             'propagate': True,
-            'level':'DEBUG',
+            'level': 'DEBUG',
         },
         'django.template': {
             'handlers': ['logfile-template'],
@@ -269,7 +282,7 @@ LOGGING = {
             'level':'DEBUG',
         },
         'bigpandamon': {
-            'handlers': ['logfile-bigpandamon'],
+            'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error', 'console'],
             'level': 'DEBUG',
         },
         'bigpandamon-error': {
@@ -281,7 +294,7 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'bigpandamon-filebrowser':{
-            'handlers': ['logfile-filebrowser'],
+            'handlers': ['logfile-filebrowser', 'logfile-error'],
             'level': 'DEBUG',
         },
         'bigpandamon-pbm':{
@@ -289,14 +302,17 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'social':{
-            'handlers': ['logfile-error','social'],
+            'handlers': ['logfile-error', 'social'],
             'level': 'DEBUG',
             'propagate': True,
         },
     },
     'formatters': {
+        'full': {
+            'format': '{asctime} {module} {filename}:{lineno:d} {funcName} pid{process:d} {levelname} {message}',
+            'style': '{',
+        },
         'verbose': {
-#            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
             'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
         },
         'simple': {
@@ -313,16 +329,16 @@ LOGGING = {
     },
 }
 
-SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = ['state']
-SESSION_COOKIE_SECURE = False
+# SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = ['state']
+# SESSION_COOKIE_SECURE = False
 
 ENV = {
     ### Application name
-    'APP_NAME': "PanDA Monitor", \
+    'APP_NAME': "PanDA Monitor",
     ### Page title default
-    'PAGE_TITLE': "PanDA Monitor", \
+    'PAGE_TITLE': "PanDA Monitor",
     ### Menu item separator
-    'SEPARATOR_MENU_ITEM': "&nbsp;&nbsp;&nbsp;", \
+    'SEPARATOR_MENU_ITEM': "         ",
     ### Navigation chain item separator
-    'SEPARATOR_NAVIGATION_ITEM': "&nbsp;&#187;&nbsp;" , \
+    'SEPARATOR_NAVIGATION_ITEM': "   &#187;   ",
 }

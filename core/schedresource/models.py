@@ -170,7 +170,7 @@ class Schedconfig(models.Model):
         for f in self._meta.fields:
             kys[f.name] = f
         kys1 = kys.keys()
-        kys1.sort()
+        kys1 = sorted(kys1)
         for k in kys1:
             f = kys[k]
             fname = f.name
@@ -200,10 +200,19 @@ class Schedconfig(models.Model):
         db_table = u'schedconfig'
 
 
+class SchedconfigJson(models.Model):
+    pandaqueue = models.CharField(max_length=180, db_column='PANDA_QUEUE', primary_key=True)
+    data = models.TextField(db_column='DATA', blank=True)
+    lastupdate = models.DateField(db_column='LAST_UPDATE')
+
+    class Meta:
+        db_table = u'"ATLAS_PANDA"."SCHEDCONFIG_JSON"'
+
+
 class Schedinstance(models.Model):
     name = models.CharField(max_length=180, db_column='NAME')
     nickname = models.CharField(max_length=180, db_column='NICKNAME', primary_key=True)
-    pandasite = models.CharField(max_length=180, db_column='PANDASITE', primary_key=True)
+    pandasite = models.CharField(max_length=180, db_column='PANDASITE')
     nqueue = models.IntegerField(db_column='NQUEUE')
     nqueued = models.IntegerField(db_column='NQUEUED')
     nrunning = models.IntegerField(db_column='NRUNNING')

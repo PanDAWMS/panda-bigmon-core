@@ -2,10 +2,10 @@
 
 {% block page_title %} DPC {% endblock %}
 {% block subtitle %} Prototype Data Product Browser 
-&nbsp; &nbsp; <a href="/dp/">Main</a>
-&nbsp; &nbsp; <a href="/dp/?mode=dataset">Datasets</a>
-&nbsp; &nbsp; <a href="/dp/?mode=request">Requests</a>
-&nbsp; &nbsp; <a href="/dp/?mode=processing">Processing</a>
+        <a href="/dp/">Main</a>
+        <a href="/dp/?mode=dataset">Datasets</a>
+        <a href="/dp/?mode=request">Requests</a>
+        <a href="/dp/?mode=processing">Processing</a>
 {% endblock %}
 
 {% block body %}
@@ -14,7 +14,7 @@
 <p>
     <font size=-1>
     {% for message in messages %}
-   &nbsp; &nbsp; <span {% if message.tags %} class="message{{ message.tags }}" {% else %} class='messageinfo' {% endif %}>{{ message|safe }}</span> <br>
+           <span {% if message.tags %} class="message{{ message.tags }}" {% else %} class='messageinfo' {% endif %}>{{ message|safe }}</span> <br>
     {% endfor %}
     </font>
 </p>
@@ -89,7 +89,7 @@ showing how the system is being used, from the perspective of generating and usi
 {% if field.is_hidden %}
 {{ field }}
 {% elif field.field.label == 'Date' %}
-<tr><td> Date &nbsp; 
+<tr><td> Date
 
 <input type="text" id="id_date_year" name="date_year" value=2014 style="width:50px; margin:0px; display: inline-block;">-<input type="text" id="id_date_month" name="date_month" value=12 style="width:40px; margin:0px; display: inline-block;">-<input type="text" id="id_date_day" name="date_day" value=31 style="width:40px; margin:0px; display: inline-block;">
 
@@ -156,8 +156,8 @@ Rucio link:
 <h3>Production request {{ reqid }}</h3>
 {% if thisProject %}
 <p>
-&nbsp; <b>{{ request.description }} </b>
-<br>&nbsp; Project: <b>{{ thisProject.project }}</b> &nbsp; &nbsp; {{ thisProject.description }}
+    <b>{{ request.description }} </b>
+<br>    Project: <b>{{ thisProject.project }}</b>         {{ thisProject.description }}
 </p>
 {% if info_fields.long_description|length > 0 %}
 <table width=700><tr><td>
@@ -177,12 +177,12 @@ Rucio link:
 <h3>Production requests</h3>
 
 <table>
-<tr class='tablesection'><th colspan=20> Request attribute summary  &nbsp; Sort by {% if request.GET.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
+<tr class='tablesection'><th colspan=20> Request attribute summary      Sort by {% if request.GET.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in reqsuml %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
 {% for item in fdict.list %}
 <span> {{ item.kname }} </span>
-<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
 {% endfor %}
 </td></tr>
 {% endfor %}
@@ -195,7 +195,7 @@ Rucio link:
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
 {% for item in fdict.list %}
 <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
-({{ item.kvalue }}) &nbsp; 
+({{ item.kvalue }})
 {% endfor %}
 </td></tr>
 {% endfor %}
@@ -212,7 +212,7 @@ Rucio link:
 <tr class='tablesection'>
 <th> <a href="{{ nosorturl }}sortby=reqid">Request</a> </th>
 <th> Group <br> Manager </th>
-<th> Description <br>Slices &nbsp; GeV &nbsp;  Provenance &nbsp; Reference link
+<th> Description <br>Slices     GeV      Provenance     Reference link
 <br><font color='brown'>Comment</font>
 </th>
 <th> Project
@@ -231,15 +231,15 @@ Rucio link:
  </td>
 <td rowspan=1> <b>{{ request.description }}</b>
 <br>
-{% if request.nslices %} {{ request.nslices }} slices &nbsp; {% endif %}
+{% if request.nslices %} {{ request.nslices }} slices     {% endif %}
 {{ request.energy_gev }} GeV
 {% if request.provenance %}
-&nbsp; Provenance:<a href="{{ xurl }}provenance={{ request.provenance }}">{{ request.provenance }}</a>
+    Provenance:<a href="{{ xurl }}provenance={{ request.provenance }}">{{ request.provenance }}</a>
 {% endif %}
 {% if request.ref_link %}
-&nbsp; <a href="{{ request.ref_link }}">{{ request.ref_link_path }}</a>
+    <a href="{{ request.ref_link }}">{{ request.ref_link_path }}</a>
 {% endif %}
-&nbsp; 
+
 <a style="cursor:pointer;" onClick=toggle_class_details('req_{{ request.reqid }}_details')>Show details</a>
 
 {% if request.ntasks %}
@@ -248,7 +248,7 @@ Rucio link:
 <tr><td width=100>  {{ istep.0 }} </td>
 <td>
 {% for istate in istep.1 %}
-<span class='{{ istate.0 }}'><b>{{ istate.0 }}</b></span>:<a href="{% url 'taskList' %}?tasktype=prod&reqid={{ request.reqid }}&superstatus={{ istate.0 }}">{{ istate.1 }}</a> &nbsp; 
+<span class='{{ istate.0 }}'><b>{{ istate.0 }}</b></span>:<a href="{% url 'taskList' %}?tasktype=prod&reqid={{ request.reqid }}&superstatus={{ istate.0 }}">{{ istate.1 }}</a>
 {% endfor %}
 </td></tr>
 {% endfor %}
@@ -283,7 +283,7 @@ Rucio link:
 {% if request.jobsumd %}
 <tr><th>  Totals </th> <th colspan=20> 
 {% for j in request.jobsumd %}
-<b>{{ j.0 }}</b>:{{ j.1 }}k &nbsp; 
+<b>{{ j.0 }}</b>:{{ j.1 }}k
 {% endfor %}
 </th></tr>
 {% endif %}
@@ -364,8 +364,8 @@ Rucio link:
 <tr><td>
 <table class='statustable' width='100%' border=0 padding=0 cellspacing=0 style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; font-size:9pt" >
 <tr class='statustable' style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; padding: 0; border-spacing: 0;>
-<td width='20%' class='finished_fill statustable' style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; padding: 0; border-spacing: 0; "> &nbsp; </td>
-<td width='80%' class='statustable'> &nbsp; </td></tr>
+<td width='20%' class='finished_fill statustable' style="margin-left: 0em; margin-right: 0em; margin-top: 0em; margin-bottom: 0em; padding: 0; border-spacing: 0; ">     </td>
+<td width='80%' class='statustable'>     </td></tr>
 </table>
 </td></tr>
 
@@ -503,14 +503,14 @@ progress[role]:after {
 {% if tasks %}
 <table>
 <tr class='tablesection'><th colspan=20> PanDA JEDI task attribute summary 
-&nbsp; <a href="{% url 'taskList' %}?reqid={{ reqid }}&tasktype=prod&days=360">Task list</a>
+    <a href="{% url 'taskList' %}?reqid={{ reqid }}&tasktype=prod&days=360">Task list</a>
 
 </th></tr>
 {% for fdict in jtasksuml %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
 {% for item in fdict.list %}
 <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
-<a href="{% url 'taskList' %}?reqid={{reqid}}&{{fdict.field}}={{item.kname}}&tasktype=prod&days=360">({{ item.kvalue }})</a> &nbsp; 
+<a href="{% url 'taskList' %}?reqid={{reqid}}&{{fdict.field}}={{item.kname}}&tasktype=prod&days=360">({{ item.kvalue }})</a>
 {% endfor %}
 </td></tr>
 {% endfor %}
@@ -528,10 +528,10 @@ progress[role]:after {
 <td> <a href="{% url 'taskInfo' %}?jeditaskid={{ e.task_id }}">{{ e.task_id }}</a> </td>
 <td> <font size=-1><a href="/dp/?dataset={{ e.name }}">{{ e.name }}</a> </font>
 <br><i>Request:</i> <a href="/dp/?reqid={{ e.ptask.request_id }}{% if e.ptask.step.slice.slice %}#slice_{{ e.ptask.step.slice.slice }}{% endif %}">{{ e.ptask.request_id }}{% if e.ptask.step.slice.slice %} slice {{ e.ptask.step.slice.slice }}{% endif %}</a>
-{% if e.ptask.step.step_template.step %}&nbsp; <i>Step:</i> {{ e.ptask.step.step_template.step }} {{ e.ptask.step.step_template.ctag }}{% endif %}
+{% if e.ptask.step.step_template.step %}    <i>Step:</i> {{ e.ptask.step.step_template.step }} {{ e.ptask.step.step_template.ctag }}{% endif %}
 
 {% if e.parent_task_id and e.parent_task_id != e.task_id%}
-&nbsp; Parent task <a href="{% url 'taskInfo' %}?jeditaskid={{ e.parent_task_id }}">{{ e.parent_task_id }}</a>
+    Parent task <a href="{% url 'taskInfo' %}?jeditaskid={{ e.parent_task_id }}">{{ e.parent_task_id }}</a>
 {% endif %}
 </td>
 <td> {{ e.events }} </td>
@@ -640,7 +640,7 @@ progress[role]:after {
 <td> <font size=-1>{{ e.taskname }} 
 <br>
 <i>Request:</i> <a href="/dp/?reqid={{ e.reqid }}">{{ e.reqid }}</a>
-&nbsp; <i>Splitrule:</i> {{ e.splitrule }}
+    <i>Splitrule:</i> {{ e.splitrule }}
 <i>Trf:</i> {{ e.transpath }} {{ e.transuses }}
 </font>
 </td>
@@ -655,10 +655,10 @@ progress[role]:after {
 <tr> <td colspan=20>
 {% for ds in e.datasets %}
 {{ ds.type }} 
-&nbsp; <a href="{% url 'datasetInfo' %}?datasetname={{ ds.datasetname }}">{{ ds.datasetname }}</a>
-&nbsp; <span class='{{ ds.status }}'>{{ ds.status }}</span>
-&nbsp; files={{ ds.nfiles }}
-{% if ds.type == 'output' %} &nbsp; evs={{ ds.nevents }} {% endif %}
+    <a href="{% url 'datasetInfo' %}?datasetname={{ ds.datasetname }}">{{ ds.datasetname }}</a>
+    <span class='{{ ds.status }}'>{{ ds.status }}</span>
+    files={{ ds.nfiles }}
+{% if ds.type == 'output' %}     evs={{ ds.nevents }} {% endif %}
 <br>
 {% endfor %}
 </td></tr>
@@ -707,7 +707,7 @@ progress[role]:after {
 
 {% if slices %}
 <table>
-<tr class='tablesection'><th colspan=20> {{ slices|length }} slices &nbsp; &nbsp; Click on step status, dataset name, task name to toggle details </th></tr>
+<tr class='tablesection'><th colspan=20> {{ slices|length }} slices         Click on step status, dataset name, task name to toggle details </th></tr>
 {% for e in slices %}
 {% if not e.is_hide %}
 <tr>
@@ -732,7 +732,7 @@ progress[role]:after {
 {% if e.dataset_data.parent_task_id and e.dataset_data.parent_task_id != e.dataset_data.task_id%}
 <br>Parent task <a href="{% url 'taskInfo' %}?jeditaskid={{ e.dataset_data.parent_task_id }}">{{ e.dataset_data.parent_task_id }}</a>
 {% endif %}
-<br>events={{ e.dataset_data.events }} &nbsp; files={{ e.dataset_data.files }} &nbsp; status=<span class='{{ e.dataset_data.status }}'>{{ e.dataset_data.status }}</span> &nbsp; campaign={{ e.dataset_data.campaign }} &nbsp; timestamp={{ e.dataset_data.timestamp }}
+<br>events={{ e.dataset_data.events }}     files={{ e.dataset_data.files }}     status=<span class='{{ e.dataset_data.status }}'>{{ e.dataset_data.status }}</span>     campaign={{ e.dataset_data.campaign }}     timestamp={{ e.dataset_data.timestamp }}
 {% else %}
 <br> No dataset details found
 {% endif %}
@@ -745,7 +745,7 @@ Cloned from <a href="#slice_{{ e.cloned_from }}">{{ e.cloned_from }}</a> <br>
 {% if e.clones %}
 Clones: 
 {% for c in e.clones %}
-    &nbsp; <a href="#slice_{{ c }}">{{ c }}</a>
+        <a href="#slice_{{ c }}">{{ c }}</a>
 {% endfor %}
 <br>
 {% endif %}
@@ -761,118 +761,118 @@ Clones:
 <a style="cursor:pointer;" onClick=toggle_class_details('slice_{{e.slice}}')> <b>{{ step.ctag.step }}</b> 
 {{ step.ctag.ctag }}
 created {{ step.ctag.def_time|date:"Y-m-d H:i" }}
-&nbsp; {{ step.ctag.output_formats }}
-&nbsp; {{ step.ctag.trf_name }}  {{ step.ctag.swrelease }}
-&nbsp; mem={{ step.ctag.memory }}
-&nbsp; cpu/ev={{ step.ctag.cpu_per_event }}
-{% if step.step_parent %} &nbsp; parent={{ step.step_parent__step_template__step }} {{ step.step_parent__step_template__ctag }} {% endif %}
-&nbsp; <span class='{{ step.status|lower }}'> {{ step.status }} </span></a> <br>
+    {{ step.ctag.output_formats }}
+    {{ step.ctag.trf_name }}  {{ step.ctag.swrelease }}
+    mem={{ step.ctag.memory }}
+    cpu/ev={{ step.ctag.cpu_per_event }}
+{% if step.step_parent %}     parent={{ step.step_parent__step_template__step }} {{ step.step_parent__step_template__ctag }} {% endif %}
+    <span class='{{ step.status|lower }}'> {{ step.status }} </span></a> <br>
 <span class='slice_{{e.slice}}'  style="display: none">
- &nbsp;
-    {% if step.step_def_time %} &nbsp; defined {{ step.step_def_time|date:"Y-m-d H:i" }} {% endif %}
-    {% if step.step_appr_time %} &nbsp; approved {{ step.step_appr_time|date:"m-d H:i" }} {% endif %}
-    {% if step.step_exe_time %} &nbsp; exe {{ step.step_exe_time|date:"m-d H:i" }} {% endif %}
-    {% if step.step_done_time %} &nbsp; done {{ step.step_done_time|date:"m-d H:i" }} {% endif %}
-    &nbsp; &nbsp; Input events {{ step.input_events }}
+
+    {% if step.step_def_time %}     defined {{ step.step_def_time|date:"Y-m-d H:i" }} {% endif %}
+    {% if step.step_appr_time %}     approved {{ step.step_appr_time|date:"m-d H:i" }} {% endif %}
+    {% if step.step_exe_time %}     exe {{ step.step_exe_time|date:"m-d H:i" }} {% endif %}
+    {% if step.step_done_time %}     done {{ step.step_done_time|date:"m-d H:i" }} {% endif %}
+            Input events {{ step.input_events }}
 <br>
 {% if step.ctagdetails %}
- &nbsp; &nbsp; ctag {{ step.ctag.ctag }} created by {{ step.ctagdetails.createdby }}
- {% if step.ctagdetails.input %} &nbsp; input={{ step.ctagdetails.input }} {% endif %}
- {% if step.ctagdetails.cache %} &nbsp; cache={{ step.ctagdetails.cache }} {% endif %}
- {% if step.ctagdetails.memory %} &nbsp; memory={{ step.ctagdetails.memory }} {% endif %}
- {% if step.ctagdetails.events_per_job %} &nbsp; evs/job={{ step.ctagdetails.events_per_job }} {% endif %}
- {% if step.ctagdetails.formats %} &nbsp; formats={{ step.ctagdetails.formats }} {% endif %}
- {% if step.ctagdetails.trf %} &nbsp; trf={{ step.ctagdetails.trf }} {{ step.ctagdetails.trfv }}{% endif %}
- {% if step.ctagdetails.priority %} &nbsp; priority={{ step.ctagdetails.priority }} {% endif %}
-<br>  &nbsp; &nbsp;  &nbsp; &nbsp; <font color=darkgrey><i>ctag params: {{ step.ctagdetails.params|safe }}</i></font>
+         ctag {{ step.ctag.ctag }} created by {{ step.ctagdetails.createdby }}
+ {% if step.ctagdetails.input %}     input={{ step.ctagdetails.input }} {% endif %}
+ {% if step.ctagdetails.cache %}     cache={{ step.ctagdetails.cache }} {% endif %}
+ {% if step.ctagdetails.memory %}     memory={{ step.ctagdetails.memory }} {% endif %}
+ {% if step.ctagdetails.events_per_job %}     evs/job={{ step.ctagdetails.events_per_job }} {% endif %}
+ {% if step.ctagdetails.formats %}     formats={{ step.ctagdetails.formats }} {% endif %}
+ {% if step.ctagdetails.trf %}     trf={{ step.ctagdetails.trf }} {{ step.ctagdetails.trfv }}{% endif %}
+ {% if step.ctagdetails.priority %}     priority={{ step.ctagdetails.priority }} {% endif %}
+<br>                   <font color=darkgrey><i>ctag params: {{ step.ctagdetails.params|safe }}</i></font>
  <br>
  {% endif %}
- &nbsp;  &nbsp; task_config: {{ step.task_config }} <br>
+          task_config: {{ step.task_config }} <br>
  </span>
 
 {% for task in step.tasks %}
-    &nbsp; &nbsp; <a style="cursor:pointer;" onClick=toggle_class_details('slice_{{e.slice}}_tasks')><span class='{{ task.status }}'>task  <b>{{ task.id }}: {{ task.name }}</b>  &nbsp; {{ task.status }} </span></a>
-    &nbsp; 
+            <a style="cursor:pointer;" onClick=toggle_class_details('slice_{{e.slice}}_tasks')><span class='{{ task.status }}'>task  <b>{{ task.id }}: {{ task.name }}</b>      {{ task.status }} </span></a>
+
     <a href="{% url 'taskInfo' %}?jeditaskid={{ task.id }}"><span class='{{ task.jedistatus }}'>JEDI task {% if task.jedistatus != task.status %} {{ task.jedistatus }} {% endif %}</span> </a>
-    &nbsp; 
+
     {% if task.total_req_jobs > 0 or task.total_done_jobs > 0 %}
         jobs done/req:<a href="{% url 'jobList' %}?jeditaskid={{task.id}}">{{ task.total_done_jobs }}/{{ task.total_req_jobs }}</a>
     {% else %}
         <a href="{% url 'jobList' %}?jeditaskid={{task.id}}&prodsourcelabel=managed">Look for jobs</a>
     {% endif %}
     {% if task.total_events and task.total_events > 0 %}
-        &nbsp; totevs={{ task.total_events }}
+            totevs={{ task.total_events }}
     {% endif %}
 
-    {% if task.jeditask.progress %} &nbsp; progress={{ task.jeditask.progress }} {% endif %}
+    {% if task.jeditask.progress %}     progress={{ task.jeditask.progress }} {% endif %}
 
-    {% if task.jeditask.failurerate %} &nbsp; failurerate={{ task.jeditask.failurerate }} {% endif %}
+    {% if task.jeditask.failurerate %}     failurerate={{ task.jeditask.failurerate }} {% endif %}
 
     {% if task.jobstats %}
-        &nbsp; jobs:
+            jobs:
         <a href="{% url 'jobList' %}?jeditaskid={{task.id}}&prodsourcelabel=managed">
         {% for s in task.jobstats %} {{ s|safe }} {% endfor %}
         </a>
     {% endif %}
 
     {% if task.chain_tid and task.chain_tid != task.id %}
-        &nbsp; <a href="{% url 'taskInfo' %}?jeditaskid={{ task.chain_tid }}"> chain_tid {{ task.chain_tid }} </a> 
+            <a href="{% url 'taskInfo' %}?jeditaskid={{ task.chain_tid }}"> chain_tid {{ task.chain_tid }} </a>
     {% endif %}
     {% if task.parent_tid and task.parent_tid != task.id %}
-        &nbsp; <a href="{% url 'taskInfo' %}?jeditaskid={{ task.parent_tid }}"> parent_tid {{ task.parent_tid }} </a> 
+            <a href="{% url 'taskInfo' %}?jeditaskid={{ task.parent_tid }}"> parent_tid {{ task.parent_tid }} </a>
     {% endif %}
     <br>
     <span class='slice_{{e.slice}}_tasks' style="display: none">
-    &nbsp; &nbsp; &nbsp; &nbsp; 
-    {% if task.dsn %} dsn={{ task.dsn }} &nbsp;  {% endif %}
-    {% if task.physics_tag %} tag={{ task.physics_tag }} &nbsp;  {% endif %}
+
+    {% if task.dsn %} dsn={{ task.dsn }}      {% endif %}
+    {% if task.physics_tag %} tag={{ task.physics_tag }}      {% endif %}
     submitted {{ task.submit_time|date:"m-d H:i" }}
-    {% if task.start_time %} &nbsp; started {{ task.start_time|date:"m-d H:i" }} {% endif %}
-    &nbsp; timestamp {{ task.timestamp|date:"m-d H:i" }} 
+    {% if task.start_time %}     started {{ task.start_time|date:"m-d H:i" }} {% endif %}
+        timestamp {{ task.timestamp|date:"m-d H:i" }}
     {% if task.update_time %}
-        &nbsp; updated {{ task.update_time|date:"m-d H:i" }} by {{ task.update_owner }}
+            updated {{ task.update_time|date:"m-d H:i" }} by {{ task.update_owner }}
     {% endif %}
 
-    {% if task.jeditask.cloud %} &nbsp; cloud={{ task.jeditask.cloud }} {% endif %}
-    {% if task.jeditask.corecount %} &nbsp; cores={{ task.jeditask.corecount }} {% endif %}
-    {% if task.jeditask.ramcount %} &nbsp; ram={{ task.jeditask.ramcount }} {% endif %}
-    {% if task.jeditask.walltime %} &nbsp; wall={{ task.jeditask.walltime }} {% endif %}
-    {% if task.jeditask.currentpriority %} &nbsp; currentpriority={{ task.jeditask.currentpriority }} {% endif %}
+    {% if task.jeditask.cloud %}     cloud={{ task.jeditask.cloud }} {% endif %}
+    {% if task.jeditask.corecount %}     cores={{ task.jeditask.corecount }} {% endif %}
+    {% if task.jeditask.ramcount %}     ram={{ task.jeditask.ramcount }} {% endif %}
+    {% if task.jeditask.walltime %}     wall={{ task.jeditask.walltime }} {% endif %}
+    {% if task.jeditask.currentpriority %}     currentpriority={{ task.jeditask.currentpriority }} {% endif %}
 
     <br>
     {% comment %}  getting it from JEDI instead
-    &nbsp; &nbsp; &nbsp; &nbsp; Input <a href="/dp/?dataset={{ task.inputdataset }}">{{ task.inputdataset }}</a> <br>
+                    Input <a href="/dp/?dataset={{ task.inputdataset }}">{{ task.inputdataset }}</a> <br>
     {% if task.dslist %}
         {% for ds in task.dslist %}
-            &nbsp; &nbsp; &nbsp; &nbsp; Output <a href="/dp/?dataset={{ ds.name }}">{{ ds.name }}</a> 
-                &nbsp; files:{{ ds.files }} &nbsp; evs:{{ ds.events }} &nbsp; status:<span class='{{ ds.status|lower }}'>{{ ds.status|lower }}</span><br>
+                            Output <a href="/dp/?dataset={{ ds.name }}">{{ ds.name }}</a>
+                    files:{{ ds.files }}     evs:{{ ds.events }}     status:<span class='{{ ds.status|lower }}'>{{ ds.status|lower }}</span><br>
         {% endfor %}
     {% endif %}
     {% endcomment %}
 
     {% if task.indslist %}
         {% for ds in task.indslist %}
-            &nbsp; &nbsp; &nbsp; &nbsp; In <a href="/dp/?dataset={{ ds.datasetname}}">{{ ds.datasetname }}</a> &nbsp; files fin/fail=<span class='finished'>{{ ds.nfilesfinished }}</span>/<span class='failed'>{{ ds.nfilesfailed }}</span> &nbsp; nevs={{ ds.nevents }}<br> 
+                            In <a href="/dp/?dataset={{ ds.datasetname}}">{{ ds.datasetname }}</a>     files fin/fail=<span class='finished'>{{ ds.nfilesfinished }}</span>/<span class='failed'>{{ ds.nfilesfailed }}</span>     nevs={{ ds.nevents }}<br>
         {% endfor %}
     {% endif %}
 
     {% if task.outdslist %}
         {% for ds in task.outdslist %}
-            &nbsp; &nbsp; &nbsp; &nbsp; Out <a href="/dp/?dataset={{ ds.datasetname}}">{{ ds.datasetname }}</a> &nbsp; files fin/fail=<span class='finished'>{{ ds.nfilesfinished }}</span>/<span class='failed'>{{ ds.nfilesfailed }}</span> &nbsp; nevs={{ ds.nevents }}<br> 
+                            Out <a href="/dp/?dataset={{ ds.datasetname}}">{{ ds.datasetname }}</a>     files fin/fail=<span class='finished'>{{ ds.nfilesfinished }}</span>/<span class='failed'>{{ ds.nfilesfailed }}</span>     nevs={{ ds.nevents }}<br>
         {% endfor %}
     {% endif %}
     {% if task.postproduction %}
-    &nbsp; &nbsp; &nbsp; &nbsp; Postproduction: {{ task.postproduction }} <br>
+                    Postproduction: {{ task.postproduction }} <br>
     {% endif %}
     {% if task.comments %}
-    &nbsp; &nbsp; &nbsp; &nbsp; <font color='brown'> Comments: {{ task.comments }} </font> <br>
+                    <font color='brown'> Comments: {{ task.comments }} </font> <br>
     {% endif %}
     {% if task.reference %}
-    &nbsp; &nbsp; &nbsp; &nbsp; Reference: <a href="https://its.cern.ch/jira/browse/{{ task.reference }}">{{ task.reference }}</a> <br>
+                    Reference: <a href="https://its.cern.ch/jira/browse/{{ task.reference }}">{{ task.reference }}</a> <br>
     {% endif %}
     </span>
     {% if task.jedi_info %}
-    &nbsp; &nbsp; &nbsp; &nbsp; <font color='brown'> JEDI: {{ task.jedi_info|safe }} </font> <br>
+                    <font color='brown'> JEDI: {{ task.jedi_info|safe }} </font> <br>
     {% endif %}
 {% endfor %}
 
@@ -897,11 +897,11 @@ created {{ step.ctag.def_time|date:"Y-m-d H:i" }}
 {% if mode == 'processing' %}
 <h3> Current queued production jobs, all pre-run states</h3>
 <p>
-Total queued production jobs: {{ totqjobs }} &nbsp; requests: {{ queuejobs|length }}
+Total queued production jobs: {{ totqjobs }}     requests: {{ queuejobs|length }}
 </p>
 <table width=100%>
 <tr><th> Request 
-<br><a style="cursor:pointer;" onClick=toggle_class_details('full_queued_list')>Show&nbsp;all</a>
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_queued_list')>Show   all</a>
 </th> <th> Info </th> <th> Description </th> <th> Queued jobs </th> <th> Share of all queued production jobs </th> </tr>
 {% for r in queuejobs %}
 <tr {% if forloop.counter > 10 %} class="full_queued_list" style="display: none"{% endif %} ><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
@@ -915,11 +915,11 @@ Total queued production jobs: {{ totqjobs }} &nbsp; requests: {{ queuejobs|lengt
 
 <h3> Current running production jobs </h3>
 <p>
-Total running production jobs: {{ totrunjobs }} &nbsp; requests: {{ runjobs|length }}
+Total running production jobs: {{ totrunjobs }}     requests: {{ runjobs|length }}
 </p>
 <table width=100%>
 <tr><th> Request 
-<br><a style="cursor:pointer;" onClick=toggle_class_details('full_running_list')>Show&nbsp;all</a>
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_running_list')>Show   all</a>
 </th> <th> Info </th> <th> Description </th> <th> Running jobs </th> <th> Share of all running production jobs </th> </tr>
 {% for r in runjobs %}
 <tr {% if forloop.counter > 10 %} class="full_running_list" style="display: none"{% endif %}><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
@@ -935,7 +935,7 @@ Total running production jobs: {{ totrunjobs }} &nbsp; requests: {{ runjobs|leng
 
 <table width=100%>
 <tr><th> Project
-<br><a style="cursor:pointer;" onClick=toggle_class_details('full_project_event_counts')>Show&nbsp;all</a>
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_project_event_counts')>Show   all</a>
 </th> <th> Events (k)</th> <th> Fraction of events </th> </tr>
 {% for r in projeventsl %}
 <tr {% if forloop.counter > 10 %} class="full_project_event_counts" style="display: none"{% endif %}><td> {{ r.project }} </td>
@@ -947,7 +947,7 @@ Total running production jobs: {{ totrunjobs }} &nbsp; requests: {{ runjobs|leng
 
 <table width=100%>
 <tr><th> Request 
-<br><a style="cursor:pointer;" onClick=toggle_class_details('full_event_counts')>Show&nbsp;all</a>
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_event_counts')>Show   all</a>
 </th> <th> Info </th> <th> Description </th> <th> Events (k)</th> <th> Fraction of events </th> </tr>
 {% for r in sumeventsl %}
 <tr {% if forloop.counter > 10 %} class="full_event_counts" style="display: none"{% endif %}><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
@@ -999,7 +999,7 @@ Total running production jobs: {{ totrunjobs }} &nbsp; requests: {{ runjobs|leng
 <h4> <span class='{{s.status}}'>{{s.status}} job counts</span></h4>
 <table width=100%>
 <tr><th> Request 
-<br><a style="cursor:pointer;" onClick=toggle_class_details('full_{{ s.status}}_job_counts')>Show&nbsp;all</a>
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_{{ s.status}}_job_counts')>Show   all</a>
 </th> <th> Info </th> <th> Description </th> <th> Jobs </th> <th> Fraction of {{s.status}} jobs </th> </tr>
 {% for r in s.recs %}
 <tr {% if forloop.counter > 10 %} class="full_{{ s.status}}_job_counts" style="display: none"{% endif %}><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
@@ -1016,7 +1016,7 @@ Total running production jobs: {{ totrunjobs }} &nbsp; requests: {{ runjobs|leng
 <h4> <span class='{{s.status}}'>{{s.status}} job walltime</span></h4>
 <table width=100%>
 <tr><th> Request 
-<br><a style="cursor:pointer;" onClick=toggle_class_details('full_{{ s.status}}_cpu_counts')>Show&nbsp;all</a>
+<br><a style="cursor:pointer;" onClick=toggle_class_details('full_{{ s.status}}_cpu_counts')>Show   all</a>
 </th> <th> Info </th> <th> Description </th> <th> Walltime </th> <th> Fraction of {{s.status}} walltime </th> </tr>
 {% for r in s.recs %}
 <tr {% if forloop.counter > 10 %} class="full_{{ s.status}}_cpu_counts" style="display: none"{% endif %}><td> <a href="/dp/?reqid={{ r.reqid }}">{{ r.reqid }}</a> </td>
@@ -1261,8 +1261,7 @@ if(document.addEventListener) {
 
 {% endblock %}
 
-{% block helptext %}
-
+{% block help %}
 
 
 {% endblock %}

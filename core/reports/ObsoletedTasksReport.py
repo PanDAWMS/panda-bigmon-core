@@ -206,7 +206,7 @@ class ObsoletedTasksReport:
                 tempDic["date"] = taskEntry[8]
                 ### If not deleted we should add graceperiod to date
                 tasksInfo[inversedMap[taskEntry[0]]] = tempDic
-        tasksInfo = sorted(tasksInfo.iteritems(), key=lambda x: x[1]['date'], reverse=True)
+        tasksInfo = sorted(tasksInfo.items(), key=lambda x: x[1]['date'], reverse=True)
         tasksInfoList = []
         for (key, value) in tasksInfo:
             value['date'] = value['date'].strftime("%d %b %Y %H:%M:%S")

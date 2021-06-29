@@ -53,10 +53,11 @@ extendedtests = [
 
 #tests = tests + extendedtests
 
+
 def runTest(x):
     urlToTest = monURL+tests[x]['url']
     passed = False
-    print "Testing %s...  %s" % ( datetime.today().strftime("%Y-%m-%d %H:%M:%S %Z"), urlToTest )
+    print("Testing %s...  %s" % ( datetime.today().strftime("%Y-%m-%d %H:%M:%S %Z"), urlToTest ))
     if (tests[x]['isJSON'] == False):
         headers = {'Accept' : 'text/html'}
     else:
@@ -84,15 +85,14 @@ if __name__ == '__main__':
     pool = Pool(processes=numOfProcesses)              
     result = pool.apply_async(runTest, range(len(tests)))   
     outputList=pool.map(runTest, range(len(tests)))
-    print "\nTest result:"
-    countErrors = 0;
+    print("\nTest result:")
+    countErrors = 0
     for outout in outputList:
         if (outout['status'] != 200):
-                print outout['url'] + " failed with status " + str(outout['status'])
+                print(outout['url'] + " failed with status " + str(outout['status']))
                 countErrors += 1        
-    print 'All tests passed' if countErrors == 0 else ' -1 status means exceding time limit'         
-    print "\nTop 10 of the heaviest queries:"
+    print('All tests passed') if countErrors == 0 else ' -1 status means exceding time limit'
+    print("\nTop 10 of the heaviest queries:")
     outputList = sorted(outputList, key=lambda x:-x['timeToPerform'], reverse=False)
     for outout in outputList[0:9]:
-        print outout['url'] + ' : ' + str(int(outout['timeToPerform'])) + ' sec'
-        
+        print(outout['url'] + ' : ' + str(int(outout['timeToPerform'])) + ' sec')

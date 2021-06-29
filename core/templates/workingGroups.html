@@ -11,7 +11,7 @@
 {% if wgsummary %}
 
 <table>
-<tr class='tablesection'><th colspan=30> Working group task summary</span> &nbsp; &nbsp; <font size=-1>Hover over state name to see full name. <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">Task state documentation</a></font> </th></tr>
+<tr class='tablesection'><th colspan=30> Working group task summary</span>         <font size=-1>Hover over state name to see full name. <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">Task state documentation</a></font> </th></tr>
 <tr class='tablesection'>
 <th>Working group</th>
 <th><font size=-1>nTask</font></th>
@@ -50,10 +50,11 @@
 <th class='running'> running </th>
 <th class='holding'> holding </th>
 <th class='transferring'> transferring </th>
+<th class='merging'> merging </th>
 <th class='finished'> finished </th>
 <th class='failed'> failed </th>
 <th class='cancelled'> cancelled </th>
-<th class='merging'> merging </th>
+<th class='closed'> closed </th>
 </tr>
 
 {% for wg in wgsummary %}
@@ -62,7 +63,7 @@
 <td align='right'> <a href="{% url 'jobList' %}?workinggroup={{ wg.name }}&days={{days}}&display_limit=100">{{ wg.count }}</a> </td>
 <td><a href="{% url 'errorSummary' %}?workinggroup={{wg.name}}&days={{days}}">{% if wg.pctfail > errthreshold %} <font color=red>{{ wg.pctfail  }}</font> {% else %} {{ wg.pctfail  }} {% endif %}</a> </td>
 {% for state in wg.statelist %}
-<td align='right' {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}> <a href="{% url 'jobList' %}?workinggroup={{ wg.name }}&jobstatus={{ state.name }}&days={{days}}&jobtype={{ view }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></a> </td>
+<td align='right' {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}> <a href="{% url 'jobList' %}?workinggroup={{ wg.name }}&jobstatus={{ state.name }}&days={{days}}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}">{{ state.count }}</span></a> </td>
 {% endfor %}
 </tr>
 {% endfor %}
@@ -76,6 +77,6 @@ No jobs with working group set were found.
 
 {% endblock %}
 
-{% block helptext %}
-{% include "workingGroupsHelp.html" with helptitle="Working groups job dashboard" %}
+{% block help %}
+{% include "dashboardWorkingGroupsHelp.html" %}
 {% endblock %}

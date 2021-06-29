@@ -18,11 +18,14 @@ def textify(html):
     # Remove html tags and continuous whitespaces
     text_only = strip_tags(html)
     # Strip single spaces in the beginning of each line
-    return text_only.replace('\n ', '\n').strip()
+    text_only = text_only.replace('\n ', '\n').replace(';=', '=').strip()
+    return text_only
 
 
-def send_mail_art(template, subject, summary, recipient):
-    # recipient = 'mailfordebug@cern.ch'
+def send_mail_art(template, subject, summary, recipient, send_html=False):
+    # uncomment for debugging
+    # recipient = 'tatiana.korchuganova@cern.ch'
+    # ----
     isSuccess = True
     nmails = 0
     html_message = loader.render_to_string(
@@ -34,15 +37,26 @@ def send_mail_art(template, subject, summary, recipient):
         }
     )
     try:
-        nmails = send_mail(
-            subject=subject,
-            message=textify(html_message),
-            from_email='atlas.pandamon@cern.ch',
-            recipient_list=[recipient],
-            fail_silently=False,
-        )
+        if send_html:
+            nmails = send_mail(
+                subject=subject,
+                html_message=html_message,
+                message=textify(html_message),
+                from_email='atlas.pandamon@cern.ch',
+                recipient_list=[recipient],
+                fail_silently=False,
+            )
+        else:
+            nmails = send_mail(
+                subject=subject,
+                message=textify(html_message),
+                from_email='atlas.pandamon@cern.ch',
+                recipient_list=[recipient],
+                fail_silently=False,
+            )
+
     except SMTPException as e:
-        msg = 'Exception was caught while sending ART jobs report to ' + recipient
+        msg = 'Internal Server Error! Exception was caught while sending ART jobs report to ' + recipient
         msg += '\n' + str(e)
         _logger.exception(msg)
         isSuccess = False
@@ -50,6 +64,7 @@ def send_mail_art(template, subject, summary, recipient):
     if nmails == 0:
         isSuccess = False
     return isSuccess
+
 
 def send_mails(template, subject, summary):
     isSuccess = True

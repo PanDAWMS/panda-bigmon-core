@@ -2,7 +2,7 @@
     filebrowser.utils
     
 """
-import commands
+import subprocess
 import json
 import logging
 import os
@@ -10,6 +10,8 @@ import re
 import time
 import shutil
 from django.conf import settings
+from datetime import datetime
+
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
@@ -27,7 +29,7 @@ def get_filebrowser_hostname():
         get_filebrowser_hostname
         
     """
-    return getattr(settings, "FILEBROWSER_HOSTNAME", commands.getoutput('hostname -f'))
+    return getattr(settings, "FILEBROWSER_HOSTNAME", subprocess.getoutput('hostname -f'))
 
 
 def get_filebrowser_directory():
@@ -155,7 +157,7 @@ def get_rucio_oauth_token():
     _logger.info('get_rucio_oauth_token: cmd=(%s)' % cmd)
 
     ### get the curl command output
-    status, output = commands.getstatusoutput(cmd)
+    status, output = subprocess.getstatusoutput(cmd)
 
     ### get the rucioToken
     rucioToken = output.rstrip()
@@ -186,7 +188,7 @@ def get_rucio_metalink_file(rucioToken, lfn, scope):
         }
 
     ### get the metalink file
-    status, output = commands.getstatusoutput(cmd)
+    status, output = subprocess.getstatusoutput(cmd)
 
     ### return the Rucio metalink file
     return output
@@ -351,7 +353,7 @@ def get_rucio_redirect_response(redirectUrl):
             'url': redirectUrl \
          }
     _logger.info('get_rucio_redirect_response: cmd=(%s)' % cmd)
-    status, output = commands.getstatusoutput(cmd)
+    status, output = subprocess.getstatusoutput(cmd)
     surl = get_location_from_rucio_redirect_output(output)
     return surl
 
@@ -529,9 +531,9 @@ def execute_cmd(cmd):
         execute_cmd
     """
     if len(cmd) > 0:
-        return commands.getstatusoutput(cmd)
+        return subprocess.getstatusoutput(cmd)
     else:
-        return commands.getstatusoutput('echo')
+        return subprocess.getstatusoutput('echo')
 
 
 def get_filename(fname, guid):
@@ -643,7 +645,7 @@ def unpack_file(fname):
     base = os.path.basename(fname)
 
     cmd = "cd %s; tar -xvzf %s" % (logdir, base)
-    (status, output) = commands.getstatusoutput(cmd)
+    (status, output) = subprocess.getstatusoutput(cmd)
     if status != 0:
         msg = 'Cannot unpack file [%s].' % (fname)
         _logger.error(msg)
@@ -652,11 +654,13 @@ def unpack_file(fname):
     return status, errtxt
 
 
-def list_file_directory(logdir):
+def list_file_directory(logdir, limit=1000):
     """
         list_file_directory
         
     """
+    #_logger.error("list_file_directory started - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
+
     files = []
     err = ''
 
@@ -669,7 +673,7 @@ def list_file_directory(logdir):
     filelist = []
     try:
         filelist = os.listdir(logdir)
-    except OSError, (errno, errMsg):
+    except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
 
@@ -679,17 +683,39 @@ def list_file_directory(logdir):
                 tardir = entry
                 continue
     if not len(tardir):
-        err = "Problem with tarball, could not find expected directory (got %s)." % logdir
-        return files, err, tardir
+        err = "Problem with tarball, could not find expected tarball directory. "
+        _logger.warning('{} (got {}).'.format(err, logdir))
+        # try to show any xml, json and txt files that are not in tarball directory
+        filtered_filelist = []
+        if len(filelist) > 0:
+            for entry in filelist:
+                if entry.endswith('.xml') or entry.endswith('.json') or entry.endswith('.txt'):
+                    filtered_filelist.append(entry)
+        if len(filtered_filelist) == 0:
+            err += ' Tried to look for files in top dir, but found nothing'
+            _logger.error('{} (got {}).'.format(err, logdir))
+            _logger.debug('Contents of untared log file: \n {}'.format(filelist))
+            return files, err, tardir
+        else:
+            err += "However, a few files has been found in a topdir, so showing them."
+            _logger.info('A few files found in a topdir, will show them to user')
 
     # Now list the contents of the tarball directory:
     try:
         contents = []
-        for walk_root, walk_dirs, walk_files in \
-            os.walk(os.path.join(logdir, tardir), followlinks=False):
+        dobrake = False
+        _logger.debug('Walking through directory:')
+        for walk_root, walk_dirs, walk_files in os.walk(os.path.join(logdir, tardir), followlinks=False):
+            #_logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
-        _logger.debug(contents)
+                if len(contents) > limit:
+                    dobrake = True
+                    _logger.debug('Number of files added to contents reached the limit : {}'.format(limit))
+                    break
+            if dobrake:
+                break
+        _logger.debug('Contents: \n {}'.format(contents))
         fileStats = {}
         linkStats = {}
         linkName = {}
@@ -699,14 +725,14 @@ def list_file_directory(logdir):
             isFile[f] = os.path.isfile(myFile)
             try:
                 fileStats[f] = os.lstat(myFile)
-            except OSError, (errno, errMsg):
+            except OSError as errMsg:
                 err += 'Warning: Error in lstat on %s (%s).\n' % (myFile, errMsg)
                 fileStats[f] = None
             if os.path.islink(myFile):
                 try:
                     linkName[f] = os.readlink(myFile)
                     linkStats[f] = os.stat(myFile)
-                except OSError, (errno, errMsg):
+                except OSError as errMsg:
                     err += 'Warning: Error in stat on linked file %s linked from %s (%s).\n' % (linkName[f], f, errMsg)
                     linkStats[f] = None
         for f in contents:
@@ -716,19 +742,24 @@ def list_file_directory(logdir):
                     f_content['modification'] = str(time.strftime(filebrowserDateTimeFormat, time.gmtime(fileStats[f][8])))
                     f_content['size'] = fileStats[f][6]
                     f_content['name'] = os.path.basename(f)
-                    f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f))
+                    f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f) + '/')
+                    f_content['dirname'] = f_content['dirname'][:-1] if f_content['dirname'].endswith('/') else f_content['dirname']
             files.append(f_content)
-    except OSError, (errno, errMsg):
+            _logger.debug('Files to be shown: \n {}'.format(files))
+    except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
 
     ### sort the files - no need since DataTable plugin applied
     # files = sorted(files, key=lambda x: (str(x['dirname']).lower(), str(x['name']).lower()))
 
+    #_logger.error("list_file_directory finished - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
+
+
     if status != 0:
         return files, output, tardir
     else:
-        return files, '', tardir
+        return files, err, tardir
 
 
 def fetch_file(pfn, guid, unpack=True, listfiles=True):
@@ -783,24 +814,27 @@ def fetch_file(pfn, guid, unpack=True, listfiles=True):
     ### return list of files
     return files, errtxt, urlbase, tardir
 
-def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True):
+def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
 
     errtxt = ''
     files = []
+
+    #_logger.error("get_rucio_file step1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
     ### logdir
     logdir = get_fullpath_filebrowser_directory() + '/' + guid.lower()
     #### basename for the file
     #base = os.path.basename(lfn)
-    fname = '%s/%s/%s' % (logdir,scope,lfn)
+    fname = '%s:%s' % (scope, lfn)
+    fpath = '%s/%s/%s' % (logdir, scope, lfn)
 
     ### create directory for files of guid
-    dir, err = create_directory(fname)
+    dir, err = create_directory(fpath)
     if not len(err):
         errtxt += err
 
     ### get command to copy file
-    cmd = 'export RUCIO_ACCOUNT=atlpan; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase;source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh;source ${ATLAS_LOCAL_ROOT_BASE}/utilities/oldAliasSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_x509_proxy(),logdir,scope,lfn)
+    cmd = 'export RUCIO_ACCOUNT=atlpan; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase;source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh; source ${ATLAS_LOCAL_ROOT_BASE}/utilities/oldAliasSetup.sh "python 2.7.9-x86_64-slc6-gcc48"; source ${ATLAS_LOCAL_ROOT_BASE}/utilities/oldAliasSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_x509_proxy(),logdir,scope,lfn)
     if not len(cmd):
         _logger.warning('Command to fetch the file is empty!')
 
@@ -811,24 +845,34 @@ def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True):
         _logger.error(msg)
         errtxt += msg
 
+    #_logger.error("get_rucio_file step2 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+
+
     if unpack:
         ### untar the file
-        status, err = unpack_file(fname)
+        status, err = unpack_file(fpath)
         if status != 0:
             msg = 'File unpacking failed for file [%s].' % (fname)
-            _logger.error(msg)
+            _logger.error('{} File path is {}.'.format(msg, fpath))
+            errtxt = '\n '.join([errtxt, msg])
+
+    #_logger.error("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+
 
     tardir = ''
     files = ''
     if listfiles:
         ### list the files
-        files, err, tardir = list_file_directory(dir)
+        files, err, tardir = list_file_directory(dir, limit)
         if len(err):
             msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
             _logger.error(msg)
+            errtxt = '\n'.join([errtxt, msg])
 
     ### urlbase
     urlbase = get_filebrowser_directory() +'/'+ guid.lower()+'/'+scope
+
+    #_logger.error("get_rucio_file step3 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
     ### return list of files
     return files, errtxt, urlbase, tardir

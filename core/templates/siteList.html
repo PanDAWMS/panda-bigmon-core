@@ -1,10 +1,10 @@
 {% extends "_base_core.html" %}
-
+{% load static %}
 
 {% block page_title %} {{ viewParams.MON_VO }} PanDA sites{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA sites{{viewParams.selection|safe }}
-{% if vo %} &nbsp; for VO {{ vo }}
+{% if vo %}     for VO {{ vo }}
 {% endif %}
 {% endblock %}
 {% block body %}
@@ -12,7 +12,7 @@
 {% if requestParams.tier %}<br><b>Tier: {{ requestParams.tier }}</b> {% endif %}
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
 {% if requestParams.region %}<br><b>Region: {{ requestParams.region }}</b> {% endif %}
-{% if requestParams.siteid %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.siteid %}">{{ requestParams.siteid }}</a>  &nbsp; <a href="{% url 'siteInfo' requestParams.siteid %}">Show site information page</a></b> {% endif %}
+{% if requestParams.siteid %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.siteid %}">{{ requestParams.siteid }}</a>      <a href="{% url 'siteInfo' requestParams.siteid %}">Show site information page</a></b> {% endif %}
 {% if requestParams.category %}<br><b>Category: {{ requestParams.category }}</b> {% endif %}
 {% if requestParams.status %}<br><b>Status: <span class="{{ requestParams.status }}">{{ requestParams.status }}</span></b> {% endif %}
 <p>
@@ -22,7 +22,7 @@
 <div class='section'>Jump to <a href="#siteatt">site attribute summary</a>, <a href="#sites">site list</a></div>
 
 <table>
-<tr class='tablesection'><th colspan=20> Clouds  &nbsp; &nbsp; 
+<tr class='tablesection'><th colspan=20> Clouds
 <font size=-1>TLo, THi are transfer timeouts for low and high priority jobs</font> </th></tr>
 <tr class='tablesection'>
 <th>Cloud</th>
@@ -53,22 +53,28 @@
 
 {% if sites %}
 
+<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+	    $(".comment").shorten();
+	});
+</script>
 <table>
 <tr class='tablesection' id="siteatt"><th colspan=20> Site attribute summary </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td>
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td><div class="comment more">
 {% for item in fdict.list %}
 {% if item.kname != '' %}
-{% if fdict.field == 'status' %} <span class='{{item.kname}}'> {% else %} <span> {% endif %}  {{ item.kname }} </span>
-<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+<span {% if fdict.field == 'status' %}  class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
 {% endif %}
 {% endfor %}
-</td></tr>
+</div></td></tr>
 {% endfor %}
 </table>
 
 <table>
-<tr class='tablesection' id="sites"><th colspan=20> Sites (PanDA resources) &nbsp; {% if mcpsites %} (<a href="#mcpsites">MCP sites are below</a>) {% endif %}</th></tr>
+<tr class='tablesection' id="sites"><th colspan=20> Sites (PanDA resources)     {% if mcpsites %} (<a href="#mcpsites">MCP sites are below</a>) {% endif %}</th></tr>
 <tr class='tablesection'>
 	<th><a href="{{nosorturl}}#sites">PanDA resource</a><br> Queue name (where different)</th>
 	<th><a href="{{nosorturl}}sortby=gocname#sites">GOC site name</a></th>
@@ -120,6 +126,6 @@
 {% endblock %}
 
 
-{% block helptext %}
-{% include "siteListHelp.html" with helptitle="Site, cloud listings" %}
+{% block help %}
+{% include "siteListHelp.html" %}
 {% endblock %}

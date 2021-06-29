@@ -4,15 +4,10 @@
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA files<font size=-1>{{ viewParams.selection|safe }}</font>{% endblock %}
 
-{% block extra_css %}
+{% block css_page_library %}
     <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <style>
-        #filelist_wrapper .row {
-            max-width: 99%;
-        }
-    </style>
 {% endblock %}
-{% block extra_js %}
+{% block js_head_page_library %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
@@ -62,6 +57,7 @@
         <th>Task ID</th>
         <th>PanDA ID</th>
         <th>Status</th>
+        <th>Processing status</th>
         <th>Attempt</th>
         <th>Max attempts</th>
         <th>Created</th>
@@ -82,9 +78,13 @@ No files matching selection were found.
 
 {% endif %}
 
+{% endblock %}
+
+{% block js_body_page %}
 <script>
 $(document).ready(function () {
-    fileListTable();
+    var extraparams = '{{ extraparams | safe }}';
+    fileListTable(extraparams);
 });
 
 $("#reloadfilelist").click(function () {
@@ -100,7 +100,7 @@ $("#reloadfilelist").click(function () {
 });
 
 
-function fileListTable() {
+function fileListTable(extraparams) {
       filelisttable = $('#filelist').dataTable({
         //"bRetrieve": true,
         {#"iDisplayLength": -1,#}
@@ -111,7 +111,7 @@ function fileListTable() {
 
         "ajax": {
             "processing": true,
-            "url": "{% url 'loadFileList' datasetid %}?json",
+            "url": "{% url 'loadFileList' datasetid %}?json" + extraparams,
             "dataSrc" : ''},
         "columnDefs": [
             {"type": "num-html", "targets": [1,3,4,5,6,9,10,12] }
@@ -138,11 +138,12 @@ function fileListTable() {
             {
                 "data": "fsizemb",
                 sDefaultContent: "",
+                className: 'num',
             },
             {
                 "data": "nevents",
                 sDefaultContent: "---",
-                className: 'dt-body-right',
+                className: 'num',
                 render: $.fn.dataTable.render.number( ',', '.')
 
             },
@@ -168,14 +169,22 @@ function fileListTable() {
             {
                 "data": "status",
                 sDefaultContent: "",
+                className: 'state',
+            },
+            {
+                "data": "procstatus",
+                sDefaultContent: "-",
+                className: 'state',
             },
             {
                 "data": "attemptnr",
                 sDefaultContent: "",
+                className: 'num',
             },
             {
                 "data": "maxattempt",
                 sDefaultContent: "",
+                className: 'num',
             },
             {
                 "data": "creationdate",
@@ -184,13 +193,14 @@ function fileListTable() {
             {
                 "data": "lumiblocknr",
                 sDefaultContent: "---",
+                className: 'num',
             },
             {
                 "data": "ruciolink",
                 sDefaultContent: "---",
                 "render": function ( data, type, full ) {
                     if (data) {
-                        return '<a href = "' + full['ruciolink'] + '" target="_blank"><i class="fi-link"></i></a>'
+                        return '<a href = "' + full['ruciolink'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
                     }
                     else {
                         return '---'
@@ -208,18 +218,17 @@ function fileListTable() {
 
         ],
         "createdRow": function ( row, data, index ) {
-            $('td', row).eq(7,8).addClass(data['status'] + '_fill');
+            $('td', row).eq(7).addClass(data['status'] + '_fill');
+            $('td', row).eq(8).addClass(data['procstatus'] + '_fill');
         }
       });
     }
 
 </script>
-
 {% endblock %}
 
-
-{% block helptext %}
-{% include "fileListHelp.html" with helptitle="File list help" %}
-{% include "fileInfoHelp.html" with helptitle="File details" %}
+{% block help %}
+{% include "fileListHelp.html" %}
+{% include "fileInfoHelp.html" with show='all' %}
 {% endblock %}
 

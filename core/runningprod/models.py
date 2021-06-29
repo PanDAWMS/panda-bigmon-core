@@ -6,57 +6,8 @@ Here are the models for runningprod views
 
 
 from __future__ import unicode_literals
-
-
 from django.db import models
-models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
-                                 'primaryColumns', 'secondaryColumns', \
-                                 'columnTitles', 'filterFields',)
 
-
-class RunningMCProductionTasks(models.Model):
-    campaign = models.CharField(max_length=72, db_column='CAMPAIGN', blank=True)
-    reqid = models.IntegerField(null=True, db_column='REQID', blank=True)
-    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    rjobs = models.IntegerField(null=True, db_column='RJOBS', blank=True)
-    status = models.CharField(max_length=192, db_column='STATUS')
-    totevrem = models.BigIntegerField(db_column='TOTEVREM')
-    totev = models.BigIntegerField(db_column='TOTEV')
-    nfilesfailed = models.IntegerField(null=True, db_column='NFILESFAILED', blank=True)
-    workinggroup = models.CharField(max_length=96, db_column='WORKINGGROUP', blank=True)
-    currentpriority = models.IntegerField(null=True, db_column='CURRENTPRIORITY', blank=True)
-    processingtype = models.CharField(max_length=192, db_column='PROCESSINGTYPE', blank=True)
-    corecount = models.IntegerField(null=True, db_column='CORECOUNT', blank=True)
-    creationdate = models.DateTimeField(db_column='CREATIONDATE')
-    taskname = models.CharField(max_length=384, db_column='TASKNAME', blank=True)
-    splitrule = models.CharField(max_length=300, db_column='SPLITRULE', blank=True)
-    username = models.CharField(max_length=384, db_column='USERNAME')
-    cputime = models.IntegerField(null=True,db_column='CPUTIME', blank=True)
-    site = models.CharField(max_length=384, db_column='SITE')
-    class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."RUNNINGMCPRODUCTIONTASKS"'
-
-class RunningDPDProductionTasks(models.Model):
-    campaign = models.CharField(max_length=72, db_column='CAMPAIGN', blank=True)
-    reqid = models.IntegerField(null=True, db_column='REQID', blank=True)
-    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    rjobs = models.IntegerField(null=True, db_column='RJOBS', blank=True)
-    status = models.CharField(max_length=192, db_column='STATUS')
-    totevrem = models.BigIntegerField(db_column='TOTEVREM')
-    totev = models.BigIntegerField(db_column='TOTEV')
-    nfilesfailed = models.IntegerField(null=True, db_column='NFILESFAILED', blank=True)
-    workinggroup = models.CharField(max_length=96, db_column='WORKINGGROUP', blank=True)
-    currentpriority = models.IntegerField(null=True, db_column='CURRENTPRIORITY', blank=True)
-    processingtype = models.CharField(max_length=192, db_column='PROCESSINGTYPE', blank=True)
-    corecount = models.IntegerField(null=True, db_column='CORECOUNT', blank=True)
-    creationdate = models.DateTimeField(db_column='CREATIONDATE')
-    taskname = models.CharField(max_length=384, db_column='TASKNAME', blank=True)
-    splitrule = models.CharField(max_length=300, db_column='SPLITRULE', blank=True)
-    username = models.CharField(max_length=384, db_column='USERNAME')
-    outputtype = models.CharField(max_length=384, db_column='OUTPUTTYPE')
-    cputime = models.IntegerField(null=True,db_column='CPUTIME', blank=True)
-    class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."RUNNINGDPDPRODUCTIONTASKS"'
 
 class RunningProdTasksModel(models.Model):
     campaign = models.CharField(max_length=72, db_column='CAMPAIGN', blank=True)
@@ -89,7 +40,13 @@ class RunningProdTasksModel(models.Model):
     hashtags = models.CharField(max_length=400, db_column='HASHTAGS', blank=True)
     eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     neventsrunning = models.BigIntegerField(db_column='NRUNNINGEVENTS')
+    neventsfinished = models.BigIntegerField(db_column='NFINISHEDEVENTS')
+    neventsfailed = models.BigIntegerField(db_column='NFAILEDEVENTS')
+    neventswaiting = models.BigIntegerField(db_column='NWAITINGEVENTS')
     jumbo = models.IntegerField(null=True, db_column='JUMBO', blank=True)
+    container_name = models.BigIntegerField(db_column='CONTAINER_NAME')
+    stepid = models.IntegerField(null=True, db_column='STEPID', blank=True)
+    sliceid = models.IntegerField(null=True, db_column='SLICEID', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 
@@ -125,6 +82,9 @@ class FrozenProdTasksModel(models.Model):
     eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     jumbo = models.IntegerField(null=True, db_column='JUMBO', blank=True)
+    container_name = models.BigIntegerField(db_column='CONTAINER_NAME')
+    stepid = models.IntegerField(null=True, db_column='STEPID', blank=True)
+    sliceid = models.IntegerField(null=True, db_column='SLICEID', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."FROZENPRODTASKS"'
 
@@ -153,6 +113,7 @@ class RunningProdRequestsModel(models.Model):
     physgroup = models.CharField(max_length=20, db_column='PHYS_GROUP', null=False, blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODREQUESTS"'
+
 
 class ProdNeventsHistory(models.Model):
     id = models.IntegerField(null=True, db_column='ID', primary_key=True)

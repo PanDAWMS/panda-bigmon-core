@@ -1,56 +1,9 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load common_tags %}
 {% block page_title %}ART nightly tests{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
+{% block css_page %}
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
 {% endblock %}
-{% block extra_js %}
-<script type="text/javascript">
-function loadJobSubResult(testname, urltail) {
-    var id = "div-subresults-" + testname;
-    var div = document.getElementById(id);
-{#    $("#div-subresults-" + testname).html("<img src='{% static "images/load.gif" %}'>  ");#}
-    div.innerHTML = "<img src='{% static "images/load.gif" %}'>  ";
-    $.ajax({
-        url: '{% url 'artJobSubResults' %}',
-        data: urltail,
-        async: true
-    })
-    .done(function (response) {
-{#       $("#div-subresults-" + testname).html(response);#}
-        div.innerHTML = response;
-   })
-    ;
-
-}
-function toggleByID(id, idplus) {
-    if ($("#" + id).is(':visible')){
-        $("#" + id).hide();
-        $("#" + idplus).removeClass('fi-minus');
-        $("#" + idplus).addClass('fi-plus');
-    }
-    else {
-        $("#" + id).show();
-        $("#" + idplus).removeClass('fi-plus');
-        $("#" + idplus).addClass('fi-minus');
-    }
-
-}
-
-function toggleShowHide(divID, linkID) {
-        if ($("#" + divID).is(':visible')){
-            $("#" + divID).hide();
-            document.getElementById(linkID).innerHTML = 'Show output container';
-        }
-        else {
-            $('#'+divID).show();
-            document.getElementById(linkID).innerHTML = 'Hide output container';
-        }
-}
-
-</script>
-{% endblock %}
-
 {% block subtitle %}ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
 
@@ -60,12 +13,15 @@ function toggleShowHide(divID, linkID) {
 {% else %}
     <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
 {% endif %}
-{% if taskids|length == 1 %}
-    <div style="float: right">
-        <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
-    </div>
-{% endif %}
-    <br>
+
+<div style="float: right">
+  {% if taskids|length == 1 %}
+    <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
+  {% elif taskids|length >= 0 and taskids|length < 50 %}
+    <a href="{% url 'jobList' %}?jeditaskid={% for id in taskids %}{{ id }}{% if not forloop.last %}|{% endif %}{% endfor %}" class="button back-to-home">PanDA job list</a>
+  {% endif %}
+</div>
+<br>
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
@@ -73,9 +29,13 @@ function toggleShowHide(divID, linkID) {
 {% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 {% if requestParams.ntag_full %}<b>Nightly tag is {{ requestParams.ntag_full }}</b> <br>{% endif %}
-{% if requestParams.ntag_full or gitlabids|length == 1 %}<b>Gitlab ID: <a class="bluelink" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b>{% endif %}
+{% if requestParams.ntag_full or gitlabids|length == 1 %}<b>Gitlab ID: <a class="bluelink" target="_blank" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b>{% endif %}
+{% if requestParams.package and artjobs.values|length == 1 %} {% if reportto.jira|length == 1 or reportto.mail|length == 1 %}<b>Report an issue to responsible,
+    {% if reportto.jira|length == 1 %} JIRA: {% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %} {% endif %}
+    {% if reportto.mail|length == 1 %} ,  {% with reportmail=reportto.mail %}{% for email in reportmail %} <a href="mailto:{{ email }} ">email</a> {% endfor %} {% endwith %} {% endif %}
+</b>{% endif %} {% endif %}
 
-
+{% if artjobs|length > 0 %}
 
 <div class="row">
   <div class="columns accordion-art-container">
@@ -106,11 +66,11 @@ function toggleShowHide(divID, linkID) {
                                                     <a class="blacklink" href="{% url 'artJobs' %}?ntag={{ ntag }}{% if requestParams.view and requestParams.view == 'branches' %}&package={{ brname }}&branch={{ pname }}{% else %}&package={{ pname }}&branch={{ brname }}{% endif %}">{{ status.ntag_hf }}</a>
                                                 </th>
                                                 {% if ntaglist|length == 1 %}
-                                                    <th class="header center-aligned">Computing site</th>
-                                                    <th class="header center-aligned">Duration, h:m:s</th>
-                                                    <th class="header center-aligned">CPU time, s</th>
-                                                    <th class="header center-aligned">MaxVMEM, MB</th>
-                                                    <th class="header center-aligned">MaxRSS, MB</th>
+                                                    <th class="header left-aligned">Computing site</th>
+                                                    <th class="header right-aligned">Duration, h:m:s</th>
+                                                    <th class="header right-aligned">CPU time, s</th>
+                                                    <th class="header right-aligned">MaxRSS, MB</th>
+                                                    <th class="header left-aligned">CPU type</th>
                                                 {% endif %}
                                               {% endif %}
                                           {% endfor %}
@@ -167,25 +127,28 @@ function toggleShowHide(divID, linkID) {
                                                     <div class="with-link-to-logs">
                                                       {% if ntaglist|length == 1 or requestParams.extra == 'subresults' %}
                                                         <div class="testsubresultscontainer">
-                                                            <ul>{% for r in job.testresult %}<li class="testsubresultbox {% if r.result > 0 %}failed{% else %}finished{% endif %}test tooltiptestresult" {% if r.name|length > 0 or r.result > 0 %}style="text-decoration: underline"{% endif %}>{{ forloop.counter }}<span class="tooltiptext">{% if r.name|length > 1 %} {{ r.name }}:{% endif %}{{ r.result }}</span></li>{% endfor %}</ul>
+                                                            <ul>{% for r in job.subresults %}<li class="testsubresultbox {% if r.result > 0 %}failed{% else %}finished{% endif %}test tooltiptestresult" {% if r.name|length > 0 or r.result > 0 %}style="text-decoration: underline"{% endif %}>{{ forloop.counter }}<span class="tooltiptext">{% if r.name|length > 1 %} {{ r.name }}:{% endif %}{{ r.result }}</span></li>{% endfor %}</ul>
                                                         </div>
                                                       {% endif %}
-                                                        <div class="clickable {% if ntaglist|length != 1 %}nosubresults {% endif %}">
-                                                            <div {% if job.finalresult == 'failed' or job.finalresult == 'finished' %} class="{{ job.finalresult }}_job">{{ job.finalresult }} {% else %} class="active_job"> active {% endif %}  </div>
-                                                            <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
-                                                        </div>
-                                                        <div class="extra-links">
-                                                            <b>&nbsp;{{ job.ntagtime }}</b>
-                                                            <span class="tarindex tooltip-upper"> {{ job.tarindex }}<span class="tooltip-text">Index of tar file</span></span>
-                                                            <span class="attempt tooltip-upper"> {{ job.attemptnr }}/{{ job.maxattempt }}<span class="tooltip-text">Attempt number / max attempts</span></span>
-                                                            <a  class="to-logs blacklink" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of last attempt</span></i></a>
-                                                            {% if job.linktopreviousattemptlogs %}
-                                                                <a  class="to-logs greylink" target="_blank" href="{% url "filebrowser" %}{{ job.linktopreviousattemptlogs }}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of previous attempt</span></i></a>
-                                                            {% endif %}
-                                                            {% if job.finalresult != 'active' %}
-                                                                <a  class="to-logs blacklink" target="_blank" href="https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{{job.linktext}}/"><i class="fi-clipboard tooltip-upper"><span class="tooltip-text">Link to ART EOS copy area</span></i></a>
-                                                            {% endif %}
-                                                        </div>
+                                                      <div class="clickable {% if ntaglist|length != 1 %} nosubresults {% endif %}">
+                                                          <div {% if job.finalresult == 'succeeded' and job.subresults == None %} class="finished_job" {% elif job.finalresult == 'failed' or job.finalresult == 'finished' or job.finalresult == 'succeeded' %} class="{{ job.finalresult }}_job" {% else %} class="active_job" {% endif %} > {{ job.finalresult }}</div>
+                                                          <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>
+                                                      </div>
+                                                      <div class="extra-links">
+                                                          <b>   {{ job.ntagtime }}</b>
+                                                          <span class="tarindex tooltip-upper"> {{ job.tarindex }}<span class="tooltip-text">Index of tar file</span></span>
+                                                          <span class="attempt tooltip-upper"> {{ job.attemptnr }}/{{ job.maxattempt }}<span class="tooltip-text">Attempt number / max attempts</span></span>
+                                                          <a  class="to-logs blacklink" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of last attempt</span></i></a>
+                                                          {% if job.linktopreviousattemptlogs %}
+                                                              <a  class="to-logs greylink" target="_blank" href="{% url "filebrowser" %}{{ job.linktopreviousattemptlogs }}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of previous attempt</span></i></a>
+                                                          {% endif %}
+                                                          {% if job.finalresult != 'active' %}
+                                                              <a  class="to-logs blacklink" target="_blank" href="{{job.eoslink}}"><i class="fi-clipboard tooltip-upper"><span class="tooltip-text">Link to EOS copy area</span></i></a>
+                                                          {% endif %}
+                                                          {% if job.finalresult != 'active' and job.htmllink %}
+                                                              <a  class="to-logs blacklink" target="_blank" href="{{job.htmllink}}"><i class="fi-graph-bar tooltip-upper"><span class="tooltip-text">Link to result HTML</span></i></a>
+                                                          {% endif %}
+                                                      </div>
                                                     </div>
                                                     {% if jobs.jobs|length > 1 %} <br> {% endif %}
                                                 {% else %}
@@ -201,29 +164,29 @@ function toggleShowHide(divID, linkID) {
                                         {% endif %}
                                       </td>
                                       {% if ntaglist|length == 1 %}
-                                          <td class="cell" style="line-height:1.8rem;">
+                                          <td class="cell extra-info left-aligned">
                                             {% for job in jobs.jobs %}
-                                              {{ job.computingsite }}<br>
+                                              <a class="bluelink" href="{% url 'siteInfo' job.computingsite  %}"><b>{{ job.computingsite }}</b></a><br>
                                             {% endfor %}
                                           </td>
-                                          <td class="cell" style="line-height:1.8rem;">
+                                          <td class="cell extra-info right-aligned">
                                              {% for job in jobs.jobs %}
                                               {{ job.duration }}<br>
                                             {% endfor %}
                                           </td>
-                                          <td class="cell" style="line-height:1.8rem;">
+                                          <td class="cell extra-info right-aligned">
                                             {% for job in jobs.jobs %}
                                               {{ job.cpuconsumptiontime }}<br>
                                             {% endfor %}
                                           </td>
-                                          <td class="cell" style="line-height:1.8rem;">
-                                            {% for job in jobs.jobs %}
-                                              {{ job.maxvmem }}<br>
-                                            {% endfor %}
-                                          </td>
-                                          <td class="cell" style="line-height:1.8rem;">
+                                          <td class="cell extra-info right-aligned">
                                             {% for job in jobs.jobs %}
                                               {{ job.maxrss }}<br>
+                                            {% endfor %}
+                                          </td>
+                                          <td class="cell extra-info left-aligned">
+                                            {% for job in jobs.jobs %}
+                                              {{ job.cpuconsumptionunit }}<br>
                                             {% endfor %}
                                           </td>
                                       {% endif %}
@@ -245,6 +208,37 @@ function toggleShowHide(divID, linkID) {
   </div>
 </div>
 
+{% else %}
+
+<p></p>
+<div class="callout alert" data-closable>
+  <h5>No tests were found for provided selection parameters!</h5>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript">
+function toggleShowHide(divID, linkID) {
+    if ($("#" + divID).is(':visible')){
+        $("#" + divID).hide();
+        document.getElementById(linkID).innerHTML = 'Show output container';
+    }
+    else {
+        $('#'+divID).show();
+        document.getElementById(linkID).innerHTML = 'Hide output container';
+    }
+}
+</script>
+{% endblock %}
 
 
+{% block help %}
+    <a name="help"></a>
+    {% include "artHelp.html" %}
 {% endblock %}

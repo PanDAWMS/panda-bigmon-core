@@ -9,7 +9,7 @@ from reportlab.lib.units import inch
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from django.template import RequestContext, loader
-import StringIO
+from io import StringIO
 import humanize
 from django.utils.cache import patch_cache_control, patch_response_headers
 import json
@@ -490,7 +490,7 @@ class MC16aCPReport:
         requestList = [11035, 11034, 11048, 11049, 11050, 11051, 11052, 11198, 11197, 11222, 11359]
         requestList = '(' + ','.join(map(str, requestList)) + ')'
 
-        data = self.getCacheEntry(request, "prepareReportMC16")
+        data = self.getCacheEntry(request, "prepareReportMC16", skipCentralRefresh=True)
         #data = None
         if data is not None:
             data = json.loads(data)

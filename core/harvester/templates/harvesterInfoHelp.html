@@ -1,31 +1,39 @@
-<tr class="docsection"><th><a name="harvesterInfoHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Harvester list help:</p></div>
+<div class="card-section">
+
 <p>
 Available filters for this page:
 </p>
 <ul>
 <li>
-    <p><b>Information for a specific computingsite.</b> E.g. /harvesters/?instance=act403&computingsite=ANALY_UIO</p>
+  <p><b>Information for a specific computingsite.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&computingsite=ANALY_UIO">/harvesters/?instance=act403&computingsite=ANALY_UIO</a></p>
 </li>
 <li>
-    <p><b>Information for a specific resourcetype.</b> E.g. /harvesters/?instance=act403&resourcetype=SCORE</p>
+    <p><b>Information for a specific resourcetype.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&resourcetype=SCORE">/harvesters/?instance=act403&resourcetype=SCORE</a></p>
 </li>
 <li>
-    <p><b>Information for a specific computingelement.</b> E.g. /harvesters/?instance=act403&computingelement=None</p>
+    <p><b>Information for a specific computingelement.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&computingelement=None">/harvesters/?instance=act403&computingelement=None</a></p>
 </li>
 <li>
-    <p><b>Information for a specific status.</b> E.g. /harvesters/?instance=act403&status=field</p>
+    <p><b>Information for a specific status.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&status=running">/harvesters/?instance=act403&status=running</a></p>
 </li>
 <li>
-    <p><b>Information for a specific workerid or workerids.</b> E.g. /harvesters/?instance=act403&workerid=759585,759584</p>
+    <p><b>Information for a specific workerid or workerids.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&workerid=759585,759584">/harvesters/?instance=act403&workerid=759585,759584</a></p>
 </li>
 <li>
-    <p><b>Information for the last days.</b> E.g. /harvesters/?instance=act403&days=365</p>
+    <p><b>Information for the last N days.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&days=3">/harvesters/?instance=act403&days=3</a></p>
 </li>
 <li>
-    <p><b>Information for the last hours (default 24 hours).</b> E.g. /harvesters/?instance=act403&hours=48</p>
+    <p><b>Information for the last N hours (default 24 hours).</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&hours=48">/harvesters/?instance=act403&hours=48</a></p>
 </li>
 </ul>
-<p>If you need information about workers which are associated with a specific computingsite, use computingsite parameter instead of instance parameter. E.g. /harvesters/?computingsite=ANALY_UIO</p>
-</td>
+
+<p>If you need information about workers which are associated with a specific computingsite, use computingsite parameter instead of instance parameter.
+  E.g. <a href="{% url 'harvesters' %}?instance=act403&computingsite=ANALY_UIO">/harvesters/?computingsite=ANALY_UIO</a></p>
+
+<p>See the Harvester documentation on workers <a href="https://github.com/HSF/harvester/wiki/State-and-sequence-diagrams">status transitions</a>.</p>
+
+</div>
+</div>
 

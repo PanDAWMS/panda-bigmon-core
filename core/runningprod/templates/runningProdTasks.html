@@ -1,1157 +1,1284 @@
 {% extends "_base_core.html" %}
 {% load humanize %}
 {% load static %}
+{% load common_tags %}
 {% block page_title %} PanDA tasks{% endblock %}
 {% block subtitle %}Running production task list
 {% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
-    <style>
-        #tasklist_wrapper .row {
-            max-width: 99%;
-        }
-    </style>
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 {% endblock %}
-{% block extra_js %}
-    <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="/static/js/d3jsplot.js"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
-    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
 {% endblock %}
-{#<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>#}
+
 {% block body %}
-<div style="font-size: 0.875rem">
-    {% if requestParams.campaign %}<br><b>Campaign:</b> {{ requestParams.campaign }} {% endif %}
-    {% if requestParams.status %}<br><b>Status:</b> {{ requestParams.status }} {% endif %}
+  <div>
     {% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
     {% if requestParams.username %}<br><b>User name:</b> {{ requestParams.username }} {% endif %}
     {% if requestParams.inputdataset %}<br><b>Input dataset:</b> {{ requestParams.inputdataset }} {% endif %}
     {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
     {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
-    {% if requestParams.workinggroup %}<br><b>Working group:</b> {{ requestParams.workinggroup }} {% endif %}
-    {% if requestParams.processingtype %}<br><b>Processingtype:</b> {{ requestParams.processingtype }} {% endif %}
     {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
-    {% if requestParams.gshare %}<br><b>Global Share:</b> {{ requestParams.gshare }} {% endif %}
-</div>
-<p>
-<script>
-    function toggleByID(id, idplus) {
-        if ($("#" + id).is(':visible')){
-            $("#" + id).hide();
-            $("#" + idplus).removeClass('fi-minus');
-            $("#" + idplus).addClass('fi-plus');
-        }
-        else {
-            $("#" + id).show();
-            $("#" + idplus).removeClass('fi-plus');
-            $("#" + idplus).addClass('fi-minus');
-        }
+  </div>
 
-    }
+  <table class="minimalistic-table">
+    <thead>
+      <tr>
+          <th>Selection Preset</th>
+          <th>Working group</th>
+          <th>Processing type</th>
+          <th>Campaign</th>
+          <th>Status</th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+          <td>
+              <select id="presetChoice" onchange="onPresetChoice()">
+                  <option value="MC"
+                      {% if requestParams.preset == 'MC' %} selected="selected" {% endif %}
+                      >MC</option>
+                  <option value="DPD"
+                      {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}
+                      >DPD</option>
+                  <option value="DATA"
+                      {% if requestParams.preset == 'DATA' %} selected="selected" {% endif %}
+                      >DATA</option>
+                  <option value=""
+                      {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC'  and requestParams.preset != 'DATA' %} selected="selected" {% endif %}>All</option>
+              </select>
+          </td>
+          <td>
+              <select id="workinggroup" onchange="onSubElementChoice()">
+                  <option value=""  selected="selected"
+                      {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+                  >All</option>
+                  <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
+                      {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+                      {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+                  >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
+                  <option value="GP_*"
+                      {% if requestParams.preset == 'DPD' and requestParams.workinggroup == 'GP_*' %} selected="selected" {% endif %}
+                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+                  >GP_*</option>
 
-    function toggleHistoricalTrend(divID, linkID) {
-        if ($("#" + divID).is(':visible')){
-            $("#" + divID).hide();
-            document.getElementById(linkID).innerHTML = 'show historical trend';
-        }
-        else {
-            if (document.getElementById(divID).firstChild) {
-                $('#'+divID).show();
-            }
-            else {
-                var params = '';
-                var preset = {{ productiontype|safe }};
-                var processingtype = "{{ requestParams.processingtype  }}";
-                if (processingtype.length > 0) {
-                    params = 'processingtype='+ processingtype;
-                }
-                else {
-                    if (preset === 'MC') {
-                        params = 'processingtype=evgen|pile|simul|recon';
-                    }
-                    else if (preset === 'DPD') {
-                        params = 'processingtype=merge|deriv';
-                    }
-                    else if (preset === 'DATA') {
-                        params = 'processingtype=reprocessing';
-                    }
-                    else {
-                        params = '';
-                    }
-                }
-                var title = 'Nevents trend for last 7 days';
-                if (params.length > 0) {
-                    title += ', taken into account all active tasks with ' + params;
-                    params += '&'
-                }
-                params += 'json';
-                $.ajax({
-                    url: {% url 'prodNeventsTrend' %},
-                    data: params,
-                    dataType:'json',
-                    success: function(response) {
-                    var plotData = response;
-                    multiLineChartFunc(plotData, '#nEventsLineChart', title);
-                    }
-                });
-
-                $('#'+divID).show();
-                document.getElementById(linkID).innerHTML = 'hide historical trend';
-            }
-         }
-    }
-</script>
+                  <option value="AP_REPR"
+                      {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
+                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+                  >AP_REPR</option>
 
 
-            <script>
-                function onPresetChoice () {
-                    var presetChoice = document.getElementById ("presetChoice");
-                    var workinggroup = document.getElementById ("workinggroup");
-                    var processingtype = document.getElementById ("processingtype");
-                    var campaign = document.getElementById ("campaign");
-                    var status = document.getElementById ("status");
-                    var warning = document.getElementById ("warning");
+                  {% if requestParams.preset != 'DATA' %}
+                      {% for field in sumd %}
+                          {% if field.field == 'workinggroup' %}
+                              {% for wg in field.list %}
+                                  <option value={{ wg.kname }}
+                                      {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
+                                      {{ wg.kname }} </option>
+                              {% endfor %}
+                          {% endif %}
+                      {% endfor %}
+                  {% endif %}
+              </select>
+          </td>
+          <td>
+              <select id="processingtype" onchange="onSubElementChoice()">
+                  <option value=""  selected="selected"
+                      {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+                  >All</option>
+                  <option value="evgen|pile|simul|recon"
+                      {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
+                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+                  >evgen|pile|simul|recon</option>
+                  <option value="merge|deriv"
+                      {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
+                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+                  >merge|deriv</option>
 
-                    if (presetChoice.value == 'MC') {
-                        workinggroup.selectedIndex = 1;
-                        processingtype.selectedIndex = 1;
-                        campaign.selectedIndex = 1;
-                        status.selectedIndex = 0;
-                    }
+                  <option value="reprocessing"
+                      {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
+                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+                  >reprocessing</option>
 
-                    if (presetChoice.value == 'DPD') {
-                        workinggroup.selectedIndex = 2;
-                        processingtype.selectedIndex = 2;
-                        campaign.selectedIndex = 0;
-                        status.selectedIndex = 0;
-                    }
+                  {% if requestParams.preset != 'DATA' %}
+                      {% for ptype in sumd.1.list %}
+                              <option value={{ ptype.kname }}
+                                  {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>
+                                  {{ ptype.kname }} </option>
+                      {% endfor %}
+                  {% endif %}
+              </select>
+          </td>
+          <td>
+              <select id="campaign" onchange="onSubElementChoice()">
+                  <option value=""  selected="selected">All</option>
+                  <option value="MC*"
+                      {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
+                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+                  > like 'MC%'</option>
+                      {% for campaign in sumd.0.list %}
+                          <option value="*{{ campaign.kname }}*"
+                              {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
+                          >{{ campaign.kname }} </option>
+                      {% endfor %}
 
-                    if (presetChoice.value == 'DATA') {
-                        workinggroup.selectedIndex = 3;
-                        processingtype.selectedIndex =3;
-                        campaign.selectedIndex =0;
-                        status.selectedIndex = 0;
-                    }
-
-
-                    if (presetChoice.value == '') {
-                        workinggroup.selectedIndex = 0;
-                        processingtype.selectedIndex = 0;
-                        campaign.selectedIndex = 0;
-                        status.selectedIndex = 0;
-                    }
-                    warning.style.display = '';
-                }
-
-                function onSubElementChoice() {
-                    var warning = document.getElementById ("warning");
-                    warning.style.display = '';
-{#                    var presetChoice = document.getElementById ("presetChoice");#}
-{#                    presetChoice.selectedIndex = 2;#}
-
-                }
-                function go() {
-
-                    var workinggroupQ = "";
-                    var processingtypeQ = "";
-                    var campaignQ = "";
-                    var presetQ = "";
-                    var statusQ = "";
-                    var hpcsitesQ = "";
-                    var esQ = "";
-                    var jumboQ = "";
-                    var workinggroup = document.getElementById ("workinggroup");
-                    var processingtype = document.getElementById ("processingtype");
-                    var campaign = document.getElementById ("campaign");
-                    var presetChoice = document.getElementById ("presetChoice");
-                    var query = {% url 'runningProdTasks' %} ;
-                    var status = document.getElementById ("status");
-                    var hpcsites = document.getElementById('hpc');
-                    var es = document.getElementById('es');
-                    var jumbo = document.getElementById('jumbo');
-
-                    if (workinggroup.value.length > 0) workinggroupQ = "workinggroup="+workinggroup.value;
-                    if (processingtype.value.length > 0) processingtypeQ = "processingtype="+processingtype.value;
-                    if (campaign.value.length > 0) campaignQ = "campaign="+campaign.value;
-                    if (presetChoice.value.length > 0) presetQ = "preset="+presetChoice.value;
-                    if (status.value.length > 0) statusQ = "status="+status.value;
-                    if (hpcsites.checked) hpcsitesQ = "site="+hpcsites.value;
-                    if (es.checked) esQ = "eventservice="+es.value;
-                    if (jumbo.checked) jumboQ = "jumbo="+jumbo.value;
-
-                    if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1) || (hpcsitesQ.length > 1) || (esQ.length > 1) || (jumboQ.length > 1)) {
-                        query += "?";
-                        if (presetQ.length > 1) {
-                            query += presetQ+"&";
-                        }
-                        if (workinggroupQ.length > 1) {
-                            query += workinggroupQ+"&";
-                        }
-                        if (processingtypeQ.length > 1) {
-                            query += processingtypeQ+"&";
-                        }
-                        if (campaignQ.length > 1) {
-                            query += campaignQ+"&";
-                        }
-                        if (statusQ.length > 1) {
-                            query += statusQ+"&";
-                        }
-                        if (hpcsitesQ.length > 1) {
-                            query += hpcsitesQ+"&";
-                        }
-                        if (esQ.length > 1) {
-                            query += esQ+"&";
-                        }
-                        if (jumboQ.length > 1) {
-                            query += jumboQ+"&";
-                        }
-                        query = query.substring(0, query.length - 1);
-                    }
-                    window.location = query;
-                }
-            </script>
+              </select>
+          </td>
+          <td>
+              <select id="status" onchange="onSubElementChoice()">
+                  <option value=""  selected="selected">All</option>
+                  {% for status in sumd.2.list %}
+                      <option value={{ status.kname }}
+                          {% if status.kname == requestParams.status %} selected="selected" {% endif %}
+                      > {{ status.kname }} </option>
+                  {% endfor %}
+              </select>
+          </td>
+          <td>
+              <label><input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
+                      {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
+          </td>
+          <td>
+              <label><input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
+                      {% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
+          </td>
+          <td>
+              <label><input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
+                      {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
+          </td>
+          <td>
+              <a onclick="go()" class="button primary">Go!</a>
+          </td>
+      </tr>
+    </tbody>
+  </table>
 
 
-            <table class="minimalistic-table">
-              <thead>
-                <tr>
-                    <th>Selection Preset</th>
-                    <th>Working group</th>
-                    <th>Processing type</th>
-                    <th>Campaign</th>
-                    <th>Status</th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                    <td>
-                        <select id="presetChoice" onchange="onPresetChoice()">
-                            <option value="MC"
-                                {% if requestParams.preset == 'MC' %} selected="selected" {% endif %}
-                                >MC</option>
-                            <option value="DPD"
-                                {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}
-                                >DPD</option>
-                            <option value="DATA"
-                                {% if requestParams.preset == 'DATA' %} selected="selected" {% endif %}
-                                >DATA</option>
-                            <option value=""
-                                {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC'  and requestParams.preset != 'DATA' %} selected="selected" {% endif %}>All</option>
-                        </select>
-                    </td>
-                    <td>
-                        <select id="workinggroup" onchange="onSubElementChoice()">
-                            <option value=""  selected="selected"
-                                {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
-                            >All</option>
-                            <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
-                                {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
-                            <option value="GP_*"
-                                {% if requestParams.preset == 'DPD' and requestParams.workinggroup == 'GP_*' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >GP_*</option>
-
-                            <option value="AP_REPR"
-                                {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
-                            >AP_REPR</option>
+  <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
 
 
-                            {% if requestParams.preset != 'DATA' %}
-                                {% for field in sumd %}
-                                    {% if field.field == 'workinggroup' %}
-                                        {% for wg in field.list %}
-                                            <option value={{ wg.kname }}
-                                                {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
-                                                {{ wg.kname }} </option>
-                                        {% endfor %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        </select>
-                    </td>
-                    <td>
-                        <select id="processingtype" onchange="onSubElementChoice()">
-                            <option value=""  selected="selected"
-                                {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
-                            >All</option>
-                            <option value="evgen|pile|simul|recon"
-                                {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >evgen|pile|simul|recon</option>
-                            <option value="merge|deriv"
-                                {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            >merge|deriv</option>
+  {% if gsum.ntasks > 0 %}
 
-                            <option value="reprocessing"
-                                {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
-                            >reprocessing</option>
+    <table class="unstriped stack minimalistic-table">
+      <thead>
+        <tr>
+            <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>]
+                {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
+                    , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
+                {% endif %}
+            </th>
+            <th> Allocated slots: {{ gsum.aslots | intcomma }} in total</th>
+            <th class="mid"> Task age</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'main' or pgroup == 'main_preset' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'nevents' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'main' or pgroup == 'main_preset' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'aslots' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td>
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'main' or pgroup == 'main_preset' %}
+                {% for pname in pgdict.keys %}
+                  {% if 'hist' in pname %}
+                    <div class="c3-chart-block" id="{{ pname }}"></div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+        <tr id="extraplots" style="display: none">
+          <td colspan="3">
+            {% for pgroup, pgdict in plots.items %}
+              {% if pgroup == 'extra' %}
+                {% for pname in pgdict.keys %}
+                  <div class="c3-chart-block" id="{{ pname }}"></div>
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-                            {% if requestParams.preset != 'DATA' %}
-                                {% for ptype in sumd.1.list %}
-                                        <option value={{ ptype.kname }}
-                                            {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>
-                                            {{ ptype.kname }} </option>
-                                {% endfor %}
-                            {% endif %}
-                        </select>
-                    </td>
-                    <td>
-                        <select id="campaign" onchange="onSubElementChoice()">
-                            <option value=""  selected="selected">All</option>
-                            <option value="MC*"
-                                {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
-                                {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                            > like 'MC%'</option>
-                                {% for campaign in sumd.0.list %}
-                                    <option value="*{{ campaign.kname }}*"
-                                        {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
-                                    >{{ campaign.kname }} </option>
-                                {% endfor %}
+    <div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
 
-                        </select>
-                    </td>
-                    <td>
-                        <select id="status" onchange="onSubElementChoice()">
-                            <option value=""  selected="selected">All</option>
-                            {% for status in sumd.2.list %}
-                                <option value={{ status.kname }}
-                                    {% if status.kname == requestParams.status %} selected="selected" {% endif %}
-                                > {{ status.kname }} </option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                    <td>
-                        <input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
-                        {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC
-                    </td>
-                    <td>
-                        <input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
-                        {% if requestParams.eventservice == '1' %} checked {% endif %}>ES
-                    </td>
-                    <td>
-                        <input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
-                        {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo
-                    </td>
-                    <td>
-                        <a onclick="go()" class="button primary">Go!</a>
-                    </td>
-                </tr>
-              </tbody>
-            </table>
-    <p>
-    <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
-    <p>
-        {% if tasks %}
+    <table id = 'tasklist' class="data-table nowrap">
+        <caption>{{ gsum.ntasks }} tasks listed</caption>
+        <thead>
+        <tr>
+            <th>Campaign</th>
+            <th>Req ID</th>
+            <th>Run</th>
+            <th>Task ID</th>
+            <th>RJobs</th>
+            <th>Status (PS2)</th>
+            <th>Status (JEDI)</th>
+            {% if requestParams.preset != 'DPD' %}
+                <th>Type</th>
+            {% endif %}
+            <th>Evts total</th>
+            <th>Evts done</th>
+            <th>Evts running</th>
+            <th>Evts waiting</th>
+            <th>Evts failed</th>
+            <th>%</th>
+            <th>Priority</th>
+            {% if requestParams.preset == 'DPD' %}
+                <th>pTag</th>
+                <th>Output types</th>
+            {% endif %}
+            {% if requestParams.preset == 'MC' %}
+                <th>Sim</th>
+            {% endif %}
+            <th>Age</th>
+            <th>Cores</th>
+            {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+                <th>Working group</th>
+                <th>User</th>
+            {% endif %}
+            <th>CPU Time per Event</th>
+            <th>Global Share</th>
+            <th>ES</th>
+            <th>Jumbo</th>
+            <th>Hastags</th>
+            <th>Site</th>
+            <th>Container name</th>
+        </tr>
+        </thead>
+    <tbody>
+    </tbody>
+    </table>
 
-            <table class="minimalistic-table unstriped stack">
-              <thead>
-                <tr>
-                    <th> Events <a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>
-                        {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
-                            , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
-                        {% endif %}
-                    </th>
-                    <th> Allocated slots</th>
-                    <th> Task age</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                    <td>
-                        <div class="row">
-                        {% if neventsByStatus|length > 0 %}<div class="d3splot" id="pieChartByStatus" style="float:left"></div>{% endif %}
-                        {% if requestParams.preset == 'MC' %}
-                            {% if neventsFStasksSum|length > 0 %}<div class="d3splot" id="pieChartFS" style="float:left"></div>{% endif %}
-                            {% if neventsAFIItasksSum|length > 0 %}<div class="d3splot" id="pieChartAFII" style="float:left"></div>{% endif %}
-                        {% else %}
-                            {% if neventsByProcessingType|length > 0 %}<div class="d3splot" id="pieChartByProcessingType" style="float:left"></div>{% endif %}
-                        {% endif %}
-                        </div>
-                        <div id="extraplots" class="row" style="display: none">
-                            {% if neventsByTaskStatus|length > 0 %}<div class="d3splot" id="pieChartByTaskStatus" style="float:left"></div>{% endif %}
-                            {% if neventsByTaskPriority|length > 0 %}<div class="d3splot" id="pieChartByTaskPriority" style="float:left"></div>{% endif %}
-                        </div>
-                    </td>
-                    <td>
-                        {% if aslotsByType|length > 0 %}<div class="d3splot" id="pieChartSlotsByProcessingType"></div>{% endif %}
-                    </td>
-                    <td>{% if plotageshistogram == 1 %}
-                            <div class="d3splot" id="sumPlot"></div>
-                        {% else %}
-                            <p> All tasks age is 0 days</p>
-                        {% endif %}
-                    </td>
-                </tr>
-{#                <tr>#}
-{#                <td colspan=20>#}
-{#                    Total events done <b>{{ neventsUsedTotSum }}M</b> of <b>{{ neventsTotSum }}M</b> in#}
-{#                    <b>{{ ntasks }}</b> tasks <br>#}
-{#                    Number of currently running events <b>{{ neventsRunningTotSum }}M</b> <br>#}
-{#                    Number of waiting events <b>{{ neventsWaitingTotSum }}M</b> <br>#}
-{#                    Total 1-core jobs <b>{{ rjobs1coreTot }}</b> and 8-cores <b>{{ rjobs8coreTot }}</b> jobs#}
-{#                </td>#}
-{#                </tr>#}
-              </tbody>
-            </table>
+  {% else %}
+      <p>No matches to query.</p>
+  {% endif %}
 
-            <div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
+{% endblock %}
 
-            <script>
-                var progressBarR = $('#runningprogressbar');
-                var progressBarW = $('#waitingprogressbar');
-                var ages = {{ ages|safe }};
-                var productiontype = {{ productiontype | safe }};
-                var plotageshistogram = {{ plotageshistogram }};
-                if (plotageshistogram == 1) {
-                    pandamonProdRunTaskSumPlotFunc(ages, "#sumPlot", 'Task age histogram', 24, productiontype);
-                }
-                var neventsByStatus ={{ neventsByStatus|safe }};
-                runningProdTasksPieChartFunc(neventsByStatus, "#pieChartByStatus", 'N Events');
-                var neventsFStasksSum ={{ neventsFStasksSum|safe }};
-                var neventsAFIItasksSum ={{ neventsAFIItasksSum|safe }};
-                var neventsByProcessingType ={{ neventsByProcessingType|safe }};
-                var neventsByTaskStatus ={{ neventsByTaskStatus|safe }};
-                var neventsByTaskPriority ={{ neventsByTaskPriority|safe }};
-                if (productiontype == 'MC') {
-                    runningProdTasksPieChartFunc(neventsFStasksSum, "#pieChartFS", 'FS');
-                    runningProdTasksPieChartFunc(neventsAFIItasksSum, "#pieChartAFII", 'AFII');
-                }
-                else {
-                    runningProdTasksPieChartFunc(neventsByProcessingType, "#pieChartByProcessingType", 'N Events')
-                }
-                runningProdTasksPieChartFunc(neventsByTaskStatus, "#pieChartByTaskStatus", 'N Events');
-                runningProdTasksPieChartFunc(neventsByTaskPriority, "#pieChartByTaskPriority", 'N Events');
-                var slots = {{ aslotsByType|safe }};
-                runningProdTasksPieChartFunc(slots, '#pieChartSlotsByProcessingType', 'Slots');
-
-                {#var gauges = [];#}
-                {#$(document).ready(function() {#}
-                {#createGauge("slots", "Slots");#}
-                {#gauges['slots'].redraw(slots);});#}
+{% block help %}
+  {% include 'taskRunningProductionHelp.html' %}
+{% endblock %}
 
 
-            </script>
+{% block js_body_page %}
 
-
-            <table id = 'tasklist' class="data-table nowrap">
-                <caption>{{ ntasks }} tasks listed</caption>
-                <thead>
-                <tr>
-                    <th>Campaign</th>
-                    <th>Req ID</th>
-                    <th>Run</th>
-                    <th>Task ID</th>
-                    <th>RJobs</th>
-                    <th>Status (PS2)</th>
-                    <th>Status (JEDI)</th>
-                    {% if requestParams.preset != 'DPD' %}
-                        <th>Type</th>
-                    {% endif %}
-                    <th>Evts total</th>
-                    <th>Evts done</th>
-                    <th>Evts running</th>
-                    <th>Evts to be used</th>
-                    <th>%</th>
-                    <th>Failed files</th>
-                    <th>Priority</th>
-                    {% if requestParams.preset == 'DPD' %}
-                        <th>pTag</th>
-                        <th>Output types</th>
-                    {% endif %}
-                    {% if requestParams.preset == 'MC' %}
-                        <th>Sim</th>
-                    {% endif %}
-                    <th>Age</th>
-                    <th>Cores</th>
-                    {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
-                        <th>Working group</th>
-                        <th>User</th>
-                    {% endif %}
-                    <th>CPU Time per Event</th>
-                    <th>Global Share</th>
-                    <th>ES</th>
-                    <th>Jumbo</th>
-                    <th>Hastags</th>
-                    <th>Site</th>
-                </tr>
-                </thead>
-            <tbody>
-            </tbody>
-            </table>
-
-
-
-
-        {% else %}
-            <p>No matches to query.</p>
-        {% endif %}
+<script src="{% static 'js/d3jsplot.js' %}"></script>
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 
 <script>
-    $(document).ready(function () {
-        var preset = {{ productiontype|safe }};
-        if (preset === 'MC') {
-            taskListMCTable();
+var plots_dict = {{ plots | safe }};
+var charts = {};
+$(document).ready(function () {
+
+  Object.keys(plots_dict).forEach(pgroup => {
+    Object.keys(plots_dict[pgroup]).forEach(item => {
+      let options = plots_dict[pgroup][item]['options'];
+      if (item.indexOf('hist') > -1) {
+        options['size'] = [440, 260];
+        charts[item] = draw_bar(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
+      }
+      else if (options.type && options.type === 'sbar') {
+        options['size'] = [440, 260];
+        options['colors'] = {
+          'done': '#207f20',
+          'running': '#34a934',
+          'waiting': '#c7c7c7',
+          'failed': '#d62728',
+        };
+        charts[item] = draw_bar_cat(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
+      }
+      else {
+        options['size'] = [210,260];
+        if (plots_dict[pgroup][item]['data'].length > 3) {
+          options['size'][1] = options['size'][1] + plots_dict[pgroup][item]['data'].length * 20 / 3;
         }
-        else if (preset === 'DPD') {
-            taskListDPDTable();
+        options['legend_position'] = 'bottom';
+        if (item.indexOf('processingtype') > -1) {
+          options['colors'] = {
+            'evgen': '#ff7f0e',
+            'pile': '#d62728',
+            'simul': '#1f77b4',
+            'recon': '#2ca02c',
+            'reprocessing': '#9467bd',
+            'deriv': '#bcbd22',
+            'merge': '#17becf',
+            'eventIndex': '#e377c2',
+            'overlay': '#3b8e67',
+            'archive': '#4a4a4a',
+            'skim': '#62c9ae',
+          };
         }
-        else {
-            taskListDataTable();
+        else if (item.indexOf('status') > -1) {
+          options['colors'] =  {
+            'done': '#207f20',
+            'running': '#34a934',
+            'waiting': '#c7c7c7',
+            'assigning': '#099999',
+            'exhausted': '#FF9933',
+            'paused': '#808080',
+            'throttled': '#deb900',
+            'pending': '#a9a9a9',
+            'ready': '#3b8e67',
+            'registered': '#4a4a4a',
+            'scouting': '#47D147',
+            'aborting': '#ff9896',
+            'failed': '#d62728',
+            'broken': '#b22222',
+            'passed': '#1a1a1a',
+            'defined': '#2174bb',
+          };
         }
+        charts[item] = draw_donut(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
+      }
+    })
+  });
+
+  var preset = {{ productiontype|safe }};
+  if (preset === 'MC') {
+      taskListMCTable();
+  }
+  else if (preset === 'DPD') {
+      taskListDPDTable();
+  }
+  else {
+      taskListDataTable();
+  }
+});
+
+  function toggleByID(id, idplus) {
+      if ($("#" + id).is(':visible')){
+          $("#" + id).hide();
+          $("#" + idplus).removeClass('fi-minus');
+          $("#" + idplus).addClass('fi-plus');
+      }
+      else {
+          $("#" + id).show();
+          $("#" + idplus).removeClass('fi-plus');
+          $("#" + idplus).addClass('fi-minus');
+      }
+
+  }
+
+  function toggleHistoricalTrend(divID, linkID) {
+      if ($("#" + divID).is(':visible')){
+          $("#" + divID).hide();
+          document.getElementById(linkID).innerHTML = 'show historical trend';
+      }
+      else {
+          if (document.getElementById(divID).firstChild) {
+              $('#'+divID).show();
+          }
+          else {
+              var params = '';
+              var preset = {{ productiontype|safe }};
+              var processingtype = "{{ requestParams.processingtype  }}";
+              if (processingtype.length > 0) {
+                  params += 'processingtype='+ processingtype;
+              }
+              else {
+                  if (preset === 'MC') {
+                      params += 'processingtype=evgen|pile|simul|recon';
+                  }
+                  else if (preset === 'DPD') {
+                      params += 'processingtype=merge|deriv';
+                  }
+                  else if (preset === 'DATA') {
+                      params += 'processingtype=reprocessing';
+                  }
+                  params += '&';
+              }
+              var title = 'Nevents trend for last 7 days';
+              if (params.length > 0) {
+                  title += ', taken into account all active tasks with ' + params;
+                  params += '&';
+              }
+              params += 'view=separated&json';
+              let options = {
+                size: [getWidth()-40, 460],
+                labels: ['Timestamp, UTC', 'Number of events'],
+                colors: {
+                  'done': '#207f20',
+                  'running': '#34a934',
+                  'waiting': '#c7c7c7',
+                  'evgen_running': '#ff7f0e',
+                  'pile_running': '#d62728',
+                  'simul_running': '#1f77b4',
+                  'recon_running': '#2ca02c',
+                  'reprocessing_running': '#9467bd',
+                  'deriv_running': '#bcbd22',
+                  'merge_running': '#17becf',
+                  'eventIndex_running': '#e377c2',
+                  'overlay_running': '#3b8e67',
+                  'archive_running': '#9e6721',
+                  'evgen_waiting': '#ffbb78',
+                  'pile_waiting': '#ff9896',
+                  'simul_waiting': '#aec7e8',
+                  'recon_waiting': '#98df8a',
+                  'reprocessing_waiting': '#c5b0d5',
+                  'deriv_waiting': '#dbdb8d',
+                  'merge_waiting': '#9edae5',
+                  'eventIndex_waiting': '#f7b6d2',
+                  'overlay_waiting': '#a1d9bf',
+                  'archive_waiting': '#d2b177',
+                  'total_running': '#000000',
+                  'total_waiting': '#7f7f7f',
+                }
+              };
+              $.ajax({
+                  url: {% url 'prodNeventsTrend' %},
+                  data: params,
+                  dataType:'json',
+                  success: function(response) {
+                  var plotData = response;
+                  charts['nEventsLineChart'] = draw_multi_line(plotData, 'nEventsLineChart', title, options);
+                  }
+              });
+
+              $('#'+divID).show();
+              document.getElementById(linkID).innerHTML = 'hide historical trend';
+          }
+      }
+  }
+
+  function onPresetChoice () {
+    var presetChoice = document.getElementById ("presetChoice");
+    var workinggroup = document.getElementById ("workinggroup");
+    var processingtype = document.getElementById ("processingtype");
+    var campaign = document.getElementById ("campaign");
+    var status = document.getElementById ("status");
+    var warning = document.getElementById ("warning");
+
+    if (presetChoice.value == 'MC') {
+        workinggroup.selectedIndex = 1;
+        processingtype.selectedIndex = 1;
+        campaign.selectedIndex = 1;
+        status.selectedIndex = 0;
+    }
+
+    if (presetChoice.value == 'DPD') {
+        workinggroup.selectedIndex = 2;
+        processingtype.selectedIndex = 2;
+        campaign.selectedIndex = 0;
+        status.selectedIndex = 0;
+    }
+
+    if (presetChoice.value == 'DATA') {
+        workinggroup.selectedIndex = 3;
+        processingtype.selectedIndex =3;
+        campaign.selectedIndex =0;
+        status.selectedIndex = 0;
+    }
+
+
+    if (presetChoice.value == '') {
+        workinggroup.selectedIndex = 0;
+        processingtype.selectedIndex = 0;
+        campaign.selectedIndex = 0;
+        status.selectedIndex = 0;
+    }
+    warning.style.display = '';
+  }
+
+  function onSubElementChoice() {
+      var warning = document.getElementById ("warning");
+      warning.style.display = '';
+  }
+
+  function go() {
+
+      var workinggroupQ = "";
+      var processingtypeQ = "";
+      var campaignQ = "";
+      var presetQ = "";
+      var statusQ = "";
+      var hpcsitesQ = "";
+      var esQ = "";
+      var jumboQ = "";
+      var workinggroup = document.getElementById ("workinggroup");
+      var processingtype = document.getElementById ("processingtype");
+      var campaign = document.getElementById ("campaign");
+      var presetChoice = document.getElementById ("presetChoice");
+      var query = {% url 'runningProdTasks' %} ;
+      var status = document.getElementById ("status");
+      var hpcsites = document.getElementById('hpc');
+      var es = document.getElementById('es');
+      var jumbo = document.getElementById('jumbo');
+
+      if (workinggroup.value.length > 0) workinggroupQ = "workinggroup="+workinggroup.value;
+      if (processingtype.value.length > 0) processingtypeQ = "processingtype="+processingtype.value;
+      if (campaign.value.length > 0) campaignQ = "campaign="+campaign.value;
+      if (presetChoice.value.length > 0) presetQ = "preset="+presetChoice.value;
+      if (status.value.length > 0) statusQ = "status="+status.value;
+      if (hpcsites.checked) hpcsitesQ = "site="+hpcsites.value;
+      if (es.checked) esQ = "eventservice="+es.value;
+      if (jumbo.checked) jumboQ = "jumbo="+jumbo.value;
+
+      if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1) || (hpcsitesQ.length > 1) || (esQ.length > 1) || (jumboQ.length > 1)) {
+          query += "?";
+          if (presetQ.length > 1) {
+              query += presetQ+"&";
+          }
+          if (workinggroupQ.length > 1) {
+              query += workinggroupQ+"&";
+          }
+          if (processingtypeQ.length > 1) {
+              query += processingtypeQ+"&";
+          }
+          if (campaignQ.length > 1) {
+              query += campaignQ+"&";
+          }
+          if (statusQ.length > 1) {
+              query += statusQ+"&";
+          }
+          if (hpcsitesQ.length > 1) {
+              query += hpcsitesQ+"&";
+          }
+          if (esQ.length > 1) {
+              query += esQ+"&";
+          }
+          if (jumboQ.length > 1) {
+              query += jumboQ+"&";
+          }
+          query = query.substring(0, query.length - 1);
+      }
+      window.location = query;
+  }
+
+  function taskListMCTable() {
+    $('#tasklist').dataTable({
+      //"bRetrieve": true,
+      "iDisplayLength": -1,
+      "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+      "paging": true,
+      "scrollX": true,
+      "aaSorting": [[16,'desc']],
+
+      "ajax": {
+          "processing": true,
+          "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
+          "dataSrc" : ''},
+      "columnDefs": [
+          {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17,20] }
+      ],
+      "aoColumns": [
+          {
+              "data": "cutcampaign",
+              sDefaultContent: "---",
+              "render": function(data, type, row, meta) {
+                  return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
+               }
+          },
+          {
+              "data": "reqid",
+              sDefaultContent: "",
+              "render": function ( data, type, full, meta ) {
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
+              }
+          },
+          {
+              "data": "inputdataset",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+              }
+          },
+          {
+              "data": "jeditaskid",
+              sDefaultContent: "",
+              "render": function ( data, type, full, meta ) {
+                  return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+              }
+          },
+          {
+              "data": "rjobs",
+              sDefaultContent: "",
+              className: 'num',
+              "render": function(data, type, full, meta) {
+                  if (data > 0) {
+                      return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
+                  }
+                  else {
+                      return data;
+                  }
+              }
+          },
+          {
+              "data": "superstatus",
+              sDefaultContent: "",
+              className: "state",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
+              }
+          },
+          {
+              "data": "status",
+              sDefaultContent: "",
+              className: "state",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
+              }
+          },
+          {
+              "data": "processingtype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}processingtype=' + full['processingtype'] + '">' + full['processingtype'] + '</a>'
+              }
+          },
+          {
+              "data": "nevents",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+
+          },
+          {
+              "data": "neventsdone",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsrunning",
+              sDefaultContent: "0",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventswaiting",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsfailed",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "percentage",
+              sDefaultContent: "",
+              className: 'num'
+          },
+          {
+              "data": "priority",
+              sDefaultContent: "",
+              className: 'num'
+          },
+          {
+              "data": "simtype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}simtype=' + full['simtype'] + '">' + full['simtype'] + '</a>'
+              }
+          },
+          {
+              "data": "age",
+              sDefaultContent: "",
+              className: 'num',
+          },
+          {
+              "data": "corecount",
+              sDefaultContent: "",
+              className: 'num',
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
+              }
+          },
+          {
+              "data": "workinggroup",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}workinggroup=' + full['workinggroup'] + '">' + full['workinggroup'] + '</a>'
+              }
+          },
+          {
+              "data": "username",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}username=' + full['username'] + '">' + full['username'] + '</a>'
+              }
+          },
+          {
+              "data": "cputime",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.'),
+          },
+          {
+              "data": "gshare",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
+              }
+          },
+          {
+              "data": "eventservice",
+              sDefaultContent: "---",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
+          },
+          {
+              "data": "jumbo",
+              sDefaultContent: "---",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
+          },
+          {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
+          },
+          {
+              "data": "container_name",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}container_name=' + full['container_name'] + '">' + full['container_name'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
+          }
+
+      ],
+      "createdRow": function ( row, data, index ) {
+          $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
+          $('td', row).eq(6).addClass(data['status'] + '_fill');
+      }
     });
-    function taskListMCTable() {
-      $('#tasklist').dataTable({
-        //"bRetrieve": true,
-        "iDisplayLength": -1,
-        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-        "paging": true,
-        "scrollX": true,
-        "aaSorting": [[16,'desc']],
+  }
 
-        "ajax": {
-            "processing": true,
-            "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
-            "dataSrc" : ''},
-        "columnDefs": [
-            {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17,20] }
-        ],
-        "aoColumns": [
-            {
-                "data": "cutcampaign",
-                sDefaultContent: "---",
-                "render": function(data, type, row, meta) {
-                    return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
-                 }
-            },
-            {
-                "data": "reqid",
-                sDefaultContent: "",
-                "render": function ( data, type, full, meta ) {
-                    return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
-                }
-            },
-            {
-                "data": "inputdataset",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
-                }
-            },
-            {
-                "data": "jeditaskid",
-                sDefaultContent: "",
-                "render": function ( data, type, full, meta ) {
-                    return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
-                }
-            },
-            {
-                "data": "rjobs",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    if (data > 0) {
-                        return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
-                    }
-                    else {
-                        return data;
-                    }
-                }
-            },
-            {
-                "data": "superstatus",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
-                }
-            },
-            {
-                "data": "status",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
-                }
-            },
-            {
-                "data": "processingtype",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}processingtype=' + full['processingtype'] + '">' + full['processingtype'] + '</a>'
-                }
-            },
-            {
-                "data": "nevents",
-                sDefaultContent: "---",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
+  function taskListDPDTable() {
+    $('#tasklist').dataTable({
+      //"bRetrieve": true,
+      "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+      "paging": true,
+      "scrollX": true,
+      "aaSorting": [[16,'desc']],
+      "columnDefs": [
+          {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17] }
+      ],
 
-            },
-            {
-                "data": "neventsused",
-                sDefaultContent: "",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "neventsrunning",
-                sDefaultContent: "0",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "neventstobeused",
-                sDefaultContent: "---",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "percentage",
-                sDefaultContent: "",
-                className: 'dt-body-right'
-            },
-            {
-                "data": "nfilesfailed",
-                sDefaultContent: "---",
-            },
-            {
-                "data": "priority",
-                sDefaultContent: "",
-                className: 'dt-body-right'
-            },
-            {
-                "data": "simtype",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}simtype=' + full['simtype'] + '">' + full['simtype'] + '</a>'
-                }
-            },
-            {
-                "data": "age",
-                sDefaultContent: "",
-            },
-            {
-                "data": "corecount",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
-                }
-            },
-            {
-                "data": "workinggroup",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}workinggroup=' + full['workinggroup'] + '">' + full['workinggroup'] + '</a>'
-                }
-            },
-            {
-                "data": "username",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}username=' + full['username'] + '">' + full['username'] + '</a>'
-                }
-            },
-            {
-                "data": "cputime",
-                sDefaultContent: "---",
-                render: $.fn.dataTable.render.number( ',', '.'),
-                className: 'dt-body-right'
-            },
-            {
-                "data": "gshare",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
-                }
-            },
-            {
-                "data": "eventservice",
-                sDefaultContent: "---",
-                "render": function(data, type, full, meta) {
-                    if (data) {
-                        return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
-                    }
-                    else {
-                        return '---';
-                    }
-                },
-            },
-            {
-                "data": "jumbo",
-                sDefaultContent: "---",
-                "render": function(data, type, full, meta) {
-                    if (data) {
-                        return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
-                    }
-                    else {
-                        return '---';
-                    }
-                },
-            },
-            {
-                "data": "hashtags",
-                sDefaultContent: "---",
-                "render": function ( data, type, row ) {
-                    if (data.length > 0) {
-                        var xurl = '{{ xurl|safe }}';
-                        var hashtaglist = data.split(',');
-                        var hashtaglinks = '';
-                        for (var i = 0; i < hashtaglist.length; i++) {
-                            if (xurl.indexOf('hashtags') > -1) {
-                                hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                            }
-                            else
-                            {
-                                hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                            }
-                        }
-                        return hashtaglinks;
-                    }
-                    else {
-                        return '---'
-                    }
-                }
-            },
-            {
-                "data": "site",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    if (data) {
-                        return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-                    }
-                    else {
-                        return '---';
-                    }
-                }
-            }
+      "ajax": {
+          "processing": true,
+          "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
+          "dataSrc" : ''},
+      "aoColumns": [
+          {
+              "data": "cutcampaign",
+              sDefaultContent: "---",
+              "render": function(data, type, row, meta) {
+                  return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
+               }
+          },
+          {
+              "data": "reqid",
+              sDefaultContent: "",
+              "render": function ( data, type, full, meta ) {
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
+              }
+          },
+          {
+              "data": "inputdataset",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+              }
+          },
+          {
+              "data": "jeditaskid",
+              sDefaultContent: "",
+              "render": function ( data, type, full, meta ) {
+                  return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+              }
+          },
+          {
+              "data": "rjobs",
+              sDefaultContent: "",
+              className: 'num',
+              "render": function(data, type, full, meta) {
+                  if (data > 0) {
+                      return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
+                  }
+                  else {
+                      return data;
+                  }
+              }
+          },
+          {
+              "data": "superstatus",
+              sDefaultContent: "",
+              className: "state",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
+              }
+          },
+          {
+              "data": "status",
+              sDefaultContent: "",
+              className: "state",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
+              }
+          },
+          {
+              "data": "nevents",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsdone",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsrunning",
+              sDefaultContent: "0",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventswaiting",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsfailed",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "percentage",
+              sDefaultContent: "",
+              className: 'num',
+          },
+          {
+              "data": "priority",
+              sDefaultContent: "",
+              className: 'num'
+          },
+          {
+              "data": "ptag",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}ptag=' + full['ptag'] + '">' + full['ptag'] + '</a>'
+              }
+          },
+          {
+              "data": "outputtypes",
+              sDefaultContent: "",
+          },
+          {
+              "data": "age",
+              sDefaultContent: "",
+              className: 'num',
+          },
+          {
+              "data": "corecount",
+              sDefaultContent: "",
+              className: 'num',
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
+              }
+          },
+          {
+              "data": "cputime",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "gshare",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
+              }
+          },
+          {
+              "data": "eventservice",
+              sDefaultContent: "---",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
+          },
+          {
+              "data": "jumbo",
+              sDefaultContent: "---",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
+          },
+          {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+              }
+          },
+          {
+              "data": "container_name",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}container_name=' + full['container_name'] + '">' + full['container_name'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
+          }
 
-        ],
-        "createdRow": function ( row, data, index ) {
-            $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
-            $('td', row).eq(6).addClass(data['status'] + '_fill');
-        }
-      });
-    }
+      ],
+      "createdRow": function ( row, data, index ) {
+          $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
+          $('td', row).eq(6).addClass(data['status'] + '_fill');
+      }
+    })
+  }
 
-    function taskListDPDTable() {
-      $('#tasklist').dataTable({
-        //"bRetrieve": true,
-        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-        "paging": true,
-        "scrollX": true,
-        "aaSorting": [[16,'desc']],
-        "columnDefs": [
-            {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17] }
-        ],
+  function taskListDataTable() {
+    $('#tasklist').dataTable({
+      //"bRetrieve": true,
+      "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+      "paging": true,
+      "scrollX": true,
+      "aaSorting": [[15,'desc']],
+      "columnDefs": [
+          {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17] }
+      ],
 
-        "ajax": {
-            "processing": true,
-            "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
-            "dataSrc" : ''},
-        "aoColumns": [
-            {
-                "data": "cutcampaign",
-                sDefaultContent: "---",
-                "render": function(data, type, row, meta) {
-                    return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
-                 }
-            },
-            {
-                "data": "reqid",
-                sDefaultContent: "",
-                "render": function ( data, type, full, meta ) {
-                    return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
-                }
-            },
-            {
-                "data": "inputdataset",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
-                }
-            },
-            {
-                "data": "jeditaskid",
-                sDefaultContent: "",
-                "render": function ( data, type, full, meta ) {
-                    return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
-                }
-            },
-            {
-                "data": "rjobs",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    if (data > 0) {
-                        return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
-                    }
-                    else {
-                        return data;
-                    }
-                }
-            },
-            {
-                "data": "superstatus",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
-                }
-            },
-            {
-                "data": "status",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
-                }
-            },
-            {
-                "data": "nevents",
-                sDefaultContent: "---",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "neventsused",
-                sDefaultContent: "",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "neventsrunning",
-                sDefaultContent: "0",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "neventstobeused",
-                sDefaultContent: "---",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "percentage",
-                sDefaultContent: "",
-                className: 'dt-body-right',
-            },
-            {
-                "data": "nfilesfailed",
-                sDefaultContent: "---",
-            },
-            {
-                "data": "priority",
-                sDefaultContent: "",
-                className: 'dt-body-right'
-            },
-            {
-                "data": "ptag",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}ptag=' + full['ptag'] + '">' + full['ptag'] + '</a>'
-                }
-            },
-            {
-                "data": "outputtypes",
-                sDefaultContent: "",
-            },
-            {
-                "data": "age",
-                sDefaultContent: "",
-            },
-            {
-                "data": "corecount",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
-                }
-            },
-            {
-                "data": "cputime",
-                sDefaultContent: "---",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "gshare",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
-                }
-            },
-            {
-                "data": "eventservice",
-                sDefaultContent: "---",
-                "render": function(data, type, full, meta) {
-                    if (data) {
-                        return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
-                    }
-                    else {
-                        return '---';
-                    }
-                },
-            },
-            {
-                "data": "jumbo",
-                sDefaultContent: "---",
-                "render": function(data, type, full, meta) {
-                    if (data) {
-                        return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
-                    }
-                    else {
-                        return '---';
-                    }
-                },
-            },
-            {
-                "data": "hashtags",
-                sDefaultContent: "---",
-                "render": function ( data, type, row ) {
-                    if (data.length > 0) {
-                        var xurl = '{{ xurl|safe }}';
-                        var hashtaglist = data.split(',');
-                        var hashtaglinks = '';
-                        for (var i = 0; i < hashtaglist.length; i++) {
-                            if (xurl.indexOf('hashtags') > -1) {
-                                hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                            }
-                            else
-                            {
-                                hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                            }
-                        }
-                        return hashtaglinks;
-                    }
-                    else {
-                        return '---'
-                    }
-                }
-            },
-            {
-                "data": "site",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-                }
-            }
+      "ajax": {
+          "processing": true,
+          "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
+          "dataSrc" : ''},
+      "aoColumns": [
+          {
+              "data": "cutcampaign",
+              sDefaultContent: "---",
+              "render": function(data, type, row, meta) {
+                  return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
+               }
+          },
+          {
+              "data": "reqid",
+              sDefaultContent: "",
+              "render": function ( data, type, full, meta ) {
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
+              }
+          },
+          {
+              "data": "inputdataset",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+              }
+          },
+          {
+              "data": "jeditaskid",
+              sDefaultContent: "",
+              "render": function ( data, type, full, meta ) {
+                  return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+              }
+          },
+          {
+              "data": "rjobs",
+              sDefaultContent: "",
+              className: 'num',
+              "render": function(data, type, full, meta) {
+                  if (data > 0) {
+                      return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
+                  }
+                  else {
+                      return data;
+                  }
+              }
+          },
+          {
+              "data": "superstatus",
+              sDefaultContent: "",
+              className: "state",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
+              }
+          },
+          {
+              "data": "status",
+              sDefaultContent: "",
+              className: "state",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
+              }
+          },
+          {
+              "data": "processingtype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}processingtype=' + full['processingtype'] + '">' + full['processingtype'] + '</a>'
+              }
+          },
+          {
+              "data": "nevents",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsdone",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsrunning",
+              sDefaultContent: "0",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventswaiting",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsfailed",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "percentage",
+              sDefaultContent: "",
+              className: 'num'
+          },
+          {
+              "data": "priority",
+              sDefaultContent: "",
+              className: 'num'
+          },
+          {
+              "data": "age",
+              sDefaultContent: "",
+              className: 'num',
+          },
+          {
+              "data": "corecount",
+              sDefaultContent: "",
+              className: 'num',
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
+              }
+          },
+          {
+              "data": "cputime",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "gshare",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
+              }
+          },
+          {
+              "data": "eventservice",
+              sDefaultContent: "---",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
+          },
+          {
+              "data": "jumbo",
+              sDefaultContent: "---",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
+          },
+          {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+              }
+          },
+          {
+              "data": "container_name",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}container_name=' + full['container_name'] + '">' + full['container_name'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
+          }
 
-        ],
-        "createdRow": function ( row, data, index ) {
-            $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
-            $('td', row).eq(6).addClass(data['status'] + '_fill');
-        }
-      })
-    }
-
-
-    function taskListDataTable() {
-      $('#tasklist').dataTable({
-        //"bRetrieve": true,
-        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-        "paging": true,
-        "scrollX": true,
-        "aaSorting": [[15,'desc']],
-        "columnDefs": [
-            {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17] }
-        ],
-
-        "ajax": {
-            "processing": true,
-            "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
-            "dataSrc" : ''},
-        "aoColumns": [
-            {
-                "data": "cutcampaign",
-                sDefaultContent: "---",
-                "render": function(data, type, row, meta) {
-                    return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
-                 }
-            },
-            {
-                "data": "reqid",
-                sDefaultContent: "",
-                "render": function ( data, type, full, meta ) {
-                    return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
-                }
-            },
-            {
-                "data": "inputdataset",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
-                }
-            },
-            {
-                "data": "jeditaskid",
-                sDefaultContent: "",
-                "render": function ( data, type, full, meta ) {
-                    return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
-                }
-            },
-            {
-                "data": "rjobs",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    if (data > 0) {
-                        return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
-                    }
-                    else {
-                        return data;
-                    }
-                }
-            },
-            {
-                "data": "superstatus",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
-                }
-            },
-            {
-                "data": "status",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
-                }
-            },
-            {
-                "data": "processingtype",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}processingtype=' + full['processingtype'] + '">' + full['processingtype'] + '</a>'
-                }
-            },
-            {
-                "data": "nevents",
-                sDefaultContent: "---",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "neventsused",
-                sDefaultContent: "",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "neventsrunning",
-                sDefaultContent: "0",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "neventstobeused",
-                sDefaultContent: "---",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "percentage",
-                sDefaultContent: "",
-                className: 'dt-body-right'
-            },
-            {
-                "data": "nfilesfailed",
-                sDefaultContent: "---",
-            },
-            {
-                "data": "priority",
-                sDefaultContent: "",
-                className: 'dt-body-right'
-            },
-            {
-                "data": "age",
-                sDefaultContent: "",
-            },
-            {
-                "data": "corecount",
-                sDefaultContent: "",
-                className: 'dt-body-right',
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
-                }
-            },
-            {
-                "data": "cputime",
-                sDefaultContent: "---",
-                className: 'dt-body-right',
-                render: $.fn.dataTable.render.number( ',', '.')
-            },
-            {
-                "data": "gshare",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
-                }
-            },
-            {
-                "data": "eventservice",
-                sDefaultContent: "---",
-                "render": function(data, type, full, meta) {
-                    if (data) {
-                        return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
-                    }
-                    else {
-                        return '---';
-                    }
-                },
-            },
-            {
-                "data": "jumbo",
-                sDefaultContent: "---",
-                "render": function(data, type, full, meta) {
-                    if (data) {
-                        return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
-                    }
-                    else {
-                        return '---';
-                    }
-                },
-            },
-            {
-                "data": "hashtags",
-                sDefaultContent: "---",
-                "render": function ( data, type, row ) {
-                    if (data.length > 0) {
-                        var xurl = '{{ xurl|safe }}';
-                        var hashtaglist = data.split(',');
-                        var hashtaglinks = '';
-                        for (var i = 0; i < hashtaglist.length; i++) {
-                            if (xurl.indexOf('hashtags') > -1) {
-                                hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                            }
-                            else
-                            {
-                                hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                            }
-                        }
-                        return hashtaglinks;
-                    }
-                    else {
-                        return '---'
-                    }
-                }
-            },
-            {
-                "data": "site",
-                sDefaultContent: "",
-                "render": function(data, type, full, meta) {
-                    return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-                }
-            }
-
-        ],
-        "createdRow": function ( row, data, index ) {
-            $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
-            $('td', row).eq(6).addClass(data['status'] + '_fill');
-        }
-      })
-    }
+      ],
+      "createdRow": function ( row, data, index ) {
+          $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
+          $('td', row).eq(6).addClass(data['status'] + '_fill');
+      }
+    })
+  }
 
 </script>
 

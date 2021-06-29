@@ -1,0 +1,92 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}ATLAS Nightlies and CI Global Page{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
+
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.dataTables.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+<div>
+
+<div id="hjk">
+    <P><H3>ATLAS Nightlies and CI Global Page</H3>
+
+</div>
+
+<div id="note1"><P>
+<UL><LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a>
+<LI> For ART GRID test results, the number of tests with statuses active, succeeded, finished, failed are shown. Follow result links for details
+<LI> For ART LOCAL test results, the number of tests with statuses successful, failed are shown. Follow results links to access ART local documentation (built by the tool developed by Oleg Zenin)
+</UL></div>
+
+<table id="firstGlobalExample" class="stripe">
+     <thead>
+                <th>Nightly Group</th>
+                <th>Branch</th>
+                <th>Recent<BR>Release</th>
+                <th>Build time</th>
+                <th>Compilation errors<BR>(w/warnings)</th>
+                <th>CTest (or CI)<BR>test errors<BR>(w/warnings)</th>
+                <th>ART<BR>LOCAL</th>
+                <th>ART<BR>GRID</th>
+                <th>CVMFS<BR>(on client)</th>
+                <th>IMAGE<BR>(developing)</th>
+                <th>ORDER string</th>
+     </thead>
+     <tbody></tbody>
+</table>
+
+</div>
+{% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript">
+
+var json=JSON.stringify({{ reslt3 | safe }});
+
+var globaldisplayTable = $('#firstGlobalExample').dataTable({
+"order": [[10, 'asc']],
+"pageLength": 100,
+"lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
+"data": JSON.parse(json),
+
+"columnDefs": [
+       {
+                "targets": [ 10 ],
+                "visible": false,
+                "searchable": false
+       }],
+"rowCallback": function( row, data, displayIndex ) {
+                 var v4=($('td:eq(4)',row).text().split(" "))[0];
+                 var v5=($('td:eq(5)',row).text().split(" "))[0];
+                 if ( v4 > 6 ) { $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( /\s/.test(v4) )  { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( ! /\D/.test(v4) ) { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v5 > 0 && v5 <= 5 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v5 > 5 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( ! /\D/.test(v5) )  { $('td:eq(5)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(5)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+
+/*
+                 if (v4 >= 0) {
+                 $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");
+                 };
+*/
+},
+});
+
+</script>
+{% endblock %}

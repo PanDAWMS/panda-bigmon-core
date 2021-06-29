@@ -3,17 +3,17 @@
 {% block page_title %} {{ viewParams.MON_VO }} PanDA incidents{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA incidents{{ viewParams.selection|safe }}
-{% if user %} &nbsp; user={{ user }} {% endif %}
-{% if site %} &nbsp; site={{ site }} {% endif %}
-{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% if user %}     user={{ user }} {% endif %}
+{% if site %}     site={{ site }} {% endif %}
+{% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
 {% block body %}
 
 {{ viewParams.header }}
 
 
-<h4>Due to decommission of pinkpanda services this information is no longer available in BigPanDA. Please use a direct AGIS link instead:
-    <a href="http://atlas-agis.cern.ch/agis/pandablacklisting/table_view/">http://atlas-agis.cern.ch/agis/pandablacklisting/table_view/</a>
+<h4>Due to decommission of pinkpanda services this information is no longer available in BigPanDA. Please use a direct CRIC link instead:
+    <a href="https://atlas-cric.cern.ch/atlas/pandaqueuestatushistory/list">https://atlas-cric.cern.ch/atlas/pandaqueuestatushistory/list</a>
 </h4>
 
 
@@ -56,7 +56,7 @@
 {% for fdict in sumd %}
 <tr><th> {{ fdict.param }} ({{ fdict.list|length }})</th><td>
 {% for item in fdict.list %}
-{{ item.kname }}(<a href="{{xurl}}{{fdict.param}}={{item.kname}}">{{ item.kvalue }}</a>) &nbsp; 
+{{ item.kname }}(<a href="{{xurl}}{{fdict.param}}={{item.kname}}">{{ item.kvalue }}</a>)
 {% endfor %}
 </td></tr>
 {% endfor %}
@@ -82,7 +82,14 @@
 
 
 {% block helptext %}
-{% include "incidentsHelp.html" with helptitle="Incidents page help" %}
+  <tr class="docsection"><th><a name="incidentsHelp"></a> Incidents page help </th></tr>
+<tr><td class="doctextlight">
+
+<p>
+Incidents are recorded using the PanDA logger service. Recorded incidents in site and cloud control (such as auto blacklisting/whitelisting of sites) are shown here.
+</p>
+
+</td>
 {% endblock %}
 
 

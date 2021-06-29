@@ -3,9 +3,9 @@
 {% block page_title %} {{ viewParams.MON_VO }} PanDA logger{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA logger{{ viewParams.selection|safe }}
-{% if user %} &nbsp; user={{ user }} {% endif %}
-{% if site %} &nbsp; site={{ site }} {% endif %}
-{% if vo %} &nbsp; VO={{ vo }} {% endif %}
+{% if user %}     user={{ user }} {% endif %}
+{% if site %}     site={{ site }} {% endif %}
+{% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
 {% block body %}
 
@@ -37,7 +37,7 @@
 {% for type in rec.types %}
 <tr bgcolor="#FCFCFC"><th> <a href="{% url 'pandaLogger' %}?category={{rec.name}}&limit=2000">{{ rec.name }}</a> </th><td> <a href="{% url 'pandaLogger' %}?category={{rec.name}}&type={{type.name}}&limit=2000">{{ type.name }}</a> </td><td>
 {% for level in type.levellist %}
-<a href="{% url 'pandaLogger' %}?category={{rec.name}}&type={{type.name}}&level={{level.name}}&limit=2000"><span class="{{ level.name }}">{{ level.name }}</span>({{ level.count }})</a> &nbsp; 
+<a href="{% url 'pandaLogger' %}?category={{rec.name}}&type={{type.name}}&level={{level.name}}&limit=2000"><span class="{{ level.name }}">{{ level.name }}</span>({{ level.count }})</a>
 {% endfor %}
 </td></tr>
 {% endfor %}
@@ -83,7 +83,7 @@
 <td> {{ inc.name }}</td>
 <td> {{ inc.type }}</td>
 <td> <span class="{{inc.levelname}}">{{ inc.levelname }}</span></td>
-<td><font size=-1> {% if inc.loguser != '' %} <i>Logged by {{ inc.loguser }}:</i> &nbsp; {% endif %} {% if inc.pid > 0 %} PandaID={{ inc.pid }} &nbsp; {% endif %} {{ inc.message|safe }}</font></td>
+<td><font size=-1> {% if inc.loguser != '' %} <i>Logged by {{ inc.loguser }}:</i>     {% endif %} {% if inc.pid > 0 %} PandaID={{ inc.pid }}     {% endif %} {{ inc.message|safe }}</font></td>
 </tr>
 {% endfor %}
 </table>
@@ -99,7 +99,7 @@ No matching log records found
 
 {% endblock %}
 
-{% block helptext %}
-{% include "pandaLoggerHelp.html" with helptitle="PanDA logger help" %}
+{% block help %}
+{% include "pandaLoggerHelp.html" %}
 {% endblock %}
 

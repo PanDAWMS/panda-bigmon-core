@@ -87,6 +87,11 @@ def configure(request_GET):
     if 'corecount' in request_GET:
         f_corecount = request_GET['corecount']
 
+    ### if jobtype is provided, use it. comma delimited strings
+    f_jobtype = ''
+    if 'jobtype' in request_GET:
+        f_jobtype = request_GET['jobtype']
+
     ### if cloud is provided, use it. comma delimited strings
     f_cloud = ''
     if 'cloud' in request_GET:
@@ -103,7 +108,7 @@ def configure(request_GET):
         f_status = request_GET['status']
 
     return starttime, endtime, nhours, errors_GET, \
-        f_computingsite, f_mcp_cloud, f_jobstatus, f_corecount, f_cloud, \
+        f_computingsite, f_mcp_cloud, f_jobstatus, f_corecount, f_jobtype,  f_cloud, \
         f_atlas_site, f_status
 
 
@@ -207,8 +212,8 @@ def build_query(GET_parameters):
 
     ### configure time interval for queries
     starttime, endtime, nhours, errors_GET, \
-        f_computingsite, f_mcp_cloud, f_jobstatus, f_corecount, f_cloud, \
-        f_atlas_site, f_status = configure(GET_parameters)
+        f_computingsite, f_mcp_cloud, f_jobstatus, f_corecount, f_jobtype, \
+    f_cloud, f_atlas_site, f_status = configure(GET_parameters)
 
     ### filter logdate__range
     query['modificationtime__castdate__range'] = [starttime, endtime]
@@ -245,6 +250,15 @@ def build_query(GET_parameters):
     if len(corecount_exclude_query.keys()):
         schedconfig_exclude_query.update(corecount_exclude_query)
 
+    ### filter jobtype
+    # jobtype based on prodsourcelabel, so convert it first then build query
+    f_jobtype = convert_jobtype_prodsourcelabel(f_jobtype)
+    jobtype_query, jobtype_exclude_query = parse_param_values_str(f_jobtype, 'prodsourcelabel')
+    if len(jobtype_query.keys()):
+        query.update(jobtype_query)
+    if len(jobtype_exclude_query.keys()):
+        exclude_query.update(jobtype_exclude_query)
+
     ### filter cloud
     cloud_query, cloud_exclude_query = \
         parse_param_values_str(f_cloud, 'cloud')
@@ -271,6 +285,22 @@ def build_query(GET_parameters):
 
     return query, exclude_query, starttime, endtime, nhours, errors_GET, \
         schedconfig_query, schedconfig_exclude_query
+
+
+def convert_jobtype_prodsourcelabel(qval_str):
+    conv_str = ''
+    conv_dict = {
+        'analysis': ['panda', 'user'],
+        'production': ['managed'],
+        'test': ['prod_test', 'ptest', 'install', 'rc_alrb', 'rc_test2'],
+    }
+    jtypes = qval_str.split(',')
+    for jt in jtypes:
+        if jt in conv_dict:
+            conv_str += ','.join(conv_dict[jt]) + ','
+    if conv_str.endswith(','):
+        conv_str = conv_str[:-1]
+    return conv_str
 
 
 def get_topo_info():
@@ -345,11 +375,11 @@ def summarize_data(data, query, exclude_query, schedconfig_query, \
         item['corecount'] = corecount
         item['status'] = status
         item['comment'] = comment
-        print
-        print '348 query', query
-        print '348 exclude_query', exclude_query
-        print '348 schedconfig_query', schedconfig_query
-        print '348 schedconfig_exclude_query', schedconfig_exclude_query
+
+        print ('348 query', query)
+        print ('348 exclude_query', exclude_query)
+        print ('348 schedconfig_query', schedconfig_query)
+        print ('348 schedconfig_exclude_query', schedconfig_exclude_query)
         for schedconfig_key_base in ['corecount', 'status', 'comment', \
                                      'cloud', 'atlas_site', 'status']:
             ### handle excludes
@@ -405,13 +435,13 @@ def summarize_data(data, query, exclude_query, schedconfig_query, \
                         store = False
             if '%s__istartswith' % (schedconfig_key_base) in \
             schedconfig_query.keys():
-                print '401', '%s__istartswith' % (schedconfig_key_base)
+                print ('401', '%s__istartswith' % (schedconfig_key_base))
                 if str(item[schedconfig_key_base]).upper().find(\
                             str(schedconfig_query['%s__istartswith' % \
                                 (schedconfig_key_base)]).upper()) != 0:
-                    print '401', store
+                    print ('401', store)
                     store = False
-                    print '401', store
+                    print ('401', store)
             if '%s__iendswith' % (schedconfig_key_base) in \
             schedconfig_query.keys():
                 for sch_it in schedconfig_query['%s__iendswith' % (schedconfig_key_base)]:

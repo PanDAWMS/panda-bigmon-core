@@ -17,14 +17,14 @@ from django.db import connection, transaction, DatabaseError
 
 from django.utils.cache import patch_cache_control, patch_response_headers
 
-
+from core.oauth.utils import login_customrequired
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from core.libs.cache import deleteCacheTestData, getCacheEntry, setCacheEntry, preparePlotData
-from core.views import login_customrequired, initRequest, setupView, endSelfMonitor, escapeInput, DateEncoder, \
+from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
+from core.views import initRequest, setupView, escapeInput, DateEncoder, \
     extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
 
 from core.pandajob.models import Jobsactive4, Jobsarchived4, Jobswaiting4, Jobsdefined4, Jobsarchived
-from core.common.models import BPUser
+from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison, job_info_getter
 
@@ -48,9 +48,7 @@ def addToComparison(request):
 
     data = {'newList': newList}
     dump = json.dumps(data, cls=DateEncoder)
-    ##self monitor
-    endSelfMonitor(request)
-    return HttpResponse(dump, content_type='text/html')
+    return HttpResponse(dump, content_type='application/json')
 
 @login_customrequired
 def deleteFromComparison(request):
@@ -72,9 +70,7 @@ def deleteFromComparison(request):
 
     data = {'newList': newList}
     dump = json.dumps(data, cls=DateEncoder)
-    ##self monitor
-    endSelfMonitor(request)
-    return HttpResponse(dump, content_type='text/html')
+    return HttpResponse(dump, content_type='application/json')
 
 
 @login_customrequired
@@ -95,9 +91,8 @@ def clearComparison(request):
 
     data = {'result': result}
     dump = json.dumps(data, cls=DateEncoder)
-    ##self monitor
-    endSelfMonitor(request)
-    return HttpResponse(dump, content_type='text/html')
+    return HttpResponse(dump, content_type='application/json')
+
 
 @login_customrequired
 def compareJobs(request):
@@ -146,18 +141,13 @@ def compareJobs(request):
             pandaidsToBeLoad.append(pandaid)
 
     #Loading jobs info in parallel
-    nprocesses = maxNJobs
+    nprocesses = 1
     if len(pandaidsToBeLoad) > 0:
         url_params = [('?json=1&pandaid=' + str(pid)) for pid in pandaidsToBeLoad]
         pool = multiprocessing.Pool(processes=nprocesses)
         jobInfoJSON.extend(pool.map(job_info_getter, url_params))
         pool.close()
         pool.join()
-
-    #Put loaded jobs info to cache
-    for job in jobInfoJSON:
-        setCacheEntry(request, "compareJob_" + str(job.keys()[0]),
-                      json.dumps(job.values()[0], cls=DateEncoder), 60 * 30, isData=True)
 
     compareParamNames = {'produsername': 'Owner', 'reqid': 'Request ID', 'jeditaskid': 'Task ID', 'jobstatus': 'Status',
                      'attemptnr': 'Attempt', 'creationtime': 'Created', 'waittime': 'Time to start', 'duration': 'Duration',
@@ -206,6 +196,11 @@ def compareJobs(request):
             jobsComparisonAll.append(row)
 
 
+    # #Put loaded jobs info to cache
+    # for job in jobInfoJSON:
+    #     setCacheEntry(request, "compareJob_" + str(job.keys()[0]),
+    #                   json.dumps(job.values()[0], cls=DateEncoder), 60 * 30, isData=True)
+
     xurl = extensibleURL(request)
     data = {
         'request': request,
@@ -219,8 +214,6 @@ def compareJobs(request):
         'built': datetime.now().strftime("%H:%M:%S"),
     }
 
-    ##self monitor
-    endSelfMonitor(request)
     response = render_to_response('compareJobs.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response

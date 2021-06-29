@@ -1,0 +1,131 @@
+
+#hpc{
+ background-color: #F2D7D5;
+}
+#GRID{
+ background-color: #D4E6F1;
+}
+#cloud{
+ background-color: #D5F5E3;
+}
+#cloud_special{
+ background-color: #CBF5F3;
+}
+#hpc_test{
+ background-color: #fce5d6;
+}
+#hpc_special{
+ background-color: #FCF3CF;
+}
+.test {
+    color: black;
+}
+
+table.bp-table tbody tr.l1 {
+  background-color: #dedede;
+}
+  table.bp-table tbody tr.l1 td {
+    background-color: #dedede;
+    border-bottom: 1px solid #f1f1f1;
+  }
+table.bp-table tbody tr.l2 {
+  background-color: #f4f4f4;
+}
+  table.bp-table tbody tr.l2 td {
+    background-color: #f4f4f4;
+    border-bottom: 1px solid #e6e6e6;
+  }
+table.bp-table tbody tr.l3 {
+  background-color: #fefefe;
+}
+  table.bp-table tbody tr.l3 td {
+    background-color: #fefefe;
+    border-bottom: 1px solid #f1f1f1;
+  }
+
+.hasTooltip {
+    color:#0a47ff;
+}
+.hasTooltip table {
+    display: none;
+    color: #222222;
+    text-decoration: none;
+    padding: 3px;
+    z-index: 10;
+    border-radius: 6px;
+    width: auto;
+}
+.hasTooltip:hover {
+
+    text-decoration:underline;
+    color:red;
+}
+.hasTooltip:hover table {
+    display: block;
+    position: absolute;
+    background-color: #FFF;
+    border: 1px solid black;
+    margin: 2px 10px;
+    z-index: 10;
+}
+.hasTooltip:hover table td {
+    text-align:left;
+    border-style:solid;
+    border-width:1px;
+    border-color:lightgrey;
+    font-weight:normal;
+    background-color: #222222;
+    color: #fff;
+
+}
+
+.hasTooltip:hover table th {
+   text-align:left; border-style:solid; border-width:1px; border-color:grey;
+    background-color: #222222;
+    color: #fff;
+
+}
+
+fieldset.inline-input {
+  margin: 0 0 0 4.5rem;
+}
+fieldset.inline-input label {
+  display: inline;
+  margin-right: 0.3rem;
+}
+fieldset.inline-input label input {
+  margin: 0 0.3rem 0.3rem 0;
+}
+fieldset.inline-input legend {
+  display: contents;
+  font-size: 0.875rem;
+}
+
+.tabs.gs {
+  border: none;
+  background-color: #5e789a;
+}
+  .tabs.gs li.tabs-title {
+    background-color: #5e789a;
+    color: #fefefe;
+  }
+  .tabs.gs li.tabs-title a {
+    padding: 0.7rem 1rem;
+    background-color: #5e789a;
+    color: #fefefe;
+    font-size: 0.875rem;
+    font-weight: bold;
+    border-right: 1px solid #fefefe;
+  }
+  .tabs.gs li.tabs-title a:hover, .tabs.gs li.tabs-title a[aria-selected="true"] {
+    background-color: #333333;
+  }
+  .tabs-content {
+    margin-bottom: 0.7rem;
+  }
+  .tabs-content .tabs-panel {
+    padding: 0.3rem 0;
+    border-right: 1px solid #5e789a;
+    border-left: 1px solid #5e789a;
+    border-bottom: 1px solid #5e789a;
+  }

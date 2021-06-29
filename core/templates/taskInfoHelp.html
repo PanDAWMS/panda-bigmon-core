@@ -1,24 +1,45 @@
-<tr class="docsection"><th><a name="taskInfoHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Task detail page help</p></div>
+<div class="card-section">
 
 <p>
 Details on JEDI's task based workload management can be found in the <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Introduction">JEDI twiki</a>.
 </p>
 
 <p>
-The task status shown in the monitor is in JEDI terms the simplified 'superstatus' the task is in. In ATLAS, these are in sync with DEFT states. JEDI uses internally a more complex set of states, shown on task detail pages as 'Detailed JEDI status' (when it differs from the superstatus); this is the 'status' field in the JEDI task.
+The task status shown in the monitor is in JEDI terms the simplified 'superstatus' the task is in. In ATLAS, these are in sync with DEFT states.
+  JEDI uses internally a more complex set of states, shown on task detail pages as 'Detailed JEDI status' (when it differs from the superstatus);
+  this is the 'status' field in the JEDI task.
 </p>
 
 <ul>
-{% if show == 'all' or task.superstatus == 'registered' %} <li>  Status <b class='registered'>registered</b> indicates the task has been received by JEDI and the task information is inserted to the JEDI_Tasks table. {% endif %}
-{% if show == 'all' or task.superstatus == 'submitting' %} <li>  Status <b class='submitting'>submitting</b> indicates the task is progressing through the steps preparing it to be run, including scouting (sending scout jobs to validate the task and measure its parameters). {% endif %}
-{% if show == 'all' or task.superstatus == 'running' %} <li>  Status <b class='running'>running</b> indicates the task has successfully validated and is running. {% endif %}
-{% if show == 'all' or task.superstatus == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates that some inputs of the task were successfully processed but others were failed or not processed (e.g. because files were unavailable) when the task was terminated. It can be re-tried by resubmitting the same command again, in order to try again the files not yet processed. It is possible to set/unset --site, --cloud, and --excludedSite when re-submitting the task.
-{% endif %}
-{% if show == 'all' or task.superstatus == 'done' %} <li>  Status <b class='done'>done</b> indicates that all inputs of the task were successfully processed. {% endif %}
-{% if show == 'all' or task.superstatus == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates the task has failed, all inputs have failed, in a way that retry is possible (if retry is judged to be impossible the task goes to status 'broken'). If some inputs succeeded while others failed and the class is terminated, the task goes to 'finished' status. {% endif %}
-{% if show == 'all' or task.superstatus == 'aborted' %} <li>  Status <b class='aborted'>aborted</b> indicates the task has been killed. Aborted tasks can be re-executed. {% endif %}
-{% if show == 'all' or task.superstatus == 'broken' %} <li>  Status <b class='broken'>broken</b> indicates the task has failed in a way that makes retry very likely impossible. Tasks are declared as broken only in very limited circumstances, e.g. when all scout jobs failed, build jobs failed at multiple sites, etc. Users can force retry from broken state at their own risk, using the --allowTaskDuplication option; see the pathena/prun documentation. {% endif %}
+{% if show == 'all' or task.superstatus == 'registered' %} <li>Status <b class='registered'>registered</b> indicates the task has been received by JEDI and the task information is inserted to the JEDI_Tasks table.{% endif %}
+{% if show == 'all' or task.superstatus == 'defined' %}  <li>Status <b class="defined">defined</b> indicates all task parameters are properly defined.{% endif %}
+{% if show == 'all' or task.superstatus == 'assigning' %}  <li>Status <b class="assigning">assigning</b> indicates the task brokerage is assigning the task to a cloud.{% endif %}
+{% if show == 'all' or task.superstatus == 'ready' %}  <li>Status <b class="ready">ready</b> indicates the task is ready to generate jobs. New jobs are generated once computing resources become available.{% endif %}
+{% if show == 'all' or task.superstatus == 'pending' %}  <li>Status <b class="pending">pending</b> indicates the task has a temporary problem, e.g. there is no sites to assign jobs.{% endif %}
+{% if show == 'all' or task.superstatus == 'scouting' %}  <li>Status <b class="scouting">scouting</b> indicates the task is running scout jobs to collect job data.{% endif %}
+{% if show == 'all' or task.superstatus == 'scouted' %}  <li>Status <b class="scouted">scouted</b> indicates all scout jobs were successfully finished.{% endif %}
+{% if show == 'all' or task.superstatus == 'submitting' %}  <li>Status <b class='submitting'>submitting</b> indicates the task is progressing through the steps preparing it to be run, including scouting (sending scout jobs to validate the task and measure its parameters).{% endif %}
+{% if show == 'all' or task.superstatus == 'running' %}  <li>Status <b class='running'>running</b> indicates the task has successfully validated and is running.{% endif %}
+{% if show == 'all' or task.superstatus == 'prepared' %}  <li>Status <b class="prepared">prepared</b> indicates the task is ready to go to a final status{% endif %}
+{% if show == 'all' or task.superstatus == 'finishing' %}  <li>Status <b class="finishing">finishing</b> indicates the task is forced to get finished{% endif %}
+{% if show == 'all' or task.superstatus == 'paused' %}  <li>Status <b class="paused">paused</b> indicates the task is paused and doesn't do anything until it is resumed{% endif %}
+{% if show == 'all' or task.superstatus == 'throttled' %}  <li>Status <b class="throttled">throttled</b> indicates the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minites{% endif %}
+{% if show == 'all' or task.superstatus == 'exhausted' %}  <li>Status <b class="exhausted">exhausted</b> for production tasks indicates, all reattempts were done but some inputs were still unsuccessful, and the task is configured to go to this state instead of finished to wait for manual intervention or timeout of 10 days. Also, if cpuTime of scouts jobs > 2x cpuTime of task definition, the task goes to exhausted. For analysis tasks, if there are more than 5 scout jobs with short execution time (< 4 min) and more than 1000 jobs are expected, they will go to exhausted to prevent automatic avalanche since so many short jobs are problematic at grid sites. Analysis tasks in exhausted state can be retried using pbook but it is better to change some parameters like nFilesPerJob to have longer execution time. Also both production and analysis tasks will go to exhausted if they are timed-out while pending in the brokerage.{% endif %}
+{% if show == 'all' or task.superstatus == 'tobroken' %}  <li>Status <b class="tobroken">tobroken</b> indicates the task is going to broken{% endif %}
+{% if show == 'all' or task.superstatus == 'aborting' %}  <li>Status <b class="aborting">aborting</b> indicates the task is being killed{% endif %}
+{% if show == 'all' or task.superstatus == 'finished' %}  <li>Status <b class='finished'>finished</b> indicates that some inputs of the task were successfully processed but others were failed or not processed (e.g. because files were unavailable) when the task was terminated. It can be re-tried by resubmitting the same command again, in order to try again the files not yet processed. It is possible to set/unset --site, --cloud, and --excludedSite when re-submitting the task.{% endif %}
+{% if show == 'all' or task.superstatus == 'done' %}  <li>Status <b class='done'>done</b> indicates that all inputs of the task were successfully processed.{% endif %}
+{% if show == 'all' or task.superstatus == 'failed' %}  <li>Status <b class='failed'>failed</b> indicates the task has failed, all inputs have failed, in a way that retry is possible (if retry is judged to be impossible the task goes to status 'broken'). If some inputs succeeded while others failed and the class is terminated, the task goes to 'finished' status.{% endif %}
+{% if show == 'all' or task.superstatus == 'aborted' %}  <li>Status <b class='aborted'>aborted</b> indicates the task has been killed. Aborted tasks can be re-executed.{% endif %}
+{% if show == 'all' or task.superstatus == 'broken' %}  <li>Status <b class='broken'>broken</b> indicates the task has failed in a way that makes retry very likely impossible. Tasks are declared as broken only in very limited circumstances, e.g. when all scout jobs failed, build jobs failed at multiple sites, etc. Users can force retry from broken state at their own risk see the pathena/prun documentation.{% endif %}
+{% if show == 'all' or task.superstatus == 'toretry' %}  <li>Status <b class="toretry">toretry</b> indicates the retry command was received for the task.{% endif %}
+{% if show == 'all' or task.superstatus == 'toincexec' %}  <li>Status <b class="toincexec">toincexec</b> indicates the incexec command was received for the task.{% endif %}
+{% if show == 'all' or task.superstatus == 'rerefine' %}  <li>Status <b class="rerefine">rerefine</b> indicates task parameters are going to be changed for incremental execution{% endif %}
+{% if show == 'all' or task.superstatus == 'topreprocess' %}  <li>Status <b class="topreprocess">topreprocess</b> indicates preprocess job is ready for the task{% endif %}
+{% if show == 'all' or task.superstatus == 'preprocessing' %}  <li>Status <b class="preprocessing">preprocessing</b> indicates preprocess job is running for the task{% endif %}
+{% if show == 'all' or task.superstatus == 'passed' %}  <li>Status <b class="passed">passed</b> indicates the task is ready to go to a final state after manual intervention or timeout{% endif %}
 </ul>
 
 <p>
@@ -40,14 +61,15 @@ Click on the failed file percentage or count to see a summary of the errors.
 </p>
 
 <p>
-In the new JEDI system, task progress cannot be monitored in terms of jobs completed/failed because jobs are defined dynamically. The input files associated with a task are an invariant of the task, so measuring their progress is a valid metric of task progress.
-JEDI centers around tasks, no longer around jobs as in the old system.
+In the JEDI system, task progress cannot be monitored in terms of jobs completed/failed because jobs are defined dynamically.
+  The input files associated with a task are an invariant of the task, so measuring their progress is a valid metric of task progress.
 </p>
 <p>
-In the old system, the front end clients -- analysis and prodsys1 -- predefined the jobs for panda, and panda's mission was to process those jobs. The metric for progress and success was the processing of those jobs.
-</p>
-<p>
-In the new system, the front end clients -- JEDI based analysis and prodsys2 -- define only the task: a transformation to be applied to a set of inputs. Panda's mission in this system is to process those inputs, and the metric is progress and success in processing those input files. Jobs are dynamically created and re-created at panda's discretion to process and as necessary retry those inputs, shaping the jobs optimally for the resources available at a given time. So jobs are shapeshifting and fluid, it is the inputs that really define the task and are the measure of its completion.
+The front end clients -- JEDI based analysis and prodsys2 -- define only the task: a transformation to be applied to a set of inputs.
+  PanDA's mission in this system is to process those inputs, and the metric is progress and success in processing those input files.
+  Jobs are dynamically created and re-created at PanDA's discretion to process and as necessary retry those inputs,
+    shaping the jobs optimally for the resources available at a given time.
+  So jobs are shapeshifting and fluid, it is the inputs that really define the task and are the measure of its completion.
 </p>
 <p>
 <b>For JEDI based analysis and production, monitoring tasks and the processing of their input files is the best means of assessing processing status.</b>
@@ -55,65 +77,59 @@ In the new system, the front end clients -- JEDI based analysis and prodsys2 -- 
 
 <p>
 Further information that can be viewed via the task detail page:
+</p>
 <ul>
-<li> Job list: lists the task's jobs. Jobs that have been retried are excluded from the list (they are obsolete and would clutter the list with misleading information). 
-<li> Child tasks: tasks can have parent/child relationships. This lists child tasks of the present task
-<li> Prodsys task page: the prodsys2 page for the task with access to DEFT information and functionality
-<li> Brokerage logger: shows the history of brokerage actions for the task
-<li> JEDI action logger: look here to see the detailed history of JEDI actions in processing the task
-<li> Error summary: job error summary page for the jobs in this task
+  <li> <b>Task extra info:</b>
+    <ul>
+      <li>ProdSys2 UI to manage task</li>
+      <li>Task and its job brokerage at ES-ATLAS Kibana</li>
+      <li>Actions and retries logger at ES-ATLAS Kibana</li>
+      <li>Error summary: job error summary page for the jobs in this task</li>
+      <li>Child tasks: tasks can have parent/child relationships. This lists child tasks of the present task</li>
+    </ul>
+  </li>
+  <li> <b>Show jobs:</b>
+    <ul>
+      <li>Jobs including retries</li>
+      <li>Jobs excluding retries</li>
+      <li>Scout jobs if there is any</li>
+      <li>Active and ended jobs</li>
+    </ul>
+  </li>
+  <li> <b>Task parameters and help</b>
+    <ul>
+      <li>Task status log - on demand option to see history of states a task went through</li>
+      <li>Anchor links to different parts of the page</li>
+    </ul>
+  </li>
+  <li> <b>Memory and walltime usage</b>
+    <ul>
+      <li>Task jobs consumption plots - on demand option to see a few histograms showing the following metrics distribution: PSS, walltime, CPU time</li>
+      <li>Link to dashboard at Kibana@Chicago</li>
+    </ul>
+  </li>
+  <li> <b>Other plots</b>
+    <ul>
+      <li>Task chain diagrams (tree and Gantt) to see child/parent tasks</li>
+      <li>Task profile - to observe a task progress profile</li>
+    </ul>
+  </li>
 </ul>
+
+
+
+<h1>API</h1>
+<p>
+  Task data can be retrieved in JSON format with <code>curl</code> so that it can be used programmatically.
+  See <a href="{% url 'helpPage' %}?#apiHelp">API section</a> in complete help page how to do it from either lxplus or outside CERN.
+  <b>Use this carefully</b>, do not for example put scripts in crons that do heavy retrieval of job data this way.
+  If you have systematic needs for PanDA job data, tell us what they are. Do <b>*not*</b> use web page scraping.
 </p>
 
 <p>
-Tasks can be listed based on a substring of the taskname using the Search page. It supports searches by project, tag, stream. All of these are simply taskname substring searches. You can also use &amp;taskname=*substring* in the URL.
+  By default you will 3 dictionaries: "task", "taskparams" and "datasets" that are corresponds to key tables in the page.
 </p>
 
-<p>
-It is possible to retrieve task data in json format via curl so that it can be used programmatically. Do not use web page scraping; if you need info, ask how to get it. An example curl command is as follows; it takes the same url parameters as the browser version.
-<p>If you are using lxplus:
-<br><font size=-1><code>
-cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt
-<br>curl -b bigpanda.cookie.txt -H 'Accept: application/json' -H 'Content-Type: application/json' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"
-</code></font>
-<p>If you are retrieving JSON outside of CERN:
-<br><font size=-1><code>
-ssh username@lxplus.cern.ch "cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;"
-<br>ssh username@lxplus.cern.ch 'curl -b ~/bigpanda.cookie.txt -H '"'"'Accept: application/json'"'"' -H '"'"'Content-Type: application/json'"'"' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"'
-</code></font>
-<p>The first command performs SSO authentication, the second delivers needed information. You may reuse single cookie until it get expired.
-<p>What you get is a list with each element a dictionary with info for a task. If your request is for a single task (jeditaskid=N), you get additional info: an element 'datasets' in the task dictionary with input/output dataset info.
-</p>
 
-<h3> Q&amp;A </h3>
-
-<dl>
-
-<dt> The status of the task is failed but all input/output have the status running?
-<dd> Failed jobs remain in the active table while other jobs are still running. The idea is to allow users to retry
-failed jobs while the task is still running. They finally go to the archived table and file status is updated
-at the same time.
-
-<dt> The status of the task is running but the % of finished or failed jobs is 0 even though one job finished and one failed?
-<dd> The finished job was a build job, so there was no successful jobs. The failed job was going to be retried and thus it was not counted as a failure at that time. 
-
-<dt> My task failed because input data is only available on tape?
-<dd> You cannot process data directly from tape. Use DaTRI to first replicate the data to disk.
-
-<dt> How can I see my job logs from the task page?
-<dd> Click on 'job list' in the View box, then on a job PandaID link and then the log files link in the box.
-
-<dt> If we want to kill a JEDI task, is there a way that I can do: "kill(JEDI TASK ID)"? Or should I instead kill the corresponding JobsetID associated to this task? i.e. Just do "kill(Jobset ID)"?
-<dd> Yes, for now, kill the Jobset ID. Each jediTaskID is mapped to a unique jobsetID for the user. Once everything migrates to JEDI,
-pbook functions could change to take jediTaskID instead of jobsetID.
-
-<dt> If I want to retry the some failed jobs in a running JEDI task, is it possible? And what should I do in pbook?
-<dd> They are automatically retried at the same and/or other sites at most 3 times by default.
-Once the task goes to finished/failed, you can retry it by using pbook.retry(jobsetID).
-
-<dt> How do I find out the JobsetIDs associated with a task?
-<dd> There is a 1:1 correspondence between jobsetid and task. The jobsetid for a given task is shown in the task detail page top summary, and in the task list on user pages.
-</dl>
-
-</td>
-
+</div>
+</div>

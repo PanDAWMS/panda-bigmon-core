@@ -1,0 +1,465 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% load common_tags %}
+
+{% block page_title %}iDDS monitor{% endblock %}
+{% block subtitle %}iDDS monitor{{ viewParams.selection|safe }} {% endblock %}
+
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.min.css" %}">
+{% endblock %}
+{% block css_page %}
+    <link rel="stylesheet" href="{% static "css/idds.css" %}?{% cache_bust "css/idds.css" %}">
+{% endblock %}
+
+{% block js_head_page_library %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+    <div class="card bp-container-simple">
+      <div class="card-divider">
+        <p>Requests summary:</p>
+      </div>
+      <div class="card-section">
+        <table id="requests_summary_table" class="display data-table" >
+         <tbody>
+         <tr>
+             <td>Status</td>
+             <td>
+                {% for status, count in requests_summary.items %}
+                    <a href="{% url 'iddsmain' %}?reqstatus={{ status }}">{{ status }}({{ count }})</a>
+                {% endfor %}
+             </td>
+         </tr>
+
+         </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <div class="card bp-container-simple">
+      <div class="card-divider">
+        <p>Requests:</p>
+      </div>
+      <div class="card-section">
+        <table id="requests_table" class="display data-table" >
+         <thead>
+             <th>Request ID</th>
+             <th>Scope</th>
+             <th>Name</th>
+             <th>Status</th>
+             <th>Transform Status</th>
+             <th>In status</th>
+             <th>In total files</th>
+             <th>In processed files</th>
+             <th>Out status</th>
+             <th>Out total files</th>
+             <th>Out processed files</th>
+         </thead>
+         <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card bp-container-simple" id="transform_table_container">
+      <div class="card-divider">
+        <p>Transform:</p>
+      </div>
+      <div class="card-section">
+        <table id="transform_table" class="display data-table" >
+         <thead><tr>
+            <th>transform_id</th>
+            <th>transform_type</th>
+            <th>transform_tag</th>
+            <th>priority</th>
+            <th>safe2get_output_from_input</th>
+            <th>status</th>
+            <th>substatus</th>
+            <th>locking</th>
+            <th>retries</th>
+            <th>created_at</th>
+            <th>updated_at</th>
+            <th>started_at</th>
+            <th>finished_at</th>
+            <th>expired_at</th>
+            <th>transform_metadata</th>
+         </tr></thead>
+         <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card bp-container-simple" id="collections_table_input_container">
+      <div class="card-divider">
+        <p>Input Collections:</p>
+      </div>
+      <div class="card-section">
+        <table id="collections_table_input" class="display data-table" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card bp-container-simple" id="collections_table_output_container">
+      <div class="card-divider">
+        <p>Output Collections:</p>
+      </div>
+      <div class="card-section">
+        <table id="collections_table_output" class="display data-table" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card bp-container-simple" id="collections_table_log_container">
+      <div class="card-divider">
+        <p>Log Collections:</p>
+      </div>
+      <div class="card-section">
+        <table id="collections_table_log" class="display data-table" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card bp-container-simple" id="processing_table_container">
+      <div class="card-divider">
+        <p>Processing:</p>
+      </div>
+      <div class="card-section">
+        <table id="processing_table" class="display data-table" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card bp-container-simple" id="contents_table_container">
+      <div class="card-divider">
+        <p>Contents:</p>
+      </div>
+      <div class="card-section">
+        <table id="contents_table" class="display data-table" >
+         <thead>
+         </thead>
+         <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+{% endblock %}
+
+{% block js_body_page %}
+
+<script type="text/javascript">
+
+var requests_summary_table = $('#requests_summary_table').DataTable(
+    {
+        columns: [
+            {title:"Summary category",},
+            {title:"Value",}
+        ],
+        "columnDefs": [
+            { "width": "20%", "targets": 0 }
+        ],
+        "paging":   false,
+        "ordering": false,
+        "info":     false,
+        "searching": false,
+    }
+);
+
+
+var iDDSrequests=JSON.parse(JSON.stringify({{ iDDSrequests | safe }}));
+
+function preprocData(dataIn){
+   var dataOut = [];
+   for(id in dataIn){
+      if(dataIn.hasOwnProperty(id)){
+         dataOut.push(dataIn[id]);
+         dataOut[dataOut.length - 1].Id = id;
+      }
+   }
+   return dataOut;
+}
+
+var collections_table_input = $('#collections_table_input').DataTable({
+     columns: [
+        { data: "coll_id", title: "coll_id", className: "num" },
+        { data: "status", title: "status" },
+        { data: "total_files", title: "total_files", className: "num" },
+        { data: "new_files", title: "new_files", className: "num" },
+        { data: "processed_files", title: "processed_files", className: "num" },
+        { data: "relation_type", title: "relation_type" },
+    ],
+    "processing": true,
+    language: {
+        "emptyTable":     "Please select transform",
+    },
+});
+
+var collections_table_output = $('#collections_table_output').DataTable({
+     columns: [
+        { data: "coll_id", title: "coll_id", className: "num" },
+        { data: "status", title: "status" },
+        { data: "total_files", title: "total_files", className: "num" },
+        { data: "new_files", title: "new_files", className: "num" },
+        { data: "processed_files", title: "processed_files", className: "num" },
+        { data: "relation_type", title: "relation_type" },
+    ],
+    "processing": true,
+    language: {
+        "emptyTable":     "Please select transform",
+    },
+});
+
+var collections_table_log = $('#collections_table_log').DataTable({
+     columns: [
+        { data: "coll_id", title: "coll_id", className: "num" },
+        { data: "status", title: "status" },
+        { data: "total_files", title: "total_files", className: "num" },
+        { data: "new_files", title: "new_files", className: "num" },
+        { data: "processed_files", title: "processed_files", className: "num" },
+        { data: "relation_type", title: "relation_type" },
+    ],
+    "processing": true,
+    language: {
+        "emptyTable":     "Please select transform",
+    },
+});
+
+var contents_table = $('#contents_table').DataTable({
+     columns: [
+        { data: "content_id", title: "content_id", className: "num" },
+        { data: "scope", title: "scope" },
+        { data: "name", title: "name" },
+        { data: "min_id", title: "min_id", className: "num" },
+        { data: "max_id", title: "max_id", className: "num" },
+        { data: "status", title: "status" },
+        { data: "storage_id", title: "storage_id", className: "num" },
+    ],
+    "processing": true,
+    language: {
+        "emptyTable":     "Please select Collection",
+    },
+});
+
+
+var processing_table = $('#processing_table').DataTable({
+     columns: [
+        { data: "processing_id", title: "processing_id", className: "num" },
+        { data: "transform_id", title: "transform_id", className: "num" },
+        { data: "status", title: "status" },
+        { data: "created_at", title: "created_at" },
+        { data: "updated_at", title: "updated_at" },
+        { data: "finished_at", title: "finished_at" },
+    ],
+    "processing": true,
+    language: {
+        "emptyTable":     "Please select transform",
+    },
+});
+
+var transform_table = $('#transform_table').DataTable({
+    scrollX: true,
+    columns: [
+        { data: "transform_id", title: "transform_id", className: "num" },
+        { data: "transform_type", title: "transform_type" },
+        { data: "transform_tag", title: "transform_tag" },
+        { data: "priority", title: "priority", className: "num" },
+        { data: "safe2get_output_from_input", title: "safe2get_output_from_input" },
+        { data: "status", title: "status" },
+        { data: "substatus", title: "substatus" },
+        { data: "locking", title: "locking" },
+        { data: "retries", title: "retries" },
+        { data: "created_at", title: "created_at" },
+        { data: "updated_at", title: "updated_at" },
+        { data: "started_at", title: "started_at" },
+        { data: "finished_at", title: "finished_at" },
+        { data: "expired_at", title: "expired_at" },
+        { data: "transform_metadata", title: "transform_metadata" },
+    ],
+    "processing": true,
+    language: {
+        "emptyTable": "Please select request",
+    },
+});
+
+var requests_table = $('#requests_table').DataTable({
+    scrollX: true,
+    order: [],
+    columns: [
+        { data: "request_id", title: "request_id", className: "num" },
+        { data: "scope", title: "scope",},
+        { data: "name", title: "name",
+           render: function(data, type, row, meta) {
+                return '<a target=blank href = "{% url "taskInfo" %}'+row['workload_id']+'">'+data+'</a>';
+           }
+        },
+        { data: "status", title: "status" },
+        { data: "transform_status", title: "transform_status" },
+        { data: "in_status", title: "in_status" },
+        { data: "in_total_files", title: "in_total_files" },
+        { data: "in_processed_files", title: "in_processed_files" },
+        { data: "out_status", title: "out_status" },
+        { data: "out_total_files", title: "out_total_files" },
+        { data: "out_processed_files", title: "out_processed_files" },
+    ],
+    data: preprocData(iDDSrequests),
+    selectable: true,
+    select: {
+        style: 'single'
+    },
+
+});
+
+$('#requests_table tbody').on( 'click', 'tr', function () {
+    $(this).toggleClass('selected');
+    doHide = true;
+    transform_table.clear().draw();
+    collections_table_input.clear().draw();
+    collections_table_output.clear().draw();
+    collections_table_log.clear().draw();
+    processing_table.clear().draw();
+    contents_table.clear().draw();
+    if (!$(this).hasClass('selected')) doHide = false;
+    //$('#transform_table_container').goTo();
+    requests_table.rows().every(function (index, element) {
+        var data = this.data();
+        var node = this.node();
+        if (!node.className.includes('selected')) {
+            if (doHide)
+                node.hidden = true;
+            else node.hidden = false;
+        } else {
+            loadTransformByReq(data.request_id);
+        }
+    });
+});
+
+
+$('#transform_table tbody').on( 'click', 'tr', function () {
+    $(this).toggleClass('selected');
+    doHide = true;
+    if (!$(this).hasClass('selected')) doHide = false;
+    $('#collections_table_input_container').goTo();
+    transform_table.rows().every(function (index, element) {
+        var data = this.data();
+        var node = this.node();
+        if (!node.className.includes('selected')) {
+            if (doHide)
+                node.hidden = true;
+            else node.hidden = false;
+        } else {
+            loadCollectionByReq(data.transform_id);
+        }
+    });
+});
+
+
+$('#collections_table_input tbody').on( 'click', 'tr', function () {
+    $(this).toggleClass('selected');
+    doHide = true;
+    if (!$(this).hasClass('selected')) doHide = false;
+    $('#contents_table_container').goTo();
+    collections_table_input.rows().every(function (index, element) {
+        var data = this.data();
+        var node = this.node();
+        if (!node.className.includes('selected')) {
+            if (doHide)
+                node.hidden = true;
+            else node.hidden = false;
+        } else {
+            loadContentByCollection(data.coll_id);
+        }
+    });
+});
+
+$('#collections_table_log tbody').on( 'click', 'tr', function () {
+    $(this).toggleClass('selected');
+    doHide = true;
+    if (!$(this).hasClass('selected')) doHide = false;
+    $('#contents_table_container').goTo();
+    collections_table_log.rows().every(function (index, element) {
+        var data = this.data();
+        var node = this.node();
+        if (!node.className.includes('selected')) {
+            if (doHide)
+                node.hidden = true;
+            else node.hidden = false;
+        } else {
+            loadContentByCollection(data.coll_id);
+        }
+    });
+ });
+
+$('#collections_table_output tbody').on( 'click', 'tr', function () {
+    $(this).toggleClass('selected');
+    doHide = true;
+    if (!$(this).hasClass('selected')) doHide = false;
+    $('#contents_table_container').goTo();
+    collections_table_output.rows().every(function (index, element) {
+        var data = this.data();
+        var node = this.node();
+        if (!node.className.includes('selected')) {
+            if (doHide)
+                node.hidden = true;
+            else node.hidden = false;
+        } else {
+            loadContentByCollection(data.coll_id);
+        }
+    });
+ });
+
+
+function loadCollectionByReq(transform_id) {
+    collections_table_input.clear().draw();
+    collections_table_input.ajax.url('{% url 'iddscollections' %}?relation_type=0&transform_id='+transform_id.toString()).load();
+    collections_table_output.clear().draw();
+    collections_table_output.ajax.url('{% url 'iddscollections' %}?relation_type=1&transform_id='+transform_id.toString()).load();
+    collections_table_log.clear().draw();
+    collections_table_log.ajax.url('{% url 'iddscollections' %}?relation_type=2&transform_id='+transform_id.toString()).load();
+    processing_table.clear().draw();
+    processing_table.ajax.url('{% url 'iddprocessings' %}?relation_type=2&transform_id='+transform_id.toString()).load();
+
+};
+
+
+function loadContentByCollection(coll_id) {
+    contents_table.clear().draw();
+    contents_table.ajax.url('{% url 'iddsсontents' %}?coll_id='+coll_id.toString()).load();
+}
+
+function loadTransformByReq(requestID) {
+    transform_table.clear().draw();
+    transform_table.ajax.url('{% url 'iddstransforms' %}?requestID='+requestID.toString()).load();
+};
+
+(function ($) {
+    $.fn.goTo = function () {
+        $('html, body').animate({scrollTop: $(this).offset().top + 'px'}, 'fast');
+        return this;
+    }
+})(jQuery);
+
+</script>
+
+{% endblock %}
+
+{% block help %}
+  {% include 'iddsHelp.html' %}
+{% endblock %}

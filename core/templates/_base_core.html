@@ -1,57 +1,51 @@
-{% load staticfiles %}<!DOCTYPE html>
+{% load staticfiles %}{% load common_tags %}<!DOCTYPE html>
 <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
-<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<!--[if lt IE 7]> <html class="lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>    <html class="lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>    <html class="lt-ie9"> <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
 <head profile="http://www.w3.org/2005/10/profile">
 <link rel="icon" type="image/png" href='{% static "images/favicon.png" %}' />
 
-	<!-- Set the viewport width to device width for mobile -->
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Set the viewport width to device width for mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-	<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
+<title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
-<script src="{% static 'js/vendor/modernizr.js' %}"></script>
-<script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>
-<script src="{% static 'js/vendor/what-input.js' %}"></script>
-<script src="{% static 'js/vendor/foundation.min.js' %}"></script>
-<script src="{% static 'js/d3.v3.min.js' %}"></script>
-<script src="{% static 'js/user-settings.js' %}"></script>
-
-<script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
-
-{% block extra_js_hepsw %}
-
+<!-- Included CSS Files -->
+{% block css %}
+  {% block css_site_library %}
+    <link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}?{% cache_bust "css/foundation/foundation.css" %}">
+    <link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}?{% cache_bust "css/foundation/foundation-icons/foundation-icons.css" %}">
+    <link rel="stylesheet" href="{% static "js/foundation-datepicker/css/foundation-datepicker.css" %}?{% cache_bust "js/foundation-datepicker/css/foundation-datepicker.css" %}">
+    <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}?{% cache_bust 'js/jquery-ui/jquery-ui.css' %}">
+  {% endblock %}
+  {% block css_page_library %}{% endblock %}
+  {% block css_site %}
+    <link rel="stylesheet" href="{% static "css/main-nav.css" %}?{% cache_bust "css/main-nav.css" %}">
+    <link rel="stylesheet" href="{% static "css/page-sections.css" %}?{% cache_bust "css/page-sections.css" %}">
+    <link rel="stylesheet" href="{% static "css/table.css" %}?{% cache_bust "css/table.css" %}">
+    <link rel="stylesheet" href="{% static "css/state-colors.css" %}?{% cache_bust "css/state-colors.css" %}">
+    <link rel="stylesheet" href="{% static "css/d3js-plots.css" %}?{% cache_bust "css/d3js-plots.css" %}">
+    <link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}?{% cache_bust "css/taskstatestooltip.css" %}">
+  {% endblock %}
+  {% block css_page %}{% endblock %}
+  {% block extra_css %}{% endblock %}
 {% endblock %}
 
-
-
-
-	<!-- Included CSS Files -->
-
-
-{% comment %}
-	<link rel="stylesheet" href="http://hepsoftware.org/static/css/normalize.css">
-	<link rel="stylesheet" href="http://hepsoftware.org/static/css/foundation.css">
-{% endcomment %}
-
-{#  <link rel="stylesheet" href="{% static "css/foundation/normalize.css" %}">#}
-
-<link rel="stylesheet" href="{% static "css/foundation/foundation.css" %}">
-<link rel="stylesheet" href="{% static "css/foundation/foundation-icons/foundation-icons.css" %}">
-<link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-<link rel="stylesheet" href="{% static "css/main-nav.css" %}?version=1">
-<link rel="stylesheet" href="{% static "css/state-colors.css" %}?version=1">
-<link rel="stylesheet" href="{% static "css/table.css" %}?version=4">
-<link rel="stylesheet" href="{% static "css/d3js-plots.css" %}">
-<link rel="stylesheet" href="{% static "css/taskstatestooltip.css" %}">
-<link rel="stylesheet" href="{% static "css/page-sections.css" %}?version=3">
-
-
-	{% comment %} <link rel="stylesheet" href="{% static "css/bigpandamon.css" %}"> {% endcomment %}
-
-
-
-	<script>
+<!-- Included JS library Files -->
+{% block js_head %}
+  {% block js_head_site_library %}
+    <script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/vendor/what-input.js' %}"></script>
+    <script src="{% static 'js/vendor/foundation.min.js' %}"></script>
+    <script src="{% static 'js/foundation-datepicker/js/foundation-datepicker.min.js' %}"></script>
+    <script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+  {% endblock %}
+  {% block js_head_page_library %}{% endblock %}
+  {% block js_head_site %}
+  <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -59,9 +53,27 @@
 
     ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
     ga('send', 'pageview');
-	</script>
+
+    var app = angular.module('bp-app', []);
+    app.config(function ($interpolateProvider) {
+      $interpolateProvider.startSymbol('{$');
+      $interpolateProvider.endSymbol('$}');
+      });
+    app.config(['$compileProvider', function ($compileProvider) {
+      $compileProvider.debugInfoEnabled(true);
+      }]);
+  </script>
+  {% endblock %}
+{% endblock %}
+
+</head>
 
 
+
+
+<body ng-app="bp-app">
+
+<!-- Header and Nav -->
 <div class="title-bar" data-responsive-toggle="main-menu" data-hide-for="large" id="main-menu-small">
   <button class="menu-icon" type="button" data-toggle="main-menu"></button>
   <div class="title-bar-title">Menu</div>
@@ -87,21 +99,34 @@
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
             {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'dashAnalysis' %}">Analysis jobs - Region view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=world">Production jobs - World view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service world view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Event Service region view</a></li>
-                <li><a href="{% url 'dashProduction' %}?cloudview=region">Production jobs - Region view</a></li>
+                <li><a>Region view</a>
+                    <ul class="submenu menu">
+                        <li><a href="{% url 'dashRegion' %}">All jobs</a></li>
+                        <li><a href="{% url 'dashRegion' %}?jobtype=analy&splitby=jobtype">Analysis jobs</a></li>
+                        <li><a href="{% url 'dashRegion' %}?jobtype=prod&splitby=jobtype">Production jobs</a></li>
+                        <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Event Service jobs</a></li>
+                    </ul>
+                </li>
+                <li><a>World view</a>
+                    <ul class="submenu menu">
+                        <li><a href="{% url 'dashWorld' %}">Production jobs</a></li>
+                        <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service jobs</a></li>
+                    </ul>
+                </li>
                 <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
                 <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
                 <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
-                <li><a href="{% url 'worldHS06s' %}">World HS06s</a></li>
+                <li><a>Data Carousel</a>
+                    <ul class="submenu menu">
+                        <li><a href="{% url 'dataCarouselleDashBoard' %}">Dashboard</a></li>
+                        <li><a href="{% url 'datacartails' %}">Staging Tails</a></li>
+                    </ul>
+                </li>
+                <li><a href="{% url 'iddsmain' %}">iDDS</a></li>
                 <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
                 <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>
-                <li><a href="{% url 'harvesters' %}">Harvester instances</a></li>
-                <li><a href="{% url 'harvesterslots' %}">Harvester slots</a></li>
                 <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
-
+                <li><a href="{% url 'BuildGlobal' %}">Nightlies and CI</a></li>
             {% else %}
                 <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
                 <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
@@ -117,9 +142,15 @@
                 <li><a href="{% url 'taskList' %}?tasktype=anal&display_limit=300">Analysis</a></li>
                 <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
                 <li><a href="{% url 'taskList' %}?eventservice=eventservice&display_limit=300">Event service</a></li>
-                <li><a href="{% url 'runningProdTasks' %}?preset=MC">All running MC production</a></li>
-                <li><a href="{% url 'runningProdTasks' %}?preset=DPD">All running derivation production</a></li>
-                <li><a href="{% url 'runningProdTasks' %}?preset=DATA">All running reprocessing production</a></li>
+                <li><a href="{% url 'taskList' %}?container_name=all&display_limit=300">Containerized</a></li>
+                <li><a>Running production</a>
+                    <ul class="submenu menu">
+                        <li><a href="{% url 'runningProdTasks' %}">All</a></li>
+                        <li><a href="{% url 'runningProdTasks' %}?preset=MC">MC production</a></li>
+                        <li><a href="{% url 'runningProdTasks' %}?preset=DPD">Derivation production</a></li>
+                        <li><a href="{% url 'runningProdTasks' %}?preset=DATA">Reprocessing production</a></li>
+                    </ul>
+                </li>
             {% endif %}
         </ul>
         </li>
@@ -133,6 +164,7 @@
                 <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
                 <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
                 <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
+                <li><a href="{% url 'jobList' %}?container_name=all&display_limit=300">Containerized</a></li>
                 <li><a href="{% url 'status_summary-index' %}">Status Summary</a></li>
             {% endif %}
             <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>
@@ -142,16 +174,19 @@
         <li class="has-submenu">
         <a href="#">Errors</a>
         <ul class="submenu menu vertical">
-            <li><a href="{% url 'errorSummary' %}?sortby=count">All</a></li>
+            <li><a href="{% url 'errorSummary' %}?sortby=count&display_limit=20">All</a></li>
             {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count">Analysis</a></li>
-                <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count">Production</a></li>
-                <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test">rc_test</a></li>
+                <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count&display_limit=20">Analysis</a></li>
+                <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count&display_limit=20">Production</a></li>
+                <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test2">rc_test2</a></li>
                 <li><a href="{% url 'errorsScattering' %}">Scattering matrix</a></li>
                 {% if viewParams.MON_VO == 'ATLAS' %}
                 <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
                 {% endif %}
-                <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger </a> </li>
+                <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger</a> </li>
+                {% comment %}
+                <li><a href="{% url 'jobProblems' %}">Problem report</a></li>
+                {% endcomment %}
             {% endif %}
         </ul>
         </li>
@@ -195,7 +230,6 @@
         <ul class="submenu menu vertical">
             <li><a href="{% url 'harvesters' %}">Harvester instances</a></li>
             <li><a href="{% url 'harvesterslots' %}">Harvester slots</a></li>
-            <li><a href="{% url 'jobList' %}?harvesterid=all&display_limit=100">Harvester jobs</a></li>
         </ul>
         </li>
 
@@ -292,7 +326,7 @@
                     <li><a href="http://apfmon.lancs.ac.uk/">Pilot factory monitor</a>
                     {% comment %} <li><a href="http://bigpanda.cern.ch/pbm/">PanDA Brokerage Monitor</a>{% endcomment %}
                     <li><a href="http://dashb-atlas-job.cern.ch/dashboard/request.py/dailysummary#button=jobstatus&sites%5B%5D=All+T3210&sitesCat%5B%5D=All+Clouds&activities%5B%5D=Data+Processing&activities%5B%5D=Extra+Production&activities%5B%5D=Group+Production&activities%5B%5D=MC+Reconstruction&activities%5B%5D=MC+Simulation&activities%5B%5D=Others&activities%5B%5D=T0+Processing&resourcetype=All&sitesSort=7&sitesCatSort=1&start=null&end=null&timerange=last24&granularity=Hourly&generic=3&sortby=3&series=All">Dashboard historical views</a></li>
-                    <li><a href="http://dashb-atlas-ddm.cern.ch/ddm2/">DDM dashboard</a>
+                    <li><a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17">DDM dashboard</a>
                     <li><a href="http://dashb-atlas-ssb.cern.ch/dashboard/request.py/siteview#currentView=Shifter+view&highlight=false">Site Status Board</a>
                     <li><a href="http://adc-monitoring.cern.ch/">All ADC monitoring services</a>
                 </ul>
@@ -335,7 +369,7 @@
 
             {% if request.user and request.user.is_authenticated %}
               <li class="has-submenu">
-                <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 2rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
+                <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 1rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
                 <ul class="submenu menu vertical">
                     <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
                     <li><span class="li-text loggeduser">{{ request.user.email }}</span>
@@ -366,211 +400,95 @@
         </ul>
     </div>
 </div>
-  <!-- End Header and Nav -->
-  <script>
-          $('#main-menu-small').foundation();
-          $('#offCanvasRight').foundation();
-          $('#main-menu').foundation();
-  </script>
-</head>
-<body>
-  <!-- sub-title and bread-crumbs -->
+<!-- End Header and Nav -->
 
-<div class="top-subbar">
+<!-- sub-title -->
+<div id="time-window-change-panel" class="time-window-change is-hidden" data-toggler="is-hidden" data-ng-controller="timeWindowController">
+    <div class="row">
+        <div class="column">
+            <ul class="tabbed-time-window-change tabs" data-tabs id="time-window-change-tabs">
+              <li class="tabs-title is-active"><a href="#tab-quick" aria-selected="true">Select time window</a></li>
+            </ul>
+            <div class="tabbed-time-window-change-content tabs-content" data-tabs-content="time-window-change-tabs">
+              <div class="tabs-panel is-active" id="tab-quick">
+                <ul class="no-bullet">
+                    <li class="row">
+                        <div class="column large-3 medium-6">
+                            <div class="input-group">
+                                <input type="radio" name="time-window-radio" value="hours" id="time-window-radio-hours" ng-model="timewindow.data.quick" ng-change="change()">
+                                <span class="input-group-label">Last hours:</span>
+                                <input type="number" class="time-window-input input-group-field time-window-input-hours" min="1" ng-model="timewindow.data.hours"  ng-change="change()">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="row">
+                        <div class="column large-3 medium-6">
+                            <div class="input-group">
+                                <input type="radio" name="time-window-radio" value="days" id="time-window-radio-days" ng-model="timewindow.data.quick" ng-change="change()">
+                                <span class="input-group-label">Last days:</span>
+                                <input type="number" class="time-window-input input-group-field time-window-input-days" min="1" ng-model="timewindow.data.days"  ng-change="change()">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="row">
+                        <div class="column large-6 medium-12">
+                            <div class="input-group">
+                                <input type="radio" name="time-window-radio" value="custom" id="time-window-radio-custom" ng-model="timewindow.data.quick" ng-change="change()">
+                                <span class="input-group-label">Custom:</span>
+                                <span class="input-group-label">from</span>
+                                <input type="text" class="fdatetimepicker time-window-input-date input-group-field time-window-input-custom" id="time-window-input-date-from" min="2017-01-01" value="{{ timerange.0 }}" ng-model="timewindow.selection.from">
 
-    <!-- sub-title -->
-    <div class="left" id="div-subtitle"><font size=-1>{% block subtitle %}Subtitle goes here{% endblock %}
-      {% if jobsErrorsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">
-          {{ jobsErrorsTotalCount }}</a></b> {% endif %}
-      {% if jobsTotalCount != None%} <b> Total jobs found &asymp; <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{jobsTotalCount}}">
-          {{ jobsTotalCount }}</a></b> {% endif %}
-      {% if tasksTotalCount != None%} <b> Total tasks found &asymp; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">
-          {{ tasksTotalCount }}</a></b> {% endif %}
-    </font>
+                                <span class="input-group-label">to</span>
+                                <input type="text" class="fdatetimepicker time-window-input-date input-group-field time-window-input-custom" id="time-window-input-date-to" value="{{ timerange.1 }}" ng-model="timewindow.selection.to">
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+              </div>
+            </div>
+        </div>
     </div>
-    <!-- End sub-title -->
-
-    <!-- bread-crumbs -->
-    <div class="right">
-    {#      {% block header-nav-chain %}#}
-          <span class="hide-for-small"><font size=-1>
-              {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
-              {% if built != None %} {{ built }}, {% endif %}
-               <a id="reloadlink" href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}">Reload</a>
-{#              {% if request.session.ADFS_EMAIL %}&nbsp;You are logged as {{ request.session.ADFS_FULLNAME }}(#}
-{#                  {% if request.session.ADFS_LOGIN %}{{request.session.ADFS_LOGIN}}{% endif %}#}
-{#                  ,#}
-{#                  {% if request.session.ADFS_EMAIL %}{{request.session.ADFS_EMAIL}}{% endif %})#}
-{#                <a href="https://login.cern.ch/adfs/ls/?wa=wsignout1.0">Logout</a> &nbsp;#}
-{#              {% else %}#}
-{#                <a href="https://bigpanda.cern.ch{{ request.path }}">Login</a>{% endif %}#}
-{#          {% if request.user and request.user.is_authenticated %}#}
-{#              | {{ request.user.first_name }} {{ request.user.last_name }}, {{ request.user.email }} <a href="{% url 'logout' %}">Logout</a>#}
-{#          {% else %}#}
-{#                <a href="{% url 'loginauth2' %}">Login</a>#}
-{#          {% endif %}#}
-
-
-          </font></span>
-    {#      {% endblock %}#}
-    </div>
-    <!-- End bread-crumbs -->
-
-
+    <a class="button" ng-click="update()">Apply</a>
 </div>
-  <!-- End sub-title and bread-crumbs -->
 
-{% block left_menu %}{% endblock %}
+<div class="row collapse top-subbar">
+    <div class="column {% if timerange and timerange|length > 0 %} small-6 medium-2 large-2 {% else %} small-6 medium-9 large-10 {% endif %}" id="">
+        <p>
+            {% block subtitle %}Subtitle goes here{% endblock %}
+            {% if not timerange %}
+                {% block subtitle_params %} {% endblock %}
+            {% endif %}
+        </p>
+    </div>
 
-	{% block base_css %}{% endblock %}
-	{% block extra_css %}{% endblock %}
+    {% if timerange and timerange|length > 0 %}
+    <div class="column medium-7 large-8 center show-for-medium">
+        {% block time_window %}{% endblock %}
+        <a class="button time-window" data-toggle="time-window-change-panel">Change</a>
+    </div>
+    {% endif %}
 
-{#	<script src="{% static "js/vendor/custom.modernizr.js" %}"></script>#}
-	{% block base_js %}{% endblock %}
-	{% block extra_js %}{% endblock %}
+    <div class="column small-6 medium-3 large-2 right">
+        {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
+        {% if built != None %} {{ built }}, {% endif %} <a onclick="refreshPage('{{ request.session.notimestampurl }}')"> Refresh</a>
+    </div>
+</div>
+<!-- End sub-title -->
 
-
-<div class="large-12 columns" id="content">
+<!-- Main Grid Section -->
+<div class="large-12 columns body-content" id="content">
 {% block body %}
 
 {% endblock %}
-</div>
 
-{% block extra_js_bottombody %}{% endblock %}
+{% block bottom_info %}
+{% comment %} {% if query %} Query: <i>{{ query }}</i> {% endif %}  {% endcomment %}
+{% endblock %}
+<!-- End Main Grid Section -->
 
-	<br>
+<!-- Help section -->
 
-
-  <!-- Main Grid Section -->
-      {% block bottom_info %}
-      {% comment %} {% if query %} Query: <i>{{ query }}</i> {% endif %}  {% endcomment %}
-      {% endblock %}
-<br>
-  <!-- End Main Grid Section -->
-
-
-
-<script>
-    function bpsearch(selectid, inputid) {
-
-        var urlBase= "https://bigpanda.cern.ch";
-        var url = "";
-        var searchparam = document.getElementById(selectid);
-        var searchvalue = document.getElementById(inputid);
-
-        if (searchparam.value.length > 0) {
-            switch (searchparam.value) {
-                case 'pandaid':
-                    urlBase = "{% url 'jobInfo' %}" ;
-                    url = "/";
-                    break;
-                case 'batchid':
-                    urlBase = "{% url 'jobList' %}" ;
-                    url = "?batchid=";
-                    break;
-                case 'jeditaskid':
-                    urlBase = "{% url 'taskInfo' %}" ;
-                    url = "/";
-                    break;
-                case 'taskname':
-                    urlBase = "{% url 'taskList' %}" ;
-                    url = "?taskname=";
-                    break;
-                case 'reqid':
-                    urlBase = "{% url 'taskList' %}" ;
-                    url = "?reqid=";
-                    break;
-                case 'campaign':
-                    urlBase = "{% url 'taskList' %}" ;
-                    url = "?campaign=";
-                    break;
-                case 'project':
-                    urlBase = "{% url 'taskList' %}" ;
-                    url = "?project=";
-                    break;
-                case 'tag':
-                    urlBase = "{% url 'taskList' %}" ;
-                    url = "/?tag=";
-                    break;
-                case 'hashtag':
-                    urlBase = "{% url 'taskList' %}" ;
-                    url = "?hashtag=";
-                    break;
-                case 'site':
-                    urlBase = "{% url 'siteInfo' %}" ;
-                    url = "?site=";
-                    break;
-                case 'user':
-                    urlBase = "{% url 'userInfo' %}" ;
-                    url = "?user=";
-                    break;
-                case 'dataset':
-                    urlBase = "{% url 'datasetInfo' %}" ;
-                    url = "?dataset=";
-                    break;
-                case 'filename':
-                    urlBase = "{% url 'fileInfo' %}" ;
-                    url = "?filename=";
-                    break;
-
-            }
-            url += searchvalue.value;
-        }
-
-        window.location = urlBase + url;
-    }
-
-    function clearComparisonList(object) {
-        var newURL = document.getElementById('reloadlink').href;
-        $.ajax({
-            url: '/clearcomparison/',
-            data: 'object='+object,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            window.location = newURL
-            });
-    }
-
-    function grantRights(type) {
-        var newURL = document.getElementById('reloadlink').href;
-        $.ajax({
-            url: '/grantrights/',
-            data: 'type='+type,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            window.location = newURL
-            });
-    }
-
-    function denyRights(type) {
-        var newURL = document.getElementById('reloadlink').href;
-        $.ajax({
-            url: '/denyrights/',
-            data: 'type='+type,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            window.location = newURL
-            });
-    }
-
-</script>
-
-
-{#  <script src="{% static 'js/app.js' %}"></script>#}
-  <script>
-    $(document).foundation();
-  </script>
-
-</body>
-
- <!-- Footer -->
-
-<footer>
-    <div class="large-12 columns">
-        {% block bottom_copy %}
+{% block help %}{% endblock %}
 
 <table width=1000 class="hide-for-small">
 <a name="doc"></a>
@@ -578,37 +496,280 @@
 {% block helptext %}
 
 {% endblock %}
+</table>
 
 <img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
 
 {% if debuginfo %}
 <p>********** DEBUG:<br>
-<font size=-2>
 {{ debuginfo|safe }}
 <br><br>********** Request:<br>{{ request }}
 <br><br>********** Session:<br>
 {% for key, val in request.session.items %}
 {{ key }} = {{ val }} <br>
 {% endfor %}
-</font></p>
+</p>
 {% endif %}
 
-</td></tr>
-
-</table>
-<div class="row left-aligned">
-     <div class="small-4 left-aligned column">
-            <table borderwidth=0>
-            <tr><td valign="bottom">
-          <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PanDA"><img src="{% static "images/panda-verysmall-notext.png" %}"></a></td>
-          <td valign="bottom"><font size=-1>Brought to you by the PanDA team. <br> All times are in UTC. Page may be cached; check the build time above.
-          <br><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a></font></td>
-          </tr></table>
-     </div>
-    <div class="column small-8"></div>
 </div>
-        {% endblock %}
-      </div>
+
+
+<!-- Footer -->
+<footer>
+
+<div class="footer-wrap">
+  <div class="sub-footer row collapse">
+    <div class="column small-4">
+      <p>Brought to you by the PanDA team.</p>
     </div>
+    <div class="column small-8 right">
+      <p>All times are in UTC. Page may be cached, check the build time above.</p>
+    </div>
+  </div>
+  <div class="footer row collapse">
+    <div class="columns small-3">
+      <img src="{% static "images/panda-verysmall-notext.png" %}"><p style="display: inline"><a target="_blank" href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA docs</a></p>
+    </div>
+    <div class="columns small-9">
+      <p>Contact us via <a href="mailto:atlas-adc-pandamon-support@cern.ch">e-mail</a>,
+        <a target="_blank" href="https://its.cern.ch/jira/projects/ATLASPANDA/"><img src="{% static 'images/jira-logo.png' %}"></a>, or
+        <a target="_blank" href="https://mattermost.web.cern.ch/adcvcr/channels/adc-bigpanda"><img src="{% static 'images/mattermost-logo.png' %}"> Mattermost</a>
+      </p>
+    </div>
+  </div>
+</div>
+
 </footer>
+
+<!-- Body JS  -->
+{% block js_body %}
+  {% block js_body_site %}
+    <script src="{% static 'js/app.js' %}?{% cache_bust "js/app.js" %}"></script>
+    <script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
+    <script>
+      {% if timerange %}
+          var timerange = {{ timerange|safe }};
+      {% else %}
+          var timerange =  ['', ''];
+      {% endif %}
+      {% if request.session.notimerangeurl %}
+          var notimerangeurl = '{{ request.session.notimerangeurl|safe }}';
+      {% else %}
+          var notimerangeurl =  window.location.href ;
+      {% endif %}
+      app.controller('timeWindowController', ['$scope', function($scope) {
+        $scope.timewindow = {
+            selection : {
+                from: timerange[0],
+                to: timerange[1],
+            }
+        };
+        $scope.timewindow.data = {
+            hours: 12,
+            days: 0,
+            quick: 'hours',
+        };
+        $scope.timewindow.availableOptions = ['hours', 'days', 'custom'];
+
+        var dt_from = new Date(timerange[0]);
+        var dt_to = new Date(timerange[1]);
+
+        if (diff_hours(dt_to, dt_from) % 24 === 0 ) {
+            $scope.timewindow.data.quick = 'days';
+            $scope.timewindow.data.days = diff_hours(dt_to, dt_from)/24;
+            disable_input('days', $scope.timewindow.availableOptions);
+        }
+        else if (diff_hours(dt_to, dt_from) % 24 > 1 ) {
+            $scope.timewindow.data.quick = 'hours';
+            $scope.timewindow.data.hours = diff_hours(dt_to, dt_from);
+            disable_input('hours', $scope.timewindow.availableOptions);
+        }
+        else {
+            $scope.timewindow.data.quick = 'custom';
+            disable_input('custom', $scope.timewindow.availableOptions);
+        }
+
+        $scope.change = function () {
+            if ($scope.timewindow.data.quick === 'hours') {
+                disable_input('hours', $scope.timewindow.availableOptions);
+                dt_to = new Date();
+                dt_from = subtract_hours(dt_to, $scope.timewindow.data.hours);
+                $scope.timewindow.selection.to = dt_to.toISOString().substring(0, dt_to.toISOString().indexOf('.'));
+                $scope.timewindow.selection.from = dt_from.toISOString().substring(0, dt_from.toISOString().indexOf('.'));
+            }
+            else if ($scope.timewindow.data.quick === 'days') {
+                disable_input('days', $scope.timewindow.availableOptions);
+                dt_to = new Date();
+                dt_from = new Date(dt_to.getTime() - $scope.timewindow.data.days * 86400000 );
+                $scope.timewindow.selection.to = dt_to.toISOString().substring(0, dt_to.toISOString().indexOf('.'));
+                $scope.timewindow.selection.from = dt_from.toISOString().substring(0, dt_from.toISOString().indexOf('.'));
+            }
+
+            else if ($scope.timewindow.data.quick === 'custom') {
+                disable_input('custom', $scope.timewindow.availableOptions);
+            }
+        };
+
+        $scope.update = function() {
+            let query = notimerangeurl;
+            if (location.pathname.indexOf('jobsbuster') > -1) {
+              let timeparamname = 'endtime';
+              query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
+              query += timeparamname + '_to=' + $scope.timewindow.selection.to;
+            }
+            else {
+              switch ($scope.timewindow.data.quick) {
+                case 'hours':
+                  query += 'hours=' + $scope.timewindow.data.hours;
+                  break;
+                case 'days':
+                  query += 'days=' + $scope.timewindow.data.days;
+                  break;
+                case 'custom':
+                  query += 'date_from=' + $scope.timewindow.selection.from + '&';
+                  query += 'date_to=' + $scope.timewindow.selection.to;
+                  break;
+              }
+            }
+            window.location = query;
+        };
+      }]);
+
+
+      function bpsearch(selectid, inputid) {
+
+          var urlBase= "https://bigpanda.cern.ch";
+          var url = "";
+          var searchparam = document.getElementById(selectid);
+          var searchvalue = document.getElementById(inputid);
+
+          if (searchparam.value.length > 0) {
+              switch (searchparam.value) {
+                  case 'pandaid':
+                      urlBase = "{% url 'jobInfo' %}" ;
+                      url = "/";
+                      break;
+                  case 'batchid':
+                      urlBase = "{% url 'jobList' %}" ;
+                      url = "?batchid=";
+                      break;
+                  case 'jeditaskid':
+                      urlBase = "{% url 'taskInfo' %}" ;
+                      url = "/";
+                      break;
+                  case 'taskname':
+                      urlBase = "{% url 'taskList' %}" ;
+                      url = "?taskname=";
+                      break;
+                  case 'reqid':
+                      urlBase = "{% url 'taskList' %}" ;
+                      url = "?reqid=";
+                      break;
+                  case 'campaign':
+                      urlBase = "{% url 'taskList' %}" ;
+                      url = "?campaign=";
+                      break;
+                  case 'project':
+                      urlBase = "{% url 'taskList' %}" ;
+                      url = "?project=";
+                      break;
+                  case 'tag':
+                      urlBase = "{% url 'taskList' %}" ;
+                      url = "/?tag=";
+                      break;
+                  case 'hashtag':
+                      urlBase = "{% url 'taskList' %}" ;
+                      url = "?hashtag=";
+                      break;
+                  case 'site':
+                      urlBase = "{% url 'siteInfo' %}" ;
+                      url = "?site=";
+                      break;
+                  case 'user':
+                      urlBase = "{% url 'userInfo' %}" ;
+                      url = "?user=";
+                      break;
+                  case 'dataset':
+                      urlBase = "{% url 'datasetList' %}" ;
+                      url = "?datasetname=";
+                      break;
+                  case 'filename':
+                      urlBase = "{% url 'fileInfo' %}" ;
+                      url = "?filename=";
+                      break;
+
+              }
+              url += searchvalue.value;
+          }
+
+          window.location = urlBase + url;
+      }
+
+      function refreshPage(notimeurl) {
+        let d = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit'});
+        window.location = notimeurl + 'timestamp=' + d;
+      }
+
+      function clearComparisonList(object) {
+          var newURL = '{{ request.session.notimestampurl|safe }}';
+          $.ajax({
+              url: '/clearcomparison/',
+              data: 'object='+object,
+              async: true,
+              cache: false
+          }).done(function (response) {
+              window.location = newURL
+              });
+      }
+
+      function grantRights(type) {
+          var newURL = '{{ request.session.notimestampurl|safe }}';
+          $.ajax({
+              url: '/grantrights/',
+              data: 'type='+type,
+              async: true,
+              cache: false
+          }).done(function (response) {
+              window.location = newURL
+              });
+      }
+
+      function denyRights(type) {
+          var newURL = '{{ request.session.notimestampurl|safe }}';
+          $.ajax({
+              url: '/denyrights/',
+              data: 'type='+type,
+              async: true,
+              cache: false
+          }).done(function (response) {
+              window.location = newURL
+              });
+      }
+
+      function saveSettings() {
+          var settingTables = getSettings('switch-table');
+          var settingJobAttr = getSettings('switch-jobsattr');
+          var url = '';
+          if (settingTables.length > 0) {
+              url += '&tables=' + settingTables;
+          }
+          url += '&jobattr=' + settingJobAttr;
+          url+='&page=' + 'errors';
+
+          $.ajax({
+              url: {% url 'saveSettings' %},
+              data: url,
+              async: true,
+              success: function() {
+                  window.location = '{{ request.session.notimestampurl|safe }}timestamp={% now "H:i:s" %}'
+              }
+          });
+      }
+    </script>
+  {% endblock %}
+  {% block js_body_page %}{% endblock %}
+  {% block extra_js %}{% endblock %}
+{% endblock %}
+<!-- End Body JS  -->
+</body>
 </html>

@@ -10,11 +10,11 @@
 
 from .columns_config import COLUMNS, ORDER_COLUMNS, COL_TITLES, FILTERS
 
-
 from django.db import models
-models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
-                                 'primaryColumns', 'secondaryColumns', \
-                                 'columnTitles', 'filterFields',)
+models.options.DEFAULT_NAMES += (
+    'allColumns', 'orderColumns', 'primaryColumns', 'secondaryColumns', 'columnTitles', 'filterFields',
+)
+
 
 class MonitorUsers(models.Model):
     userid = models.BigIntegerField(db_column='ID')
@@ -25,6 +25,7 @@ class MonitorUsers(models.Model):
     isactive = models.SmallIntegerField(db_column='ISACTIVE') # Field name made lowercase.
     class Meta:
         db_table = u'MONITOR_USERS'
+        app_label = 'panda'
 
 
 class Getfailedjobshspec(models.Model):
@@ -32,12 +33,16 @@ class Getfailedjobshspec(models.Model):
     timeinhepspec = models.FloatField(default=None, db_column='TIMEINHEPSPEC')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETFAILEDJOBSHSPEC"'
+        app_label = 'pandamon'
+
 
 class Getfailedjobshspecarch(models.Model):
     jeditaskid = models.BigIntegerField(db_column='JEDITASKID')
     timeinhepspec = models.FloatField(default=None, db_column='TIMEINHEPSPEC')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETFAILEDJOBSHSPECARCH"'
+        app_label = 'pandamon'
+
 
 
 class GetRWWithPrioJedi3DAYS(models.Model):
@@ -105,6 +110,7 @@ class GetRWWithPrioJedi3DAYS(models.Model):
 
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."GETRWWITHPRIOJEDI3DAYS"'
+        app_label = 'pandamon'
 
 
 class RemainedEventsPerCloud3dayswind(models.Model):
@@ -112,6 +118,8 @@ class RemainedEventsPerCloud3dayswind(models.Model):
     nrem = models.BigIntegerField(db_column='REMNORMEV')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."REMEVPCL3DAYSWIND"'
+        app_label = 'pandamon'
+
 
 class JobsWorldView(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
@@ -120,6 +128,8 @@ class JobsWorldView(models.Model):
     countjobsinstate = models.IntegerField(db_column='COUNTJOBSINSTATE')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEW"'
+        app_label = 'pandamon'
+
 
 class CombinedWaitActDefArch4(models.Model):
     pandaid = models.BigIntegerField(db_column='PANDAID')
@@ -133,8 +143,13 @@ class CombinedWaitActDefArch4(models.Model):
     es = models.IntegerField(db_column='ES')
     nevents = models.IntegerField(db_column='NEVENTS')
     isarchive = models.IntegerField(db_column='ISARCHIVE')
+    username = models.CharField(max_length=168, db_column='USERNAME')
+    resourcetype = models.CharField(max_length=64, db_column='RESOURCE_TYPE')
+    eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."COMBINED_WAIT_ACT_DEF_ARCH4"'
+        app_label = 'pandamon'
+
 
 class JobsWorldViewTaskType(models.Model):
     nucleus = models.CharField(max_length=10, db_column='NUCLEUS', blank=True)
@@ -145,6 +160,7 @@ class JobsWorldViewTaskType(models.Model):
     es = models.IntegerField(db_column='ES')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."JOBSWORLDVIEWTASKTYPE"'
+        app_label = 'pandamon'
 
 
 class PandaJob(models.Model):
@@ -267,7 +283,9 @@ class PandaJob(models.Model):
     raterbytes = models.BigIntegerField(null=True, db_column='RATERBYTES', blank=True) # Field name made lowercase.
     ratewbytes = models.BigIntegerField(null=True, db_column='RATEWBYTES', blank=True) # Field name made lowercase.
     diskio = models.BigIntegerField(null=True, db_column='DISKIO', blank=True) # Field name made lowercase.
-
+    memoryleak = models.BigIntegerField(null=True, db_column='MEMORY_LEAK', blank=True)
+    memoryleakx2 = models.BigIntegerField(null=True, db_column='MEMORY_LEAK_X2', blank=True)
+    container_name = models.CharField(max_length=765, db_column='CONTAINER_NAME', blank=True)
 
     def __str__(self):
         return 'PanDA:' + str(self.pandaid)
@@ -318,6 +336,10 @@ class PandaJob(models.Model):
                 )
         return fields
 
+    def get_fields_by_type(self, ftype='integer'):
+        field_list = [str(f.name) for f in self._meta.fields if ftype in str(f.description).lower()]
+        return field_list
+
     class Meta:
         abstract = True
         allColumns = COLUMNS['PanDAjob-all']
@@ -334,32 +356,124 @@ class PandaJob(models.Model):
 
 class Jobsactive4(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobsactive4'
+        app_label = 'panda'
+
 
 class Jobsarchived(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobsarchived'
+        app_label = 'panda'
+
 
 class Jobsarchived4(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobsarchived4'
+        app_label = 'panda'
+
 
 class Jobsdefined4(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobsdefined4'
+        app_label = 'panda'
 
     # __getitem__
     def __getitem__(self, name):
-#        return super(HTCondorJob, self).__getattr__(name)
+        # return super(HTCondorJob, self).__getattr__(name)
         return self.__dict__[name]
+
 
 class Jobswaiting4(PandaJob):
     class Meta:
-#        managed = False
         db_table = u'jobswaiting4'
+        app_label = 'panda'
 
 
+# ATLARC DB
+
+class PandaJobArch(models.Model):
+    pandaid = models.BigIntegerField(primary_key=True, db_column='PANDAID') # Field name made lowercase.
+    creationtime = models.DateTimeField(db_column='CREATIONTIME') # Field name made lowercase.
+    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME') # Field name made lowercase.
+    modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True) # Field name made lowercase.
+    transformation = models.CharField(max_length=750, db_column='TRANSFORMATION', blank=True) # Field name made lowercase.
+    prodsourcelabel = models.CharField(max_length=60, db_column='PRODSOURCELABEL', blank=True) # Field name made lowercase.
+    produserid = models.CharField(max_length=750, db_column='PRODUSERID', blank=True) # Field name made lowercase.
+    attemptnr = models.IntegerField(db_column='ATTEMPTNR') # Field name made lowercase.
+    maxattempt = models.IntegerField(db_column='MAXATTEMPT') # Field name made lowercase.
+    jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS') # Field name made lowercase.
+    jobname = models.CharField(max_length=768, db_column='JOBNAME', blank=True) # Field name made lowercase.
+    starttime = models.DateTimeField(null=True, db_column='STARTTIME', blank=True) # Field name made lowercase.
+    endtime = models.DateTimeField(null=True, db_column='ENDTIME', blank=True) # Field name made lowercase.
+    cpuconsumptiontime = models.BigIntegerField(db_column='CPUCONSUMPTIONTIME') # Field name made lowercase.
+    cpuconsumptionunit = models.CharField(max_length=384, db_column='CPUCONSUMPTIONUNIT', blank=True) # Field name made lowercase.
+    transexitcode = models.CharField(max_length=384, db_column='TRANSEXITCODE', blank=True) # Field name made lowercase.
+    piloterrorcode = models.IntegerField(db_column='PILOTERRORCODE') # Field name made lowercase.
+    piloterrordiag = models.CharField(max_length=1500, db_column='PILOTERRORDIAG', blank=True) # Field name made lowercase.
+    exeerrorcode = models.IntegerField(db_column='EXEERRORCODE') # Field name made lowercase.
+    exeerrordiag = models.CharField(max_length=1500, db_column='EXEERRORDIAG', blank=True) # Field name made lowercase.
+    superrorcode = models.IntegerField(db_column='SUPERRORCODE') # Field name made lowercase.
+    superrordiag = models.CharField(max_length=750, db_column='SUPERRORDIAG', blank=True) # Field name made lowercase.
+    ddmerrorcode = models.IntegerField(db_column='DDMERRORCODE') # Field name made lowercase.
+    ddmerrordiag = models.CharField(max_length=1500, db_column='DDMERRORDIAG', blank=True) # Field name made lowercase.
+    brokerageerrorcode = models.IntegerField(db_column='BROKERAGEERRORCODE') # Field name made lowercase.
+    brokerageerrordiag = models.CharField(max_length=750, db_column='BROKERAGEERRORDIAG', blank=True) # Field name made lowercase.
+    jobdispatchererrorcode = models.IntegerField(db_column='JOBDISPATCHERERRORCODE') # Field name made lowercase.
+    jobdispatchererrordiag = models.CharField(max_length=750, db_column='JOBDISPATCHERERRORDIAG', blank=True) # Field name made lowercase.
+    taskbuffererrorcode = models.IntegerField(db_column='TASKBUFFERERRORCODE') # Field name made lowercase.
+    taskbuffererrordiag = models.CharField(max_length=900, db_column='TASKBUFFERERRORDIAG', blank=True) # Field name made lowercase.
+    computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True) # Field name made lowercase.
+    computingelement = models.CharField(max_length=384, db_column='COMPUTINGELEMENT', blank=True) # Field name made lowercase.
+    nevents = models.IntegerField(db_column='NEVENTS') # Field name made lowercase.
+    taskid = models.IntegerField(null=True, db_column='TASKID', blank=True) # Field name made lowercase.
+    statechangetime = models.DateTimeField(null=True, db_column='STATECHANGETIME', blank=True) # Field name made lowercase.
+    pilottiming = models.CharField(max_length=300, db_column='PILOTTIMING', blank=True) # Field name made lowercase.
+    workinggroup = models.CharField(max_length=60, db_column='WORKINGGROUP', blank=True) # Field name made lowercase.
+    processingtype = models.CharField(max_length=192, db_column='PROCESSINGTYPE', blank=True) # Field name made lowercase.
+    produsername = models.CharField(max_length=180, db_column='PRODUSERNAME', blank=True) # Field name made lowercase.
+    parentid = models.BigIntegerField(null=True, db_column='PARENTID', blank=True) # Field name made lowercase.
+    specialhandling = models.CharField(max_length=240, db_column='SPECIALHANDLING', blank=True) # Field name made lowercase.
+    jobsetid = models.BigIntegerField(null=True, db_column='JOBSETID', blank=True) # Field name made lowercase.
+    jobmetrics = models.CharField(max_length=1500, db_column='JOBMETRICS', blank=True) # Field name made lowercase.
+    jeditaskid = models.BigIntegerField(null=True, db_column='JEDITASKID', blank=True) # Field name made lowercase.
+    actualcorecount = models.IntegerField(null=True, db_column='ACTUALCORECOUNT', blank=True)
+    reqid = models.BigIntegerField(null=True, db_column='REQID', blank=True) # Field name made lowercase.
+    nucleus = models.CharField(max_length=200, db_column='nucleus', blank=True) # Field name made lowercase.
+    jobsubstatus = models.CharField(null=True, max_length=80, db_column='JOBSUBSTATUS', blank=True)
+    eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True) # Field name made lowercase.
+    hs06 = models.BigIntegerField(null=True, db_column='HS06', blank=True) # Field name made lowercase.
+    hs06sec = models.BigIntegerField(null=True, db_column='HS06SEC', blank=True) # Field name made lowercase.
+    maxpss = models.BigIntegerField(null=True, db_column='maxpss', blank=True) # Field name made lowercase.
+
+    class Meta:
+        abstract = True
+
+
+class Jobsarchived_y2014(PandaJobArch):
+    class Meta:
+        db_table = u'y2015_jobsarchived'
+        app_label = 'pandaarch'
+
+
+class Jobsarchived_y2015(PandaJobArch):
+    class Meta:
+        db_table = u'"atlas_pandaarch"."y2015_jobsarchived"'
+        app_label = 'pandaarch'
+
+
+class Jobsarchived_y2016(PandaJobArch):
+    class Meta:
+        db_table = u'"atlas_pandaarch"."y2016_jobsarchived"'
+        app_label = 'pandaarch'
+
+
+class Jobsarchived_y2017(PandaJobArch):
+    class Meta:
+        db_table = u'"atlas_pandaarch"."y2017_jobsarchived"'
+        app_label = 'pandaarch'
+
+
+class Jobsarchived_y2018(PandaJobArch):
+    class Meta:
+        db_table = u'"atlas_pandaarch"."y2018_jobsarchived"'
+        app_label = 'pandaarch'

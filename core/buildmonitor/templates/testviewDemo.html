@@ -1,0 +1,88 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Test Summary{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
+
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.dataTables.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+<div>
+
+<div id="hjk">
+    <P><H3><B>Test Results</B></H3>
+       <H3>branch {{ nightly }}, release {{ rel }}, project={{ proj }}, platform={{ ar }}</H3>
+</div>
+
+<div id="linkslist"><P><a href="{% url 'BuildGlobal' %}">Link to global system page</a></div>
+
+<table id="TestsResults" class="stripe">
+     <thead>
+                <th>Result</th>
+                <th>Project</th>
+                <th>Test name</th>
+                <th>Optional<BR>or required</th>
+                <th>Container</th>
+                <th>Time</th>
+     </thead>
+     <tbody></tbody>
+</table>
+
+</div>
+{% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript">
+
+var json = JSON.stringify({{ rows_s | safe }});
+var prjct = "{{ proj|safe }}";
+var projectVisib=false;
+if ( /all/i.test(prjct) || /\*/.test(prjct) ) {
+    projectVisib=true;
+}
+var testdisplayTable = $('#TestsResults').dataTable({
+"order": [[0, 'desc'],[1, 'asc'],[2, 'asc']],
+"pageLength": 100,
+"lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
+"data": JSON.parse(json),
+"columnDefs": [
+    {
+        "targets": [ 1 ],
+        "visible": projectVisib,
+        "searchable": projectVisib
+    }
+],
+"rowCallback": function( row, data, displayIndex ) {
+               var v0v = $('td:eq(0)',row).html();
+               var indvv = 1;
+               if ( projectVisib ) { indvv = 2; }
+               if (/ERROR/.test(v0v)) {
+                   if (row.className == 'even' ){
+                      $('td:eq('+indvv+')', row).css("background-color", "#F99E88") /* .css('opacity', '0.7');  */
+                   } else { $('td:eq('+indvv+')', row).css("background-color", "#F5623D"); }
+                   }
+               else if (/MINOR/.test(v0v)) {
+                   if (row.className == 'even' ){
+                      $('td:eq('+indvv+')', row).css("background-color", "#FFE9BB");
+                   } else { $('td:eq('+indvv+')', row).css("background-color", "#FFD780"); }
+                   }
+               else if (/WARNING/i.test(v0v)) {
+                   if ( row.className == 'even' ){
+                      $('td:eq('+indvv+')', row).css("background-color", "#EAA032");
+                   } else { $('td:eq('+indvv+')', row).css("background-color", "#E58900"); } /* #F0A675 */
+               };
+},
+});
+
+</script>
+{% endblock %}

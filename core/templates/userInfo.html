@@ -14,10 +14,17 @@
 {% endblock %}
 {% block body %}
 
+<div class="callout info" data-closable>
+  <h5><b>Please participate in testing a completely new <a href="{{ xurl }}view=dash">MyBigPanDA page</a></b></h5>
+  <p>The new user dashboard focuses on the progress of your tasks and highlighting of possible problems. </p>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
 
 <p>
 {% if ntasks > 0 or njobsets > 0 or njobs > 0 %}
-<b>Jump to my {% if ntasks > 0 %} <a class="uservisits" href="#tasks">tasks</a> {% endif %} {% if njobsets > 0 %} &nbsp; <a class="uservisits" href="#jobsets">jobsets</a> {% endif %} {% if njobs > 0 %} &nbsp; <a class="uservisits" href="#jobs">jobs</a> {% endif %}
+<b>Jump to my {% if ntasks > 0 %} <a class="uservisits" href="#tasks">tasks</a> {% endif %} {% if njobsets > 0 %}     <a class="uservisits" href="#jobsets">jobsets</a> {% endif %} {% if njobs > 0 %}     <a class="uservisits" href="#jobs">jobs</a> {% endif %}
 {% endif %}
 </b>
 
@@ -103,7 +110,7 @@
 <div class="comment more">
 {% for item in fdict.list %}
 <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{item.kname}} item' {% else %} class="item" {% endif %}> {{ item.kname }} </span>
-<a href="{% url 'taskList' %}?username={{ user }}&{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+<a href="{% url 'taskList' %}?username={{ user }}&{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
 {% endfor %}
 </div></td></tr>
 {% endfor %}
@@ -117,15 +124,15 @@
 <table>
 <tr class='tablesection'><th colspan=20> {{ tasks|length }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
 {% if ntasks >= display_limit_tasks %}
-&nbsp; &nbsp; <font size=-1>Only the most recent {{ display_limit_tasks }} tasks are shown. <a href="{{ url_nolimit_tasks }}">Remove the limit</a></font>
+        <font size=-1>Only the most recent {{ display_limit_tasks }} tasks are shown. <a href="{{ url_nolimit_tasks }}">Remove the limit</a></font>
 {% endif %}
 
-&nbsp; &nbsp; <a href="{% url 'taskList' %}?tasktype=analy&username={{ user }}&days=7&display_limit=300">Show in task list page</a>
+        <a href="{% url 'taskList' %}?tasktype=analy&username={{ user }}&days=7&display_limit=300">Show in task list page</a>
 </th></tr>
 <tr class='tablesection'>
 	<th><a href="{{nosorturl}}#tasks">ID</a><br>Parent</th>
     <th>Jobset</th>
-	<th><a href="{{nosorturl}}sortby=taskname#tasks">Task name</a><br>TaskType/ProcessingType &nbsp; Campaign &nbsp; Group &nbsp; User {% if requestParams.tasktype == 'prod' %} &nbsp; TrackerLink {% endif %}<br><font color='brown'>Logged status</font></th>
+	<th><a href="{{nosorturl}}sortby=taskname#tasks">Task name</a><br>TaskType/ProcessingType     Campaign     Group     User {% if requestParams.tasktype == 'prod' %}     TrackerLink {% endif %}<br><font color='brown'>Logged status</font></th>
 	<th>Task status<br><a href="{{nosorturl}}sortby=nfiles#tasks">Nfiles</a></th>
 	<th>Input files <br><a href="{{nosorturl}}sortby=pctfinished#tasks"><span class='finished'>finish%</span></a> <a href="{{nosorturl}}sortby=pctfailed#tasks"><span class='failed'>fail%</span></a>
 <br>	<a href="{{nosorturl}}sortby=pctfinished#tasks"><span class='finished'>Nfinish</span></a> <a href="{{nosorturl}}sortby=pctfailed#tasks"><span class='failed'>Nfail</span></a>
@@ -143,7 +150,7 @@
 			{% endif %}
 		</td>
 		<td>{{ task.reqid }} </td>
-		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %} &nbsp; <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %} &nbsp; {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a> &nbsp; {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %} &nbsp; <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} <br><font color='brown'>{{ task.errordialog|safe }}</font></td>
+		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %}     <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}     {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %}     <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} <br><font color='brown'>{{ task.errordialog|safe }}</font></td>
 		<td  {% if task.scoutinghascritfailures == True %} class='broken_fill'
              {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
              {% else %} class='{{task.superstatus}}_fill'
@@ -151,7 +158,7 @@
             {% if task.superstatus %} <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.superstatus }}</a> {% else %} <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a> {% endif %}
         {% if task.dsinfo.nfiles > 0 %} <br>{{task.dsinfo.nfiles}} {% endif %} </td>
         <td>{% if task.dsinfo.nfilesfinished > 0 %}<span  class='finished'>{{task.dsinfo.pctfinished}}%</span>{% endif %} {% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span>{% endif %}</a>
-        <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %} &nbsp; {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
+        <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %}     {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
 		</td>
         <td><font size=-1>{{ task.starttime }}</font></td>
 		<td><font size=-1>{{ task.modificationtime }}</font></td>
@@ -167,7 +174,7 @@
 
 <table>
 <tr class='tablesection'><th colspan=20> <a name="jobsets"></a> Recent jobsets {% if njobsetmax <= njobsets %} (listing limited to {{ njobsetmax }}. Use the jobset ranges in the attribute summary to see more jobsets) {% endif %} 
-&nbsp; &nbsp; &nbsp; Note that with JEDI you should pay more attention to tasks than jobsets! <a href="#doc"><span class='helpdark'>See the help section below.</span></a>
+            Note that with JEDI you should pay more attention to tasks than jobsets! <a href="#doc"><span class='helpdark'>See the help section below.</span></a>
 
 </th></tr>
 <tr class='tablesection'>
@@ -233,7 +240,7 @@
 <div class="comment more">
 {% for item in fdict.list %}
 {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
-<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a> &nbsp; 
+<a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
 {% endfor %}
 </div>
 </td></tr>
@@ -243,11 +250,11 @@
 {% endif %}
 
 
-<table>
-<tr class='tablesection'><th colspan=20> {{ jobList|length }} recent jobs {% if display_limit_jobs < njobs %} &nbsp; &nbsp;
+<table style="max-width: 100%">
+<tr class='tablesection'><th colspan=12> {{ jobList|length }} recent jobs {% if display_limit_jobs < njobs %}
 Only the most recent {{ display_limit_jobs }} jobs are shown. <a href="{{ url_nolimit_jobs }}">Remove the limit</a>
 {% endif %}
-&nbsp; &nbsp; &nbsp; Note that with JEDI, tasks are the best tool to monitor the progress of your submissions! <a href="#doc"><span class='helpdark'>See the help section below.</span></a>
+            Note that with JEDI, tasks are the best tool to monitor the progress of your submissions! <a href="#doc"><span class='helpdark'>See the help section below.</span></a>
 </th></tr>
 <tr class='tablesection'>
 	<th>PanDA ID</th>
@@ -278,17 +285,16 @@ Only the most recent {{ display_limit_jobs }} jobs are shown. <a href="{{ url_no
 		<td><font size=-1>{{ job.modificationtime }}</font></td>
 		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
 		<td>{{ job.currentpriority }}</td>
-		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
+		<td class="wrap">{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
 		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
 		</td>
-	<tr><td colspan=11 class='whitecell'> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}{% if job.taskid > 0 %}&taskid={{ job.taskid }}{% endif %}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&produsername={{ job.produsername }}&sortby=attemptnr">{{ job.jobname }}</a></font> </td></tr>
+	<tr><td colspan="11" class='whitecell'> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}{% if job.taskid > 0 %}&taskid={{ job.taskid }}{% endif %}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&produsername={{ job.produsername }}&sortby=attemptnr">{{ job.jobname }}</a></font> </td></tr>
 	</tr>
-	<tr><td colspan="20" class='highlightcell'> Datasets: &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+	<tr><td colspan="11" class='highlightcell'> Datasets:     {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br>    {% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
 
 
     {% endfor %}
 </table>
-
 {% else %}
 
 <p>
@@ -299,9 +305,9 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 
 {% endblock %}
 
-{% block helptext %}
-{% include "userInfoHelp.html" with helptitle="User information page help" %}
-{% include "taskInfoHelp.html" with helptitle="Tasks" %}
-{% include "jobListHelp.html" with helptitle="Job list" %}
-{% include "jobInfoHelp.html" with helptitle="Jobs" %}
+{% block help %}
+{% include "userInfoHelp.html" %}
+{% include "taskInfoHelp.html" %}
+{% include "jobListHelp.html" %}
+{% include "jobInfoHelp.html" with show='all' %}
 {% endblock %}

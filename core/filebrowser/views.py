@@ -5,25 +5,25 @@
 import logging
 import re
 import json
-from datetime import datetime
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, render
-from django.template import RequestContext, loader
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.template.loader import get_template
 from django.conf import settings
-from django.utils.cache import patch_response_headers
-#from django.core.urlresolvers import reverse
-#from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
-get_filebrowser_hostname, remove_folder
+    remove_folder, get_fullpath_filebrowser_directory, list_file_directory
 
-from core.common.models import Filestable4
-from core.views import DateEncoder, DateTimeEncoder
-from core.libs.cache import setCacheEntry, getCacheEntry
+from core.oauth.utils import login_customrequired
+from core.common.models import Filestable4, FilestableArch
+from core.views import DateTimeEncoder, initSelfMonitor
+from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
+hostname = "bigpanda.cern.ch"
 
+
+@login_customrequired
 def index(request):
     """
         index -- filebrowser's default page
@@ -33,10 +33,18 @@ def index(request):
         
     """
 
+    try:
+        initSelfMonitor(request)
+    except:
+        _logger.exception('Failed to init self monitor')
+
     errors = {}
 
+    _logger.debug("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
+
     ### check that all expected parameters are in URL
-    expectedFields = ['guid', 'site', 'scope', 'lfn']
+    # 'site' is not mandatory anymore, so removing it from the list
+    expectedFields = ['guid', 'scope', 'lfn']
     for expectedField in expectedFields:
         try:
             request.GET[expectedField]
@@ -54,7 +62,7 @@ def index(request):
     guid = ''
     site = ''
     pattern_string='^[a-zA-Z0-9.\-_]+$'
-    pattern_site = '^[a-zA-Z0-9.,\-_]+$'
+    pattern_site = '^[a-zA-Z0-9.,\-_\/]+$'
     pattern_guid='^(\{){0,1}[0-9a-zA-Z]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\}){0,1}$'
     try:
         guid = request.GET['guid']
@@ -93,12 +101,46 @@ def index(request):
     except:
         pass
 
+    # check if size of logfile is too big return to user error message with rucio cli command to download it locally
+    max_sizemb = 1000
+    sizemb = -1
+    fsize = []
+    try:
+        fileid = int(request.GET['fileid'])
+    except:
+        fileid = -1
+    lquery = {'type': 'log'}
+    if lfn and len(lfn) > 0:
+        lquery['lfn'] = lfn
+        fsize.extend(Filestable4.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
+        if len(fsize) == 0:
+            fsize.extend(FilestableArch.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
+        if len(fsize) > 0:
+            try:
+                if fileid > 0:
+                    sizemb = round(int([f['fsize'] for f in fsize if f['fileid'] == fileid][0])/1000/1000)
+                else:
+                    sizemb = round(int([f['fsize'] for f in fsize][0])/1000/1000)
+            except:
+                _logger.warning("ERROR!!! Failed to calculate log tarball size in MB")
+
+    _logger.debug("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+
     ### download the file
     files = []
     dirprefix = ''
     tardir = ''
+    if sizemb > max_sizemb:
+        _logger.warning('Size of the requested log is {} MB which is more than limit {} MB'.format(sizemb, max_sizemb))
+        errormessage = """The size of requested log is too big ({}MB). 
+                            Please try to download it locally using Rucio CLI by the next command: 
+                            rucio download {}:{}""".format(sizemb, scope, lfn)
+        data = {
+            'errormessage': errormessage
+        }
+        return render_to_response('errorPage.html', data, content_type='text/html')
     if not (guid is None or lfn is None or scope is None):
-        files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid)
+        files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid, 100)
     else:
         errormessage = ''
         if guid is None:
@@ -113,14 +155,16 @@ def index(request):
         }
         return render_to_response('errorPage.html', data, content_type='text/html')
     if not len(files):
-        msg = 'File download failed. [guid=%s, site=%s, scope=%s, lfn=%s]' % \
-            (guid, site, scope, lfn)
+        msg = 'Something went wrong while the log file downloading. [guid=%s, site=%s, scope=%s, lfn=%s] \n' % \
+              (guid, site, scope, lfn)
         _logger.warning(msg)
         errors['download'] = msg
     if len(errtxt):
         if 'download' not in errors:
             errors['download'] = ''
         errors['download'] += errtxt
+
+    _logger.debug("index step2 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     totalLogSize = 0
     if type(files) is list and len(files) > 0:
@@ -148,16 +192,23 @@ def index(request):
         'guid': guid,
         'MEDIA_URL': settings.MEDIA_URL,
         'viewParams' : {'MON_VO': str(get_filebrowser_vo()).upper()},
-        'HOSTNAME': get_filebrowser_hostname(),
+        'HOSTNAME': hostname,
         'totalLogSize': totalLogSize,
         'nfiles': len(files),
-#        , 'new_contents': new_contents
     }
 
+    _logger.debug("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
     if 'json' not in request.GET:
-        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
+        status = 200
+        # return 500 if most probably there were issue   
+        if 'download' in errors and errors['download'] and len(errors['download']) > 0:
+            if len(fsize) > 0 and 'status' in fsize[0] and fsize[0]['status'] != 'failed' and sizemb <= 0:
+                status = 500
+        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
     else:
-        return HttpResponse(json.dumps(data,cls=DateTimeEncoder), content_type='text/html')
+        resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
+        _logger.debug("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+        return resp
 
 
 
@@ -276,7 +327,7 @@ def api_single_pandaid(request):
         'timestamp': datetime.utcnow().isoformat() \
     }
     if not len(errors):
-        url = 'http://' + get_filebrowser_hostname() + \
+        url = 'http://' + hostname + \
                     settings.MEDIA_URL + dirprefix + '/' + lfn
         data['url'] = url
         ### set request response data
@@ -293,6 +344,64 @@ def api_single_pandaid(request):
         t = get_template('filebrowser/filebrowser_api_single_pandaid.html')
         context = RequestContext(request, {'data':data})
         return HttpResponse(t.render(context), status=400)
+
+
+def get_job_log_file_path(pandaid, filename=''):
+    """
+    Download log tarball of a job and return path to a local copy of memory_monitor_output.txt file
+    :param pandaid:
+    :param filename: str, if empty the function returm path to tarball folder
+    :return: file_path: str
+    """
+    file_path = None
+    files = []
+    scope = ''
+    lfn = ''
+    guid = ''
+    dirprefix = ''
+    tardir = ''
+    query = {}
+    query['type'] = 'log'
+    query['pandaid'] = int(pandaid)
+    values = ['pandaid', 'guid', 'scope', 'lfn']
+    file_properties = []
+
+    file_properties.extend(Filestable4.objects.filter(**query).values(*values))
+    if len(file_properties) == 0:
+        file_properties.extend(FilestableArch.objects.filter(**query).values(*values))
+
+    if len(file_properties):
+        file_properties = file_properties[0]
+        try:
+            guid = file_properties['guid']
+        except:
+            pass
+        try:
+            lfn = file_properties['lfn']
+        except:
+            pass
+        try:
+            scope = file_properties['scope']
+        except:
+            pass
+
+        if guid and lfn and scope:
+            # check if files are already available in common CEPH storage
+            tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/'
+            files, err, tardir = list_file_directory(tarball_path, 100)
+            _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
+            if len(files) == 0 and len(err) > 0:
+                # download tarball
+                _logger.debug('log tarball has not been downloaded, so downloading it now')
+                files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
+                _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
+            if type(files) is list and len(files) > 0 and len(filename) > 0:
+                for f in files:
+                    if f['name'] == filename:
+                        file_path = tarball_path + '/' + tardir + '/' + filename
+
+    _logger.debug('Final path of {} file: {}'.format(filename, file_path))
+    return file_path
 
 
 def delete_files(request):
@@ -314,7 +423,7 @@ def delete_files(request):
     if guid is not None:
         logdir = remove_folder(guid)
         data = {'message':'The folder was cleaned ' + logdir}
-        return HttpResponse(json.dumps(data), content_type='text/html')
+        return HttpResponse(json.dumps(data), content_type='application/json')
     else:
         return HttpResponse(status=404)
 

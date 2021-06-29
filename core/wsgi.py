@@ -37,7 +37,7 @@ except:
     # _logger.exception("Staying with default path: {}".format(path))
 
 # Add the site-packages of the chosen virtualenv to work with
-site.addsitedir(virtualenvPath + '/lib/python2.7/site-packages')
+site.addsitedir(virtualenvPath + '/lib/python3.7/site-packages')
 
 # Add the app's directory to the PYTHONPATH
 sys.path.append(path)
@@ -64,7 +64,15 @@ os.environ['DJANGO_SETTINGS_MODULE'] = DJANGO_SETTINGS_MODULE
 
 # Activate your virtual env
 activate_env = os.path.expanduser(virtualenvPath + '/bin/activate_this.py')
-execfile(activate_env, dict(__file__=activate_env))
+exec(open(activate_env).read(), dict(__file__=activate_env))
+
+from threading import Timer
+import requests
+
+def makeFirstRequest():
+    requests.get("http://127.0.0.1", params={'json':'1'})
+t = Timer(10.0, makeFirstRequest)
+t.start()
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()

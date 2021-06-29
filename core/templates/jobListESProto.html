@@ -16,10 +16,10 @@
 {% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
 {% if requestParams.jobstatus %}<br><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b> {% endif %}
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> &nbsp; <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
-{% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> &nbsp; <a href="{% url 'userInfo' user %}?display_limit=100">Show user page</a></b> {% endif %}
-{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}  &nbsp; {{ taskname }}</a> </b> {% endif %}
-{% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}  &nbsp; {{ taskname }}</a></b> {% endif %}
+{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a>     <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
+{% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a>     <a href="{% url 'userInfo' user %}?display_limit=100">Show user page</a></b> {% endif %}
+{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b> {% endif %}
+{% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b> {% endif %}
 {% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
 {% if requestParams.parentid %}<br><b>Parent ID: {{ requestParams.parentid }}</b> {% endif %}
 {% if requestParams.jobname %}<br><b>Job name: {{ requestParams.jobname }}</b> {% endif %}
@@ -39,7 +39,7 @@
 <font size=-1>
 <br>Dropped (retry):<br>
 {% for drop in droplist %}
-<a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a>&nbsp;(<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>) &nbsp;
+<a href="{% url 'jobInfo' drop.pandaid %}">{{ drop.pandaid }}</a>   (<a href="{% url 'jobInfo' drop.newpandaid %}">{{ drop.newpandaid }}</a>)
 {% endfor %}
 </font>
 </tr></td></table>
@@ -48,7 +48,7 @@
 
 {% if sumd %}
 <table>
-<tr class='tablesection'><th colspan=20> Job attribute summary   &nbsp; Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
+<tr class='tablesection'><th colspan=20> Job attribute summary       Sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
     <td><div class="comment more">
@@ -58,7 +58,7 @@
                 {% if fdict.field == 'JOBSTATUS' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
                 {% if fdict.field == 'EVENTSERVICESTATUS' %} ({{ item.kvalue }}) {% else %}
                     <a {% if item.kname == 'closed:toreassign' %} href="{{xurl}}{{fdict.field}}=closed&jobsubstatus=toreassign"{% else %}
-                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a> &nbsp;
+                                                                  href="{{xurl}}{{fdict.field}}={{item.kname}}" {% endif %}>({{ item.kvalue }})</a>
                 {% endif %}
             {% endif %}
         {% endfor %}
@@ -70,7 +70,7 @@
 
 <table>
 <tr class='tablesection'><th colspan=20>
-<a name="joblist"></a> Job list &nbsp; &nbsp; 
+<a name="joblist"></a> Job list
 {% if display_limit  and display_limit < njobs %}
 <font size=-1>Only the most recent {{ display_limit }} jobs (sorted by PandaID) are shown. Remove the limit and sort by 
 <a href="{{nosorturl}}">PandaID</a>, 
@@ -136,7 +136,7 @@ Sort by
 		</td>
 	<tr><td colspan=20> {{ job.esjobstr }} </td></tr>
 	</tr>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan="20" class='highlightcell'> Datasets: &nbsp; {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> &nbsp;{% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan="20" class='highlightcell'> Datasets:     {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}"> {{ job.proddblock }} </a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br>    {% endif %} <b>Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
 
     {% endfor %}
 </table>
@@ -152,8 +152,8 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 {% endblock %}
 
 
-{% block helptext %}
-{% include "jobListHelp.html" with helptitle="Job list help" %}
-{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
+{% block help %}
+{% include "jobListHelp.html" %}
+{% include "jobInfoHelp.html" with show="all" %}
 {% endblock %}
 

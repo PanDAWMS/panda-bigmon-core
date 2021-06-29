@@ -1,0 +1,543 @@
+{% extends "_base_core.html" %}
+{% load static %}{% load common_tags %}{% load humanize %}
+{% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
+{% block subtitle %}PanDA user <b>{{ user }}</b>{% endblock %}
+{% block time_window %}
+    Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static "js/datatables/Buttons-1.2.4/css/buttons.foundation.min.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/dataTables.buttons.min.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.foundation.min.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.colVis.min.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
+{% endblock %}
+
+
+{% block body %}
+
+<p>
+{# {{ viewParams.selection|safe }} #}
+{% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
+</p>
+
+
+{% if request.user and request.user.is_authenticated and links and links|length > 0 %}
+
+  <div class="card bp-container-simple">
+  <div class="card-divider"><p>Inspired by your visits history:</p></div>
+  <div class="card-section">
+    {% for category, linkslist in links.items %}
+      <p><b>{{ category | title }}:</b></p>
+      <ul class="no-bullet uservisits">
+        {% for link in linkslist %}
+          {% if link.keyparams|length > 0 %}
+            <a href={{ link.url }}>
+              {% for param in link.keyparams %}
+                {% if forloop.first %}{% elif forloop.counter == 2 %}({% else %},{% endif %}
+                {% if param.param == 'status' %}<span class="{{ param.value }}">{{ param.param }}:{{ param.value }}</span>
+                {% elif param.param == 'jeditaskid' or param.param == 'taskid' %}
+                  {% if category != 'task' %}{{ param.param }}:{% endif %}<b>{{ param.value }}</b>
+                {% elif param.param == 'pandaid' %}<b>{{ param.value }}</b>
+                {% elif param.param == 'jobstatus' or param.param == 'status' %}<span class="{{ param.value }}">{{ param.value }}</span>
+                {% elif param.param == 'site' %}<b>{{param.value}}</b>
+                {% elif param.param == 'cloud' %}{{ param.param }}:<b>{{ param.value }}</b>
+                {% else %}{{ param.param }}:{{ param.value }}
+                {% endif %}
+                {% if forloop.last and link.keyparams|length > 1 %}){% else %}{% endif %}
+              {% endfor %}</a>
+          {% else %}<a href={{ link.url }}>{{ link.pagename }}</a>
+          {% endif %}
+        {% if forloop.last %}{% else %},&emsp;{% endif %}
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  </div>
+  </div>
+{% endif %}
+
+<div class="callout info" data-closable>
+  <h5>This is the new user dashboard page! Send your feedback to: <a href="mailto:atlas-adc-pandamon-support@cern.ch">atlas-adc-pandamon-support@cern.ch</a></h5>
+  <p>
+    The new user dashboard focuses on the progress of your tasks and highlighting of possible problems.
+    This page summarizes all the recent user tasks.
+    By default the tasks with a modification date in the last 7 days are selected.
+    You can change the time window by clicking on blue "Change" button in the top subbar.
+  </p>
+  <p>
+    The <b>"User activity overview"</b> section shows overall metrics, that can give a clue of potential problems.
+    Each metric label has 3 color codes:
+    <span class="label ok">OK</span>, <span class="label warning">Warning</span> and <span class="label alert">Alert</span>.
+    For example, if you see <span class="label warning">Median MaxPSS/core: <b>2.3</b>GB</span> ,
+      most probably your jobs consume a lof of memory that can be a cause of jobs failure.
+  </p>
+  <p>
+    Also the <b>"User activity overview"</b> section has 3 plots:
+    <ul>
+      <li><b>Inputs by status</b> represents the total number of input files for all the tasks (excluding aborted) grouped by 3 states:
+        <span class="done">done</span>, <span class="registered">remaining</span> and <span class="failed">failed</span>.
+      </li>
+      <li><b>Tasks by status</b> shows the number of tasks grouped by detailed JEDI task status.
+        The description of task states can be found below. </li>
+      <li><b>Task age histogram</b> displays the distribution of task age.
+        If task ended, the age is difference between end time and creation time.
+        If task is in active state, the age is the current time - creation time.</li>
+    </ul>
+  </p>
+  <p>
+    The full list of tasks are in the table. It is based on a popular DataTable plugin,
+      so the pagination is enabled by default showing 20 tasks by page. You can use "Search" input to filter the tasks.
+    The jobs metrics are calculated per task as well, you can show/hide them by using 2 buttons:
+      <b>"Show all metrics"</b> and <b>"Minimize view"</b>.
+    The <b>"Top job errors, count [code] message"</b> column shows the top-3 job errors per task,
+      the count is clickable and goes to a classic jobs page.
+    The <b>"Task ID"</b> links goes to a task page,
+      the  <b>"Jobs failure, %"</b> links goes to error summary page for a task.
+  </p>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+
+{% if ntasks > 0 %}
+  <div id="scope" data-ng-controller="userDashController" class="ng-cloak">
+  <div class="card bp-container-simple secondary" id="plots">
+    <div class="card-divider"><p>User activity overview:</p></div>
+    <div class="card-section">
+      <p>
+        <span class="label medium" ng-repeat="m in userinfo.metrics" ng-class="m.class">{$ m.title $}: <b>{$ m.value $}</b> {$ m.unit $}</span>
+      </p>
+      <div class="c3-chart-block" ng-repeat="plot in userinfo.uts_plots.plot_data" uaplot-directive plot="plot" parent="$parent"></div>
+    </div>
+  </div>
+
+  <div class="card bp-container-simple secondary" id="container_tasks">
+  <div class="card-divider"><p>{{ ntasks }} tasks:</p></div>
+  <div class="card-section">
+    <p ng-bind-html="userinfo.message"></p>
+    <table class="data-table" id="taskstable">
+        <thead></thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+    </table>
+  </div>
+  </div>
+  </div>
+
+{% else %}
+  <div class="card bp-container-simple info">
+  <div class="card-divider"><p>No tasks were found.</p></div>
+  </div>
+{% endif %}
+
+
+
+{% endblock %}
+
+{% block js_body_page %}
+
+<script src="{% static 'js/d3jsplot.js' %}"></script>
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+
+
+<script type="text/javascript">
+
+  var plot_data = {{ plots|safe }};
+  var metrics = {{ metrics|safe }};
+  app.controller('userDashController', function($scope, $http, $sce) {
+    $scope.userinfo = {
+      page: {
+        width: getWidth(),
+        screen_cat: getScreenCategory(getWidth()),
+      },
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      metrics: metrics,
+      tasks: {
+        list: [],
+        is_loaded: false,
+      },
+      uts_plots: {
+        plot_data: plot_data,
+        charts: {}
+      }
+    };
+
+    $scope.userinfo.uts_plots.plot_data.forEach((item) => {
+      if ($scope.userinfo.page.screen_cat === 'small') {
+        item.options.size = [getWidth() - 40, 300];
+      }
+      else {
+        item.options.size = [getWidth() / $scope.userinfo.uts_plots.plot_data.length - 20, 300];
+      }
+    });
+
+    $scope.userinfo.uts_plots.build = function () {
+      $scope.userinfo.uts_plots.plot_data.forEach((item) => {
+        if (item.type === 'pie') {
+          $scope.userinfo.uts_plots.charts[item.name + "_chart"] = draw_donut(
+            item.data,
+            item.name + "_chart",
+            item.title,
+            item.options,
+          );
+        }
+        else if (item.type === 'bar') {
+          $scope.userinfo.uts_plots.charts[item.name + "_chart"] = draw_bar(
+            item.data,
+            item.name + "_chart",
+            item.title,
+            item.options)
+        }
+      });
+    };
+
+
+    $scope.userinfo.getData = function () {
+      $http({
+              url: '/api/user_dash/initial/',
+              method: "GET",
+              params: {'tk':{{ tk|safe }}, }
+          }
+      ).then(function success(res) {
+        if (res.data && res.data.msg.length === 0) {
+          $scope.userinfo.message = "";
+          let ua_metrics = angular.fromJson(res.data.data.metrics);
+          if (ua_metrics && ua_metrics.length > 0) {
+            ua_metrics.forEach((item) => {
+              $scope.userinfo.metrics.push(item);
+            })
+          }
+          $scope.userinfo.tasks.list = angular.fromJson(res.data.data.tasks_metrics);
+          $scope.userinfo.buildTasksTable();
+        }
+        else {
+          $scope.userinfo.message = $sce.trustAsHtml('Failed to load data :( ');
+        }
+      },
+      function error(res) {
+          $scope.userinfo.message = $sce.trustAsHtml('Failed to load data :( ');
+        }
+      );
+    };
+
+    $scope.userinfo.buildTasksTable = function () {
+      $scope.userinfo.tasksDataTable = $('#taskstable').DataTable({
+      "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+      "iDisplayLength": 20,
+      "paging": true,
+      "scrollX": true,
+      "aaSorting": [[0, 'desc']],
+      "columnDefs": [
+          {"type": "num-html", "targets": [0,1,4,5,7,10,11,12,13,14,15,17,18] }
+      ],
+      "data": $scope.userinfo.tasks.list,
+      "buttons": [
+        {
+          extend: 'colvisGroup',
+          text: 'Minimize view',
+          hide: [ 5,11,12,13,14,15, ],
+        },
+        {
+          extend: 'colvisGroup',
+          text: 'Show all metrics',
+          show: ':hidden',
+        }
+      ],
+      "aoColumns": [
+        {
+          title: "Task ID",
+          {#data: "jeditaskid",#}
+          sDefaultContent: "-",
+          render: function(data, type, row, meta) {
+            if (data) {
+              return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Attempt",
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "Type",
+          {#data: "tasktype",#}
+          sDefaultContent: "-",
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              return (data !== 'prod') ? 'analy' : 'prod';
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Task name",
+          {#data: "taskname",#}
+          sDefaultContent: "-",
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              switch ($scope.userinfo.page.screen_cat) {
+                case 'small':
+                  return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');
+                case 'medium':
+                  return data.replace(/\./g, '.<wbr>');
+                case 'large':
+                  return data;
+                default:
+                  return data.replace(/\./g, '.<wbr>');
+              }
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "N files total",
+          {#data: "nfiles",#}
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "N files done",
+          {#data: "nfilesfinished",#}
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "N files failed",
+          {#data: "nfilesfailed",#}
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "Progress, %",
+          {#data: "pctfinished",#}
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "Status (PS2)",
+          {#data: "superstatus",#}
+          sDefaultContent: "-",
+          className: 'state',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return '<a href="{{ xurl }}superstatus=' + data + '">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Status (JEDI)",
+          {#data: "status",#}
+          sDefaultContent: "-",
+          className: 'state',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return '<a href="{{ xurl }}status=' + data + '">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Age, days",
+          {#data: "age",#}
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "Queue time, hours",
+          {#data: "job_queuetime",#}
+          sDefaultContent: "-",
+          className: 'num',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return data;
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Wall time, hours",
+          {#data: "job_walltime",#}
+          sDefaultContent: "-",
+          className: 'num',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return data;
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Max PSS/core, GB",
+          {#data: "job_maxpss_per_actualcorecount",#}
+          sDefaultContent: "-",
+          className: 'num',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return data;
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Jobs efficiency",
+          {#data: "job_efficiency",#}
+          sDefaultContent: "-",
+          className: 'num',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return data;
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Jobs attempts",
+          {#data: "job_attemptnr",#}
+          sDefaultContent: "-",
+          className: 'num',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return data;
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Task logged status",
+          {#data: "errordialog",#}
+          sDefaultContent: "-",
+          className: 'alert',
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              return data.replace(/\_/g, '_<wbr>');
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Jobs failure, %",
+          {#data: "job_failed",#}
+          sDefaultContent: "-",
+          className: 'num',
+          render: function(data, type, row, meta) {
+            if (data && data > 0) {
+              return '<a href="{% url 'errorSummary' %}?jeditaskid=' + row[0] + '">' + data + '</a>'
+            }
+            else {
+              return 0
+            }
+          },
+        },
+        {
+          title: 'Top job errors, count [code] "sample message"',
+          {#data: "top_errors",#}
+          sDefaultContent: "-",
+          className: 'alert',
+          render: function(data, type, row, meta) {
+            if (data && data.length > 2 ) {
+              return data.replace(/\./g, '.<wbr>');
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+      ],
+      createdRow: function ( row, data, index ) {
+          $('td', row).eq(8).addClass(data[8] + '_fill');
+          $('td', row).eq(9).addClass(data[9] + '_fill');
+        },
+      });
+
+      $scope.userinfo.tasksDataTable.columns( [ 5,11,12,13,14,15 ] ).visible( false );
+      $scope.userinfo.tasksDataTable.buttons().container().appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
+
+    };
+
+    $scope.userinfo.init = function () {
+      $scope.userinfo.getData();
+
+    };
+    $scope.userinfo.init();
+
+
+
+  })
+  .directive('uaplotDirective', function ($timeout) {
+      var template = '<div id="{$plot.name$}_chart"></div>';
+      return {
+          template: template,
+          scope: {
+              plot: '=',
+              parent: '=',
+          },
+          link: function (scope, element, attrs) {
+            $timeout(() => {
+              element.ready(() => {
+                if (scope.plot.type === 'pie') {
+                  scope.parent.userinfo.uts_plots.charts[scope.plot.name + "_chart"] = draw_donut(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.title,
+                    scope.plot.options)
+                }
+                else if (scope.plot.type === 'bar') {
+                  scope.parent.userinfo.uts_plots.charts[scope.plot.name + "_chart"] = draw_bar(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.title,
+                    scope.plot.options)
+                }
+              });
+            });
+          }
+      };
+  });
+
+
+</script>
+{% endblock %}
+
+
+{% block help %}
+{% include "userInfoHelp.html" with view='dash' show='all' %}
+{% endblock %}

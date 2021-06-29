@@ -1,0 +1,189 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Jobs Buster{% endblock %}
+{% block subtitle %}Jobs Buster{{ viewParams.selection|safe }}{% endblock %}
+
+{% block time_window %}
+    Time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
+
+{% block css_page_library %}
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.css" rel="stylesheet">
+{% endblock %}
+{% block js_head_page_library %}
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
+  <script src="{% static 'js/datatables/moment.min.js' %}"></script>
+
+    <!-- jsPanel CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/jspanel.css" rel="stylesheet">
+    <!-- jsPanel JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/jspanel.js"></script>
+
+    <!-- optional jsPanel extensions -->
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/modal/jspanel.modal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/tooltip/jspanel.tooltip.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/hint/jspanel.hint.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/layout/jspanel.layout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/contextmenu/jspanel.contextmenu.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.10.1/dist/extensions/dock/jspanel.dock.js"></script>
+
+{% endblock %}
+
+
+{% block body %}
+
+<table class="minimalistic-table">
+  <thead>
+    <tr>
+        <th><h1><a href="?&metric=loss">
+            {% if not metric or metric == 'loss'%}<u>{% endif %}Order by lost walltime{% if not metric or metric == 'loss'%}</u>{% endif %}</a></h1></th>
+        <th><h1><a href="?&metric=fails">
+            {% if metric == 'fails'%}<u>{% endif %}Order by failures counts{% if metric == 'fails'%}</u>{% endif %}
+            </a></h1></th>
+        <th>
+            <select id="jobtype">
+                <option value="all" selected="selected" {% if requestParams.computetype == 'all' %} disabled="disabled" {% endif %}>GRID+HPC</option>
+                <option value="grid" {% if requestParams.computetype == 'grid' %} selected="selected" {% endif %}>GRID</option>
+                <option value="hpc" {% if requestParams.computetype == 'hpc' %} selected="selected" {% endif %}>HPC</option>
+            </select>
+
+        </th>
+
+    </tr>
+
+  </thead>
+  <tbody>
+
+  </tbody>
+</table>
+
+{% if 'warning' in message %}
+    <p>
+    <div class="callout warning" data-closable>
+      <h5>Warning!</h5>
+      <p>{{ message.warning }}</p>
+      <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true"><i class="fi-x"></i></span>
+      </button>
+    </div>
+{% endif %}
+
+<div id="time-window-chart_c3js" style="height: 300px; width: 100%;"></div>
+<input type="hidden" id="myVar" name="variable" value="{{ errormessages }}">
+
+{% if spots|length > 0 %}
+<div class="tiles small-up-1 medium-up-6 large-up-10">
+{% for problem in spots %}
+    <div class="column">
+        <a href="{{ problem.url }}" target="_blank">
+            <div class="card tile warning-light" style="background-color: {{ problem.color }};">
+                <div class="card-divider">
+                    <b><b>{{ problem.name }}:</b> lost {{ problem.impactloss }} years / {{ problem.impactfails }} jobs failed</b>
+                </div>
+                <div class="card-section">
+                {% for iparam, ivalue in problem.params.items %}
+                    <p>{{ iparam }}: <b>{{ ivalue }}</b></p>
+                {% endfor %}
+                </div>
+                   <p><a onClick='showerrors({{ problem.errormessagesid }})'>show errors</a></p>
+            </div>
+        </a>
+    </div>
+{% endfor %}
+{% else %}
+    <p>No error peaks were spotted. Please extend time range.</p>
+{% endif %}
+</div>
+
+{% endblock %}
+
+{% block js_body_page %}
+
+<script>
+$(document).ready(function () {
+    var formatRound = d3.format(".3f");
+    var tw_c3js = c3.generate({
+        bindto: '#time-window-chart_c3js',
+        data: {
+            x: 'x',
+            xFormat: '%Y-%m-%d %H:%M:%S',
+            columns: {{ mesures|safe }},
+            {% if doGroup %}
+            groups: [{{ issnames|safe }}],
+            {% endif %}
+            type: 'bar',
+            colors: {{ colors|safe }},
+        },
+        axis: {
+            x: {
+                type: 'timeseries',
+                tick: {
+                    format: '%Y-%m-%d %H:%M:%S',
+                    rotate: -30,
+                }
+            },
+            y: {
+                tick: {
+                    format: function (d) { return d; }
+                },
+                label: {
+    {% if metric and metric == 'fails'%}
+                  text: 'N Failes',
+    {% else %}
+                  text: 'walltime * cores loss [years]',
+    {% endif %}
+
+                  position: 'outer-middle'
+                }
+            }
+        },
+        tooltip: {
+            format: {
+                value: function (value, ratio, id) {
+                    return (value > 0 && value % 1 !== 0) ? formatRound(value) : value;
+                }
+            }
+        },
+        padding: {
+            top: 0,
+            right: 10,
+            bottom: 0,
+            left: 80,
+        },
+    });
+});
+
+
+$( "#jobtype" ).change(function() {
+    window.location = "{{ urlBase|safe }}" + "computetype="+this.value;
+});
+
+var errormessages = JSON.parse(document.getElementById("myVar").value);
+
+function showerrors(id) {
+    jsPanel.create({
+    theme:       'primary',
+    headerTitle: 'Errors messages',
+    position:    'center-top 0 58',
+    contentSize: '450 250',
+    content:     errormessages[id],
+    callback: function () {
+        this.content.style.padding = '20px';
+    },
+    });
+}
+
+</script>
+
+{% endblock %}
+
+{% block help %}
+    <a name="help"></a>
+    {% include "jobBusterHelp.html"  %}
+{% endblock %}

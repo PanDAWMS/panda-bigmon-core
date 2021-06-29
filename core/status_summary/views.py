@@ -50,6 +50,7 @@ def index_data(request):
                 ?mcp_cloud ... cloud field of the jobs tables
                 ?computingsite ... computingsite field of the jobs tables
                 ?jobstatus ... PanDA job status, list delimited by comma
+                ?jobtype ... PanDA job type: production, analysis or test
             
             * filtering on PanDA schedresource properties
                 ?corecount .. corecount field of the schedconfig table
@@ -66,8 +67,8 @@ def index_data(request):
         GET_parameters[p] = str(request.GET[p])
 
     ### time range from request.GET
-    optionalFields = ['nhours', 'starttime', 'endtime', \
-                      'mcp_cloud', 'computingsite', 'jobstatus', 'corecount', \
+    optionalFields = ['nhours', 'starttime', 'endtime',
+                      'mcp_cloud', 'computingsite', 'jobstatus', 'corecount', 'jobtype',
                       'cloud', 'atlas_site', 'status']
     for optionalField in optionalFields:
         try:
@@ -86,9 +87,7 @@ def index_data(request):
     ### if all expected GET parameters are present, execute log lookup
 
     ### get queries
-    query, exclude_query, starttime, endtime, nhours, errors_GET, \
-        schedconfig_query, schedconfig_exclude_query = \
-        build_query(GET_parameters)
+    query, exclude_query, starttime, endtime, nhours, errors_GET, schedconfig_query, schedconfig_exclude_query = build_query(GET_parameters)
 
     ### query jobs for the summary
     qs = []
@@ -162,7 +161,7 @@ def index_data(request):
             query_merge[new_key] = schedconfig_exclude_query[key]
 
     ### set request response data
-    data = { \
+    data = {
         'errors_GET': errors_GET,
         'starttime': starttime,
         'endtime': endtime,
@@ -197,7 +196,7 @@ def api_status_summary(request):
 
     if not len(errors) and len(raw_data):
         ### set request response data
-        return  HttpResponse(json.dumps(data), content_type='text/html')
+        return  HttpResponse(json.dumps(data), content_type='application/json')
     elif not len(raw_data):
         return  HttpResponse(json.dumps(data), content_type='application/json', status=404)
     else:

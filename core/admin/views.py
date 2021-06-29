@@ -1,4 +1,4 @@
-import logging, re, json, commands, os, copy
+import logging, re, json, subprocess, os, copy
 from datetime import datetime, timedelta
 import time
 import json
@@ -12,7 +12,6 @@ from django.utils import timezone
 from django.utils.cache import patch_cache_control, patch_response_headers
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from core.common.models import RequestStat
 from core.settings.config import ENV
 from time import gmtime, strftime
 from core.common.models import Users
@@ -109,7 +108,6 @@ def listReqPlot(request):
 
     values = 'urls', 'qtime','remote','qduration','duration'
     reqs=[]
-    reqs = RequestStat.objects.filter(**query).order_by(sortby).reverse().values(*values)
 
     reqHist = {}
     drHist =[]

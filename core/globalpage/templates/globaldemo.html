@@ -1,0 +1,73 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}ATLAS Nightlies and CI Global Page{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
+
+{% block body %}
+
+<div>
+<P>
+<link rel="stylesheet" type="text/css" href="/static/js/datatables/datatables.min.css"/>
+  <script type="text/javascript" src="/static/js/datatables/datatables.min.js"></script>
+  <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
+
+<div id="hjk">
+    <P><H3>ATLAS Nightlies and CI Global Page</H3>
+
+</div>
+
+<table id="firstGlobalExample" class="stripe">
+     <thead>
+                <th>Nightly Group</th>
+                <th>Branch</th>
+                <th>Recent<BR>Release</th>
+                <th>Build time</th>
+                <th>Compilation Errors<BR>(w/warnings)</th>
+                <th>Pct. of Successful<BR>CTest or ATN tests<BR>(no warnings)</th>
+                <th>ORDER string</th>
+     </thead>
+     <tbody></tbody>
+    </table>
+<script type="text/javascript">
+
+var firstExampleTable = $('#firstGlobalExample').dataTable({
+"order": [[6, 'asc']],
+"pageLength": 100,
+"lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
+"columnDefs": [
+       {
+                "targets": [ 6 ],
+                "visible": false,
+                "searchable": false
+       }],
+"ajax": {
+                 "processing": true,
+                 "url": "{% url 'SITGlobalData' %}",
+                 "dataSrc" : ''},
+
+"rowCallback": function( row, data, displayIndex ) {
+                 var v4=($('td:eq(4)',row).text().split(" "))[0];
+                 var v5=($('td:eq(5)',row).text().split(" "))[0];
+                 if ( v4 > 6 ) { $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( /\s/.test(v4) )  { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v5 < 95 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v5 < 32 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v5 != 'N/A' )  { $('td:eq(5)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(5)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+
+/*
+                 if (v4 >= 0) {
+                 $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");
+                 };
+*/
+},
+});
+
+</script>
+</div>
+{% endblock %}

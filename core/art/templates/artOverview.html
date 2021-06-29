@@ -1,11 +1,12 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load common_tags %}
 {% block page_title %}ART nightly tests{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}">
+{% block css_page %}
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
 {% endblock %}
 {% block subtitle %}Overview of ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
+
 
 <a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
 {% if requestParams.view and requestParams.view == 'branches' %}
@@ -21,7 +22,9 @@
 {% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
-<div class="row">
+{% if artpackages|length > 0 %}
+
+<div class="row collapse">
   <div class="columns">
     <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
       {% for pname,pack in artpackages.items %}
@@ -50,11 +53,12 @@
                       {% for tags,files in pack.items %}
                           {% if tags == ntag %}
                               <td class="cell">
-                                {% if files.finished > 0 or files.failed > 0 or files.active > 0 %}
+                                {% if files.finished > 0 or files.failed > 0 or files.active > 0 or files.succeeded > 0 %}
                                     <div class="clickable">
+                                        <div class="active">{{ files.active }}</div>
+                                        <div class="succeeded">{{ files.succeeded }}</div>
                                         <div class="finished">{{ files.finished }}</div>
                                         <div class="failed">{{ files.failed }}</div>
-                                        <div class="active">{{ files.active }}</div>
                                         <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% if requestParams.branch  %}&branch={{ requestParams.branch }}{% endif %}{% else %}?branch={{ pname }}{% if requestParams.package  %}&package={{ requestParams.package }}{% endif %}{% endif %}&ntag={{ tags }}"></a>
                                     </div>
                                 {% else %}
@@ -75,4 +79,21 @@
   </div>
 </div>
 
+{% else %}
+
+<p></p>
+<div class="callout alert" data-closable>
+  <h5>No tests were found for provided selection parameters!</h5>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block help %}
+    <a name="help"></a>
+    {% include "artHelp.html" %}
 {% endblock %}

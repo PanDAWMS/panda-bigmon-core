@@ -1,0 +1,26 @@
+<a name="helpAPI"></a>
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>API</p></div>
+<div class="card-section">
+
+<p>
+It is possible to retrieve data in json format via curl so that it can be used programmatically.
+  Do not use web page scraping; if you need info, ask how to get it.
+  An example curl command is as follows; it takes the same url parameters as the browser version.</p>
+<p><b>If you are using lxplus:</b></p>
+  <code>cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt</code><br>
+  <code>curl -b bigpanda.cookie.txt -H 'Accept: application/json' -H 'Content-Type: application/json' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"
+</code>
+
+<p><b>If you are retrieving JSON outside of CERN:</b></p>
+  <code>ssh username@lxplus.cern.ch "cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;"</code><br>
+  <code>ssh username@lxplus.cern.ch 'curl -b ~/bigpanda.cookie.txt -H '"'"'Accept: application/json'"'"' -H '"'"'Content-Type: application/json'"'"' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"'</code>
+
+<p>The first command performs SSO authentication, the second delivers needed information. You may reuse single cookie until it get expired.
+
+
+  <p>What you get is a list with each element a dictionary with info for a task.
+  If your request is for a single task (jeditaskid=N), you get additional info: an element 'datasets' in the task dictionary with input/output dataset info.</p>
+
+</div>
+</div>

@@ -27,16 +27,22 @@ function disableDetails(tablename) {
     var switchname = 'switch-' + basename;
     var switches = document.getElementsByName(switchname);
     if (!input.checked) {
-        for (var sw = 0; sw<switches.length; sw++ ) {
-            if (switches[sw].hasAttribute('checked')) {
-                switches[sw].removeAttribute('checked');
+        if (switches.length > 0) {
+            for (var sw = 0; sw < switches.length; sw++) {
+                if (switches[sw].hasAttribute('checked')) {
+                    switches[sw].removeAttribute('checked');
+                }
             }
         }
-        document.getElementById(switchmenuid).setAttribute('aria-expanded', 'false');
-        document.getElementById(switchmenuid).classList.add('invisible');
+        if (document.getElementById(switchmenuid) !== null) {
+            document.getElementById(switchmenuid).setAttribute('aria-expanded', 'false');
+            document.getElementById(switchmenuid).classList.add('invisible');
+        }
     }
     else {
-        document.getElementById(switchmenuid).classList.remove('invisible');
+        if (document.getElementById(switchmenuid) !== null) {
+            document.getElementById(switchmenuid).classList.remove('invisible');
+        }
         // var userSettings = {{ userPreferences.jobattr | safe }} ;
         // for (var i = 0; i<switches.length; i++ ) {
         //     if (userSettings.indexOf(switches[i].id.split('-')[2]) != -1) {

@@ -1,0 +1,92 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}ATLAS CI Builds Summary{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
+
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.dataTables.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+<div>
+
+<div id="hjk">
+    <P><H3>ATLAS CI Builds Summary</H3>
+</div>
+
+<div id="notes"><P><UL><LI><a href="{% url 'BuildGlobal' %}">Link to global system page</a><LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a><LI><a href="http://alibrari.web.cern.ch/alibrari/mr-problems-bp.html">Merge Request Problems Display (from C. Suster)<LI><a href="http://atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/ci/plots">CI analytics (build and test time distributions)</a></UL></div>
+
+<table id="CISummary" class="stripe">
+     <thead>
+                <th>Release</th>
+                <th>Platform</th>
+                <th>Project</th>
+                <th>git branch<BR>(link to MR)</th>
+                <th>Job time stamp</th>
+                <th>git clone</th>
+                <th>Externals<BR>build</th>
+                <th>CMake<BR>config</th>
+                <th>Build time</th>
+                <th>Comp. errors<BR>(w/warnings)</th>
+                <th>Test time</th>
+                <th>CI tests errors<BR>(w/warnings)</th>
+                <th>Host</th>
+     </thead>
+     <tbody></tbody>
+</table>
+
+</div>
+{% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript">
+
+var json=JSON.stringify({{ rows_s | safe }});
+
+var cidisplayTable = $('#CISummary').dataTable({
+"order": [[4, 'desc']],
+"pageLength": 100,
+"lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
+"data": JSON.parse(json),
+"rowCallback": function( row, data, displayIndex ) {
+                 var v0=($('td:eq(0)',row).text().split("-"))[1];
+                 var v0I = parseInt(v0, 10);
+                 var v0F = 0.5;
+                 if ( v0I > 20000 && v0I < 30000 ) { v0F = (v0I - 20000)/11000;}
+                 else if ( v0I >= 30000 && v0I < 32000 ) { v0F = (v0I - 26000)/11000;}
+                 else if ( v0I >= 32000 && v0I < 34000 ) { v0F = (v0I - 28000)/11000;}
+                 else if ( v0I >= 34000 && v0I < 36000 ) { v0F = (v0I - 30000)/11000;}
+                 else if ( v0I >= 38000 ) { v0F = (v0I - 32000)/11000;}
+                 else if ( v0I >= 30000 && v0I < 40000 ) { v0F = (v0I - 30000)/11000;}
+                 var hexV0 = '#F'+Math.floor(v0F*1048575).toString(16);
+                 $('td:eq(0)', row).css("background-color", hexV0).css("border", "1px solid rgb(197, 219, 236)");
+                 var v9=($('td:eq(9)',row).text().split(" "))[0];
+                 var v11=($('td:eq(11)',row).text().split(" "))[0];
+                 if ( v9 > 6 ) { $('td:eq(9)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v9 > 0 ) { $('td:eq(9)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( /\s/.test(v9) )  { $('td:eq(9)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(9)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v11 > 0 && v11 <= 1 ) { $('td:eq(11)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v11 > 1 ) { $('td:eq(11)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v11 != 'N/A' )  { $('td:eq(11)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 else { $('td:eq(11)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+
+/*
+                 if (v9 >= 0) {
+                 $('td:eq(9)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");
+                 };
+*/
+},
+});
+
+</script>
+{% endblock %}

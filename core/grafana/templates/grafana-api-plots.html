@@ -1,0 +1,97 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% block page_title %} Plots generator from Grafana API data {% endblock %}
+{% block subtitle %} Plots
+{% endblock %}
+{% block extra_css %}
+
+{% endblock %}
+{% block extra_js %}
+    <script src="/static/js/d3js-grafana.js"></script>
+{% endblock %}
+{% block body %}
+
+<table class="minimalistic-table">
+  <thead>
+    <tr>
+        <th>Group by</th>
+        <th>Split series</th>
+        <th>Plots</th>
+        <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+        <td>
+            <select id="group_by" onchange="onSubElementChoice()">
+                {% for gb, name in group_by.items %}
+                    <option value={{ gb }}{% if gb == requestParams.group_by %} selected="selected" {% endif %}> {{ name }} </option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <select id="split_series" onchange="onSubElementChoice()">
+                <option value="no"{% if not requestParams.split_series or requestParams.split_series == 'no' %} selected="selected" {% endif %}>No</option>
+                {% for ss, name in split_series.items %}
+                    <option value={{ ss }}{% if ss == requestParams.split_series %} selected="selected" {% endif %}> {{ name }} </option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+          <ul class="no-bullet">
+              {% for plot, name in plots.items %}
+                  <li class="item"><input id="{{ plot }}" class="fieldtoplot" type="checkbox"><label for="{{ plot }}">{{ name }}</label></li>
+              {% endfor %}
+          </ul>
+        </td>
+        <td>
+            <a onclick="go()" class="button primary">Go!</a>
+        </td>
+    </tr>
+  </tbody>
+</table>
+<p>
+
+<p>
+<div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
+<p>
+
+<div class="d3splot" id="plots" style="float:left"></div>
+
+<script>
+function onSubElementChoice() {
+    var warning = document.getElementById ("warning");
+    warning.style.display = '';
+}
+function go() {
+    d3.select("#plots").selectAll("*").remove();
+    var group_byQ = "";
+    var split_seriesQ = "";
+    var group_by = document.getElementById ("group_by");
+    var split_series = document.getElementById ("split_series");
+    var query = '' ;
+
+
+    if (group_by.value.length > 0) group_byQ = "groupby="+group_by.value;
+    if (split_series.value.length > 0 && split_series.value != 'no') group_byQ += ',' + split_series.value;
+
+    if ((group_byQ.length>1) || (split_seriesQ.length>1) ) {
+        query += "table=completed&field=sum_cpuconsumptiontime&";
+        if (group_byQ.length > 1) {
+            query += group_byQ+"&";
+        }
+        query += "type=d3js"
+    }
+    $.ajax({
+        url: '{% url 'grafana_api' %}',
+        data: query,
+        dataType:'json',
+        success: function(response) {
+            var plotData = response;
+            stackedHistOrdinal(plotData, '#plots', 'CPU Consumption');
+        }
+    });
+}
+</script>
+{% endblock %}

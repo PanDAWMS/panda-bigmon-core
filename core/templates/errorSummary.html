@@ -1,11 +1,351 @@
 {% extends "_base_core.html" %}
 {% load static %}
+{% load common_tags %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA job errors{% endblock %}
+{% block subtitle %}PanDA job error summary{{ viewParams.selection|safe }}
+{% if user %}     user={{ user }} {% endif %}
+{% if site %}     site={{ site }} {% endif %}
+{% if vo %}     VO={{ vo }} {% endif %}
+{% endblock %}
+{% block subtitle_params %}
+{% if jobsErrorsTotalCount != None%} <b> Total jobs found &#x7E; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">{{ jobsErrorsTotalCount }}</a></b> {% endif %}
+{% endblock %}
+
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block js_head_page_library %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/Select-1.2.0/js/dataTables.select.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <script src="{% static "js/clipboardjs/clipboard.min.js" %}"></script>
+    <script src="{% static "js/jquery.shorten.1.0.js" %}"></script>
+    <!-- Load d3.js and c3.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
+{% endblock %}
+
+{% block body %}
+{{ viewParams.header }}
+
+<b>{{ njobs }} jobs found. Show jobs: </b>
+    <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed </b></a>,
+    <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{limit}}&mode=nodrop"><b> All</b></a>
+
+{% if sortby == "count" %}
+<p>Sort by <b>count</b>, <a href="{{nosorturl}}">alpha</a>
+{% else %}
+<p>Sort by <a href="{{xurlsubst}}sortby=count">count</a>, <b>alpha</b>
+{% endif %}
+
+{% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
+{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
+{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a></b> {% endif %}
+{% if requestParams.produsername %}<br><b>User: <a href="{% url 'userInfo' requestParams.produsername %}?display_limit=100">{{ requestParams.produsername }}</a></b> {% endif %}
+{% if requestParams.jeditaskid %}<br><b>JEDI Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}     {{ taskname }}</a> </b> {% endif %}
+
+{% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
+{% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
+
+{% if requestParams.taskid %}<br><b>Task ID: {{ requestParams.taskid }}</b> {% endif %}
+{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
+{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
+
+<p>
+
+<p>Job modification times in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>,
+<a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a>
+<p>
+
+<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
+
+{% if errHist %}
+<div id="chart_div"></div>
+{% endif %}
+
+{% if sumd %}
+<table>
+<tr class='tablesection'><th colspan=20> Error occurrences by job attribute </th></tr>
+{% for fdict in sumd %}
+<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th>
+    <td><div class="comment more">
+        {% for item in fdict.list %}
+            {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% elif fdict.field == 'produsername' %} <a href="{% url 'userInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% else %}
+                    {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
+                    <a href="{{xurlsubst}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
+            {% endif %}
+        {% endfor %}
+    </div>
+</td></tr>
+{% endfor %}
+</table>
+
+{% endif %}
+
+{% if errsByCount %}
+<a name="summary"></a>
+<div class="card card-tabs">
+  <div class="card-divider">
+    <h6 class="float-left"><b>Overall error summary</b></h6>
+    <ul class="tabs menu align-right" data-active-collapse="true" data-tabs id="collapsing-tabs">
+      <li class="tabs-title is-active"><a href="#panel_groupbycode" aria-selected="true">Grouped by error code</a></li>
+      <li class="tabs-title"><a href="#panel_groupbymessage">Grouped by error message</a></li>
+     </ul>
+  </div>
+  <div class="tabs-content" data-tabs-content="collapsing-tabs">
+    <div class="tabs-panel is-active" id="panel_groupbycode">
+      <div class="card-section">
+        <div class="callout success small" data-closable>
+        <p>If you need to explore all error description messages, please use the 'Grouped by error message' link on the right above. </p>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        <table id="errorsummary_groupbycode" class="data-table left-aligned">
+        <thead>
+        <tr>
+            <th>Category:code</th>
+            <th>Nerrors</th>
+            <th>Sample error description</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for errval in errsByCount %}
+        <tr>
+            <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
+            <td> {{ errval.count }} </td>
+            <td> {{ errval.diag|safe }}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tabs-panel" id="panel_groupbymessage">
+      <div class="card-section">
+        <table id="errorsummary_groupbymessage" class="data-table left-aligned">
+        <thead>
+          <tr>
+            <th>Category:code</th>
+            <th>Error message</th>
+            <th class="num">Number of error message</th>
+          </tr>
+        </thead>
+        <tfoot>
+          <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+        </tfoot>
+        <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if errsBySite %}
+<a name="sites"></a>
+<table class="fixed">
+<colgroup>
+    <col class="w15"/>
+    <col class="w5"/>
+    <col class="w80"/>
+</colgroup>
+<tr class='tablesection'><th colspan=3> Site error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
+{% for site in errsBySite %}
+<tr><th class="wrap-words"> <a href="{{xurlsubstNoSite}}computingsite={{ site.name }}"> {{ site.name }} </a> </th>
+<th> {{ site.toterrors }} </th>
+<th> Total errors in {{ site.toterrjobs }} jobs.     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a>     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a>     % failed: {{ site.pctfail }}     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ site.holding }} </span></a>      <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }} </span></a> </th>  </tr>
+{% for errval in site.errorlist %}
+<tr><td>  </td>
+    <td> <a href="{{jobsurlNoSite}}?computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td>
+    <td class="wrap-words"> <b>{{ errval.error }}</b>     <font size=-1> {{ errval.diag }} </font></td>
+</tr>
+{% endfor %}
+{% endfor %}
+</table>
+{% endif %}
+
+{% if errsByUser %}
+<a name="users"></a>
+<table class="fixed">
+<colgroup>
+    <col class="w15"/>
+    <col class="w5"/>
+    <col class="w80"/>
+</colgroup>
+<tr class='tablesection'><th colspan=3> User error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
+{% for user in errsByUser %}
+<tr><th class="wrap-words"> <a href="{{xurl}}produsername={{ user.name }}"> {{ user.name }} </a> </th> <th> {{ user.toterrors }} </th> <th> Total errors </th>  </tr>
+{% for errval in user.errorlist %}
+<tr><td>  </td> <td> <a href="{{jobsurl}}produsername={{user.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>     {{ errval.diag }} </td>  </tr>
+{% endfor %}
+{% endfor %}
+</table>
+{% endif %}
+
+{% if errsByTask %}
+<a name="tasks"></a>
+<table class="fixed">
+<colgroup>
+    <col class="w10"/>
+    <col class="w90"/>
+</colgroup>
+<tr class='tablesection'><th colspan=2> Task error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
+{% for task in errsByTask %}
+<tr><th colspan=10> <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}"> {{ task.tasktype }}     {{ task.name }} </a>         {% if task.longname != '' %} <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
+<tr>
+<th> {{ task.toterrors }} </th>
+<th> Total errors in {{ task.toterrjobs }} jobs.     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a>     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a>     % failed: {{ task.pctfail }}     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ task.holding }} </span></a>      <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
+</tr>
+{% for errval in task.errorlist %}
+<tr><td> <a href="{{jobsurl}}{{task.tasktype}}={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>      {{ errval.diag }} </td>  </tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+{% endif %}
+
+{% endblock %}
+
+{% block js_body_page %}
+
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+<script>
+let err_hist = {{ errHist | safe }};
+var chart;
+window.addEventListener('resize', onWindowResize);
+$(document).ready(function() {
+
+    $(".comment").shorten();
+
+    let options = {
+      title: 'Error count timeline',
+      labels: ['Timestamp, UTC', 'Number of failed jobs'],
+      size: [getWidth()-40, 300],
+      colors: {'Number of failed jobs':'#b22222'},
+    };
+    chart = draw_bar_timeseries(err_hist, 'chart_div', options);
+
+    DisplayErrorCountListTableData();
+    DisplayErrorMessagesListTableData();
+
+    let clipboard = new ClipboardJS('#copy-button'); //needed for copy to clipboard button
+
+    clipboard.on('success', function (e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copied!';
+        copy_button.classList.add('disabled');
+        e.clearSelection();
+    });
+
+    clipboard.on('error', function (e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copying failed!';
+        copy_button.classList.add('disabled');
+    });
+});
+
+var err_list_data = {{ errsByMessage|safe }};
+var errorMessagesListDataTable;
+var errorCountListTableData;
+
+function DisplayErrorCountListTableData() {
+    errorCountListTableData = $('#errorsummary_groupbycode').dataTable({
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "aaSorting": [[1, 'desc']],
+    })
+}
+
+function DisplayErrorMessagesListTableData() {
+    errorMessagesListDataTable = $('#errorsummary_groupbymessage').dataTable({
+        "sPaginationType": "full_numbers",
+        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "paging": true,
+        "aaSorting": [[2, 'desc'],],
+        "data": err_list_data,
+        "columns": [
+            {
+                "data": "errcode",
+                sDefaultContent: "",
+                "render": function (data, type, row, meta) {
+                    return '<a href="{{ xurl }}' + row['errcodename'] + '=' + row['errcodeval'] + '">' + data + '</a>'
+                }
+            },
+            {
+                "data": "errmessage",
+                sDefaultContent: "",
+            },
+            {
+                "data": "errmessagecount",
+                sDefaultContent: "",
+                className: "num",
+                render: function (data, type, row) {
+                    let encdesc = encodeURIComponent(row['errmessage']);
+                    return '<a href="{{ jobsurl }}' + row['errcodename'] + '=' + row['errcodeval'] + '&errormessage=' + encdesc +'" target="_blank">' + data + '</a>'
+                }
+            },
+        ],
+        initComplete: function () {
+            this.api().columns([0]).every(function (i) {
+                var column = this;
+                var select = $('<select><option value="">All</option></select>')
+                    .appendTo( $(column.footer()).empty() )
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+                if (i === 0) {
+                    column.data().unique().sort().each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                }
+                else {
+                    column.data().unique().sort((a,b) => b - a).each(function (d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>')
+                    });
+                }
+            });
+        }
+    });
+}
+
+function onWindowResize() {
+    // get chart vars to apply resizing
+  chart.resize({width:getWidth()-40});
+}
+</script>
+
+
+{% endblock %}
+
+{% block help %}
+{% include "errorSummaryHelp.html" %}
+{% endblock %}
+
 
 {% block settings-offcanvas %}
-    <p>
-        <span style="font-weight: bold">Errors page settings</span>
-    </p>
+  <p>
+      <span style="font-weight: bold">Errors page settings</span>
+  </p>
 
   {% for table, desc in userPreferences.defaulttables.items %}
           <div class="switch-toggle-wrapper">
@@ -19,15 +359,13 @@
             </div>
             <span>{{desc }}</span>
           </div>
-
-
   {% endfor %}
 
 
 <div class="row">
   <div class="columns offCanvasRight-columns">
     <ul class="accordion " data-accordion data-allow-all-closed="true">
-    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">JOB ATTRIBUTE SUMMARY TABLE</a>
+    <li id="jobattr-menu" class="accordion-item is-active " data-accordion-item><a href="#" class="menu-link" id="jobattr-link" class="accordion-title">Job Attribute Summary Table</a>
      <div class="accordion-content" data-tab-content >
       <ul id="jobattr-menu-item" class="menu vertical nested">
 
@@ -43,8 +381,6 @@
             <span>{{ attr }}</span>
           </div>
         {% endfor %}
-
-
        </ul>
      </div>
     </li>
@@ -52,229 +388,5 @@
   </div>
 </div>
 
-
-
 {% endblock %}
 
-
-{% block subtitle %}PanDA job error summary{{ viewParams.selection|safe }}
-{% if user %} &nbsp; user={{ user }} {% endif %}
-{% if site %} &nbsp; site={{ site }} {% endif %}
-{% if vo %} &nbsp; VO={{ vo }} {% endif %}
-{% endblock %}
-{% block body %}
-{{ viewParams.header }}
-<script>
-    function saveSettings() {
-        var settingTables = getSettings('switch-table');
-        var settingJobAttr = getSettings('switch-jobsattr');
-{#        var url = window.location.href;#}
-        var url = '';
-        if (settingTables.length > 0) {
-            url += '&tables=' + settingTables;
-        }
-        url += '&jobattr=' + settingJobAttr;
-        url+='&page=' + 'errors';
-{#        window.location = url;#}
-
-        $.ajax({
-            url: {% url 'saveSettings' %},
-            data: url,
-            async: true,
-            success: function() {
-                window.location = window.location.href
-            }
-        });
-    }
-</script>
-
-
-<b>{{ njobs }} jobs found. Show jobs: </b>
-&nbsp;  <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed</b></a>
-&nbsp; &nbsp;  <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{limit}}&mode=nodrop"><b>All</b></a>
-
-{% if sortby == "count" %}
-<p>Sort by <b>count</b>, <a href="{{nosorturl}}">alpha</a>
-{% else %}
-<p>Sort by <a href="{{xurlsubst}}sortby=count">count</a>, <b>alpha</b>
-{% endif %}
-
-{% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
-{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a></b> {% endif %}
-{% if requestParams.produsername %}<br><b>User: <a href="{% url 'userInfo' requestParams.produsername %}?display_limit=100">{{ requestParams.produsername }}</a></b> {% endif %}
-{% if requestParams.jeditaskid %}<br><b>JEDI Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }} &nbsp; {{ taskname }}</a> </b> {% endif %}
-
-{% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
-{% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
-
-{% if requestParams.taskid %}<br><b>Task ID: {{ requestParams.taskid }}</b> {% endif %}
-{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
-{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
-
-<p>
-
-<p>Job modification times in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b><p>
-
-<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
-
-<script type="text/javascript"
-           src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}">
-</script>
-{% if flowstruct %}
-{% include "googleFlowDiagram.html" with struct=flowstruct %}
-{% endif %}
-
-{% if errHist %}
-    <script type="text/javascript">
-      google.setOnLoadCallback(drawChart);
-      function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-          ['Time', 'Count'],
-          {% for time, count in errHist %}
-                   ['{{ time|date:"m-d H:i" }}', {{ count }}],
-          {% endfor %}
-        ]);
-        var options = {
-          title: 'Error count timeline',
-          legend: { position: 'none' },
-          hAxis: {title: 'Time (empty bins suppressed)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11},},
-        };
-        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
-      }
-    </script>
-<div id="chart_div" style="height: 500px;"></div>
-{% endif %}
-
-<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
-<script type="text/javascript">
-	$(document).ready(function() {
-	    $(".comment").shorten();
-	});
-</script>
-{% if sumd %}
-<table>
-<tr class='tablesection'><th colspan=20> Error occurrences by job attribute </th></tr>
-{% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }}) </th>
-    <td><div class="comment more">
-        {% for item in fdict.list %}
-            {% if fdict.field == 'jeditaskid' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
-            {% else %}
-                    {% if fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'> {% else %} <span class="item"> {% endif %}  {{ item.kname }} </span>
-                    <a href="{{xurlsubst}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
-            &nbsp;{% endif %}
-        {% endfor %}
-    </div>
-</td></tr>
-{% endfor %}
-</table>
-
-{% endif %}
-
-{% if errsByCount %}
-<a name="summary"></a>
-<table id="errsbycount" class="fixed">
-<colgroup>
-    <col class="w10"/>
-    <col class="w5"/>
-    <col class="w5"/>
-    <col class="w80"/>
-</colgroup>
-<thead>
-<tr class='tablesection'><th colspan=4> Overall error summary </th></tr>
-<tr><th>Category:code</th><th>Job list</th><th>Nerrors</th><th>Sample error description</th></tr>
-</thead>
-<tbody>
-{% for errval in errsByCount %}
-<tr>
-    <td class="wrap-words"> <a href="{{xurlsubst}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> {{ errval.error }} </a> </td>
-    <td> <a href="{{jobsurl}}{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100"> jobs </a> </td>
-    <td> {{ errval.count }} </td>
-    <td class="wrap-words"> {{ errval.diag }} <br/> {% if errval.count > 1%} <a href="{% url 'summaryErrorsList'%}?codename={{errval.codename}}&codeval={{errval.codeval}}&tk={{ errval.tk }}" target="_blank"> more information here </a> {% endif %} </td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-{#<button class="bluebutton" id="errsbycount-showall" onclick="toggleTableByID('errsbycount', 'errsbycount-showall')">Show all</button>#}
-{% endif %}
-
-{% if errsBySite %}
-<a name="sites"></a>
-<table class="fixed">
-<colgroup>
-    <col class="w15"/>
-    <col class="w5"/>
-    <col class="w80"/>
-</colgroup>
-<tr class='tablesection'><th colspan=3> Site error summary </th></tr>
-{% for site in errsBySite %}
-<tr><th class="wrap-words"> <a href="{{xurlsubstNoSite}}computingsite={{ site.name }}"> {{ site.name }} </a> </th>
-<th> {{ site.toterrors }} </th>
-<th> Total errors in {{ site.toterrjobs }} jobs. &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a> &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a> &nbsp; % failed: {{ site.pctfail }} &nbsp; <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ site.holding }} </span></a> &nbsp;  <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }} </span></a> </th>  </tr>
-{% for errval in site.errorlist %}
-<tr><td>  </td>
-    <td> <a href="{{jobsurlNoSite}}?computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td>
-    <td class="wrap-words"> <b>{{ errval.error }}</b> &nbsp; <font size=-1> {{ errval.diag }} </font></td>
-</tr>
-{% endfor %}
-{% endfor %}
-</table>
-{% endif %}
-
-{% if errsByUser %}
-<a name="users"></a>
-<table class="fixed">
-<colgroup>
-    <col class="w15"/>
-    <col class="w5"/>
-    <col class="w80"/>
-</colgroup>
-<tr class='tablesection'><th colspan=3> User error summary </th></tr>
-{% for user in errsByUser %}
-<tr><th class="wrap-words"> <a href="{{xurl}}produsername={{ user.name }}"> {{ user.name }} </a> </th> <th> {{ user.toterrors }} </th> <th> Total errors </th>  </tr>
-{% for errval in user.errorlist %}
-<tr><td>  </td> <td> <a href="{{jobsurl}}produsername={{user.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b> &nbsp; {{ errval.diag }} </td>  </tr>
-{% endfor %}
-{% endfor %}
-</table>
-{% endif %}
-
-{% if errsByTask %}
-<a name="tasks"></a>
-<table class="fixed">
-<colgroup>
-    <col class="w10"/>
-    <col class="w90"/>
-</colgroup>
-<tr class='tablesection'><th colspan=2> Task error summary </th></tr>
-{% for task in errsByTask %}
-<tr><th colspan=10> <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}"> {{ task.tasktype }} &nbsp; {{ task.name }} </a> &nbsp; &nbsp; {% if task.longname != '' %} <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
-<tr>
-<th> {{ task.toterrors }} </th>
-<th> Total errors in {{ task.toterrjobs }} jobs. &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a> &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a> &nbsp; % failed: {{ task.pctfail }} &nbsp; <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ task.holding }} </span></a> &nbsp;  <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
-</tr>
-{% for errval in task.errorlist %}
-<tr><td> <a href="{{jobsurl}}{{task.tasktype}}={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b> &nbsp;  {{ errval.diag }} </td>  </tr>
-{% endfor %}
-{% endfor %}
-</table>
-
-{% endif %}
-
-{#<script>#}
-{##}
-{#    $("table#errsbycount > tbody > tr").hide().slice(0, 10).show();#}
-{##}
-{#function toggleTableByID(tableid, buttonid) {#}
-{#    $("#" + buttonid).hide();#}
-{#    $("table#" + tableid + " > tbody > tr").show();#}
-{#}#}
-{#</script>#}
-
-{% endblock %}
-
-{% block helptext %}
-{% include "errorSummaryHelp.html" with helptitle="Error summary help" %}
-{% endblock %}

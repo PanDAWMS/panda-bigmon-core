@@ -1,0 +1,53 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}ATLAS ART Monitoring for Nightlies{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %}Monitoring for ASCIG on BigPanDA{% endblock %}
+
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.dataTables.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+<div>
+
+<div id="hjk">
+    <P><H3>ATLAS ART Monitoring for Nightlies</H3>
+</div>
+
+<table id="firstMonitExample" class="stripe">
+     <thead>
+                <th>Branch</th> 
+                <th>Datestamp</th>
+                <th>Active</th>
+                <th>Succeeded</th>
+                <th>Failed</th>
+                <th>Finished</th>
+     </thead>
+     <tbody></tbody>
+</table>
+
+</div>
+{% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript">
+
+var json=JSON.stringify({{ resltART | safe }});
+
+var artmonitdisplayTable = $('#firstMonitExample').dataTable({
+"pageLength": 100,
+"lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
+"data": JSON.parse(json)
+});
+
+</script>
+{% endblock %}
