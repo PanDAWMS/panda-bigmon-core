@@ -149,7 +149,7 @@
 {% for fdict in sumd %}
 <tr><th>
   <p>{{ fdict.field }} ({{ fdict.list|length }})</p>
-  {% if fdict.stats %}{% if fdict.stats.sum %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}{% endif %}
+  {% if fdict.stats %}{% if fdict.stats.sum and 'jobstatus' in requestParams and requestParams.jobstatus == 'running' %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}{% endif %}
 </th>
     <td><div class="comment more">
         {% for item in fdict.list %}
