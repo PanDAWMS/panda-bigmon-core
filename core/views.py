@@ -4347,7 +4347,7 @@ def userDashApi(request, agg=None):
     if agg == 'initial':
         # get taskids from cache
         tasks_str = getCacheEntry(request, tk, isData=True)
-        if data is not None:
+        if tasks_str is not None:
             tasks = json.loads(tasks_str)
         else:
             tasks = []
