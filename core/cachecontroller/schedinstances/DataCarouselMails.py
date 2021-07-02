@@ -30,7 +30,7 @@ class DataCarouselMails(BaseTasksProvider):
             return -1
         for r in rows:
             self.logger.debug("DataCarouselMails processes this Rucio Rule: {}".format(r[5]))
-            data = {"SE":r[8], "RR":r[5], "START_TIME":r[3], "TASKID":r[9], "TOT_FILES": r[6], "STAGED_FILES": r[2]}
+            data = {"SE":r[8], "RR":r[5], "START_TIME":r[3], "TASKID":r[9], "TOT_FILES": r[6], "STAGED_FILES": r[2], "UPDATE_TIME": r[7]}
             self.send_email(data)
         self.logger.info("DataCaruselMails finished")
 
