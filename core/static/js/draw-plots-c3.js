@@ -323,6 +323,16 @@ function draw_bar_cat(data, divid, title, ext) {
         colors = ext.colors;
     }
 
+    let groups = [];
+    if (ext.grouped) {groups = data.slice(1).map(d => d[0]);}
+
+    let legend = false;
+    if (ext.legend) {legend = ext.legend;}
+
+    let y_grid_lines = [];
+    if (ext.y_grid_lines) {y_grid_lines = ext.y_grid_lines;}
+
+
     var chart = c3.generate({
         bindto: '#' + divid,
         data: {
@@ -330,6 +340,7 @@ function draw_bar_cat(data, divid, title, ext) {
             columns: data,
             type: 'bar',
             colors: colors,
+            groups: [groups],
         },
         padding: {
           right: 20
@@ -339,8 +350,13 @@ function draw_bar_cat(data, divid, title, ext) {
                 ratio: 0.6
             }
         },
+        grid: {
+          y: {
+            lines: y_grid_lines,
+          }
+        },
         legend: {
-             show: false
+             show: legend,
         },
         axis: {
             x: {
@@ -348,7 +364,11 @@ function draw_bar_cat(data, divid, title, ext) {
                 tick: {
                     rotate: -60,
                     multiline: false,
-                }
+                },
+                label: {
+                    text: labels[0],
+                    position: 'outer-right'
+                },
             },
             y: {
                 tick: {
