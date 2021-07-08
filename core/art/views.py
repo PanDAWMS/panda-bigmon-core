@@ -17,6 +17,7 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F
 
 from core.oauth.utils import login_customrequired
+from core.utils import is_json_request
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import DateEncoder
 from core.art.artMail import send_mail_art
@@ -164,8 +165,7 @@ def artOverview(request):
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    if is_json_request(request):
 
         data = {
             'artpackages': artpackagesdict,
@@ -274,14 +274,11 @@ def artTasks(request):
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
-
+    if is_json_request(request):
         data = {
             'arttasks': arttasksdict,
             'jeditaskids': jeditaskids,
         }
-
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
@@ -294,7 +291,6 @@ def artTasks(request):
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
         }
-
         setCacheEntry(request, "artTasks", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -307,12 +303,14 @@ def artJobs(request):
     if not valid:
         return response
 
-    # getting aggregation order
+    # getting aggregation order and view
+    art_view = 'package'
     if not 'view' in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
         art_aggr_order = ['package', 'branch']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         art_aggr_order = ['branch', 'package']
+        art_view = 'branch'
     else:
         return HttpResponse(status=401)
 
@@ -386,7 +384,7 @@ def artJobs(request):
     cur.close()
 
     artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
-                    'computingsite', 'endtime', 'starttime' , 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
+                    'computingsite', 'endtime', 'starttime', 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
                     'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'cpuconsumptionunit', 'result',
                     'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark',
                     'inputfileid', 'extrainfo']
@@ -519,34 +517,7 @@ def artJobs(request):
                 artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'][jobindex]['linktopreviousattemptlogs'] = '?scope={}&guid={}&lfn={}&site={}'.format(job['scope'], job['guid'], job['lfn'], job['computingsite'])
     _logger.info('Prepared data: {}s'.format(time.time() - request.session['req_init_time']))
 
-    # transform dict of tests to list of test and sort alphabetically
-    artjobslist = {}
-    for i, idict in artjobsdict.items():
-        artjobslist[i] = {}
-        for j, jdict in idict.items():
-            artjobslist[i][j] = []
-            for t, tdict in jdict.items():
-                for ntg, jobs in tdict.items():
-                    tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']), reverse=True)
-                tdict['testname'] = t
-                if len(testdirectories[i][j]) > 0 and 'src' in testdirectories[i][j][0]:
-                    if not 'view' in request.session['requestParams'] or (
-                            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
-                        tdict['gitlablink'] = 'https://gitlab.cern.ch/atlas/athena/blob/' + j.split('/')[0] + \
-                                              testdirectories[i][j][0].split('src')[1] + '/' + t
-                    else:
-                        tdict['gitlablink'] = 'https://gitlab.cern.ch/atlas/athena/blob/' + i.split('/')[0] + \
-                                              testdirectories[i][j][0].split('src')[1] + '/' + t
-                artjobslist[i][j].append(tdict)
-            artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
-    _logger.info('Converted data from dict to list: {}s'.format(time.time() - request.session['req_init_time']))
-
-    linktoplots = set(linktoplots)
-    xurl = extensibleURL(request)
-    noviewurl = removeParam(xurl, 'view', mode='extensible')
-
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    if is_json_request(request):
 
         data = {
             'artjobs': artjobsdict,
@@ -555,11 +526,38 @@ def artJobs(request):
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
+        # transform dict of tests to list of test and sort alphabetically
+        artjobslist = {}
+        for i, idict in artjobsdict.items():
+            artjobslist[i] = {}
+            for j, jdict in idict.items():
+                artjobslist[i][j] = []
+                for t, tdict in jdict.items():
+                    for ntg, jobs in tdict.items():
+                        tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']),
+                                                    reverse=True)
+                    tdict['testname'] = t
+                    if len(testdirectories[i][j]) > 0 and 'src' in testdirectories[i][j][0]:
+                        if art_view == 'package':
+                            tdict['gitlablink'] = 'https://gitlab.cern.ch/atlas/athena/blob/' + j.split('/')[0] + \
+                                                  testdirectories[i][j][0].split('src')[1] + '/' + t
+                        else:
+                            tdict['gitlablink'] = 'https://gitlab.cern.ch/atlas/athena/blob/' + i.split('/')[0] + \
+                                                  testdirectories[i][j][0].split('src')[1] + '/' + t
+                    artjobslist[i][j].append(tdict)
+                artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
+        _logger.info('Converted data from dict to list: {}s'.format(time.time() - request.session['req_init_time']))
+
+        linktoplots = set(linktoplots)
+        xurl = extensibleURL(request)
+        noviewurl = removeParam(xurl, 'view', mode='extensible')
+
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
+            'artview': art_view,
             'artjobs': artjobslist,
             'testdirectories': testdirectories,
             'noviewurl': noviewurl,
