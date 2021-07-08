@@ -16,5 +16,6 @@ class ArtPackages(BaseURLTasksProvider):
         urlsQueue.put((self.BASIC_PRIORITY, '/art/updatejoblist/?ntag_to=' +
                        datetime.now().strftime('%Y-%m-%d') + '&ntag_from=' +
                        (datetime.now() - timedelta(days=self.N_DAYS_WINDOW)).strftime('%Y-%m-%d')))
+        urlsQueue.put((self.BASIC_PRIORITY, '/art/loadsubresults/'))
         return urlsQueue
 

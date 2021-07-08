@@ -588,9 +588,8 @@ def updateARTJobList(request):
     query = setupView(request, 'job')
     starttime = datetime.now()
 
-    ### Adding to ART_RESULTS_QUEUE jobs with not loaded result json yet
+    # Adding to ART_RESULTS_QUEUE jobs with not loaded result json yet
     cur = connection.cursor()
-    cur.autocommit = True
     cur.execute("""INSERT INTO atlas_pandabigmon.art_results_queue
                     (pandaid, IS_LOCKED, LOCK_TIME)
                     SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}'))
@@ -600,12 +599,34 @@ def updateARTJobList(request):
                           and status in ('finished', 'failed')
                           and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)
                 """.format(query['ntag_from'], query['ntag_to'], query['strcondition']))
+    cur.close()
+
+    data = {
+        'strt': starttime,
+        'endt': datetime.now()
+    }
+    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+
+
+def loadSubResults(request):
+    """
+    Loading sub-step results for tests from PanDA job log files managed by Rucio
+    Get N items from queue -> call filebrowser view -> extract art json -> save to ART_SUBRESULT table
+    :param request: HTTP request
+    :return:
+    """
+    # limit to N minutes to avoid timeouts
+    N_MINUTES = 10
+    starttime = datetime.now()
 
     # number of concurrent download requests to Rucio
     N_ROWS = 1
 
+    ids = []
+    cur = connection.cursor()
+    cur.autocommit = True
     is_queue_empty = False
-    while not is_queue_empty:
+    while not is_queue_empty or datetime.now() < starttime + timedelta(minutes=N_MINUTES):
 
         # Locking first N rows
         lock_time = lock_nqueuedjobs(cur, N_ROWS)
@@ -672,8 +693,11 @@ def updateARTJobList(request):
 
     data = {
         'strt': starttime,
-        'endt': datetime.now()
+        'endt': datetime.now(),
+        'queue_len': len(ids),
     }
+    _logger.info('ART queue length is: {}'.format(len(ids)))
+
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 

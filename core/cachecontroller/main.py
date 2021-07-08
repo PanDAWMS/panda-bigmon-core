@@ -52,7 +52,7 @@ def run_threaded(job_func):
 schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
 schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
 schedule.every(10).minutes.do(run_threaded, harvester.execute)
-schedule.every(20).minutes.do(run_threaded, artPackages.execute)
+schedule.every(10).minutes.do(run_threaded, artPackages.execute)
 schedule.every(1).hours.do(run_threaded, artDevMails.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)
