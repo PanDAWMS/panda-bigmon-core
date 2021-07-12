@@ -264,6 +264,7 @@
             {% endif %}
             {% if requestParams.preset == 'MC' %}
                 <th>Sim</th>
+                <th>aTag</th>
             {% endif %}
             <th>Age</th>
             <th>Cores</th>
@@ -586,14 +587,14 @@ $(document).ready(function () {
       "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
       "paging": true,
       "scrollX": true,
-      "aaSorting": [[16,'desc']],
+      "aaSorting": [[17,'desc']],
 
       "ajax": {
           "processing": true,
           "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
           "dataSrc" : ''},
       "columnDefs": [
-          {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17,20] }
+          {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,17,18,21] }
       ],
       "aoColumns": [
           {
@@ -708,6 +709,18 @@ $(document).ready(function () {
               "render": function(data, type, full, meta) {
                   return '<a href = "{{ xurl }}simtype=' + full['simtype'] + '">' + full['simtype'] + '</a>'
               }
+          },
+          {
+              "data": "atag",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}atag=' + full['atag'] + '">' + full['atag'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
           },
           {
               "data": "age",

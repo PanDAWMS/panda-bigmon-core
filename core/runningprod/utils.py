@@ -4,10 +4,79 @@ Utils for runningProdTasks module
 """
 
 import numpy as np
-import math
+import copy
 from datetime import datetime
 from django.db import transaction, DatabaseError
-from core.runningprod.models import ProdNeventsHistory
+from core.runningprod.models import ProdNeventsHistory, RunningProdTasksModel
+from core.common.models import JediTasks
+
+from core.views import preprocessWildCardString
+
+
+def updateView(request, query, exquery, wild_card_str):
+    """
+    Add specific to runningProd view params to query
+    :param request:
+    :param query:
+    :param wild_card_str:
+    :return:
+    """
+    query = copy.deepcopy(query)
+    exquery = copy.deepcopy(exquery)
+
+    if 'workinggroup' in query and 'preset' in request.session['requestParams'] and \
+            request.session['requestParams']['preset'] == 'MC' and ',' in query['workinggroup']:
+        #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
+        #     exquery['workinggroup__in'] = excludeWGList
+        try:
+            del query['workinggroup']
+        except:
+            pass
+    if 'status' in request.session['requestParams'] and request.session['requestParams']['status'] == '':
+        try:
+            del query['status']
+        except:
+            pass
+    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
+        try:
+            del query['site']
+        except:
+            pass
+        exquery['site__isnull'] = True
+    if 'currentpriority__gte' in query and 'currentpriority__lte' in query:
+        query['priority__gte'] = query['currentpriority__gte']
+        query['priority__lte'] = query['currentpriority__lte']
+        del query['currentpriority__gte']
+        del query['currentpriority__lte']
+
+    jedi_tasks_fields = [field.name for field in JediTasks._meta.get_fields() if field.get_internal_type() == 'CharField']
+    running_prod_fields = (set([
+        field.name for field in RunningProdTasksModel._meta.get_fields() if field.get_internal_type() == 'CharField'
+    ])).difference(set(jedi_tasks_fields))
+
+    for f in running_prod_fields:
+        if f in request.session['requestParams'] and request.session['requestParams'][f] and f not in query and f not in wild_card_str:
+            if f == 'hashtags':
+                wild_card_str += ' AND ('
+                wildCards = request.session['requestParams'][f].split(',')
+                currentCardCount = 1
+                countCards = len(wildCards)
+                for card in wildCards:
+                    if '*' not in card:
+                        card = '*' + card + '*'
+                    elif card.startswith('*'):
+                        card = card + '*'
+                    elif card.endswith('*'):
+                        card = '*' + card
+                    wild_card_str += preprocessWildCardString(card, 'hashtags')
+                    if currentCardCount < countCards:
+                        wild_card_str += ' AND '
+                    currentCardCount += 1
+                    wild_card_str += ')'
+            else:
+                query[f] = request.session['requestParams'][f]
+
+    return query, exquery, wild_card_str
 
 
 def clean_running_task_list(task_list):

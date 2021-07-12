@@ -13,10 +13,10 @@ from django.utils.cache import patch_response_headers
 from core.settings import defaultDatetimeFormat
 from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, DateEncoder, removeParam, preprocessWildCardString, taskSummaryDict
+from core.views import initRequest, setupView, DateEncoder, removeParam, taskSummaryDict
 from core.utils import is_json_request
 
-from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots
+from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots, updateView
 from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
 
 
@@ -73,61 +73,17 @@ def runningProdTasks(request):
             if 'processingtype' not in request.session['requestParams']:
                 request.session['requestParams']['processingtype'] = 'reprocessing'
 
-    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=0, limit=9999999, querytype='task',
+    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request,
+                                                            hours=0,
+                                                            limit=9999999,
+                                                            querytype='task',
                                                             wildCardExt=True)
+    tquery, exquery, wildCardExtension = updateView(request, tquery, exquery, wildCardExtension)
 
-    if 'workinggroup' in tquery and 'preset' in request.session['requestParams'] and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
-        #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
-        #     exquery['workinggroup__in'] = excludeWGList
-        try:
-            del tquery['workinggroup']
-        except:
-            pass
-    if 'status' in request.session['requestParams'] and request.session['requestParams']['status'] == '':
-        try:
-            del tquery['status']
-        except:
-            pass
-    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
-        try:
-            del tquery['site']
-        except:
-            pass
-        exquery['site__isnull'] = True
-    if 'simtype' in request.session['requestParams'] and request.session['requestParams']['simtype']:
-            tquery['simtype'] = request.session['requestParams']['simtype']
-    if 'runnumber' in request.session['requestParams'] and request.session['requestParams']['runnumber']:
-            tquery['runnumber'] = request.session['requestParams']['runnumber']
-    if 'ptag' in request.session['requestParams'] and request.session['requestParams']['ptag']:
-            tquery['ptag'] = request.session['requestParams']['ptag']
-    if 'hashtags' in request.session['requestParams']:
-        wildCardExtension += ' AND ('
-        wildCards = request.session['requestParams']['hashtags'].split(',')
-        currentCardCount = 1
-        countCards = len(wildCards)
-        for card in wildCards:
-            if '*' not in card:
-                card = '*' + card + '*'
-            elif card.startswith('*'):
-                card = card + '*'
-            elif card.endswith('*'):
-                card = '*' + card
-            wildCardExtension += preprocessWildCardString(card, 'hashtags')
-            if (currentCardCount < countCards): wildCardExtension += ' AND '
-            currentCardCount += 1
-        wildCardExtension += ')'
-    if 'jumbo' in request.session['requestParams'] and request.session['requestParams']['jumbo']:
-        tquery['jumbo'] = request.session['requestParams']['jumbo']
-    if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby'] :
+    if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby']:
         sortby = request.session['requestParams']['sortby']
     else:
         sortby = 'creationdate-desc'
-    if 'currentpriority__gte' in tquery and 'currentpriority__lte' in tquery:
-        tquery['priority__gte'] = tquery['currentpriority__gte']
-        tquery['priority__lte'] = tquery['currentpriority__lte']
-        del tquery['currentpriority__gte']
-        del tquery['currentpriority__lte']
-
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
     tasks = []
@@ -203,7 +159,6 @@ def runningProdTasks(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'transKey': transactionKey,
             'qtime': qtime,
-
             'productiontype': json.dumps(productiontype),
             # 'tasks': task_list,
             # 'ntasks': ntasks,
