@@ -1,48 +1,60 @@
 /* Styles for buttons on logon page*/
 
-.social.google-plus {
+.button-group-v {
+  text-align:center;
+  display: grid;
+  vertical-align: middle;
+  padding: 1rem;
+  justify-content: center;
+}
+
+.button-group-v .button.social {
+  display: inline;
+  color: #fefefe;
+  line-height: 100%;
+  vertical-align: middle;
+  width: 370px;
+  margin: 0.5rem;
+  padding: 1rem;
+}
+
+.button-group-v .button.social.google-plus {
   background-color: #dd4b39;
-  color: #fefefe;
-  line-height: 100%;
-  vertical-align: middle;
-  width: 300px;
+  padding: 1.2rem;
 }
-.social.google-plus > i {
-  font-size: 24pt;
-  vertical-align: middle;
-  line-height: 100%;
-}
-.social.google-plus:hover, .social.google-plus:focus {
-  background-color: #be3221;
-  color: #fefefe;
-}
+  .button-group-v .button.social.google-plus > i {
+    font-size: 24pt;
+    vertical-align: middle;
+    line-height: 100%;
+    padding-right: 0.7rem;
+  }
+  .button-group-v .button.social.google-plus:hover, .button-group-v .button.social.google-plus:focus {
+    background-color: #be3221;
+    color: #fefefe;
+  }
 
-.social.github {
-  background-color: #333;
-  color: #fefefe;
-  line-height: 100%;
-  vertical-align: middle;
-  width: 300px;
+.button-group-v .button.social.github {
+  background-color: #333333;
+  padding: 1.2rem;
 }
+  .button-group-v .button.social.github > i {
+    font-size: 24pt;
+    vertical-align: middle;
+    line-height: 100%;
+    padding-right: 0.7rem;
+  }
+  .button-group-v .button.social.github:hover, .button-group-v .button.social.github:focus {
+    background-color: black;
+    color: #fefefe;
+  }
 
-.social.github > i {
-  font-size: 24pt;
-  vertical-align: middle;
-  line-height: 100%;
-}
-
-.social.github:hover, .social.github:focus {
-  background-color: black;
-  color: #fefefe;
-}
-
-.social.cern {
+.button-group-v .button.social.cern {
   background-color: #0053A1;
-  color: #fefefe;
-  width: 300px;
 }
-
-.social.cern:hover, .social.github:focus {
-  background-color: #004d85;
-  color: #fefefe;
-}
+  .button-group-v .button.social.cern > img {
+    padding-right: 0.7rem;
+  }
+  .button-group-v .button.social.cern:hover, .button-group-v .button.social.github:focus {
+    background-color: #004d85;
+    color: #fefefe;
+  }
