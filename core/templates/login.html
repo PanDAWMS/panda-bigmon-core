@@ -41,6 +41,10 @@
             <img width="40" width="40" src="{% static "images/cern-logo.png"%}">
             Login with CERN (recommended)
         </a><br>
+        <a href="{% url 'social:begin' 'cernoidc' %}?next={{ next }}" class="button social cern" >
+            <img width="40" width="40" src="{% static "images/cern-logo.png"%}">
+            Login with new CERN SSO
+        </a><br>
         <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="button social google-plus">
           <i class="fi-social-google-plus" aria-hidden="true"></i> Log in with Google+
         </a><br>

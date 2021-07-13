@@ -60,6 +60,7 @@ ROOT_URLCONF = 'core.urls'
 # Auth
 AUTHENTICATION_BACKENDS = (
     'core.oauth.Cernauth2.Cernauth2',
+    'core.oauth.Cernauth2.CernAuthOIDC',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'django.contrib.auth.backends.ModelBackend',

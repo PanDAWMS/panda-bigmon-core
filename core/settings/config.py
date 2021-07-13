@@ -301,7 +301,7 @@ LOGGING = {
             'handlers': ['logfile-pbm'],
             'level': 'DEBUG',
         },
-        'social':{
+        'social': {
             'handlers': ['logfile-error', 'social'],
             'level': 'DEBUG',
             'propagate': True,
@@ -320,8 +320,8 @@ LOGGING = {
         },
     },
     'logfile': {
-        'level':'DEBUG',
-        'class':'logging.handlers.RotatingFileHandler',
+        'level': 'DEBUG',
+        'class': 'logging.handlers.RotatingFileHandler',
         'filename': LOG_ROOT + "/logfile",
         'maxBytes': 10000000,
         'backupCount': 5,
