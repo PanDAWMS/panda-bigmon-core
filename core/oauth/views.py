@@ -19,8 +19,9 @@ from core.oauth.models import BPUser, BPUserSettings, Visits
 def loginauth2(request):
 
     if 'next' in request.GET:
-        next = str(request.GET['next']) + '&'
-        next += '&'.join(['{}={}'.format(k, v) for k, v in request.GET.items() if k != 'next'])
+        next = str(request.GET['next'])
+        if len(request.GET) > 1:
+            next += '&' + '&'.join(['{}={}'.format(k, v) for k, v in request.GET.items() if k != 'next'])
     elif 'HTTP_REFERER' in request.META:
         next = extensibleURL(request, request.META['HTTP_REFERER'])
     else:

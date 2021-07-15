@@ -470,7 +470,7 @@
 
     <div class="column small-6 medium-3 large-2 right">
         {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
-        {% if built != None %} {{ built }}, {% endif %} <a onclick="refreshPage('{{ request.session.notimestampurl }}')"> Refresh</a>
+        {% if built != None %} {{ built }}, {% endif %} <a onclick="refreshPage()"> Refresh</a>
     </div>
 </div>
 <!-- End sub-title -->
@@ -705,8 +705,10 @@
           window.location = urlBase + url;
       }
 
-      function refreshPage(notimeurl) {
-        let d = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit'});
+      function refreshPage() {
+        let notimeurl = '{{ request.session.notimestampurl }}';
+
+        let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
         window.location = notimeurl + 'timestamp=' + d;
       }
 
