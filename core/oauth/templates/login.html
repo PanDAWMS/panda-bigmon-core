@@ -19,18 +19,18 @@
 {% endif %}
 
   <div id='buttons' class="button-group-v">
-    <a href="{% url 'social:begin' 'cernoidc' %}?next={{ next }}" class="button social cern" >
+    <a href="{% url 'social:begin' 'cernoidc' %}" class="button social cern" >
         <img width="40" width="40" src="{% static "images/cern-logo.png"%}">
         Log in with new CERN SSO (recommended)
     </a>
-    <a href="{% url 'social:begin' 'cernauth2' %}?next={{ next }}" class="button social cern" >
+    <a href="{% url 'social:begin' 'cernauth2' %}" class="button social cern" >
         <img width="40" width="40" src="{% static "images/cern-logo.png"%}">
         Log in with CERN
     </a>
-    <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ next }}" class="button social google-plus">
+    <a href="{% url 'social:begin' 'google-oauth2' %}" class="button social google-plus">
       <i class="fi-social-google-plus" aria-hidden="true"></i> Log in with Google
     </a>
-    <a href="{% url 'social:begin' 'github' %}?next={{ next }}" class="button social github">
+    <a href="{% url 'social:begin' 'github' %}" class="button social github">
     <i class="fi-social-github" aria-hidden="true"></i> Log in with Github
     </a>
   </div>

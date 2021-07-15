@@ -17,13 +17,17 @@ from core.oauth.models import BPUser, BPUserSettings, Visits
 
 @never_cache
 def loginauth2(request):
+
     if 'next' in request.GET:
-        next = str(request.GET['next'])
+        next = str(request.GET['next']) + '&'
+        next += '&'.join(['{}={}'.format(k, v) for k, v in request.GET.items() if k != 'next'])
     elif 'HTTP_REFERER' in request.META:
         next = extensibleURL(request, request.META['HTTP_REFERER'])
     else:
         next = '/'
-    response = render_to_response('login.html', {'request': request, 'next': next,}, content_type='text/html')
+    # store the redirect url in the session to be picked up after the auth completed
+    request.session['next'] = next
+    response = render_to_response('login.html', {'request': request, }, content_type='text/html')
     response.delete_cookie('sessionid')
     return response
 
