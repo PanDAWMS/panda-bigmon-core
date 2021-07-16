@@ -17,7 +17,9 @@ from core.oauth.models import BPUser, BPUserSettings, Visits
 
 @never_cache
 def loginauth2(request):
-
+    """
+    Login view
+    """
     if 'next' in request.GET:
         next = str(request.GET['next'])
         if len(request.GET) > 1:
@@ -26,6 +28,11 @@ def loginauth2(request):
         next = extensibleURL(request, request.META['HTTP_REFERER'])
     else:
         next = '/'
+
+    # redirect to the next if user already authenticated
+    if request.user.is_authenticated:
+        return redirect(next)
+
     # store the redirect url in the session to be picked up after the auth completed
     request.session['next'] = next
     response = render_to_response('login.html', {'request': request, }, content_type='text/html')
@@ -57,7 +64,8 @@ def logout(request):
 @login_customrequired
 def grantRights(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
 
     if 'type' in request.session['requestParams']:
         rtype = request.session['requestParams']['type']
@@ -69,7 +77,8 @@ def grantRights(request):
 @login_customrequired
 def denyRights(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
 
     if 'type' in request.session['requestParams']:
         rtype = request.session['requestParams']['type']
