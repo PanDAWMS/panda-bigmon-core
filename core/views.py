@@ -7199,7 +7199,9 @@ def taskList(request):
 @never_cache
 def killtasks(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
+
     taskid = -1
     action = -1
     if 'task' in request.session['requestParams']:
@@ -7228,37 +7230,47 @@ def killtasks(request):
         response = HttpResponse(dump, content_type='application/json')
         return response
 
+    cern_auth_provider = None
     user = request.user
-    if user.is_authenticated and (not user.social_auth is None) and (not user.social_auth.get(provider='cernauth2') is None) \
-            and (not user.social_auth.get(provider='cernauth2').extra_data is None) and ('username' in user.social_auth.get(provider='cernauth2').extra_data):
-        username = user.social_auth.get(provider='cernauth2').extra_data['username']
-        fullname = user.social_auth.get(provider='cernauth2').extra_data['name']
+    # TODO
+    # temporary while both old and new CERN auth supported
+    if user.is_authenticated and user.social_auth is not None:
+        if len(user.social_auth.filter(provider='cernauth2')) > 0:
+            cern_auth_provider = 'cernauth2'
+        elif len(user.social_auth.filter(provider='cernoidc')) > 0:
+            cern_auth_provider = 'cernoidc'
+
+    if cern_auth_provider and user.social_auth.get(provider=cern_auth_provider).extra_data is not None and (
+            'username' in user.social_auth.get(provider=cern_auth_provider).extra_data):
+        username = user.social_auth.get(provider=cern_auth_provider).extra_data['username']
+        fullname = user.social_auth.get(provider=cern_auth_provider).extra_data['name']
 
     else:
-        resp = {"detail": "User not authenticated. Please login to bigpanda mon with CERN"}
+        resp = {"detail": "User not authenticated. Please login to BigPanDAmon with CERN"}
         dump = json.dumps(resp, cls=DateEncoder)
         response = HttpResponse(dump, content_type='application/json')
         return response
 
     if action == 1:
-        postdata = {"username": username, "task": taskid, "userfullname":fullname}
+        postdata = {"username": username, "task": taskid, "userfullname": fullname}
     else:
-        postdata = {"username": username, "task": taskid, "parameters":[1], "userfullname":fullname}
+        postdata = {"username": username, "task": taskid, "parameters": [1], "userfullname": fullname}
 
-
-    headers = {'Content-Type':'application/json', 'Accept': 'application/json', 'Authorization': 'Token '+prodsysToken}
-
+    headers = {
+        'Content-Type':'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Token ' + prodsysToken
+    }
     conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=100)
     resp = None
 
-#    if request.session['IS_TESTER']:
+    # if request.session['IS_TESTER']:
     resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1, assert_same_host=False)
-#    else:
-#        resp = {"detail": "You are not allowed to test. Sorry"}
-#        dump = json.dumps(resp, cls=DateEncoder)
-#        response = HttpResponse(dump, mimetype='text/plain')
-#        return response
-
+    # else:
+    #    resp = {"detail": "You are not allowed to test. Sorry"}
+    #    dump = json.dumps(resp, cls=DateEncoder)
+    #    response = HttpResponse(dump, mimetype='text/plain')
+    #    return response
 
     if resp and len(resp.data) > 0:
         try:
