@@ -557,6 +557,14 @@
       {% else %}
           var notimerangeurl =  window.location.href ;
       {% endif %}
+
+      {% if request.session.notimestampurl %}
+          var notimestampurl = '{{ request.session.notimestampurl|safe }}';
+      {% else %}
+          var notimestampurl =  window.location.href ;
+      {% endif %}
+
+
       app.controller('timeWindowController', ['$scope', function($scope) {
         $scope.timewindow = {
             selection : {
@@ -707,7 +715,7 @@
 
       function refreshPage() {
         let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
-        window.location = notimerangeurl + 'timestamp=' + d;
+        window.location = notimestampurl + 'timestamp=' + d;
       }
 
       function clearComparisonList(object) {
