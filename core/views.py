@@ -327,7 +327,7 @@ def setupSiteInfo(request):
                 pass
 
 
-def initRequest(request, callselfmon=False):
+def initRequest(request, callselfmon=True):
     global VOMODE, ENV, hostname
     ENV = {}
     VOMODE = ''
