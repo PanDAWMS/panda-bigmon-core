@@ -327,7 +327,7 @@ def setupSiteInfo(request):
                 pass
 
 
-def initRequest(request, callselfmon = True):
+def initRequest(request, callselfmon=False):
     global VOMODE, ENV, hostname
     ENV = {}
     VOMODE = ''
@@ -379,6 +379,9 @@ def initRequest(request, callselfmon = True):
     # if not 'viewParams' in request.session:
     request.session['viewParams'] = viewParams
 
+    # creating a dict in session to store long urls as it will not be saved to session storage
+    # Session is NOT modified, because this alters sub dict
+    request.session['urls_cut'] = {}
     url = request.get_full_path()
     u = urlparse(url)
     query = parse_qs(u.query)
@@ -390,7 +393,7 @@ def initRequest(request, callselfmon = True):
             'errormessage': 'Error appeared while encoding URL!'
         }
         return False, render_to_response('errorPage.html', data, content_type='text/html')
-    request.session['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
+    request.session['urls_cut']['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
 
     notimerangeurl = extensibleURL(request)
     timerange_params = [
@@ -401,7 +404,7 @@ def initRequest(request, callselfmon = True):
     ]
     for trp in timerange_params:
         notimerangeurl = removeParam(notimerangeurl, trp, mode='extensible')
-    request.session['notimerangeurl'] = notimerangeurl
+    request.session['urls_cut']['notimerangeurl'] = notimerangeurl
 
     if 'timerange' in request.session:
         del request.session['timerange']
@@ -10805,11 +10808,11 @@ def getFilePathForObjectStore(objectstore, filetype="logs"):
                     basepath = url + basepath
 
         if basepath == "":
-            print ("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
+            _logger.warning("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
             filetype, objectstore))
 
     else:
-        print ("Object store not defined in queuedata")
+        _logger.info("Object store not defined in queuedata")
 
     return basepath
 

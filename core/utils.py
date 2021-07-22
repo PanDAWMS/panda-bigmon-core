@@ -47,13 +47,14 @@ def complete_request(request, **kwargs):
     """
     _logger.info("Len of session dict at the end: {}".format(len(str(request.session._session))))
 
-    keys_to_remove = ['requestParams', 'viewParams', 'notimestampurl', 'notimerangeurl']
+    keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls']
     if 'extra_keys' in kwargs:
         keys_to_remove.extend(kwargs['extra_keys'])
 
     for k in keys_to_remove:
         if k in request.session:
             del request.session[k]
+    request.session.modified = True
     _logger.info("Len of session dict after cleaning: {}".format(len(str(request.session._session))))
 
     return request

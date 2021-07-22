@@ -552,16 +552,16 @@
       {% else %}
           var timerange =  ['', ''];
       {% endif %}
-      {% if request.session.notimerangeurl %}
-          var notimerangeurl = '{{ request.session.notimerangeurl|safe }}';
+      {% if request.session.urls_cut.notimerangeurl %}
+          var notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
       {% else %}
-          var notimerangeurl =  window.location.href ;
+          var notimerangeurl =  window.location.href + '?';
       {% endif %}
 
-      {% if request.session.notimestampurl %}
-          var notimestampurl = '{{ request.session.notimestampurl|safe }}';
+      {% if request.session.urls_cut.notimestampurl %}
+          var notimestampurl = '{{ request.session.urls_cut.notimestampurl|safe }}';
       {% else %}
-          var notimestampurl =  window.location.href ;
+          var notimestampurl =  window.location.href + '?' ;
       {% endif %}
 
 

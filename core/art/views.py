@@ -57,6 +57,7 @@ def art(request):
         data = json.loads(data)
         data['request'] = request
         response = render_to_response('artMainPage.html', data, content_type='text/html')
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -129,6 +130,7 @@ def artOverview(request):
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
         response = render_to_response('artOverview.html', data, content_type='text/html')
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -226,6 +228,7 @@ def artTasks(request):
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
         response = render_to_response('artTasks.html', data, content_type='text/html')
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -339,6 +342,7 @@ def artJobs(request):
                     data['requestParams']['ntag'] = ntags[0]
         response = render_to_response('artJobs.html', data, content_type='text/html')
         _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
