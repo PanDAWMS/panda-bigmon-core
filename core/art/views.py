@@ -17,7 +17,7 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F
 
 from core.oauth.utils import login_customrequired
-from core.utils import is_json_request
+from core.utils import is_json_request, complete_request
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import DateEncoder
 from core.art.artMail import send_mail_art
@@ -89,6 +89,7 @@ def art(request):
     else:
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     setCacheEntry(request, "artMain", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
+    request = complete_request(request)
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -185,6 +186,7 @@ def artOverview(request):
         }
         setCacheEntry(request, "artOverview", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artOverview.html', data, content_type='text/html')
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -293,6 +295,7 @@ def artTasks(request):
         }
         setCacheEntry(request, "artTasks", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artTasks.html', data, content_type='text/html')
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -571,6 +574,7 @@ def artJobs(request):
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artJobs.html', data, content_type='text/html')
         _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 

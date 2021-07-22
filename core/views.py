@@ -96,7 +96,7 @@ from decimal import *
 from django.contrib.auth import logout as auth_logout
 from core.oauth.utils import login_customrequired
 
-from core.utils import is_json_request, extensibleURL
+from core.utils import is_json_request, extensibleURL, complete_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
@@ -334,6 +334,8 @@ def initRequest(request, callselfmon = True):
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
         VOMODE = 'atlas'
         # VOMODE = 'devtest'
+
+    _logger.info("Len of session dict: {}".format(len(str(request.session._session))))
     request.session['req_init_time'] = time.time()
     request.session['IS_TESTER'] = False
 
@@ -403,8 +405,6 @@ def initRequest(request, callselfmon = True):
 
     if 'timerange' in request.session:
         del request.session['timerange']
-
-    request.session['secureurl'] = 'https://bigpanda.cern.ch' + url
 
     #if 'USER' in os.environ and os.environ['USER'] != 'apache':
     #    request.session['debug'] = True
@@ -2723,6 +2723,7 @@ def jobList(request, mode=None, param=None):
             response = render_to_response('jobList.html', data, content_type='text/html')
 
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
+        request = complete_request(request)
 
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
