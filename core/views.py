@@ -7673,22 +7673,22 @@ def taskProfileData(request, jeditaskid=0):
     job_types = ['build', 'run', 'merge']
     job_states = ['finished', 'failed', 'closed', 'cancelled']
     colors = {
-        'creation': {'finished': 'RGBA(176,255,176,0.75)', 'failed': 'RGBA(255,176,176,0.75)',
-                     'closed': 'RGBA(214,214,214,0.75)', 'cancelled': 'RGBA(255,227,177,0.75)'},
-        'start': {'finished': 'RGBA(0,216,0,0.75)', 'failed': 'RGBA(235,0,0,0.75)',
-                  'closed': 'RGBA(100,100,100,0.75)', 'cancelled': 'RGBA(255,165,0,0.75)'},
-        'end': {'finished': 'RGBA(0,100,0,0.75)', 'failed': 'RGBA(137,0,0,0.75)',
-                'closed': 'RGBA(0,0,0,0.75)', 'cancelled': 'RGBA(157,102,0,0.75)'},
+        'creation': {'finished': 'RGBA(162,198,110,1)', 'failed': 'RGBA(255,176,176,1)',
+                     'closed': 'RGBA(214,214,214,1)', 'cancelled': 'RGBA(255,227,177,1)'},
+        'start': {'finished': 'RGBA(70,181,117,0.8)', 'failed': 'RGBA(235,0,0,0.8)',
+                  'closed': 'RGBA(100,100,100,0.8)', 'cancelled': 'RGBA(255,165,0,0.8)'},
+        'end': {'finished': 'RGBA(2,115,0,0.8)', 'failed': 'RGBA(137,0,0,0.8)',
+                'closed': 'RGBA(0,0,0,0.8)', 'cancelled': 'RGBA(157,102,0,0.8)'},
     }
     markers = {'build': 'triangle', 'run': 'circle', 'merge': 'crossRot'}
     order_mpx = {
         'creation': 1,
         'start': 2,
         'end': 3,
-        'finished': 4,
-        'failed': 3,
-        'closed': 2,
-        'cancelled': 1,
+        'finished': 7,
+        'failed': 6,
+        'closed': 5,
+        'cancelled': 4,
     }
     order_dict = {}
     for jtn in job_time_names:
@@ -7703,7 +7703,7 @@ def taskProfileData(request, jeditaskid=0):
                     task_profile_data_dict['_'.join((jtmn, js, jt))] = {
                         'name': '_'.join((jtmn, js, jt)),
                         'label': jtmn.capitalize() + ' time of a ' + js + ' ' + jt + ' job',
-                        'pointRadius': round(1 + 4.0 * math.exp(-0.0004*len(task_profile_dict[jt]))),
+                        'pointRadius': round(1 + 3.0 * math.exp(-0.0004*len(task_profile_dict[jt]))),
                         'backgroundColor': colors[jtmn][js],
                         'borderColor': colors[jtmn][js],
                         'pointStyle': markers[jt],
