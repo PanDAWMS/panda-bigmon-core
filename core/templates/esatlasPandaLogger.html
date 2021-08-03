@@ -47,7 +47,7 @@
                 input = document.getElementById("jediTaskID0").value;
                 if (input) {
                     taskid = input.replace(/\s/g, '');
-                    url = "https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:" + taskid + "'),sort:!('@timestamp',desc))";
+                    url = "https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:" + taskid + "'),sort:!('@timestamp',desc))";
                     window.open(url);
                 }
             }
@@ -56,7 +56,7 @@
                 input = document.getElementById("jediTaskID1").value;
                 if (input) {
                     taskid = input.replace(/\s/g, '');
-                    url = "https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'(fields.type:%22atlasanaljobbroker%22%20OR%20fields.type:%22atlasprodjobbroker%22)%20AND%20jediTaskID:" + taskid + "'),sort:!('@timestamp',desc))";
+                    url = "https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'(fields.type:%22atlasanaljobbroker%22%20OR%20fields.type:%22atlasprodjobbroker%22)%20AND%20jediTaskID:" + taskid + "'),sort:!('@timestamp',desc))";
                     //window.location.href=url;
                     window.open(url);
                 }
@@ -90,7 +90,7 @@
                                 <tr bgcolor="#FCFCFC">
 
                                     <td style="width: 200px">
-                                        <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{ type }}%22'),sort:!('@timestamp',desc))"
+                                        <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{ type }}%22'),sort:!('@timestamp',desc))"
                                            target="_blank">{% if type == "stdout" %}{{ type }} ({{ name }}) {% else %}
                                             {{ type }}{% endif %}</a>
                                         {% for k,v in jedidesc.items %}
@@ -108,7 +108,7 @@
                                     <td>
                                         {% for key,level in levels.items %}
 
-                                            <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{ type }}%22%20AND%20logLevel:%22{{ level.logLevel }}%22'),sort:!('@timestamp',desc))"
+                                            <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{ type }}%22%20AND%20logLevel:%22{{ level.logLevel }}%22'),sort:!('@timestamp',desc))"
                                                target="_blank">
                                                 <span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>&nbsp;({{ level.lcount }})
                                             </a>
@@ -136,7 +136,7 @@
                                 <tr bgcolor="#FCFCFC">
 
                                     <td>
-                                        <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{ type }}%22'),sort:!('@timestamp',desc))"
+                                        <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{ type }}%22'),sort:!('@timestamp',desc))"
                                            target="_blank">{{ type }}</a>
                                         {% for k,v in pandadesc.items %}
                                             {% if k ==  name %}
@@ -153,7 +153,7 @@
                                     <td>
 
                                         {% for key,level in levels.items %}
-                                            <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{ type }}%22%20AND%20logLevel:%22{{ level.logLevel }}%22'),sort:!('@timestamp',desc))"
+                                            <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-7d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'logName:%22{{ name }}%22%20AND%20fields.type:%22{{ type }}%22%20AND%20logLevel:%22{{ level.logLevel }}%22'),sort:!('@timestamp',desc))"
                                                target="_blank">
                                                 <span class="{% if  level.logLevel|lower == "error" %}errspan {% else %}{{ level.logLevel|lower }}{% endif %}">{{ level.logLevel }}</span>&nbsp;({{ level.lcount }})
                                             </a>
@@ -199,12 +199,11 @@
                         if (/chrom(e|ium)/.test(navigator.userAgent.toLowerCase()) == false) {
                             //$( "#tabs" ).tabs( { disabled: [2, 3,4] } );
                             $("#tabs-3").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>");
-                            $("#tabs-3").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod job brokerage</a><br/><br/>");
+                            $("#tabs-3").append("<a href=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/jedilogs_prodjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod job brokerage</a><br/><br/>");
                         }
                         $("#tabs-3").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">      ");
-                        $("#tabs-3").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod job brokerage (es-atlas.cern.ch)</a><br/><br/>");
-                        //$( "#tabs-3" ).append( "<iframe id=\"prodjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?embed=true&g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-24h%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>" );
-                        $("#tabs-3").append("<iframe id=\"prodjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_prodjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
+                        $("#tabs-3").append("<a href=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/jedilogs_prodjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod job brokerage (es-atlas.cern.ch)</a><br/><br/>");
+                        $("#tabs-3").append("<iframe id=\"prodjobbrokerage\" src=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/jedilogs_prodjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
                         $("#refresh").button();
                         $("#refresh").click(function (event) {
                             $('#prodjobbrokerage').attr('src', function (i, val) {
@@ -215,12 +214,11 @@
                     case 'tabs-4':
                         if (/chrom(e|ium)/.test(navigator.userAgent.toLowerCase()) == false) {
                             $("#tabs-4").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>")
-                            $("#tabs-4").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage</a><br/><br/>");
+                            $("#tabs-4").append("<a href=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage</a><br/><br/>");
                         }
                         $("#tabs-4").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">      ");
-                        $("#tabs-4").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage (es-atlas.cern.ch)</a><br/><br/>");
-                        //$( "#tabs-4" ).append( "<iframe id=\"analyjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" )
-                        $("#tabs-4").append("<iframe id=\"analyjobbrokerage\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/jedilogs_analyjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
+                        $("#tabs-4").append("<a href=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage (es-atlas.cern.ch)</a><br/><br/>");
+                        $("#tabs-4").append("<iframe id=\"analyjobbrokerage\" src=\"https://es-atlas.cern1.ch/kibana/app/dashboards#/view/jedilogs_analyjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
                         $("#refresh").button();
                         $("#refresh").click(function (event) {
                             $('#analyjobbrokerage').attr('src', function (i, val) {
@@ -231,12 +229,12 @@
                     case 'tabs-5':
                         if (/chrom(e|ium)/.test(navigator.userAgent.toLowerCase()) == false) {
                             $("#tabs-5").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>");
-                            $("#tabs-5").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Throttle: queued vs running</a><br/><br/>");
+                            $("#tabs-5").append("<a href=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/f7164a00-5505-11e7-94c4-574499bcfa21?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Throttle: queued vs running</a><br/><br/>");
                         }
                         $("#tabs-5").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">      ");
-                        $("#tabs-5").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Throttle: queued vs running (es-atlas.cern.ch)</a><br/><br/>");
+                        $("#tabs-5").append("<a href=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/f7164a00-5505-11e7-94c4-574499bcfa21?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Throttle: queued vs running (es-atlas.cern.ch)</a><br/><br/>");
                         //$( "#tabs-5" ).append( "<iframe id=\"throttle\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" )
-                        $("#tabs-5").append("<iframe id=\"throttle\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
+                        $("#tabs-5").append("<iframe id=\"throttle\" src=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
                         $("#refresh").button();
                         $("#refresh").click(function (event) {
                             $('#throttle').attr('src', function (i, val) {
@@ -247,12 +245,12 @@
                     case 'tabs-6':
                         if (/chrom(e|ium)/.test(navigator.userAgent.toLowerCase()) == false) {
                             $("#tabs-6").append("<p>If you are having trouble with the certificate, try to open this page in Chrome. Or you can use this link:</p>");
-                            $("#tabs-6").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod task brokerage</a><br/><br/>");
+                            $("#tabs-6").append("<a href=\"https://es-atlas1.cern.ch/kibana/app/dashboard/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod task brokerage</a><br/><br/>");
                         }
                         $("#tabs-6").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">      ");
-                        $("#tabs-6").append("<a href=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod task brokerage (es-atlas.cern.ch)</a><br/><br/>");
+                        $("#tabs-6").append("<a href=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Prod task brokerage (es-atlas.cern.ch)</a><br/><br/>");
                         //$( "#tabs-5" ).append( "<iframe id=\"throttle\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/f7164a00-5505-11e7-94c4-574499bcfa21?embed=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>" )
-                        $("#tabs-6").append("<iframe id=\"prodtaskbroker\" src=\"https://es-atlas.cern.ch/kibana/app/kibana::/dashboard/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?embed=true&showSearch=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>");
+                        $("#tabs-6").append("<iframe id=\"prodtaskbroker\" src=\"https://es-atlas1.cern.ch/kibana/app/dashboards#/view/929a9770-b7e8-11e7-a6d6-5b89f03c2dd6?embed=true&showSearch=true&_g=()\" height=\"1000\" width=\"100%\"></iframe>");
                         $("#refresh").button();
                         $("#refresh").click(function (event) {
                             $('#prodtaskbroker').attr('src', function (i, val) {
@@ -290,7 +288,7 @@
                         {
                             "data": "jediTaskID",
                             "render": function (data, type, full, meta) {
-                                return '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:'+ data + '\'),sort:!(\'@timestamp\',desc))" target="_blank" style="color: #0a47ff">' + full['jediTaskID'] + '</a>'
+                                return '<a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:'+ data + '\'),sort:!(\'@timestamp\',desc))" target="_blank" style="color: #0a47ff">' + full['jediTaskID'] + '</a>'
                             },
                             sDefaultContent: ""
                         },
@@ -298,14 +296,14 @@
                             "data": "Type",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                return '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['Type'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank" style="color: #0a47ff">' + full['Type'] + '</a>'
+                                return '<a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['Type'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank" style="color: #0a47ff">' + full['Type'] + '</a>'
                             }
                         },
                         {
                             "data": "LevelName",
                             sDefaultContent: "",
                             "render": function (data, type, full, meta) {
-                                return '<a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['Type'] + '%22%20AND%20logLevel:%22' + full['LevelName'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank" style="color: #0a47ff">' + full['LevelName'] + '</a>'
+                                return '<a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,fields.type,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['Type'] + '%22%20AND%20logLevel:%22' + full['LevelName'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank" style="color: #0a47ff">' + full['LevelName'] + '</a>'
                             }
                         },
                         {
