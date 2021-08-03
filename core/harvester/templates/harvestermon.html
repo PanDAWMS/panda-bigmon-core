@@ -68,7 +68,7 @@
             Dear BigPanDA monitor users,<br><br>
 
             We propose to participate in testing the <a
-                href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))"
+                href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:''),sort:!('@timestamp',desc))"
                 target="_blank"> first prototype </a> (only CERN inside) of Elasticsearch+Kibana engine for harvester
             monitoring. <br>
             Data in Elasticsearch is synchronized with PanDA DB every minute. Timestamp field = submittime field. <br>
@@ -91,7 +91,7 @@
                         <td><b>{{ name }} ({{ value|length }})</b></td>
                         <td>
                             {% for n,v in value.items %}
-                                <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'status: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
+                                <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'status: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
                                    target="_blank"> <span class='{{ n }} item'>{{ n }}</span></a>
                                 <a href="{{ xurl }}status={{ n|safe }}">({{ v }})</a>
                             {% endfor %}
@@ -101,7 +101,7 @@
                         <td>
                             <div class="comment more">
                                 {% for n,v in value.items %}
-                                    <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingsite: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
+                                    <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingsite: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
                                        target="_blank"> {{ n }}</a>
                                     <a href="{{ xurl }}computingsite={{ n|safe }}">({{ v }})</a>
                                 {% endfor %}
@@ -112,7 +112,7 @@
                         <td>
                             <div class="comment more">
                                 {% for n,v in value.items %}
-                                    <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'resourcetype: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
+                                    <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'resourcetype: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
                                        target="_blank"> {{ n }}</a>
                                     <a href="{{ xurl }}resourcetype={{ n|safe }}">({{ v }})</a>
                                 {% endfor %}
@@ -123,7 +123,7 @@
                         <td>
                             <div class="comment more">
                                 {% for n,v in value.items %}
-                                    <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingelement: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
+                                    <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'computingelement: &quot;{{ n }}&quot;%20AND%20{% if instance != 0 %}harvesterid:&quot;{{ instance|safe }}&quot;'){% else %}computingsite:&quot;{{ computingsite|safe }}&quot;'){% endif %},sort:!('@timestamp',desc))"
                                        target="_blank"> {{ n }}</a>
                                     <a href="{{ xurl }}computingelement={{ n|safe }}">({{ v }})</a>
                                 {% endfor %}
@@ -134,7 +134,7 @@
                         <td>
                             <div class="comment more">
                                 {% for n,v in value.items %}
-                                    <a href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'harvesterid: &quot;{{ n }}&quot;%20AND%20computingsite:&quot;{{ computingsite|safe }}&quot;'),sort:!('@timestamp',desc))"
+                                    <a href="https://es-atlas1.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(columns:!(_source),index:'09f5a610-6810-11e9-a744-833d910adbcf',interval:auto,query:(language:lucene,query:'harvesterid: &quot;{{ n }}&quot;%20AND%20computingsite:&quot;{{ computingsite|safe }}&quot;'),sort:!('@timestamp',desc))"
                                        target="_blank"> {{ n }}</a>
                                     <a href="{{ xurl }}instance={{ n|safe }}">({{ v }})</a>
                                 {% endfor %}
@@ -337,7 +337,7 @@
                 </ul>
                 <div id="tabs-1">
                     {% if instance == 0 %}
-                        <a style="color: #0a47ff" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+                        <a style="color: #0a47ff" href="https://es-atlas1.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:computingsite.keyword,negate:!f,params:(query:{{ computingsite|safe }},type:phrase),
 type:phrase,value:{{ computingsite|safe }}),query:(match:(computingsite.keyword:(query:{{ computingsite|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
 panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
@@ -348,7 +348,7 @@ id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,versio
 (gridData:(h:3,i:'8',w:6,x:6,y:9),id:ed82b2a0-859f-11e8-be57-2be8d64792c0,panelIndex:'8',type:visualization,version:'6.2.4')),
 query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)" target="_blank">Link
                             (es-atlas.cern.ch)</a> <br/><br/>
-                        <iframe src="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+                        <iframe src="https://es-atlas1cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:computingsite.keyword,negate:!f,params:(query:{{ computingsite|safe }},type:phrase),
 type:phrase,value:{{ computingsite|safe }}),query:(match:(computingsite.keyword:(query:{{ computingsite|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
 panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
@@ -360,7 +360,7 @@ id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,versio
 query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)"
                                 height="1000" width="100%"></iframe>
                     {% else %}
-                        <a style="color: #0a47ff" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+                        <a style="color: #0a47ff" href="https://es-atlas1.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:harvesterid.keyword,negate:!f,params:(query:{{ instance|safe }},type:phrase),
 type:phrase,value:{{ instance|safe }}),query:(match:(harvesterid.keyword:(query:{{ instance|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
 panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
@@ -371,7 +371,7 @@ id:a9207bf0-843d-11e8-a7e3-ffbb2f24f6b4,panelIndex:'6',type:visualization,versio
 (gridData:(h:3,i:'8',w:6,x:6,y:9),id:ed82b2a0-859f-11e8-be57-2be8d64792c0,panelIndex:'8',type:visualization,version:'6.2.4')),
 query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashboard',viewMode:view)" target="_blank">Link
                             (es-atlas.cern.ch)</a> <br/><br/>
-                        <iframe src="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
+                        <iframe src="https://es-atlas1.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?embed=true&_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:harvesterid.keyword,negate:!f,params:(query:{{ instance|safe }},type:phrase),
 type:phrase,value:{{ instance|safe }}),query:(match:(harvesterid.keyword:(query:{{ instance|safe }},type:phrase))))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),
 panels:!((gridData:(h:3,i:'1',w:6,x:6,y:6),id:'44015690-843d-11e8-be57-2be8d64792c0',panelIndex:'1',type:visualization,version:'6.2.4'),(gridData:(h:3,i:'2',w:6,x:0,y:3),
