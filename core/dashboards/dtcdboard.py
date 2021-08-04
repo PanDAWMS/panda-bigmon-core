@@ -297,7 +297,7 @@ def getStagingData(request):
         selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
 
     if not jeditaskid:
-        selection += " AND (not t3.TIMESTAMP < t1.start_time) AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or (END_TIME is NULL and not (t1.STATUS = 'done')))" \
+        selection += " AND not (NVL(t4.ENDTIME, CURRENT_TIMESTAMP) < t1.start_time) AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or (END_TIME is NULL and not (t1.STATUS = 'done')))" \
                      % (timewindow[0], timewindow[1])
 
     new_cur.execute(
