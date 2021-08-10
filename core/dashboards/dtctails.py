@@ -23,6 +23,7 @@ import logging
 _logger = logging.getLogger('bigpandamon')
 
 BASE_STAGE_INFO_URL = 'https://bigpanda.cern.ch/staginprogress/?jeditaskid='
+#BASE_STAGE_INFO_URL = 'http://aipanda163.cern.ch:8000/staginprogress/?jeditaskid='
 
 @never_cache
 @login_customrequired

@@ -36,7 +36,7 @@ def run_query(rules):
         results = loads(r.text)['responses'][0]['hits']['hits']
         for result in results:
             dictEntry = resultdict.get(result['_source']['data']['rule_id'], {})
-            dictEntry[result['_source']['data']['created_at']] = result['_source']['data']['progress']
+            dictEntry[result['_source']['data']['created_at']] = result['_source']['data'].get('progress')
             resultdict[result['_source']['data']['rule_id']] = dictEntry
         result = resultdict
     else:
