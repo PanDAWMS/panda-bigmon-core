@@ -54,7 +54,7 @@ def globalviewDemo(request):
     TO_CHAR(j.ecvkv,'DD-MON HH24:MI') as \"CVMCL\", j.SCVKV as \"S.CVMCL\",
     platf.lartwebarea,
     TO_CHAR(j.ela,'DD-MON HH24:MI') as \"LA\",
-    j.erla,j.sula, j.eim, j.sim, j.vext, j.suff, platf.webarea
+    j.erla,j.sula, j.wala, j.eim, j.sim, j.vext, j.suff, platf.webarea
     from nightlies@ATLR.CERN.CH n inner join
       ( releases@ATLR.CERN.CH a inner join
         ( jobstat@ATLR.CERN.CH j inner join projects@ATLR.CERN.CH p on j.projid = p.projid) on a.nid=j.nid and a.relid=j.relid )
@@ -115,10 +115,10 @@ def globalviewDemo(request):
             for kk, vv in v46.items():
                 kk_transf = re.sub('/','_',k46) 
                 key_transf = kk_transf+'_'+kk
-                string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
+                string_vv = '<B><span style="color: blue">' + str(vv['active']) + '</span></B>'
                 string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['succeeded']) +'</span></B>,'
-                string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
-                string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>' 
+                string_vv = string_vv + '<B><span style="color: brown">' + str(vv['finished']) + '</span></B>'
+                string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>'
                 dict_cache_transf[key_transf] = [string_vv, k46]
 #    pprint(dict_cache_transf)
     reslt3 = []
@@ -152,9 +152,12 @@ def globalviewDemo(request):
         lartwebarea=row[29]
         if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDir\
 ectory/gitwww/GITWebArea/nightlies"        
-        erla=row[31];sula=row[32]; eim=row[33]; sim=row[34]; vext=row[35]; area_suffix=row[36]; webarea_cur=row[37]
+        erla=row[31];sula=row[32]; wala=row[33]; eim=row[34]; sim=row[35]; vext=row[36]; area_suffix=row[37]; webarea_cur=row[38]
         if erla == None or erla == '': erla='N/A'
         if sula == None or sula == '': sula='N/A'
+        if wala == None or wala == '': wala = 'N/A'
+        if wala.isdigit() and sula.isdigit():
+            sula=str(int(sula)-int(wala))
         if eim == None or eim == '': eim='N/A'
         if sim == None or sim == '': sim='N/A'
         if vext == None or vext == '': vext = '0'
@@ -184,6 +187,7 @@ ectory/gitwww/GITWebArea/nightlies"
             local_art_res='N/A'
         else:
             local_art_res=local_art_res+'<B><span style="color: green">'+ str(sula)+'</span></B>,'
+            local_art_res = local_art_res +'<B><span style="color: brown">' + str(wala) + '</span></B>,'
             local_art_res=local_art_res+'<B><span style="color: red">'+ str(erla)+'</span></B>'
             arrk=re.split('_',brname)
             branch=arrk[0]
@@ -211,7 +215,7 @@ ectory/gitwww/GITWebArea/nightlies"
         list9.append(val_cache_transf);
         list9.append(tt_cv_clie);
         list9.append(image_res);
-        list9.append(row[38]);
+        list9.append(row[39]);
 
         reslt3.append(list9)
 

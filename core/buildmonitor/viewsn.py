@@ -91,9 +91,9 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
             for kk, vv in v46.items():
                 kk_transf = re.sub('/','_',k46)
                 key_transf = kk_transf+'_'+kk
-                string_vv = '<span style="color: blue">' + str(vv['active']) + '</span>'
+                string_vv = '<B><span style="color: blue">' + str(vv['active']) + '</span></B>'
                 string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['succeeded']) +'</span></B>,'
-                string_vv = string_vv + '<span style="color: maroon">' + str(vv['finished']) + '</span>'
+                string_vv = string_vv + '<B><span style="color: brown">' + str(vv['finished']) + '</span></B>'
                 string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>'
                 dict_cache_transf[key_transf] = [string_vv, k46]
     ar_sel="unknown"
@@ -118,15 +118,15 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/gitwww/GITWebArea/nightlies"
 #      print("JIDX",jid_sel)
 #
-      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,eim,sim,eext,sext,vext,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
+      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,wala,eim,sim,eext,sext,vext,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
       new_cur.execute(query01)
       reslt1 = new_cur.fetchall()
       lenres=len(reslt1)
       if lenres != 0 and ( reslt1[0][2] == 'cancel' or reslt1[0][2] == 'CANCEL' or reslt1[0][2] == 'ABORT' or reslt1[0][2] == 'abort' ):
           pjname=reslt1[0][1]
-          s_ext = reslt1[0][22]
+          s_ext = reslt1[0][23]
           if s_ext == None or s_ext == '': s_ext = 'N/A'
-          vext = reslt1[0][23]
+          vext = reslt1[0][24]
           if vext == None or vext == '': vext = '0'
           s_checkout = 'N/A'
           if reslt1[0][14] != None: s_checkout = str(reslt1[0][14])
@@ -135,7 +135,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           if str(vext) != 1: s_config = '0'; s_inst = '0'
           if reslt1[0][12] != None: s_config = str(reslt1[0][12])
           if reslt1[0][13] != None: s_inst = str(reslt1[0][13])
-          hname=reslt1[0][24]
+          hname=reslt1[0][25]
           if re.search(r'\.',hname):
               hname=(re.split(r'\.',hname))[0]
           area_suffix = reslt1[0][9]
@@ -195,15 +195,19 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   if erla == None or erla == '': erla='N/A'
                   sula=row01[18]
                   if sula == None or sula == '': sula='N/A'
-                  e_im=row01[19]
+                  wala=row01[19]
+                  if wala == None or wala == '': wala = 'N/A'
+                  if wala.isdigit() and sula.isdigit():
+                      sula = str(int(sula) - int(wala))
+                  e_im = row01[20]
                   if e_im == None or e_im == '': e_im='N/A'
-                  s_im=row01[20]
+                  s_im=row01[21]
                   if s_im == None or s_im == '': s_im='N/A'
-                  s_ext = row01[22]
+                  s_ext = row01[23]
                   if s_ext == None or s_ext == '': s_ext = 'N/A'
-                  vext = row01[23]
+                  vext = row01[24]
                   if vext == None or vext == '': vext = '0'
-                  hname=row01[24]
+                  hname=row01[25]
                   if re.search(r'\.', hname):
                       hname = (re.split(r'\.', hname))[0]
                   area_suffix = reslt1[0][9]
@@ -306,6 +310,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                       local_art_res='N/A'
                   else: 
                       local_art_res=local_art_res+'<B><span style="color: green">'+ str(sula)+'</span></B>,'
+                      local_art_res = local_art_res + '<B><span style="color: brown">' + str(wala) + '</span></B>,'
                       local_art_res=local_art_res+'<B><span style="color: red">'+ str(erla)+'</span></B>'
                       arrk=re.split('_',nname)
                       branch=arrk[0]
