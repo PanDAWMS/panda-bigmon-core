@@ -240,7 +240,7 @@
 
             <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">Pilot records</a>
 
-            <a target="_blank" href="https://es-atlas1.cern.ch/kibana/app/discover#/?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-10d,to:now))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'jediTaskID:{{job.jeditaskid}}'),sort:!('timeEvent',desc))">Action logger (Kibana)</a>
+            <a target="_blank" href="https://es-atlas1.cern.ch/kibana/app/discover#/?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-10d,to:now))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'jediTaskID:{{job.jeditaskid}}'),sort:!('@timestamp',desc))">Action logger (Kibana)</a>
             <a href="#" onclick="return openAllLogs();">Open all logs</a>
 
         {% endif %}
@@ -519,7 +519,7 @@ function openAllLogs() {
       logLinksArray.push('{{stdlog}}');
       logLinksArray.push('{{stdjdl}}');
       logLinksArray.push("{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}");
-      logLinksArray.push("https://es-atlas1.cern.ch/kibana/app/discover#/?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-10d,to:now))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'jediTaskID:{{job.jeditaskid}}'),sort:!('timeEvent',desc))")
+      logLinksArray.push("https://es-atlas1.cern.ch/kibana/app/discover#/?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-10d,to:now))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'jediTaskID:{{job.jeditaskid}}'),sort:!('@timestamp',desc))")
    }
   }
   else {
