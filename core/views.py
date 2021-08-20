@@ -335,7 +335,6 @@ def initRequest(request, callselfmon=True):
         VOMODE = 'atlas'
         # VOMODE = 'devtest'
 
-    _logger.info("Len of session dict: {}".format(len(str(request.session._session))))
     request.session['req_init_time'] = time.time()
     request.session['IS_TESTER'] = False
 
