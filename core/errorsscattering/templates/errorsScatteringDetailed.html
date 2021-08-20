@@ -14,7 +14,7 @@
 {% block body %}
 
 <div class="float-left">
-{% if requestParams.reqid %}<br><b>Request ID: {{ requestParams.reqid }}</b> {% endif %}
+{% if requestParams.reqid %}<br><b>Request ID: {{ requestParams.reqid }}</b> <a target="_blank" href="https://monit-grafana.cern.ch/d/5ROeg3QZk/jobs-monitoring-monit-elasticsearch?orgId=17&var-bin=1h&var-groupby=adcactivity&var-country=All&var-federation=All&var-resources=All&var-tier=All&var-cloud=All&var-site=All&var-computingsite=All&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-reasonoffailure=All&var-transexitreasonoffailure=All&var-errorcategory=All&var-container_name=All&var-reqids={{ requestParams.reqid }}&var-taskid=All&from=now-7d&to=now"><div class="tooltip-upper"><img src="{% static 'images/grafana.png' %}" width=15 height=15 border=0><span class="tooltip-text">Jobs monitoring (MONIT Grafana)</span></div></a> {% endif %}
 {% if requestParams.region %}<br><b>Region: {{ requestParams.region }}</b> {% endif %}
 </div>
 
