@@ -1294,6 +1294,7 @@ def get_prod_slice_by_taskid(jeditaskid):
         slice = task_prod_info[0][3]
     return slice
 
+
 def get_logs_by_taskid(jeditaskid):
 
     tasks_logs = []
@@ -1337,3 +1338,30 @@ def get_logs_by_taskid(jeditaskid):
                                    'lcount': str(levelnames['doc_count'])})
 
     return tasks_logs
+
+
+def taskNameDict(jobs):
+    """
+    Translate IDs to names. Awkward because models don't provide foreign keys to task records.
+    :param jobs: list of dist
+    :return:
+    """
+    jeditaskids = {}
+    for job in jobs:
+        if 'taskid' in job and job['taskid'] and job['taskid'] > 0:
+            jeditaskids[job['taskid']] = 1
+        if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
+            jeditaskids[job['jeditaskid']] = 1
+    jeditaskidl = jeditaskids.keys()
+
+    # Write ids to temp table to avoid too many bind variables oracle error
+    tasknamedict = {}
+    if len(jeditaskidl) > 0:
+        tmp_table_name = get_tmp_table_name()
+        transaction_key = insert_to_temp_table(jeditaskidl)
+        extra = 'JEDITASKID IN (SELECT ID FROM {} WHERE TRANSACTIONKEY = {})'.format(tmp_table_name, transaction_key)
+        jeditasks = JediTasks.objects.extra(where=[extra]).values('taskname', 'jeditaskid')
+        for t in jeditasks:
+            tasknamedict[t['jeditaskid']] = t['taskname']
+
+    return tasknamedict

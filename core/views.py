@@ -60,7 +60,7 @@ from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
 from core.common.models import JediWorkQueue
-from core.oauth.models import BPUser, Visits, BPUserSettings
+from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.ruciowrapper import ruciowrapper
 
@@ -107,7 +107,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     job_summary_for_task_light, get_top_memory_consumers, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
-    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid
+    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, taskNameDict
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
@@ -2543,12 +2543,10 @@ def jobList(request, mode=None, param=None):
                         job['maxpss'] = "%0.2f" % (job['maxpss'] / 1024.)
 
     testjobs = False
-    if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
-        'prodsourcelabel'].lower().find('test') >= 0:
+    if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0:
         testjobs = True
-    tasknamedict = taskNameDict(jobs)
-    errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
-                                                                                          testjobs)
+
+    errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, testjobs)
     errsByMessage = get_error_message_summary(jobs)
 
     _logger.info('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
@@ -4370,7 +4368,7 @@ def userDashApi(request, agg=None):
         jobs = get_job_list(jquery, values=err_fields)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, {}, False, flist=[], sortby='count')
+        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, False, flist=[], sortby='count')
         errs_by_task_dict = {}
         for err in errs_by_task:
             if err['name'] not in errs_by_task_dict:
@@ -8688,7 +8686,7 @@ def jobStateSummary(jobs):
     return statecount
 
 
-def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
+def errorSummaryDict(request, jobs, testjobs, **kwargs):
     """ take a job list and produce error summaries from it """
     errsByCount = {}
     errsBySite = {}
@@ -8719,6 +8717,9 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
         sortby = request.session['requestParams']['sortby']
     elif 'sortby' in kwargs and kwargs['sortby']:
         sortby = kwargs['sortby']
+
+    # get task names needed for error summary by task
+    tasknamedict = taskNameDict(jobs)
 
     for job in jobs:
         if not testjobs:
@@ -8841,46 +8842,15 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
     errsBySiteL = []
     errsByUserL = []
     errsByTaskL = []
-    v = {}
     esjobs = []
     kys = errsByCount.keys()
     kys = sorted(kys)
     for err in kys:
-        v = {}
         for key, value in sorted(errsByCount[err]['pandalist'].items()):
             if value == '':
                 value = 'None'
             esjobs.append(key)
-           # if err == 'jobdispatcher:100':
-           #     value = re.sub("(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})", "*", value)
-           # elif err == 'exe:68':
-           #     #value = re.sub("","*",value)
-           #     value = value
-          #  elif err == 'pilot:1099':
-          #      if ('STAGEIN FAILED: Get error: Staging input file failed' in value):
-         #           value = 'STAGEIN FAILED: Get error: Staging input file failed'
-          #  v.setdefault(value, []).append(key)
-        #errsByCount[err]['pandalist'] = v
         errsByCountL.append(errsByCount[err])
-
-
-
-       # random.seed()
-
-        #if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        #    tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-        #else:
-        #    tmpTableName = "TMP_IDS1DEBUG"
-
-        #transactionKey = random.randrange(1000000)
-        #            connection.enter_transaction_management()
-        #new_cur = connection.cursor()
-        #executionData = []
-        #for id in esjobs:
-        #    executionData.append((id, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-        #query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
-        #new_cur.executemany(query, executionData)
-        #            connection.commit()
 
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
@@ -8898,7 +8868,6 @@ def errorSummaryDict(request, jobs, tasknamedict, testjobs, **kwargs):
         errsByUserL.append(errsByUser[user])
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
-
 
     kys = list(errsBySite.keys())
     kys = sorted(kys)
@@ -9210,13 +9179,9 @@ def errorSummary(request):
     _logger.info('Prepared new error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
     njobs = len(jobs)
-    tasknamedict = taskNameDict(jobs)
-
-    _logger.info('Got taskname for jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     ## Build the error summary.
-    errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, tasknamedict,
-                                                                                      testjobs, errHist=True)
+    errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, testjobs, errHist=True)
 
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -10734,45 +10699,6 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False):
         return txt, codesDescribed
     else:
         return txt
-
-
-def taskNameDict(jobs):
-    ## Translate IDs to names. Awkward because models don't provide foreign keys to task records.
-    taskids = {}
-    jeditaskids = {}
-    for job in jobs:
-        if 'taskid' in job and job['taskid'] and job['taskid'] > 0:
-            taskids[job['taskid']] = 1
-        if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0: jeditaskids[job['jeditaskid']] = 1
-    taskidl = taskids.keys()
-    jeditaskidl = jeditaskids.keys()
-
-    # Write ids to temp table to avoid too many bind variables oracle error
-    tasknamedict = {}
-    if len(jeditaskidl) > 0:
-        random.seed()
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-        else:
-            tmpTableName = "TMP_IDS1"
-        transactionKey = random.randrange(1000000)
-        jeditaskidl = [(tid, transactionKey) for tid in jeditaskidl]
-        new_cur = connection.cursor()
-        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-        new_cur.executemany(query, jeditaskidl)
-        connection.commit()
-
-        extraqueue = 'JEDITASKID IN (SELECT ID FROM %s WHERE TRANSACTIONKEY = %s)' % (tmpTableName, transactionKey)
-        jeditasks = JediTasks.objects.extra(where=[extraqueue]).values('taskname', 'jeditaskid')
-        for t in jeditasks:
-            tasknamedict[t['jeditaskid']] = t['taskname']
-
-    # if len(taskidl) > 0:
-    #    tq = { 'taskid__in' : taskidl }
-    #    oldtasks = Etask.objects.filter(**tq).values('taskname', 'taskid')
-    #    for t in oldtasks:
-    #        tasknamedict[t['taskid']] = t['taskname']
-    return tasknamedict
 
 
 def getFilePathForObjectStore(objectstore, filetype="logs"):

@@ -38,6 +38,10 @@ td.wrap{
     word-break: break-word;
 }
 
+td.small, th.small {
+  font-size: 0.8rem;
+}
+
 th.main {
     font-weight: 600;
 	font-family: 'Muli', sans-serif;

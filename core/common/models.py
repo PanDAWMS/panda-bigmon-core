@@ -14,14 +14,8 @@ from ..pandajob.columns_config import COLUMNS, ORDER_COLUMNS, COL_TITLES, FILTER
 
 import json
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import connection
 from django.db import connections
 from django.utils import timezone
-from django.contrib.auth.models import AbstractUser
-#from rest_framework.authtoken.models import Token
-#import uuid
-#from hashlib import sha1
-#import hmac
 
 
 from django.db import models
@@ -163,74 +157,6 @@ class DeftTask(models.Model):
     class Meta:
         db_table = u'deft_task'
 
-class Dslist(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='ID')
-    duid = models.CharField(max_length=120, db_column='DUID', blank=True)
-    name = models.CharField(max_length=600, db_column='NAME')
-    ugid = models.IntegerField(null=True, db_column='UGID', blank=True)
-    priority = models.IntegerField(null=True, db_column='PRIORITY', blank=True)
-    status = models.CharField(max_length=30, db_column='STATUS', blank=True)
-    lastuse = models.DateTimeField(db_column='LASTUSE')
-    pinstate = models.CharField(max_length=30, db_column='PINSTATE', blank=True)
-    pintime = models.DateTimeField(db_column='PINTIME')
-    lifetime = models.DateTimeField(db_column='LIFETIME')
-    site = models.CharField(max_length=180, db_column='SITE', blank=True)
-    par1 = models.CharField(max_length=90, db_column='PAR1', blank=True)
-    par2 = models.CharField(max_length=90, db_column='PAR2', blank=True)
-    par3 = models.CharField(max_length=90, db_column='PAR3', blank=True)
-    par4 = models.CharField(max_length=90, db_column='PAR4', blank=True)
-    par5 = models.CharField(max_length=90, db_column='PAR5', blank=True)
-    par6 = models.CharField(max_length=90, db_column='PAR6', blank=True)
-    class Meta:
-        db_table = u'dslist'
-
-class Etask(models.Model):
-    taskid = models.IntegerField(primary_key=True, db_column='TASKID')
-    creationtime = models.DateTimeField(db_column='CREATIONTIME')
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    taskname = models.CharField(max_length=768, db_column='TASKNAME', blank=True)
-    status = models.CharField(max_length=384, db_column='STATUS', blank=True)
-    username = models.CharField(max_length=768, db_column='USERNAME', blank=True)
-    usergroup = models.CharField(max_length=96, db_column='USERGROUP', blank=True) 
-    userrole = models.CharField(max_length=96, db_column='USERROLE', blank=True) 
-    actualpars = models.CharField(max_length=6000, db_column='ACTUALPARS', blank=True)
-    cpucount = models.IntegerField(db_column='CPUCOUNT', blank=True)
-    cpuunit = models.CharField(max_length=96, db_column='CPUUNIT', blank=True)
-    diskcount = models.IntegerField(db_column='DISKCOUNT', blank=True)
-    diskunit = models.CharField(max_length=96, db_column='DISKUNIT', blank=True)
-    ramcount = models.IntegerField(db_column='RAMCOUNT', blank=True)
-    ramunit = models.CharField(max_length=96, db_column='RAMUNIT', blank=True)
-    outip = models.CharField(max_length=9, db_column='OUTIP', blank=True)
-    tasktype = models.CharField(max_length=96, db_column='TASKTYPE', blank=True)
-    grid = models.CharField(max_length=96, db_column='GRID', blank=True)
-    transfk = models.IntegerField(db_column='TRANSFK', blank=True)
-    transuses = models.CharField(max_length=768, db_column='TRANSUSES', blank=True)
-    transhome = models.CharField(max_length=768, db_column='TRANSHOME', blank=True)
-    transpath = models.CharField(max_length=768, db_column='TRANSPATH', blank=True)
-    transformalpars = models.CharField(max_length=768, db_column='TRANSFORMALPARS', blank=True)
-    tier = models.CharField(max_length=36, db_column='TIER', blank=True)
-    ndone = models.IntegerField(db_column='NDONE', blank=True)
-    ntotal = models.IntegerField(db_column='NTOTAL', blank=True)
-    nevents = models.BigIntegerField(db_column='NEVENTS', blank=True)
-    relpriority = models.CharField(max_length=30, db_column='RELPRIORITY', blank=True)
-    expevtperjob = models.BigIntegerField(db_column='EXPEVTPERJOB', blank=True)
-    tasktransinfo = models.CharField(max_length=1536, db_column='TASKTRANSINFO', blank=True)
-    extid1 = models.BigIntegerField(db_column='EXTID1', blank=True)
-    reqid = models.BigIntegerField(db_column='REQID', blank=True)
-    expntotal = models.BigIntegerField(db_column='EXPNTOTAL', blank=True)
-    cmtconfig = models.CharField(max_length=768, db_column='CMTCONFIG', blank=True)
-    site = models.CharField(max_length=384, db_column='SITE', blank=True)
-    tasktype2 = models.CharField(max_length=192, db_column='TASKTYPE2', blank=True)
-    taskpriority = models.IntegerField(db_column='TASKPRIORITY', blank=True)
-    partid = models.CharField(max_length=192, db_column='PARTID', blank=True)
-    taskpars = models.CharField(max_length=3072, db_column='TASKPARS', blank=True)
-    fillstatus = models.CharField(max_length=192, db_column='FILLSTATUS', blank=True)
-    rw = models.BigIntegerField(db_column='RW', blank=True)
-    jobsremaining = models.BigIntegerField(db_column='JOBSREMAINING', blank=True)
-    cpuperjob = models.IntegerField(db_column='CPUPERJOB', blank=True)
-
-    class Meta:
-        db_table = u'etask'
 
 class Filestable4(models.Model):
     row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
