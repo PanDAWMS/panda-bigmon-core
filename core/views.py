@@ -1395,7 +1395,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
         if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
     jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
 
-    print ('job list cleaned')
+    _logger.info('job list cleaned')
     return jobs
 
 
@@ -2121,7 +2121,6 @@ def jobList(request, mode=None, param=None):
     warning = {}
     extraquery_files = ' '
 
-
     if 'fileid' in request.session['requestParams'] or 'ecstate' in request.session['requestParams']:
         if 'fileid' in request.session['requestParams'] and request.session['requestParams']['fileid']:
             fileid = request.session['requestParams']['fileid']
@@ -2181,7 +2180,6 @@ def jobList(request, mode=None, param=None):
         fileid = None
 
     extraquery_tasks = ' '
-
     if 'taskname' in request.session['requestParams'] and 'username' in request.session['requestParams']:
         taskname = request.session['requestParams']['taskname']
         taskusername = request.session['requestParams']['username']
@@ -2426,7 +2424,6 @@ def jobList(request, mode=None, param=None):
     else:
         sortby = "attemptnr-descending,pandaid-descending"
         jobs = sorted(jobs, key=lambda x: [-x['attemptnr'],-x['pandaid']])
-
     _logger.info('Sorted joblist: {}'.format(time.time() - request.session['req_init_time']))
 
     taskname = ''
@@ -2441,80 +2438,7 @@ def jobList(request, mode=None, param=None):
         user = request.session['requestParams']['user']
     else:
         user = None
-    _logger.info('Got task names: {}'.format(time.time() - request.session['req_init_time']))
-
-    # set up google flow diagram
-    flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
-
-    _logger.info('Built google flow diagram: {}'.format(time.time() - request.session['req_init_time']))
-
-    if 'datasets' in request.session['requestParams'] and is_json_request(request):
-        for job in jobs:
-            files = []
-            pandaid = job['pandaid']
-            files.extend(JediDatasetContents.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
-            ninput = 0
-
-            dsquery = Q()
-            counter = 0
-            if len(files) > 0:
-                for f in files:
-                    if f['type'] == 'input': ninput += 1
-                    f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-
-                    f['DSQuery'] = {'jeditaskid': job['jeditaskid'], 'datasetid': f['datasetid']}
-                    dsquery = dsquery | Q(Q(jeditaskid=job['jeditaskid']) & Q(datasetid=f['datasetid']))
-                    counter += 1
-                    if counter == 30:
-                        break
-
-                dsets = JediDatasets.objects.filter(dsquery).extra(select={"dummy1": '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
-                if len(dsets) > 0:
-                    for ds in dsets:
-                        for file in files:
-                            if 'DSQuery' in file and file['DSQuery']['jeditaskid'] == ds['jeditaskid'] and \
-                                    file['DSQuery']['datasetid'] == ds['datasetid']:
-                                file['dataset'] = ds['datasetname']
-                                del file['DSQuery']
-
-                    #dsets = JediDatasets.objects.filter(jeditaskid=job['jeditaskid'], datasetid=f['datasetid']).extra(select={"dummy1" : '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
-                    #if len(dsets) > 0:
-                    #    f['datasetname'] = dsets[0]['datasetname']
-
-
-            if True:
-                # if ninput == 0:
-                files.extend(Filestable4.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
-                if len(files) == 0:
-                    files.extend(FilestableArch.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
-                if len(files) > 0:
-                    for f in files:
-                        if 'creationdate' not in f: f['creationdate'] = f['modificationtime']
-                        if 'fileid' not in f: f['fileid'] = f['row_id']
-                        if 'datasetname' not in f and 'dataset' in f: f['datasetname'] = f['dataset']
-                        if 'modificationtime' in f: f['oldfiletable'] = 1
-                        if 'destinationdblock' in f and f['destinationdblock'] is not None:
-                            f['destinationdblock_vis'] = f['destinationdblock'].split('_')[-1]
-            files = sorted(files, key=lambda x: x['type'])
-            nfiles = len(files)
-            logfile = {}
-            for file in files:
-                if file['type'] == 'log':
-                    logfile['lfn'] = file['lfn']
-                    logfile['guid'] = file['guid']
-                    if 'destinationse' in file:
-                        logfile['site'] = file['destinationse']
-                    else:
-                        logfilerec = Filestable4.objects.filter(pandaid=pandaid, lfn=logfile['lfn']).values()
-                        if len(logfilerec) == 0:
-                            logfilerec = FilestableArch.objects.filter(pandaid=pandaid, lfn=logfile['lfn']).values()
-                        if len(logfilerec) > 0:
-                            logfile['site'] = logfilerec[0]['destinationse']
-                            logfile['guid'] = logfilerec[0]['guid']
-                    logfile['scope'] = file['scope']
-                file['fsize'] = int(file['fsize'] / 1000000)
-            job['datasets'] = files
-        _logger.info('Got datasets info if requested: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.info('Got task and user names: {}'.format(time.time() - request.session['req_init_time']))
 
     # show warning or not
     if njobs <= request.session['JOB_LIMIT']:
@@ -2551,108 +2475,100 @@ def jobList(request, mode=None, param=None):
 
     _logger.info('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
 
-    # Here we getting extended data for site
-    jobsToShow = jobs[:njobsmax]
-    from core.libs import exlib
-    try:
-        jobsToShow = exlib.fileList(jobsToShow)
-    except Exception as e:
-        logger = logging.getLogger('bigpandamon-error')
-        logger.error(e)
-    ###RESERVE
-    distinctComputingSites = []
-    for job in jobsToShow:
-        distinctComputingSites.append(job['computingsite'])
-    distinctComputingSites = list(set(distinctComputingSites))
-    query = {}
-    query['siteid__in'] = distinctComputingSites
-    siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').extra().values('siteid', 'status',
-                                                                                      'comment_field')
-    siteHash = {}
-    for site in siteres:
-        siteHash[site['siteid']] = (site['status'], site['comment_field'])
-    for job in jobsToShow:
-        if job['computingsite'] in siteHash.keys():
-            job['computingsitestatus'] = siteHash[job['computingsite']][0]
-            job['computingsitecomment'] = siteHash[job['computingsite']][1]
+    if not is_json_request(request):
 
-    _logger.info('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
-
-    if thread != None:
+        # Here we getting extended data for list of jobs to be shown
+        jobsToShow = jobs[:njobsmax]
+        from core.libs import exlib
         try:
-            thread.join()
-            jobsTotalCount = sum(tcount[dkey])
-            print(dkey)
-            print(tcount[dkey])
-            del tcount[dkey]
-            print(tcount)
-            print(jobsTotalCount)
-        except:
-            jobsTotalCount = -1
-    else: jobsTotalCount = -1
+            jobsToShow = exlib.fileList(jobsToShow)
+        except Exception as e:
+            _logger.error(e)
+        _logger.info(
+            'Got file info for list of jobs to be shown: {}'.format(time.time() - request.session['req_init_time']))
 
-    listPar =[]
-    for key, val in request.session['requestParams'].items():
-        if (key!='limit' and key!='display_limit'):
-            listPar.append(key + '=' + str(val))
-    if len(listPar) > 0:
-        urlParametrs = '&'.join(listPar)+'&'
-    else:
-        urlParametrs = None
-    print(listPar)
-    del listPar
-    if (math.fabs(njobs-jobsTotalCount)<1000 or jobsTotalCount == -1):
-        jobsTotalCount=None
-    else:
-        jobsTotalCount = int(math.ceil((jobsTotalCount+10000)/10000)*10000)
+        # Getting PQ status for for list of jobs to be shown
+        pq_dict = get_panda_queues()
+        for job in jobsToShow:
+            if job['computingsite'] in pq_dict:
+                job['computingsitestatus'] = pq_dict[job['computingsite']]['status']
+                job['computingsitecomment'] = pq_dict[job['computingsite']]['comment']
+        _logger.info('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
 
-    _logger.info('Total jobs count thread finished: {}'.format(time.time() - request.session['req_init_time']))
-
-    for job in jobsToShow:
-        if job['creationtime']:
-            job['creationtime'] = job['creationtime'].strftime(defaultDatetimeFormat)
-        if job['modificationtime']:
-            job['modificationtime'] = job['modificationtime'].strftime(defaultDatetimeFormat)
-        if job['statechangetime']:
-            job['statechangetime'] = job['statechangetime'].strftime(defaultDatetimeFormat)
-
-    isincomparisonlist = False
-    clist = []
-    if request.user.is_authenticated and request.user.is_tester:
-
-        cquery = {}
-        cquery['object'] = 'job'
-        cquery['userid'] = request.user.id
-        try:
-            jobsComparisonList = ObjectsComparison.objects.get(**cquery)
-        except ObjectsComparison.DoesNotExist:
-            jobsComparisonList = None
-
-        if jobsComparisonList:
+        # closing thread for counting total jobs in DB without limiting number of rows selection
+        if thread is not None:
             try:
-                clist = json.loads(jobsComparisonList.comparisonlist)
-                newlist = []
-                for ce in clist:
-                    try:
-                        ceint = int(ce)
-                        newlist.append(ceint)
-                    except:
-                        pass
-                clist = newlist
+                thread.join()
+                jobsTotalCount = sum(tcount[dkey])
+                _logger.debug(dkey)
+                _logger.debug(tcount[dkey])
+                del tcount[dkey]
+                _logger.debug(tcount)
+                _logger.info("Total number of jobs in DB: {}".format(jobsTotalCount))
             except:
-                clist = []
+                jobsTotalCount = -1
+        else:
+            jobsTotalCount = -1
 
-    _logger.info('Got comparison job list for user: {}'.format(time.time() - request.session['req_init_time']))
+        listPar = []
+        for key, val in request.session['requestParams'].items():
+            if key not in ('limit', 'display_limit'):
+                listPar.append(key + '=' + str(val))
+        if len(listPar) > 0:
+            urlParametrs = '&'.join(listPar) + '&'
+        else:
+            urlParametrs = None
+        _logger.info(listPar)
+        del listPar
+        if math.fabs(njobs - jobsTotalCount) < 1000 or jobsTotalCount == -1:
+            jobsTotalCount = None
+        else:
+            jobsTotalCount = int(math.ceil((jobsTotalCount + 10000) / 10000) * 10000)
+        _logger.info('Total jobs count thread finished: {}'.format(time.time() - request.session['req_init_time']))
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+        # datetime type -> str in order to avoid encoding errors on template
+        datetime_job_param_names = ['creationtime', 'modificationtime', 'starttime', 'statechangetime', 'endtime']
+        for job in jobsToShow:
+            for dtp in datetime_job_param_names:
+                if job[dtp]:
+                    job[dtp] = job[dtp].strftime(defaultDatetimeFormat)
+
+        # comparison of objects
+        isincomparisonlist = False
+        clist = []
+        if request.user.is_authenticated and request.user.is_tester:
+            cquery = {}
+            cquery['object'] = 'job'
+            cquery['userid'] = request.user.id
+            try:
+                jobsComparisonList = ObjectsComparison.objects.get(**cquery)
+            except ObjectsComparison.DoesNotExist:
+                jobsComparisonList = None
+
+            if jobsComparisonList:
+                try:
+                    clist = json.loads(jobsComparisonList.comparisonlist)
+                    newlist = []
+                    for ce in clist:
+                        try:
+                            ceint = int(ce)
+                            newlist.append(ceint)
+                        except:
+                            pass
+                    clist = newlist
+                except:
+                    clist = []
+        _logger.info('Got comparison job list for user: {}'.format(time.time() - request.session['req_init_time']))
+
+        # set up google flow diagram
+        flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
+        _logger.info('Built google flow diagram: {}'.format(time.time() - request.session['req_init_time']))
 
         xurl = extensibleURL(request)
         time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
                           'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
                           '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
         nodurminurl = removeParam(xurl, 'durationmin', mode='extensible')
-        print(xurl)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         nosorturl = removeParam(nosorturl, 'display_limit', mode='extensible')
         #xurl = removeParam(nosorturl, 'mode', mode='extensible')
@@ -2668,7 +2584,7 @@ def jobList(request, mode=None, param=None):
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
-        errsByCount = importToken(request,errsByCount=errsByCount)
+        errsByCount = importToken(request, errsByCount=errsByCount)
         _logger.info('Extra data preporation done: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
@@ -2730,7 +2646,69 @@ def jobList(request, mode=None, param=None):
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        if (('fields' in request.session['requestParams']) and (len(jobs) > 0)):
+        if 'datasets' in request.session['requestParams']:
+            for job in jobs:
+                files = []
+                pandaid = job['pandaid']
+                files.extend(JediDatasetContents.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
+                ninput = 0
+
+                dsquery = Q()
+                counter = 0
+                if len(files) > 0:
+                    for f in files:
+                        if f['type'] == 'input': ninput += 1
+                        f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
+
+                        f['DSQuery'] = {'jeditaskid': job['jeditaskid'], 'datasetid': f['datasetid']}
+                        dsquery = dsquery | Q(Q(jeditaskid=job['jeditaskid']) & Q(datasetid=f['datasetid']))
+                        counter += 1
+                        if counter == 30:
+                            break
+
+                    dsets = JediDatasets.objects.filter(dsquery).extra(
+                        select={"dummy1": '/*+ INDEX_RS_ASC(ds JEDI_DATASETS_PK) */ 1 '}).values()
+                    if len(dsets) > 0:
+                        for ds in dsets:
+                            for file in files:
+                                if 'DSQuery' in file and file['DSQuery']['jeditaskid'] == ds['jeditaskid'] and \
+                                        file['DSQuery']['datasetid'] == ds['datasetid']:
+                                    file['dataset'] = ds['datasetname']
+                                    del file['DSQuery']
+
+                files.extend(Filestable4.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
+                if len(files) == 0:
+                    files.extend(FilestableArch.objects.filter(jeditaskid=job['jeditaskid'], pandaid=pandaid).values())
+                if len(files) > 0:
+                    for f in files:
+                        if 'creationdate' not in f: f['creationdate'] = f['modificationtime']
+                        if 'fileid' not in f: f['fileid'] = f['row_id']
+                        if 'datasetname' not in f and 'dataset' in f: f['datasetname'] = f['dataset']
+                        if 'modificationtime' in f: f['oldfiletable'] = 1
+                        if 'destinationdblock' in f and f['destinationdblock'] is not None:
+                            f['destinationdblock_vis'] = f['destinationdblock'].split('_')[-1]
+                files = sorted(files, key=lambda x: x['type'])
+                nfiles = len(files)
+                logfile = {}
+                for file in files:
+                    if file['type'] == 'log':
+                        logfile['lfn'] = file['lfn']
+                        logfile['guid'] = file['guid']
+                        if 'destinationse' in file:
+                            logfile['site'] = file['destinationse']
+                        else:
+                            logfilerec = Filestable4.objects.filter(pandaid=pandaid, lfn=logfile['lfn']).values()
+                            if len(logfilerec) == 0:
+                                logfilerec = FilestableArch.objects.filter(pandaid=pandaid, lfn=logfile['lfn']).values()
+                            if len(logfilerec) > 0:
+                                logfile['site'] = logfilerec[0]['destinationse']
+                                logfile['guid'] = logfilerec[0]['guid']
+                        logfile['scope'] = file['scope']
+                    file['fsize'] = int(file['fsize'] / 1000000)
+                job['datasets'] = files
+            _logger.info('Got dataset and file info if requested: {}'.format(time.time() - request.session['req_init_time']))
+
+        if 'fields' in request.session['requestParams'] and len(jobs) > 0:
             fields = request.session['requestParams']['fields'].split(',')
             fields = (set(fields) & set(jobs[0].keys()))
             if 'pandaid' not in fields:
@@ -2753,6 +2731,7 @@ def jobList(request, mode=None, param=None):
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
 
 def importToken(request, errsByCount):
     newErrsByCount = []
@@ -9092,7 +9071,6 @@ def errorSummary(request):
     else:
         display_limit = 9999999
 
-
     xurlsubst = extensibleURL(request)
     xurlsubstNoSite = xurlsubst
 
@@ -9270,8 +9248,6 @@ def errorSummary(request):
         jobsErrorsTotalCount = None
     else:
         jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount+10000)/10000)*10000)
-
-
     _logger.info('Formed list of params: {}'.format(time.time() - request.session['req_init_time']))
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
