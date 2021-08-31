@@ -2470,7 +2470,7 @@ def jobList(request, mode=None, param=None):
     if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0:
         testjobs = True
 
-    errsByCount, errsBySite, errsByUser, errsByTask, errdSumd, errHist = errorSummaryDict(request, jobs, testjobs)
+    errsByCount, _, _, _, errdSumd, _ = errorSummaryDict(request, jobs, testjobs, output=['errsByCount', 'errdSumd'])
     errsByMessage = get_error_message_summary(jobs)
 
     _logger.info('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
@@ -8697,8 +8697,15 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
     elif 'sortby' in kwargs and kwargs['sortby']:
         sortby = kwargs['sortby']
 
+    if 'output' in kwargs:
+        outputs = kwargs['output']
+    else:
+        outputs = ['errsByCount', 'errsBySite', 'errsByUser', 'errsByTask']
+
     # get task names needed for error summary by task
-    tasknamedict = taskNameDict(jobs)
+    tasknamedict = {}
+    if 'errsByTask' in outputs:
+        tasknamedict = taskNameDict(jobs)
 
     for job in jobs:
         if not testjobs:

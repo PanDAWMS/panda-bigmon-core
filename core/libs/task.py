@@ -1346,6 +1346,7 @@ def taskNameDict(jobs):
     :param jobs: list of dist
     :return:
     """
+    N_MAX_IN_QUERY = 100
     jeditaskids = {}
     for job in jobs:
         if 'taskid' in job and job['taskid'] and job['taskid'] > 0:
@@ -1357,10 +1358,15 @@ def taskNameDict(jobs):
     # Write ids to temp table to avoid too many bind variables oracle error
     tasknamedict = {}
     if len(jeditaskidl) > 0:
-        tmp_table_name = get_tmp_table_name()
-        transaction_key = insert_to_temp_table(jeditaskidl)
-        extra = 'JEDITASKID IN (SELECT ID FROM {} WHERE TRANSACTIONKEY = {})'.format(tmp_table_name, transaction_key)
-        jeditasks = JediTasks.objects.extra(where=[extra]).values('taskname', 'jeditaskid')
+        tquery = {}
+        if len(jeditaskidl) < N_MAX_IN_QUERY:
+            tquery['jeditaskid__in'] = jeditaskidl
+            extra = "(1=1)"
+        else:
+            tmp_table_name = get_tmp_table_name()
+            transaction_key = insert_to_temp_table(jeditaskidl)
+            extra = 'JEDITASKID IN (SELECT ID FROM {} WHERE TRANSACTIONKEY = {})'.format(tmp_table_name, transaction_key)
+        jeditasks = JediTasks.objects.filter(*tquery).extra(where=[extra]).values('taskname', 'jeditaskid')
         for t in jeditasks:
             tasknamedict[t['jeditaskid']] = t['taskname']
 
