@@ -877,6 +877,7 @@ def sendArtReport(request):
     """
     valid, response = initRequest(request)
     template = 'templated_email/artReportPackage.html'
+    subject = '[BigPanDAmon][ART] GRID ART jobs status report'
     if 'ntag_from' not in request.session['requestParams']:
         valid = False
         errorMessage = 'No ntag provided!'
@@ -904,24 +905,11 @@ def sendArtReport(request):
     artJobsNames = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'result']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
-    ### prepare data for report
-    artjobsdictbranch = {}
+    # prepare data for report
     artjobsdictpackage = {}
     for job in jobs:
         nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
         if nightly_tag_time > request.session['requestParams']['ntag_from'] + timedelta(hours=20):
-            if job['branch'] not in artjobsdictbranch.keys():
-                artjobsdictbranch[job['branch']] = {}
-                artjobsdictbranch[job['branch']]['branch'] = job['branch']
-                artjobsdictbranch[job['branch']]['ntag_full'] = job['nightly_tag']
-                artjobsdictbranch[job['branch']]['ntag'] = job['ntag'].strftime(artdateformat)
-                artjobsdictbranch[job['branch']]['packages'] = {}
-            if job['package'] not in artjobsdictbranch[job['branch']]['packages'].keys():
-                artjobsdictbranch[job['branch']]['packages'][job['package']] = {}
-                artjobsdictbranch[job['branch']]['packages'][job['package']]['name'] = job['package']
-                for state in statestocount:
-                    artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + state] = 0
-
             if job['package'] not in artjobsdictpackage.keys():
                 artjobsdictpackage[job['package']] = {}
                 artjobsdictpackage[job['package']]['branch'] = job['branch']
@@ -939,17 +927,11 @@ def sendArtReport(request):
                     'linktoeos'] = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{}/{}/{}/'.format(
                     job['branch'], job['nightly_tag'], job['package'])
             finalresult, extraparams = get_final_result(job)
-            artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
             artjobsdictpackage[job['package']]['branches'][job['branch']]['n' + finalresult] += 1
 
-
-    ### dict -> list & ordering
-    for branchname, sumdict in artjobsdictbranch.items():
-        sumdict['packages'] = sorted(artjobsdictbranch[branchname]['packages'].values(), key=lambda k: k['name'])
+    # dict -> list & ordering
     for packagename, sumdict in artjobsdictpackage.items():
         sumdict['packages'] = sorted(artjobsdictpackage[packagename]['branches'].values(), key=lambda k: k['name'])
-
-    summaryPerBranch = sorted(artjobsdictbranch.values(), key=lambda k: k['branch'], reverse=True)
 
     rquery = {}
     rquery['report'] = 'art'
@@ -960,12 +942,22 @@ def sendArtReport(request):
             recipients[recipient['type']] = recipient['email']
 
     summaryPerRecipient = {}
-    for package, email in recipients.items():
-        if email not in summaryPerRecipient:
-            summaryPerRecipient[email] = {}
-        if package in artjobsdictpackage.keys():
-            summaryPerRecipient[email][package] = artjobsdictpackage[package]
-    subject = '[BigPanDAmon][ART] GRID ART jobs status report'
+    for row in recipientslist:
+        if row['email'] is not None and len(row['email']) > 0 and row['email'] not in summaryPerRecipient:
+            summaryPerRecipient[row['email']] = {}
+        if row['type'] in artjobsdictpackage.keys():
+            summaryPerRecipient[row['email']][row['type']] = artjobsdictpackage[row['type']]
+
+    # remove empty dicts
+    recipients_to_remove = []
+    for recipient in summaryPerRecipient:
+        if len(summaryPerRecipient[recipient]) == 0:
+            recipients_to_remove.append(recipient)
+    for package in recipients_to_remove:
+        try:
+            del summaryPerRecipient[package]
+        except:
+            _logger.warning("Failed to remove recipient from list")
 
     maxTries = 1
     for recipient, summary in summaryPerRecipient.items():
