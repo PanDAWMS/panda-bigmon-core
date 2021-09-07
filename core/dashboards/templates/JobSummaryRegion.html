@@ -316,7 +316,7 @@ function buildRegionSummary(data, divid) {
           {
             extend: 'colvisGroup',
             text: 'Minimize view',
-            hide: [ 3,4,5,8,9,10,12,14,15,17,22,23 ],
+            hide: [ 3,4,8,9,10,12,14,15,17,22,23 ],
           },
           {
             extend: 'colvisGroup',
@@ -591,7 +591,7 @@ function buildRegionSummary(data, divid) {
           }
         },
     });
-    regionsTable.columns( [3,4,5,8,9,10,12,14,15,17,22,23] ).visible( false );
+    regionsTable.columns( [3,4,8,9,10,12,14,15,17,22,23] ).visible( false );
     regionsTable.buttons().container()
         .appendTo( '#regionsummary_wrapper .small-6.columns:eq(0)' );
     return regionsTable
@@ -616,7 +616,7 @@ function buildQueueSummary(data, divid) {
       {
         extend: 'colvisGroup',
         text: 'Minimize view',
-        hide: [ 6,7,8,9,10,13,14,15,17,19,20,22,27,28 ]
+        hide: [ 6,7,8,9,13,14,15,17,19,20,22,27,28 ]
       },
       {
         extend: 'colvisGroup',
@@ -943,7 +943,7 @@ function buildQueueSummary(data, divid) {
       },
     ],
   });
-  queuesTable.columns( [ 6,7,8,9,10,13,14,15,17,19,20,22,27,28 ] ).visible( false );
+  queuesTable.columns( [ 6,7,8,9,13,14,15,17,19,20,22,27,28 ] ).visible( false );
   queuesTable.buttons().container()
     .appendTo( '#queuesummary_wrapper .small-6.columns:eq(0)' );
   return queuesTable
