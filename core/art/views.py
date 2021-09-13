@@ -933,13 +933,10 @@ def sendArtReport(request):
     for packagename, sumdict in artjobsdictpackage.items():
         sumdict['packages'] = sorted(artjobsdictpackage[packagename]['branches'].values(), key=lambda k: k['name'])
 
+    # get recipient emails and prepare test results summary per email
     rquery = {}
     rquery['report'] = 'art'
     recipientslist = ReportEmails.objects.filter(**rquery).values()
-    recipients = {}
-    for recipient in recipientslist:
-        if recipient['email'] is not None and len(recipient['email']) > 0:
-            recipients[recipient['type']] = recipient['email']
 
     summaryPerRecipient = {}
     for row in recipientslist:
@@ -947,17 +944,6 @@ def sendArtReport(request):
             summaryPerRecipient[row['email']] = {}
         if row['type'] in artjobsdictpackage.keys():
             summaryPerRecipient[row['email']][row['type']] = artjobsdictpackage[row['type']]
-
-    # remove empty dicts
-    recipients_to_remove = []
-    for recipient in summaryPerRecipient:
-        if len(summaryPerRecipient[recipient]) == 0:
-            recipients_to_remove.append(recipient)
-    for package in recipients_to_remove:
-        try:
-            del summaryPerRecipient[package]
-        except:
-            _logger.warning("Failed to remove recipient from list")
 
     maxTries = 1
     for recipient, summary in summaryPerRecipient.items():
