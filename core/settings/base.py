@@ -141,7 +141,7 @@ INSTALLED_APPS_EXTRA = [
     "core.globalshares",
     "core.grafana",
     "core.harvester",
-    "core.iDDS",
+    #"core.iDDS",
     # "core.mlflowdynamic",
     "core.monitor",
     "core.oi",
