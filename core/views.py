@@ -7697,6 +7697,18 @@ def taskProfileData(request, jeditaskid=0):
                         'y': r['indx'] if request_progress_unit == 'jobs' else r['nevents'],
                         'label': r['pandaid'],
                     })
+
+    # deleting point groups if data is empty
+    group_to_remove = []
+    for group in task_profile_data_dict:
+        if len(task_profile_data_dict[group]['data']) == 0:
+            group_to_remove.append(group)
+    for group in group_to_remove:
+        try:
+            del task_profile_data_dict[group]
+        except:
+            _logger.info('failed to remove key from dict')
+
     # dict -> list
     task_profile_data = [v for k, v in task_profile_data_dict.items()]
 
@@ -7855,7 +7867,7 @@ def userProfileData(request):
                             'label': r['pandaid'],
                         })
 
-    # deleting points group if data is empty
+    # deleting point groups if data is empty
     group_to_remove = []
     for group in user_Dataprofile_data_dict:
         if len(user_Dataprofile_data_dict[group]['data']) == 0:
