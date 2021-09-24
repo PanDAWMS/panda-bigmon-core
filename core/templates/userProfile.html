@@ -4,7 +4,11 @@
 {% load common_tags %}
 
 {% block page_title %}Task profile plots{% endblock %}
-{% block subtitle %}Username profile plot for {{ username }} {% endblock %}
+{% block subtitle %}Profile plot for {{ username }} {% endblock %}
+{% block time_window %}
+    Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
 
 {% block css_page_library %}
 <!-- Load chart.css -->
@@ -115,6 +119,9 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
 
     $scope.taskprofile.url = function() {
       var query = '{% url 'userProfileData'  %}?username={{ username }}&';
+      // pass url params to api call
+      query += window.location.search.substr(1) + '&';
+      // add selection params
       Object.keys($scope.taskprofile.selection).forEach(key => {
           if (typeof $scope.taskprofile.selection[key] !== 'string') {
               query += key + '=' + $scope.taskprofile.selection[key].join(',') + '&';

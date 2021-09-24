@@ -70,6 +70,7 @@ from core.settings.local import GRAFANA
 
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
+from core.libs.UserProfilePlot import UserProfilePlot
 from core.ErrorCodes import ErrorCodes
 import hashlib
 
@@ -1098,7 +1099,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         query['jobstatus__in'] = ('finished', 'cancelled')
                     elif param == 'jobstatus':
                         val = escapeInput(request.session['requestParams'][param])
-                        values = val.split('|')
+                        values = val.split('|') if '|' in val else val.split(',')
                         query['jobstatus__in'] = values
                     elif param == 'eventservice':
                         if '|' in request.session['requestParams'][param]:
@@ -7702,8 +7703,9 @@ def taskProfileData(request, jeditaskid=0):
     data = {'plotData': task_profile_data, 'error': ''}
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
-def userProfile(request, username = ""):
+def userProfile(request, username=""):
     """A wrapper page for task profile plot"""
     valid, response = initRequest(request)
     if not valid:
@@ -7717,8 +7719,7 @@ def userProfile(request, username = ""):
         response = HttpResponse(json.dumps(msg), status=400)
 
     if len(username) > 0:
-        query = setupView(request, hours=24 * 30, querytype='task', wildCardExt=False)
-
+        query = setupView(request, hours=24 * 7, querytype='task', wildCardExt=False)
         query['username__icontains'] = username.strip()
         tasks = JediTasks.objects.filter(**query).values()
 
@@ -7727,6 +7728,9 @@ def userProfile(request, username = ""):
         else:
             msg = 'The username do not exist: {}'.format(username)
             response = HttpResponse(json.dumps(msg), status=400)
+
+        if query and 'modificationtime__castdate__range' in query:
+            request.session['timerange'] = query['modificationtime__castdate__range']
 
     else:
         msg = 'Not valid username provided: {}'.format(username)
@@ -7738,14 +7742,16 @@ def userProfile(request, username = ""):
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
         'username': username,
+        'timerange': request.session['timerange'],
     }
     response = render_to_response('userProfile.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
+
+@never_cache
 def userProfileData(request):
     """A view that returns data for task profile plot"""
-########
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -7755,7 +7761,6 @@ def userProfileData(request):
         msg = 'Provided username: {} is not valid, it must be string'.format(username)
         _logger.exception(msg)
         response = HttpResponse(json.dumps(msg), status=400)
-######
 
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype']:
         request_job_types = request.session['requestParams']['jobtype'].split(',')
@@ -7763,18 +7768,19 @@ def userProfileData(request):
         request_job_types = None
     if 'jobstatus' in request.session['requestParams'] and request.session['requestParams']['jobstatus']:
         request_job_states = request.session['requestParams']['jobstatus'].split(',')
+        if 'active' in request.session['requestParams']['jobstatus']:
+            # replace active with list of real job states
+            request.session['requestParams']['jobstatus'] = request.session['requestParams']['jobstatus'].replace(
+                'active',
+                ','.join(list(set(const.JOB_STATES) - set(const.JOB_STATES_FINAL))))
     else:
         request_job_states = None
 
     # get raw profile data
     if len(username) > 0:
-        query = setupView(request, hours=24 * 30, querytype='job', wildCardExt=False)
-#        user_Dataprofile = DataProgressPlot()
-#        user_Dataprofile_dict = user_Dataprofile.get_raw_data_profile_full(query)
-
-
-        with open('/data/tmp/user_jobs_dataset.json') as json_file:
-            user_Dataprofile_dict = json.load(json_file)
+        query = setupView(request, hours=24 * 7, querytype='job', wildCardExt=False)
+        user_Dataprofile = UserProfilePlot()
+        user_Dataprofile_dict = user_Dataprofile.get_raw_data_profile_full(query)
     else:
         msg = 'Not valid username provided: {}'.format(username)
         _logger.exception(msg)
@@ -7797,13 +7803,13 @@ def userProfileData(request):
     job_time_names = ['end', 'start', 'creation']
     job_types = ['build', 'run', 'merge']
     job_states = ['active', 'finished', 'failed', 'closed', 'cancelled']
-#I should change colors later
+
     colors = {
-        'creation': {'active': 'RGBA(0,169,255,1)', 'finished': 'RGBA(176,255,176,0.75)', 'failed': 'RGBA(255,176,176,0.75)',
+        'creation': {'active': 'RGBA(0,169,255,0.75)', 'finished': 'RGBA(162,198,110,0.75)', 'failed': 'RGBA(255,176,176,0.75)',
                      'closed': 'RGBA(214,214,214,0.75)', 'cancelled': 'RGBA(255,227,177,0.75)'},
-        'start': {'active': 'RGBA(0,85,183,1)', 'finished': 'RGBA(0,216,0,0.75)', 'failed': 'RGBA(235,0,0,0.75)',
+        'start': {'active': 'RGBA(0,85,183,0.75)', 'finished': 'RGBA(70,181,117,0.8)', 'failed': 'RGBA(235,0,0,0.75)',
                   'closed': 'RGBA(100,100,100,0.75)', 'cancelled': 'RGBA(255,165,0,0.75)'},
-        'end': {'active': 'RGBA(0,0,141,1)', 'finished': 'RGBA(0,100,0,0.75)', 'failed': 'RGBA(137,0,0,0.75)',
+        'end': {'active': 'RGBA(0,0,141,0.75)', 'finished': 'RGBA(0,100,0,0.75)', 'failed': 'RGBA(137,0,0,0.75)',
                 'closed': 'RGBA(0,0,0,0.75)', 'cancelled': 'RGBA(157,102,0,0.75)'},
     }
     markers = {'build': 'triangle', 'run': 'circle', 'merge': 'crossRot'}
@@ -7842,12 +7848,24 @@ def userProfileData(request):
             rdata = user_Dataprofile_dict[jt]
             for r in rdata:
                 for jtn in job_time_names:
-                    if r[jtn] is not None:
+                    if jtn in r and r[jtn] is not None:
                         user_Dataprofile_data_dict['_'.join((jtn, r['jobstatus'], jt))]['data'].append({
-                            't': r[jtn],#.strftime(defaultDatetimeFormat),
-                            'y': r['indx'] ,
+                            't': r[jtn].strftime(defaultDatetimeFormat),
+                            'y': r['indx'],
                             'label': r['pandaid'],
                         })
+
+    # deleting points group if data is empty
+    group_to_remove = []
+    for group in user_Dataprofile_data_dict:
+        if len(user_Dataprofile_data_dict[group]['data']) == 0:
+            group_to_remove.append(group)
+    for group in group_to_remove:
+        try:
+            del user_Dataprofile_data_dict[group]
+        except:
+            _logger.info('failed to remove key from dict')
+
     # dict -> list
     user_Dataprofile_data = [v for k, v in user_Dataprofile_data_dict.items()]
 

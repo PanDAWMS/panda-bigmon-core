@@ -18,8 +18,6 @@ import core.pandajob.views_support as core_coremon_support_views
 app_name = "bigpandamon"
 
 urlpatterns = [
-    re_path(r'^userProfile/(?P<username>.*)/$', coremon_views.userProfile, name='userProfile'),
-    re_path(r'^userProfileData/$', coremon_views.userProfileData, name='userProfileData'),
     re_path(r'^$', coremon_views.mainPage, name='mainPage'),
     re_path(r'^$', coremon_views.mainPage, name='index'),
     re_path(r'^help/$', coremon_views.helpPage, name='helpPage'),
@@ -38,6 +36,8 @@ urlpatterns = [
     re_path(r'^users/$', coremon_views.userList, name='userList'),
     re_path(r'^user/(?P<user>.*)/$', coremon_views.userInfo, name='userInfo'),
     re_path(r'^user/$', coremon_views.userInfo, name='userInfo'),
+    re_path(r'^userProfile/(?P<username>.*)/$', coremon_views.userProfile, name='userProfile'),
+    re_path(r'^userProfileData/$', coremon_views.userProfileData, name='userProfileData'),
     re_path(r'^sites/$', coremon_views.siteList, name='siteList'),
     re_path(r'^site/(?P<site>.*)/$', coremon_views.siteInfo, name='siteInfo'),
     re_path(r'^site/$', coremon_views.siteInfo, name='siteInfo'),
