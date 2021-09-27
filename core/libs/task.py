@@ -1397,9 +1397,12 @@ def get_task_flow_data(jeditaskid):
     replicas = []
     if len(datasets) > 0:
         # get RSE for datasets
-        dids = [d['datasetname'] for d in datasets]
+        dids = []
+        for d in datasets:
+            did = d['datasetname'] if ':' not in d['datasetname'] else d['datasetname'].split(':')[1]
+            dids.append(did)
+
         rw = ruciowrapper()
         replicas = rw.getRSEbyDID(dids)
-
 
     return {'datasets': datasets, 'replicas': replicas}

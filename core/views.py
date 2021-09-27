@@ -8853,7 +8853,7 @@ def taskFlowDiagram(request, jeditaskid=-1):
     :param jeditaskid:
     :return:
     """
-    data = {}
+    data = {'data': ''}
     try:
         jeditaskid = int(jeditaskid)
     except:
@@ -8865,7 +8865,7 @@ def taskFlowDiagram(request, jeditaskid=-1):
     elif jeditaskid == 0:
         data['error'] = 'Not valid jeditaskid provided'
     else:
-        raw_data = get_task_flow_data(jeditaskid)
+        data['data'] = get_task_flow_data(jeditaskid)
 
     response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     return response
