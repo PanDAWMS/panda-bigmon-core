@@ -106,7 +106,7 @@ from core.libs.exlib import is_timestamp, parse_datetime, get_job_walltime, \
     add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall, getPilotCounts
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, datasets_for_task, \
-    get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList
+    get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
     get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, taskNameDict
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics
@@ -8844,6 +8844,31 @@ def jobStateSummary(jobs):
     for job in jobs:
         statecount[job['jobstatus']] += 1
     return statecount
+
+
+def taskFlowDiagram(request, jeditaskid=-1):
+    """
+    Prepare data for task flow chart
+    :param request:
+    :param jeditaskid:
+    :return:
+    """
+    data = {}
+    try:
+        jeditaskid = int(jeditaskid)
+    except:
+        jeditaskid = 0
+        _logger.exception('jeditaskid={} must be int'.format(jeditaskid))
+
+    if jeditaskid < 0:
+        data['error'] = 'No jeditaskid provided'
+    elif jeditaskid == 0:
+        data['error'] = 'Not valid jeditaskid provided'
+    else:
+        raw_data = get_task_flow_data(jeditaskid)
+
+    response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+    return response
 
 
 def errorSummaryDict(request, jobs, testjobs, **kwargs):

@@ -7,6 +7,8 @@ import os
 from .utils import get_rucio_account, get_x509_proxy
 from core.filebrowser.utils import get_fullpath_filebrowser_directory, get_filebrowser_directory
 import uuid
+_logger = logging.getLogger('bigpandamon-filebrowser')
+
 
 class ruciowrapper(object):
     if 'RUCIO_ACCOUNT' not in os.environ:
@@ -59,6 +61,22 @@ class ruciowrapper(object):
         else:
             accounts = [account['rucio_account'] for account in accounts]
         return accounts
+
+    def getRSEbyDID(self, dids):
+
+        if self.client is not None:
+            try:
+                replicas = self.client.list_dataset_replicas_bulk(dids=dids)
+            except Exception as e:
+                replicas = None
+                _logger.exception('Failed to get list of replicas:\n {}'.format(e))
+
+            _logger.debug('{}'.format(replicas))
+
+            return replicas
+        else:
+            return None
+
 
 """
     def getT1TapeSEForRR(self, RR = None, dataset = None):

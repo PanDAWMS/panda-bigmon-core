@@ -66,6 +66,8 @@ urlpatterns = [
     re_path(r'^taskprofiledata/(?P<jeditaskid>.*)/$', coremon_views.taskProfileData, name='getTaskProfilePlotData'),
     re_path(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
     re_path(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
+    re_path(r'^taskflow/(?P<jeditaskid>.*)/$', coremon_views.taskFlowDiagram, name='taskFlowDiagram'),
+
 
     re_path(r'^errors/$', coremon_views.errorSummary, name='errorSummary'),
     re_path(r'^incidents/$', coremon_views.incidentList, name='incidentList'),

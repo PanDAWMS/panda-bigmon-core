@@ -15,6 +15,7 @@ from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates,
 from core.libs.job import parse_jobmetrics
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 from core.pandajob.utils import get_pandajob_models_by_year
+from core.filebrowser.ruciowrapper import ruciowrapper
 
 import core.constants as const
 
@@ -1371,3 +1372,34 @@ def taskNameDict(jobs):
             tasknamedict[t['jeditaskid']] = t['taskname']
 
     return tasknamedict
+
+
+def get_task_flow_data(jeditaskid):
+    """
+    Getting data for task data flow diagram
+    RSE -> dataset -> njobs in state -> PQ
+    :param jeditaskid: int
+    :return:
+    """
+    data = []
+    # get datasets
+    datasets = []
+    dquery = {'jeditaskid': jeditaskid, 'type__in': ['input', 'pseudo_input'], 'masterid__isnull': True}
+    datasets.extend(JediDatasets.objects.filter(**dquery).values('jeditaskid', 'datasetname', ))
+
+    # get jobs aggregated by status, computingsite and proddblock (input dataset name)
+    # ...TODO
+    # jobs = []
+    # jquery = {'jeditaskid': jeditaskid, 'prodsourcelabel__in': ['user', 'managed'], }
+    # jvalues = ['proddblock', 'computingsite', 'jobstatus']
+    # jobs.extend(Jobsarchived4.objects.filter(**jquery).values(*jvalues).annotate(njobs=Count('pandaid')))
+
+    replicas = []
+    if len(datasets) > 0:
+        # get RSE for datasets
+        dids = [d['datasetname'] for d in datasets]
+        rw = ruciowrapper()
+        replicas = rw.getRSEbyDID(dids)
+
+
+    return {'datasets': datasets, 'replicas': replicas}
