@@ -1399,7 +1399,10 @@ def get_task_flow_data(jeditaskid):
         # get RSE for datasets
         dids = []
         for d in datasets:
-            did = d['datasetname'] if ':' in d['datasetname'] else '{}:{}'.format(d['datasetname'].split('.')[0], d['datasetname'])
+            did = {
+                'scope': d['datasetname'].split(':')[0] if ':' in d['datasetname'] else d['datasetname'].split('.')[0],
+                'name': d['datasetname'].split(':')[1] if ':' in d['datasetname'] else d['datasetname'],
+                }
             dids.append(did)
 
         rw = ruciowrapper()
