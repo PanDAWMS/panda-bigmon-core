@@ -38,6 +38,8 @@ urlpatterns = [
     re_path(r'^users/$', coremon_views.userList, name='userList'),
     re_path(r'^user/(?P<user>.*)/$', coremon_views.userInfo, name='userInfo'),
     re_path(r'^user/$', coremon_views.userInfo, name='userInfo'),
+    re_path(r'^userProfile/(?P<username>.*)/$', coremon_views.userProfile, name='userProfile'),
+    re_path(r'^userProfileData/$', coremon_views.userProfileData, name='userProfileData'),
     re_path(r'^sites/$', coremon_views.siteList, name='siteList'),
     re_path(r'^site/(?P<site>.*)/$', coremon_views.siteInfo, name='siteInfo'),
     re_path(r'^site/$', coremon_views.siteInfo, name='siteInfo'),
@@ -66,6 +68,8 @@ urlpatterns = [
     re_path(r'^taskprofiledata/(?P<jeditaskid>.*)/$', coremon_views.taskProfileData, name='getTaskProfilePlotData'),
     re_path(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
     re_path(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
+    re_path(r'^taskflow/(?P<jeditaskid>.*)/$', coremon_views.taskFlowDiagram, name='taskFlowDiagram'),
+
 
     re_path(r'^errors/$', coremon_views.errorSummary, name='errorSummary'),
     re_path(r'^incidents/$', coremon_views.incidentList, name='incidentList'),

@@ -1,3 +1,4 @@
+{% load static %}
 <div class="card bp-container-simple help">
 <div class="card-divider"><p>Errors scattering matrix help:</p></div>
 <div class="card-section">
@@ -18,7 +19,10 @@ Legend on the upper right corner clarifies the color codding of the cells and nu
 Rows are ordered by average success rate, with Requests having the highest failing rate on top.
 </p>
 <p>
-Each Request (first column) has a <b><i class="fi-plus"></i></b> sign in front. Clicking it will open a similar correlation matrix page with all the Tasks belonging to that Request. Clicking on the Request number on the other hand will open the panda page of that Request.
+Each Request (first column) has a <b><i class="fi-plus"></i></b> sign in front.
+  Clicking on the Request number on the other hand will open the PanDA page of that Request.
+  Clicking it will open a similar correlation matrix page with all the Tasks belonging to that Request.
+  Clicking on a Grafana icon <img src="{% static 'images/grafana-black.png' %}" width=15 height=15 border=0> leads to job monitoring dashboard for given request with more detailed information.
 </p>
 <p>
 Each Region (first row) has a <b><i class="fi-plus"></i></b> sign under the Region name. Clicking it will open a similar correlation matrix page with all the Queues belonging to that Region. Clicking on the Region name on the other hand will open the panda page of that Region.
@@ -34,6 +38,11 @@ The page has various display or filtering options through the following buttons:
     <li> <b><q>Exclude scouts</q></b> button will exclude the scouting jobs from the statistics, so basically the matrix will skip the Requests/Tasks which are still running scouting jobs. </li>
     <li> <b><q>Hide low statistics cells</q></b> button will omit the cells with <100 statistics, so basically it will condense the matrix, showing only the cells with higher contributions to production. </li>
 </ul>
+
+<p>
+  On the request page, there is a Grafana icon <img src="{% static 'images/grafana.png' %}" width=15 height=15 border=0> on the top left (next to the request number). This leads to job monitoring dashboard for given request with more detailed information.
+  There, one can also select specific tasks of the request.
+</p>
 
 </div>
 </div>

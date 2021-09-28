@@ -1,4 +1,5 @@
 import logging
+import ipaddress
 from core.common.models import AllRequests
 
 from django.utils import timezone
@@ -44,7 +45,19 @@ class DDOSMiddleware(object):
             _logger.info('Request: {}'.format(request.get_full_path()))
         except:
             _logger.exception('Can not get full path of request')
+
+        # check if remote is a valid IP address
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for is not None:
+            try:
+                ip = ipaddress.ip_address(x_forwarded_for)
+            except:
+                _logger.warning('Provided HTTP_X_FORWARDED_FOR={} is not a correct IP address.'.format(x_forwarded_for))
+                return HttpResponse(
+                    json.dumps({'message': 'provided remote address is wrong'}),
+                    status=400,
+                    content_type='application/json')
+
         try:
             x_referer = request.META.get('HTTP_REFERER')
         except:

@@ -15,6 +15,7 @@ from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates,
 from core.libs.job import parse_jobmetrics
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 from core.pandajob.utils import get_pandajob_models_by_year
+from core.filebrowser.ruciowrapper import ruciowrapper
 
 import core.constants as const
 
@@ -1353,7 +1354,7 @@ def taskNameDict(jobs):
             jeditaskids[job['taskid']] = 1
         if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
             jeditaskids[job['jeditaskid']] = 1
-    jeditaskidl = jeditaskids.keys()
+    jeditaskidl = list(jeditaskids.keys())
 
     # Write ids to temp table to avoid too many bind variables oracle error
     tasknamedict = {}
@@ -1366,8 +1367,75 @@ def taskNameDict(jobs):
             tmp_table_name = get_tmp_table_name()
             transaction_key = insert_to_temp_table(jeditaskidl)
             extra = 'JEDITASKID IN (SELECT ID FROM {} WHERE TRANSACTIONKEY = {})'.format(tmp_table_name, transaction_key)
-        jeditasks = JediTasks.objects.filter(*tquery).extra(where=[extra]).values('taskname', 'jeditaskid')
+        jeditasks = JediTasks.objects.filter(**tquery).extra(where=[extra]).values('taskname', 'jeditaskid')
         for t in jeditasks:
             tasknamedict[t['jeditaskid']] = t['taskname']
 
     return tasknamedict
+
+
+def get_task_flow_data(jeditaskid):
+    """
+    Getting data for task data flow diagram
+    RSE -> dataset -> PQ -> njobs in state
+    :param jeditaskid: int
+    :return: data for sankey diagram: list ['from', 'to', 'weight']
+    """
+    data = []
+    # get datasets
+    datasets = []
+    dquery = {'jeditaskid': jeditaskid, 'type__in': ['input', 'pseudo_input'], 'masterid__isnull': True}
+    datasets.extend(JediDatasets.objects.filter(**dquery).values('jeditaskid', 'datasetname', ))
+
+    dataset_dict = {}
+    for d in datasets:
+        dname = d['datasetname'] if ':' not in d['datasetname'] else d['datasetname'].split(':')[1]
+        dataset_dict[dname] = {'replica': {}, 'jobs': {}}
+
+    # get jobs aggregated by status, computingsite and proddblock (input dataset name)
+    jobs = []
+    jquery = {'jeditaskid': jeditaskid, 'prodsourcelabel__in': ['user', 'managed'], }
+    extra_str = "( processingtype not in ('pmerge') )"
+    jvalues = ['proddblock', 'computingsite', 'jobstatus']
+    jobs.extend(Jobsarchived4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    jobs.extend(Jobsarchived.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    jobs.extend(Jobsactive4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    jobs.extend(Jobsdefined4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    jobs.extend(Jobswaiting4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+
+    if len(jobs) > 0:
+        for j in jobs:
+            dname = j['proddblock'] if ':' not in j['proddblock'] else j['proddblock'].split(':')[1]
+            if j['computingsite'] not in dataset_dict[dname]['jobs']:
+                dataset_dict[dname]['jobs'][j['computingsite']] = {}
+            job_state = j['jobstatus'] if j['jobstatus'] in const.JOB_STATES_FINAL else 'active'
+            if job_state not in dataset_dict[dname]['jobs'][j['computingsite']]:
+                dataset_dict[dname]['jobs'][j['computingsite']][job_state] = 0
+            dataset_dict[dname]['jobs'][j['computingsite']][job_state] += j['njobs']
+
+    # get RSE for datasets
+    replicas = []
+    if len(datasets) > 0:
+        dids = []
+        for d in datasets:
+            did = {
+                'scope': d['datasetname'].split(':')[0] if ':' in d['datasetname'] else d['datasetname'].split('.')[0],
+                'name': d['datasetname'].split(':')[1] if ':' in d['datasetname'] else d['datasetname'],
+                }
+            dids.append(did)
+
+        rw = ruciowrapper()
+        replicas = rw.getRSEbyDID(dids)
+
+        if replicas is not None and len(replicas) > 0:
+            for r in replicas:
+                if r['name'] in dataset_dict and 'TAPE' not in r['rse']:
+                    dataset_dict[r['name']]['replica'][r['rse']] = {
+                        'state': r['state'],
+                        'available_pct': round(100.0 * r['available_length']/r['length'], 1) if r['length'] > 0 else 0
+                    }
+
+    # transform data for plot
+    # TODO ...
+
+    return {'datasets': dataset_dict, }

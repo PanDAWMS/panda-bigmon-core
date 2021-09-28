@@ -26,6 +26,7 @@ from core.art.jobSubResults import subresults_getter, save_subresults, lock_nque
 from core.common.models import Filestable4, FilestableArch
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4
+from core.utils import is_json_request
 
 from core.art.utils import setupView
 
@@ -583,6 +584,135 @@ def artJobs(request):
         return response
 
 
+def artStability(request):
+    """
+    A view to summarize changes of a test results over last week
+    :param request: HTTP request
+    :return:
+    """
+    starttime = datetime.now()
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    # getting aggregation order
+    if not 'view' in request.session['requestParams'] or (
+            'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
+        art_aggr_order = ['package', 'branch']
+    elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
+        art_aggr_order = ['branch', 'package']
+    else:
+        return HttpResponse(status=401)
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "artJobs")
+    # data = None
+    if data is not None:
+        _logger.info('Got data from cache: {}s'.format(time.time() - request.session['req_init_time']))
+        data = json.loads(data)
+        data['request'] = request
+        if 'ntaglist' in data:
+            if len(data['ntaglist']) > 0:
+                ntags = []
+                for ntag in data['ntaglist']:
+                    try:
+                        ntags.append(datetime.strptime(ntag, artdateformat))
+                    except:
+                        pass
+                if len(ntags) > 1 and 'requestParams' in data:
+                    data['requestParams']['ntag_from'] = min(ntags)
+                    data['requestParams']['ntag_to'] = max(ntags)
+                elif len(ntags) == 1:
+                    data['requestParams']['ntag'] = ntags[0]
+        response = render_to_response('artJobs.html', data, content_type='text/html')
+        _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+    # process URL params to query params
+    query = setupView(request, 'job')
+    _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
+
+    # querying data from dedicated SQL function
+    cur = connection.cursor()
+    query_raw = """
+        SELECT 
+            c.taskid, 
+            c.package, 
+            c.branch, 
+            c.ntag, 
+            c.nightly_tag, 
+            c.testname, 
+            c.status, 
+            c.pandaid, 
+            c.result, 
+            c.gitlabid, 
+            c.attemptmark, 
+            c.extrainfo 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS('{}','{}','{}')) c
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+    cur.execute(query_raw)
+    jobs = cur.fetchall()
+    cur.close()
+
+    art_job_names = [
+        'taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'result',
+                    'gitlabid',  'attemptmark', 'extrainfo']
+    jobs = [dict(zip(art_job_names, row)) for row in jobs]
+    _logger.info('Got data from DB: {}s'.format(time.time() - request.session['req_init_time']))
+
+    artjobsdict = {}
+    ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
+
+    for job in jobs:
+        if 'attemptmark' in job and job['attemptmark'] == 0:
+            if job[art_aggr_order[0]] not in artjobsdict.keys():
+                artjobsdict[job[art_aggr_order[0]]] = {}
+            if job[art_aggr_order[1]] not in artjobsdict[job[art_aggr_order[0]]].keys():
+                artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = {}
+
+            if job['testname'] not in artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]].keys():
+                artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']] = {}
+                for n in ntagslist:
+                    artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][n.strftime(artdateformat)] = {}
+                    artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][n.strftime(artdateformat)]['jobs'] = []
+            if job['ntag'].strftime(artdateformat) in artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']]:
+                jobdict = {}
+                jobdict['jobstatus'] = job['jobstatus']
+
+                finalresult, extraparams = get_final_result(job)
+
+                jobdict['finalresult'] = finalresult
+                jobdict.update(extraparams)
+                artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
+
+    # finding a diff
+    print("fff")
+
+
+
+    # response
+    if is_json_request(request):
+        data = {
+            'art': {},
+        }
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+    else:
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+        }
+        setCacheEntry(request, "artStability", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
+        response = render_to_response('artStability.html', data, content_type='text/html')
+        _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
+
 def updateARTJobList(request):
     """
     Loading sub-step results for tests from PanDA job log files managed by Rucio
@@ -877,6 +1007,7 @@ def sendArtReport(request):
     """
     valid, response = initRequest(request)
     template = 'templated_email/artReportPackage.html'
+    subject = '[BigPanDAmon][ART] GRID ART jobs status report'
     if 'ntag_from' not in request.session['requestParams']:
         valid = False
         errorMessage = 'No ntag provided!'
@@ -904,24 +1035,11 @@ def sendArtReport(request):
     artJobsNames = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'result']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
 
-    ### prepare data for report
-    artjobsdictbranch = {}
+    # prepare data for report
     artjobsdictpackage = {}
     for job in jobs:
         nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
         if nightly_tag_time > request.session['requestParams']['ntag_from'] + timedelta(hours=20):
-            if job['branch'] not in artjobsdictbranch.keys():
-                artjobsdictbranch[job['branch']] = {}
-                artjobsdictbranch[job['branch']]['branch'] = job['branch']
-                artjobsdictbranch[job['branch']]['ntag_full'] = job['nightly_tag']
-                artjobsdictbranch[job['branch']]['ntag'] = job['ntag'].strftime(artdateformat)
-                artjobsdictbranch[job['branch']]['packages'] = {}
-            if job['package'] not in artjobsdictbranch[job['branch']]['packages'].keys():
-                artjobsdictbranch[job['branch']]['packages'][job['package']] = {}
-                artjobsdictbranch[job['branch']]['packages'][job['package']]['name'] = job['package']
-                for state in statestocount:
-                    artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + state] = 0
-
             if job['package'] not in artjobsdictpackage.keys():
                 artjobsdictpackage[job['package']] = {}
                 artjobsdictpackage[job['package']]['branch'] = job['branch']
@@ -939,33 +1057,23 @@ def sendArtReport(request):
                     'linktoeos'] = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{}/{}/{}/'.format(
                     job['branch'], job['nightly_tag'], job['package'])
             finalresult, extraparams = get_final_result(job)
-            artjobsdictbranch[job['branch']]['packages'][job['package']]['n' + finalresult] += 1
             artjobsdictpackage[job['package']]['branches'][job['branch']]['n' + finalresult] += 1
 
-
-    ### dict -> list & ordering
-    for branchname, sumdict in artjobsdictbranch.items():
-        sumdict['packages'] = sorted(artjobsdictbranch[branchname]['packages'].values(), key=lambda k: k['name'])
+    # dict -> list & ordering
     for packagename, sumdict in artjobsdictpackage.items():
         sumdict['packages'] = sorted(artjobsdictpackage[packagename]['branches'].values(), key=lambda k: k['name'])
 
-    summaryPerBranch = sorted(artjobsdictbranch.values(), key=lambda k: k['branch'], reverse=True)
-
+    # get recipient emails and prepare test results summary per email
     rquery = {}
     rquery['report'] = 'art'
     recipientslist = ReportEmails.objects.filter(**rquery).values()
-    recipients = {}
-    for recipient in recipientslist:
-        if recipient['email'] is not None and len(recipient['email']) > 0:
-            recipients[recipient['type']] = recipient['email']
 
     summaryPerRecipient = {}
-    for package, email in recipients.items():
-        if email not in summaryPerRecipient:
-            summaryPerRecipient[email] = {}
-        if package in artjobsdictpackage.keys():
-            summaryPerRecipient[email][package] = artjobsdictpackage[package]
-    subject = '[BigPanDAmon][ART] GRID ART jobs status report'
+    for row in recipientslist:
+        if row['email'] is not None and len(row['email']) > 0 and row['email'] not in summaryPerRecipient:
+            summaryPerRecipient[row['email']] = {}
+        if row['type'] in artjobsdictpackage.keys():
+            summaryPerRecipient[row['email']][row['type']] = artjobsdictpackage[row['type']]
 
     maxTries = 1
     for recipient, summary in summaryPerRecipient.items():
