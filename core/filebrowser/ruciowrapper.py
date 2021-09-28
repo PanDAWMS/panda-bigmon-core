@@ -63,17 +63,18 @@ class ruciowrapper(object):
         return accounts
 
     def getRSEbyDID(self, dids):
-
+        """
+        :param dids: list of dicts {'scope': scope, 'name': name}
+        :return: list of replicas
+        """
         if self.client is not None:
             try:
                 replicas = self.client.list_dataset_replicas_bulk(dids=dids)
             except Exception as e:
-                replicas = None
+                replicas = []
                 _logger.exception('Failed to get list of replicas:\n {}'.format(e))
 
-            _logger.debug('{}'.format(replicas))
-
-            return replicas
+            return list(replicas)
         else:
             return None
 

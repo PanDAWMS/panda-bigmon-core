@@ -1377,9 +1377,9 @@ def taskNameDict(jobs):
 def get_task_flow_data(jeditaskid):
     """
     Getting data for task data flow diagram
-    RSE -> dataset -> njobs in state -> PQ
+    RSE -> dataset -> PQ -> njobs in state
     :param jeditaskid: int
-    :return:
+    :return: data for sankey diagram: list ['from', 'to', 'weight']
     """
     data = []
     # get datasets
@@ -1387,16 +1387,35 @@ def get_task_flow_data(jeditaskid):
     dquery = {'jeditaskid': jeditaskid, 'type__in': ['input', 'pseudo_input'], 'masterid__isnull': True}
     datasets.extend(JediDatasets.objects.filter(**dquery).values('jeditaskid', 'datasetname', ))
 
-    # get jobs aggregated by status, computingsite and proddblock (input dataset name)
-    # ...TODO
-    # jobs = []
-    # jquery = {'jeditaskid': jeditaskid, 'prodsourcelabel__in': ['user', 'managed'], }
-    # jvalues = ['proddblock', 'computingsite', 'jobstatus']
-    # jobs.extend(Jobsarchived4.objects.filter(**jquery).values(*jvalues).annotate(njobs=Count('pandaid')))
+    dataset_dict = {}
+    for d in datasets:
+        dname = d['datasetname'] if ':' not in d['datasetname'] else d['datasetname'].split(':')[1]
+        dataset_dict[dname] = {'replica': {}, 'jobs': {}}
 
+    # get jobs aggregated by status, computingsite and proddblock (input dataset name)
+    jobs = []
+    jquery = {'jeditaskid': jeditaskid, 'prodsourcelabel__in': ['user', 'managed'], }
+    extra_str = "( processingtype not in ('pmerge') )"
+    jvalues = ['proddblock', 'computingsite', 'jobstatus']
+    jobs.extend(Jobsarchived4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    jobs.extend(Jobsarchived.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    jobs.extend(Jobsactive4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    jobs.extend(Jobsdefined4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    jobs.extend(Jobswaiting4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+
+    if len(jobs) > 0:
+        for j in jobs:
+            dname = j['proddblock'] if ':' not in j['proddblock'] else j['proddblock'].split(':')[1]
+            if j['computingsite'] not in dataset_dict[dname]['jobs']:
+                dataset_dict[dname]['jobs'][j['computingsite']] = {}
+            job_state = j['jobstatus'] if j['jobstatus'] in const.JOB_STATES_FINAL else 'active'
+            if job_state not in dataset_dict[dname]['jobs'][j['computingsite']]:
+                dataset_dict[dname]['jobs'][j['computingsite']][job_state] = 0
+            dataset_dict[dname]['jobs'][j['computingsite']][job_state] += j['njobs']
+
+    # get RSE for datasets
     replicas = []
     if len(datasets) > 0:
-        # get RSE for datasets
         dids = []
         for d in datasets:
             did = {
@@ -1408,4 +1427,15 @@ def get_task_flow_data(jeditaskid):
         rw = ruciowrapper()
         replicas = rw.getRSEbyDID(dids)
 
-    return {'datasets': datasets, 'replicas': replicas}
+        if replicas is not None and len(replicas) > 0:
+            for r in replicas:
+                if r['name'] in dataset_dict and 'TAPE' not in r['rse']:
+                    dataset_dict[r['name']]['replica'][r['rse']] = {
+                        'state': r['state'],
+                        'available_pct': round(100.0 * r['available_length']/r['length'], 1) if r['length'] > 0 else 0
+                    }
+
+    # transform data for plot
+    # TODO ...
+
+    return {'datasets': dataset_dict, }
