@@ -1,5 +1,5 @@
 import logging
-import ipaddress
+import ipaddress, re
 from core.common.models import AllRequests
 
 from django.utils import timezone
@@ -50,6 +50,7 @@ class DDOSMiddleware(object):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for is not None:
             try:
+                x_forwarded_for = re.findall(r'[0-9]+(?:\.[0-9]+){3}', x_forwarded_for)[0]
                 ip = ipaddress.ip_address(x_forwarded_for)
             except:
                 _logger.warning('Provided HTTP_X_FORWARDED_FOR={} is not a correct IP address.'.format(x_forwarded_for))
