@@ -863,28 +863,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             val = escapeInput(request.session['requestParams'][param])
             values = val.split(',')
             query['harvesterid__in'] = values
-        elif param == 'jobtype':
-            jobtype = request.session['requestParams']['jobtype']
-            if jobtype.startswith('anal'):
-                query['prodsourcelabel__in'] = ['panda', 'user', 'rc_alrb', 'rc_test2']
-                query['transformation__startswith'] = 'http'
-            elif jobtype.startswith('prod'):
-                query['prodsourcelabel__in'] = ['managed', 'prod_test', 'ptest', 'rc_alrb', 'rc_test2']
-                query['transformation__endswith'] = '.py'
-            elif jobtype == 'groupproduction':
-                query['prodsourcelabel'] = 'managed'
-                query['workinggroup__isnull'] = False
-            elif jobtype == 'eventservice':
-                query['eventservice'] = 1
-            elif jobtype == 'esmerge':
-                query['eventservice'] = 2
-            elif jobtype == 'test' or jobtype.find('test') >= 0:
-                query['produsername'] = 'gangarbt'
 
-        elif param in ('tag',) and querytype == 'task':
+        elif param in ('tag',):
             val = request.session['requestParams'][param]
             query['taskname__endswith'] = val
-
 
         elif param == 'reqid_from':
             val = int(request.session['requestParams'][param])
@@ -955,6 +937,25 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 request.session['xurls'] = {}
             request.session['xurls']['container_name'] = removeParam(extensibleURL(request), 'container_name', mode='extensible')
             continue
+        elif param == 'reqtoken':
+            data = getCacheData(request, request.session['requestParams']['reqtoken'])
+            if data is not None:
+                if 'pandaid' in data:
+                    pid = data['pandaid']
+                    if pid.find(',') >= 0:
+                        pidl = pid.split(',')
+                        query['pandaid__in'] = pidl
+                    else:
+                        query['pandaid'] = int(pid)
+                elif 'jeditaskid' in data:
+                    tid = data['jeditaskid']
+                    if tid.find(',') >= 0:
+                        tidl = tid.split(',')
+                        query['jeditaskid__in'] = tidl
+                    else:
+                        query['jeditaskid'] = int(tid)
+            else:
+                return 'reqtoken', None, None
 
         if querytype == 'task':
             for field in JediTasks._meta.get_fields():
@@ -1018,27 +1019,25 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     else:
                         if (param not in wildSearchFields):
                             query[param] = request.session['requestParams'][param]
-        elif param == 'reqtoken':
-                data = getCacheData(request, request.session['requestParams']['reqtoken'])
-                if data is not None:
-                    if 'pandaid' in data:
-                        pid = data['pandaid']
-                        if pid.find(',') >= 0:
-                            pidl = pid.split(',')
-                            query['pandaid__in'] = pidl
-                        else:
-                            query['pandaid'] = int(pid)
-                    elif 'jeditaskid' in data:
-                        tid = data['jeditaskid']
-                        if tid.find(',') >= 0:
-                            tidl = tid.split(',')
-                            query['jeditaskid__in'] = tidl
-                        else:
-                            query['jeditaskid'] = int(tid)
-
-                else: return 'reqtoken', None, None
-
         else:
+            if param == 'jobtype':
+                jobtype = request.session['requestParams']['jobtype']
+                if jobtype.startswith('anal'):
+                    query['prodsourcelabel__in'] = ['panda', 'user', 'rc_alrb', 'rc_test2']
+                    query['transformation__startswith'] = 'http'
+                elif jobtype.startswith('prod'):
+                    query['prodsourcelabel__in'] = ['managed', 'prod_test', 'ptest', 'rc_alrb', 'rc_test2']
+                    query['transformation__endswith'] = '.py'
+                elif jobtype == 'groupproduction':
+                    query['prodsourcelabel'] = 'managed'
+                    query['workinggroup__isnull'] = False
+                elif jobtype == 'eventservice':
+                    query['eventservice'] = 1
+                elif jobtype == 'esmerge':
+                    query['eventservice'] = 2
+                elif jobtype == 'test' or jobtype.find('test') >= 0:
+                    query['produsername'] = 'gangarbt'
+
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
                     if request.session['requestParams'][param] == 'Not specified':
