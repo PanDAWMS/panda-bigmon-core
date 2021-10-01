@@ -3576,7 +3576,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     # Check for debug info
     if ('specialhandling' in job and not job['specialhandling'] is None and job['specialhandling'].find('debug') >= 0) or (
-        'commandtopilot' in job and job['commandtopilot'] is not None and len(job['commandtopilot']) > 0
+        'commandtopilot' in job and job['commandtopilot'] is not None and len(job['commandtopilot']) > 0 and job['commandtopilot'] != 'tobekilled'
     ):
         debugmode = True
     else:
