@@ -220,7 +220,7 @@ standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comme
                        'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor']
 standard_taskfields = ['workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'username', 'transuses',
                        'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
-                       'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare', 'container_name', 'attemptnr']
+                       'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare', 'container_name', 'attemptnr', 'site']
 standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
                         'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
                         'workinggroup', 'reqid', 'computingelement']
