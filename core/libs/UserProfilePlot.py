@@ -2,12 +2,15 @@
 from core.pandajob.models import Jobsarchived4, Jobsarchived, Jobsactive4, Jobsdefined4, Jobswaiting4
 from core.libs.job import add_job_category, drop_duplicates
 import core.constants as const
-
+import logging
+_logger = logging.getLogger('bigpandamon')
 
 class UserProfilePlot:
 
-    def __init__(self):
-        pass
+    username = ''
+
+    def __init__(self, username):
+        self.username = username
 
     def get_raw_data_profile_full(self, query):
         """
@@ -25,8 +28,18 @@ class UserProfilePlot:
         jobs.extend(Jobsactive4.objects.filter(**query).values(*jvalues))
         jobs.extend(Jobswaiting4.objects.filter(**query).values(*jvalues))
         jobs.extend(Jobsdefined4.objects.filter(**query).values(*jvalues))
-
-        jobs.extend(Jobsarchived.objects.filter(**query).values(*jvalues))
+        _logger.info('Got info from Jobs*4')
+        # change timewindow param to statechangetime asa it indexed
+        if 'modificationtime__castdate__range' in query:
+            query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
+            del query['modificationtime__castdate__range']
+        # add jeditaskid to where clause
+        extra_srt = " jeditaskid in (select jeditaskid from atlas_panda.jedi_tasks where username = '{}' and modificationtime > TO_DATE('{}', 'YYYY-MM-DD HH24:MI:SS'))".format(
+            self.username,
+            query['creationtime__gte']
+        )
+        jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_srt]).values(*jvalues))
+        _logger.info('Got info from Jobsarchived')
 
         jobs = drop_duplicates(jobs)
         jobs = add_job_category(jobs)

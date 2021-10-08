@@ -7728,17 +7728,19 @@ def userProfile(request, username=""):
         msg = 'Provided username: {} is not valid, it must be string'.format(username)
         _logger.exception(msg)
         response = HttpResponse(json.dumps(msg), status=400)
+        return response
 
     if len(username) > 0:
         query = setupView(request, hours=24 * 7, querytype='task', wildCardExt=False)
         query['username__icontains'] = username.strip()
-        tasks = JediTasks.objects.filter(**query).values()
+        tasks = JediTasks.objects.filter(**query).values('jeditaskid')
 
         if len(list(tasks)) > 0:
             msg = 'The username exist: {}'.format(username)
         else:
-            msg = 'The username do not exist: {}'.format(username)
+            msg = 'The username do not exist or no tasks found: {}'.format(username)
             response = HttpResponse(json.dumps(msg), status=400)
+            return response
 
         if query and 'modificationtime__castdate__range' in query:
             request.session['timerange'] = query['modificationtime__castdate__range']
@@ -7747,6 +7749,7 @@ def userProfile(request, username=""):
         msg = 'Not valid username provided: {}'.format(username)
         _logger.exception(msg)
         response = HttpResponse(json.dumps(msg), status=400)
+        return response
 
     data = {
         'request': request,
@@ -7766,12 +7769,21 @@ def userProfileData(request):
     valid, response = initRequest(request)
     if not valid:
         return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "userProfileData", isData=True)
+    data = None
+    if data is not None:
+        data = json.loads(data)
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+
     if 'username' in request.session['requestParams'] and request.session['requestParams']['username']:
         username = str(request.session['requestParams']['username'])
     else:
-        msg = 'Provided username: {} is not valid, it must be string'.format(username)
-        _logger.exception(msg)
+        msg = 'No username provided: {} is not valid, it must be string'
+        _logger.warning(msg)
         response = HttpResponse(json.dumps(msg), status=400)
+        return response
 
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype']:
         request_job_types = request.session['requestParams']['jobtype'].split(',')
@@ -7790,7 +7802,7 @@ def userProfileData(request):
     # get raw profile data
     if len(username) > 0:
         query = setupView(request, hours=24 * 7, querytype='job', wildCardExt=False)
-        user_Dataprofile = UserProfilePlot()
+        user_Dataprofile = UserProfilePlot(username)
         user_Dataprofile_dict = user_Dataprofile.get_raw_data_profile_full(query)
     else:
         msg = 'Not valid username provided: {}'.format(username)
@@ -7881,6 +7893,7 @@ def userProfileData(request):
     user_Dataprofile_data = [v for k, v in user_Dataprofile_data_dict.items()]
 
     data = {'plotData': user_Dataprofile_data, 'error': ''}
+    setCacheEntry(request, "userProfileData", json.dumps(data, cls=DateEncoder), 60 * 30, isData=True)
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 @login_customrequired
