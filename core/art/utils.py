@@ -202,3 +202,47 @@ def find_last_n_nightlies(request, limit=7):
 def getjflag(job):
     """Returns flag if job in finished state"""
     return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
+
+
+def get_test_diff(test_a, test_b):
+    """
+    Finding difference in 2 test results
+    :param test_1: dict, {finalstatus, subresults} - previous.
+    :param test_2: dict, {finalstatus, subresults} - current.
+    :return: index
+
+    """
+    state_index = {'active': 3, 'succeeded': 2, 'finished': 1, 'failed': 0}
+    result_translation = {
+        -1: 'active',
+        0: 'ok',
+        1: 'warning_b',
+        2: 'warning',
+        3: 'warning_w',
+        4: 'alert',
+    }
+    diff_matrix = [
+        [4,   2,  0, -1],
+        [4,   9,  0, -1],
+        [4,   2,  0, -1],
+        [-1, -1, -1, -1]
+    ]
+    result = diff_matrix[state_index[test_a['finalresult']]][state_index[test_b['finalresult']]]
+
+    if result == 9:
+        # compare substep results
+        is_diff = None
+        for step in range(0, len(test_b['subresults'])):
+            try:
+                if len(test_a['subresults']) - 1 > step and test_a['subresults'][step]['name'] == test_b['subresults'][step]['name']:
+                    if test_a['subresults'][step]['result'] != test_b['subresults'][step]['result']:
+                        is_diff = test_b['subresults'][step]['result'] - test_a['subresults'][step]['result']
+                        break
+            except:
+                print('ddd')
+        if is_diff is not None:
+            result = 1 if is_diff < 0 else 3
+        else:
+            result = 2
+
+    return result_translation[result]

@@ -28,7 +28,7 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4
 from core.utils import is_json_request
 
-from core.art.utils import setupView
+from core.art.utils import setupView, get_test_diff
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -42,6 +42,7 @@ def get_time(value):
 
 artdateformat = '%Y-%m-%d'
 humandateformat = '%d %b %Y'
+cuthumandateformat = '%d %b'
 cache_timeout = 15
 statestocount = ['finished', 'failed', 'active', 'succeeded']
 
@@ -584,6 +585,7 @@ def artJobs(request):
         return response
 
 
+@login_customrequired
 def artStability(request):
     """
     A view to summarize changes of a test results over last week
@@ -605,7 +607,7 @@ def artStability(request):
         return HttpResponse(status=401)
 
     # Here we try to get cached data
-    data = getCacheEntry(request, "artJobs")
+    data = getCacheEntry(request, "artStability")
     # data = None
     if data is not None:
         _logger.info('Got data from cache: {}s'.format(time.time() - request.session['req_init_time']))
@@ -624,7 +626,7 @@ def artStability(request):
                     data['requestParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
-        response = render_to_response('artJobs.html', data, content_type='text/html')
+        response = render_to_response('artStability.html', data, content_type='text/html')
         _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -687,15 +689,52 @@ def artStability(request):
                 jobdict.update(extraparams)
                 artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']][job['ntag'].strftime(artdateformat)]['jobs'].append(jobdict)
 
-    # finding a diff
-    print("fff")
+    art_jobs_diff_header = [art_aggr_order[1], 'testname', ]
+    art_jobs_diff_header.extend([n.strftime(cuthumandateformat) for n in ntagslist][1:])
 
+    # finding a diff
+    art_jobs_diff = {}
+    # filter out stable tests
+    ntags = [n.strftime(artdateformat) for n in ntagslist]
+    for i, i_dict in artjobsdict.items():
+        if i not in art_jobs_diff:
+            art_jobs_diff[i] = []
+            art_jobs_diff[i].append(art_jobs_diff_header)
+        for j, j_dict in i_dict.items():
+            for t, t_dict in j_dict.items():
+                tmp_row = [
+                    j,
+                    t,
+                ]
+                for ntag_i in range(0, len(ntags)-1):
+                    if len(t_dict[ntags[ntag_i+1]]['jobs']) > 0:
+                        # find existing previous one
+                        ntag_prev = -1
+                        for ntag_j in range(0, ntag_i+1):
+                            if len(t_dict[ntags[ntag_i-ntag_j]]['jobs']) > 0:
+                                ntag_prev = ntag_i-ntag_j
+                                break
+                        if ntag_prev >= 0:
+                            # compare one test
+                            tmp_row.append(get_test_diff(t_dict[ntags[ntag_prev]]['jobs'][0], t_dict[ntags[ntag_i+1]]['jobs'][0]))
+                        else:
+                            tmp_row.append('-')
+                    else:
+                        tmp_row.append('na')
+
+                # for ntag, t_jobs in t_dict.items():
+                #     tmp_row[ntag] = '_'.join(set([r['finalresult'] for r in t_jobs['jobs']]))
+                # if len(set(['_'.join(r['finalresult'] for r in t_jobs['jobs']) for ntag, t_jobs in t_dict.items() if len(t_jobs['jobs'])])) > 1:
+                #     tmp_row['diff'] = '+'
+                # else:
+                #     tmp_row['diff'] = '-'
+                art_jobs_diff[i].append(tmp_row)
 
 
     # response
     if is_json_request(request):
         data = {
-            'art': {},
+            'art': art_jobs_diff,
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
@@ -704,13 +743,16 @@ def artStability(request):
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
+            'ntags': ntags[1:],
+            'artaggrorder': art_aggr_order,
+            # 'tableheader': art_jobs_diff_header,
+            'artjobsdiff': art_jobs_diff,
         }
         setCacheEntry(request, "artStability", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artStability.html', data, content_type='text/html')
         _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
 
 
 def updateARTJobList(request):

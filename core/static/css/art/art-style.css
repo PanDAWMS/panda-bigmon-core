@@ -623,3 +623,11 @@ fieldset.artmenu li.input-group button.hollow.alert {
 .art-legend.active_job {
     background: cornflowerblue;
 }
+
+.na_fill {color:black;  background-color:#fefefe}
+.active_fill {color:black;  background-color:#E6F0F6}
+.alert_fill {  color:black;  background-color:#ffcccc }
+.warning_fill { color:black;  background-color:#fffdb1 }
+.warning_b_fill { color:black;  background-color:#ecfeb8 }
+.warning_w_fill { color:black;  background-color:#fff0b3 }
+.ok_fill {color:black;  background-color:#d6f5d6}
