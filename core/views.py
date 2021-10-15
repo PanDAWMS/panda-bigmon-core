@@ -119,6 +119,7 @@ from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
 from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs
+from core.libs.exlib import get_tmp_table_name
 
 from django.template.context_processors import csrf
 
@@ -6812,17 +6813,20 @@ def taskList(request):
     # For tasks plots
     setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
 
-    new_cur = connection.cursor()
-    new_cur.execute(
-        """
-        select htt.TASKID,
-            LISTAGG(h.hashtag, ',') within GROUP (order by htt.taskid) as hashtags
-        from ATLAS_DEFT.T_HASHTAG h, ATLAS_DEFT.T_HT_TO_TASK htt , %s tmp
-        where TRANSACTIONKEY=%i and h.ht_id = htt.ht_id and tmp.id = htt.taskid
-        GROUP BY htt.TASKID
-        """ % (tmpTableName, transactionKey)
-    )
-    taskhashtags = dictfetchall(new_cur)
+    if DEPLOYMENT == 'ORACLE_ATLAS':
+        new_cur = connection.cursor()
+        new_cur.execute(
+            """
+            select htt.TASKID,
+                LISTAGG(h.hashtag, ',') within GROUP (order by htt.taskid) as hashtags
+            from ATLAS_DEFT.T_HASHTAG h, ATLAS_DEFT.T_HT_TO_TASK htt , %s tmp
+            where TRANSACTIONKEY=%i and h.ht_id = htt.ht_id and tmp.id = htt.taskid
+            GROUP BY htt.TASKID
+            """ % (tmpTableName, transactionKey)
+        )
+        taskhashtags = dictfetchall(new_cur)
+    else:
+        taskhashtags = []
 
     datasetstage = []
     if 'tape' in  request.session['requestParams']:
@@ -7265,11 +7269,7 @@ def getTaskScoutingInfo(tasks, nmax):
     tasksIdToBeDisplayed = [task['jeditaskid'] for task in taskslToBeDisplayed]
     tquery = {}
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
-
+    tmpTableName = get_tmp_table_name()
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
     executionData = []

@@ -4,14 +4,14 @@
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from core.settings.config import DB_SCHEMA
 
 class BPUser(AbstractUser):
     is_tester = models.NullBooleanField(db_column='IS_TESTER', null=True, blank=False)
     last_login = models.DateTimeField(db_column='LAST_LOGIN', auto_now_add=True, blank=False)
 
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."AUTH_USER"'
+        db_table = f'"{DB_SCHEMA}"."AUTH_USER"'
 
 
 class BPUserSettings(models.Model):
@@ -20,7 +20,7 @@ class BPUserSettings(models.Model):
     preferences = models.CharField(db_column='PREFERENCES', max_length=4000)
 
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."USER_SETTINGS"'
+        db_table = f'"{DB_SCHEMA}"."USER_SETTINGS"'
 
 
 class Visits(models.Model):
@@ -32,4 +32,4 @@ class Visits(models.Model):
     service = models.IntegerField(null=True, db_column='SERVICE', blank=True)
 
     class Meta:
-        db_table= u'"ATLAS_PANDABIGMON"."VISITS"'
+        db_table= f'"{DB_SCHEMA}"."VISITS"'

@@ -563,7 +563,7 @@ class JediTasks(JediTasksBase):
 
 class JediTasksOrdered(JediTasksBase):
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."JEDI_TASKS_ORDERED"'
+        db_table = f'"{DB_SCHEMA}"."JEDI_TASKS_ORDERED"'
         app_label = 'pandamon'
 
 
@@ -572,7 +572,7 @@ class GetEventsForTask(models.Model):
     totevrem = models.BigIntegerField(db_column='totevrem')
     totev = models.BigIntegerField(db_column='totev')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."GETEVENTSFORTASK"'
+        db_table = f'"{DB_SCHEMA}"."GETEVENTSFORTASK"'
         app_label = 'pandamon'
 
 

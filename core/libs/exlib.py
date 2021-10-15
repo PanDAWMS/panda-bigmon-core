@@ -5,7 +5,7 @@ from django.db import connection
 from dateutil.parser import parse
 from datetime import datetime
 from core.settings.local import dbaccess
-
+from core.settings.config import DB_SCHEMA
 import core.constants as const
 
 
@@ -388,10 +388,7 @@ def is_job_active(jobststus):
 
 
 def get_tmp_table_name():
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
+    tmpTableName = f"{DB_SCHEMA}.TMP_IDS1"
     return tmpTableName
 
 
