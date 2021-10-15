@@ -8079,7 +8079,10 @@ def taskInfo(request, jeditaskid=0):
             inctrs = [taskparams[tp], ]
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
     # get dataset locality
-    dataset_locality = get_dataset_locality(jeditaskid)
+    if DEPLOYMENT == 'ORACLE_ATLAS':
+        dataset_locality = get_dataset_locality(jeditaskid)
+    else:
+        dataset_locality = {}
     for ds in dsets:
         if jeditaskid in dataset_locality and ds['datasetid'] in dataset_locality[jeditaskid]:
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
