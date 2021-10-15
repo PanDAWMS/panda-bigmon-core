@@ -1,6 +1,7 @@
 import logging
 import ipaddress, re
 from core.common.models import AllRequests
+from core.settings.config import DB_SCHEMA
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -9,6 +10,7 @@ from django.http import HttpResponse
 import json
 import psutil
 from django.db import connection
+
 
 _logger = logging.getLogger('bigpandamon')
 # We postpone JSON requests is server is overloaded
@@ -46,6 +48,7 @@ class DDOSMiddleware(object):
         except:
             _logger.exception('Can not get full path of request')
 
+
         # check if remote is a valid IP address
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for is not None:
@@ -76,7 +79,7 @@ class DDOSMiddleware(object):
         # except:
         #     _logger.warning('Failed to get connections number from ATLAS_DBA')
 
-        sqlRequest = "SELECT ATLAS_PANDABIGMON.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+        sqlRequest = f"SELECT {DB_SCHEMA}.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
         cursor.execute(sqlRequest)
         requestToken = cursor.fetchall()
         requestToken = requestToken[0][0]

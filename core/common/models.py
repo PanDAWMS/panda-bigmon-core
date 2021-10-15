@@ -16,9 +16,10 @@ import json
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connections
 from django.utils import timezone
-
-
 from django.db import models
+
+from core.settings.config import DB_SCHEMA
+
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
                                  'columnTitles', 'filterFields',)
@@ -1536,7 +1537,7 @@ class AllRequests(models.Model):
     dbactivesess = models.IntegerField(db_column='DBACTIVESESS')
     dbtotalsess = models.IntegerField(db_column='DBTOTALSESS')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."ALL_REQUESTS_DAILY"'
+        db_table = f'"{DB_SCHEMA}"."ALL_REQUESTS_DAILY"'
         app_label = 'pandamon'
 
 

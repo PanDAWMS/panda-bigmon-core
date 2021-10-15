@@ -67,7 +67,7 @@ from core.filebrowser.ruciowrapper import ruciowrapper
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
 from core.settings.local import GRAFANA
-
+from core.settings.config import DEPLOYMENT
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
@@ -225,7 +225,6 @@ standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername'
                         'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
                         'workinggroup', 'reqid', 'computingelement']
 
-VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
 
@@ -439,20 +438,13 @@ def initRequest(request, callselfmon=True):
         if len(userrec) > 0:
             request.session['username'] = userrec[0]['name']
 
-    ENV['MON_VO'] = ''
-    request.session['viewParams']['MON_VO'] = ''
-    if 'HTTP_HOST' in request.META:
-        for vo in VOLIST:
-            if request.META['HTTP_HOST'].startswith(vo):
-                VOMODE = vo
+    if DEPLOYMENT == 'ORACLE_ATLAS':
+        VOMODE = 'atlas'
+        request.session['viewParams']['MON_VO'] = 'ATLAS'
     else:
-        VOMODE = 'atlas'
+        VOMODE = DEPLOYMENT
+        request.session['viewParams']['MON_VO'] = DEPLOYMENT
 
-    ## If DB is Oracle, set vomode to atlas
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        VOMODE = 'atlas'
-    ENV['MON_VO'] = VONAME[VOMODE]
-    request.session['viewParams']['MON_VO'] = ENV['MON_VO']
 
     # remove xurls from session if it is kept from previous requests
     if 'xurls' in request.session:

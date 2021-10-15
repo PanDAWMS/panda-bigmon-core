@@ -3,7 +3,7 @@ from os.path import dirname, join
 
 import core
 from core import filebrowser, pbm, admin
-from core.settings.local import dbaccess, MY_SECRET_KEY, LOG_ROOT
+from core.settings.local import MY_SECRET_KEY, LOG_ROOT
 
 ALLOWED_HOSTS = [
     ### cern.ch
@@ -96,7 +96,44 @@ SECRET_KEY = MY_SECRET_KEY
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-DATABASES = dbaccess
+
+
+try:
+    from core.settings.local import dbaccess_postgres
+except ImportError:
+    dbaccess_postgres = None
+try:
+    from core.settings.local import dbaccess_oracle_atlas
+except ImportError:
+    dbaccess_oracle_atlas = None
+try:
+    from core.settings.local import dbaccess_oracle_doma
+except ImportError:
+    dbaccess_oracle_atlas = None
+
+
+DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
+if DEPLOYMENT == 'ORACLE_ATLAS':
+    DB_SCHEMA = 'ATLAS_PANDABIGMON'
+    DATABASES = dbaccess_oracle_atlas
+elif DEPLOYMENT == 'POSTGRES':
+    DB_SCHEMA = 'ATLAS_PANDABIGMON'
+    DATABASES = dbaccess_postgres
+elif DEPLOYMENT == 'ORACLE_DOMA':
+    DB_SCHEMA = 'DOMA_PANDABIGMON'
+    DATABASES = dbaccess_oracle_doma
+
+
+CACHES = {
+    "default": {
+    'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+    'LOCATION': f'"{DB_SCHEMA}"."DJANGOCACHE"',
+    'TIMEOUT': 31536000,
+    'OPTIONS': {
+        'MAX_ENTRIES': 1000000000
+        }
+    }
+}
 
 
 ### URL_PATH_PREFIX for multi-developer apache/wsgi instance
@@ -342,3 +379,4 @@ ENV = {
     ### Navigation chain item separator
     'SEPARATOR_NAVIGATION_ITEM': "   &#187;   ",
 }
+
