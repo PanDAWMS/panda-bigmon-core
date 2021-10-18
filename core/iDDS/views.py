@@ -139,11 +139,8 @@ def transforms(request):
 
 def getiDDSInfoForTaskRequest(request):
     initRequest(request)
-
     transformationWithNested = None
-
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = request.session['requestParams']['jeditaskid']
         transformationWithNested = getiDDSInfoForTask(jeditaskid)
-
     return JsonResponse({'data': transformationWithNested}, encoder=DateEncoder, safe=False)
