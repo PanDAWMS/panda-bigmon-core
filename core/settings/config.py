@@ -115,13 +115,19 @@ except ImportError:
 DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
 if DEPLOYMENT == 'ORACLE_ATLAS':
     DB_SCHEMA = 'ATLAS_PANDABIGMON'
+    DB_SCHEMA_PANDA = 'ATLAS_PANDA'
     DATABASES = dbaccess_oracle_atlas
+    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
 elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA = 'ATLAS_PANDABIGMON'
+    DB_SCHEMA_PANDA = 'DOMA_PANDA'
     DATABASES = dbaccess_postgres
+    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
 elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA = 'DOMA_PANDABIGMON'
+    DB_SCHEMA_PANDA = 'DOMA_PANDA'
     DATABASES = dbaccess_oracle_doma
+    CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
 
 
 CACHES = {
