@@ -391,6 +391,10 @@ def get_tmp_table_name():
     tmpTableName = f"{DB_SCHEMA}.TMP_IDS1"
     return tmpTableName
 
+def get_tmp_table_name_debug():
+    tmpTableName = f"{DB_SCHEMA}.TMP_IDS1DEBUG"
+    return tmpTableName
+
 
 def lower_string(string):
     return string.lower() if isinstance(string, str) else string

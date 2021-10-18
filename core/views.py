@@ -100,7 +100,7 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, extensibleURL, complete_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, get_tmp_table_name_debug
 from core.libs.exlib import is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
     add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall, getPilotCounts
@@ -119,7 +119,6 @@ from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
 from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs
-from core.libs.exlib import get_tmp_table_name
 
 from django.template.context_processors import csrf
 
@@ -2729,10 +2728,7 @@ def jobList(request, mode=None, param=None):
 def importToken(request, errsByCount):
     newErrsByCount = []
     random.seed()
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1DEBUG"
+    tmpTableName = get_tmp_table_name_debug()
     isListPID = False
     new_cur = connection.cursor()
     transactionKey = random.randrange(1000000)
