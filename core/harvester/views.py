@@ -21,7 +21,7 @@ from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, Har
 
 
 from core.settings.local import dbaccess, defaultDatetimeFormat
-from core.settings.config import DB_SCHEMA_PANDA
+from core.settings.config import DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
 
 harvesterWorkerStatuses = [
     'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
@@ -1249,39 +1249,40 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
 
     sqlQuery = """
     SELECT DISTINCT {2} FROM
-    (SELECT {2} FROM ATLAS_PANDA.JOBSARCHIVED4, 
+    (SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSARCHIVED4, 
     (select
     pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) 
-    PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSARCHIVED4.PANDAID {3}
+    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
+    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) 
+    PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSARCHIVED4.PANDAID {3}
     UNION ALL
-    SELECT {2} FROM ATLAS_PANDA.JOBSACTIVE4, 
+    SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSACTIVE4, 
     (select
     pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSACTIVE4.PANDAID {3}
+    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
+    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSACTIVE4.PANDAID {3}
     UNION ALL 
-    SELECT {2} FROM ATLAS_PANDA.JOBSDEFINED4, 
+    SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSDEFINED4, 
     (select
     pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSDEFINED4.PANDAID {3}
+    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
+    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSDEFINED4.PANDAID {3}
     UNION ALL 
-    SELECT {2} FROM ATLAS_PANDA.JOBSWAITING4,
+    SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSWAITING4,
     (select
     pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDA.JOBSWAITING4.PANDAID {3}
+    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
+    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSWAITING4.PANDAID {3}
     UNION ALL
-    SELECT {2} FROM ATLAS_PANDAARCH.JOBSARCHIVED, 
+    SELECT {2} FROM {DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED, 
     (select
     pandaid as pid
-    from atlas_panda.harvester_rel_jobs_workers where
-    atlas_panda.harvester_rel_jobs_workers.harvesterid {0} and atlas_panda.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID {3})  
+    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
+    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED.PANDAID {3})  
     """
 
-    sqlQuery = sqlQuery.format(qinstance, qworkerid, ', '.join(values), qjobstatus)
+    sqlQuery = sqlQuery.format(qinstance, qworkerid, ', '.join(values), qjobstatus, DB_SCHEMA_PANDA=DB_SCHEMA_PANDA,
+                               DB_SCHEMA_PANDA_ARCH=DB_SCHEMA_PANDA_ARCH)
 
     cur = connection.cursor()
     cur.execute(sqlQuery)
