@@ -21,7 +21,7 @@ from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, Har
 
 
 from core.settings.local import dbaccess, defaultDatetimeFormat
-
+from core.settings.config import DB_SCHEMA_PANDA
 
 harvesterWorkerStatuses = [
     'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
@@ -388,9 +388,9 @@ def harvestermon(request):
             ii.commit_stamp,
             to_char(ww.submittime, 'dd-mm-yyyy hh24:mi:ss') as submittime
             FROM
-            atlas_panda.harvester_instances ii INNER JOIN 
-            atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id {0} and ii.harvester_id like '{1}'
-        """.format(hours, str(instance))
+            {2}.harvester_instances ii INNER JOIN 
+            {2}.harvester_workers ww on ww.harvesterid = ii.harvester_id {0} and ii.harvester_id like '{1}'
+        """.format(hours, str(instance), DB_SCHEMA_PANDA)
 
         cur = connection.cursor()
         cur.execute(sqlQuery)
@@ -414,11 +414,11 @@ def harvestermon(request):
             ii.commit_stamp,
             to_char(ww.submittime, 'dd-mm-yyyy hh24:mi:ss') as submittime
             FROM
-            atlas_panda.harvester_instances ii INNER JOIN 
-            atlas_panda.harvester_workers ww on ww.harvesterid = ii.harvester_id and ww.submittime = (select max(submittime) 
-        from atlas_panda.harvester_workers 
+            {1}.harvester_instances ii INNER JOIN 
+            {1}.harvester_workers ww on ww.harvesterid = ii.harvester_id and ww.submittime = (select max(submittime) 
+        from {1}.harvester_workers 
         where harvesterid like '{0}') and ii.harvester_id like '{0}'
-            """.format(str(instance))
+            """.format(str(instance), DB_SCHEMA_PANDA)
 
             cur = connection.cursor()
             cur.execute(sqlQuery)
@@ -441,10 +441,10 @@ def harvestermon(request):
             defaulthours = daysdelta * 24
 
         harvesterWorkersQuery = """
-        SELECT * FROM ATLAS_PANDA.HARVESTER_WORKERS 
+        SELECT * FROM {DB_SCHEMA_PANDA}.HARVESTER_WORKERS 
         where harvesterid = '{0}' {1} {2} {3} {4} {5} {6} {7}"""\
             .format(str(instance), status, computingsite, workerid, lastupdateCache,
-                    days, hours, resourcetype, computingelement)
+                    days, hours, resourcetype, computingelement, DB_SCHEMA_PANDA=DB_SCHEMA_PANDA)
 
         harvester_dicts = query_to_dicts(harvesterWorkersQuery)
 
@@ -875,13 +875,13 @@ def harvestermon(request):
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
         return render_to_response('harvestermon.html', data, content_type='text/html')
     else:
-        sqlQuery = """
+        sqlQuery = f"""
           SELECT HARVESTER_ID as HARVID,
           SW_VERSION,
           DESCRIPTION,
           COMMIT_STAMP,
           to_char(LASTUPDATE, 'dd-mm-yyyy hh24:mi:ss') as LASTUPDATE
-          FROM ATLAS_PANDA.HARVESTER_INSTANCES
+          FROM {DB_SCHEMA_PANDA}.HARVESTER_INSTANCES
         """
         instanceDictionary = []
 
@@ -982,8 +982,8 @@ def workersJSON(request):
 
             fields = ','.join(generalWorkersFields)
 
-            sqlquery = """
-            SELECT * FROM (SELECT %s FROM ATLAS_PANDA.HARVESTER_WORKERS
+            sqlquery = f"""
+            SELECT * FROM (SELECT %s FROM {DB_SCHEMA_PANDA}.HARVESTER_WORKERS
             where harvesterid like '%s' %s %s %s %s %s %s %s %s
             order by submittime DESC) WHERE ROWNUM<=%s
             """ % (fields, str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement, display_limit_workers)
