@@ -8,14 +8,14 @@ from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.utils import identify_jobtype
 
 from core.settings.local import defaultDatetimeFormat
-from core.settings.config import DEPLOYMENT
+from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA
 
 
 def isHarvesterJob(pandaid):
 
     jobHarvesterInfo = []
 
-    sqlQuery = """
+    sqlQuery = f"""
     SELECT workerid, HARVESTERID, BATCHLOG, COMPUTINGELEMENT, ERRORCODE, DIAGMESSAGE  FROM (SELECT 
       a.PANDAID,
       a.workerid,
@@ -24,8 +24,8 @@ def isHarvesterJob(pandaid):
       b.COMPUTINGELEMENT,
       b.ERRORCODE,
       b.DIAGMESSAGE
-      FROM ATLAS_PANDA.HARVESTER_REL_JOBS_WORKERS a,
-      ATLAS_PANDA.HARVESTER_WORKERS b
+      FROM {DB_SCHEMA_PANDA}.HARVESTER_REL_JOBS_WORKERS a,
+      {DB_SCHEMA_PANDA}.HARVESTER_WORKERS b
       WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {0}
   """
     sqlQuery = sqlQuery.format(str(pandaid))

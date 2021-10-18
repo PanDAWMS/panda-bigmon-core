@@ -67,7 +67,7 @@ from core.filebrowser.ruciowrapper import ruciowrapper
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
 from core.settings.local import GRAFANA
-from core.settings.config import DEPLOYMENT
+from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
@@ -3542,9 +3542,15 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
         stdout = job['pilotid'].split('|')[0]
-        stderr = stdout.replace('.out', '.err')
-        stdlog = stdout.replace('.out', '.log')
-        stdjdl = stdout.replace('.out', '.jdl')
+        if stdout.endswith('pilotlog.txt'):
+           stdlog = stdout.replace('pilotlog.txt', 'payload.stdout')
+           stderr = stdout.replace('pilotlog.txt', 'payload.stderr')
+           stdjdl = None
+        else:
+            stderr = stdout.replace('.out', '.err')
+            stdlog = stdout.replace('.out', '.log')
+            stdjdl = stdout.replace('.out', '.jdl')
+            stdlog = stdout.replace('.out', '.log')
     elif len(job['harvesterInfo']) > 0 and 'batchlog' in job['harvesterInfo'] and job['harvesterInfo']['batchlog']:
         stdlog = job['harvesterInfo']['batchlog']
         stderr = stdlog.replace('.log', '.err')
@@ -3689,7 +3695,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     # if it is ART test, get test name
     art_test = []
-    if 'core.art' in djangosettings.INSTALLED_APPS:
+    if 'core.art' in djangosettings.INSTALLED_APPS and DEPLOYMENT == 'ORACLE_ATLAS':
         try:
             from core.art.modelsART import ARTTests
         except ImportError:
@@ -11224,16 +11230,10 @@ def addJobMetadata(jobs, require=False):
     ## Get job metadata
 
     random.seed()
+    tmpTableName = get_tmp_table_name()
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        metaTableName = "ATLAS_PANDA.METATABLE"
-        metaTableNameArch = "ATLAS_PANDAARCH.METATABLE_ARCH"
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-
-    else:
-        metaTableName = "METATABLE"
-        metaTableNameArch = "METATABLE_ARCH"
-        tmpTableName = "TMP_IDS1"
+    metaTableName = f"{DB_SCHEMA_PANDA}.METATABLE"
+    metaTableNameArch = f"{DB_SCHEMA_PANDA_ARCH}.METATABLE_ARCH"
 
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
