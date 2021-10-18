@@ -1215,10 +1215,13 @@ footer {
     color: #fefefe;
     font-size: 0.875rem;
     font-weight: bold;
-    border-right: 1px solid #fefefe;
+    border-right: 1px solid #d3deed;
+    border-top: 1px solid #d3deed;
   }
-  .bp-tabs li.bp-tabs-title a:hover, .bp-tabs li.bp-tabs-title a[aria-selected="true"] {
+  .bp-tabs li.bp-tabs-title a:hover, .bp-tabs li.bp-tabs-title a.selected {
     background-color: #333333;
+    /*border-right: 1px solid #333333;*/
+    /*border-top: 1px solid #333333;*/
   }
   .bp-tabs-content {
     border: 1px solid #e6e6e6;
@@ -1229,12 +1232,9 @@ footer {
     margin-bottom: 0.7rem;
   }
   .bp-tabs-content .tabs-panel {
-    display: none;
+    display: block;
     padding: 0.3rem 0;
     border-right: 1px solid #5e789a;
     border-left: 1px solid #5e789a;
     border-bottom: 1px solid #5e789a;
-  }
-  .bp-tabs-content .tabs-panel[aria-hidden="false"] {
-    display: block;
   }

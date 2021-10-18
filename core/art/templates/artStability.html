@@ -25,25 +25,21 @@
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
-{% if requestParams.ntag %}<b>Listed tests are for builds done on {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
-{% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
-{% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
 
-<div data-ng-controller="artStabilityController" id="artStabilityController">
+<div ng-controller="artStabilityController as art" id="artStabilityController" class="ng-cloak">
 {% if artjobsdiff|length > 0 %}
 
-
 <ul class="bp-tabs" id="art-tabs" data-tabs>
-  <li class="bp-tabs-title" ng-repeat="(panel,pobj) in art.panels"><a aria-selected="{$ art.isActive(panel) $}" ng-click="art.activatePanel( panel )" >{$ panel $}</a></li>
+  <li class="bp-tabs-title" ng-repeat="panel in art.panels" on-finish-render="ngRepeatFinished"><a ng-click="art.activatePanel(panel.id)" ng-class="art.isSelectedClass(panel.id)">{$ panel.name $}</a></li>
 </ul>
 <div class="bp-tabs-content" data-tabs-content="art-tabs">
-  <div class="tabs-panel" ng-repeat="(panel,pobj) in art.panels" id="panel_{$ panel $}" aria-hidden="{$ art.isHidden(panel) $}" on-finish-render="ngRepeatFinished">
-    <p>{$ panel $}</p>
-    <table id="table_{$ panel $}" class="data-table left-aligned nowrap ng-hide" ng-hide="art.isHidden(panel)">
+  <div id="panel_{$ panel.id $}" class="tabs-panel" ng-repeat="panel in art.panels" ng-show="art.isActive(panel.id)">
+    <div id="container_{$ panel.id $}">
+    <table id="table_{$ panel.id $}" class="data-table left-aligned nowrap">
       <thead>
         <tr>
-          <th ng-repeat="title in art.header" ng-class=" art.isFixedWidth(title) " >{$ title $}</th>
+          <th ng-repeat="title in art.header" ng-class="art.isFixedWidth(title)">{$ title $}</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -53,6 +49,7 @@
         </tr>
       </tfoot>
     </table>
+    </div>
   </div>
 </div>
 
@@ -73,63 +70,134 @@
 
 {% block help %}
     <a name="help"></a>
-    {% include "artHelp.html" %}
+    {% include "artStabilityHelp.html" %}
 {% endblock %}
 
 {% block js_body_page %}
 <script>
+var artaggrorder = {{ artaggrorder|safe }};
 var data_raw = {{ artjobsdiff|safe }};
-app.controller('artStabilityController', ['$scope', '$http', function($scope, $http) {
+app.controller('artStabilityController', ['$scope', '$timeout', function($scope, $timeout) {
   $scope.art = {
     data: data_raw,
-    panels: {},
-    selection: '',
+    panels: [],
+    selected: 0,
     header: [],
   };
 
-  Object.keys($scope.art.data).sort().forEach(p => {
-    $scope.art.panels[p] = {
-      is_active: false,
-    };
+  Object.keys($scope.art.data).sort().forEach((p, i) => {
+    $scope.art.panels.push({
+      id: i,
+      name: p,
+      table: {},
+    });
   });
 
-  $scope.art.selection = Object.keys($scope.art.panels)[0];
-  $scope.art.panels[$scope.art.selection].is_active = true;
+  $scope.art.header = data_raw[$scope.art.panels[$scope.art.selected].name][0];
 
-  $scope.art.header = data_raw[$scope.art.selection][0];
-
-
-  $scope.art.activatePanel = function (panel_name) {
-    console.log(panel_name);
-    $scope.art.panels[$scope.art.selection].is_active = false;
-    $scope.art.selection = panel_name;
-    $scope.art.panels[panel_name].is_active = true;
-    if (!('table' in $scope.art.panels[panel_name])) {
-      $scope.art.panels[panel_name]['table'] = buildDiffTable(panel_name, $scope.art.data[panel_name]);
-      {#$scope.art.panels[panel_name]['table'].fnAdjustColumnSizing();#}
-      {#$scope.art.panels[panel_name]['table'].columns.adjust().draw();#}
-    }
-
+  $scope.art.activatePanel = function (tab_id) {
+    $scope.art.selected = tab_id;
+    $scope.art.toggleTable(tab_id);
   };
 
-  $scope.art.isActive = function (panel_name) {
-    return (panel_name === $scope.art.selection)
+  $scope.art.isActive = function (tab_id) {
+    return (tab_id === $scope.art.selected)
   };
-  $scope.art.isHidden = function (panel_name) {
-    return (panel_name !== $scope.art.selection)
+  $scope.art.isSelectedClass = function (tab_id) {
+    return (tab_id !== $scope.art.selected) ? '' : 'selected'
   };
   $scope.art.isFixedWidth = function (column_title) {
     let not_fixed_width = $scope.art.header.slice(0,2);
     return (not_fixed_width.includes(column_title)) ? 'text' : 'fixed-width-small'
   };
 
+  $scope.art.buildTable = function (tab_id) {
+    var dt_obj;
+    let columns = [];
+    // remove the header
+    let header = $scope.art.data[$scope.art.panels[tab_id].name].shift();
+    header.forEach(col => {
+      if (artaggrorder.includes(col)) {
+        columns.push({
+          className: 'text',
+          sDefaultContent: '-',
+          render: function(data, type, row, meta) {
+              return '<a href = "{% url 'artJobs' %}?' + artaggrorder[0] + '=' + $scope.art.panels[tab_id].name + '&' + artaggrorder[1] + '=' + row[0] + '">'+row[0]+'</a>'
+          }
+        });
+      }
+      else if (col === 'testname') {
+        columns.push({
+          className: 'text',
+          sDefaultContent: '-',
+        });
+      }
+      else {
+        columns.push({
+          className: 'state',
+          sDefaultContent: '-',
+        });
+      }
+    });
 
-  $scope.$on('ngRepeatFinished', function(ngRepeatFinishedEvent) {
-    //you also get the actual event object
-    $scope.art.activatePanel($scope.art.selection);
+    dt_obj = $('#table_' + $scope.art.panels[tab_id].id).DataTable({
+      "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+      "pageLength": 20,
+      "paging": true,
+      "scrollX": true,
+      "aaSorting": [[0, 'desc']],
+      "data": $scope.art.data[$scope.art.panels[tab_id].name],
+      "columns": columns,
+      initComplete: function () {
+        this.api().columns([0,1]).every(function () {
+          var column = this;
+          var select = $('<select><option value="">Show all</option></select>')
+              .appendTo($(column.footer()).empty())
+              .on('change', function () {
+                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                  column
+                    .search(val ? '^' + val + '$' : '', true, false)
+                    .draw();
+              });
+          column.data().unique().sort().each(function (d, j) {
+              select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+        this.api().columns.adjust().draw();
+      },
+      createdRow: function ( row, data, index ) {
+          for (let i=2; i<header.length; i++) {
+            $('td', row).eq(i).addClass(data[i] + '_fill');
+          }
+      },
+
+    });
+
+    return dt_obj
+
+  };
+
+  $scope.art.toggleTable = function (tab_id) {
+
+    if (!('dt_obj' in $scope.art.panels[tab_id].table)) {
+      $scope.art.panels[tab_id].table['dt_obj'] = $scope.art.buildTable(tab_id);
+    }
+
+  };
+
+  $scope.$watch('art.selected', function(newValue, oldValue) {
+    if (newValue !== oldValue ) {
+        $timeout(function() {
+            // adjust header and cells width
+            $scope.art.panels[newValue].table['dt_obj'].columns.adjust().draw();
+        });
+    }
   });
 
-
+  $scope.$on('ngRepeatFinished', function(ngRepeatFinishedEvent) {
+    // show first tab content by default
+    $scope.art.toggleTable($scope.art.selected);
+  });
 
 }])
   .directive('onFinishRender', function ($timeout) {
@@ -137,122 +205,12 @@ app.controller('artStabilityController', ['$scope', '$http', function($scope, $h
         restrict: 'A',
         link: function (scope, element, attr) {
             if (scope.$last === true) {
-                $timeout(function () {
-                    scope.$emit(attr.onFinishRender);
-                });
+                $timeout(function () {scope.$emit(attr.onFinishRender);});
             }
         }
     }
-});
+ });
 
-
-
-  $(document).ready(function () {
-    var art_jobs_diff = {{ artjobsdiff|safe }};
-    Object.keys(art_jobs_diff).forEach(k => {
-      {#buildDiffTable(k, art_jobs_diff[k]);#}
-    });
-
-  });
-
-function buildDiffTable(name, data) {
-  var artaggrorder = {{ artaggrorder|safe }};
-  var columns = [];
-  // remove the header
-  var header = data.shift();
-
-  header.forEach(col => {
-    if (artaggrorder.includes(col)) {
-      columns.push({
-        className: 'text',
-        sDefaultContent: '-',
-        render: function(data, type, row, meta) {
-            return '<a href = "{% url 'artJobs' %}?' + artaggrorder[0] + '=' + name + '&' + artaggrorder[1] + '=' + row[0] + '">'+row[0]+'</a>'
-        }
-      });
-    }
-    else if (col === 'testname') {
-      columns.push({
-        className: 'text',
-        sDefaultContent: '-',
-      });
-    }
-    else {
-      columns.push({
-        className: 'state',
-        sDefaultContent: '-',
-      });
-    }
-  });
-
-  var table = $('#table_' + name).DataTable({
-    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
-    "paging": true,
-    "scrollX": true,
-    "aaSorting": [[0, 'desc']],
-    "data": data,
-    "columns": columns,
-    initComplete: function () {
-      this.api().columns([0,1]).every(function () {
-        var column = this;
-        var select = $('<select><option value="">Show all</option></select>')
-            .appendTo($(column.footer()).empty())
-            .on('change', function () {
-                var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                column
-                  .search(val ? '^' + val + '$' : '', true, false)
-                  .draw();
-            });
-        column.data().unique().sort().each(function (d, j) {
-            select.append('<option value="' + d + '">' + d + '</option>')
-        });
-      });
-    },
-    "createdRow": function ( row, data, index ) {
-        for (let i=2; i<header.length; i++) {
-          $('td', row).eq(i).addClass(data[i] + '_fill');
-        }
-    },
-
-  });
-  return table
-
-}
 
 </script>
 {% endblock %}
-
-
-{#{% for name,ndict in artjobsdiff.items %}#}
-{##}
-{#  <div class="card bp-container-simple primary" id="container_{{ name }}">#}
-{#  <div class="card-divider"><p>{{ name }}</p></div>#}
-{#  <div class="card-section">#}
-{#  </div>#}
-{#    <table id="table_{{ name }}" class="data-table left-aligned nowrap">#}
-{#      <thead>#}
-{#        <tr>#}
-{#          {% for row in ndict|slice:"1" %}#}
-{#            {% for col in row %}#}
-{#              {% if forloop.counter0 < 2 %}#}
-{#                <th class="text">{{ col|title }}</th>#}
-{#              {% else %}#}
-{#                <th class="vertical fixed-width-small">{{ col }}</th>#}
-{#              {% endif %}#}
-{#            {% endfor %}#}
-{#          {% endfor %}#}
-{#        </tr>#}
-{#      </thead>#}
-{#      <tbody></tbody>#}
-{#      <tfoot>#}
-{#        <tr>#}
-{#          {% for row in ndict|slice:"1" %}#}
-{#            {% for col in row %}#}
-{#              <th></th>#}
-{#            {% endfor %}#}
-{#          {% endfor %}#}
-{#        </tr>#}
-{#      </tfoot>#}
-{#    </table>#}
-{#  </div>#}
-{#{% endfor %}#}

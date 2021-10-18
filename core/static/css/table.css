@@ -9,6 +9,13 @@ table {
     border-width:1px;
     border-color:grey;}
 
+tr {
+  background-color: #fefefe;
+}
+
+tr > td {
+  background-color: inherit;
+}
 
 th {
     text-align:left;
@@ -537,11 +544,11 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     width: 5rem;
     padding: 0;
   }
-  .data-table thead th.fixed-width-small {
+  .data-table thead th.fixed-width-small, .data-table tbody td.fixed-width-small {
     padding: 0;
-    width: 3rem;
-    max-width: 3rem;
-    min-width: 3rem;
+    width: 3.5rem;
+    max-width: 3.5rem;
+    min-width: 3.5rem;
   }
   .data-table tbody td {
     border-left: none;
@@ -601,10 +608,13 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     text-align: center !important;
   }
   .data-table tbody tr:nth-child(even):hover td {
-    background-color: #d4dfed !important;
+    /*background-color: #d4dfed !important;*/
+    filter: brightness(90%) !important;
+    ;
   }
   .data-table tbody tr:nth-child(odd):hover td {
-    background-color: #d4dfed !important;
+    /*background-color: #d4dfed !important;*/
+    filter: brightness(90%) !important;
   }
 
   .data-table tbody th.fixed30 {

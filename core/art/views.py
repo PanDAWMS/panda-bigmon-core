@@ -648,18 +648,15 @@ def artStability(request):
             c.status, 
             c.pandaid, 
             c.result, 
-            c.gitlabid, 
-            c.attemptmark, 
-            c.extrainfo 
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS('{}','{}','{}')) c
+            c.attemptmark 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) c
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
 
-    art_job_names = [
-        'taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid', 'result',
-                    'gitlabid',  'attemptmark', 'extrainfo']
+    art_job_names = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
+                     'result', 'attemptmark']
     jobs = [dict(zip(art_job_names, row)) for row in jobs]
     _logger.info('Got data from DB: {}s'.format(time.time() - request.session['req_init_time']))
 
@@ -718,9 +715,9 @@ def artStability(request):
                             # compare one test
                             tmp_row.append(get_test_diff(t_dict[ntags[ntag_prev]]['jobs'][0], t_dict[ntags[ntag_i+1]]['jobs'][0]))
                         else:
-                            tmp_row.append('-')
+                            tmp_row.append('na')
                     else:
-                        tmp_row.append('na')
+                        tmp_row.append('-')
 
                 # for ntag, t_jobs in t_dict.items():
                 #     tmp_row[ntag] = '_'.join(set([r['finalresult'] for r in t_jobs['jobs']]))
@@ -738,12 +735,15 @@ def artStability(request):
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
+        xurl = extensibleURL(request)
+        noviewurl = removeParam(xurl, 'view', mode='extensible')
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
             'ntags': ntags[1:],
+            'noviewurl': noviewurl,
             'artaggrorder': art_aggr_order,
             # 'tableheader': art_jobs_diff_header,
             'artjobsdiff': art_jobs_diff,

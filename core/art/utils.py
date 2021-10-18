@@ -9,8 +9,6 @@ from django.db.models.functions import Substr
 from core.views import preprocessWildCardString
 from core.art.modelsART import ARTTests
 
-
-
 artdateformat = '%Y-%m-%d'
 
 
@@ -56,14 +54,19 @@ def setupView(request, querytype='task'):
         except:
             del request.session['requestParams']['ntag_full']
 
-    if request.path != '/art/updatejoblist/':
-        ndaysmax = 6
-    else:
+    if request.path == '/art/updatejoblist/':
+        ndaysdefault = 30
         ndaysmax = 30
+    elif request.path == '/art/stability/':
+        ndaysdefault = 8
+        ndaysmax = 15
+    else:
+        ndaysmax = 6
+        ndaysdefault = 6
     if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        enddate = startdate + timedelta(days=ndaysmax)
+        enddate = startdate + timedelta(days=ndaysdefault)
     elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
-        startdate = enddate - timedelta(days=ndaysmax)
+        startdate = enddate - timedelta(days=ndaysdefault)
     elif not 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
         if 'ntag' in request.session['requestParams']:
             enddate = startdate
@@ -71,15 +74,15 @@ def setupView(request, querytype='task'):
             enddate = startdate
         else:
             enddate = datetime.now()
-            startdate = enddate - timedelta(days=ndaysmax)
-    elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > 7:
+            startdate = enddate - timedelta(days=ndaysdefault)
+    elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > ndaysmax:
         enddate = startdate + timedelta(days=ndaysmax)
 
     if 'days' in request.session['requestParams']:
         try:
             ndays = int(request.session['requestParams']['days'])
         except:
-            ndays = ndaysmax
+            ndays = ndaysdefault
         enddate = datetime.now()
         if ndays <= ndaysmax:
             startdate = enddate - timedelta(days=ndays)
@@ -92,6 +95,7 @@ def setupView(request, querytype='task'):
         if len(datelist) == 0:
             startdate = datetime.strptime('2017-05-03', artdateformat)
             enddate = datetime.now()
+
 
     if not 'ntag' in request.session['requestParams']:
         if 'ntags' in request.session['requestParams'] or 'nlastnightlies' in request.session['requestParams']:
