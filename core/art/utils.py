@@ -60,6 +60,9 @@ def setupView(request, querytype='task'):
     elif request.path == '/art/stability/':
         ndaysdefault = 8
         ndaysmax = 15
+    elif request.path == '/art/errors/':
+        ndaysdefault = 1
+        ndaysmax = 6
     else:
         ndaysmax = 6
         ndaysdefault = 6

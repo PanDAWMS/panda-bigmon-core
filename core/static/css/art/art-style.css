@@ -604,23 +604,23 @@ fieldset.artmenu li.input-group button.hollow.alert {
     font-weight: bold;
 }
 
-.art-legend.finished_job {
+.finished_job {
     background: #FADA5E;
 }
 
-.art-legend.done_job {
+.done_job {
     background: #3adb76;
 }
 
-.art-legend.succeeded_job {
+.succeeded_job {
     background: #3adb76;
 }
 
-.art-legend.failed_job {
+.failed_job {
     background: tomato;
 }
 
-.art-legend.active_job {
+.active_job {
     background: cornflowerblue;
 }
 

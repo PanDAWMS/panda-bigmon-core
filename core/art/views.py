@@ -24,6 +24,7 @@ from core.art.artMail import send_mail_art
 from core.art.modelsART import ARTTests, ReportEmails, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from core.common.models import Filestable4, FilestableArch
+from core.libs.job import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4
 from core.utils import is_json_request
@@ -750,6 +751,123 @@ def artStability(request):
         }
         setCacheEntry(request, "artStability", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
         response = render_to_response('artStability.html', data, content_type='text/html')
+        _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
+@login_customrequired
+def artErrors(request):
+    """
+    A view to summarize changes of a test results over last week
+    :param request: HTTP request
+    :return:
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    # Here we try to get cached data
+    data = getCacheEntry(request, "artErrors")
+    # data = None
+    if data is not None:
+        _logger.info('Got data from cache: {}s'.format(time.time() - request.session['req_init_time']))
+        data = json.loads(data)
+        data['request'] = request
+        response = render_to_response('artErrors.html', data, content_type='text/html')
+        _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+    # process URL params to query params
+    query = setupView(request, 'job')
+    _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
+
+    # querying data from dedicated SQL function
+    cur = connection.cursor()
+    query_raw = """
+        SELECT 
+            c.taskid, 
+            c.package, 
+            c.branch, 
+            c.ntag, 
+            c.nightly_tag, 
+            c.testname, 
+            c.status, 
+            c.pandaid, 
+            c.result 
+        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) c
+        WHERE c.attemptmark = 0
+        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+    cur.execute(query_raw)
+    jobs = cur.fetchall()
+    cur.close()
+
+    art_job_names = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'pandaid',
+                     'result', 'attemptmark']
+    jobs = [dict(zip(art_job_names, row)) for row in jobs]
+    _logger.info('Got data from DB: {}s'.format(time.time() - request.session['req_init_time']))
+
+    artjobsdict = {}
+    ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
+
+    artjoberrors = []
+    artjoberrors_header = [
+        {'title': 'Package', 'param': 'package'},
+        {'title': 'Branch', 'param': 'branch'},
+        {'title': 'Test name', 'param': 'testname'},
+        {'title': 'Ntag', 'param': 'ntag_str'},
+        {'title': 'Test result', 'param': 'finalresult'},
+        {'title': 'Sub-step results', 'param': 'subresults_str'},
+        {'title': 'PanDA job errors', 'param': 'pandaerror_str'},
+    ]
+
+    # get PanDA job error info
+    pandaids = [j['pandaid'] for j in jobs if j['jobstatus'] in ('failed', 'closed', 'cancelled')]
+    error_desc_dict = get_job_errors(pandaids)
+
+    for job in jobs:
+        job['ntag_str'] = job['ntag'].strftime(artdateformat)
+        finalresult, extraparams = get_final_result(job)
+        job['finalresult'] = finalresult
+        job.update(extraparams)
+
+        if job['subresults'] is not None and len(job['subresults']) > 0:
+            job['subresults_str'] = ', '.join(['{}:<b>{}</b>'.format(s['name'], s['result']) for s in job['subresults']])
+        else:
+            job['subresults_str'] = '-'
+
+        if job['pandaid'] in error_desc_dict:
+            job['pandaerror_str'] = error_desc_dict[job['pandaid']]
+        else:
+            job['pandaerror_str'] = '-'
+
+        if job['finalresult'] not in ('succeeded', 'active'):
+            row = [job[col['param']] for col in artjoberrors_header]
+            artjoberrors.append(row)
+
+    if len(artjoberrors) > 0:
+        artjoberrors.insert(0, [col['title'] for col in artjoberrors_header])
+
+    # response
+    if is_json_request(request):
+        data = {
+            'art': artjoberrors,
+        }
+        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+    else:
+        xurl = extensibleURL(request)
+        noviewurl = removeParam(xurl, 'view', mode='extensible')
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'noviewurl': noviewurl,
+            'artjoberrors': artjoberrors,
+        }
+        setCacheEntry(request, "artErrors", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
+        response = render_to_response('artErrors.html', data, content_type='text/html')
         _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
