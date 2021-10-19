@@ -18,7 +18,7 @@ from django.db import connections
 from django.utils import timezone
 from django.db import models
 
-from core.settings.config import DB_SCHEMA
+from core.settings.config import DB_SCHEMA, DEPLOYMENT
 
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
@@ -1522,7 +1522,7 @@ class RucioAccounts(models.Model):
 
 
 class AllRequests(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='ID')
+    id = models.IntegerField(primary_key=True, db_column='id')
     server = models.CharField(max_length=40, db_column='server')
     remote = models.CharField(max_length=40, db_column='remote')
     qtime = models.DateTimeField(db_column='qtime')
@@ -1532,12 +1532,12 @@ class AllRequests(models.Model):
     useragent = models.CharField(max_length=250, db_column='useragent')
     is_rejected = models.IntegerField(db_column='is_rejected')
     urlview = models.CharField(max_length=40, db_column='urlview')
-    load = models.FloatField(db_column='LOAD')
-    mem = models.FloatField(db_column='MEM')
-    dbactivesess = models.IntegerField(db_column='DBACTIVESESS')
-    dbtotalsess = models.IntegerField(db_column='DBTOTALSESS')
+    load = models.FloatField(db_column='load')
+    mem = models.FloatField(db_column='mem')
+    dbactivesess = models.IntegerField(db_column='dbactivesess')
+    dbtotalsess = models.IntegerField(db_column='dbtotalsess')
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."ALL_REQUESTS_DAILY"'
+        db_table = f'"{DB_SCHEMA}"."all_requests_daily"'
         app_label = 'pandamon'
 
 

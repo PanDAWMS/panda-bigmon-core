@@ -121,8 +121,8 @@ if DEPLOYMENT == 'ORACLE_ATLAS':
     DATABASES = dbaccess_oracle_atlas
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
 elif DEPLOYMENT == 'POSTGRES':
-    DB_SCHEMA = 'ATLAS_PANDABIGMON'
-    DB_SCHEMA_PANDA = 'DOMA_PANDA'
+    DB_SCHEMA = 'doma_pandabigmon'
+    DB_SCHEMA_PANDA = 'doma_panda'
     DB_SCHEMA_PANDA_ARCH = 'DOMA_PANDAARCH'
     DB_SCHEMA_IDDS = 'DOMA_IDDS'
     DATABASES = dbaccess_postgres
@@ -146,6 +146,9 @@ CACHES = {
         }
     }
 }
+
+if DEPLOYMENT == 'POSTGRES':
+    CACHES['default']['LOCATION'] = f'"{DB_SCHEMA}"."djangocache"'
 
 
 ### URL_PATH_PREFIX for multi-developer apache/wsgi instance

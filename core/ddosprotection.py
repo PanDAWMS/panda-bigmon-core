@@ -1,7 +1,7 @@
 import logging
 import ipaddress, re
 from core.common.models import AllRequests
-from core.settings.config import DB_SCHEMA
+from core.settings.config import DB_SCHEMA, DEPLOYMENT
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -79,7 +79,11 @@ class DDOSMiddleware(object):
         # except:
         #     _logger.warning('Failed to get connections number from ATLAS_DBA')
 
-        sqlRequest = f"SELECT {DB_SCHEMA}.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+        if DEPLOYMENT == 'POSTGRES':
+            sqlRequest = f"SELECT nextval('{DB_SCHEMA}.\"ALL_REQUESTS_SEQ\"') as my_req_token;"
+        else:
+            sqlRequest = f"SELECT {DB_SCHEMA}.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+
         cursor.execute(sqlRequest)
         requestToken = cursor.fetchall()
         requestToken = requestToken[0][0]
