@@ -53,6 +53,7 @@ fieldset.artmenu li.input-group button.hollow.alert {
     max-width: 500px; /*250 px for status box with tar index and link to logs, +250px for sub results  */
     display: inline-flex;
     white-space: normal;
+    line-height: 1.43rem;
 }
 
 .with-ntagfull {
@@ -344,7 +345,7 @@ fieldset.artmenu li.input-group button.hollow.alert {
 }
 
 .cell.extra-info {
-    line-height: 1.8rem;
+    line-height: 1.43rem;
 }
 
 .left-aligned {
