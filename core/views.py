@@ -100,7 +100,7 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, extensibleURL, complete_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, get_tmp_table_name_debug
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, get_tmp_table_name_debug, create_temporary_table
 from core.libs.exlib import is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
     add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall, getPilotCounts
@@ -7274,6 +7274,7 @@ def getTaskScoutingInfo(tasks, nmax):
     tmpTableName = get_tmp_table_name()
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
+    create_temporary_table(new_cur, tmpTableName)
     executionData = []
     for id in tasksIdToBeDisplayed:
         executionData.append((id, transactionKey))

@@ -73,7 +73,7 @@ def cleanTaskList(tasks, **kwargs):
         if 'corecount' in task and task['corecount'] is None:
             task['corecount'] = 1
         task['age'] = get_task_age(task)
-        if 'campaign' in task:
+        if 'campaign' in task and task['campaign']:
             task['campaign_cut'] = ':'.join(task['campaign'].split(':')[1:]) if ':' in task['campaign'] else task['campaign']
 
     # Get status of input processing as indicator of task progress if requested

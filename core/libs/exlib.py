@@ -5,7 +5,7 @@ from django.db import connection
 from dateutil.parser import parse
 from datetime import datetime
 from core.settings.local import dbaccess
-from core.settings.config import DB_SCHEMA
+from core.settings.config import DB_SCHEMA, DEPLOYMENT
 import core.constants as const
 
 
@@ -263,12 +263,13 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
     """
 
     tmpTableName = get_tmp_table_name()
-
     if transactionKey == -1:
         random.seed()
         transactionKey = random.randrange(1000000)
 
     new_cur = connection.cursor()
+    if DEPLOYMENT == "POSTGRES":
+        create_temporary_table(new_cur, tmpTableName)
     executionData = []
     for item in list_of_items:
         executionData.append((item, transactionKey))
@@ -389,11 +390,22 @@ def is_job_active(jobststus):
 
 def get_tmp_table_name():
     tmpTableName = f"{DB_SCHEMA}.TMP_IDS1"
+    if DEPLOYMENT == 'POSTGRES':
+        tmpTableName = "TMP_IDS1"
     return tmpTableName
 
 def get_tmp_table_name_debug():
     tmpTableName = f"{DB_SCHEMA}.TMP_IDS1DEBUG"
     return tmpTableName
+
+def create_temporary_table(cursor, tmpTableName):
+    #Postgres does not keep the temporary table definition across connections, this is why we should recreate them
+    sql_query = f"""
+    CREATE TEMPORARY TABLE if not exists {tmpTableName} 
+   ("id" bigint, "transactionkey" bigint) ON COMMIT PRESERVE ROWS;
+    COMMIT;
+    """
+    cursor.execute(sql_query)
 
 
 def lower_string(string):
