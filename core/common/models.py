@@ -361,8 +361,8 @@ class JediDatasetContents(models.Model):
 
 class JediDatasets(models.Model):
     jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
-    datasetid = models.BigIntegerField(db_column='DATASETID')
-    datasetname = models.CharField(max_length=765, db_column='DATASETNAME')
+    datasetid = models.BigIntegerField(db_column='datasetid')
+    datasetname = models.CharField(max_length=765, db_column='datasetname')
     type = models.CharField(max_length=60, db_column='type')
     creationtime = models.DateTimeField(db_column='CREATIONTIME')
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
@@ -371,8 +371,8 @@ class JediDatasets(models.Model):
     site = models.CharField(max_length=180, db_column='SITE', blank=True)
     masterid = models.BigIntegerField(null=True, db_column='masterid', blank=True)
     provenanceid = models.BigIntegerField(null=True, db_column='PROVENANCEID', blank=True)
-    containername = models.CharField(max_length=396, db_column='CONTAINERNAME', blank=True)
-    status = models.CharField(max_length=60, db_column='STATUS', blank=True)
+    containername = models.CharField(max_length=396, db_column='containername', blank=True)
+    status = models.CharField(max_length=60, db_column='status', blank=True)
     state = models.CharField(max_length=60, db_column='STATE', blank=True)
     statechecktime = models.DateTimeField(null=True, db_column='STATECHECKTIME', blank=True)
     statecheckexpiration = models.DateTimeField(null=True, db_column='STATECHECKEXPIRATION', blank=True)
@@ -380,16 +380,16 @@ class JediDatasets(models.Model):
     nfiles = models.IntegerField(null=True, db_column='nfiles', blank=True)
     nfilestobeused = models.IntegerField(null=True, db_column='NFILESTOBEUSED', blank=True)
     nfilesused = models.IntegerField(null=True, db_column='NFILESUSED', blank=True)
-    nevents = models.BigIntegerField(null=True, db_column='NEVENTS', blank=True)
-    neventstobeused = models.BigIntegerField(null=True, db_column='NEVENTSTOBEUSED', blank=True)
-    neventsused = models.BigIntegerField(null=True, db_column='NEVENTSUSED', blank=True)
+    nevents = models.BigIntegerField(null=True, db_column='nevents', blank=True)
+    neventstobeused = models.BigIntegerField(null=True, db_column='neventstobeused', blank=True)
+    neventsused = models.BigIntegerField(null=True, db_column='neventsused', blank=True)
     lockedby = models.CharField(max_length=120, db_column='LOCKEDBY', blank=True)
     lockedtime = models.DateTimeField(null=True, db_column='LOCKEDTIME', blank=True)
     nfilesfinished = models.IntegerField(null=True, db_column='nfilesfinished', blank=True)
     nfilesfailed = models.IntegerField(null=True, db_column='nfilesfailed', blank=True)
     attributes = models.CharField(max_length=300, db_column='ATTRIBUTES', blank=True)
-    streamname = models.CharField(max_length=60, db_column='STREAMNAME', blank=True)
-    storagetoken = models.CharField(max_length=180, db_column='STORAGETOKEN', blank=True)
+    streamname = models.CharField(max_length=60, db_column='streamname', blank=True)
+    storagetoken = models.CharField(max_length=180, db_column='storagetoken', blank=True)
     destination = models.CharField(max_length=180, db_column='DESTINATION', blank=True)
     nfilesonhold = models.IntegerField(null=True, db_column='NFILESONHOLD', blank=True)
     templateid = models.BigIntegerField(db_column='TEMPLATEID', blank=True)
@@ -444,9 +444,9 @@ class JediJobparamsTemplate(models.Model):
 
 class JediJobRetryHistory(models.Model):
     jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
-    oldpandaid = models.BigIntegerField(db_column='OLDPANDAID')
-    newpandaid = models.BigIntegerField(db_column='NEWPANDAID')
-    ins_utc_tstamp = models.BigIntegerField(db_column='INS_UTC_TSTAMP', blank=True) 
+    oldpandaid = models.BigIntegerField(db_column='oldpandaid')
+    newpandaid = models.BigIntegerField(db_column='newpandaid')
+    ins_utc_tstamp = models.BigIntegerField(db_column='ins_utc_tstamp', blank=True)
     relationtype = models.CharField(max_length=48, db_column='relationtype')
     class Meta:
         db_table = u'jedi_job_retry_history'
@@ -471,8 +471,8 @@ class JediOutputTemplate(models.Model):
 
 
 class JediTaskparams(models.Model):
-    jeditaskid = models.BigIntegerField(primary_key=True, db_column='JEDITASKID')
-    taskparams = models.TextField(db_column='TASKPARAMS', blank=True)
+    jeditaskid = models.BigIntegerField(primary_key=True, db_column='jeditaskid')
+    taskparams = models.TextField(db_column='taskparams', blank=True)
     class Meta:
         db_table = u'jedi_taskparams'
         app_label = 'jedi'

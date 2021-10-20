@@ -13,16 +13,22 @@ def get_pandajob_models_by_year(timewindow):
     :return:
 
     """
-    pjm_year_dict = {
-        2014: [Jobsarchived_y2014, ],
-        2015: [Jobsarchived_y2015, ],
-        2016: [Jobsarchived_y2016, ],
-        2017: [Jobsarchived_y2017, ],
-        2018: [Jobsarchived_y2018, ],
-        2019: [Jobsarchived, ],
-        2020: [Jobsarchived, ],
-        2021: [Jobsarchived, Jobsarchived4],
-    }
+    if DEPLOYMENT == "ORACLE_ATLAS":
+        pjm_year_dict = {
+            2014: [Jobsarchived_y2014, ],
+            2015: [Jobsarchived_y2015, ],
+            2016: [Jobsarchived_y2016, ],
+            2017: [Jobsarchived_y2017, ],
+            2018: [Jobsarchived_y2018, ],
+            2019: [Jobsarchived, ],
+            2020: [Jobsarchived, ],
+            2021: [Jobsarchived, Jobsarchived4],
+        }
+    else:
+        pjm_year_dict = {
+            2020: [Jobsarchived, ],
+            2021: [Jobsarchived, Jobsarchived4],
+        }
     pandajob_models = []
 
     if len(timewindow) == 2 and isinstance(timewindow[0], str):

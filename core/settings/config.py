@@ -123,7 +123,7 @@ if DEPLOYMENT == 'ORACLE_ATLAS':
 elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA = 'doma_pandabigmon'
     DB_SCHEMA_PANDA = 'doma_panda'
-    DB_SCHEMA_PANDA_ARCH = 'DOMA_PANDAARCH'
+    DB_SCHEMA_PANDA_ARCH = 'doma_pandaarch'
     DB_SCHEMA_IDDS = 'DOMA_IDDS'
     DATABASES = dbaccess_postgres
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'

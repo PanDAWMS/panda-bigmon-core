@@ -8097,7 +8097,10 @@ def taskInfo(request, jeditaskid=0):
     # creating a jquery with timewindow
     jquery = copy.deepcopy(query)
     jquery['modificationtime__castdate__range'] = get_task_timewindow(taskrec, format_out='str')
-    hs06sSum = get_hs06s_summary_for_task(jquery)
+    if DEPLOYMENT != 'POSTGRES':
+        hs06sSum = get_hs06s_summary_for_task(jquery)
+    else:
+        hs06sSum = {}
     _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
 
     eventssummary = []
