@@ -4,6 +4,7 @@ Created on Jun 29, 2009
 @author: Torre Wenaus
 '''
 import logging
+_logger = logging.getLogger('bigpandamon')
 
 class ErrorCodes:
     
@@ -270,15 +271,14 @@ class ErrorCodes:
         self.errorCodes['exeerrorcode'][100] = 'Transformation not found in run directory'
         self.errorStages['exeerrorcode'][100] = 'ddm-start'
         
-        for code in range ( 1000, 2000 ):
-            #try:
-            if code in self.errorCodes['piloterrorcode']:
-                self.errorCodes['exeerrorcode'][code] = self.errorCodes['piloterrorcode'][code]
-            if code in self.errorStages['piloterrorcode']:
-                self.errorStages['exeerrorcode'][code] = self.errorStages['piloterrorcode'][code]
-            #except Exception as e:
-                # print e.__class__, e.__doc__, e.message, 'bigpanda_logstash'
-                #logging.error(e)
+        for code in range (1000, 2000):
+            try:
+                if code in self.errorCodes['piloterrorcode']:
+                    self.errorCodes['exeerrorcode'][code] = self.errorCodes['piloterrorcode'][code]
+                if code in self.errorStages['piloterrorcode']:
+                    self.errorStages['exeerrorcode'][code] = self.errorStages['piloterrorcode'][code]
+            except Exception as e:
+                _logger.exception(e)
 
     # errors at http://alxr.usatlas.bnl.gov/lxr/source/atlas/Tools/PyJobTransformsCore/share/atlas_error_categories.db?v=current
         self.errorCodes['exeerrorcode'][60000] = 'segmentation violation'
