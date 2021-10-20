@@ -211,6 +211,29 @@ def getjflag(job):
     return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
 
 
+def remove_duplicates(jobs):
+    """
+    Removee test duplicates which may come from JOBSARCHIVED4 and JOBSARCHIVED
+    :return:
+    """
+    jobs_new = []
+
+    pandaids = {}
+    for job in jobs:
+        if job['pandaid'] not in pandaids:
+            pandaids[job['pandaid']] = []
+        pandaids[job['pandaid']].append(job)
+
+    for pid, plist in pandaids.items():
+        if len(plist) == 1:
+            jobs_new.append(plist[0])
+        elif len(plist) > 1:
+            # find one that has bigger attemptmark
+            jobs_new.append(sorted(plist, key=lambda d: d['attemptmark'], reverse=True)[0])
+
+    return jobs_new
+
+
 def get_test_diff(test_a, test_b):
     """
     Finding difference in 2 test results

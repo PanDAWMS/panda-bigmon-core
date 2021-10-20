@@ -29,7 +29,7 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4
 from core.utils import is_json_request
 
-from core.art.utils import setupView, get_test_diff
+from core.art.utils import setupView, get_test_diff, remove_duplicates
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -142,31 +142,33 @@ def artOverview(request):
     
     # quering data from dedicated SQL function
     query_raw = """
-        SELECT package, branch, ntag, status, result 
+        SELECT package, branch, ntag, status, result, pandaid, attemptmark
         FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
-        WHERE attemptmark = 0
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur = connection.cursor()
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
     cur.close()
-    artJobs = ['package', 'branch','ntag', 'jobstatus', 'result']
+    artJobs = ['package', 'branch','ntag', 'jobstatus', 'result', 'pandaid', 'attemptmark']
     jobs = [dict(zip(artJobs, row)) for row in tasks_raw]
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
+
+    jobs = remove_duplicates(jobs)
     
     artpackagesdict = {}
     for j in jobs:
-        if j[art_aggr_order[0]] not in artpackagesdict.keys():
-            artpackagesdict[j[art_aggr_order[0]]] = {}
-            for n in ntagslist:
-                artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)] = {}
-                artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-                for state in statestocount:
-                    artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)][state] = 0
+        if 'attemptmark' in j and j['attemptmark'] == 0:
+            if j[art_aggr_order[0]] not in artpackagesdict.keys():
+                artpackagesdict[j[art_aggr_order[0]]] = {}
+                for n in ntagslist:
+                    artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)] = {}
+                    artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+                    for state in statestocount:
+                        artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)][state] = 0
 
-        if j['ntag'].strftime(artdateformat) in artpackagesdict[j[art_aggr_order[0]]]:
-            finalresult, extraparams = get_final_result(j)
-            artpackagesdict[j[art_aggr_order[0]]][j['ntag'].strftime(artdateformat)][finalresult] += 1
+            if j['ntag'].strftime(artdateformat) in artpackagesdict[j[art_aggr_order[0]]]:
+                finalresult, extraparams = get_final_result(j)
+                artpackagesdict[j[art_aggr_order[0]]][j['ntag'].strftime(artdateformat)][finalresult] += 1
         
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -241,43 +243,45 @@ def artTasks(request):
     # quering data from dedicated SQL function
     cur = connection.cursor()
     query_raw = """
-        SELECT package, branch, ntag, nightly_tag, taskid, status, result 
+        SELECT package, branch, ntag, nightly_tag, pandaid, taskid, status, result, attemptmark
         FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
-        WHERE attemptmark = 0
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
     cur.close()
 
-    artJobs = ['package', 'branch', 'ntag', 'nightly_tag', 'task_id', 'jobstatus', 'result']
+    artJobs = ['package', 'branch', 'ntag', 'nightly_tag', 'pandaid', 'task_id', 'jobstatus', 'result', 'attemptmark']
     jobs = [dict(zip(artJobs, row)) for row in tasks_raw]
+
+    jobs = remove_duplicates(jobs)
 
     # tasks = ARTTasks.objects.filter(**query).values('package','branch','task_id', 'ntag', 'nfilesfinished', 'nfilesfailed')
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
     arttasksdict = {}
     jeditaskids = {}
     for job in jobs:
-        if job[art_aggr_order[0]] not in arttasksdict.keys():
-            arttasksdict[job[art_aggr_order[0]]] = {}
-        if job[art_aggr_order[1]] not in arttasksdict[job[art_aggr_order[0]]].keys():
-            arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = {}
-            for n in ntagslist:
-                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][n.strftime(artdateformat)] = {}
-                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
-        if job['nightly_tag'] not in arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)]:
-            arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']] = {}
-            for state in statestocount:
-                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']][state] = 0
-        if job['nightly_tag'] in arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)]:
-            finalresult, extraparams = get_final_result(job)
-            arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
+        if 'attemptmark' in job and job['attemptmark'] == 0:
+            if job[art_aggr_order[0]] not in arttasksdict.keys():
+                arttasksdict[job[art_aggr_order[0]]] = {}
+            if job[art_aggr_order[1]] not in arttasksdict[job[art_aggr_order[0]]].keys():
+                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = {}
+                for n in ntagslist:
+                    arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][n.strftime(artdateformat)] = {}
+                    arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][n.strftime(artdateformat)]['ntag_hf'] = n.strftime(humandateformat)
+            if job['nightly_tag'] not in arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)]:
+                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']] = {}
+                for state in statestocount:
+                    arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']][state] = 0
+            if job['nightly_tag'] in arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)]:
+                finalresult, extraparams = get_final_result(job)
+                arttasksdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['ntag'].strftime(artdateformat)][job['nightly_tag']][finalresult] += 1
 
-        if job[art_aggr_order[0]] not in jeditaskids.keys():
-            jeditaskids[job[art_aggr_order[0]]] = {}
-        if job[art_aggr_order[1]] not in jeditaskids[job[art_aggr_order[0]]].keys():
-            jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = []
-        if job['task_id'] not in jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]]:
-            jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]].append(job['task_id'])
+            if job[art_aggr_order[0]] not in jeditaskids.keys():
+                jeditaskids[job[art_aggr_order[0]]] = {}
+            if job[art_aggr_order[1]] not in jeditaskids[job[art_aggr_order[0]]].keys():
+                jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]] = []
+            if job['task_id'] not in jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]]:
+                jeditaskids[job[art_aggr_order[0]]][job[art_aggr_order[1]]].append(job['task_id'])
 
     xurl = extensibleURL(request)
     noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -393,13 +397,15 @@ def artJobs(request):
     jobs = cur.fetchall()
     cur.close()
 
-    artJobsNames = ['taskid','package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
+    artJobsNames = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'pandaid',
                     'computingsite', 'endtime', 'starttime', 'maxvmem', 'cpuconsumptiontime', 'guid', 'scope', 'lfn',
                     'taskstatus', 'taskmodificationtime', 'jobmodificationtime', 'cpuconsumptionunit', 'result',
                     'gitlabid', 'outputcontainer', 'maxrss', 'attemptnr', 'maxattempt', 'parentid', 'attemptmark',
                     'inputfileid', 'extrainfo']
     jobs = [dict(zip(artJobsNames, row)) for row in jobs]
     _logger.info('Got data from DB: {}s'.format(time.time() - request.session['req_init_time']))
+
+    jobs = remove_duplicates(jobs)
 
     # i=0
     # for job in jobs:
@@ -448,7 +454,7 @@ def artJobs(request):
             if job['ntag'].strftime(artdateformat) in artjobsdict[job[art_aggr_order[0]]][job[art_aggr_order[1]]][job['testname']]:
                 jobdict = {}
                 jobdict['jobstatus'] = job['jobstatus']
-                jobdict['origpandaid'] = job['origpandaid']
+                jobdict['origpandaid'] = job['pandaid']
                 jobdict['ntagtime'] = job['nightly_tag'][-5:]
                 jobdict['computingsite'] = job['computingsite']
                 jobdict['guid'] = job['guid']
@@ -656,7 +662,7 @@ def artStability(request):
     jobs = cur.fetchall()
     cur.close()
 
-    art_job_names = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'origpandaid',
+    art_job_names = ['taskid', 'package', 'branch', 'ntag', 'nightly_tag', 'testname', 'jobstatus', 'pandaid',
                      'result', 'attemptmark']
     jobs = [dict(zip(art_job_names, row)) for row in jobs]
     _logger.info('Got data from DB: {}s'.format(time.time() - request.session['req_init_time']))
