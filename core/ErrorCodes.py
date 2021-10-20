@@ -704,10 +704,13 @@ class ErrorCodes:
         self.errorStages['transexitcode'][223] = 'athena-during'
     
         for code in ( 1008, 1098, 1112, 1116, 1117, 1118, 1119, 1163, 1177, 1178 ):
-            if code in self.errorCodes['piloterrorcode']:
-                self.errorCodes['transexitcode'][code] = self.errorCodes['piloterrorcode'][code]
-            if code in self.errorStages['piloterrorcode']:
-                self.errorStages['transexitcode'][code] = self.errorStages['piloterrorcode'][code]
+            try:
+                if code in self.errorCodes['piloterrorcode']:
+                    self.errorCodes['transexitcode'][code] = self.errorCodes['piloterrorcode'][code]
+                if code in self.errorStages['piloterrorcode']:
+                    self.errorStages['transexitcode'][code] = self.errorStages['piloterrorcode'][code]
+            except Exception as e:
+                _logger.exception(e)
 
         self.errorCodes['transexitcode'][1198] = 'Can\'t check the child process status from the heartbeat process'
         self.errorStages['transexitcode'][1198] = 'athena-during'
