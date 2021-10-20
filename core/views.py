@@ -2219,11 +2219,18 @@ def jobList(request, mode=None, param=None):
             'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag',
             'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr',
             'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount',
-            'statechangetime', 'nucleus', 'eventservice', 'nevents', 'gshare', 'jobmetrics',
-            'noutputdatafiles', 'parentid', 'actualcorecount', 'resourcetype','schedulerid', 'pilotid',
-            'container_name', 'cmtconfig', 'maxpss']
+            'statechangetime',  'nevents', 'jobmetrics',
+            'noutputdatafiles', 'parentid', 'actualcorecount', 'schedulerid', 'pilotid',
+            'cmtconfig', 'maxpss']
     if not eventservice:
         values.extend(['avgvmem', 'maxvmem', 'maxrss'])
+
+    if DEPLOYMENT != "POSTGRES":
+        values.append('nucleus')
+        values.append('eventservice')
+        values.append('gshare')
+        values.append('resourcetype')
+        values.append('container_name')
 
     totalJobs = 0
     showTop = 0

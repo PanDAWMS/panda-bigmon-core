@@ -4,6 +4,8 @@ topology.models -- for Schedconfig and other topology-related objects
 """
 
 from django.db import models
+from core.settings.config import DB_SCHEMA_PANDA
+
 # Create your models here.
 class Schedconfig(models.Model):
     name = models.CharField(max_length=180, db_column='NAME')
@@ -203,12 +205,12 @@ class Schedconfig(models.Model):
 
 
 class SchedconfigJson(models.Model):
-    pandaqueue = models.CharField(max_length=180, db_column='PANDA_QUEUE', primary_key=True)
-    data = models.TextField(db_column='DATA', blank=True)
-    lastupdate = models.DateField(db_column='LAST_UPDATE')
+    pandaqueue = models.CharField(max_length=180, db_column='panda_queue', primary_key=True)
+    data = models.TextField(db_column='data', blank=True)
+    lastupdate = models.DateField(db_column='last_update')
 
     class Meta:
-        db_table = u'"ATLAS_PANDA"."SCHEDCONFIG_JSON"'
+        db_table = f'"{DB_SCHEMA_PANDA}"."schedconfig_json"'
 
 
 class Schedinstance(models.Model):
