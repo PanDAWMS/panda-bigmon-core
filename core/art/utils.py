@@ -211,6 +211,22 @@ def getjflag(job):
     return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
 
 
+def get_result_for_multijob_test(states):
+    """Return worst final result for a test that has several PanDA jobs"""
+    result = None
+    state_dict = {
+        'active': 0,
+        'failed': 1,
+        'finished': 2,
+        'succeeded': 3,
+    }
+
+    result_index = min([state_dict[s] for s in list(set(states)) if s in state_dict])
+    result = list(state_dict.keys())[result_index] if result_index < len(state_dict) else None
+
+    return result
+
+
 def remove_duplicates(jobs):
     """
     Removee test duplicates which may come from JOBSARCHIVED4 and JOBSARCHIVED
