@@ -7281,7 +7281,8 @@ def getTaskScoutingInfo(tasks, nmax):
     tmpTableName = get_tmp_table_name()
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
-    create_temporary_table(new_cur, tmpTableName)
+    if DEPLOYMENT == "POSTGRES":
+        create_temporary_table(new_cur, tmpTableName)
     executionData = []
     for id in tasksIdToBeDisplayed:
         executionData.append((id, transactionKey))
