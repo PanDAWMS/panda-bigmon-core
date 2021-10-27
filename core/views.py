@@ -67,7 +67,7 @@ from core.filebrowser.ruciowrapper import ruciowrapper
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
 from core.settings.local import GRAFANA
-
+from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
@@ -100,7 +100,7 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, extensibleURL, complete_request
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, get_tmp_table_name_debug, create_temporary_table
 from core.libs.exlib import is_timestamp, parse_datetime, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
     add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall, getPilotCounts
@@ -225,7 +225,6 @@ standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername'
                         'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
                         'workinggroup', 'reqid', 'computingelement']
 
-VOLIST = ['atlas', 'bigpanda', 'htcondor', 'core', 'aipanda']
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
 
@@ -439,20 +438,13 @@ def initRequest(request, callselfmon=True):
         if len(userrec) > 0:
             request.session['username'] = userrec[0]['name']
 
-    ENV['MON_VO'] = ''
-    request.session['viewParams']['MON_VO'] = ''
-    if 'HTTP_HOST' in request.META:
-        for vo in VOLIST:
-            if request.META['HTTP_HOST'].startswith(vo):
-                VOMODE = vo
+    if DEPLOYMENT == 'ORACLE_ATLAS':
+        VOMODE = 'atlas'
+        request.session['viewParams']['MON_VO'] = 'ATLAS'
     else:
-        VOMODE = 'atlas'
+        VOMODE = DEPLOYMENT
+        request.session['viewParams']['MON_VO'] = DEPLOYMENT
 
-    ## If DB is Oracle, set vomode to atlas
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        VOMODE = 'atlas'
-    ENV['MON_VO'] = VONAME[VOMODE]
-    request.session['viewParams']['MON_VO'] = ENV['MON_VO']
 
     # remove xurls from session if it is kept from previous requests
     if 'xurls' in request.session:
@@ -2179,11 +2171,18 @@ def jobList(request, mode=None, param=None):
             'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag',
             'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr',
             'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount',
-            'statechangetime', 'nucleus', 'eventservice', 'nevents', 'gshare', 'jobmetrics',
-            'noutputdatafiles', 'parentid', 'actualcorecount', 'resourcetype','schedulerid', 'pilotid',
-            'container_name', 'cmtconfig', 'maxpss']
+            'statechangetime',  'nevents', 'jobmetrics',
+            'noutputdatafiles', 'parentid', 'actualcorecount', 'schedulerid', 'pilotid',
+            'cmtconfig', 'maxpss']
     if not eventservice:
         values.extend(['avgvmem', 'maxvmem', 'maxrss'])
+
+    if DEPLOYMENT != "POSTGRES":
+        values.append('nucleus')
+        values.append('eventservice')
+        values.append('gshare')
+        values.append('resourcetype')
+        values.append('container_name')
 
     totalJobs = 0
     showTop = 0
@@ -2688,10 +2687,7 @@ def jobList(request, mode=None, param=None):
 def importToken(request, errsByCount):
     newErrsByCount = []
     random.seed()
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1DEBUG"
+    tmpTableName = get_tmp_table_name_debug()
     isListPID = False
     new_cur = connection.cursor()
     transactionKey = random.randrange(1000000)
@@ -3505,9 +3501,15 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
         stdout = job['pilotid'].split('|')[0]
-        stderr = stdout.replace('.out', '.err')
-        stdlog = stdout.replace('.out', '.log')
-        stdjdl = stdout.replace('.out', '.jdl')
+        if stdout.endswith('pilotlog.txt'):
+           stdlog = stdout.replace('pilotlog.txt', 'payload.stdout')
+           stderr = stdout.replace('pilotlog.txt', 'payload.stderr')
+           stdjdl = None
+        else:
+            stderr = stdout.replace('.out', '.err')
+            stdlog = stdout.replace('.out', '.log')
+            stdjdl = stdout.replace('.out', '.jdl')
+            stdlog = stdout.replace('.out', '.log')
     elif len(job['harvesterInfo']) > 0 and 'batchlog' in job['harvesterInfo'] and job['harvesterInfo']['batchlog']:
         stdlog = job['harvesterInfo']['batchlog']
         stderr = stdlog.replace('.log', '.err')
@@ -3652,7 +3654,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     # if it is ART test, get test name
     art_test = []
-    if 'core.art' in djangosettings.INSTALLED_APPS:
+    if 'core.art' in djangosettings.INSTALLED_APPS and DEPLOYMENT == 'ORACLE_ATLAS':
         try:
             from core.art.modelsART import ARTTests
         except ImportError:
@@ -6772,17 +6774,20 @@ def taskList(request):
     # For tasks plots
     setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
 
-    new_cur = connection.cursor()
-    new_cur.execute(
-        """
-        select htt.TASKID,
-            LISTAGG(h.hashtag, ',') within GROUP (order by htt.taskid) as hashtags
-        from ATLAS_DEFT.T_HASHTAG h, ATLAS_DEFT.T_HT_TO_TASK htt , %s tmp
-        where TRANSACTIONKEY=%i and h.ht_id = htt.ht_id and tmp.id = htt.taskid
-        GROUP BY htt.TASKID
-        """ % (tmpTableName, transactionKey)
-    )
-    taskhashtags = dictfetchall(new_cur)
+    if DEPLOYMENT == 'ORACLE_ATLAS':
+        new_cur = connection.cursor()
+        new_cur.execute(
+            """
+            select htt.TASKID,
+                LISTAGG(h.hashtag, ',') within GROUP (order by htt.taskid) as hashtags
+            from ATLAS_DEFT.T_HASHTAG h, ATLAS_DEFT.T_HT_TO_TASK htt , %s tmp
+            where TRANSACTIONKEY=%i and h.ht_id = htt.ht_id and tmp.id = htt.taskid
+            GROUP BY htt.TASKID
+            """ % (tmpTableName, transactionKey)
+        )
+        taskhashtags = dictfetchall(new_cur)
+    else:
+        taskhashtags = []
 
     datasetstage = []
     if 'tape' in  request.session['requestParams']:
@@ -7225,13 +7230,11 @@ def getTaskScoutingInfo(tasks, nmax):
     tasksIdToBeDisplayed = [task['jeditaskid'] for task in taskslToBeDisplayed]
     tquery = {}
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
-
+    tmpTableName = get_tmp_table_name()
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
+    if DEPLOYMENT == "POSTGRES":
+        create_temporary_table(new_cur, tmpTableName)
     executionData = []
     for id in tasksIdToBeDisplayed:
         executionData.append((id, transactionKey))
@@ -8039,7 +8042,10 @@ def taskInfo(request, jeditaskid=0):
             inctrs = [taskparams[tp], ]
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
     # get dataset locality
-    dataset_locality = get_dataset_locality(jeditaskid)
+    if DEPLOYMENT == 'ORACLE_ATLAS':
+        dataset_locality = get_dataset_locality(jeditaskid)
+    else:
+        dataset_locality = {}
     for ds in dsets:
         if jeditaskid in dataset_locality and ds['datasetid'] in dataset_locality[jeditaskid]:
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
@@ -8051,7 +8057,10 @@ def taskInfo(request, jeditaskid=0):
     # creating a jquery with timewindow
     jquery = copy.deepcopy(query)
     jquery['modificationtime__castdate__range'] = get_task_timewindow(taskrec, format_out='str')
-    hs06sSum = get_hs06s_summary_for_task(jquery)
+    if DEPLOYMENT != 'POSTGRES':
+        hs06sSum = get_hs06s_summary_for_task(jquery)
+    else:
+        hs06sSum = {}
     _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
 
     eventssummary = []
@@ -11118,16 +11127,10 @@ def addJobMetadata(jobs, require=False):
     ## Get job metadata
 
     random.seed()
+    tmpTableName = get_tmp_table_name()
 
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        metaTableName = "ATLAS_PANDA.METATABLE"
-        metaTableNameArch = "ATLAS_PANDAARCH.METATABLE_ARCH"
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-
-    else:
-        metaTableName = "METATABLE"
-        metaTableNameArch = "METATABLE_ARCH"
-        tmpTableName = "TMP_IDS1"
+    metaTableName = f"{DB_SCHEMA_PANDA}.METATABLE"
+    metaTableNameArch = f"{DB_SCHEMA_PANDA_ARCH}.METATABLE_ARCH"
 
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()

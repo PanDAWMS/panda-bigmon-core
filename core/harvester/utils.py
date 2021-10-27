@@ -8,13 +8,14 @@ from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.utils import identify_jobtype
 
 from core.settings.local import defaultDatetimeFormat
+from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA
 
 
 def isHarvesterJob(pandaid):
 
     jobHarvesterInfo = []
 
-    sqlQuery = """
+    sqlQuery = f"""
     SELECT workerid, HARVESTERID, BATCHLOG, COMPUTINGELEMENT, ERRORCODE, DIAGMESSAGE  FROM (SELECT 
       a.PANDAID,
       a.workerid,
@@ -23,8 +24,8 @@ def isHarvesterJob(pandaid):
       b.COMPUTINGELEMENT,
       b.ERRORCODE,
       b.DIAGMESSAGE
-      FROM ATLAS_PANDA.HARVESTER_REL_JOBS_WORKERS a,
-      ATLAS_PANDA.HARVESTER_WORKERS b
+      FROM {DB_SCHEMA_PANDA}.HARVESTER_REL_JOBS_WORKERS a,
+      {DB_SCHEMA_PANDA}.HARVESTER_WORKERS b
       WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {0}
   """
     sqlQuery = sqlQuery.format(str(pandaid))
@@ -112,6 +113,8 @@ def get_workers_summary_split(query, **kwargs):
         worker_summary = HarvesterWorkers.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
     else:
         wquery['jobtype__in'] = ['managed', 'user', 'panda']
+        if DEPLOYMENT == 'ORACLE_DOMA':
+            wquery['jobtype__in'].append('ANY')
         w_running = Sum('nworkers', filter=Q(status__exact='running'))
         w_submitted = Sum('nworkers', filter=Q(status__exact='submitted'))
         w_values = ['computingsite', 'resourcetype', 'jobtype']
@@ -119,5 +122,4 @@ def get_workers_summary_split(query, **kwargs):
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
     worker_summary = identify_jobtype(worker_summary, field_name='jobtype')
-
     return list(worker_summary)

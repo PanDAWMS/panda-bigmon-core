@@ -3,7 +3,7 @@ from os.path import dirname, join
 
 import core
 from core import filebrowser, pbm, admin
-from core.settings.local import dbaccess, MY_SECRET_KEY, LOG_ROOT
+from core.settings.local import MY_SECRET_KEY, LOG_ROOT
 
 ALLOWED_HOSTS = [
     ### cern.ch
@@ -96,7 +96,59 @@ SECRET_KEY = MY_SECRET_KEY
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-DATABASES = dbaccess
+
+
+try:
+    from core.settings.local import dbaccess_postgres
+except ImportError:
+    dbaccess_postgres = None
+try:
+    from core.settings.local import dbaccess_oracle_atlas
+except ImportError:
+    dbaccess_oracle_atlas = None
+try:
+    from core.settings.local import dbaccess_oracle_doma
+except ImportError:
+    dbaccess_oracle_atlas = None
+
+
+DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
+if DEPLOYMENT == 'ORACLE_ATLAS':
+    DB_SCHEMA = 'ATLAS_PANDABIGMON'
+    DB_SCHEMA_PANDA = 'ATLAS_PANDA'
+    DB_SCHEMA_PANDA_ARCH = 'ATLAS_PANDAARCH'
+    DB_SCHEMA_IDDS = 'ATLAS_IDDS'
+    DATABASES = dbaccess_oracle_atlas
+    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+elif DEPLOYMENT == 'POSTGRES':
+    DB_SCHEMA = 'doma_pandabigmon'
+    DB_SCHEMA_PANDA = 'doma_panda'
+    DB_SCHEMA_PANDA_ARCH = 'doma_pandaarch'
+    DB_SCHEMA_IDDS = 'DOMA_IDDS'
+    DATABASES = dbaccess_postgres
+    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+elif DEPLOYMENT == 'ORACLE_DOMA':
+    DB_SCHEMA = 'DOMA_PANDABIGMON'
+    DB_SCHEMA_PANDA = 'DOMA_PANDA'
+    DB_SCHEMA_PANDA_ARCH = 'DOMA_PANDAARCH'
+    DB_SCHEMA_IDDS = 'DOMA_IDDS'
+    DATABASES = dbaccess_oracle_doma
+    CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+
+
+CACHES = {
+    "default": {
+    'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+    'LOCATION': f'"{DB_SCHEMA}"."DJANGOCACHE"',
+    'TIMEOUT': 31536000,
+    'OPTIONS': {
+        'MAX_ENTRIES': 1000000000
+        }
+    }
+}
+
+if DEPLOYMENT == 'POSTGRES':
+    CACHES['default']['LOCATION'] = f'"{DB_SCHEMA}"."djangocache"'
 
 
 ### URL_PATH_PREFIX for multi-developer apache/wsgi instance
@@ -342,3 +394,4 @@ ENV = {
     ### Navigation chain item separator
     'SEPARATOR_NAVIGATION_ITEM': "   &#187;   ",
 }
+

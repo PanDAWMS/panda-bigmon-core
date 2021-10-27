@@ -118,7 +118,7 @@ class RunningProdRequestsModel(models.Model):
 
 
 class ProdNeventsHistory(models.Model):
-    id = models.IntegerField(null=True, db_column='ID', primary_key=True)
+    id = models.IntegerField(db_column='ID', primary_key=True)
     processingtype = models.CharField(max_length=192, db_column='PROCESSING_TYPE')
     timestamp = models.DateTimeField(db_column='TIMESTAMP')
     neventsused = models.BigIntegerField(db_column='NEVENTS_USED')

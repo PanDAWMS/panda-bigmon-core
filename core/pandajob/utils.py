@@ -3,6 +3,8 @@
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
     Jobsarchived_y2018, Jobsarchived, Jobsarchived4
 from core.libs.exlib import parse_datetime
+from core.settings.config import DEPLOYMENT
+
 
 
 def get_pandajob_models_by_year(timewindow):
@@ -11,16 +13,22 @@ def get_pandajob_models_by_year(timewindow):
     :return:
 
     """
-    pjm_year_dict = {
-        2014: [Jobsarchived_y2014, ],
-        2015: [Jobsarchived_y2015, ],
-        2016: [Jobsarchived_y2016, ],
-        2017: [Jobsarchived_y2017, ],
-        2018: [Jobsarchived_y2018, ],
-        2019: [Jobsarchived, ],
-        2020: [Jobsarchived, ],
-        2021: [Jobsarchived, Jobsarchived4],
-    }
+    if DEPLOYMENT == "ORACLE_ATLAS":
+        pjm_year_dict = {
+            2014: [Jobsarchived_y2014, ],
+            2015: [Jobsarchived_y2015, ],
+            2016: [Jobsarchived_y2016, ],
+            2017: [Jobsarchived_y2017, ],
+            2018: [Jobsarchived_y2018, ],
+            2019: [Jobsarchived, ],
+            2020: [Jobsarchived, ],
+            2021: [Jobsarchived, Jobsarchived4],
+        }
+    else:
+        pjm_year_dict = {
+            2020: [Jobsarchived, ],
+            2021: [Jobsarchived, Jobsarchived4],
+        }
     pandajob_models = []
 
     if len(timewindow) == 2 and isinstance(timewindow[0], str):
@@ -52,6 +60,12 @@ def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
         'rc_alrb': 'analy',
         'rc_test2': 'analy',
     }
+
+    if DEPLOYMENT == 'ORACLE_DOMA':
+        psl_to_jt = {
+            'test': 'prod',
+            'ANY': 'prod',
+        }
 
     trsfrm_to_jt = {
         'run': 'analy',

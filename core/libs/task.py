@@ -23,7 +23,7 @@ from core.libs.elasticsearch import create_esatlas_connection
 from elasticsearch_dsl import Search
 
 from core.settings.local import defaultDatetimeFormat
-
+from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA_ARCH, DEPLOYMENT
 _logger = logging.getLogger('bigpandamon')
 
 
@@ -73,7 +73,7 @@ def cleanTaskList(tasks, **kwargs):
         if 'corecount' in task and task['corecount'] is None:
             task['corecount'] = 1
         task['age'] = get_task_age(task)
-        if 'campaign' in task:
+        if 'campaign' in task and task['campaign']:
             task['campaign_cut'] = ':'.join(task['campaign'].split(':')[1:]) if ':' in task['campaign'] else task['campaign']
 
     # Get status of input processing as indicator of task progress if requested
@@ -185,10 +185,14 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
         except:
             _logger.warning('failed to remove modificationtime range from jquery')
 
-    values = ('actualcorecount', 'eventservice', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus',
+    values = ['actualcorecount', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus',
               'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
-              'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
-              'jobsetid', 'specialhandling', 'creationtime')
+              'nevents', 'hs06', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
+              'jobsetid', 'specialhandling', 'creationtime']
+    if DEPLOYMENT == 'ORACLE_ATLAS':
+        values.append('eventservice')
+        values.append('hs06sec')
+
 
     if task_archive_flag >= 0:
         jobs.extend(Jobsdefined4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
@@ -1049,24 +1053,24 @@ def get_job_state_summary_for_tasklist(tasks):
     jsquery = """
         select  jeditaskid, jobstatus, count(pandaid) as njobs from (
         (
-        select jeditaskid, pandaid, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 
+        select jeditaskid, pandaid, jobstatus from {DB_SCHEMA}.combined_wait_act_def_arch4 
             where jeditaskid in (select id from {0} where TRANSACTIONKEY = :tk )
         )
         union all
         (
-        select jeditaskid, pandaid, jobstatus from atlas_pandaarch.jobsarchived 
+        select jeditaskid, pandaid, jobstatus from {DB_SCHEMA_PANDA_ARCH}.jobsarchived 
             where jeditaskid in (select id from {0} where TRANSACTIONKEY = :tk )
         minus
-        select jeditaskid, pandaid, jobstatus from atlas_pandaarch.jobsarchived 
+        select jeditaskid, pandaid, jobstatus from {DB_SCHEMA_PANDA_ARCH}.jobsarchived 
             where jeditaskid in (select id from {0} where TRANSACTIONKEY = :tk ) 
                 and pandaid in (
-                    select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 
+                    select pandaid from {DB_SCHEMA}.combined_wait_act_def_arch4 
                         where jeditaskid in (select id from {0} where TRANSACTIONKEY = :tk )
             )
         )
         )
         group by jeditaskid, jobstatus
-        """.format(tmp_table)
+        """.format(tmp_table, DB_SCHEMA=DB_SCHEMA, DB_SCHEMA_PANDA_ARCH=DB_SCHEMA_PANDA_ARCH)
     cur = connection.cursor()
     cur.execute(jsquery, {'tk': trans_key})
     js_count_bytask = cur.fetchall()
