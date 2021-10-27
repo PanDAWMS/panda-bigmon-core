@@ -3,14 +3,14 @@ from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 import urllib.request
 from urllib.error import HTTPError, URLError
+from core.settings.base import IDDS_SERVER_URL
 import json
 
-BASE_URL = 'https://aipanda160.cern.ch:443'
 SELECTION_CRITERIA = '/idds/monitor_request_relation'
 
 
 def query_idds_srver(request_id):
-    url = f"{BASE_URL}{SELECTION_CRITERIA}/{request_id}/null"
+    url = f"{IDDS_SERVER_URL}{SELECTION_CRITERIA}/{request_id}/null"
     try:
         response = urllib.request.urlopen(url).read()
     except (HTTPError, URLError) as e:
