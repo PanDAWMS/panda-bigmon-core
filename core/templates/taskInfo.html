@@ -453,8 +453,11 @@
            <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
       </tr>
       <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">
-           <th>{$ key $}</th>
-           <td>{$ value $}</td>
+          <th ng-if="key!='step_action_id'">{$ key $}</th>
+          <td ng-if="key=='dataset'"><a href="https://rucio-ui.cern.ch/did?name={$ value $}">{$ value $}</a></td>
+          <td ng-if="key=='status'"><a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a></td>
+          <td ng-if="key=='rse'"><a href="https://rucio-ui.cern.ch/rule?rule_id={$ value $}">{$ value $}</a></td>
+          <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
       </tr>
     </tbody>
   </table>
