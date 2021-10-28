@@ -2348,6 +2348,10 @@ def jobList(request, mode=None, param=None):
     if 'sortby' in request.session['requestParams']:
         sortby = request.session['requestParams']['sortby']
 
+        if sortby == 'create-ascending':
+            jobs = sorted(jobs, key=lambda x:x['creationtime'] if not x['creationtime'] is None else datetime(1900, 1, 1))
+        if sortby == 'create-descending':
+            jobs = sorted(jobs, key=lambda x:x['creationtime'] if not x['creationtime'] is None else datetime(1900, 1, 1), reverse=True)
         if sortby == 'time-ascending':
             jobs = sorted(jobs, key=lambda x:x['modificationtime'] if not x['modificationtime'] is None else datetime(1900, 1, 1))
         if sortby == 'time-descending':
