@@ -34,8 +34,8 @@ class UserProfilePlot:
             query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
             del query['modificationtime__castdate__range']
         # add jeditaskid to where clause
-        extra_srt = " jeditaskid in (select jeditaskid from atlas_panda.jedi_tasks where username = '{}' and modificationtime > TO_DATE('{}', 'YYYY-MM-DD HH24:MI:SS'))".format(
-            self.username,
+        extra_srt = " jeditaskid in (select jeditaskid from atlas_panda.jedi_tasks where upper(username) like '%%{}%%' and modificationtime > TO_DATE('{}', 'YYYY-MM-DD HH24:MI:SS'))".format(
+            self.username.upper(),
             query['creationtime__gte']
         )
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_srt]).values(*jvalues))
