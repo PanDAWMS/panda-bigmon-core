@@ -443,7 +443,7 @@ def initRequest(request, callselfmon=True):
         request.session['viewParams']['MON_VO'] = 'ATLAS'
     else:
         VOMODE = DEPLOYMENT
-        request.session['viewParams']['MON_VO'] = DEPLOYMENT
+        #request.session['viewParams']['MON_VO'] = DEPLOYMENT
 
 
     # remove xurls from session if it is kept from previous requests
