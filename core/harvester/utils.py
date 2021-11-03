@@ -26,13 +26,10 @@ def isHarvesterJob(pandaid):
       b.DIAGMESSAGE
       FROM {DB_SCHEMA_PANDA}.HARVESTER_REL_JOBS_WORKERS a,
       {DB_SCHEMA_PANDA}.HARVESTER_WORKERS b
-      WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {0}
+      WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {pandaid}
   """
-    sqlQuery = sqlQuery.format(str(pandaid))
-
     cur = connection.cursor()
     cur.execute(sqlQuery)
-
     job = cur.fetchall()
 
     if len(job) == 0:
