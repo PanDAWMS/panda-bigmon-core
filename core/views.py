@@ -1510,8 +1510,8 @@ def jobSummaryDict(request, jobs, fieldlist=None):
 
 
     sumd['processor_type'] = {
-        'GPU': len(list(filter(lambda x: 'gpu' in x['cmtconfig'], jobs))),
-        'CPU': len(list(filter(lambda x: not 'gpu' in x['cmtconfig'], jobs)))
+        'GPU': len(list(filter(lambda x: x.get('cmtconfig') and 'gpu' in x.get('cmtconfig'), jobs))),
+        'CPU': len(list(filter(lambda x: x.get('cmtconfig') and not 'gpu' in x.get('cmtconfig'), jobs)))
     }
 
     ## convert to ordered lists
