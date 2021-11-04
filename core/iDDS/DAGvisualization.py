@@ -20,8 +20,66 @@ def query_idds_srver(request_id):
 
 def daggraph(request):
     initRequest(request)
-    requestid = int(request.session['requestParams']['requestid'])
-    stats = query_idds_srver(requestid)
-    response = render_to_response('DAGgraph.html', {}, content_type='text/html')
+    #requestid = int(request.session['requestParams']['requestid'])
+    #stats = query_idds_srver(requestid)
+
+    DAG = [
+        { 'group': 'nodes', 'data': { 'id': 'noop', 'resolved': 'false' } },
+        {
+          'group': 'nodes',
+          'data': { 'id': 'collect data', 'resolved': 'false' }
+        },
+        {
+          'group': 'nodes',
+          'data': { 'id': 'send to waylay', 'resolved': 'false' }
+        },
+        { 'group': 'nodes', 'data': { 'id': 'send to BB', 'resolved': 'false' } },
+        { 'group': 'nodes', 'data': { 'id': 'notify me', 'resolved': 'false' } },
+        {
+          'group': 'edges',
+          'data': {
+            'id': 'noop-collect data',
+            'target': 'collect data',
+            'source': 'noop'
+          }
+        },
+        {
+          'group': 'edges',
+          'data': {
+            'id': 'collect data-send to waylay',
+            'target': 'send to waylay',
+            'source': 'collect data'
+          }
+        },
+        {
+          'group': 'edges',
+          'data': {
+            'id': 'collect data-send to BB',
+            'target': 'send to BB',
+            'source': 'collect data'
+          }
+        },
+        {
+          'group': 'edges',
+          'data': {
+            'id': 'send to waylay-notify me',
+            'target': 'notify me',
+            'source': 'send to waylay'
+          }
+        },
+        {
+          'group': 'edges',
+          'data': {
+            'id': 'send to BB-notify me',
+            'target': 'notify me',
+            'source': 'send to BB'
+          }
+        }
+    ]
+
+    data = {
+        'DAG': DAG
+    }
+    response = render_to_response('DAGgraph.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
