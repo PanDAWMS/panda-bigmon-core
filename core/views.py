@@ -2317,7 +2317,7 @@ def jobList(request, mode=None, param=None):
                         job['fileattemptnr'] = None
                     if jedi_file and 'maxattempt' in jedi_file:
                         job['filemaxattempts'] = jedi_file['maxattempt']
-    _logger.info('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.info('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = cleanJobList(request, jobs, doAddMeta=False)
     _logger.info('Cleaned job list: {}'.format(time.time() - request.session['req_init_time']))
@@ -2950,10 +2950,11 @@ SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTER
                 if str(error[error.index(errorcode) + 1]) !='' and 'transformation' not in errorcode:
                     descr = str(error[error.index(errorcode) + 1])
                 else:
-                    if codename in errorCodes and errnum in errorCodes[codename]:
-                        descr = errorCodes[codename][errnum]
-                    else:
-                        descr = 'None'
+                    descr = getErrorDescription(error, mode='txt', provideProcessedCodes=False)
+                    # if codename in errorCodes and errnum in errorCodes[codename]:
+                    #     descr = errorCodes[codename][errnum]
+                    # else:
+                    #     descr = 'None'
             except:
                 pass
             rowDict = {"taskid": error[1], "pandaid": error[0], "desc": descr}
