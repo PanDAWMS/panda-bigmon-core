@@ -25,7 +25,6 @@ urlpatterns = [
     re_path(r'^jobs/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/(.*)/$', coremon_views.jobList, name='jobList'),
-    re_path(r'^errorslist/$', coremon_views.summaryErrorsList, name='summaryErrorsList'),
     re_path(r'^job$', coremon_views.jobInfo, name='jobInfo'),
     re_path(r'^job/(.*)/$', coremon_views.jobInfo, name='jobInfo'),
     re_path(r'^job/(.*)/(.*)/$', coremon_views.jobInfo, name='jobInfo'),
@@ -74,8 +73,6 @@ urlpatterns = [
     re_path(r'^logger/$', coremon_views.pandaLogger, name='pandaLogger'),
     re_path(r'^esatlaslogger/$', coremon_views.esatlasPandaLogger, name='esatlasPandaLogger'),
     re_path(r'^datatable/data/jeditaskid', coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
-    re_path(r'^datatable/data/errorSummaryList', coremon_views.summaryErrorsListJSON, name='summaryErrorsListJSON'),
-    re_path(r'^datatable/data/errorMessagesSummaryList', coremon_views.summaryErrorMessagesListJSON, name='summaryErrorMessagesListJSON'),
 
     re_path(r'^fileInfo/$', coremon_views.fileInfo, name='fileInfoLegacy'),
     re_path(r'^fileList/$', coremon_views.fileList, name='fileListLegacy'),
