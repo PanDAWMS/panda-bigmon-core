@@ -1269,7 +1269,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['eventservice'] = 'cojumbo'
             else:
                 job['eventservice'] = 'ordinary'
-        if 'destinationdblock' in job:
+        if 'destinationdblock' in job and job['destinationdblock']:
             ddbfields = job['destinationdblock'].split('.')
             if len(ddbfields) == 6 and ddbfields[0] != 'hc_test':
                 job['outputfiletype'] = ddbfields[4]
