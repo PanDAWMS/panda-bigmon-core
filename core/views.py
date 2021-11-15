@@ -4151,7 +4151,6 @@ def siteInfo(request, site=''):
             if queue['lastmod']:
                 queue['lastmod'] = queue['lastmod'].strftime(defaultDatetimeFormat)
 
-
     # get data from new schedconfig_json table
     panda_queue = []
     pqquery = {'pandaqueue': site}
@@ -4175,8 +4174,8 @@ def siteInfo(request, site=''):
     except AttributeError:
         pass
     panda_resource = get_panda_resource(siterec)
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+
+    if not is_json_request(request):
         attrs = []
         if siterec:
             attrs.append({'name': 'GOC name', 'value': siterec.gocname})
@@ -4213,24 +4212,9 @@ def siteInfo(request, site=''):
             attrs.append({'name': 'Min rss', 'value': "%.1f GB" % (float(siterec.minrss) / 1000.)})
             if siterec.maxtime > 0:
                 attrs.append({'name': 'Maximum time', 'value': "%.1f hours" % (float(siterec.maxtime) / 3600.)})
-            attrs.append({'name': 'Space', 'value': "%d TB as of %s" % (
-            (float(siterec.space) / 1000.), siterec.tspace.strftime('%m-%d %H:%M'))})
+            attrs.append({'name': 'Space', 'value': "%d TB as of %s" % ((float(siterec.space) / 1000.), siterec.tspace.strftime('%m-%d %H:%M'))})
             attrs.append({'name': 'Last modified', 'value': "%s" % (siterec.lastmod.strftime('%Y-%m-%d %H:%M'))})
 
-            iquery = {}
-
-            startdate = timezone.now() - timedelta(hours=24 * 30)
-            startdate = startdate.strftime(defaultDatetimeFormat)
-            enddate = timezone.now().strftime(defaultDatetimeFormat)
-            iquery['at_time__range'] = [startdate, enddate]
-            cloudQuery = Q(description__contains='queue=%s' % siterec.nickname) | Q(
-                description__contains='queue=%s' % siterec.siteid)
-            incidents = Incidents.objects.filter(**iquery).filter(cloudQuery).order_by('at_time').reverse().values()
-            for inc in incidents:
-                if inc['at_time']:
-                    inc['at_time'] = inc['at_time'].strftime(defaultDatetimeFormat)
-        else:
-            incidents = []
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -4241,7 +4225,6 @@ def siteInfo(request, site=''):
             'queues': sites,
             'colnames': colnames,
             'attrs': attrs,
-            'incidents': incidents,
             'name': site,
             'pq_type': panda_queue_type,
             'njobhours': njobhours,
@@ -4255,11 +4238,8 @@ def siteInfo(request, site=''):
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        resp = []
-        for job in jobList:
-            resp.append({'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel,
-                         'produserid': job.produserid})
-        return HttpResponse(json.dumps(resp), content_type='application/json')
+
+        return HttpResponse(json.dumps(panda_queue), content_type='application/json')
 
 
 def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
