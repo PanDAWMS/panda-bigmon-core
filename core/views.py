@@ -71,7 +71,6 @@ from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_AR
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
-from core.ErrorCodes import ErrorCodes
 import hashlib
 
 import core.constants as const
