@@ -166,7 +166,7 @@
                                       {% if ntaglist|length == 1 %}
                                           <td class="cell extra-info left-aligned">
                                             {% for job in jobs.jobs %}
-                                              <a class="bluelink" href="{% url 'siteInfo' job.computingsite  %}"><b>{{ job.computingsite }}</b></a><br>
+                                              <div><a class="bluelink" href="{% url 'siteInfo' job.computingsite  %}"><b>{{ job.computingsite }}</b></a></div>
                                             {% endfor %}
                                           </td>
                                           <td class="cell extra-info right-aligned">

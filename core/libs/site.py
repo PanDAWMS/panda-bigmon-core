@@ -1,10 +1,12 @@
 """
 Created by Tatiana Korchuganova on 05.03.2020
 """
+import json
 
 from django.db.models import Sum, Count
 
 from core.pandajob.models import Jobsactive4
+from core.common.models import Metrics
 
 
 def get_running_jobs_stats(computingsites):
@@ -34,3 +36,29 @@ def get_running_jobs_stats(computingsites):
             rjs_dict[row['computingsite']] = row
 
     return rjs_dict
+
+
+def get_pq_metrics(pq='all'):
+    """
+    Get calculated metrics from METRICS table far PQs
+    :return: pq_metrics_list
+    """
+
+    query = {}
+    if pq == 'all' or pq == '':
+        query['computingsite__isnull'] = False
+    else:
+        query['computingsite'] = pq
+
+    pq_metrics_list = []
+    values = ['computingsite', 'datajson']
+    pq_metrics_list.extend(Metrics.objects.filter(**query).values(*values))
+
+    # list -> dict
+    pq_metrics = {}
+    if len(pq_metrics_list) > 0:
+        pq_metrics = {m['computingsite']: json.loads(m['datajson']) for m in pq_metrics_list}
+
+    return pq_metrics
+
+

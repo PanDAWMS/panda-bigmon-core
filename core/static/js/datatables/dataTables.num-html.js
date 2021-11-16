@@ -20,12 +20,15 @@
  *         { type: 'num-html', targets: 0 }
  *       ]
  *    } );
+ *
+ * Patched to support other empty column anchors but "---"
+ *
  */
 
 jQuery.extend( jQuery.fn.dataTableExt.oSort, {
 	"num-html-pre": function ( a ) {
 		var x = String(a).replace( /<[\s\S]*?>/g, "" ).replace( /[,]*/g, "");
-		return parseFloat( (x == "---") ? -1 : x );
+		return parseFloat( ((x == "---") || (x == "-") || (x == "")) ? -1 : x );
 	},
 
 	"num-html-asc": function ( a, b ) {

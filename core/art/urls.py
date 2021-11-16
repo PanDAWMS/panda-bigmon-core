@@ -11,6 +11,7 @@ urlpatterns = [
     re_path(r'^art/tasks/$', art_views.artTasks, name='artTasks'),
     re_path(r'^art/jobs/$', art_views.artJobs, name='artJobs'),
     re_path(r'^art/stability/$', art_views.artStability, name='artStability'),
+    re_path(r'^art/errors/$', art_views.artErrors, name='artErrors'),
 
     re_path(r'^art/updatejoblist/$', art_views.updateARTJobList),
     re_path(r'^art/loadsubresults/$', art_views.loadSubResults),

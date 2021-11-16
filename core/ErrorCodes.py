@@ -4,10 +4,25 @@ Created on Jun 29, 2009
 @author: Torre Wenaus
 '''
 import logging
+_logger = logging.getLogger('bigpandamon')
+
 
 class ErrorCodes:
     
-    errorFields = ('pilot','exe','sup','ddm','brokerage','jobdispatcher','taskbuffer')
+    errorFields = ('pilot', 'exe', 'sup', 'ddm', 'brokerage', 'jobdispatcher', 'taskbuffer')
+    errorCategories = (
+        {'name': 'brokerage', 'error': 'brokerageerrorcode', 'diag': 'brokerageerrordiag',
+            'title': 'Brokerage error'},
+        {'name': 'ddm', 'error': 'ddmerrorcode', 'diag': 'ddmerrordiag', 'title': 'DDM error'},
+        {'name': 'exe', 'error': 'exeerrorcode', 'diag': 'exeerrordiag', 'title': 'Executable error'},
+        {'name': 'jobdispatcher', 'error': 'jobdispatchererrorcode', 'diag': 'jobdispatchererrordiag',
+            'title': 'Dispatcher error'},
+        {'name': 'pilot', 'error': 'piloterrorcode', 'diag': 'piloterrordiag', 'title': 'Pilot error'},
+        {'name': 'sup', 'error': 'superrorcode', 'diag': 'superrordiag', 'title': 'Sup error'},
+        {'name': 'taskbuffer', 'error': 'taskbuffererrorcode', 'diag': 'taskbuffererrordiag',
+            'title': 'Task buffer error'},
+        {'name': 'transformation', 'error': 'transexitcode', 'diag': None, 'title': 'Trf exit code'},
+    )
     errorCodes = {}
     errorStages = {}
 
@@ -16,7 +31,7 @@ class ErrorCodes:
             self.errorCodes['%serrorcode'%f] = {}
             self.errorStages['%serrorcode'%f] = {}
     
-        ## Panda errors can be found at https://twiki.cern.ch/twiki/bin/view/Atlas/PandaErrorCodes
+        # Panda errors can be found at https://twiki.cern.ch/twiki/bin/view/Atlas/PandaErrorCodes
     
         self.errorCodes['ddmerrorcode'][100] = 'DQ2 server error'
         self.errorStages['ddmerrorcode'][100] = 'ddm-start'
@@ -260,25 +275,22 @@ class ErrorCodes:
         self.errorStages['piloterrorcode'][1212] = 'athena-during'
         self.errorCodes['piloterrorcode'][1220] = 'Job failed due to unknown reason (consult log file)'
         self.errorStages['piloterrorcode'][1220] = 'athena-end'
-
         self.errorCodes['piloterrorcode'][1187] = 'Payload metadata is not available'
-        #self.errorStages['piloterrorcode'][1187] = 'athena-end'
-
+        self.errorStages['piloterrorcode'][1187] = 'athena-end'
 
         self.errorCodes['exeerrorcode'][99] = 'Transformation error code mismatch'
         self.errorStages['exeerrorcode'][99] = 'athena-end'
         self.errorCodes['exeerrorcode'][100] = 'Transformation not found in run directory'
         self.errorStages['exeerrorcode'][100] = 'ddm-start'
         
-        for code in range ( 1000, 2000 ):
-            #try:
+        for code in range(1000, 2000):
+            # try:
             if code in self.errorCodes['piloterrorcode']:
                 self.errorCodes['exeerrorcode'][code] = self.errorCodes['piloterrorcode'][code]
             if code in self.errorStages['piloterrorcode']:
                 self.errorStages['exeerrorcode'][code] = self.errorStages['piloterrorcode'][code]
-            #except Exception as e:
-                # print e.__class__, e.__doc__, e.message, 'bigpanda_logstash'
-                #logging.error(e)
+            # except Exception as e:
+            #     _logger.exception(e)
 
     # errors at http://alxr.usatlas.bnl.gov/lxr/source/atlas/Tools/PyJobTransformsCore/share/atlas_error_categories.db?v=current
         self.errorCodes['exeerrorcode'][60000] = 'segmentation violation'
@@ -704,10 +716,13 @@ class ErrorCodes:
         self.errorStages['transexitcode'][223] = 'athena-during'
     
         for code in ( 1008, 1098, 1112, 1116, 1117, 1118, 1119, 1163, 1177, 1178 ):
+            # try:
             if code in self.errorCodes['piloterrorcode']:
                 self.errorCodes['transexitcode'][code] = self.errorCodes['piloterrorcode'][code]
             if code in self.errorStages['piloterrorcode']:
                 self.errorStages['transexitcode'][code] = self.errorStages['piloterrorcode'][code]
+            # except Exception as e:
+            #     _logger.exception(e)
 
         self.errorCodes['transexitcode'][1198] = 'Can\'t check the child process status from the heartbeat process'
         self.errorStages['transexitcode'][1198] = 'athena-during'

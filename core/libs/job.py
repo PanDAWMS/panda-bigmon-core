@@ -8,6 +8,7 @@ import statistics
 from core.libs.exlib import convert_bytes
 from datetime import datetime, timedelta
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from core.common.models import JediJobRetryHistory
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, get_job_walltime, get_job_queuetime, \
     drop_duplicates, add_job_category
 
@@ -165,3 +166,170 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
                 metrics_dict[metric]['group_by'][gbp] = -1
 
     return metrics_dict
+
+
+def get_job_errors(pandaids):
+    """
+    Get error info for a list of PanDA jobs
+    :param pandaids: list of pandaids
+    :return: errors_dict: dict
+    """
+    MAX_ENTRIES__IN = 100
+
+    errors_dict = {}
+
+    jobs = []
+    jquery = {}
+    extra_str = ' (1=1) '
+    values = (
+        'pandaid',
+        'transexitcode',
+        'brokerageerrorcode', 'brokerageerrordiag',
+        'ddmerrorcode', 'ddmerrordiag',
+        'exeerrorcode', 'exeerrordiag',
+        'jobdispatchererrorcode', 'jobdispatchererrordiag',
+        'piloterrorcode', 'piloterrordiag',
+        # 'superrorcode', 'superrordiag',
+        'taskbuffererrorcode', 'taskbuffererrordiag'
+        )
+
+    if len(pandaids) > 0 and len(pandaids) <= MAX_ENTRIES__IN:
+        jquery['pandaid__in'] = pandaids
+    elif len(pandaids) > 0 and len(pandaids) > MAX_ENTRIES__IN:
+        # insert pandaids to temp DB table
+        tmp_table_name = get_tmp_table_name()
+        tk_pandaids = insert_to_temp_table(pandaids)
+        extra_str += " AND pandaid in (select ID from {} where TRANSACTIONKEY={})".format(tmp_table_name, tk_pandaids)
+    else:
+        return errors_dict
+
+    jobs.extend(Jobsarchived4.objects.filter(**jquery).extra(where=[extra_str]).values(*values))
+    jobs.extend(Jobsarchived.objects.filter(**jquery).extra(where=[extra_str]).values(*values))
+
+    for job in jobs:
+        errors_dict[job['pandaid']] = errorInfo(job)
+
+    return errors_dict
+
+
+def getSequentialRetries(pandaid, jeditaskid, countOfInvocations):
+    retryquery = {}
+    countOfInvocations.append(1)
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['newpandaid'] = pandaid
+    newretries = []
+
+    if (len(countOfInvocations) < 100):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+        newretries.extend(retries)
+        for retry in retries:
+            if retry['relationtype'] in ['merge', 'retry']:
+                jsquery = {}
+                jsquery['jeditaskid'] = jeditaskid
+                jsquery['pandaid'] = retry['oldpandaid']
+                values = ['pandaid', 'jobstatus', 'jeditaskid']
+                jsjobs = []
+                jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+                for job in jsjobs:
+                    if job['jobstatus'] == 'failed':
+                        for retry in newretries:
+                            if (retry['oldpandaid'] == job['pandaid']):
+                                retry['relationtype'] = 'retry'
+                        newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations))
+
+    outlist = []
+    added_keys = set()
+    for row in newretries:
+        lookup = row['oldpandaid']
+        if lookup not in added_keys:
+            outlist.append(row)
+            added_keys.add(lookup)
+
+    return outlist
+
+
+def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, recurse=0):
+    retryquery = {}
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['newpandaid'] = jobsetid
+    retryquery['relationtype'] = 'jobset_retry'
+    countOfInvocations.append(1)
+    newretries = []
+
+    if (len(countOfInvocations) < 100):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+        newretries.extend(retries)
+        for retry in retries:
+            jsquery = {}
+            jsquery['jeditaskid'] = jeditaskid
+            jsquery['jobstatus'] = 'failed'
+            jsquery['jobsetid'] = retry['oldpandaid']
+            values = ['pandaid', 'jobstatus', 'jobsetid', 'jeditaskid']
+            jsjobs = []
+            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+            for job in jsjobs:
+                if job['jobstatus'] == 'failed':
+                    for retry in newretries:
+                        if (retry['oldpandaid'] == job['jobsetid']):
+                            retry['relationtype'] = 'retry'
+                            retry['jobid'] = job['pandaid']
+
+                        newretries.extend(getSequentialRetries_ES(job['pandaid'],
+                                                                  jobsetid, job['jeditaskid'], countOfInvocations,
+                                                                  recurse + 1))
+    outlist = []
+    added_keys = set()
+    for row in newretries:
+        if 'jobid' in row:
+            lookup = row['jobid']
+            if lookup not in added_keys:
+                outlist.append(row)
+                added_keys.add(lookup)
+    return outlist
+
+
+def getSequentialRetries_ESupstream(pandaid, jobsetid, jeditaskid, countOfInvocations, recurse=0):
+    retryquery = {}
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['oldpandaid'] = jobsetid
+    retryquery['relationtype'] = 'jobset_retry'
+    countOfInvocations.append(1)
+    newretries = []
+
+    if (len(countOfInvocations) < 100):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').values()
+        newretries.extend(retries)
+        for retry in retries:
+            jsquery = {}
+            jsquery['jeditaskid'] = jeditaskid
+            jsquery['jobsetid'] = retry['newpandaid']
+            values = ['pandaid', 'jobstatus', 'jobsetid', 'jeditaskid']
+            jsjobs = []
+            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+            for job in jsjobs:
+                for retry in newretries:
+                    if (retry['newpandaid'] == job['jobsetid']):
+                        retry['relationtype'] = 'retry'
+                        retry['jobid'] = job['pandaid']
+
+    outlist = []
+    added_keys = set()
+    for row in newretries:
+        if 'jobid' in row:
+            lookup = row['jobid']
+            if lookup not in added_keys:
+                outlist.append(row)
+                added_keys.add(lookup)
+    return outlist

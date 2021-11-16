@@ -296,12 +296,14 @@ function buildUsersTable(data) {
     "aoColumns": [
         {
             "data": "name",
-            className: "text",
+            className: "text icons3",
             sDefaultContent: "---",
             "render": function(data, type, row, meta) {
                 let links = '';
                 if (data) {
                   links += ' <a href = "{% url 'userInfo' %}?user=' + data + '" target="_blank">' + data + '</a>'
+                  links += ' <a href = "{% url 'userInfo' %}?user=' + data + '&view=dash" target="_blank"><div class="tooltip-right"><i class="fi-link"></i><span container="body" class="tooltip-text">User dash</span></div></a>'
+                  links += ' <a href = "{% url 'userProfile' %}' + data + '/" target="_blank"><div class="tooltip-right"><i class="fi-graph-trend"></i><span container="body" class="tooltip-text">Jobs profile</span></div></a>'
                 }
                 return links
             }

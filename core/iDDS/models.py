@@ -5,7 +5,7 @@ from django.db import models
 
 
 class Transforms(models.Model):
-    transform_id = models.BigIntegerField(primary_key=True, null=True, db_column='TRANSFORM_ID')
+    transform_id = models.BigIntegerField(primary_key=True, db_column='TRANSFORM_ID')
     transform_type = models.SmallIntegerField(db_column='TRANSFORM_TYPE')
     transform_tag = models.CharField(null=True, max_length=20, db_column='TRANSFORM_TAG')
     priority = models.IntegerField(null=True, db_column='PRIORITY')
@@ -79,7 +79,7 @@ class Contents(models.Model):
 
 
 class Processings(models.Model):
-    processing_id = models.BigIntegerField(primary_key=True, null=True, db_column='PROCESSING_ID')
+    processing_id = models.BigIntegerField(primary_key=True, db_column='PROCESSING_ID')
     transform_id = models.BigIntegerField(null=True,db_column='TRANSFORM_ID')
     status = models.SmallIntegerField(null=True, db_column='STATUS')
     substatus = models.SmallIntegerField(null=True, db_column='SUBSTATUS')
@@ -99,7 +99,7 @@ class Processings(models.Model):
 
 
 class Requests(models.Model):
-    request_id = models.BigIntegerField(primary_key=True, null=True, db_column='REQUEST_ID')
+    request_id = models.BigIntegerField(primary_key=True, db_column='REQUEST_ID')
     scope = models.CharField(null=True, max_length=25, db_column='SCOPE')
     name = models.CharField(null=True, max_length=255, db_column='NAME')
     requester = models.CharField(null=True, max_length=20, db_column='REQUESTER')

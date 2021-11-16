@@ -11,6 +11,7 @@ from core.pandajob.models import PandaJob
 from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
 from core.libs.exlib import getPilotCounts
+from core.settings.config import DB_SCHEMA_PANDA
 
 import core.constants as const
 
@@ -295,30 +296,30 @@ def get_job_summary_split(query, extra):
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
             case when jobstatus in ('finished', 'failed') then (ja4.endtime-ja4.starttime)*60*60*24 else 0 end as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
+        from {2}.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.jobsactive4 jav4 where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and 
+        from {2}.jobsactive4 jav4 where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and 
             jobstatus in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {1}
+        from {2}.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
         select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.jobswaiting4 jw4 where {1}
+        from {2}.jobswaiting4 jw4 where {1}
         union
         select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.jobsdefined4 jd4  where {1}
+        from {2}.jobsdefined4 jd4  where {1}
         )
         GROUP BY computingsite, prodsourcelabel, transform, resource_type, jobstatus
         order by computingsite, prodsourcelabel, transform, resource_type, jobstatus
-    """.format(query['modificationtime__castdate__range'][0], extra_str)
+    """.format(query['modificationtime__castdate__range'][0], extra_str, DB_SCHEMA_PANDA)
 
     cur = connection.cursor()
     cur.execute(query_raw)

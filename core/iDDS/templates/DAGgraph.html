@@ -1,0 +1,51 @@
+{% load staticfiles %}
+{% load common_tags %}
+
+<!DOCTYPE>
+<html>
+  <head>
+    <title>DAG visualization demo</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+    <script src="{% static 'js/cytoscape.min.js' %}"></script>
+    <script src="{% static 'js/dagre.js' %}"></script>
+    <script src="{% static 'js/cytoscape-dagre.js' %}"></script>
+    <link href="{% static 'css/dagvisualization.css' %}" rel="stylesheet" />
+    <script>
+      window.addEventListener('DOMContentLoaded', function(){
+
+        var cy = window.cy = cytoscape({
+          container: document.getElementById('cy'), // container to render in
+          elements: {{ DAG | safe }},
+          style: [
+            {
+              selector: 'node',
+              style: {
+                label: 'data(id)',
+                'font-size': 10
+              }
+            },
+
+            {
+              selector: 'edge',
+              style: {
+                width: 1
+              }
+            }
+          ],
+
+          layout: {
+            name: 'dagre',
+            rankDir: 'LR',
+            nodeDimensionsIncludeLabels: true
+          }
+        });
+
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="cy"></div>
+  </body>
+
+</html>

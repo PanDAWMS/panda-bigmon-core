@@ -1,0 +1,22 @@
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>ART GRID jobs help</p></div>
+<div class="card-section">
+
+<p>The stability view shows comparison of test results with regard to previous nightly. </p>
+
+<b>The color coding of the comparison:</b>
+<ul class="no-bullet">
+    <li> <div class="art-legend active_fill">active</div> - PanDA job still running. </li>
+    <li> <div class="art-legend na_fill">na</div> - there is no previous test to compare with</li>
+    <li> <div class="art-legend ok_fill">ok</div> - Athena and sub-steps of both current and previous tests are succeeded;</li>
+    <li> <div class="art-legend warning_fill">warning</div> - Athena step of both tests succeeded, but the same sub-steps failed; </li>
+    <li> <div class="art-legend warning_b_fill">warning_b</div> - Athena step of both tests succeeded, but the current test went further
+      i.e. at least one of sub-steps failed which is farther than failed sub-step of the previous nightly test; </li>
+    <li> <div class="art-legend warning_w_fill">warning_w</div> - Athena step of both tests succeeded,
+      but at least one sub-step of the current test failed sooner than the failed sub-step of the previous nightly test; </li>
+    <li> <div class="art-legend alert_fill">alert</div> - Athena step or PanDA job failed. </li>
+</ul>
+
+</div>
+</div>
+

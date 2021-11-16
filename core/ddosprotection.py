@@ -1,6 +1,7 @@
 import logging
-import ipaddress
+import ipaddress, re
 from core.common.models import AllRequests
+from core.settings.config import DB_SCHEMA, DEPLOYMENT
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -9,6 +10,7 @@ from django.http import HttpResponse
 import json
 import psutil
 from django.db import connection
+
 
 _logger = logging.getLogger('bigpandamon')
 # We postpone JSON requests is server is overloaded
@@ -46,10 +48,12 @@ class DDOSMiddleware(object):
         except:
             _logger.exception('Can not get full path of request')
 
+
         # check if remote is a valid IP address
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for is not None:
             try:
+                x_forwarded_for = re.findall(r'[0-9]+(?:\.[0-9]+){3}', x_forwarded_for)[0]
                 ip = ipaddress.ip_address(x_forwarded_for)
             except:
                 _logger.warning('Provided HTTP_X_FORWARDED_FOR={} is not a correct IP address.'.format(x_forwarded_for))
@@ -75,7 +79,11 @@ class DDOSMiddleware(object):
         # except:
         #     _logger.warning('Failed to get connections number from ATLAS_DBA')
 
-        sqlRequest = "SELECT ATLAS_PANDABIGMON.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+        if DEPLOYMENT == 'POSTGRES':
+            sqlRequest = f"SELECT nextval('{DB_SCHEMA}.\"ALL_REQUESTS_SEQ\"') as my_req_token;"
+        else:
+            sqlRequest = f"SELECT {DB_SCHEMA}.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+
         cursor.execute(sqlRequest)
         requestToken = cursor.fetchall()
         requestToken = requestToken[0][0]

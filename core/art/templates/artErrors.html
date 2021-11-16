@@ -1,0 +1,139 @@
+{% extends "_base_core.html" %}
+{% load static %}{% load common_tags %}
+{% block page_title %}ART nightly tests{% endblock %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block css_page %}
+    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+{% block subtitle %}ART nightly tasks {{ viewParams.selection|safe }}{% endblock %}
+{% block body %}
+
+{% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
+{% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
+
+
+{% if artjoberrors|length > 0 %}
+
+<div class="card bp-container-simple secondary" id="container_arterr" style="display: none; font-size: 0.875rem">
+<div class="card-divider"><p>Region summary:</p></div>
+<div class="card-section">
+<table id='arterrors' class="data-table hover">
+  <thead><tr>
+    {% for col in artjoberrors.0 %}<th></th>{% endfor %}
+  </tr></thead>
+  <tbody></tbody>
+  <tfoot><tr>
+    {% for col in artjoberrors.0 %}<th></th>{% endfor %}
+  </tr></tfoot>
+</table>
+</div>
+</div>
+{% else %}
+
+<p></p>
+<div class="callout alert" data-closable>
+  <h5>No tests were found for provided selection parameters!</h5>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+{% endif %}
+
+
+{% endblock %}
+
+{% block help %}
+    <a name="help"></a>
+    {% include "artStabilityHelp.html" %}
+{% endblock %}
+
+{% block js_body_page %}
+<script>
+
+$(document).ready(function () {
+    var artjoberrors = {{ artjoberrors|safe }};
+    var artErrorsTable = buildDataTable(artjoberrors, 'arterrors');
+    $('#container_arterr').css( 'display', 'block' );
+    artErrorsTable.columns.adjust().draw();
+});
+
+function buildDataTable(data_raw, table_id) {
+    var dt_obj;
+    let columns = [];
+    // remove the header
+    let header = data_raw.shift();
+    header.forEach(col => {
+      if (['Package', 'Branch'].includes(col)) {
+        columns.push({
+          title: col,
+          className: 'text nowrap',
+          sDefaultContent: '-',
+        });
+      }
+      else if (col === 'Test result') {
+        columns.push({
+          title: col,
+          className: 'state nowrap',
+          sDefaultContent: '-',
+        });
+      }
+      else if (['PanDA job errors',].includes(col)) {
+        columns.push({
+          title: col,
+          className: 'text alert',
+          sDefaultContent: '-',
+        });
+      }
+      else {
+        columns.push({
+          title: col,
+          className: 'text',
+          sDefaultContent: '-',
+        });
+      }
+    });
+
+    dt_obj = $('#' + table_id).DataTable({
+      "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+      "pageLength": 10,
+      "paging": true,
+      "scrollX": true,
+      "aaSorting": [[3, 'desc'],[0, 'asc'],[1, 'desc']],
+      "data": data_raw,
+      "columns": columns,
+      initComplete: function () {
+        this.api().columns([0,1,2]).every(function () {
+          var column = this;
+          var select = $('<select><option value="">Show all</option></select>')
+              .appendTo($(column.footer()).empty())
+              .on('change', function () {
+                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                  column
+                    .search(val ? '^' + val + '$' : '', true, false)
+                    .draw();
+              });
+          column.data().unique().sort().each(function (d, j) {
+              select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+      },
+      createdRow: function ( row, data, index ) {
+        $('td', row).eq(4).addClass(data[4] + '_job');
+      },
+
+    });
+
+    return dt_obj
+  }
+
+
+</script>
+{% endblock %}

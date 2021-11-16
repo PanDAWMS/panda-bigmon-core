@@ -19,7 +19,7 @@
   <script src="{% static 'js/datatables/Buttons-1.2.4/js/dataTables.buttons.min.js' %}"></script>
   <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.foundation.min.js' %}"></script>
   <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.colVis.min.js' %}"></script>
-  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}?{% cache_bust "js/datatables/dataTables.num-html.js" %}"></script>
   <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
   <!-- Load d3.js and c3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
