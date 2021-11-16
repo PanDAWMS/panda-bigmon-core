@@ -809,11 +809,10 @@ google.charts.load('current', {'packages':['sankey']});
         // Sets chart options.
         var options = {
             width: getWidth()-40,
-            sankey: {
-                link: { color: { fill: '#d799ae' } },
-                node: { colors: [ '#a61d4c' ]
-                     },
-      },
+            {#sankey: {#}
+            {#    link: { color: { fill: '#d799ae' } },#}
+            {#    node: { colors: [ '#a61d4c' ]},#}
+            {# },#}
         };
 
         // Instantiates and draws our chart, passing in some options.

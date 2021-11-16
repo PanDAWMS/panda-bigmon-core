@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 
-#RSEtoInpDat function: prepare data for sankey plot (from RSE/replica to Input-Dataset)
+
 def RSEtoInpDat(TASK):
+    """RSEtoInpDat function: prepare data for sankey plot (from RSE/replica to Input-Dataset)"""
     count_rows = 0
     for k in TASK["data"]["datasets"]:
         for j in TASK["data"]["datasets"][k]["replica"]:
@@ -39,8 +40,8 @@ def RSEtoInpDat(TASK):
     return M
 
 
-# InpDattoSITE function: prepare data for sankey plot (from Input-Dataset to Site)
 def InpDattoSITE(TASK):
+    """InpDattoSITE function: prepare data for sankey plot (from Input-Dataset to Site)"""
     count_rows = 0
     for k in TASK["data"]["datasets"]:
         for i in TASK["data"]["datasets"][k]["jobs"]:
@@ -75,8 +76,9 @@ def InpDattoSITE(TASK):
                 count_j = count_j + 1
     return M
 
-#SITEtoJOB function: prepare data for sankey plot (from site to Input-Dataset)
+
 def SITEtoJOB(TASK):
+    """SITEtoJOB function: prepare data for sankey plot (from site to Input-Dataset)"""
     count_dat = 0 #count over datasets
     for k in TASK["data"]["datasets"]: 
         count_dat = count_dat + 1 
@@ -147,30 +149,25 @@ def SITEtoJOB(TASK):
             count_i = count_i + 1
     return MM
 
-#frec function: calculate the frcuencies in a proper way for sankey plot
+
 def frec(M):
+    """frec function: calculate the frcuencies in a proper way for sankey plot"""
     A = np.array(M)
     df = pd.DataFrame(A, columns=['X', 'Y', 'frec'])
 #    print(df)
     df['frec'] = df['frec'].apply(int)
     df = df.groupby(['X','Y'], as_index=False)['frec'].sum()
-    NP = df.to_numpy() #convert from panda-dataframe to numpy-array
-    b = NP.tolist() #convert from numpy-array to a list
+    NP = df.to_numpy()  # convert from panda-dataframe to numpy-array
+    b = NP.tolist()  # convert from numpy-array to a list
     return b
 
-#concat function: join the data in a proper format for sankey plot.
+
 def concat(TASK):
+    """concat function: join the data in a proper format for sankey plot."""
     A = pd.DataFrame(frec(RSEtoInpDat(TASK)))
     B = pd.DataFrame(frec(InpDattoSITE(TASK)))
     C = pd.DataFrame(frec(SITEtoJOB(TASK)))
     D = pd.concat([A, B, C], ignore_index=True)
     E = D.to_numpy()
     return E.tolist()
-
-
-
-
-
-
-
 
