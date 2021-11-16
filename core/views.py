@@ -4217,10 +4217,15 @@ def siteInfo(request, site=''):
             attrs.append({'name': 'Last modified', 'value': "%s" % (siterec.lastmod.strftime('%Y-%m-%d %H:%M'))})
 
             # get calculated metrics
-            metrics = get_pq_metrics(siterec.nickname)
-            for pq, m_dict in metrics.items():
-                for m in m_dict:
-                    colnames.append({'label': m, 'name': m, 'value': m_dict[m]['value']})
+            try:
+                metrics = get_pq_metrics(siterec.nickname)
+            except Exception as ex:
+                metrics = {}
+                _logger.exception('Failed to get metrics for {}\n {}'.format(siterec.nickname, ex))
+            if len(metrics) > 0:
+                for pq, m_dict in metrics.items():
+                    for m in m_dict:
+                        colnames.append({'label': m, 'name': m, 'value': m_dict[m]['value']})
 
         del request.session['TFIRST']
         del request.session['TLAST']
