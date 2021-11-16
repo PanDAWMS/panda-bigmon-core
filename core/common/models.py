@@ -18,7 +18,7 @@ from django.db import connections
 from django.utils import timezone
 from django.db import models
 
-from core.settings.config import DB_SCHEMA, DEPLOYMENT
+from core.settings.config import DB_SCHEMA, DEPLOYMENT, DB_SCHEMA_PANDA
 
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
@@ -727,6 +727,17 @@ class MetatableArch(models.Model):
     metadata = models.TextField(db_column='METADATA', blank=True)
     class Meta:
         db_table = u'metatable_arch'
+
+
+class Metrics(models.Model):
+    computingsite = models.CharField(db_column='computingsite')
+    gshare = models.CharField(db_column='gshare')
+    datajson = models.TextField(db_column='data_json', blank=True)
+
+    class Meta:
+        db_table = f'"{DB_SCHEMA_PANDA}"."metrics"'
+        app_label = 'panda'
+        unique_together = ('computingsite', 'gshare')
 
 
 class MvJobsactive4Stats(models.Model):

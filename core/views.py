@@ -103,6 +103,7 @@ from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_local
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream
 from core.libs.error import errorInfo, getErrorDescription, errorSummaryDict, get_error_message_summary, get_job_error_desc
+from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection
@@ -4214,6 +4215,12 @@ def siteInfo(request, site=''):
                 attrs.append({'name': 'Maximum time', 'value': "%.1f hours" % (float(siterec.maxtime) / 3600.)})
             attrs.append({'name': 'Space', 'value': "%d TB as of %s" % ((float(siterec.space) / 1000.), siterec.tspace.strftime('%m-%d %H:%M'))})
             attrs.append({'name': 'Last modified', 'value': "%s" % (siterec.lastmod.strftime('%Y-%m-%d %H:%M'))})
+
+            # get calculated metrics
+            metrics = get_pq_metrics(siterec.nickname)
+            for pq, m_dict in metrics.items():
+                for m in m_dict:
+                    colnames.append({'label': m, 'name': m, 'value': m_dict[m]['value']})
 
         del request.session['TFIRST']
         del request.session['TLAST']
