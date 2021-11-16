@@ -36,6 +36,7 @@ urlpatterns = [
     re_path(r'^user/(?P<user>.*)/$', coremon_views.userInfo, name='userInfo'),
     re_path(r'^user/$', coremon_views.userInfo, name='userInfo'),
     re_path(r'^userProfile/(?P<username>.*)/$', coremon_views.userProfile, name='userProfile'),
+    re_path(r'^userProfile/$', coremon_views.userProfile, name='userProfile'),
     re_path(r'^userProfileData/$', coremon_views.userProfileData, name='userProfileData'),
     re_path(r'^sites/$', coremon_views.siteList, name='siteList'),
     re_path(r'^site/(?P<site>.*)/$', coremon_views.siteInfo, name='siteInfo'),
