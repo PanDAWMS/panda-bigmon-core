@@ -22,7 +22,7 @@
 <table class="fresh-table unstriped">
 <thead>
 <tr>
-  <th colspan="20">Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&sortby=attemptnr">{{ job.jobname }}</a></th>
+  <th colspan="20">Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></th>
 </tr>
 </thead>
 <tbody>
