@@ -74,7 +74,7 @@ class ruciowrapper(object):
                 replicas = []
                 _logger.exception('Failed to get list of replicas:\n {}'.format(e))
 
-            _logger.info('List of replicas got from Rucio for dids: {}\n {}'.format(dids, replicas))
+            _logger.info('List of replicas got from Rucio for dids:\n {}\n {}'.format(dids, list(replicas)))
 
             return list(replicas)
         else:
