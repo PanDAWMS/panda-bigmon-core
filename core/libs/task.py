@@ -1433,7 +1433,7 @@ def get_task_flow_data(jeditaskid):
 
         if replicas is not None and len(replicas) > 0:
             for r in replicas:
-                if r['name'] in dataset_dict and 'TAPE' not in r['rse']:
+                if r['name'] in dataset_dict:
                     dataset_dict[r['name']]['replica'][r['rse']] = {
                         'state': r['state'],
                         'available_pct': round(100.0 * r['available_length']/r['length'], 1) if r['length'] > 0 else 0
