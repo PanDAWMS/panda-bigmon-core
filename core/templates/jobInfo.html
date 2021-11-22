@@ -197,7 +197,6 @@
 <div class="bp-dropdown-button">
     <button class="dropdown"><span>Logs</span></button>
     <div   class=" dropdown-items">
-
         {% if logfile.lfn %}
           {% if viewParams.MON_VO == 'ATLAS' %}
               {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
@@ -236,6 +235,10 @@
               logLinksArray[logLinksArray.length] ='{{stdlog}}'
               logLinksArray[logLinksArray.length] ='{{stdjdl}}'
               </script>
+            {% endif %}
+            {% if prmon_logs %}
+                <a href="{{ prmon_logs.prmon_summary }}">Job system process summary</a>
+                <a href="{{ prmon_logs.prmon_details }}">Job system process details</a>
             {% endif %}
             {% if job.jobstatus == 'closed' %}
                 <td><a href='{{stdout}}'>Pilot ID</a></td>

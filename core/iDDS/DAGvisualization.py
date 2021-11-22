@@ -20,8 +20,27 @@ def query_idds_srver(request_id):
 
 def daggraph(request):
     initRequest(request)
-    #requestid = int(request.session['requestParams']['requestid'])
-    #stats = query_idds_srver(requestid)
+    requestid = int(request.session['requestParams']['requestid'])
+    stats = query_idds_srver(requestid)
+    nodes = []
+    edges = []
+    if len(stats) > 0:
+        relation_map = stats[0]['relation_map']
+        if len(relation_map) > 0:
+            relation_map = relation_map[0]
+            nodes.append({ 'group': 'nodes',
+                           'data': { 'id': str(relation_map['work']['workload_id']),
+                                     'resolved': 'false'
+                                  }
+                        })
+            edges.append({
+              'group': 'edges',
+              'data': {
+                'id': str(relation_map['work']['workload_id']) + '_to_' + str(relation_map['work']['workload_id']),
+                'target': 'collect data',
+                'source': 'noop'
+                }
+            })
 
     DAG = [
         { 'group': 'nodes', 'data': { 'id': 'noop', 'resolved': 'false' } },

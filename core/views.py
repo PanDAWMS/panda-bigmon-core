@@ -67,7 +67,7 @@ from core.filebrowser.ruciowrapper import ruciowrapper
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
 from core.settings.local import GRAFANA
-from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
+from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH, PRMON_LOGS_DIRECTIO_LOCATION
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
@@ -3680,6 +3680,16 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             if fpv is None:
                 f[fp] = ''
 
+    prmon_logs = {}
+    if PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed'):
+        prmon_logs['prmon_summary'] = PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name = job.get('computingsite'),
+                                                                          panda_id = pandaid) + \
+                                      '/memory_monitor_summary.json'
+        prmon_logs['prmon_details'] = PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name = job.get('computingsite'),
+                                                                          panda_id = pandaid) + \
+                                      '/memory_monitor_output.txt'
+
+
     if not is_json_request(request):
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -3716,7 +3726,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'isincomparisonlist': isincomparisonlist,
             'clist': clist,
             'inputfiles': inputfiles,
-            'rucioUserName': rucioUserName
+            'rucioUserName': rucioUserName,
+            'prmon_logs': prmon_logs
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)

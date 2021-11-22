@@ -24,6 +24,7 @@ VIRTUALENV_PATH = '/data/virtualenv37'
 
 IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
 
+
 ### WSGI
 #WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
 
@@ -114,6 +115,8 @@ except ImportError:
 
 #DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
 DEPLOYMENT = 'ORACLE_ATLAS'
+
+PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
     DB_SCHEMA = 'ATLAS_PANDABIGMON'
     DB_SCHEMA_PANDA = 'ATLAS_PANDA'
@@ -135,7 +138,7 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA_IDDS = 'DOMA_IDDS'
     DATABASES = dbaccess_oracle_doma
     CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
-
+    PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
 CACHES = {
     "default": {

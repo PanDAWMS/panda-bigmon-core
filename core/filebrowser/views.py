@@ -13,9 +13,11 @@ from django.conf import settings
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
     remove_folder, get_fullpath_filebrowser_directory, list_file_directory
 
+from core.settings.config import PRMON_LOGS_DIRECTIO_LOCATION
 from core.oauth.utils import login_customrequired
 from core.common.models import Filestable4, FilestableArch
 from core.views import DateTimeEncoder, initSelfMonitor
+from core.libs.job import get_job_list
 from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
@@ -349,10 +351,18 @@ def api_single_pandaid(request):
 def get_job_log_file_path(pandaid, filename=''):
     """
     Download log tarball of a job and return path to a local copy of memory_monitor_output.txt file
+    If the directIO is enabled for prmon, return the remote location
     :param pandaid:
     :param filename: str, if empty the function returm path to tarball folder
     :return: file_path: str
     """
+
+    if PRMON_LOGS_DIRECTIO_LOCATION and filename in ('memory_monitor_summary.json','memory_monitor_output.txt'):
+        joblist = get_job_list(query={"pandaid":pandaid})
+        if joblist and len(joblist) > 0:
+            computingsite = joblist[0].get('computingsite')
+        return PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name = computingsite, panda_id = pandaid) + '/' + filename
+
     file_path = None
     files = []
     scope = ''
