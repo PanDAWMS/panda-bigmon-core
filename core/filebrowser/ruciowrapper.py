@@ -69,13 +69,17 @@ class ruciowrapper(object):
         """
         if self.client is not None:
             try:
-                replicas = self.client.list_dataset_replicas_bulk(dids=dids)
+                raw_data = self.client.list_dataset_replicas_bulk(dids=dids)
+                replicas = list(raw_data)
             except Exception as e:
                 replicas = []
                 _logger.exception('Failed to get list of replicas:\n {}'.format(e))
 
-            return list(replicas)
+            _logger.info('List of replicas got from Rucio for dids:\n {}\n {}'.format(dids, replicas))
+
+            return replicas
         else:
+            _logger.warning('Failed to initiate Rucio client, so it is impossible to get list of replicas for dids')
             return None
 
 

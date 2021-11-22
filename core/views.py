@@ -71,13 +71,11 @@ from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_AR
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
-from core.ErrorCodes import ErrorCodes
 import hashlib
 
 import core.constants as const
 
 import core.Customrenderer as Customrenderer
-import collections, pickle
 
 from threading import Thread, Lock
 import base64
@@ -86,15 +84,8 @@ from django.views.decorators.cache import never_cache
 from core import chainsql
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
-errorFields = []
-errorCodes = {}
-errorStages = {}
-
 from django.template.defaulttags import register
 
-from decimal import *
-
-from django.contrib.auth import logout as auth_logout
 from core.oauth.utils import login_customrequired
 
 from core.utils import is_json_request, extensibleURL, complete_request
@@ -109,7 +100,10 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
     get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, taskNameDict
-from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, errorInfo, getErrorDescription
+from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, \
+    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream
+from core.libs.error import errorInfo, getErrorDescription, errorSummaryDict, get_error_message_summary, get_job_error_desc
+from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection
@@ -453,8 +447,6 @@ def initRequest(request, callselfmon=True):
         except:
             pass
 
-    global errorFields, errorCodes, errorStages
-
     requestParams = {}
     request.session['requestParams'] = requestParams
 
@@ -526,12 +518,10 @@ def initRequest(request, callselfmon=True):
                 }
                 return False, render_to_response('errorPage.html', data, content_type='text/html')
             request.session['requestParams'][p.lower()] = pval
+
+    # TODO delete this as well
     setupSiteInfo(request)
 
-    with inilock:
-        if len(errorFields) == 0:
-            codes = ErrorCodes()
-            errorFields, errorCodes, errorStages = codes.getErrorCodes()
     return True, None
 
 
@@ -1238,6 +1228,9 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
         fields = fieldsStr.split("|")
         if 'metastruct' in fields:
             doAddMetaStill = True
+
+    errorCodes = get_job_error_desc()
+
     if doAddMeta or doAddMetaStill:
         jobs = addJobMetadata(jobl, doAddMetaStill)
     else:
@@ -1290,7 +1283,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['produsername'] = 'Unknown'
         if job['transformation']: job['transformation'] = job['transformation'].split('/')[-1]
 
-        job['errorinfo'] = errorInfo(job)
+        job['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
 
         job['jobinfo'] = ''
         if is_event_service(job):
@@ -2317,7 +2310,7 @@ def jobList(request, mode=None, param=None):
                         job['fileattemptnr'] = None
                     if jedi_file and 'maxattempt' in jedi_file:
                         job['filemaxattempts'] = jedi_file['maxattempt']
-    _logger.info('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.info('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = cleanJobList(request, jobs, doAddMeta=False)
     _logger.info('Cleaned job list: {}'.format(time.time() - request.session['req_init_time']))
@@ -2720,391 +2713,6 @@ def importToken(request, errsByCount):
     return newErrsByCount
 
 
-@login_customrequired
-def summaryErrorsList(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    message = {}
-    isReloadData = False
-    notTkLive = 0
-    errorsList = []
-
-    if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
-        transactionkey = request.session['requestParams']['tk']
-    else:
-        transactionkey = None
-    if 'codename' in request.session['requestParams'] and request.session['requestParams']['codename']:
-        codename = request.session['requestParams']['codename']
-    else:
-        codename = None
-    if 'codeval' in request.session['requestParams'] and request.session['requestParams']['codeval']:
-        codeval = request.session['requestParams']['codeval']
-    else:
-        codeval = None
-
-    if transactionkey and codename and codeval:
-        checkTKeyQuery = '''
-            SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}
-            '''
-        try:
-            sqlRequestFull = checkTKeyQuery.format(transactionkey)
-            cur = connection.cursor()
-            cur.execute(sqlRequestFull)
-            errorsList = cur.fetchall()
-        except:
-            message['warning'] = """The data is outdated or not found. 
-                You should close this page, refresh jobs page and try again."""
-
-        if len(errorsList) == 0 or errorsList == '':
-            data = getCacheEntry(request, transactionkey, isData=True)
-            if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-                tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-            else:
-                tmpTableName = "TMP_IDS1DEBUG"
-            new_cur = connection.cursor()
-            query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
-            if data is not None:
-                new_cur.executemany(query, data)
-            else:
-                message['warning'] = """The data is outdated or not found. 
-                                You should close this page, refresh jobs page and try again."""
-
-
-    xurl = extensibleURL(request)
-    print(xurl)
-
-    data = {
-        'prefix': getPrefix(request),
-        'tk': transactionkey,
-        'codename':codename,
-        'codeval':codeval,
-        'request': request,
-        'message': message,
-        'viewParams': request.session['viewParams'],
-        'requestParams': request.session['requestParams'],
-        'built': datetime.now().strftime("%H:%M:%S"),
-    }
-    data.update(getContextVariables(request))
-    response = render_to_response('errorSummaryList.html', data, content_type='text/html')
-    return response
-
-
-def summaryErrorMessagesListJSON(request):
-    """
-    JSON for Datatables errors
-    """
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    if 'codename' in request.session['requestParams'] and request.session['requestParams']['codename']:
-        codename = request.session['requestParams']['codename']
-    else:
-        codename = None
-    if 'codeval' in request.session['requestParams'] and request.session['requestParams']['codeval']:
-        codeval = request.session['requestParams']['codeval']
-    else:
-        codeval = None
-
-    fullListErrors = []
-    errorcode2diag = {}
-    for er in errorcodelist:
-        if er['error'] == request.session['requestParams']['codename']:
-            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
-        if er['name'] == str(request.session['requestParams']['codename']):
-            codename = er['error']
-            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
-        errorcode2diag[er['error']] = er['diag']
-
-    condition = request.session['requestParams']['tk']
-    sqlRequest = """
-    SELECT DISTINCT PANDAID, JEDITASKID, COMMANDTOPILOT, 
-        concat('transformation:',TRANSEXITCODE) AS TRANSEXITCODE, 
-        concat('pilot:',PILOTERRORCODE) AS PILOTERRORCODE, 
-        PILOTERRORDIAG, 
-        concat('exe:',EXEERRORCODE) AS EXEERRORCODE, 
-        EXEERRORDIAG, 
-        concat('sup:',SUPERRORCODE) AS SUPERRORCODE, 
-        SUPERRORDIAG,
-        concat('ddm:',DDMERRORCODE) AS DDMERRORCODE,
-        DDMERRORDIAG,
-        concat('brokerage:',BROKERAGEERRORCODE) AS BROKERAGEERRORCODE,
-        BROKERAGEERRORDIAG,
-        concat('jobdispatcher:',JOBDISPATCHERERRORCODE) AS JOBDISPATCHERERRORCODE,
-        JOBDISPATCHERERRORDIAG,
-        concat('taskbuffer:',TASKBUFFERERRORCODE) AS TASKBUFFERERRORCODE,
-        TASKBUFFERERRORDIAG 
-    FROM (
-        SELECT PANDAID,JEDITASKID, 
-            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
-            SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
-            JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
-        UNION ALL
-        SELECT PANDAID,JEDITASKID, 
-            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
-            SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
-            JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
-        UNION ALL 
-        SELECT PANDAID,JEDITASKID, 
-            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
-            SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
-            JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
-        UNION ALL 
-        SELECT PANDAID,JEDITASKID, 
-            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,
-            SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,
-            JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
-        UNION ALL
-        SELECT PANDAID,JEDITASKID, 
-            COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,
-            SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,
-            BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG 
-        FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE 
-        WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID
-        )
-    """
-
-    sqlRequest += ' WHERE ' + codename + '=' + codeval
-    sqlRequestFull = sqlRequest.format(condition)
-    cur = connection.cursor()
-    cur.execute(sqlRequestFull)
-    errors_tuple = cur.fetchall()
-    errors_header = [s.lower() for s in ['PANDAID', 'JEDITASKID', 'COMMANDTOPILOT', 'TRANSEXITCODE',
-             'PILOTERRORCODE', 'PILOTERRORDIAG', 'EXEERRORCODE', 'EXEERRORDIAG', 'SUPERRORCODE', 'SUPERRORDIAG',
-             'DDMERRORCODE', 'DDMERRORDIAG', 'BROKERAGEERRORCODE', 'BROKERAGEERRORDIAG',
-             'JOBDISPATCHERERRORCODE', 'JOBDISPATCHERERRORDIAG', 'TASKBUFFERERRORCODE', 'TASKBUFFERERRORDIAG']]
-    errors_list = [dict(zip(errors_header, row)) for row in errors_tuple]
-
-    # group by error diag message, counting unique messages and store top N pandaids and by errorcode for full list table
-    N_SAMPLEJOBS = 5
-    errorMessages = {}
-    for error in errors_list:
-        if errorcode in error.values():
-            if error[errorcode2diag[codename]] not in errorMessages:
-                errorMessages[error[errorcode2diag[codename]]] = {'count': 0, 'pandaids': []}
-            errorMessages[error[errorcode2diag[codename]]]['count'] += 1
-            if len(errorMessages[error[errorcode2diag[codename]]]['pandaids']) < N_SAMPLEJOBS:
-                errorMessages[error[errorcode2diag[codename]]]['pandaids'].append(error['pandaid'])
-
-    # transform dict -> list
-    error_messages = []
-    for key, value in errorMessages.items():
-        error_messages.append({'desc': key, 'count': value['count'], 'pandaids': value['pandaids']})
-
-    return HttpResponse(json.dumps(error_messages), content_type='application/json')
-
-
-def summaryErrorsListJSON(request):
-    initRequest(request)
-
-    codename = request.session['requestParams']['codename']
-    codeval = request.session['requestParams']['codeval']
-    fullListErrors = []
-    #isJobsss = False
-    print (request.session['requestParams'])
-    for er in errorcodelist:
-        if er['error'] == request.session['requestParams']['codename']:
-            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
-        if er['name'] == str(request.session['requestParams']['codename']):
-            codename = er['error']
-            errorcode = er['name'] + ':' + request.session['requestParams']['codeval']
-            #isJobsss=True
-    #d = dict((k, v) for k, v in errorcodelist if v >= request.session['requestParams']['codename'])
-
-
-    condition = request.session['requestParams']['tk']
-    sqlRequest = '''
-SELECT DISTINCT PANDAID,JEDITASKID, COMMANDTOPILOT, concat('transformation:',TRANSEXITCODE) AS TRANSEXITCODE, concat('pilot:',PILOTERRORCODE) AS PILOTERRORCODE, PILOTERRORDIAG, concat('exe:',EXEERRORCODE) AS EXEERRORCODE, EXEERRORDIAG, concat('sup:',SUPERRORCODE) AS SUPERRORCODE,SUPERRORDIAG,concat('ddm:',DDMERRORCODE) AS DDMERRORCODE,DDMERRORDIAG,concat('brokerage:',BROKERAGEERRORCODE) AS BROKERAGEERRORCODE,BROKERAGEERRORDIAG,concat('jobdispatcher:',JOBDISPATCHERERRORCODE) AS JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,concat('taskbuffer:',TASKBUFFERERRORCODE) AS TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM
-(SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSARCHIVED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSARCHIVED4.PANDAID
-UNION ALL
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSACTIVE4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSACTIVE4.PANDAID
-UNION ALL 
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSDEFINED4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSDEFINED4.PANDAID
-UNION ALL 
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDA.JOBSWAITING4, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDA.JOBSWAITING4.PANDAID
-UNION ALL
-SELECT PANDAID,JEDITASKID, COMMANDTOPILOT, TRANSEXITCODE,PILOTERRORCODE, PILOTERRORDIAG,EXEERRORCODE, EXEERRORDIAG,SUPERRORCODE,SUPERRORDIAG,DDMERRORCODE,DDMERRORDIAG,BROKERAGEERRORCODE,BROKERAGEERRORDIAG,JOBDISPATCHERERRORCODE,JOBDISPATCHERERRORDIAG,TASKBUFFERERRORCODE,TASKBUFFERERRORDIAG FROM ATLAS_PANDAARCH.JOBSARCHIVED, (SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}) PIDACTIVE WHERE PIDACTIVE.ID=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)
-    '''
-    #if isJobsss:
-    sqlRequest += ' WHERE '+ codename + '='+codeval
-    # INPUT_EVENTS, TOTAL_EVENTS, STEP
-    shortListErrors = []
-    sqlRequestFull = sqlRequest.format(condition)
-    cur = connection.cursor()
-    cur.execute(sqlRequestFull)
-    errorsList = cur.fetchall()
-    for error in errorsList:
-        if (errorcode in error):
-            try:
-                errnum = int(codeval)
-                if str(error[error.index(errorcode) + 1]) !='' and 'transformation' not in errorcode:
-                    descr = str(error[error.index(errorcode) + 1])
-                else:
-                    if codename in errorCodes and errnum in errorCodes[codename]:
-                        descr = errorCodes[codename][errnum]
-                    else:
-                        descr = 'None'
-            except:
-                pass
-            rowDict = {"taskid": error[1], "pandaid": error[0], "desc": descr}
-            fullListErrors.append(rowDict)
-    return HttpResponse(json.dumps(fullListErrors), content_type='application/json')
-
-
-def decimal_default(obj):
-    if isinstance(obj, decimal.Decimal):
-        return float(obj)
-    elif (obj == 0): return 0
-    elif (obj == 'None'): return -1
-
-
-def cleanURLFromDropPart(url):
-    posDropPart = url.find('mode')
-    if (posDropPart == -1):
-        return url
-    else:
-        if url[posDropPart - 1] == '&':
-            posDropPart -= 1
-        nextAmp = url.find('&', posDropPart + 1)
-        if nextAmp == -1:
-            return url[0:posDropPart]
-        else:
-            return url[0:posDropPart] + url[nextAmp + 1:]
-
-
-def getSequentialRetries(pandaid, jeditaskid, countOfInvocations):
-    retryquery = {}
-    countOfInvocations.append(1)
-    retryquery['jeditaskid'] = jeditaskid
-    retryquery['newpandaid'] = pandaid
-    newretries = []
-
-    if (len(countOfInvocations) < 100):
-        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
-        newretries.extend(retries)
-        for retry in retries:
-            if retry['relationtype'] in ['merge', 'retry']:
-                jsquery = {}
-                jsquery['jeditaskid'] = jeditaskid
-                jsquery['pandaid'] = retry['oldpandaid']
-                values = ['pandaid', 'jobstatus', 'jeditaskid']
-                jsjobs = []
-                jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
-                jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-                jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
-                jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
-                jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
-                for job in jsjobs:
-                    if job['jobstatus'] == 'failed':
-                        for retry in newretries:
-                            if (retry['oldpandaid'] == job['pandaid']):
-                                retry['relationtype'] = 'retry'
-                        newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations))
-
-    outlist = []
-    added_keys = set()
-    for row in newretries:
-        lookup = row['oldpandaid']
-        if lookup not in added_keys:
-            outlist.append(row)
-            added_keys.add(lookup)
-
-    return outlist
-
-
-def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, recurse=0):
-    retryquery = {}
-    retryquery['jeditaskid'] = jeditaskid
-    retryquery['newpandaid'] = jobsetid
-    retryquery['relationtype'] = 'jobset_retry'
-    countOfInvocations.append(1)
-    newretries = []
-
-    if (len(countOfInvocations) < 100):
-        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
-        newretries.extend(retries)
-        for retry in retries:
-            jsquery = {}
-            jsquery['jeditaskid'] = jeditaskid
-            jsquery['jobstatus'] = 'failed'
-            jsquery['jobsetid'] = retry['oldpandaid']
-            values = ['pandaid', 'jobstatus', 'jobsetid', 'jeditaskid']
-            jsjobs = []
-            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
-            for job in jsjobs:
-                if job['jobstatus'] == 'failed':
-                    for retry in newretries:
-                        if (retry['oldpandaid'] == job['jobsetid']):
-                            retry['relationtype'] = 'retry'
-                            retry['jobid'] = job['pandaid']
-
-                        newretries.extend(getSequentialRetries_ES(job['pandaid'],
-                                                                  jobsetid, job['jeditaskid'], countOfInvocations,
-                                                                  recurse + 1))
-    outlist = []
-    added_keys = set()
-    for row in newretries:
-        if 'jobid' in row:
-            lookup = row['jobid']
-            if lookup not in added_keys:
-                outlist.append(row)
-                added_keys.add(lookup)
-    return outlist
-
-
-def getSequentialRetries_ESupstream(pandaid, jobsetid, jeditaskid, countOfInvocations, recurse=0):
-    retryquery = {}
-    retryquery['jeditaskid'] = jeditaskid
-    retryquery['oldpandaid'] = jobsetid
-    retryquery['relationtype'] = 'jobset_retry'
-    countOfInvocations.append(1)
-    newretries = []
-
-    if (len(countOfInvocations) < 100):
-        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').values()
-        newretries.extend(retries)
-        for retry in retries:
-            jsquery = {}
-            jsquery['jeditaskid'] = jeditaskid
-            jsquery['jobsetid'] = retry['newpandaid']
-            values = ['pandaid', 'jobstatus', 'jobsetid', 'jeditaskid']
-            jsjobs = []
-            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
-            for job in jsjobs:
-                for retry in newretries:
-                    if (retry['newpandaid'] == job['jobsetid']):
-                        retry['relationtype'] = 'retry'
-                        retry['jobid'] = job['pandaid']
-
-    outlist = []
-    added_keys = set()
-    for row in newretries:
-        if 'jobid' in row:
-            lookup = row['jobid']
-            if lookup not in added_keys:
-                outlist.append(row)
-                added_keys.add(lookup)
-    return outlist
-
-
 def descendentjoberrsinfo(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -3169,11 +2777,11 @@ def descendentjoberrsinfo(request):
     jobs.extend(Jobsarchived.objects.filter(**query).values())
     jobs = cleanJobList(request, jobs, mode='nodrop')
 
+    errorCodes = get_job_error_desc()
     errors = {}
-
     for job in jobs:
+        errors[job['pandaid']] = getErrorDescription(job, mode='txt', errorCodes=errorCodes)
 
-        errors[job['pandaid']] = getErrorDescription(job, mode='txt')
     del request.session['TFIRST']
     del request.session['TLAST']
     response = render_to_response('jobDescentErrors.html', {'errors': errors}, content_type='text/html')
@@ -4555,7 +4163,6 @@ def siteInfo(request, site=''):
             if queue['lastmod']:
                 queue['lastmod'] = queue['lastmod'].strftime(defaultDatetimeFormat)
 
-
     # get data from new schedconfig_json table
     panda_queue = []
     pqquery = {'pandaqueue': site}
@@ -4579,8 +4186,8 @@ def siteInfo(request, site=''):
     except AttributeError:
         pass
     panda_resource = get_panda_resource(siterec)
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+
+    if not is_json_request(request):
         attrs = []
         if siterec:
             attrs.append({'name': 'GOC name', 'value': siterec.gocname})
@@ -4617,24 +4224,20 @@ def siteInfo(request, site=''):
             attrs.append({'name': 'Min rss', 'value': "%.1f GB" % (float(siterec.minrss) / 1000.)})
             if siterec.maxtime > 0:
                 attrs.append({'name': 'Maximum time', 'value': "%.1f hours" % (float(siterec.maxtime) / 3600.)})
-            attrs.append({'name': 'Space', 'value': "%d TB as of %s" % (
-            (float(siterec.space) / 1000.), siterec.tspace.strftime('%m-%d %H:%M'))})
+            attrs.append({'name': 'Space', 'value': "%d TB as of %s" % ((float(siterec.space) / 1000.), siterec.tspace.strftime('%m-%d %H:%M'))})
             attrs.append({'name': 'Last modified', 'value': "%s" % (siterec.lastmod.strftime('%Y-%m-%d %H:%M'))})
 
-            iquery = {}
+            # get calculated metrics
+            try:
+                metrics = get_pq_metrics(siterec.nickname)
+            except Exception as ex:
+                metrics = {}
+                _logger.exception('Failed to get metrics for {}\n {}'.format(siterec.nickname, ex))
+            if len(metrics) > 0:
+                for pq, m_dict in metrics.items():
+                    for m in m_dict:
+                        colnames.append({'label': m, 'name': m, 'value': m_dict[m]['value']})
 
-            startdate = timezone.now() - timedelta(hours=24 * 30)
-            startdate = startdate.strftime(defaultDatetimeFormat)
-            enddate = timezone.now().strftime(defaultDatetimeFormat)
-            iquery['at_time__range'] = [startdate, enddate]
-            cloudQuery = Q(description__contains='queue=%s' % siterec.nickname) | Q(
-                description__contains='queue=%s' % siterec.siteid)
-            incidents = Incidents.objects.filter(**iquery).filter(cloudQuery).order_by('at_time').reverse().values()
-            for inc in incidents:
-                if inc['at_time']:
-                    inc['at_time'] = inc['at_time'].strftime(defaultDatetimeFormat)
-        else:
-            incidents = []
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -4645,7 +4248,6 @@ def siteInfo(request, site=''):
             'queues': sites,
             'colnames': colnames,
             'attrs': attrs,
-            'incidents': incidents,
             'name': site,
             'pq_type': panda_queue_type,
             'njobhours': njobhours,
@@ -4659,11 +4261,8 @@ def siteInfo(request, site=''):
     else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        resp = []
-        for job in jobList:
-            resp.append({'pandaid': job.pandaid, 'status': job.jobstatus, 'prodsourcelabel': job.prodsourcelabel,
-                         'produserid': job.produserid})
-        return HttpResponse(json.dumps(resp), content_type='application/json')
+
+        return HttpResponse(json.dumps(panda_queue), content_type='application/json')
 
 
 def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
@@ -7449,11 +7048,13 @@ def getErrorSummaryForEvents(request):
             line[key.lower()] = value
         eventsErrors.append(line)
 
+    error_codes = get_job_error_desc()
+
     for eventserror in eventsErrors:
         try:
-            eventserror['error_code']=int(eventserror['error_code'])
-            if eventserror['error_code'] in errorCodes['piloterrorcode'].keys():
-                eventserror['error_description'] = errorCodes['piloterrorcode'][eventserror['error_code']]
+            eventserror['error_code'] = int(eventserror['error_code'])
+            if eventserror['error_code'] in error_codes['piloterrorcode'].keys():
+                eventserror['error_description'] = error_codes['piloterrorcode'][eventserror['error_code']]
             else:
                 eventserror['error_description'] = ''
         except:
@@ -7461,9 +7062,7 @@ def getErrorSummaryForEvents(request):
         if eventserror['pandaidlist'] and len(eventserror['pandaidlist']) > 0:
             eventserror['pandaidlist'] = eventserror['pandaidlist'].split(',')
 
-
-
-    data = {'errors' : eventsErrors}
+    data = {'errors': eventsErrors}
 
     response = render_to_response('eventsErrorSummary.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -8161,7 +7760,8 @@ def taskInfo(request, jeditaskid=0):
             taskrec['currenttotevhs06'] = int(hs06sSum['total']) if 'total' in hs06sSum else None
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
-        taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
+        if DEPLOYMENT == 'ORACLE_ATLAS':
+            taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
 
     # datetime type -> str in order to avoid encoding errors in template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
@@ -8859,244 +8459,6 @@ def taskFlowDiagram(request, jeditaskid=-1):
     return response
 
 
-def errorSummaryDict(request, jobs, testjobs, **kwargs):
-    """ take a job list and produce error summaries from it """
-    errsByCount = {}
-    errsBySite = {}
-    errsByUser = {}
-    errsByTask = {}
-
-    sumd = {}
-    errHistL = []
-    if 'errHist' in kwargs and kwargs['errHist'] is True:
-        # histogram of errors vs. time, for plotting
-        jobs_failed = [{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed']
-        if len(jobs_failed) > 0:
-            df = pd.DataFrame(jobs_failed)
-            df['modificationtime'] = pd.to_datetime(df['modificationtime'])
-            df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
-            errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
-            errHistL[0] = [t.strftime(defaultDatetimeFormat) for t in errHistL[0]]
-            errHistL[0].insert(0, 'Timestamp')
-            errHistL[1].insert(0, 'Number of failed jobs')
-
-    if 'flist' in kwargs:
-        flist = kwargs['flist']
-    else:
-        flist = copy.deepcopy(standard_errorfields)
-
-    sortby = 'count'
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
-        sortby = request.session['requestParams']['sortby']
-    elif 'sortby' in kwargs and kwargs['sortby']:
-        sortby = kwargs['sortby']
-
-    if 'output' in kwargs:
-        outputs = kwargs['output']
-    else:
-        outputs = ['errsByCount', 'errsBySite', 'errsByUser', 'errsByTask']
-
-    # get task names needed for error summary by task
-    tasknamedict = {}
-    if 'errsByTask' in outputs:
-        tasknamedict = taskNameDict(jobs)
-
-    for job in jobs:
-        if not testjobs:
-            if job['jobstatus'] not in ['failed', 'holding', 'finished', 'closed', 'cancelled']: continue
-        site = job['computingsite']
-        #        if 'cloud' in request.session['requestParams']:
-        #            if site in homeCloud and homeCloud[site] != request.session['requestParams']['cloud']: continue
-        user = job['produsername']
-        taskname = ''
-        if job['jeditaskid'] is not None and job['jeditaskid'] > 0:
-            taskid = job['jeditaskid']
-            if taskid in tasknamedict:
-                taskname = tasknamedict[taskid]
-            tasktype = 'jeditaskid'
-        else:
-            taskid = job['taskid'] if not job['taskid'] is None else 0
-            if taskid in tasknamedict:
-                taskname = tasknamedict[taskid]
-            tasktype = 'taskid'
-
-        ## Overall summary
-        for f in flist:
-            if job[f]:
-                if f == 'taskid' and job[f] < 1000000 and 'produsername' not in request.session['requestParams']:
-                    pass
-                else:
-                    if not f in sumd: sumd[f] = {}
-                    if not job[f] in sumd[f]: sumd[f][job[f]] = 0
-                    sumd[f][job[f]] += 1
-        if job['specialhandling']:
-            if not 'specialhandling' in sumd: sumd['specialhandling'] = {}
-            shl = job['specialhandling'].split()
-            for v in shl:
-                if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
-                sumd['specialhandling'][v] += 1
-        errsByList = {}
-        #errsByCount[errcode]['list'] = {}
-        for err in errorcodelist:
-            if job[err['error']] != 0 and job[err['error']] != '' and job[err['error']] != None:
-                errval = job[err['error']]
-                ## error code of zero is not an error
-                if errval == 0 or errval == '0' or errval == None: continue
-                errdiag = ''
-                try:
-                    errnum = int(errval)
-                    if err['error'] in errorCodes and errnum in errorCodes[err['error']]:
-                        errdiag = errorCodes[err['error']][errnum]
-                except:
-                    errnum = errval
-                errcode = "%s:%s" % (err['name'], errnum)
-                if err['diag']:
-                    errdiag = job[err['diag']]
-                errsByList[job['pandaid']]=errdiag
-
-                if errcode not in errsByCount:
-                    errsByCount[errcode] = {}
-                    errsByCount[errcode]['error'] = errcode
-                    errsByCount[errcode]['codename'] = err['error']
-                    errsByCount[errcode]['codeval'] = errnum
-                    errsByCount[errcode]['diag'] = errdiag
-                    errsByCount[errcode]['count'] = 0
-                    errsByCount[errcode]['pandalist'] = {}
-                errsByCount[errcode]['count'] += 1
-                errsByCount[errcode]['pandalist'].update(errsByList)
-                if user not in errsByUser:
-                    errsByUser[user] = {}
-                    errsByUser[user]['name'] = user
-                    errsByUser[user]['errors'] = {}
-                    errsByUser[user]['toterrors'] = 0
-                if errcode not in errsByUser[user]['errors']:
-                    errsByUser[user]['errors'][errcode] = {}
-                    errsByUser[user]['errors'][errcode]['error'] = errcode
-                    errsByUser[user]['errors'][errcode]['codename'] = err['error']
-                    errsByUser[user]['errors'][errcode]['codeval'] = errnum
-                    errsByUser[user]['errors'][errcode]['diag'] = errdiag
-                    errsByUser[user]['errors'][errcode]['count'] = 0
-                errsByUser[user]['errors'][errcode]['count'] += 1
-                errsByUser[user]['toterrors'] += 1
-
-                if site not in errsBySite:
-                    errsBySite[site] = {}
-                    errsBySite[site]['name'] = site
-                    errsBySite[site]['errors'] = {}
-                    errsBySite[site]['toterrors'] = 0
-                    errsBySite[site]['toterrjobs'] = 0
-                if errcode not in errsBySite[site]['errors']:
-                    errsBySite[site]['errors'][errcode] = {}
-                    errsBySite[site]['errors'][errcode]['error'] = errcode
-                    errsBySite[site]['errors'][errcode]['codename'] = err['error']
-                    errsBySite[site]['errors'][errcode]['codeval'] = errnum
-                    errsBySite[site]['errors'][errcode]['diag'] = errdiag
-                    errsBySite[site]['errors'][errcode]['count'] = 0
-                errsBySite[site]['errors'][errcode]['count'] += 1
-                errsBySite[site]['toterrors'] += 1
-
-                if tasktype == 'jeditaskid' or (taskid is not None and taskid > 1000000) or 'produsername' in request.session['requestParams']:
-                    if taskid not in errsByTask:
-                        errsByTask[taskid] = {}
-                        errsByTask[taskid]['name'] = taskid
-                        errsByTask[taskid]['longname'] = taskname
-                        errsByTask[taskid]['errors'] = {}
-                        errsByTask[taskid]['toterrors'] = 0
-                        errsByTask[taskid]['toterrjobs'] = 0
-                        errsByTask[taskid]['tasktype'] = tasktype
-                    if errcode not in errsByTask[taskid]['errors']:
-                        errsByTask[taskid]['errors'][errcode] = {}
-                        errsByTask[taskid]['errors'][errcode]['error'] = errcode
-                        errsByTask[taskid]['errors'][errcode]['codename'] = err['error']
-                        errsByTask[taskid]['errors'][errcode]['codeval'] = errnum
-                        errsByTask[taskid]['errors'][errcode]['diag'] = errdiag
-                        errsByTask[taskid]['errors'][errcode]['count'] = 0
-                    errsByTask[taskid]['errors'][errcode]['count'] += 1
-                    errsByTask[taskid]['toterrors'] += 1
-
-        if site in errsBySite: errsBySite[site]['toterrjobs'] += 1
-        if taskid in errsByTask: errsByTask[taskid]['toterrjobs'] += 1
-
-    ## reorganize as sorted lists
-    errsByCountL = []
-    errsBySiteL = []
-    errsByUserL = []
-    errsByTaskL = []
-    esjobs = []
-    kys = errsByCount.keys()
-    kys = sorted(kys)
-    for err in kys:
-        for key, value in sorted(errsByCount[err]['pandalist'].items()):
-            if value == '':
-                value = 'None'
-            esjobs.append(key)
-        errsByCountL.append(errsByCount[err])
-
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
-        errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
-
-    kys = list(errsByUser.keys())
-    kys = sorted(kys)
-    for user in kys:
-        errsByUser[user]['errorlist'] = []
-        errkeys = errsByUser[user]['errors'].keys()
-        errkeys = sorted(errkeys)
-        for err in errkeys:
-            errsByUser[user]['errorlist'].append(errsByUser[user]['errors'][err])
-        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
-            errsByUser[user]['errorlist'] = sorted(errsByUser[user]['errorlist'], key=lambda x: -x['count'])
-        errsByUserL.append(errsByUser[user])
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
-        errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
-
-    kys = list(errsBySite.keys())
-    kys = sorted(kys)
-    for site in kys:
-        errsBySite[site]['errorlist'] = []
-        errkeys = errsBySite[site]['errors'].keys()
-        errkeys = sorted(errkeys)
-        for err in errkeys:
-            errsBySite[site]['errorlist'].append(errsBySite[site]['errors'][err])
-        if sortby == 'count':
-            errsBySite[site]['errorlist'] = sorted(errsBySite[site]['errorlist'], key=lambda x: -x['count'])
-        errsBySiteL.append(errsBySite[site])
-    if sortby == 'count':
-        errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
-
-    kys = list(errsByTask.keys())
-    kys = sorted(kys)
-    for taskid in kys:
-        errsByTask[taskid]['errorlist'] = []
-        errkeys = errsByTask[taskid]['errors'].keys()
-        errkeys = sorted(errkeys)
-        for err in errkeys:
-            errsByTask[taskid]['errorlist'].append(errsByTask[taskid]['errors'][err])
-        if sortby == 'count':
-            errsByTask[taskid]['errorlist'] = sorted(errsByTask[taskid]['errorlist'], key=lambda x: -x['count'])
-        errsByTaskL.append(errsByTask[taskid])
-    if sortby == 'count':
-        errsByTaskL = sorted(errsByTaskL, key=lambda x: -x['toterrors'])
-
-    suml = []
-    for f in sumd:
-        itemd = {}
-        itemd['field'] = f
-        iteml = []
-        kys = sorted(sumd[f].keys())
-
-        for ky in kys:
-            iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
-        itemd['list'] = iteml
-        suml.append(itemd)
-    suml = sorted(suml, key=lambda x: x['field'])
-
-    if sortby == 'count':
-        for item in suml:
-            item['list'] = sorted(item['list'], key=lambda x: -x['kvalue'])
-
-    return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, errHistL
-
-
 def getTaskName(tasktype, taskid):
     taskname = ''
     if tasktype == 'taskid':
@@ -9106,69 +8468,6 @@ def getTaskName(tasktype, taskid):
         if len(tasks) > 0:
             taskname = tasks[0]['taskname']
     return taskname
-
-
-def get_error_message_summary(jobs):
-    """
-    Aggregation of error messages for each error code
-    :param jobs: list of job dicts including error codees, error messages, timestamps of job start and end, corecount
-    :return: list of rows for datatable
-    """
-    error_message_summary_list = []
-    errorMessageSummary = {}
-    N_SAMPLE_JOBS = 3
-    for job in jobs:
-        for errortype in errorcodelist:
-            if errortype['error'] in job and job[errortype['error']] is not None and job[errortype['error']] != '' and int(job[errortype['error']]) > 0:
-                errorcodestr = errortype['name'] + ':' + str(job[errortype['error']])
-                if not errorcodestr in errorMessageSummary:
-                    errorMessageSummary[errorcodestr] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
-                errorMessageSummary[errorcodestr]['count'] += 1
-                try:
-                    corecount = int(job['actualcorecount'])
-                except:
-                    corecount = 1
-                try:
-                    walltime = int(get_job_walltime(job))
-                except:
-                    walltime = 0
-                errorMessageSummary[errorcodestr]['walltimeloss'] += walltime * corecount
-                # transexitcode has no diag field in DB, so we get it from ErrorCodes class
-                if errortype['name'] != 'transformation':
-                    errordiag = job[errortype['diag']] if len(job[errortype['diag']]) > 0 else '---'
-                else:
-                    try:
-                        errordiag = errorCodes[errortype['error']][int(job[errortype['error']])]
-                    except:
-                        errordiag = '--'
-                if not errordiag in errorMessageSummary[errorcodestr]['messages']:
-                    errorMessageSummary[errorcodestr]['messages'][errordiag] = {'count': 0, 'pandaids': []}
-                errorMessageSummary[errorcodestr]['messages'][errordiag]['count'] += 1
-                if len(errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids']) < N_SAMPLE_JOBS:
-                    errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids'].append(job['pandaid'])
-
-    # form a dict for mapping error code name and field in panda db in order to prepare links to job selection
-    errname2dbfield = {}
-    for errortype in errorcodelist:
-        errname2dbfield[errortype['name']] = errortype['error']
-
-    # dict -> list
-    for errcode, errinfo in errorMessageSummary.items():
-        errcodename = errname2dbfield[errcode.split(':')[0]]
-        errcodeval = errcode.split(':')[1]
-        for errmessage, errmessageinfo in errinfo['messages'].items():
-            error_message_summary_list.append({
-                'errcode': errcode,
-                'errcodename': errcodename,
-                'errcodeval': errcodeval,
-                'errcodecount': errinfo['count'],
-                'errcodewalltimeloss': round(errinfo['walltimeloss']/60.0/60.0/24.0/360.0, 2),
-                'errmessage': errmessage,
-                'errmessagecount': errmessageinfo['count'],
-                'pandaids': list(errmessageinfo['pandaids'])
-            })
-
-    return error_message_summary_list
 
 
 tcount = {}
@@ -11416,11 +10715,14 @@ def grafana_image(request):
     else:
         return redirect('/static/images/error_z0my4n.png')
 
+
 def handler500(request):
     response = render_to_response('500.html', {},
                                   context_instance=RequestContext(request))
     response.status_code = 500
     return response
+
+
 #### URL Section ####
 import uuid
 from collections import defaultdict
@@ -11487,11 +10789,6 @@ def getBadEventsForTask(request):
     if 'mode' in request.GET and request.GET['mode'] == 'nodrop':
         mode = 'nodrop'
 
-    global errorFields, errorCodes, errorStages
-    if len(errorFields) == 0:
-        codes = ErrorCodes.ErrorCodes()
-        errorFields, errorCodes, errorStages = codes.getErrorCodes()
-
     data = []
     cursor = connection.cursor()
 
@@ -11512,6 +10809,8 @@ def getBadEventsForTask(request):
 
     cursor.execute(plsql)
     evtable = cursor.fetchall()
+
+    errorCodes = get_job_error_desc()
 
     for row in evtable:
         dataitem = {}
@@ -11575,7 +10874,8 @@ def getJobStatusLog(request, pandaid = None):
     :return: json contained job states changes history
     """
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
 
     try:
         pandaid = int(pandaid)
@@ -11607,8 +10907,12 @@ def getJobStatusLog(request, pandaid = None):
 
     for sl in statusLog:
         sl['modiftime_str'] = sl[mtimeparam].strftime(defaultDatetimeFormat) if sl[mtimeparam] is not None else "---"
-    response = render_to_response('jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+
+    if is_json_request(request):
+        response = JsonResponse(statusLog, safe=False)
+    else:
+        response = render_to_response('jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
@@ -11816,9 +11120,11 @@ def get_hc_tests(request):
         _logger.warning('Failed to get info of input files')
     _logger.info('Got input file info for jobs: {}'.format(time.time() - request.session['req_init_time']))
 
+    errorCodes = get_job_error_desc()
+
     for job in jobs:
         test = {}
-        test['errorinfo'] = errorInfo(job)
+        test['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
         try:
             hctestid = job['destinationdblock'].split('.')[2][2:]
         except:

@@ -5,15 +5,12 @@ Created by Tatiana Korchuganova on 05.03.2020
 """
 
 import statistics
-import json
-import numpy as np
 from core.libs.exlib import convert_bytes
 from datetime import datetime, timedelta
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from core.common.models import JediJobRetryHistory
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, get_job_walltime, get_job_queuetime, \
     drop_duplicates, add_job_category
-
-from core.ErrorCodes import ErrorCodes
 
 
 def is_event_service(job):
@@ -26,124 +23,6 @@ def is_event_service(job):
             return False
     else:
         return False
-
-
-def getErrorDescription(job, mode='html', provideProcessedCodes = False):
-    txt = ''
-    codesDescribed = []
-
-    if 'metastruct' in job:
-        if type(job['metastruct']) is np.unicode:
-            try:
-                meta = json.loads(job['metastruct'])
-            except:
-                print ('Meta type: '+str(type(job['metastruct'])))
-                meta = job['metastruct']
-            if 'exitCode' in meta and meta['exitCode'] != 0:
-                txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
-                if provideProcessedCodes:
-                    return txt, codesDescribed
-                else:
-                    return txt
-            else:
-                if provideProcessedCodes:
-                    return '-', codesDescribed
-                else:
-                    return '-'
-        else:
-            meta = job['metastruct']
-            if 'exitCode' in meta and meta['exitCode'] != 0:
-                txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
-                if provideProcessedCodes:
-                    return txt, codesDescribed
-                else:
-                    return txt
-
-    codes = ErrorCodes()
-    errorFields, errorCodes, errorStages = codes.getErrorCodes()
-
-    for errcode in errorCodes.keys():
-        errval = 0
-        if errcode in job:
-            errval = job[errcode]
-            if errval != 0 and errval != '0' and errval != None and errval != '':
-                try:
-                    errval = int(errval)
-                except:
-                    pass  # errval = -1
-                codesDescribed.append(errval)
-                errdiag = errcode.replace('errorcode', 'errordiag')
-                if errcode.find('errorcode') > 0:
-                    if job[errdiag] is not None:
-                        diagtxt = str(job[errdiag])
-                    else:
-                        diagtxt = ''
-                else:
-                    diagtxt = ''
-                if len(diagtxt) > 0:
-                    desc = diagtxt
-                elif errval in errorCodes[errcode]:
-                    desc = errorCodes[errcode][errval]
-                else:
-                    desc = "Unknown %s error code %s" % (errcode, errval)
-                errname = errcode.replace('errorcode', '')
-                errname = errname.replace('exitcode', '')
-                if mode == 'html':
-                    txt += " <b>%s, %d:</b> %s" % (errname, errval, desc)
-                else:
-                    txt = "%s, %d: %s" % (errname, errval, desc)
-    if provideProcessedCodes:
-        return txt, codesDescribed
-    else:
-        return txt
-
-
-def errorInfo(job, nchars=300, mode='html'):
-    errtxt = ''
-    err1 = ''
-    desc, codesDescribed = getErrorDescription(job, provideProcessedCodes=True)
-
-    if 'brokerageerrorcode' in job and int(job['brokerageerrorcode']) != 0 and int(job['brokerageerrorcode']) not in codesDescribed:
-        errtxt += 'Brokerage error %s: %s <br>' % (job['brokerageerrorcode'], job['brokerageerrordiag'])
-        if err1 == '': err1 = "Broker: %s" % job['brokerageerrordiag']
-    if 'ddmerrorcode' in job and int(job['ddmerrorcode']) != 0 and int(job['ddmerrorcode']) not in codesDescribed:
-        errtxt += 'DDM error %s: %s <br>' % (job['ddmerrorcode'], job['ddmerrordiag'])
-        if err1 == '': err1 = "DDM: %s" % job['ddmerrordiag']
-    if 'exeerrorcode' in job and int(job['exeerrorcode']) != 0 and int(job['exeerrorcode']) not in codesDescribed:
-        errtxt += 'Executable error %s: %s <br>' % (job['exeerrorcode'], job['exeerrordiag'])
-        if err1 == '': err1 = "Exe: %s" % job['exeerrordiag']
-    if 'jobdispatchererrorcode' in job and int(job['jobdispatchererrorcode']) != 0 and int(job['jobdispatchererrorcode']) not in codesDescribed:
-        errtxt += 'Dispatcher error %s: %s <br>' % (job['jobdispatchererrorcode'], job['jobdispatchererrordiag'])
-        if err1 == '': err1 = "Dispatcher: %s" % job['jobdispatchererrordiag']
-    if 'piloterrorcode' in job and int(job['piloterrorcode']) != 0 and int(job['piloterrorcode']) not in codesDescribed:
-        errtxt += 'Pilot error %s: %s <br>' % (job['piloterrorcode'], job['piloterrordiag'])
-        if err1 == '': err1 = "Pilot: %s" % job['piloterrordiag']
-    if 'superrorcode' in job and int(job['superrorcode']) != 0 and int(job['superrorcode']) not in codesDescribed:
-        errtxt += 'Sup error %s: %s <br>' % (job['superrorcode'], job['superrordiag'])
-        if err1 == '': err1 = job['superrordiag']
-    if 'taskbuffererrorcode' in job and int(job['taskbuffererrorcode']) != 0 and int(job['taskbuffererrorcode']) not in codesDescribed:
-        errtxt += 'Task buffer error %s: %s <br>' % (job['taskbuffererrorcode'], job['taskbuffererrordiag'])
-        if err1 == '': err1 = 'Taskbuffer: %s' % job['taskbuffererrordiag']
-    if 'transexitcode' in job and job['transexitcode'] != '' and job['transexitcode'] is not None and int(job['transexitcode']) > 0 and int(job['transexitcode']) not in codesDescribed:
-        errtxt += 'Trf exit code %s.' % job['transexitcode']
-        if err1 == '': err1 = 'Trf exit code %s' % job['transexitcode']
-    if len(desc) > 0:
-        errtxt += '%s<br>' % desc
-        if err1 == '': err1 = getErrorDescription(job, mode='string')
-    if len(errtxt) > nchars:
-        ret = errtxt[:nchars] + '...'
-    else:
-        ret = errtxt[:nchars]
-    if err1.find('lost heartbeat') >= 0: err1 = 'lost heartbeat'
-    if err1.lower().find('unknown transexitcode') >= 0: err1 = 'unknown transexit'
-    if err1.find(' at ') >= 0: err1 = err1[:err1.find(' at ') - 1]
-    if errtxt.find('lost heartbeat') >= 0: err1 = 'lost heartbeat'
-    err1 = err1.replace('\n', ' ')
-
-    if mode == 'html':
-        return errtxt
-    else:
-        return err1[:nchars]
 
 
 def get_job_list(query, **kwargs):
@@ -331,3 +210,126 @@ def get_job_errors(pandaids):
         errors_dict[job['pandaid']] = errorInfo(job)
 
     return errors_dict
+
+
+def getSequentialRetries(pandaid, jeditaskid, countOfInvocations):
+    retryquery = {}
+    countOfInvocations.append(1)
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['newpandaid'] = pandaid
+    newretries = []
+
+    if (len(countOfInvocations) < 100):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+        newretries.extend(retries)
+        for retry in retries:
+            if retry['relationtype'] in ['merge', 'retry']:
+                jsquery = {}
+                jsquery['jeditaskid'] = jeditaskid
+                jsquery['pandaid'] = retry['oldpandaid']
+                values = ['pandaid', 'jobstatus', 'jeditaskid']
+                jsjobs = []
+                jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+                jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+                for job in jsjobs:
+                    if job['jobstatus'] == 'failed':
+                        for retry in newretries:
+                            if (retry['oldpandaid'] == job['pandaid']):
+                                retry['relationtype'] = 'retry'
+                        newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations))
+
+    outlist = []
+    added_keys = set()
+    for row in newretries:
+        lookup = row['oldpandaid']
+        if lookup not in added_keys:
+            outlist.append(row)
+            added_keys.add(lookup)
+
+    return outlist
+
+
+def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, recurse=0):
+    retryquery = {}
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['newpandaid'] = jobsetid
+    retryquery['relationtype'] = 'jobset_retry'
+    countOfInvocations.append(1)
+    newretries = []
+
+    if (len(countOfInvocations) < 100):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('oldpandaid').reverse().values()
+        newretries.extend(retries)
+        for retry in retries:
+            jsquery = {}
+            jsquery['jeditaskid'] = jeditaskid
+            jsquery['jobstatus'] = 'failed'
+            jsquery['jobsetid'] = retry['oldpandaid']
+            values = ['pandaid', 'jobstatus', 'jobsetid', 'jeditaskid']
+            jsjobs = []
+            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+            for job in jsjobs:
+                if job['jobstatus'] == 'failed':
+                    for retry in newretries:
+                        if (retry['oldpandaid'] == job['jobsetid']):
+                            retry['relationtype'] = 'retry'
+                            retry['jobid'] = job['pandaid']
+
+                        newretries.extend(getSequentialRetries_ES(job['pandaid'],
+                                                                  jobsetid, job['jeditaskid'], countOfInvocations,
+                                                                  recurse + 1))
+    outlist = []
+    added_keys = set()
+    for row in newretries:
+        if 'jobid' in row:
+            lookup = row['jobid']
+            if lookup not in added_keys:
+                outlist.append(row)
+                added_keys.add(lookup)
+    return outlist
+
+
+def getSequentialRetries_ESupstream(pandaid, jobsetid, jeditaskid, countOfInvocations, recurse=0):
+    retryquery = {}
+    retryquery['jeditaskid'] = jeditaskid
+    retryquery['oldpandaid'] = jobsetid
+    retryquery['relationtype'] = 'jobset_retry'
+    countOfInvocations.append(1)
+    newretries = []
+
+    if (len(countOfInvocations) < 100):
+        retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').values()
+        newretries.extend(retries)
+        for retry in retries:
+            jsquery = {}
+            jsquery['jeditaskid'] = jeditaskid
+            jsquery['jobsetid'] = retry['newpandaid']
+            values = ['pandaid', 'jobstatus', 'jobsetid', 'jeditaskid']
+            jsjobs = []
+            jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
+            jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+            for job in jsjobs:
+                for retry in newretries:
+                    if (retry['newpandaid'] == job['jobsetid']):
+                        retry['relationtype'] = 'retry'
+                        retry['jobid'] = job['pandaid']
+
+    outlist = []
+    added_keys = set()
+    for row in newretries:
+        if 'jobid' in row:
+            lookup = row['jobid']
+            if lookup not in added_keys:
+                outlist.append(row)
+                added_keys.add(lookup)
+    return outlist

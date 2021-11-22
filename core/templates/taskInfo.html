@@ -259,6 +259,7 @@
   <div class="bp-dropdown-button">
       <button class="dropdown">Task parameters and help</button>
       <div class="dropdown-items">
+          <a href="#taskflow" onclick="toggletaskflow() ">Show taskflow</a>
           <a href="#statuslog" onclick="toggleStatusLog() ">Show task status log</a>
           <a href="#tasklogs" onclick="toggleTaskLogs() ">Show task logs from ElasticSearch</a>
           <a href="#jobparams">Jump to job parameters</a>
@@ -400,6 +401,17 @@
         </button>
       </div>
   {% endif %}
+
+
+    <div id="taskflow" ng-app="taskInfoAppSL" ng-controller="taskflowController">
+    <div class="card bp-container-simple secondary ng-hide" ng-hide="taskflow.is_hidden">
+    <div class="card-divider"><p>Task Flow Diagram</p></div>
+    <div class="card-section">
+      <p ng-bind-html="taskflow.message"></p>
+      <div id="sankey_basic" style="width: 100%; height: 500px;"></div>
+    </div>
+  </div>
+  </div>
 
   <div id="statuslog" ng-app="taskInfoAppSL" ng-controller="TaskStatusLogController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="status_log.is_hidden">
@@ -608,7 +620,10 @@
 
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script>
+google.charts.load('current', {'packages':['sankey']});
+
     app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
         $scope.iddsjson = "";
         $scope.getiDDs = function () {
@@ -748,6 +763,69 @@
             }
         };
     });
+
+
+    app.controller('taskflowController', function ($scope, $http, $sce) {
+        $scope.taskflow = {
+          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+          data: [],
+          is_hidden: true,
+          plot_data: {
+            columns: [],
+          },
+          plot: "",
+        };
+        $scope.taskflow.get = function () {
+            $http({
+                    url: "{% url 'taskFlowDiagram' jeditaskid %}",
+                    method: "GET",
+                    params: {'json':1}
+                }
+            ).then(function success(response) {
+                $scope.taskflow.message = "";
+                $scope.taskflow.data = angular.fromJson(response.data.data);
+                console.log(response.data.data)
+                if ($scope.taskflow.data.length > 0) {
+                  $scope.taskflow.buildPlot();
+                }
+                else {
+                  $scope.taskflow.message = $sce.trustAsHtml("No data received :(");
+                }
+              },
+              function error(response) {
+                console.log(response);
+                $scope.taskflow.message = $sce.trustAsHtml('Failed to load data :( ');
+              }
+            );
+        };
+
+        $scope.taskflow.buildPlot = function() {
+            var data = new google.visualization.DataTable();
+                data.addColumn('string', 'From');
+                data.addColumn('string', 'To');
+                data.addColumn('number', 'Weight');
+                data.addRows($scope.taskflow.data);
+
+        // Sets chart options.
+        var options = {
+            width: getWidth()-40,
+            {#sankey: {#}
+            {#    link: { color: { fill: '#d799ae' } },#}
+            {#    node: { colors: [ '#a61d4c' ]},#}
+            {# },#}
+        };
+
+        // Instantiates and draws our chart, passing in some options.
+        var chart = new google.visualization.Sankey(document.getElementById('sankey_basic'));
+        chart.draw(data, options);
+
+        };
+        $scope.taskflow.toggle = function() {
+            $scope.taskflow.is_hidden = false;
+            $scope.taskflow.get();
+        };
+    });
+
 
     app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
         $scope.status_log = {
@@ -977,6 +1055,14 @@ function togglePlots() {
   scope.$apply(function(){
         scope.taskinfo.jc_plots.toggle();
   });
+}
+function toggletaskflow() {
+    let scope = angular.element(document.getElementById('taskflow')).scope();
+    if (scope.taskflow.is_hidden) {
+      scope.$apply(function () {
+        scope.taskflow.toggle();
+      });
+    }
 }
 
 function toggleStatusLog() {
