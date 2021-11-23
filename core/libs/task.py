@@ -1417,12 +1417,13 @@ def get_task_flow_data(jeditaskid):
     if len(jobs) > 0:
         for j in jobs:
             dname = j['proddblock'] if ':' not in j['proddblock'] else j['proddblock'].split(':')[1]
-            if j['computingsite'] not in dataset_dict[dname]['jobs']:
-                dataset_dict[dname]['jobs'][j['computingsite']] = {}
-            job_state = j['jobstatus'] if j['jobstatus'] in const.JOB_STATES_FINAL else 'active'
-            if job_state not in dataset_dict[dname]['jobs'][j['computingsite']]:
-                dataset_dict[dname]['jobs'][j['computingsite']][job_state] = 0
-            dataset_dict[dname]['jobs'][j['computingsite']][job_state] += j['njobs']
+            if j['computingsite'] is not None and j['computingsite'] != '':
+                if j['computingsite'] not in dataset_dict[dname]['jobs']:
+                    dataset_dict[dname]['jobs'][j['computingsite']] = {}
+                job_state = j['jobstatus'] if j['jobstatus'] in const.JOB_STATES_FINAL else 'active'
+                if job_state not in dataset_dict[dname]['jobs'][j['computingsite']]:
+                    dataset_dict[dname]['jobs'][j['computingsite']][job_state] = 0
+                dataset_dict[dname]['jobs'][j['computingsite']][job_state] += j['njobs']
 
     # get RSE for datasets
     replicas = []
