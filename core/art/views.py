@@ -75,9 +75,9 @@ def art(request):
     branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
     ntags = ARTTests.objects.values('nightly_tag_display').annotate(nightly_tag_date=Substr('nightly_tag_display', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
-    # a workaround for a splitted DF into a lot of separate packages
-    package_list = [p['package'] for p in packages]
-    package_list.append('DerivationFramework*ART')
+    # a workaround for the DF split into a lot of separate packages
+    df_name = 'DerivationFramework'
+    package_list = list(set([p['package'] if not p['package'].startswith(df_name) else df_name + '*' for p in packages]))
 
     data = {
             'request': request,
