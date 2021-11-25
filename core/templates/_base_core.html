@@ -708,7 +708,7 @@
                       break;
 
               }
-              url += searchvalue.value;
+              url += encodeURIComponent(searchvalue.value);
           }
 
           window.location = urlBase + url;
