@@ -166,6 +166,6 @@ unittest2==1.1.0
 urllib3==1.25.9
 webencodings==0.5.1
 websocket-client==0.57.0
-wiki==0.6
+wiki==0.7.9
 xlrd==1.1.0
 zipp==3.1.0
