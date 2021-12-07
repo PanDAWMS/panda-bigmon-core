@@ -177,13 +177,13 @@
 <tbody>
 {% for wn in summary %}
 <tr>
-<td> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </td>
+<td>{% if wn.name != 'All' and wn.name != 'Average' and wn.name != 'unknown' %}<a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }}</a> {% else %} {{ wn.name }} {% endif %}</td>
 <td class="num">{{ wn.slotcount }} </td>
 <td class="num">{{ wn.rcores }} </td>
-<td class="num"><a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}"> {{ wn.count }} </a></td>
+<td class="num"><a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' %}
-<td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %}-{% endif %} </td>
+<td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %}-{% endif %} </td>
 {% endif %}
 {% endfor %}
 <td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
@@ -239,14 +239,14 @@ $(document).ready(function () {
 <tbody>
 {% for wn in summary %}
 <tr>
-<td> <a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }} </td>
+<td> {% if wn.name != 'All' and wn.name != 'Average' and wn.name != 'unknown' %}<a href="{% url 'wnInfo' site wn.name %}">{{ wn.name }}</a> {% else %} {{ wn.name }} {% endif %} </td>
 <td class="num">{{ wn.slotcount }} </td>
 <td class="num">{{ wn.rcores }} </td>
 <td class="num">{{ wn.rminramcount  }} </td>
-<td class="num"><a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}"> {{ wn.count }} </a></td>
+<td class="num"><a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
 {% if state.name != 'assigned' and state.name != 'activated' and state.name != 'pending' %}
-<td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={{ wn.name }}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %} - {% endif %} </td>
+<td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %} - {% endif %} </td>
 {% endif %}
 {% endfor %}
 <td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail  }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
