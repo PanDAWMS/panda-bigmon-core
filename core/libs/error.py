@@ -116,7 +116,7 @@ def errorInfo(job, nchars=300, mode='html', **kwargs):
     desc, codesDescribed = getErrorDescription(job, provideProcessedCodes=True, errorCodes=errorCodes)
 
     for error_cat in const.JOB_ERROR_CATEGORIES:
-        if error_cat['error'] in job and job[error_cat['error']] != '' and int(job[error_cat['error']]) != 0 and int(job[error_cat['error']]) not in codesDescribed:
+        if error_cat['error'] in job and job[error_cat['error']] != '' and not job[error_cat['error']] is None and int(job[error_cat['error']]) != 0 and int(job[error_cat['error']]) not in codesDescribed:
             if error_cat['diag'] is not None:
                 errtxt += '{} {}: {} <br>'.format(error_cat['title'], job[error_cat['error']], job[error_cat['diag']])
                 if err1 == '':
