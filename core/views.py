@@ -4538,7 +4538,9 @@ def wnInfo(request, site, wnname='all'):
         else:
             wn = wnfull
             slot = '1'
-        if wn.startswith('aipanda'): continue
+        if wn.startswith('aipanda'):
+            wn = 'unknown'
+            slot = ''
         if jobstatus == 'failed':
             if not wn in wnPlotFailed: wnPlotFailed[wn] = 0
             wnPlotFailed[wn] += count
