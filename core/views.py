@@ -6133,9 +6133,6 @@ def dashES(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-
-
-
 @login_customrequired
 def dashAnalysis(request):
     return dashboard(request, view='analysis')

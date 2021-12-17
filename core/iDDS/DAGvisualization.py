@@ -3,14 +3,15 @@ from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 import urllib.request
 from urllib.error import HTTPError, URLError
-from core.settings.base import IDDS_SERVER_URL
+from core.settings.config import IDDS_HOST
 import json
 
-SELECTION_CRITERIA = '/idds/monitor_request_relation'
+SELECTION_CRITERIA = '/monitor_request_relation'
 
 
-def query_idds_srver(request_id):
-    url = f"{IDDS_SERVER_URL}{SELECTION_CRITERIA}/{request_id}/null"
+def query_idds_server(request_id):
+    response = []
+    url = f"{IDDS_HOST}{SELECTION_CRITERIA}/{request_id}/null"
     try:
         response = urllib.request.urlopen(url).read()
     except (HTTPError, URLError) as e:
@@ -18,84 +19,54 @@ def query_idds_srver(request_id):
     stats = json.loads(response)
     return stats
 
+def fill_nodes_edges(current_node):
+    nodes, edges = [], []
+    nodes.append(current_node['work']['workload_id'])
+    last_edge = {'start': None, 'finish': current_node['work']['workload_id']}
+    if 'next_works' in current_node:
+        for work in current_node.get('next_works'):
+            nodes_sub, edges_sub, last_edge_sub = fill_nodes_edges(work)
+            last_edge_sub['start'] = current_node['work']['workload_id']
+            nodes.extend(nodes_sub)
+            edges.extend(edges_sub)
+            edges.append(last_edge_sub)
+    return nodes, edges, last_edge
+
+
 def daggraph(request):
     initRequest(request)
     requestid = int(request.session['requestParams']['requestid'])
-    stats = query_idds_srver(requestid)
-    nodes = []
-    edges = []
+    stats = query_idds_server(requestid)
+    nodes_dag_vis = []
+    edges_dag_vis = []
     if len(stats) > 0:
         relation_map = stats[0]['relation_map']
         if len(relation_map) > 0:
             relation_map = relation_map[0]
-            nodes.append({ 'group': 'nodes',
-                           'data': { 'id': str(relation_map['work']['workload_id']),
-                                     'resolved': 'false'
-                                  }
-                        })
-            edges.append({
-              'group': 'edges',
-              'data': {
-                'id': str(relation_map['work']['workload_id']) + '_to_' + str(relation_map['work']['workload_id']),
-                'target': 'collect data',
-                'source': 'noop'
-                }
-            })
+            nodes, edges, last_edge = fill_nodes_edges(relation_map)
+            for node in nodes:
+                nodes_dag_vis.append(
+                    {'group': 'nodes',
+                     'data': {'id': str(node),
+                              'name': 'a.com',
+                              "type": 1,
+                              }
+                     }
+                )
 
-    DAG = [
-        { 'group': 'nodes', 'data': { 'id': 'noop', 'resolved': 'false' } },
-        {
-          'group': 'nodes',
-          'data': { 'id': 'collect data', 'resolved': 'false' }
-        },
-        {
-          'group': 'nodes',
-          'data': { 'id': 'send to waylay', 'resolved': 'false' }
-        },
-        { 'group': 'nodes', 'data': { 'id': 'send to BB', 'resolved': 'false' } },
-        { 'group': 'nodes', 'data': { 'id': 'notify me', 'resolved': 'false' } },
-        {
-          'group': 'edges',
-          'data': {
-            'id': 'noop-collect data',
-            'target': 'collect data',
-            'source': 'noop'
-          }
-        },
-        {
-          'group': 'edges',
-          'data': {
-            'id': 'collect data-send to waylay',
-            'target': 'send to waylay',
-            'source': 'collect data'
-          }
-        },
-        {
-          'group': 'edges',
-          'data': {
-            'id': 'collect data-send to BB',
-            'target': 'send to BB',
-            'source': 'collect data'
-          }
-        },
-        {
-          'group': 'edges',
-          'data': {
-            'id': 'send to waylay-notify me',
-            'target': 'notify me',
-            'source': 'send to waylay'
-          }
-        },
-        {
-          'group': 'edges',
-          'data': {
-            'id': 'send to BB-notify me',
-            'target': 'notify me',
-            'source': 'send to BB'
-          }
-        }
-    ]
+            for edge in edges:
+                edges_dag_vis.append({
+                  'group': 'edges',
+                  'data': {
+                    'id': str(edge['start']) + '_to_' + str(edge['finish']),
+                    'target': str(edge['finish']),
+                    'source': str(edge['start'])
+                    }
+                })
 
+    DAG = []
+    DAG.extend(nodes_dag_vis)
+    DAG.extend(edges_dag_vis)
     data = {
         'DAG': DAG
     }
