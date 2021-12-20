@@ -48,8 +48,6 @@ def daggraph(request):
                 nodes_dag_vis.append(
                     {'group': 'nodes',
                      'data': {'id': str(node),
-                              'name': 'a.com',
-                              "type": 1,
                               }
                      }
                 )

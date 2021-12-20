@@ -9,7 +9,7 @@
     <script src="{% static 'js/cytoscape.min.js' %}"></script>
     <script src="{% static 'js/dagre.js' %}"></script>
     <script src="{% static 'js/cytoscape-dagre.js' %}"></script>
-    <script src="{% static 'js/cytoscape-node-html-label.js' %}"></script>
+    <script src="{% static 'js/cytoscape-node-html-label.min.js' %}"></script>
     <link href="{% static 'css/dagvisualization.css' %}" rel="stylesheet"/>
     <script>
         window.addEventListener('DOMContentLoaded', function () {
@@ -20,7 +20,7 @@
                     {
                         selector: 'node',
                         style: {
-                            label: 'data(id)',
+                            label: '',
                             'font-size': 10
                         }
                     },
@@ -36,15 +36,17 @@
                 layout: {
                     name: 'dagre',
                     rankDir: 'LR',
-                    nodeDimensionsIncludeLabels: true
+                    nodeDimensionsIncludeLabels: false
                 }
             });
             cy.nodeHtmlLabel(
                 [
                     {
                         query: 'node',
+                        valign: "top",
+                        valignBox: "top",
                         tpl: function(data){
-                        return '<p class="line1">line 1</p><p class="line1">line 2</p>'}
+                        return '<a href="{% url 'taskInfo' %}/'+data.id+'/">'+data.id+'</a>'}
                     }
                 ]
             );
