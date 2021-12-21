@@ -67,7 +67,7 @@ def getWorkFlowProgressItemized(query_params=None):
 
     sql = f"""
     SELECT r.REQUEST_ID, r.NAME as r_NAME, r.STATUS as r_STATUS, r.CREATED_AT as r_CREATED_AT, r.CREATED_AT as r_CREATED_AT, c.total_files, 
-    c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status FROM {DB_SCHEMA_IDDS}.requests r LEFT JOIN {DB_SCHEMA_IDDS}.collections c ON r.REQUEST_ID=c.REQUEST_ID
+    c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status, r.USERNAME FROM {DB_SCHEMA_IDDS}.requests r LEFT JOIN {DB_SCHEMA_IDDS}.collections c ON r.REQUEST_ID=c.REQUEST_ID
     LEFT JOIN {DB_SCHEMA_IDDS}.transforms t ON t.transform_id = c.transform_id 
     LEFT JOIN {DB_SCHEMA_IDDS}.processings p on p.transform_id=t.transform_id
     where c.relation_type=0 and {condition} order by r.request_id desc

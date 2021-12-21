@@ -29,6 +29,7 @@
         <table id="requests_table" class="display data-table" >
          <thead>
              <th>Request ID</th>
+             <th>Username</th>
              <th>Request Status</th>
              <th>WorkFlow Name</th>
              <th>Created At</th>
@@ -65,7 +66,8 @@ var requests_table = $('#requests_table').DataTable({
     scrollX: true,
     order: [[0, "desc"]],
     columns: [
-        { data: "request_id", title: "request_id", className: "num" },
+        { data: "request_id", title: "request id", className: "num" },
+        { data: "user", title: "Username" },
         { data: "r_status", title: "workflow status" },
         { data: "r_name", title: "workflow name",
             render: function(data, type, row, meta) {

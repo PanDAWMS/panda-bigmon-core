@@ -18,7 +18,9 @@ subtitleValue = SubstitleValue()
 def get_workflow_progress_data(request):
     #initRequest(request)
     workflows_items = getWorkFlowProgressItemized()
-    workflows_pd = pd.DataFrame(workflows_items).astype({"WORKLOAD_ID":str}).astype({"R_CREATED_AT":str}).groupby(['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME']).agg(
+    workflows_items = pd.DataFrame(workflows_items)
+    workflows_items.USERNAME.fillna(value='', inplace=True)
+    workflows_pd = workflows_items.astype({"WORKLOAD_ID":str}).astype({"R_CREATED_AT":str}).groupby(['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'USERNAME']).agg(
         PROCESSING_FILES_SUM=pd.NamedAgg(column="PROCESSING_FILES", aggfunc="sum"),
         PROCESSED_FILES_SUM=pd.NamedAgg(column="PROCESSED_FILES", aggfunc="sum"),
         TOTAL_FILES=pd.NamedAgg(column="TOTAL_FILES", aggfunc="sum"),
@@ -35,14 +37,15 @@ def get_workflow_progress_data(request):
             "REQUEST_ID":workflow_group[0], "R_STATUS": subtitleValue.substitleValue("requests", "status")[workflow_group[1]], "CREATED_AT":workflow_group[8],"TOTAL_TASKS":0,
             "TASKS_STATUSES":{}, "TASKS_LINKS":{}, "REMAINING_FILES":0,"PROCESSED_FILES":0,"PROCESSING_FILES":0,
             "TOTAL_FILES":0})
-        workflow['TOTAL_TASKS'] += workflow_group[7]
+        workflow['TOTAL_TASKS'] += workflow_group[8]
         workflow['R_NAME'] = workflow_group[3]
+        workflow['USER'] = workflow_group[4]
         processing_status_name = subtitleValue.substitleValue("processings", "status")[workflow_group[2]]
-        workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[7]
-        workflow["TASKS_LINKS"][processing_status_name] = workflow_group[9].replace('.0','')
-        workflow['PROCESSED_FILES'] += workflow_group[5]
-        workflow['PROCESSING_FILES'] += workflow_group[4]
-        workflow['TOTAL_FILES'] += workflow_group[6]
+        workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[8]
+        workflow["TASKS_LINKS"][processing_status_name] = workflow_group[10].replace('.0','')
+        workflow['PROCESSED_FILES'] += workflow_group[6]
+        workflow['PROCESSING_FILES'] += workflow_group[5]
+        workflow['TOTAL_FILES'] += workflow_group[7]
         workflow['REMAINING_FILES'] = workflow['TOTAL_FILES'] - workflow['PROCESSED_FILES']
     workflows = lower_dicts_in_list(list(workflows.values()))
     #return JsonResponse(workflows, encoder=DateEncoder, safe=False)
