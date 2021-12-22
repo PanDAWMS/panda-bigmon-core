@@ -15,22 +15,23 @@ OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 subtitleValue = SubstitleValue()
 
-def get_workflow_progress_data(request):
-    #initRequest(request)
-    workflows_items = getWorkFlowProgressItemized()
+def get_workflow_progress_data(request_params):
+    workflows_items = getWorkFlowProgressItemized(request_params)
     workflows_items = pd.DataFrame(workflows_items)
-    workflows_items.USERNAME.fillna(value='', inplace=True)
-    workflows_pd = workflows_items.astype({"WORKLOAD_ID":str}).astype({"R_CREATED_AT":str}).groupby(['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'USERNAME']).agg(
-        PROCESSING_FILES_SUM=pd.NamedAgg(column="PROCESSING_FILES", aggfunc="sum"),
-        PROCESSED_FILES_SUM=pd.NamedAgg(column="PROCESSED_FILES", aggfunc="sum"),
-        TOTAL_FILES=pd.NamedAgg(column="TOTAL_FILES", aggfunc="sum"),
-        P_STATUS_COUNT=pd.NamedAgg(column="P_STATUS", aggfunc="count"),
-        R_CREATED_AT=pd.NamedAgg(column="R_CREATED_AT", aggfunc="first"),
-        workload_ids=('WORKLOAD_ID', lambda x: '|'.join(x)),
-    ).reset_index()
-    workflows_pd = workflows_pd.astype({"R_STATUS":int, 'P_STATUS':int, "PROCESSING_FILES_SUM": int,
-                                        "PROCESSED_FILES_SUM": int, "TOTAL_FILES": int, "P_STATUS_COUNT": int})
-    workflows_semi_grouped = workflows_pd.values.tolist()
+    workflows_semi_grouped = []
+    if not workflows_items.empty:
+        workflows_items.USERNAME.fillna(value='', inplace=True)
+        workflows_pd = workflows_items.astype({"WORKLOAD_ID":str}).astype({"R_CREATED_AT":str}).groupby(['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'USERNAME']).agg(
+            PROCESSING_FILES_SUM=pd.NamedAgg(column="PROCESSING_FILES", aggfunc="sum"),
+            PROCESSED_FILES_SUM=pd.NamedAgg(column="PROCESSED_FILES", aggfunc="sum"),
+            TOTAL_FILES=pd.NamedAgg(column="TOTAL_FILES", aggfunc="sum"),
+            P_STATUS_COUNT=pd.NamedAgg(column="P_STATUS", aggfunc="count"),
+            R_CREATED_AT=pd.NamedAgg(column="R_CREATED_AT", aggfunc="first"),
+            workload_ids=('WORKLOAD_ID', lambda x: '|'.join(x)),
+        ).reset_index()
+        workflows_pd = workflows_pd.astype({"R_STATUS":int, 'P_STATUS':int, "PROCESSING_FILES_SUM": int,
+                                            "PROCESSED_FILES_SUM": int, "TOTAL_FILES": int, "P_STATUS_COUNT": int})
+        workflows_semi_grouped = workflows_pd.values.tolist()
     workflows = {}
     for workflow_group in workflows_semi_grouped:
         workflow = workflows.setdefault(workflow_group[0], {
@@ -40,6 +41,7 @@ def get_workflow_progress_data(request):
         workflow['TOTAL_TASKS'] += workflow_group[8]
         workflow['R_NAME'] = workflow_group[3]
         workflow['USER'] = workflow_group[4]
+        workflow['CREATED_AT'] = workflow_group[9]
         processing_status_name = subtitleValue.substitleValue("processings", "status")[workflow_group[2]]
         workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[8]
         workflow["TASKS_LINKS"][processing_status_name] = workflow_group[10].replace('.0','')
@@ -55,8 +57,7 @@ def get_workflow_progress_data(request):
 @login_customrequired
 def wfprogress(request):
     initRequest(request)
-    query_params = parse_request(request)
-    iDDSrequests = get_workflow_progress_data(None)
+    iDDSrequests = get_workflow_progress_data(request.session['requestParams'])
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
         return JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)

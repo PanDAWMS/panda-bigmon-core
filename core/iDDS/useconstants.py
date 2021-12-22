@@ -55,7 +55,6 @@ class SubstitleValue:
             for field in fields.keys():
                 self.substitleMap[objName][field] = self.substitleValue(objName, field)
 
-
     def substitleValue(self, objName, field):
         klass = self.getKlassName(objName, field)
         enumMembers = klass.__members__
@@ -63,7 +62,6 @@ class SubstitleValue:
         for member in enumMembers:
             enumMap[enumMembers[member].value] = enumMembers[member].name
         return enumMap
-
 
     def replace(self, objName, objList):
         for objects in objList:
@@ -75,14 +73,9 @@ class SubstitleValue:
                 except:
                     pass
 
-
     def replaceInverseKeys(self, objName, value):
         replacement = {}
         if objName == 'requests':
             for k,v in value.items():
                 replacement[k] = RequestStatus[v].value
         return replacement
-
-
-
-

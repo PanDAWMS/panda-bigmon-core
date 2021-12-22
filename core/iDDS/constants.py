@@ -12,8 +12,7 @@
 Constants.
 """
 
-from enum import Enum
-
+from aenum import Enum
 
 SCOPE_LENGTH = 25
 NAME_LENGTH = 255
@@ -90,6 +89,12 @@ class IDDSEnum(Enum):
                 setattr(impl, key, value)
             return impl
         return d
+
+    @classmethod
+    def _missing_name_(cls, name):
+        for member in cls:
+            if member.name.lower() == name.lower():
+                return member
 
 
 class WorkStatus(IDDSEnum):

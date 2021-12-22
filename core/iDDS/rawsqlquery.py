@@ -55,16 +55,23 @@ from {DB_SCHEMA_IDDS}.requests r
     return rows
 
 
-def getWorkFlowProgressItemized(query_params=None):
-    condition = '(1=1)'
-    sqlpar = {}
-    if query_params and len(query_params) > 0:
-        query_params = subtitleValue.replaceInverseKeys('requests', query_params)
+def prepareSQLQueryParameters(request_params):
+    sqlpar, condition = {}, " (1=1) "
+    query_params_substited = subtitleValue.replaceInverseKeys('requests', request_params)
+    if request_params and len(request_params) > 0:
+        if 'requestid' in request_params:
+            sqlpar['requestid'] = request_params['requestid']
+            condition += 'AND r.REQUEST_ID = :requestid'
+        if 'username' in request_params:
+            sqlpar['USERNAME'] = request_params['username']
+            condition += 'AND r.USERNAME = :username'
+        if 'status' in request_params:
+            sqlpar['status'] = query_params_substited.get('status')
+            condition += 'AND r.STATUS = :status'
+    return sqlpar, condition
 
-        if 'requestid' in query_params:
-            sqlpar['requestid'] = query_params['requestid']
-            condition = 'r.REQUEST_ID = :requestid'
-
+def getWorkFlowProgressItemized(request_params):
+    sqlpar, condition = prepareSQLQueryParameters(request_params)
     sql = f"""
     SELECT r.REQUEST_ID, r.NAME as r_NAME, r.STATUS as r_STATUS, r.CREATED_AT as r_CREATED_AT, r.CREATED_AT as r_CREATED_AT, c.total_files, 
     c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status, r.USERNAME FROM {DB_SCHEMA_IDDS}.requests r LEFT JOIN {DB_SCHEMA_IDDS}.collections c ON r.REQUEST_ID=c.REQUEST_ID
