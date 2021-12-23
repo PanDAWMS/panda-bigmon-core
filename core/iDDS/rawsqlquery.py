@@ -4,6 +4,7 @@ from core.iDDS.useconstants import SubstitleValue
 from core.settings.config import DB_SCHEMA_IDDS
 subtitleValue = SubstitleValue()
 
+
 def getTransforms(requestid):
     sqlpar = {"requestid": requestid}
     sql = """
@@ -57,18 +58,27 @@ from {DB_SCHEMA_IDDS}.requests r
 
 def prepareSQLQueryParameters(request_params):
     sqlpar, condition = {}, " (1=1) "
-    query_params_substited = subtitleValue.replaceInverseKeys('requests', request_params)
+    request_params = {key: value for key,value in request_params.items() if key in ['requestid', 'username', 'status']}
+    query_fields_for_subst = ['status']
+    dict_for_subst = {key:request_params.get(key) for key in query_fields_for_subst if key in request_params}
+    query_params_substituted = subtitleValue.replaceInverseKeys('requests', dict_for_subst)
+    for key in query_params_substituted.keys():
+        request_params[key] = query_params_substituted[key]
     if request_params and len(request_params) > 0:
         if 'requestid' in request_params:
             sqlpar['requestid'] = request_params['requestid']
             condition += 'AND r.REQUEST_ID = :requestid'
         if 'username' in request_params:
-            sqlpar['USERNAME'] = request_params['username']
-            condition += 'AND r.USERNAME = :username'
+            if request_params['username'] == 'Not set':
+                condition += 'AND r.USERNAME is NULL '
+            else:
+                sqlpar['username'] = request_params['username'].lower()
+                condition += 'AND lower(r.USERNAME) = :username'
         if 'status' in request_params:
-            sqlpar['status'] = query_params_substited.get('status')
+            sqlpar['status'] = query_params_substituted.get('status')
             condition += 'AND r.STATUS = :status'
     return sqlpar, condition
+
 
 def getWorkFlowProgressItemized(request_params):
     sqlpar, condition = prepareSQLQueryParameters(request_params)

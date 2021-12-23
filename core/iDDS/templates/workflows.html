@@ -21,6 +21,21 @@
 {% endblock %}
 
 {% block body %}
+
+    <table>
+    <tr class='tablesection'><th colspan=20><a name="tasks"></a> Workflows attribute summary</th></tr>
+    {% for attribute, occurences in iDDSsummary.items %}
+    <tr><th> {{ attribute }} ({{ occurences|length }}) </th><td>
+    <div class="comment more">
+    {% for property, count  in occurences.items %}
+    <span {% if attribute == 'status' %} class='{{property}} item' {% else %} class="item" {% endif %}> {{ property }} </span>
+        <a href="{% url 'workflowprogressitems' %}?{{attribute}}={{property}}">({{ count }})</a>
+    {% endfor %}
+    </div></td></tr>
+    {% endfor %}
+    </table>
+
+
     <div class="card bp-container-simple">
       <div class="card-divider">
         <p>Requests:</p>
@@ -67,7 +82,7 @@ var requests_table = $('#requests_table').DataTable({
     order: [[0, "desc"]],
     columns: [
         { data: "request_id", title: "request id", className: "num" },
-        { data: "user", title: "username" },
+        { data: "username", title: "username" },
         { data: "r_status", title: "workflow status" },
         { data: "r_name", title: "workflow name",
             render: function(data, type, row, meta) {
@@ -101,23 +116,8 @@ var requests_table = $('#requests_table').DataTable({
         },
 
         { data: "remaining_files", title: "remaining_files" },
-        { data: "processed_files", title: "processed_files" },
+        { data: "processed_files", title: "released_files" },
         { data: "total_files", title: "total_files" },
-
-        {#{ data: "scope", title: "scope",},#}
-        {#{ data: "name", title: "name",#}
-        {#   render: function(data, type, row, meta) {#}
-        {#        return '<a target=blank href = "{% url "taskInfo" %}'+row['workload_id']+'">'+data+'</a>';#}
-        {#   }#}
-        {#},#}
-        {#{ data: "status", title: "status" },#}
-        {#{ data: "transform_status", title: "transform_status" },#}
-        {#{ data: "in_status", title: "in_status" },#}
-        {#{ data: "in_total_files", title: "in_total_files" },#}
-        {#{ data: "in_processed_files", title: "in_processed_files" },#}
-        {#{ data: "out_status", title: "out_status" },#}
-        {#{ data: "out_total_files", title: "out_total_files" },#}
-        {#{ data: "out_processed_files", title: "out_processed_files" },#}
     ],
     data: preprocData(iDDSrequests),
     selectable: true,

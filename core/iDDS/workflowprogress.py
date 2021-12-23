@@ -15,6 +15,19 @@ OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 subtitleValue = SubstitleValue()
 
+def prepare_requests_summary(workflows):
+    summary = {'status': {}, 'username': {}}
+    """
+    completion
+    age
+    """
+    for workflow in workflows:
+        summary['status'][workflow['r_status']] = summary['status'].get(workflow['r_status'], 0) + 1
+        if workflow['username'] == '':
+            workflow['username'] = "Not set"
+        summary['username'][workflow['username']] = summary['username'].get(workflow['username'], 0) + 1
+    return summary
+
 def get_workflow_progress_data(request_params):
     workflows_items = getWorkFlowProgressItemized(request_params)
     workflows_items = pd.DataFrame(workflows_items)
@@ -40,7 +53,7 @@ def get_workflow_progress_data(request_params):
             "TOTAL_FILES":0})
         workflow['TOTAL_TASKS'] += workflow_group[8]
         workflow['R_NAME'] = workflow_group[3]
-        workflow['USER'] = workflow_group[4]
+        workflow['USERNAME'] = workflow_group[4]
         workflow['CREATED_AT'] = workflow_group[9]
         processing_status_name = subtitleValue.substitleValue("processings", "status")[workflow_group[2]]
         workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[8]
@@ -58,12 +71,14 @@ def get_workflow_progress_data(request_params):
 def wfprogress(request):
     initRequest(request)
     iDDSrequests = get_workflow_progress_data(request.session['requestParams'])
+    iDDSsummary = prepare_requests_summary(iDDSrequests)
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
         'json' in request.session['requestParams']):
         return JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)
 
     data = {
         'iDDSrequests':iDDSrequests,
+        'iDDSsummary':iDDSsummary,
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }

@@ -73,7 +73,7 @@ def collections(request):
     return JsonResponse({'data': iDDScollections}, encoder=DateEncoder, safe=False)
 
 
-def iddsсontents(request):
+def iddscontents(request):
     initRequest(request)
     query = Q()
     if 'coll_id' in request.session['requestParams']:
