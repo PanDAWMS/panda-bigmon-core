@@ -50,13 +50,16 @@ def get_workflow_progress_data(request_params):
         workflow = workflows.setdefault(workflow_group[0], {
             "REQUEST_ID":workflow_group[0], "R_STATUS": subtitleValue.substitleValue("requests", "status")[workflow_group[1]], "CREATED_AT":workflow_group[8],"TOTAL_TASKS":0,
             "TASKS_STATUSES":{}, "TASKS_LINKS":{}, "REMAINING_FILES":0,"PROCESSED_FILES":0,"PROCESSING_FILES":0,
-            "TOTAL_FILES":0})
+            "TOTAL_FILES":0, "TASKS_LINKS_ALL":''})
         workflow['TOTAL_TASKS'] += workflow_group[8]
         workflow['R_NAME'] = workflow_group[3]
         workflow['USERNAME'] = workflow_group[4]
         workflow['CREATED_AT'] = workflow_group[9]
         processing_status_name = subtitleValue.substitleValue("processings", "status")[workflow_group[2]]
         workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[8]
+        workflow["TASKS_LINKS_ALL"] += ('|'+ workflow_group[10].replace('.0','')) if \
+            len(workflow["TASKS_LINKS_ALL"]) > 0 else \
+            workflow_group[10].replace('.0','')
         workflow["TASKS_LINKS"][processing_status_name] = workflow_group[10].replace('.0','')
         workflow['PROCESSED_FILES'] += workflow_group[6]
         workflow['PROCESSING_FILES'] += workflow_group[5]

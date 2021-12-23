@@ -86,7 +86,7 @@ var requests_table = $('#requests_table').DataTable({
         { data: "r_status", title: "workflow status" },
         { data: "r_name", title: "workflow name",
             render: function(data, type, row, meta) {
-                retVal = '<a target=blank href = "{% url "taskList" %}?taskname='+row['r_name']+'*">'+row['r_name']+'</a>'
+                retVal = '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links_all']+'">'+row['r_name']+'</a>'
                 return retVal;
             }
         },
