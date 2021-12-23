@@ -65,9 +65,8 @@ def prepareSQLQueryParameters(request_params):
     dict_for_subst = {key:request_params.get(key) for key in query_fields_for_subst if key in request_params}
     query_params_substituted = subtitleValue.replaceInverseKeys('requests', dict_for_subst)
 
-
     sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*90)).strftime(defaultDatetimeFormat)
-    condition += 'AND r.CREATED_AT > :starttime'
+    condition += 'AND r.CREATED_AT > :starttime '
 
     for key in query_params_substituted.keys():
         request_params[key] = query_params_substituted[key]
