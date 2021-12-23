@@ -1,7 +1,9 @@
+from datetime import datetime, timedelta
 from django.db import connection
 from core.libs.exlib import dictfetchall
 from core.iDDS.useconstants import SubstitleValue
 from core.settings.config import DB_SCHEMA_IDDS
+from core.settings.local import defaultDatetimeFormat
 subtitleValue = SubstitleValue()
 
 
@@ -57,11 +59,16 @@ from {DB_SCHEMA_IDDS}.requests r
 
 
 def prepareSQLQueryParameters(request_params):
-    sqlpar, condition = {}, " (1=1) "
+    sqlpar, condition = {}, " (1=1)  "
     request_params = {key: value for key,value in request_params.items() if key in ['requestid', 'username', 'status']}
     query_fields_for_subst = ['status']
     dict_for_subst = {key:request_params.get(key) for key in query_fields_for_subst if key in request_params}
     query_params_substituted = subtitleValue.replaceInverseKeys('requests', dict_for_subst)
+
+
+    sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*90)).strftime(defaultDatetimeFormat)
+    condition += 'AND r.CREATED_AT > :starttime'
+
     for key in query_params_substituted.keys():
         request_params[key] = query_params_substituted[key]
     if request_params and len(request_params) > 0:
