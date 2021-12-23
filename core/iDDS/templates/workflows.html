@@ -46,6 +46,7 @@
              <th>Request ID</th>
              <th>Username</th>
              <th>Request Status</th>
+             <th>Plot</th>
              <th>WorkFlow Name</th>
              <th>Created At</th>
              <th>Total tasks</th>
@@ -84,10 +85,14 @@ var requests_table = $('#requests_table').DataTable({
         { data: "request_id", title: "request id", className: "num" },
         { data: "username", title: "username" },
         { data: "r_status", title: "workflow status" },
+        { data: "request_id", title: "graph",
+            render: function(data, type, row, meta) {
+                return '<a target=blank href = "{% url "daggraph" %}?requestid='+row['request_id']+'">'+'plot'+'</a>';
+            }
+        },
         { data: "r_name", title: "workflow name",
             render: function(data, type, row, meta) {
-                retVal = '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links_all']+'">'+row['r_name']+'</a>'
-                return retVal;
+                return '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links_all']+'">'+row['r_name']+'</a>';
             }
         },
         { data: "created_at", title: "created on (UTC)" },
