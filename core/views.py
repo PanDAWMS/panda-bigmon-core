@@ -4539,7 +4539,7 @@ def wnInfo(request, site, wnname='all'):
             wn = wnfull
             slot = '1'
         if wn.startswith('aipanda'):
-            wn = 'unknown'
+            wn = 'Unknown'
             slot = ''
         if jobstatus == 'failed':
             if not wn in wnPlotFailed: wnPlotFailed[wn] = 0
