@@ -33,12 +33,12 @@ td {
     font-size: 0.875rem;
 }
 
-th.num {
+th.num, td.num {
   text-align: right;
 }
 
-td.num {
-  text-align: right;
+th.mid, td.mid {
+  text-align: center;
 }
 
 td.wrap{
@@ -358,7 +358,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   width: 100%;
   background-color: #fefefe;
   border: 1px solid #5e789a;
-  border-collapse: separate;
+  border-collapse: collapse;
   border-spacing: 0;
 }
   .bp-table thead {
@@ -387,29 +387,57 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     font-weight: bold;
     border: none;
   }
-  .bp-table tbody td {
+  .bp-table tbody td, .bp-table tbody th {
     border: none;
     padding: 0.3rem 0.7rem;
-  }
-  .bp-table tbody th {
-    border: none;
-    background-color: #fefefe;
   }
   .bp-table tbody td a {
     color: #355681;
     font-weight: bold;
   }
-  .bp-table tbody td a:hover {
+  .bp-table tbody th a:hover, .bp-table tbody td a:hover {
     color: #272727;
   }
-  .bp-table tbody tr:nth-child(even):hover td{
-    background-color: #d4dfed !important;
+  .bp-table tbody tr:nth-child(even):hover td {
+    /*background-color: #d4dfed !important;*/
+    filter: brightness(90%) !important;
   }
   .bp-table tbody tr:nth-child(odd):hover td {
-    background-color: #d4dfed !important;
+    /*background-color: #d4dfed !important;*/
+    filter: brightness(90%) !important;
   }
   .bp-table tbody tr:last-child td {
     border-bottom: none !important;
+  }
+  .bp-table tbody tr > th.nowrap, .bp-table tbody tr > th.nowrap > a,
+    .bp-table tbody tr > td.nowrap, .bp-table tbody tr > td.nowrap > a {
+      white-space: nowrap;
+  }
+
+.bp-table.blank {
+  border: none;
+}
+  .bp-table.blank thead, .bp-table.blank tbody,.bp-table.blank tfoot {
+    border: none;
+  }
+  .bp-table.blank thead th {
+    background-color: #e6e6e6;
+    color: #272727;
+    border: 1px solid #fefefe;
+  }
+  .bp-table.blank thead th > a {
+    color: #272727;
+  }
+  .bp-table.blank thead th > a:hover {
+    color: #fefefe;
+  }
+  .bp-table.blank tbody th {
+    background-color: #e6e6e6;
+    color: #272727;
+    border: 1px solid #fefefe;
+  }
+  .bp-table.blank tbody th > a{
+    color: #272727;
   }
 
 
@@ -506,7 +534,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     padding: 0.25rem 1.2rem 0.25rem 0.35rem;
   }
   table.data-table tfoot > tr > th {
-    padding: 0.25rem 1.2rem 0.25rem 0.35rem;
+    padding: 0.25rem 0.35rem 0.25rem 0.35rem;
   }
   .data-table tfoot th.num {
     padding: 0.25rem 0.35rem 0.25rem 1.5rem;
@@ -727,11 +755,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     margin: 0 0 0.7rem 0;
 }
 
-.fresh-table thead {
-    border: none;
-}
-
-.fresh-table tbody {
+.fresh-table thead, .fresh-table tbody, .fresh-table tfoot {
     border: none;
 }
 
@@ -799,7 +823,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .table-scroll {
   margin: 0 0 0.7rem 0;
 }
-.table-scroll table.fresh-table {
+.table-scroll table {
   width: 100%;
   margin: 0;
 }

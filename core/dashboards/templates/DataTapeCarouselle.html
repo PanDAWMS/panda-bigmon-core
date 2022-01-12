@@ -2,8 +2,8 @@
 {% load humanize %}
 {% load static %}
 
-{% block page_title %}Data Carousel DashBoard{% endblock %}
-{% block subtitle %}Data Carousel DashBoard {{ viewParams.selection|safe }} {% endblock %}
+{% block page_title %}Data Carousel Dashboard{% endblock %}
+{% block subtitle %}Data Carousel Dashboard {{ viewParams.selection|safe }} {% endblock %}
 
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
@@ -13,139 +13,124 @@
 {% endblock %}
 {% block js_head_page_library %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
-
-  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 {% endblock %}
 
 {% block body %}
-    <div class="large-12 columns" data-ng-controller="dataviewctrl">
-     <div class="row lim-width">
-        <div id="chartACTCH_div" class="column column-block panel" ></div>
-         <div id="selectionpane" class="column column-block medium-4" style="margin-top: 60px">
-            <select id="timewindow" ng-model="selectedTime" ng-options="timeitem.value as timeitem.name for timeitem in selecttime" ng-change="updateByPredefinedTime();">
-               <option value="" disabled>Select Time Window</option>
-            </select>
-            <table class="table">
-           		<tr>
-                <td><label>From:<input type="date" class="ntag-text" ng-model="dateFrom" id="ntag_from" min="2019-06-01" ng-change="updateTimeWindow();"></label>
-                <td><label>To:<input type="date" class="ntag-text" ng-model="dateTo" id="ntag_to" min="2019-06-01" ng-change="updateTimeWindow();"></label>
-                <!-- <td><a ng-click="gog();" class="button secondary">Set</a> -->
-           		</tr>
-            </table>
+  <div data-ng-controller="dataviewctrl">
+    <div class="row">
+      <div id="chartACTCH_div" class="columns medium-8" ><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="selectionpane" class="columns medium-4">
+          <select id="timewindow" ng-model="selectedTime" ng-options="timeitem.value as timeitem.name for timeitem in selecttime" ng-change="updateByPredefinedTime();">
+             <option value="" disabled>Select Time Window</option>
+          </select>
+          <table class="table">
+            <tr>
+              <td><label>From:<input type="date" class="ntag-text" ng-model="dateFrom" id="ntag_from" min="2019-06-01" ng-change="updateTimeWindow();"></label>
+              <td><label>To:<input type="date" class="ntag-text" ng-model="dateTo" id="ntag_to" min="2019-06-01" ng-change="updateTimeWindow();"></label>
+              <!-- <td><a ng-click="gog();" class="button secondary">Set</a> -->
+            </tr>
+          </table>
 
-            <b>Campaign:</b>
-            <select id="campaign" ng-model="selectedCampaign" ng-options="campitem.value as campitem.name for campitem in selectcampaign" multiple>
-                <option value="" selected="selected">All</option>
-            </select>
+          <b>Campaign:</b>
+          <select id="campaign" ng-model="selectedCampaign" ng-options="campitem.value as campitem.name for campitem in selectcampaign" multiple>
+              <option value="" selected="selected">All</option>
+          </select>
 
-            <b>Source:</b>
-            <select id="source" ng-model="selectedSource" ng-options="source.value as source.name for source in selectsource" multiple>
-               <option value="" selected="selected">All</option>
-            </select>
-            <a ng-click="gog();" class="button primary">Update</a>
-         </div>
-     </div>
-
-
-
-     <div class="row lim-width">
-         <div id="chartETCH_div" class="column column-block panel" ></div>
-         <div id="chartPRCH_div" class="column column-block panel" ></div>
-     </div>
-     <div class="row lim-width">
-        <div class="column small-offset-7 medium-centered">
-            <table id="transfersmatrix" class="unstriped errorsscat floatThead">
-              <thead>
-                <tr>
-                    <th>Source</th>
-                    <th>Progress plot</th>
-                    <th>DDM Dash</th>
-                    <th>Datasets Queuing</th>
-                    <th>Datasets Active</th>
-                    <th>Datasets Done <br>(+ 90% readiness)</th>
-                    <th>Files Remaining</th>
-                    <th>Files Queuing</th>
-                    <th>Files Done</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr ng-repeat="x in progresstablearr" class="low-stat">
-                    <th class="sm_ok_fill"> <a href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeForQuery() $}">{$ x.source $}</a>
-                    </th>
-                    <td class="sm_ok_light_fill">
-                        <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&{$ getTimeForQuery() $}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
-                    </td>
-                    <td class="sm_ok_light_fill">
-                        <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}">--></a>
-                    </td>
-                    <td class="sm_ok_light_fill">
-                        {$ x.ds_queued $}
-                    </td>
-                    <td class="sm_ok_light_fill">
-                        {$ x.ds_active $}
-                    </td>
-                    <td class="sm_ok_light_fill">
-                        {$ x.ds_done $} (+{$ x.ds_90pdone $})
-                    </td>
-                    <td class="sm_ok_light_fill">
-                        {$ x.files_rem $}
-                    </td>
-                    <td class="sm_ok_light_fill">
-                        {$ x.files_q $}
-                    </td>
-                    <td class="sm_ok_light_fill">
-                        {$ x.files_done $}
-                    </td>
-                </tr>
-              </tbody>
-            </table>
-        </div>
-     </div>
-     <div class="row lim-width">
-         <div class="panel-body">
-
-             <table class="data-table" id="stagingdatasetstable">
-                 <thead>
-                 <tr>
-                     <th>Campaign</th>
-                     <th>Request ID</th>
-                     <th>TaskID</th>
-                     <th>Status</th>
-                     <th>P-type</th>
-                     <th>Total Files</th>
-                     <th>Staged Files</th>
-                     <th>Progress (%)</th>
-                     <th>Source RSE</th>
-                     <th>Time Elapsed</th>
-                     <th>Started At</th>
-                     <th>Rucio Rule</th>
-                     <th>Update time</th>
-                 </tr>
-                 </thead>
-                 <tfoot>
-                 <tr>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                     <th></th>
-                 </tr>
-                 </tfoot>
-
-             </table>
-         </div>
-     </div>
+          <b>Source:</b>
+          <select id="source" ng-model="selectedSource" ng-options="source.value as source.name for source in selectsource" multiple>
+             <option value="" selected="selected">All</option>
+          </select>
+          <a ng-click="gog();" class="button primary">Update</a>
+      </div>
     </div>
+
+    <div class="row">
+       <div id="chartETCH_div" class="columns medium-8" ><p ng-bind-html="loading_placeholder"></p></div>
+       <div id="chartPRCH_div" class="columns medium-4" ><p ng-bind-html="loading_placeholder"></p></div>
+    </div>
+
+    <div class="row">
+      <div id="chartTAPECH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+      <div class="columns medium-8 table-scroll">
+        <p ng-bind-html="loading_placeholder"></p>
+        <table id="transfersmatrix" class="bp-table blank unstriped ng-hide" ng-hide="is_hidden" >
+          <thead>
+            <tr>
+                <th>Source</th>
+                <th class="mid">Progress plot</th>
+                <th class="mid">DDM Dash</th>
+                <th class="num">Datasets Queuing</th>
+                <th class="num">Datasets Active</th>
+                <th class="num">Datasets Done <br>(+ 90% readiness)</th>
+                <th class="num">Files Remaining</th>
+                <th class="num">Files Queuing</th>
+                <th class="num">Files Done</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="x in progresstablearr" class="low-stat">
+                <th class="nowrap"> <a class="nowrap" href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeForQuery() $}">{$ x.source $}</a>
+                </th>
+                <td class="mid">
+                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&{$ getTimeForQuery() $}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
+                </td>
+                <td class="mid">
+                    <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}">--></a>
+                </td>
+                <td class="queued_fill num">
+                    {$ x.ds_queued $}
+                </td>
+                <td class="staging_fill num">
+                    {$ x.ds_active $}
+                </td>
+                <td class="done_fill num">
+                    {$ x.ds_done $} (+{$ x.ds_90pdone $})
+                </td>
+                <td class="num">
+                    {$ x.files_rem $}
+                </td>
+                <td class="num">
+                    {$ x.files_q $}
+                </td>
+                <td class="num">
+                    {$ x.files_done $}
+                </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card bp-container-simple secondary" id="container_sds">
+      <div class="card-divider"><p>Staging datasets:</p></div>
+      <div class="card-section">
+        <p ng-bind-html="loading_placeholder"></p>
+        <table class="data-table nowrap" id="stagingdatasetstable">
+         <thead></thead>
+         <tfoot>
+          <tr>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+          </tr>
+         </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
 
 {% endblock %}
 
@@ -154,256 +139,281 @@
   <script type="text/javascript" src='https://www.google.com/jsapi?autoload={"modules":[{"name":"visualization","version":"1.1","packages":["sankey","corechart"]}]}'></script>
   <script type="text/javascript">
   google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
-    app.service('Service', ['$http', service])
-       .controller('dataviewctrl', ['$scope','Service', controller]);
 
-    function service($http, $scope){
-        var get = function(requestparams) {
-         return $http({
-          method: 'GET',
-          url: '{% url 'getDTCSubmissionHist' %}'+requestparams,
-          cache: false
-        })};
-        return {
-          get: get
+  var detailsDataTable;
+  var chartACTCH, chartETCH, chartPRCH, chartTAPECH, dataACTCH, dataETCH, dataPRCH, dataTAPECH;
+  var optionsACTCH = {
+    title: 'Activation time',
+    height: 500,
+    chartArea: {width: '100%', height: '70%', left: 50,},
+    legend: { position: 'none' },
+    colors: ['#2174bb'],
+    vAxis: {title: 'Number of datasets'},
+    hAxis: {title: 'Submission time', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
+    explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+  };
+
+  var optionsETCH = {
+    title: 'Elapsed time (h))',
+    height: 400,
+    chartArea: {width: '100%', height: '70%', left: 50, },
+    vAxis: {title: 'Number of datasets'},
+    hAxis: {title: 'Time (h)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category' },
+    explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+    colors: ['#934fff', '#207f20', '#2174bb'],
+    legend: { position: "top" },
+    isStacked: true,
+  };
+
+  var optionsPRCH = {
+    title: 'Progress of selected stagings (%)',
+    height: 400,
+    chartArea: {width: '100%', height: '70%', left: 50,},
+    legend: {position: 'none'},
+    colors: ['#2174bb'],
+    vAxis: {title: 'Number of datasets'},
+    hAxis: {title: 'Progress (%)', titleTextStyle: {color: 'black'}, textStyle: {fontSize:11}, type: 'category'},
+    explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+  };
+
+  var optionsTAPECH = {
+    title: 'Staging datasets per source RSE',
+    height: 400,
+    isStacked: true,
+    bar: { groupWidth: '75%' },
+    chartArea: {width: '100%', height: '70%', left: 130, },
+    legend: { position: 'top' },
+    vAxis: {textStyle: {fontSize:11} },
+    hAxis: {title: 'Number of datasets', titleTextStyle: {color: 'black'},  textStyle: {fontSize:11}},
+    colors: ['#2174bb', '#934fff', '#207f20'],
+    explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+  };
+
+  app.service('Service', ['$http', service])
+     .controller('dataviewctrl', ['$scope', '$sce','Service', controller]);
+
+  function service($http, $scope){
+    var get = function(requestparams) {
+      return $http({
+        method: 'GET',
+        url: '{% url 'getDTCSubmissionHist' %}'+requestparams,
+        cache: false
+      })};
+    return {
+      get: get
+    }
+  }
+
+  function controller($scope, $sce, Service){
+    $scope.is_hidden = true;
+    $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
+    $scope.gog = function() {
+      var request = "";
+
+      if ((typeof $scope.selectedTime === 'string' || $scope.selectedTime instanceof String) && ($scope.selectedTime.length > 0))  {
+          if ($scope.selectedTime == "hours4320") request = '?hours=4320';
+          if ($scope.selectedTime == "hours2160") request = '?hours=2160';
+          if ($scope.selectedTime == "hours720") request = '?hours=720';
+          if ($scope.selectedTime == "hours168") request = '?hours=168';
+          if ($scope.selectedTime == "hours24") request = '?hours=24';
+          if ($scope.selectedTime == "hours12") request = '?hours=12';
+          if ($scope.selectedTime == "hours1") request = '?hours=1';
+      } else {
+          request = "?"+$scope.getTimeForQuery();
+      }
+
+      if (request.length == 0) request = "?"; else request += "&";
+      if ($scope.selectedCampaign) request += ('campaign=' + $scope.selectedCampaign);
+      if (request.length == 0) request = "?"; else request += "&";
+      if ($scope.selectedSource) request += ('source=' + $scope.selectedSource);
+
+      Service.get(request).then($scope.processResponce);
+    };
+
+    $scope.getTimeHours = function(){
+       if ($scope.selectedTime == "hours4320") return '4320';
+       if ($scope.selectedTime == "hours2160") return '2160';
+       if ($scope.selectedTime == "hours720") return '720';
+       if ($scope.selectedTime == "hours168") return '168';
+       if ($scope.selectedTime == "hours24") return '24';
+       if ($scope.selectedTime == "hours12") return '12';
+       if ($scope.selectedTime == "hours1") return '1';
+    };
+
+    $scope.updateByPredefinedTime = function(){
+        selHours = $scope.getTimeHours();
+        if (selHours >= 24) {
+            $scope.dateTo = new Date();
+            $scope.dateFrom = new Date();
+            $scope.dateFrom.setHours($scope.dateFrom.getHours() - selHours);
+
+        } else {
+            $scope.dateFrom ='';
+            $scope.dateTo ='';
         }
-    }
+        Service.get('?hours='+selHours).then($scope.processResponce);
+    };
 
-    function controller($scope, Service){
+    formatDate = function(date){
+        date = new Date(date)
+        return  date.getFullYear() + '-' + ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1)))  + '-' +
+            ((date.getDate() > 9) ? (date.getDate()) : ('0' + (date.getDate()))) ;
+    };
 
-        $scope.gog = function(){
-            var request = "";
+    $scope.updateTimeWindow = function(){
+        $scope.selectedTime = "";
+        if ($scope.dateFrom && $scope.dateTo) {
+            Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);
+        }
+    };
 
-            if ((typeof $scope.selectedTime === 'string' || $scope.selectedTime instanceof String) && ($scope.selectedTime.length > 0))  {
-                if ($scope.selectedTime == "hours4320") request = '?hours=4320';
-                if ($scope.selectedTime == "hours2160") request = '?hours=2160';
-                if ($scope.selectedTime == "hours720") request = '?hours=720';
-                if ($scope.selectedTime == "hours168") request = '?hours=168';
-                if ($scope.selectedTime == "hours24") request = '?hours=24';
-                if ($scope.selectedTime == "hours12") request = '?hours=12';
-                if ($scope.selectedTime == "hours1") request = '?hours=1';
-            } else {
-                request = "?"+$scope.getTimeForQuery();
+    $scope.getTimeForQuery = function(forGrafana = false){
+        if ($scope.getTimeHours()) {
+            if (forGrafana)
+                return 'from=now-'+ $scope.getTimeHours()+'h&to=now';
+            else
+                return 'hours=' + $scope.getTimeHours();
+        }
+        else {
+            if (forGrafana) {
+                dateFrom = new Date($scope.dateFrom);
+                if (!$scope.dateTo) $scope.dateTo = new Date();
+                dateTo = new Date($scope.dateTo);
+                return 'from=' + dateFrom.getTime() + '&to=' + $scope.dateTo.getTime();
             }
+            else
+                return 'date_from=' + formatDate($scope.dateFrom) + '&date_to=' + formatDate($scope.dateTo);
+        }
+    };
 
-            if (request.length == 0) request = "?"; else request += "&";
-            if ($scope.selectedCampaign) request += ('campaign=' + $scope.selectedCampaign);
-            if (request.length == 0) request = "?"; else request += "&";
-            if ($scope.selectedSource) request += ('source=' + $scope.selectedSource);
+    $scope.processResponce = function(response) {
+      $scope.is_hidden = false;
+      $scope.loading_placeholder = "";
 
-            Service.get(request).then($scope.processResponce);
-        };
+      response.data.submittime = response.data.submittime.map(function (row) {
+         return [
+         new Date(row[0]),
+                  row[1]
+            ];
+      });
 
-        $scope.getTimeHours = function(){
-           if ($scope.selectedTime == "hours4320") return '4320';
-           if ($scope.selectedTime == "hours2160") return '2160';
-           if ($scope.selectedTime == "hours720") return '720';
-           if ($scope.selectedTime == "hours168") return '168';
-           if ($scope.selectedTime == "hours24") return '24';
-           if ($scope.selectedTime == "hours12") return '12';
-           if ($scope.selectedTime == "hours1") return '1';
-        };
+      chartACTCH = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
+      chartETCH = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
+      chartPRCH = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
+      chartTAPECH = new google.visualization.BarChart(document.getElementById('chartTAPECH_div'));
 
-        $scope.updateByPredefinedTime = function(){
-            selHours = $scope.getTimeHours();
-            if (selHours >= 24) {
-                $scope.dateTo = new Date();
-                $scope.dateFrom = new Date()
-                $scope.dateFrom.setHours($scope.dateFrom.getHours() - selHours);
+      dataACTCH = google.visualization.arrayToDataTable(response.data.submittime);
+      chartACTCH.draw(dataACTCH, optionsACTCH);
 
-            } else {
-                $scope.dateFrom ='';
-                $scope.dateTo ='';
-            }
-            Service.get('?hours='+selHours).then($scope.processResponce);
-        };
+      dataETCH = google.visualization.arrayToDataTable(response.data.epltime);
+      chartETCH.draw(dataETCH, optionsETCH);
 
-        formatDate = function(date){
-            date = new Date(date)
-            return  date.getFullYear() + '-' + ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1)))  + '-' +
-                ((date.getDate() > 9) ? (date.getDate()) : ('0' + (date.getDate()))) ;
-        };
+      dataPRCH = google.visualization.arrayToDataTable(response.data.progress);
+      chartPRCH.draw(dataPRCH, optionsPRCH);
 
-        $scope.updateTimeWindow = function(){
-            $scope.selectedTime = "";
-            if ($scope.dateFrom && $scope.dateTo) {
-                Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);
-            }
-        };
+      $scope.progresstablearr = response.data.progresstable;
+      $scope.reqpertape = [['Source', 'Queued', 'Staging', 'Done']];
+      $scope.progresstablearr.forEach(row => {
+        $scope.reqpertape.push([row['source'], row['ds_queued'], row['ds_active'], row['ds_done']])
+      });
 
-        $scope.getTimeForQuery = function(forGrafana = false){
-            if ($scope.getTimeHours()) {
-                if (forGrafana)
-                    return 'from=now-'+ $scope.getTimeHours()+'h&to=now';
-                else
-                    return 'hours=' + $scope.getTimeHours();
-            }
-            else {
-                if (forGrafana) {
-                    dateFrom = new Date($scope.dateFrom);
-                    if (!$scope.dateTo) $scope.dateTo = new Date();
-                    dateTo = new Date($scope.dateTo);
-                    return 'from=' + dateFrom.getTime() + '&to=' + $scope.dateTo.getTime();
-                }
-                else
-                    return 'date_from=' + formatDate($scope.dateFrom) + '&date_to=' + formatDate($scope.dateTo);
-            }
-        };
+      dataTAPECH = google.visualization.arrayToDataTable($scope.reqpertape);
+      chartTAPECH.draw(dataTAPECH, optionsTAPECH);
 
-        var optionsACTCH = {
-                      title: 'Activation time',
-                      legend: { position: 'none' },
-                      hAxis: {title: 'Time', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category' },
-                      explorer: {
-                        actions: ['dragToZoom', 'rightClickToReset'],
-                        axis: 'horizontal',
-                        keepInBounds: true,
-                        maxZoomIn: 4.0
-                      },
-                  };
-
-        var optionsETCH = {
-                      title: 'Elapsed time (h)',
-                      legend: { position: 'none' },
-                      hAxis: {title: 'Time (h)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category' },
-                      explorer: {
-                        actions: ['dragToZoom', 'rightClickToReset'],
-                        axis: 'horizontal',
-                        keepInBounds: true,
-                        maxZoomIn: 4.0
-                      },
-                      colors: ['green', 'blue', 'red'],
-                      legend: { position: "top" },
-
-                  };
-
-        var optionsPRCH = {
-                      title: 'Progress of selected stagings (%)',
-                      legend: { position: 'none' },
-                      hAxis: {title: 'Progress (%)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category' },
-                      explorer: {
-                        actions: ['dragToZoom', 'rightClickToReset'],
-                        axis: 'horizontal',
-                        keepInBounds: true,
-                        maxZoomIn: 4.0
-                      },
-        };
+      $scope.selecttime = response.data.selecttime;
+      $scope.selectedTime = {};
+      for (item of $scope.selecttime) {
+         if (item.selected == "1") $scope.selectedTime = item.value;
+      }
 
 
-        $scope.processResponce = function(response) {
-            response.data.submittime = response.data.submittime.map(function (row) {
-               return [
-               new Date(row[0]),
-                        row[1]
-                  ];
-               });
-            var chartACTCH = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
-            var chartETCH = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
-            var chartPRCH = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
+      $scope.selectedCampaign = null;
+      $scope.selectedSource = null;
 
-             var dataACTCH = google.visualization.arrayToDataTable(response.data.submittime);
-             chartACTCH.draw(dataACTCH, optionsACTCH);
+      $scope.selectcampaign = response.data.selectcampaign;
+      $scope.selectsource = response.data.selectsource;
 
-             var dataETCH = google.visualization.arrayToDataTable(response.data.epltime);
-             chartETCH.draw(dataETCH, optionsETCH);
+      detailsDataTable = $('#stagingdatasetstable').DataTable({
+          bDestroy: true,
+          scrollX: true,
+          columnDefs: [{"type": "num-html", "targets": [5,6,7,9,12] }],
+          data: response.data.detailstable,
+          columns: [
+            { title: 'Campaign', data: 'campaign' },
+            { title: 'Request ID', data: 'pr_id', className: 'num' },
+            { title: 'Task ID', data: 'taskid',
+              className: 'text icons1',
+              "render": function(data, type, full, meta) {
+                let entry = '<a href="{% url 'taskInfo' %}'+full['taskid']+'">'+full['taskid']+'</a> ';
+                entry += '<a target="_blank" href="{% url 'staginprogressplot' %}'+'?jeditaskid='+full['taskid']+'"><i class="fi-graph-trend"></i></a>';
+                return entry;
+              },
+            },
+            { title: 'Status', data: 'status', className: 'state'},
+            { title: 'P-type', data: 'processingtype', className: 'state' },
+            { title: 'Total files', data: 'total_files', className: 'num' },
+            { title: 'Staged files', data: 'staged_files', className: 'num' },
+            { title: 'Progress [%]', data: 'progress', className: 'num' },
+            { title: 'Source RSE', data: 'source_rse' },
+            { title: 'Time elapsed', data: 'elapsedtime', defaultValue: '---'},
+            { title: 'Started at', data: 'start_time' },
+            { title: 'Rucio rule', data: 'rse',
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                    return '<a href="https://rucio-ui.cern.ch/rule?rule_id=' + full['rse'] + '"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  }
+                  else {
+                    return '---'
+                  }
+                },
+            },
+            { title: 'Update time', data: 'update_time', defaultValue: '---',},
+          ],
+          createdRow: function ( row, data, index ) {
+              $('td', row).eq(3).addClass(data['status'] + '_fill');
+          },
+          initComplete: function () {
+              this.api().columns([3,4]).every( function () {
+                  var column = this;
+                  var select = $('<select><option value="">All</option></select>')
+                      .appendTo( $(column.footer()).empty() )
+                      .on( 'change', function () {
+                          var val = $.fn.dataTable.util.escapeRegex(
+                              $(this).val()
+                          );
 
-             var dataPRCH = google.visualization.arrayToDataTable(response.data.progress);
-             chartPRCH.draw(dataPRCH, optionsPRCH);
+                          column
+                              .search( val ? '^'+val+'$' : '', true, false )
+                              .draw();
+                      });
 
-             $scope.progresstablearr = response.data.progresstable;
-             $scope.selecttime = response.data.selecttime;
-             $scope.selectedTime = {};
-             for (item of $scope.selecttime) {
-                 if (item.selected == "1") $scope.selectedTime = item.value;
-             }
+                  column.data().unique().sort().each( function ( d, j ) {
+                      select.append( '<option value="'+d+'">'+d+'</option>' )
+                  });
+              });
+          }
+      });
+    };
+    $scope.selectedTime = 24;
+    $scope.dateFrom = '';
+    $scope.dateTo = '';
+    Service.get('?hours='+$scope.selectedTime).then($scope.processResponce);
+  }
 
+  //create trigger to resizeEnd event
+  $(window).resize(function() {
+    if(this.resize_to) clearTimeout(this.resize_to);
+    this.resize_to = setTimeout(function() {
+      $(this).trigger('resize_ended');
+    }, 500);
+  });
 
-             $scope.selectedCampaign = null;
-             $scope.selectedSource = null;
-
-             $scope.selectcampaign = response.data.selectcampaign;
-             $scope.selectsource = response.data.selectsource;
-
-            $('#stagingdatasetstable').dataTable({
-                "bDestroy": true,
-                scrollX: true,
-                data: response.data.detailstable,
-                columns: [
-                    { data: 'campaign' },
-                    { data: 'pr_id' },
-                    { data: 'taskid',
-                      className: 'nowrap',
-                      "render": function(data, type, full, meta) {
-                            var entry =  '<a href="'+{% url 'taskInfo' %}+full['taskid']+'">'+full['taskid']+'</a> ';
-                            entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+'?jeditaskid='+full['taskid']+'"><i class="fi-graph-trend"></i></a>';
-                            return entry;
-                      },
-                    },
-                    { data: 'status' },
-                    { data: 'processingtype' },
-                    { data: 'total_files', className: 'num' },
-                    { data: 'staged_files', className: 'num' },
-                    { data: 'progress', className: 'num' },
-                    { data: 'source_rse' },
-                    { data: 'elapsedtime' },
-                    { data: 'start_time' },
-                    { data: 'rse',
-                      "render": function(data, type, full, meta) {
-                            return '<a href="https://rucio-ui.cern.ch/rule?rule_id='+full['rse']+'">'+full['rse']+'</a>';
-                        },
-                    },
-                    {
-                      "render": function(data, type, full, meta) {
-                        if(type == 'display')  return full['update_time'];
-                            return full['update_time_sort'];
-                        },
-                    },
-                ],
-                initComplete: function () {
-                    this.api().columns(3).every( function () {
-                        var column = this;
-                        var select = $('<select><option value="">All</option></select>')
-                            .appendTo( $(column.footer()).empty() )
-                            .on( 'change', function () {
-                                var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
-                                );
-
-                                column
-                                    .search( val ? '^'+val+'$' : '', true, false )
-                                    .draw();
-                            } );
-
-                        column.data().unique().sort().each( function ( d, j ) {
-                            select.append( '<option value="'+d+'">'+d+'</option>' )
-                        } );
-                    } );
-                    this.api().columns(4).every( function () {
-                        var column = this;
-                        var select = $('<select><option value="">All</option></select>')
-                            .appendTo( $(column.footer()).empty() )
-                            .on( 'change', function () {
-                                var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
-                                );
-
-                                column
-                                    .search( val ? '^'+val+'$' : '', true, false )
-                                    .draw();
-                            } );
-
-                        column.data().unique().sort().each( function ( d, j ) {
-                            select.append( '<option value="'+d+'">'+d+'</option>' )
-                        } );
-                    } );
-                }
-
-            });
-        };
-        $scope.selectedTime = 24;
-        $scope.dateFrom = '';
-        $scope.dateTo = '';
-        Service.get('?hours='+$scope.selectedTime).then($scope.processResponce);
-    }
+  //redraw graph when window resize is completed
+  $(window).on('resize_ended', function() {
+    if (chartACTCH && dataACTCH && optionsACTCH) chartACTCH.draw(dataACTCH, optionsACTCH);
+    if (chartETCH && dataETCH && optionsETCH) chartETCH.draw(dataETCH, optionsETCH);
+    if (chartPRCH && dataPRCH && optionsPRCH) chartPRCH.draw(dataPRCH, optionsPRCH);
+    if (chartTAPECH && dataTAPECH && optionsTAPECH) chartTAPECH.draw(dataTAPECH, optionsTAPECH);
+  });
   </script>
 {% endblock %}

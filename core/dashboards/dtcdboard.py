@@ -15,6 +15,7 @@ from core.views import initRequest, setupView, DateEncoder, setCacheData
 from core.common.models import JediTasksOrdered
 from core.schedresource.models import Schedconfig
 from core.settings.local import dbaccess
+from core.settings import defaultDatetimeFormat
 import pandas as pd
 import numpy as np
 from django.views.decorators.cache import never_cache
@@ -43,6 +44,7 @@ def getStagingInfoForTask(request):
     response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response
+
 
 def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
     isTimeNotDelta = True
@@ -176,17 +178,19 @@ def getDTCSubmissionHist(request):
         summarytableDict[dsdata['source_rse']] = dictSE
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
-        detailsTable.append({'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'],
-                             'status': dsdata['status'], 'total_files': dsdata['total_files'],
-                             'staged_files': dsdata['staged_files'],
-                             'progress':
-                                 int(round(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
-                             'source_rse': dsdata['source_rse'], 'elapsedtime': epltime,
-                             'start_time': dsdata['start_time'], 'rse': dsdata['rse'], 'update_time':
-                                 dsdata['update_time'], 'update_time_sort': dsdata['update_time_sort'],
-                             'processingtype': dsdata['processingtype']})
+        detailsTable.append({
+            'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'],
+            'status': dsdata['status'], 'total_files': dsdata['total_files'], 'staged_files': dsdata['staged_files'],
+            'progress': int(math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
+            'source_rse': dsdata['source_rse'],
+            'elapsedtime': str(epltime).split('.')[0] if epltime is not None else '---',
+            'start_time': dsdata['start_time'].strftime(defaultDatetimeFormat) if dsdata['start_time'] else '---',
+            'rse': dsdata['rse'],
+            'update_time': str(dsdata['update_time']).split('.')[0] if dsdata['update_time'] is not None else '---',
+            'update_time_sort': dsdata['update_time_sort'],
+            'processingtype': dsdata['processingtype']})
 
-    #For uniquiness
+    # For uniquiness
     selectSource = list({v['name']: v for v in selectSource}.values())
     selectCampaign = list({v['name']: v for v in selectCampaign}.values())
 
@@ -203,8 +207,8 @@ def getDTCSubmissionHist(request):
     # arr.extend([[x] for x in timedelta.tolist()])
 
     binnedActFinData = getBinnedData(timelistIntervalact, additionalList1 = timelistIntervalfin, additionalList2 = timelistIntervalqueued)
-    eplTime = [['Time', 'Act. staging', 'Fin. staging', 'Q. staging']] + [[time, data[0], data[1], data[2]] for (time, data) in binnedActFinData]
-    #, 'Queued staging'
+    eplTime = [['Time', 'Active staging', 'Finished staging', 'Queued staging']] + [[round(time, 1), data[0], data[1], data[2]] for (time, data) in binnedActFinData]
+
 
     finalvalue = {"epltime": eplTime}
 

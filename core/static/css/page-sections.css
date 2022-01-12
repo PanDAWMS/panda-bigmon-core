@@ -91,16 +91,16 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
 .input4{width:4em}
 
 .row {
-    max-width: 100%;
+  max-width: 100%;
 }
 
-.row.lim-width {
-    max-width: 85rem;
+.row .column.column-block {
+  /*padding: 0 0.3rem 0 0.3rem;*/
 }
 
 .panel {
-    width: 600px;
-    height: 500px;
+  width: 600px;
+  height: 500px;
 }
 
 .label {
