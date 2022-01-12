@@ -5,6 +5,11 @@
 {% block page_title %}Data Carousel Dashboard{% endblock %}
 {% block subtitle %}Data Carousel Dashboard {{ viewParams.selection|safe }} {% endblock %}
 
+{% block time_window %}
+    Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
+
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
 {% endblock %}
@@ -23,17 +28,6 @@
     <div class="row">
       <div id="chartACTCH_div" class="columns medium-8" ><p ng-bind-html="loading_placeholder"></p></div>
       <div id="selectionpane" class="columns medium-4">
-          <select id="timewindow" ng-model="selectedTime" ng-options="timeitem.value as timeitem.name for timeitem in selecttime" ng-change="updateByPredefinedTime();">
-             <option value="" disabled>Select Time Window</option>
-          </select>
-          <table class="table">
-            <tr>
-              <td><label>From:<input type="date" class="ntag-text" ng-model="dateFrom" id="ntag_from" min="2019-06-01" ng-change="updateTimeWindow();"></label>
-              <td><label>To:<input type="date" class="ntag-text" ng-model="dateTo" id="ntag_to" min="2019-06-01" ng-change="updateTimeWindow();"></label>
-              <!-- <td><a ng-click="gog();" class="button secondary">Set</a> -->
-            </tr>
-          </table>
-
           <b>Campaign:</b>
           <select id="campaign" ng-model="selectedCampaign" ng-options="campitem.value as campitem.name for campitem in selectcampaign" multiple>
               <option value="" selected="selected">All</option>
@@ -75,10 +69,10 @@
                 <th class="nowrap"> <a class="nowrap" href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeForQuery() $}">{$ x.source $}</a>
                 </th>
                 <td class="mid">
-                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&{$ getTimeForQuery() $}"><img src='/static/images/tinychart.png' width=14 height=14 border=0/></a>
+                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&{$ getTimeForQuery() $}"><i class="fi-graph-trend"></i></a>
                 </td>
                 <td class="mid">
-                    <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}">--></a>
+                  <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}"><img src="{% static 'images/grafana.png' %}" width=14 height=14 border=0></a>
                 </td>
                 <td class="queued_fill num">
                     {$ x.ds_queued $}
@@ -143,18 +137,18 @@
   var detailsDataTable;
   var chartACTCH, chartETCH, chartPRCH, chartTAPECH, dataACTCH, dataETCH, dataPRCH, dataTAPECH;
   var optionsACTCH = {
-    title: 'Activation time',
-    height: 500,
-    chartArea: {width: '100%', height: '70%', left: 50,},
+    title: '',
+    height: 400,
+    chartArea: {width: '100%', height: '100%', left: 50, top: 50, bottom: 100},
     legend: { position: 'none' },
     colors: ['#2174bb'],
     vAxis: {title: 'Number of datasets'},
-    hAxis: {title: 'Submission time', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
+    hAxis: {title: 'Date', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
     explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
   };
 
   var optionsETCH = {
-    title: 'Elapsed time (h))',
+    title: 'Elapsed time (h)',
     height: 400,
     chartArea: {width: '100%', height: '70%', left: 50, },
     vAxis: {title: 'Number of datasets'},
@@ -178,7 +172,7 @@
 
   var optionsTAPECH = {
     title: 'Staging datasets per source RSE',
-    height: 400,
+    height: 425,
     isStacked: true,
     bar: { groupWidth: '75%' },
     chartArea: {width: '100%', height: '70%', left: 130, },
@@ -210,17 +204,7 @@
     $scope.gog = function() {
       var request = "";
 
-      if ((typeof $scope.selectedTime === 'string' || $scope.selectedTime instanceof String) && ($scope.selectedTime.length > 0))  {
-          if ($scope.selectedTime == "hours4320") request = '?hours=4320';
-          if ($scope.selectedTime == "hours2160") request = '?hours=2160';
-          if ($scope.selectedTime == "hours720") request = '?hours=720';
-          if ($scope.selectedTime == "hours168") request = '?hours=168';
-          if ($scope.selectedTime == "hours24") request = '?hours=24';
-          if ($scope.selectedTime == "hours12") request = '?hours=12';
-          if ($scope.selectedTime == "hours1") request = '?hours=1';
-      } else {
-          request = "?"+$scope.getTimeForQuery();
-      }
+      request = "?"+$scope.getTimeForQuery();
 
       if (request.length == 0) request = "?"; else request += "&";
       if ($scope.selectedCampaign) request += ('campaign=' + $scope.selectedCampaign);
@@ -230,60 +214,11 @@
       Service.get(request).then($scope.processResponce);
     };
 
-    $scope.getTimeHours = function(){
-       if ($scope.selectedTime == "hours4320") return '4320';
-       if ($scope.selectedTime == "hours2160") return '2160';
-       if ($scope.selectedTime == "hours720") return '720';
-       if ($scope.selectedTime == "hours168") return '168';
-       if ($scope.selectedTime == "hours24") return '24';
-       if ($scope.selectedTime == "hours12") return '12';
-       if ($scope.selectedTime == "hours1") return '1';
-    };
+    $scope.getTimeForQuery = function(forGrafana = false) {
+      var timerange = {{ timerange|safe }};
 
-    $scope.updateByPredefinedTime = function(){
-        selHours = $scope.getTimeHours();
-        if (selHours >= 24) {
-            $scope.dateTo = new Date();
-            $scope.dateFrom = new Date();
-            $scope.dateFrom.setHours($scope.dateFrom.getHours() - selHours);
-
-        } else {
-            $scope.dateFrom ='';
-            $scope.dateTo ='';
-        }
-        Service.get('?hours='+selHours).then($scope.processResponce);
-    };
-
-    formatDate = function(date){
-        date = new Date(date)
-        return  date.getFullYear() + '-' + ((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1)))  + '-' +
-            ((date.getDate() > 9) ? (date.getDate()) : ('0' + (date.getDate()))) ;
-    };
-
-    $scope.updateTimeWindow = function(){
-        $scope.selectedTime = "";
-        if ($scope.dateFrom && $scope.dateTo) {
-            Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);
-        }
-    };
-
-    $scope.getTimeForQuery = function(forGrafana = false){
-        if ($scope.getTimeHours()) {
-            if (forGrafana)
-                return 'from=now-'+ $scope.getTimeHours()+'h&to=now';
-            else
-                return 'hours=' + $scope.getTimeHours();
-        }
-        else {
-            if (forGrafana) {
-                dateFrom = new Date($scope.dateFrom);
-                if (!$scope.dateTo) $scope.dateTo = new Date();
-                dateTo = new Date($scope.dateTo);
-                return 'from=' + dateFrom.getTime() + '&to=' + $scope.dateTo.getTime();
-            }
-            else
-                return 'date_from=' + formatDate($scope.dateFrom) + '&date_to=' + formatDate($scope.dateTo);
-        }
+      if (forGrafana) { return 'from=' + timerange[0] + '&to=' + timerange[1];}
+      else { return 'date_from=' + timerange[0]  + '&date_to=' + timerange[1];}
     };
 
     $scope.processResponce = function(response) {
@@ -320,18 +255,14 @@
       dataTAPECH = google.visualization.arrayToDataTable($scope.reqpertape);
       chartTAPECH.draw(dataTAPECH, optionsTAPECH);
 
-      $scope.selecttime = response.data.selecttime;
-      $scope.selectedTime = {};
-      for (item of $scope.selecttime) {
-         if (item.selected == "1") $scope.selectedTime = item.value;
-      }
-
-
       $scope.selectedCampaign = null;
       $scope.selectedSource = null;
 
       $scope.selectcampaign = response.data.selectcampaign;
       $scope.selectsource = response.data.selectsource;
+
+      if ($scope.selectcampaign.length === 1) $scope.selectedCampaign = [$scope.selectcampaign[0]['name']];
+      if ($scope.selectsource.length === 1) $scope.selectedSource = [$scope.selectsource[0].name];
 
       detailsDataTable = $('#stagingdatasetstable').DataTable({
           bDestroy: true,
@@ -394,10 +325,8 @@
           }
       });
     };
-    $scope.selectedTime = 24;
-    $scope.dateFrom = '';
-    $scope.dateTo = '';
-    Service.get('?hours='+$scope.selectedTime).then($scope.processResponce);
+
+    Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);
   }
 
   //create trigger to resizeEnd event

@@ -416,6 +416,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 
 .bp-table.blank {
   border: none;
+  margin: 0.7rem 0;
 }
   .bp-table.blank thead, .bp-table.blank tbody,.bp-table.blank tfoot {
     border: none;
@@ -436,7 +437,10 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     color: #272727;
     border: 1px solid #fefefe;
   }
-  .bp-table.blank tbody th > a{
+  .bp-table.blank tbody td {
+    border: 1px solid #e6e6e6;
+  }
+  .bp-table.blank tbody th > a {
     color: #272727;
   }
 

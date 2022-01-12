@@ -3,21 +3,16 @@
 """
 
 import random, json, math
-from datetime import datetime
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render_to_response
 from django.db import connection
 from django.utils.cache import patch_response_headers
-from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import dictfetchall
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, DateEncoder, setCacheData
-from core.common.models import JediTasksOrdered
-from core.schedresource.models import Schedconfig
+from core.views import initRequest, setupView, DateEncoder
 from core.settings.local import dbaccess
 from core.settings import defaultDatetimeFormat
 import pandas as pd
-import numpy as np
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
 from core.schedresource.utils import getCRICSEs
@@ -25,16 +20,24 @@ from core.schedresource.utils import getCRICSEs
 @never_cache
 @login_customrequired
 def dataCarouselleDashBoard(request):
-    initRequest(request)
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=24, limit=9999999, querytype='task', wildCardExt=True)
+
+    if query and 'modificationtime__castdate__range' in query:
+        request.session['timerange'] = query['modificationtime__castdate__range']
+
     request.session['viewParams']['selection'] = ''
     data = {
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+        'timerange': request.session['timerange'],
     }
 
     response = render_to_response('DataTapeCarouselle.html', data, content_type='text/html')
-    #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
+    # patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response
 
 
@@ -191,8 +194,8 @@ def getDTCSubmissionHist(request):
             'processingtype': dsdata['processingtype']})
 
     # For uniquiness
-    selectSource = list({v['name']: v for v in selectSource}.values())
-    selectCampaign = list({v['name']: v for v in selectCampaign}.values())
+    selectSource = sorted(list({v['name']: v for v in selectSource}.values()), key=lambda x: x['name'].lower())
+    selectCampaign = sorted(list({v['name']: v for v in selectCampaign}.values()), key=lambda x: x['name'].lower())
 
     summarytableList = list(summarytableDict.values())
 

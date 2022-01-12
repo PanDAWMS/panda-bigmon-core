@@ -623,8 +623,8 @@
             let query = notimerangeurl;
             if (location.pathname.indexOf('jobsbuster') > -1) {
               let timeparamname = 'endtime';
-              query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
-              query += timeparamname + '_to=' + $scope.timewindow.selection.to;
+              query += timeparamname + '_from=' + $scope.timewindow.selection.from.replace(' ', 'T') + '&';
+              query += timeparamname + '_to=' + $scope.timewindow.selection.to.replace(' ', 'T');
             }
             else {
               switch ($scope.timewindow.data.quick) {
@@ -635,8 +635,8 @@
                   query += 'days=' + $scope.timewindow.data.days;
                   break;
                 case 'custom':
-                  query += 'date_from=' + $scope.timewindow.selection.from + '&';
-                  query += 'date_to=' + $scope.timewindow.selection.to;
+                  query += 'date_from=' + $scope.timewindow.selection.from.replace(' ', 'T') + '&';
+                  query += 'date_to=' + $scope.timewindow.selection.to.replace(' ', 'T');
                   break;
               }
             }
