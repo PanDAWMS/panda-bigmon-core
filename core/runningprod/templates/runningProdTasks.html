@@ -266,6 +266,9 @@
                 <th>Sim</th>
                 <th>aTag</th>
             {% endif %}
+            {% if requestParams.preset == 'DATA' %}
+                <th>rTag</th>
+            {% endif %}
             <th>Age</th>
             <th>Cores</th>
             {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
@@ -1190,6 +1193,14 @@ $(document).ready(function () {
               "data": "priority",
               sDefaultContent: "",
               className: 'num'
+          },
+          {
+              "data": "rtag",
+              sDefaultContent: "",
+              className: '',
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}rtag=' + full['rtag'] + '">' + full['rtag'] + '</a>'
+              }
           },
           {
               "data": "age",
