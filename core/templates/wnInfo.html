@@ -159,7 +159,9 @@
 <th class="num"> N jobs </th>
 <th class="vertical fixed_dash"><div class="rotate70">defined</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">waiting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">assigned</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">throttled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">activated</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">sent</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">starting</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">running</div></th>
@@ -182,9 +184,7 @@
 <td class="num">{{ wn.rcores }} </td>
 <td class="num"><a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'Unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
-{#{% if state.name != 'assigned' and state.name != 'activated' %}#}
 <td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'Unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %}-{% endif %} </td>
-{#{% endif %}#}
 {% endfor %}
 <td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
 <td> {% if wn.outlier != '' %} <span class='warning'> {{ wn.outlier }} </span> {% endif %} </td>
@@ -219,9 +219,11 @@ $(document).ready(function () {
 <th class="num"> N running cores </th>
 <th class="num"> Running min RAM count, GB</th>
 <th class="num"> N jobs </th>
-<th class="vertical fixed_dash defined_fill"><div class="rotate70">defined</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">defined</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">waiting</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">assigned</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">throttled</div></th>
+<th class="vertical fixed_dash"><div class="rotate70">activated</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">sent</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">starting</div></th>
 <th class="vertical fixed_dash"><div class="rotate70">running</div></th>
@@ -245,9 +247,7 @@ $(document).ready(function () {
 <td class="num">{{ wn.rminramcount  }} </td>
 <td class="num"><a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'Unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}"> {{ wn.count }} </a></td>
 {% for state in wn.statelist %}
-{#{% if state.name != 'assigned' and state.name != 'activated' and state.name != 'pending' %}#}
 <td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'Unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %} - {% endif %} </td>
-{#{% endif %}#}
 {% endfor %}
 <td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail  }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
 <td> {% if wn.outlier != '' %} <span class="warning"> {{ wn.outlier }} </span> {% endif %} </td>
