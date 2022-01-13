@@ -138,6 +138,7 @@ def getDTCSubmissionHist(request):
 
     progressDistribution = []
     summarytableDict = {}
+    summaryByPtype = {}
     selectCampaign = []
     selectSource = []
     detailsTable = []
@@ -145,34 +146,50 @@ def getDTCSubmissionHist(request):
     timelistIntervalact = []
     timelistIntervalqueued = []
 
-
     for task, dsdata in staginData.items():
         epltime = None
         timelistSubmitted.append(dsdata['start_time'])
         source_rse_breakdown = substitudeRSEbreakdown(dsdata['source_rse'])
-        dictSE = summarytableDict.get(dsdata['source_rse'], {"source": dsdata['source_rse'], "ds_active":0, "ds_done":0,
-                                                             "ds_queued":0, "ds_90pdone":0, "files_rem":0, "files_q":0,
-                                                             "files_done":0, "source_rse_breakdown": source_rse_breakdown})
-
+        dictSE = summarytableDict.get(dsdata['source_rse'], {
+            "source": dsdata['source_rse'], "ds_active": 0, "ds_done": 0,
+            "ds_queued": 0, "ds_90pdone": 0, "files_rem": 0, "files_q": 0,
+            "files_done": 0, "source_rse_breakdown": source_rse_breakdown})
+        if 'processingtype' in dsdata and dsdata['processingtype']:
+            if dsdata['processingtype'] not in summaryByPtype:
+                summaryByPtype[dsdata['processingtype']] = {
+                    "processingtype": dsdata['processingtype'],
+                    "ds_active": 0, "ds_done": 0, "ds_queued": 0,
+                    "files_total": 0, "files_rem": 0, "files_queued": 0, "files_done": 0,
+                }
         if dsdata['occurence'] == 1:
             dictSE["files_done"] += dsdata['staged_files']
             dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
+            if 'processingtype' in dsdata and dsdata['processingtype']:
+                summaryByPtype[dsdata['processingtype']]['files_total'] += dsdata['total_files']
+                summaryByPtype[dsdata['processingtype']]['files_done'] += dsdata['staged_files']
+                summaryByPtype[dsdata['processingtype']]['files_rem'] += (dsdata['total_files'] - dsdata['staged_files'])
 
             # Build the summary by SEs and create lists for histograms
-            if dsdata['end_time'] != None:
-                dictSE["ds_done"]+=1
+            if dsdata['end_time'] is not None:
+                dictSE["ds_done"] += 1
+                if 'processingtype' in dsdata and dsdata['processingtype']:
+                    summaryByPtype[dsdata['processingtype']]['ds_done'] += 1
                 epltime = dsdata['end_time'] - dsdata['start_time']
                 timelistIntervalfin.append(epltime)
-
             elif dsdata['status'] != 'queued':
                 epltime = timezone.now() - dsdata['start_time']
                 timelistIntervalact.append(epltime)
-                dictSE["ds_active"]+=1
+                dictSE["ds_active"] += 1
+                if 'processingtype' in dsdata and dsdata['processingtype']:
+                    summaryByPtype[dsdata['processingtype']]['ds_active'] += 1
                 if dsdata['staged_files'] >= dsdata['total_files']*0.9:
                     dictSE["ds_90pdone"] += 1
             elif dsdata['status'] == 'queued':
                 dictSE["ds_queued"] += 1
                 dictSE["files_q"] += (dsdata['total_files'] - dsdata['staged_files'])
+                if 'processingtype' in dsdata and dsdata['processingtype']:
+                    summaryByPtype[dsdata['processingtype']]['ds_queued'] += 1
+                    summaryByPtype[dsdata['processingtype']]['files_queued'] += (dsdata['total_files'] - dsdata['staged_files'])
                 epltime = timezone.now() - dsdata['start_time']
                 timelistIntervalqueued.append(epltime)
 
@@ -198,22 +215,11 @@ def getDTCSubmissionHist(request):
     selectCampaign = sorted(list({v['name']: v for v in selectCampaign}.values()), key=lambda x: x['name'].lower())
 
     summarytableList = list(summarytableDict.values())
-
-    # timedelta = pd.to_timedelta(timelistIntervalfin)
-    # timedelta = (timedelta / pd.Timedelta(hours=1))
-    # arr = [["EplTime"]]
-    # arr.extend([[x] for x in timedelta.tolist()])
-    #
-    # timedelta = pd.to_timedelta(timelistIntervalact)
-    # timedelta = (timedelta / pd.Timedelta(hours=1))
-    # #arr1 = [["EplTime"]]
-    # arr.extend([[x] for x in timedelta.tolist()])
+    summaryByPtypeList = list(summaryByPtype.values())
 
     binnedActFinData = getBinnedData(timelistIntervalact, additionalList1 = timelistIntervalfin, additionalList2 = timelistIntervalqueued)
     eplTime = [['Time', 'Active staging', 'Finished staging', 'Queued staging']] + [[round(time, 1), data[0], data[1], data[2]] for (time, data) in binnedActFinData]
-
-
-    finalvalue = {"epltime": eplTime}
+    finalvalue = {"elapsedtime": eplTime}
 
     arr = [["Progress"]]
     arr.extend([[x*100] for x in progressDistribution])
@@ -222,28 +228,9 @@ def getDTCSubmissionHist(request):
     binnedSubmData = getBinnedData(timelistSubmitted)
     finalvalue["submittime"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binnedSubmData]
     finalvalue["progresstable"] = summarytableList
-
-    selectTime = [
-        {"name": "Last 1 hour", "value": "hours1", "selected": "0"},
-        {"name":"Last 12 hours", "value":"hours12", "selected":"0"},
-        {"name":"Last day", "value":"hours24", "selected":"0"},
-        {"name":"Last week","value":"hours168", "selected":"0"},
-        {"name":"Last month","value":"hours720", "selected":"0"},
-        {"name": "Last 3 months", "value": "hours2160", "selected": "0"},
-        {"name": "Last 6 months", "value": "hours4320", "selected": "0"}
-    ]
-
-    hours = ""
-    if 'hours' in request.session['requestParams']:
-        hours = request.session['requestParams']['hours']
-
-    for selectTimeItem in selectTime:
-        if selectTimeItem["value"] == "hours"+str(hours):
-            selectTimeItem["selected"] = "1"
-            break
+    finalvalue['summarybyptype'] = summaryByPtypeList
 
     finalvalue["selectsource"] = selectSource
-    finalvalue["selecttime"] = selectTime
     finalvalue["selectcampaign"] = selectCampaign
     finalvalue["detailstable"] = detailsTable
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')

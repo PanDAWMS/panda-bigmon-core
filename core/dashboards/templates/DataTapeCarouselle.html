@@ -47,8 +47,12 @@
     </div>
 
     <div class="row">
-      <div id="chartTAPECH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
-      <div class="columns medium-8 table-scroll">
+      <div id="chartTAPECH_div" class="columns medium-6"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartTAPEFILECH_div" class="columns medium-6"><p ng-bind-html="loading_placeholder"></p></div>
+    </div>
+
+    <div class="row">
+      <div class="columns medium-12 table-scroll">
         <p ng-bind-html="loading_placeholder"></p>
         <table id="transfersmatrix" class="bp-table blank unstriped ng-hide" ng-hide="is_hidden" >
           <thead>
@@ -98,6 +102,11 @@
       </div>
     </div>
 
+    <div class="row">
+      <div id="chartDACH_div" class="columns medium-6"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartFACH_div" class="columns medium-6"><p ng-bind-html="loading_placeholder"></p></div>
+    </div>
+
     <div class="card bp-container-simple secondary" id="container_sds">
       <div class="card-divider"><p>Staging datasets:</p></div>
       <div class="card-section">
@@ -135,52 +144,145 @@
   google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
 
   var detailsDataTable;
-  var chartACTCH, chartETCH, chartPRCH, chartTAPECH, dataACTCH, dataETCH, dataPRCH, dataTAPECH;
-  var optionsACTCH = {
-    title: '',
-    height: 400,
-    chartArea: {width: '100%', height: '100%', left: 50, top: 50, bottom: 100},
-    legend: { position: 'none' },
-    colors: ['#2174bb'],
-    vAxis: {title: 'Number of datasets'},
-    hAxis: {title: 'Date', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
-    explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
-  };
-
-  var optionsETCH = {
-    title: 'Elapsed time (h)',
-    height: 400,
-    chartArea: {width: '100%', height: '70%', left: 50, },
-    vAxis: {title: 'Number of datasets'},
-    hAxis: {title: 'Time (h)', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category' },
-    explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
-    colors: ['#934fff', '#207f20', '#2174bb'],
-    legend: { position: "top" },
-    isStacked: true,
-  };
-
-  var optionsPRCH = {
-    title: 'Progress of selected stagings (%)',
-    height: 400,
-    chartArea: {width: '100%', height: '70%', left: 50,},
-    legend: {position: 'none'},
-    colors: ['#2174bb'],
-    vAxis: {title: 'Number of datasets'},
-    hAxis: {title: 'Progress (%)', titleTextStyle: {color: 'black'}, textStyle: {fontSize:11}, type: 'category'},
-    explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
-  };
-
-  var optionsTAPECH = {
-    title: 'Staging datasets per source RSE',
-    height: 425,
-    isStacked: true,
-    bar: { groupWidth: '75%' },
-    chartArea: {width: '100%', height: '70%', left: 130, },
-    legend: { position: 'top' },
-    vAxis: {textStyle: {fontSize:11} },
-    hAxis: {title: 'Number of datasets', titleTextStyle: {color: 'black'},  textStyle: {fontSize:11}},
-    colors: ['#2174bb', '#934fff', '#207f20'],
-    explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+  var chart_list = ['submittime', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];
+  var charts = {
+    submittime: {
+      options: {
+        title: '',
+        height: 400,
+        chartArea: {width: '100%', height: '100%', left: 50, top: 50, bottom: 100},
+        legend: { position: 'none' },
+        colors: ['#2174bb'],
+        vAxis: {title: 'Number of datasets'},
+        hAxis: {title: 'Date', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
+        explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+      },
+      obj: {},
+      data: [],
+    },
+    elapsedtime: {
+      options: {
+        title: 'Elapsed time (h)',
+        height: 400,
+        chartArea: {width: '100%', height: '70%', left: 50,},
+        vAxis: {title: 'Number of datasets'},
+        hAxis: {title: 'Time (h)', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, type: 'category'},
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+        colors: ['#934fff', '#207f20', '#2174bb'],
+        legend: {position: "top"},
+        isStacked: true,
+      },
+      obj: {},
+      data: [],
+    },
+    progress: {
+      options: {
+        title: 'Progress of selected stagings (%)',
+        height: 400,
+        chartArea: {width: '100%', height: '70%', left: 50,},
+        legend: {position: 'none'},
+        colors: ['#2174bb'],
+        vAxis: {title: 'Number of datasets'},
+        hAxis: {title: 'Progress (%)', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, type: 'category'},
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    reqpertape: {
+      options: {
+        title: 'Staging datasets per source RSE',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 130,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Number of datasets', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    filespertape: {
+      options: {
+        title: 'Staging files per source RSE',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 130,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#a9a9a9', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    datasetperactivity: {
+      options: {
+        title: 'Staging datasets per activity',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 100,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Number of datasets', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    filesperactivity: {
+      options: {
+        title: 'Staging files per activity',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 100,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#a9a9a9', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
   };
 
   app.service('Service', ['$http', service])
@@ -232,28 +334,36 @@
             ];
       });
 
-      chartACTCH = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
-      chartETCH = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
-      chartPRCH = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
-      chartTAPECH = new google.visualization.BarChart(document.getElementById('chartTAPECH_div'));
-
-      dataACTCH = google.visualization.arrayToDataTable(response.data.submittime);
-      chartACTCH.draw(dataACTCH, optionsACTCH);
-
-      dataETCH = google.visualization.arrayToDataTable(response.data.epltime);
-      chartETCH.draw(dataETCH, optionsETCH);
-
-      dataPRCH = google.visualization.arrayToDataTable(response.data.progress);
-      chartPRCH.draw(dataPRCH, optionsPRCH);
-
+      $scope.submittime = response.data.submittime;
+      $scope.elapsedtime = response.data.elapsedtime;
+      $scope.progress = response.data.progress;
       $scope.progresstablearr = response.data.progresstable;
       $scope.reqpertape = [['Source', 'Queued', 'Staging', 'Done']];
+      $scope.filespertape = [['Source', 'Queued', 'Remaining', 'Done']];
       $scope.progresstablearr.forEach(row => {
-        $scope.reqpertape.push([row['source'], row['ds_queued'], row['ds_active'], row['ds_done']])
+        $scope.reqpertape.push([row['source'], row['ds_queued'], row['ds_active'], row['ds_done']]);
+        $scope.filespertape.push([row['source'], row['files_q'], row['files_rem']-row['files_q'], row['files_done']])
+      });
+      $scope.summarybyptype = response.data.summarybyptype;
+      $scope.datasetperactivity = [['Processing Type', 'Queued', 'Staging', 'Done']];
+      $scope.filesperactivity = [['Processing Type', 'Queued', 'Remaining', 'Done']];
+      $scope.summarybyptype.forEach(row => {
+        $scope.datasetperactivity.push([row['processingtype'], row['ds_queued'], row['ds_active'], row['ds_done']]);
+        $scope.filesperactivity.push([row['processingtype'], row['files_queued'], row['files_rem']-row['files_queued'], row['files_done']])
       });
 
-      dataTAPECH = google.visualization.arrayToDataTable($scope.reqpertape);
-      chartTAPECH.draw(dataTAPECH, optionsTAPECH);
+      charts.submittime.obj = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
+      charts.elapsedtime.obj = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
+      charts.progress.obj = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
+      charts.reqpertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPECH_div'));
+      charts.filespertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPEFILECH_div'));
+      charts.datasetperactivity.obj = new google.visualization.BarChart(document.getElementById('chartDACH_div'));
+      charts.filesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartFACH_div'));
+
+      Object.keys(charts).forEach(name => {
+        charts[name].data = google.visualization.arrayToDataTable($scope[name]);
+        charts[name].obj.draw(charts[name].data, charts[name].options);
+      });
 
       $scope.selectedCampaign = null;
       $scope.selectedSource = null;
@@ -339,10 +449,13 @@
 
   //redraw graph when window resize is completed
   $(window).on('resize_ended', function() {
-    if (chartACTCH && dataACTCH && optionsACTCH) chartACTCH.draw(dataACTCH, optionsACTCH);
-    if (chartETCH && dataETCH && optionsETCH) chartETCH.draw(dataETCH, optionsETCH);
-    if (chartPRCH && dataPRCH && optionsPRCH) chartPRCH.draw(dataPRCH, optionsPRCH);
-    if (chartTAPECH && dataTAPECH && optionsTAPECH) chartTAPECH.draw(dataTAPECH, optionsTAPECH);
+    Object.keys(charts).forEach(name => {
+      charts[name].obj.draw(charts[name].data, charts[name].options);
+    });
   });
   </script>
+{% endblock %}
+
+{% block help %}
+{% include 'dataCarouselleHelp.html' %}
 {% endblock %}
