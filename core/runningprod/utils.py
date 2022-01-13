@@ -9,6 +9,7 @@ from datetime import datetime
 from django.db import transaction, DatabaseError
 from core.runningprod.models import ProdNeventsHistory, RunningProdTasksModel
 from core.common.models import JediTasks
+import core.constants as const
 
 from core.views import preprocessWildCardString
 
@@ -91,7 +92,8 @@ def clean_running_task_list(task_list):
         task['nevents'] = task['nevents'] if task['nevents'] is not None else 0
         task['neventsused'] = task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
         task['neventstobeused'] = task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
-        if task['neventsrunning'] + task['neventsfinished'] + task['neventsfailed'] + task['neventswaiting'] == task['nevents']:
+
+        if task['status'] not in const.TASK_STATES_FINAL and task['neventsrunning'] + task['neventsfinished'] + task['neventsfailed'] + task['neventswaiting'] == task['nevents']:
             task['neventsdone'] = task['neventsfinished']
         else:
             task['neventsdone'] = task['neventsused']

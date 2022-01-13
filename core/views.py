@@ -526,7 +526,7 @@ def initRequest(request, callselfmon=True):
 
 
 def preprocessWildCardString(strToProcess, fieldToLookAt):
-    if (len(strToProcess) == 0):
+    if len(strToProcess) == 0:
         return '(1=1)'
     isNot = False
     if strToProcess.startswith('!'):
@@ -538,7 +538,7 @@ def preprocessWildCardString(strToProcess, fieldToLookAt):
     countRealParameters = len(cardRealParameters)
     countParameters = len(cardParametersRaw)
 
-    if (countParameters == 0):
+    if countParameters == 0:
         return '(1=1)'
     currentRealParCount = 0
     currentParCount = 0
@@ -620,23 +620,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if processor_type.lower() == 'gpu':
             extraQueryString += " AND (cmtconfig like '%%gpu%%')"
 
-
-
-    if 'workinggroup' in request.session['requestParams'] and 'preset' in request.session['requestParams'] and request.session['requestParams']['preset']=='MC':
-        # if 'workinggroup' in request.session['requestParams']:
-        workinggroupQuery = request.session['requestParams']['workinggroup']
-        extraQueryString += ' AND ('
-        for card in workinggroupQuery.split(','):
-            if card[0] == '!':
-                extraQueryString += ' NOT workinggroup=\''+escapeInput(card[1:])+'\' AND'
-            else:
-                extraQueryString += ' workinggroup=\''+escapeInput(card[0:])+'\' OR'
-        if extraQueryString.endswith('AND'):
-            extraQueryString = extraQueryString[:-3]
-        elif extraQueryString.endswith('OR'):
-            extraQueryString = extraQueryString[:-2]
-        extraQueryString += ')'
-        extraQueryFields.append('workinggroup')
 
     elif 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup'] and \
                         '*' not in request.session['requestParams']['workinggroup'] and \
@@ -1162,8 +1145,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     except NameError:
         extraQueryString = ''
 
-
+    # wild cards handling
     wildSearchFields = (set(wildSearchFields) & set(list(request.session['requestParams'].keys())))
+    # filter out fields that already in query dict
     wildSearchFields1 = set()
     for currenfField in wildSearchFields:
         if not (currenfField.lower() == 'transformation'):
@@ -1173,22 +1157,28 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     wildSearchFields1.add(currenfField)
     wildSearchFields = wildSearchFields1
 
-    lenWildSearchFields = len(wildSearchFields)
-    currentField = 1
-
-    for currenfField in wildSearchFields:
+    for i_field, field_name in enumerate(wildSearchFields, start=1):
         extraQueryString += '('
-        wildCards = request.session['requestParams'][currenfField].split('|')
-        countCards = len(wildCards)
-        currentCardCount = 1
-        if not ((currenfField.lower() == 'cloud') & (any(card.lower() == 'all' for card in wildCards))):
-            for card in wildCards:
-                extraQueryString += preprocessWildCardString(card, currenfField)
-                if (currentCardCount < countCards): extraQueryString += ' OR '
-                currentCardCount += 1
+        wildCardsOr = request.session['requestParams'][field_name].split('|')
+        if not ((field_name.lower() == 'cloud') & (any(card.lower() == 'all' for card in wildCardsOr))):
+            for i_or, card_or in enumerate(wildCardsOr, start=1):
+                if ',' in card_or:
+                    extraQueryString += '('
+                    wildCardsAnd = card_or.split(',')
+                    for i_and, card_and in enumerate(wildCardsAnd, start=1):
+                        extraQueryString += preprocessWildCardString(card_and, field_name)
+                        if i_and < len(wildCardsAnd):
+                            extraQueryString += ' AND '
+                    extraQueryString += ')'
+                else:
+                    extraQueryString += preprocessWildCardString(card_or, field_name)
+                if i_or < len(wildCardsOr):
+                    extraQueryString += ' OR '
+
             extraQueryString += ')'
-            if (currentField < lenWildSearchFields): extraQueryString += ' AND '
-            currentField += 1
+            if i_field < len(wildSearchFields):
+                extraQueryString += ' AND '
+
 
     if ('jobparam' in request.session['requestParams'].keys()):
         jobParWildCards = request.session['requestParams']['jobparam'].split('|')

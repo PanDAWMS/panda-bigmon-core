@@ -80,6 +80,24 @@ def runningProdTasks(request):
                                                             wildCardExt=True)
     tquery, exquery, wildCardExtension = updateView(request, tquery, exquery, wildCardExtension)
 
+    load_ended_tasks = False
+    if 'days' in request.session['requestParams'] and ((
+            'show_ended_tasks' in request.session['requestParams'] and request.session['requestParams']['show_ended_tasks'] == 'true') or (
+                 'eventservice' in tquery and tquery['eventservice'] == 1)):
+        load_ended_tasks = True
+
+        tquery_timelimited = copy.deepcopy(tquery)
+
+        # add time window selection for query from Frozen* model
+        days = int(request.session['requestParams']['days'])
+        tquery_timelimited['modificationtime__castdate__range'] = [
+            (timezone.now() - timedelta(days=days)).strftime(defaultDatetimeFormat),
+            timezone.now().strftime(defaultDatetimeFormat)
+        ]
+
+        if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension:
+            wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
+
     if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby']:
         sortby = request.session['requestParams']['sortby']
     else:
@@ -87,27 +105,10 @@ def runningProdTasks(request):
     oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
 
     tasks = []
-#    if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension and tquery['eventservice'] == 1:
-    if 'eventservice' in tquery and tquery['eventservice'] == 1 and 'days' in request.session['requestParams']:
-
-        setupView(request)
-        if 'status__in' in tquery:
-            del tquery['status__in']
-        excludedTimeQuery = copy.deepcopy(tquery)
-
-        if ('days' in request.GET) and (request.GET['days']):
-            days = int(request.GET['days'])
-            hours = 24 * days
-            startdate = timezone.now() - timedelta(hours=hours)
-            startdate = startdate.strftime(defaultDatetimeFormat)
-            enddate = timezone.now().strftime(defaultDatetimeFormat)
-            tquery['modificationtime__castdate__range'] = [startdate, enddate]
-
-        if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension:
-            wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
-        tasks.extend(RunningProdTasksModel.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension]).exclude(
+    if load_ended_tasks:
+        tasks.extend(RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(
             **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
-        tasks.extend(FrozenProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(
+        tasks.extend(FrozenProdTasksModel.objects.filter(**tquery_timelimited).extra(where=[wildCardExtension]).exclude(
             **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
     else:
         tasks.extend(RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery))
@@ -160,8 +161,6 @@ def runningProdTasks(request):
             'transKey': transactionKey,
             'qtime': qtime,
             'productiontype': json.dumps(productiontype),
-            # 'tasks': task_list,
-            # 'ntasks': ntasks,
             'sumd': sumd,
             'gsum': gsum,
             'plots': plots_dict,
