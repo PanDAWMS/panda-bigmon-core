@@ -312,6 +312,12 @@ function draw_bar_cat(data, divid, title, ext) {
     let labels = ['',''];
     if (ext.size) {width = ext.size[0]; height=ext.size[1]}
     if (ext.labels) {labels = ext.labels}
+    // increase height if x axis labels are long str
+    let cat_names = [...data[0]];
+    cat_names.shift();
+    cat_names.sort(function (a,b) {return b.length - a.length;});
+    if (cat_names[0].length >= 10) {height += 5 * (cat_names[0].length - 10);}
+
     let colors = {};
     if (ext.colors === 'gs') {
         colors = {
