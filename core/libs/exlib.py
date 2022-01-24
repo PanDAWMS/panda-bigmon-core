@@ -1,6 +1,7 @@
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
 import math, random, datetime
 import numpy as np
+import pandas as pd
 from django.db import connection
 from dateutil.parser import parse
 from datetime import datetime
@@ -524,6 +525,74 @@ def split_into_intervals(input_data, **kwargs):
             output_data.append({'kname': str(ranges[i]) + '-' + str(ranges[i + 1]), 'kvalue': bin})
 
     return output_data
+
+
+def build_time_histogram(data):
+    """
+    Preparing data for time-based histogram.
+    :param data: list. if 1xN - counting occurances, if 2xN - sum for each occurance
+    :return:
+    """
+    N_BINS_MAX = 60
+    agg = 'count'
+    if len(data) > 0 and isinstance(data[0], list) and len(data[0]) == 2:
+        agg = 'sum'
+
+    # find optimal interval
+    if agg == 'count':
+        timestamp_list = data
+    else:
+        timestamp_list = [item[0] for item in data]
+
+    full_timerange_seconds = (max(timestamp_list) - min(timestamp_list)).total_seconds()
+
+    step = 30
+    label = 'S'
+    while full_timerange_seconds/step > N_BINS_MAX:
+        if step <= 600:
+            step += 30
+        elif step <= 3600:
+            step += 600
+            label = 'T'
+        elif step <= 3600 * 24:
+            step += 3600
+            label = 'H'
+        elif step <= 3600 * 24 * 7:
+            step += 3600 * 24
+            label = 'D'
+        elif step <= 3600 * 24 * 30:
+            step += 3600 * 24 * 7
+            label = 'W'
+        else:
+            step += 3600 * 24 * 30
+            label = 'M'
+
+    labels = {
+        'S': 1,
+        'T': 60,
+        'H': 3600,
+        'D': 3600*24,
+        'W': 3600 * 24 * 7,
+        'M': 3600 * 24 * 30,
+    }
+    freq = '{}{}'.format(math.floor(step/labels[label]), label)
+
+    # prepare binned data
+    if agg == 'count':
+        df = pd.DataFrame(timestamp_list, columns=['date'])
+        df.set_index('date', drop=False, inplace=True)
+        binned_data = df.groupby(pd.Grouper(freq=freq)).count()
+    else:
+        df = pd.DataFrame(data, columns=['date', 'value'])
+        df.set_index('date', drop=False, inplace=True)
+        binned_data = df.groupby(pd.Grouper(key='date', freq=freq)).sum()
+
+    data = []
+    index = binned_data.index.to_pydatetime().tolist()
+    for i, item in enumerate(binned_data.values.tolist()):
+        data.append([index[i], item])
+
+    return data
 
 
 def round_to_n(x, n):

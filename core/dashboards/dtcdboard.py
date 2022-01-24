@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.db import connection
 from django.utils.cache import patch_response_headers
-from core.libs.exlib import dictfetchall
+from core.libs.exlib import dictfetchall, build_time_histogram
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView, DateEncoder
 from core.settings.local import dbaccess
@@ -135,6 +135,7 @@ def getDTCSubmissionHist(request):
     staginData = getStagingData(request)
 
     timelistSubmitted = []
+    timelistSubmittedFiles = []
 
     progressDistribution = []
     summarytableDict = {}
@@ -149,17 +150,18 @@ def getDTCSubmissionHist(request):
     for task, dsdata in staginData.items():
         epltime = None
         timelistSubmitted.append(dsdata['start_time'])
+        timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
         source_rse_breakdown = substitudeRSEbreakdown(dsdata['source_rse'])
         dictSE = summarytableDict.get(dsdata['source_rse'], {
-            "source": dsdata['source_rse'], "ds_active": 0, "ds_done": 0,
-            "ds_queued": 0, "ds_90pdone": 0, "files_rem": 0, "files_q": 0,
-            "files_done": 0, "source_rse_breakdown": source_rse_breakdown})
+            "source": dsdata['source_rse'], "source_rse_breakdown": source_rse_breakdown,
+            "ds_active": 0, "ds_done": 0, "ds_queued": 0, "ds_90pdone": 0,
+            "files_rem": 0, "files_q": 0, "files_done": 0, 'files_active': 0})
         if 'processingtype' in dsdata and dsdata['processingtype']:
             if dsdata['processingtype'] not in summaryByPtype:
                 summaryByPtype[dsdata['processingtype']] = {
                     "processingtype": dsdata['processingtype'],
                     "ds_active": 0, "ds_done": 0, "ds_queued": 0,
-                    "files_total": 0, "files_rem": 0, "files_queued": 0, "files_done": 0,
+                    "files_total": 0, "files_rem": 0, "files_queued": 0, "files_done": 0, 'files_active': 0
                 }
         if dsdata['occurence'] == 1:
             dictSE["files_done"] += dsdata['staged_files']
@@ -180,8 +182,10 @@ def getDTCSubmissionHist(request):
                 epltime = timezone.now() - dsdata['start_time']
                 timelistIntervalact.append(epltime)
                 dictSE["ds_active"] += 1
+                dictSE['files_active'] += (dsdata['total_files'] - dsdata['staged_files'])
                 if 'processingtype' in dsdata and dsdata['processingtype']:
                     summaryByPtype[dsdata['processingtype']]['ds_active'] += 1
+                    summaryByPtype[dsdata['processingtype']]['files_active'] += (dsdata['total_files'] - dsdata['staged_files'])
                 if dsdata['staged_files'] >= dsdata['total_files']*0.9:
                     dictSE["ds_90pdone"] += 1
             elif dsdata['status'] == 'queued':
@@ -210,6 +214,9 @@ def getDTCSubmissionHist(request):
             'update_time_sort': dsdata['update_time_sort'],
             'processingtype': dsdata['processingtype']})
 
+    binned_subm_datasets = build_time_histogram(timelistSubmitted)
+    binned_subm_files = build_time_histogram(timelistSubmittedFiles)
+
     # For uniquiness
     selectSource = sorted(list({v['name']: v for v in selectSource}.values()), key=lambda x: x['name'].lower())
     selectCampaign = sorted(list({v['name']: v for v in selectCampaign}.values()), key=lambda x: x['name'].lower())
@@ -226,7 +233,8 @@ def getDTCSubmissionHist(request):
     finalvalue["progress"] = arr
 
     binnedSubmData = getBinnedData(timelistSubmitted)
-    finalvalue["submittime"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binnedSubmData]
+    finalvalue["submittime"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binned_subm_datasets]
+    finalvalue["submittimefiles"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binned_subm_files]
     finalvalue["progresstable"] = summarytableList
     finalvalue['summarybyptype'] = summaryByPtypeList
 

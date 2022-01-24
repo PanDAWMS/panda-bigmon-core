@@ -26,7 +26,11 @@
 {% block body %}
   <div data-ng-controller="dataviewctrl">
     <div class="row">
-      <div id="chartACTCH_div" class="columns medium-8" ><p ng-bind-html="loading_placeholder"></p></div>
+      <div class="columns medium-8">
+        <div id="chartACTCH_div"><p ng-bind-html="loading_placeholder"></p></div>
+        <div id="chartACTFILECH_div"><p ng-bind-html="loading_placeholder"></p></div>
+      </div>
+
       <div id="selectionpane" class="columns medium-4">
           <b>Campaign:</b>
           <select id="campaign" ng-model="selectedCampaign" ng-options="campitem.value as campitem.name for campitem in selectcampaign" multiple>
@@ -60,11 +64,11 @@
                 <th>Source</th>
                 <th class="mid">Progress plot</th>
                 <th class="mid">DDM Dash</th>
-                <th class="num">Datasets Queuing</th>
+                <th class="num">Datasets Queued</th>
                 <th class="num">Datasets Active</th>
                 <th class="num">Datasets Done <br>(+ 90% readiness)</th>
-                <th class="num">Files Remaining</th>
-                <th class="num">Files Queuing</th>
+                <th class="num">Files Queued</th>
+                <th class="num">Files Active</th>
                 <th class="num">Files Done</th>
             </tr>
           </thead>
@@ -87,13 +91,13 @@
                 <td class="done_fill num">
                     {$ x.ds_done $} (+{$ x.ds_90pdone $})
                 </td>
-                <td class="num">
-                    {$ x.files_rem $}
-                </td>
-                <td class="num">
+                <td class="num queued_fill">
                     {$ x.files_q $}
                 </td>
-                <td class="num">
+                <td class="num staging_fill">
+                    {$ x.files_active $}
+                </td>
+                <td class="num done_fill">
                     {$ x.files_done $}
                 </td>
             </tr>
@@ -144,16 +148,30 @@
   google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
 
   var detailsDataTable;
-  var chart_list = ['submittime', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];
+  var chart_list = ['submittime', 'submittimefiles', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];
   var charts = {
     submittime: {
       options: {
         title: '',
-        height: 400,
-        chartArea: {width: '100%', height: '100%', left: 50, top: 50, bottom: 100},
+        height: 200,
+        chartArea: {width: '100%', height: '100%', left: 80, top: 20, bottom: 80},
         legend: { position: 'none' },
         colors: ['#2174bb'],
         vAxis: {title: 'Number of datasets'},
+        hAxis: {title: 'Date', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
+        explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+      },
+      obj: {},
+      data: [],
+    },
+    submittimefiles: {
+      options: {
+        title: '',
+        height: 200,
+        chartArea: {width: '100%', height: '100%', left: 80, top: 20, bottom: 80},
+        legend: { position: 'none' },
+        colors: ['#2174bb'],
+        vAxis: {title: 'Number of files'},
         hAxis: {title: 'Date', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
         explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
       },
@@ -230,7 +248,7 @@
         legend: {position: 'top'},
         vAxis: {textStyle: {fontSize: 11}},
         hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
-        colors: ['#2174bb', '#a9a9a9', '#207f20'],
+        colors: ['#2174bb', '#934fff', '#207f20'],
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
           axis: 'horizontal',
@@ -272,7 +290,7 @@
         legend: {position: 'top'},
         vAxis: {textStyle: {fontSize: 11}},
         hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
-        colors: ['#2174bb', '#a9a9a9', '#207f20'],
+        colors: ['#2174bb', '#934fff', '#207f20'],
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
           axis: 'horizontal',
@@ -333,26 +351,34 @@
                   row[1]
             ];
       });
+      response.data.submittimefiles = response.data.submittimefiles.map(function (row) {
+         return [
+         new Date(row[0]),
+                  row[1]
+            ];
+      });
 
       $scope.submittime = response.data.submittime;
+      $scope.submittimefiles = response.data.submittimefiles;
       $scope.elapsedtime = response.data.elapsedtime;
       $scope.progress = response.data.progress;
       $scope.progresstablearr = response.data.progresstable;
       $scope.reqpertape = [['Source', 'Queued', 'Staging', 'Done']];
-      $scope.filespertape = [['Source', 'Queued', 'Remaining', 'Done']];
+      $scope.filespertape = [['Source', 'Queued', 'Active', 'Done']];
       $scope.progresstablearr.forEach(row => {
         $scope.reqpertape.push([row['source'], row['ds_queued'], row['ds_active'], row['ds_done']]);
-        $scope.filespertape.push([row['source'], row['files_q'], row['files_rem']-row['files_q'], row['files_done']])
+        $scope.filespertape.push([row['source'], row['files_q'], row['files_active'], row['files_done']])
       });
       $scope.summarybyptype = response.data.summarybyptype;
       $scope.datasetperactivity = [['Processing Type', 'Queued', 'Staging', 'Done']];
-      $scope.filesperactivity = [['Processing Type', 'Queued', 'Remaining', 'Done']];
+      $scope.filesperactivity = [['Processing Type', 'Queued', 'Active', 'Done']];
       $scope.summarybyptype.forEach(row => {
         $scope.datasetperactivity.push([row['processingtype'], row['ds_queued'], row['ds_active'], row['ds_done']]);
-        $scope.filesperactivity.push([row['processingtype'], row['files_queued'], row['files_rem']-row['files_queued'], row['files_done']])
+        $scope.filesperactivity.push([row['processingtype'], row['files_queued'], row['files_active'], row['files_done']])
       });
 
       charts.submittime.obj = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
+      charts.submittimefiles.obj = new google.visualization.ColumnChart(document.getElementById('chartACTFILECH_div'));
       charts.elapsedtime.obj = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
       charts.progress.obj = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
       charts.reqpertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPECH_div'));
@@ -401,7 +427,7 @@
             { title: 'Rucio rule', data: 'rse',
               "render": function(data, type, full, meta) {
                   if (data) {
-                    return '<a href="https://rucio-ui.cern.ch/rule?rule_id=' + full['rse'] + '"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                    return '<a href="https://rucio-ui.cern.ch/rule?rule_id=' + full['rse'] + '">' + full['rse'].slice(0,3) + '...' + full['rse'].slice(full['rse'].length-3, full['rse'].length) + ' <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
                   }
                   else {
                     return '---'
