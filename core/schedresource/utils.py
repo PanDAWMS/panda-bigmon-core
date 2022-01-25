@@ -32,7 +32,7 @@ def get_CRIC_panda_queues():
                         panda_queues_dict[pq] = params
         except Exception as exc:
             print (exc)
-        cache.set(f'pandaQueues{DEPLOYMENT}', panda_queues_dict, 3600)
+        cache.set(f'pandaQueues{DEPLOYMENT}', panda_queues_dict, 60*20)
     return panda_queues_dict
 
 
