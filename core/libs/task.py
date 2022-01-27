@@ -209,7 +209,10 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
         jobsarchived_models = get_pandajob_models_by_year(jquery['modificationtime__castdate__range'])
         if len(jobsarchived_models) > 0:
             for jam in jobsarchived_models:
-                jobs.extend(jam.objects.filter(**jquery).extra(where=[extra]).values(*values))
+                try:
+                    jobs.extend(jam.objects.filter(**jquery).extra(where=[extra]).values(*values))
+                except Exception as ex:
+                    _logger.exception('Failed to get jobs from {} at ATLARC: \n{}'.format(jam, ex))
             _logger.info("Got jobs from ATLARC: {} sec".format(time.time() - start_time))
     _logger.info("Got jobs: {} sec".format(time.time() - start_time))
 
@@ -1168,7 +1171,10 @@ def get_hs06s_summary_for_task(query):
         pj_models = get_pandajob_models_by_year(query['modificationtime__castdate__range'])
 
         for pjm in pj_models:
-            hs06sec_sum.extend(pjm.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
+            try:
+                hs06sec_sum.extend(pjm.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
+            except Exception as ex:
+                _logger.exception('Failed to get hs06sec from {} at ATLARC DB:\n{}'.format(pjm, ex))
 
         if len(hs06sec_sum) > 0:
             for hs in hs06sec_sum:

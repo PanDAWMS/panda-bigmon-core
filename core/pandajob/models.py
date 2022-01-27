@@ -451,7 +451,7 @@ class PandaJobArch(models.Model):
 
 class Jobsarchived_y2014(PandaJobArch):
     class Meta:
-        db_table = u'y2015_jobsarchived'
+        db_table = u'"atlas_pandaarch"."y2014_jobsarchived"'
         app_label = 'pandaarch'
 
 
