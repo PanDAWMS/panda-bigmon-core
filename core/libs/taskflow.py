@@ -9,17 +9,40 @@ def RSEtoInpDat(TASK):
         for j in TASK["data"]["datasets"][k]["replica"]:
             count_rows = count_rows + 1
     f = count_rows
-    c = 3 # c: number of columns
-    M =[] #Defining my matrix
+    c = 3  # c: number of columns
+    M = []  # Defining my matrix
     for t in range(f):
-        M.append([0]*c)
-    count_j = 0
-    for k in TASK["data"]["datasets"]:
-        for j in TASK["data"]["datasets"][k]["replica"]:
-            M[count_j][0] = j
-            M[count_j][1] = k
-            M[count_j][2] = 1
-            count_j = count_j + 1
+        M.append([0] * c)
+
+    if (f > 0):
+        count_j = 0
+        for k in TASK["data"]["datasets"]:
+            for j in TASK["data"]["datasets"][k]["replica"]:
+                M[count_j][0] = j
+                txt = k
+                x1 = txt.split(".")
+                if (x1[0] == "user"):
+                    out_str = txt
+                else:
+                    out_str = x1[0] + "_" + x1[1] + "_" + x1[3] + "_" + x1[4] + "_" + x1[5]
+                M[count_j][1] = out_str
+                M[count_j][2] = 1
+                count_j = count_j + 1
+
+    else:
+        count_j = 0
+        for k in TASK["data"]["datasets"]:
+            for j in TASK["data"]["datasets"][k]["replica"]:
+                M[count_j][0] = j
+                txt = k
+                x1 = txt.split(".")
+                if (x1[0] == "user"):
+                    out_str = txt
+                else:
+                    out_str = x1[0] + "_" + x1[1] + "_" + x1[3] + "_" + x1[4] + "_" + x1[5]
+                M[count_j][1] = out_str
+                M[count_j][2] = 1
+                count_j = count_j + 1
     return M
 
 
@@ -30,17 +53,36 @@ def InpDattoSITE(TASK):
         for i in TASK["data"]["datasets"][k]["jobs"]:
             count_rows = count_rows + 1
     f = count_rows
-    c = 3 # c: number of columns
-    M =[] #Defining my matrix
+    c = 3  # c: number of columns
+    M = []  # Defining my matrix
     for t in range(f):
-        M.append([0]*c)
-    count_j = 0
-    for k in TASK["data"]["datasets"]:
-        for j in TASK["data"]["datasets"][k]["jobs"]:
-            M[count_j][0] = k
-            M[count_j][1] = j
-            M[count_j][2] = 1
-            count_j = count_j + 1
+        M.append([0] * c)
+
+    if (f > 0):
+        count_j = 0
+        for k in TASK["data"]["datasets"]:
+            for j in TASK["data"]["datasets"][k]["jobs"]:
+                txt = k
+                x1 = txt.split(".")
+                if (x1[0] == "user"):
+                    out_str = txt
+                else:
+                    out_str = x1[0] + "_" + x1[1] + "_" + x1[3] + "_" + x1[4] + "_" + x1[5]
+                M[count_j][0] = out_str
+                M[count_j][1] = j
+                M[count_j][2] = 1
+                count_j = count_j + 1
+    else:
+        count_j = 0
+        for k in TASK["data"]["datasets"]:
+            for j in TASK["data"]["datasets"][k]["jobs"]:
+                txt = k
+                x1 = txt.split(".")
+                out_str = x1[0] + "_" + x1[3] + "_" + x1[4] + "_" + x1[5]
+                M[count_j][0] = out_str
+                M[count_j][1] = j
+                M[count_j][2] = 1
+                count_j = count_j + 1
     return M
 
 
@@ -129,12 +171,63 @@ def frec(M):
     return b
 
 
-def concat(TASK):
-    """concat function: join the data in a proper format for sankey plot."""
+# concat_all function: join the data in a proper formart for sankey plot.
+# This function considers all the nodes: replica, dataset, site and status
+def concat_all(TASK):
     A = pd.DataFrame(frec(RSEtoInpDat(TASK)))
     B = pd.DataFrame(frec(InpDattoSITE(TASK)))
     C = pd.DataFrame(frec(SITEtoJOB(TASK)))
     D = pd.concat([A, B, C], ignore_index=True)
     E = D.to_numpy()
     return E.tolist()
+
+
+# concat_NoRep function: join the data in a proper formart for sankey plot.
+# This function considers the nodes:dataset, site and status
+def concat_NoRep(TASK):
+    B = pd.DataFrame(frec(InpDattoSITE(TASK)))
+    C = pd.DataFrame(frec(SITEtoJOB(TASK)))
+    D = pd.concat([B, C], ignore_index=True)
+    E = D.to_numpy()
+    return E.tolist()
+
+
+def executeTF(TASK):
+    for k in TASK["data"]["datasets"]:
+        Nrep = 0
+        for j in TASK["data"]["datasets"][k]["replica"]:
+            Nrep = Nrep + 1
+
+    for k in TASK["data"]["datasets"]:
+        Njobs = 0
+        for i in TASK["data"]["datasets"][k]["jobs"]:
+            Njobs = Njobs + 1
+
+    Ndatasets = 0
+    for i in TASK["data"]["datasets"]:
+        Ndatasets = Ndatasets + 1
+
+    if (Ndatasets == 0):
+        output = 0     # No dataset
+
+    elif (Njobs == 0) and (Nrep == 0):
+        output = 1     # No Jobs nor Replicas
+
+    elif (Nrep == 0) and (Njobs != 0):
+        output = concat_NoRep(TASK)
+
+    elif (Nrep != 0) and (Njobs == 0):
+        output = RSEtoInpDat(TASK)
+
+    else:
+        output = concat_all(TASK)
+
+    return output
+
+
+
+
+
+
+
 

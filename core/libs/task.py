@@ -25,7 +25,7 @@ from elasticsearch_dsl import Search
 from core.settings.local import defaultDatetimeFormat
 from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA_ARCH, DEPLOYMENT
 
-from core.libs.taskflow import concat
+from core.libs.taskflow import RSEtoInpDat, InpDattoSITE, SITEtoJOB, frec, executeTF, concat_all, concat_NoRep
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -1455,6 +1455,8 @@ def get_task_flow_data(jeditaskid):
                     }
 
     # transform data for plot
-    taskflow_data = concat({'data': {'datasets': dataset_dict, } })
+    #concat(dataset_dict)
+ #   print({'data': {'datasets': dataset_dict, } })
 
-    return taskflow_data
+    return executeTF({'data': {'datasets': dataset_dict, } })
+
