@@ -41,6 +41,11 @@
           <select id="source" ng-model="selectedSource" ng-options="source.value as source.name for source in selectsource" multiple>
              <option value="" selected="selected">All</option>
           </select>
+
+          <b>Processing type:</b>
+          <select id="source" ng-model="selectedPtype" ng-options="pt.value as pt.name for pt in selectptype" multiple>
+             <option value="" selected="selected">All</option>
+          </select>
           <a ng-click="gog();" class="button primary">Update</a>
       </div>
     </div>
@@ -153,7 +158,7 @@
     submittime: {
       options: {
         title: '',
-        height: 200,
+        height: 250,
         chartArea: {width: '100%', height: '100%', left: 80, top: 20, bottom: 80},
         legend: { position: 'none' },
         colors: ['#2174bb'],
@@ -167,7 +172,7 @@
     submittimefiles: {
       options: {
         title: '',
-        height: 200,
+        height: 250,
         chartArea: {width: '100%', height: '100%', left: 80, top: 20, bottom: 80},
         legend: { position: 'none' },
         colors: ['#2174bb'],
@@ -330,6 +335,8 @@
       if ($scope.selectedCampaign) request += ('campaign=' + $scope.selectedCampaign);
       if (request.length == 0) request = "?"; else request += "&";
       if ($scope.selectedSource) request += ('source=' + $scope.selectedSource);
+      if (request.length == 0) request = "?"; else request += "&";
+      if ($scope.selectedPtype) request += ('processingtype=' + $scope.selectedPtype);
 
       Service.get(request).then($scope.processResponce);
     };
@@ -393,12 +400,15 @@
 
       $scope.selectedCampaign = null;
       $scope.selectedSource = null;
+      $scope.selectedPtype = null;
 
       $scope.selectcampaign = response.data.selectcampaign;
       $scope.selectsource = response.data.selectsource;
+      $scope.selectptype = response.data.selectptype;
 
-      if ($scope.selectcampaign.length === 1) $scope.selectedCampaign = [$scope.selectcampaign[0]['name']];
+      if ($scope.selectcampaign.length === 1) $scope.selectedCampaign = [$scope.selectcampaign[0].name];
       if ($scope.selectsource.length === 1) $scope.selectedSource = [$scope.selectsource[0].name];
+      if ($scope.selectptype.length === 1) $scope.selectedPtype = [$scope.selectptype[0].name];
 
       detailsDataTable = $('#stagingdatasetstable').DataTable({
           bDestroy: true,

@@ -142,6 +142,7 @@ def getDTCSubmissionHist(request):
     summaryByPtype = {}
     selectCampaign = []
     selectSource = []
+    selectPtype = []
     detailsTable = []
     timelistIntervalfin = []
     timelistIntervalact = []
@@ -202,6 +203,7 @@ def getDTCSubmissionHist(request):
         summarytableDict[dsdata['source_rse']] = dictSE
         selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
         selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
+        selectPtype.append({"name": dsdata['processingtype'], "value": dsdata['processingtype'], "selected": "0"})
         detailsTable.append({
             'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'],
             'status': dsdata['status'], 'total_files': dsdata['total_files'], 'staged_files': dsdata['staged_files'],
@@ -220,6 +222,7 @@ def getDTCSubmissionHist(request):
     # For uniquiness
     selectSource = sorted(list({v['name']: v for v in selectSource}.values()), key=lambda x: x['name'].lower())
     selectCampaign = sorted(list({v['name']: v for v in selectCampaign}.values()), key=lambda x: x['name'].lower())
+    selectPtype = sorted(list({v['name']: v for v in selectPtype}.values()), key=lambda x: x['name'].lower())
 
     summarytableList = list(summarytableDict.values())
     summaryByPtypeList = list(summaryByPtype.values())
@@ -240,6 +243,7 @@ def getDTCSubmissionHist(request):
 
     finalvalue["selectsource"] = selectSource
     finalvalue["selectcampaign"] = selectCampaign
+    finalvalue["selectptype"] = selectPtype
     finalvalue["detailstable"] = detailsTable
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
@@ -263,6 +267,11 @@ def getStagingData(request):
         campaign = request.GET['campaign']
     else:
         campaign = None
+
+    if 'processingtype' in request.GET:
+        processingtype = request.GET['processingtype']
+    else:
+        processingtype = None
 
     data = {}
     if dbaccess['default']['ENGINE'].find('oracle') >= 0:
@@ -297,6 +306,10 @@ def getStagingData(request):
     if campaign:
         campaignl = [campaign] if ',' not in campaign else [camp for camp in campaign.split(',')]
         selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
+
+    if processingtype:
+        processingtypel = [processingtype] if ',' not in processingtype else [pt for pt in processingtype.split(',')]
+        selection += " AND t4.processingtype in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
 
     if not jeditaskid:
         selection += " AND not (NVL(t4.ENDTIME, CURRENT_TIMESTAMP) < t1.start_time) AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or (END_TIME is NULL and not (t1.STATUS = 'done')))" \
