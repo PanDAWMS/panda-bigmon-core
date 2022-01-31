@@ -101,7 +101,7 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
     get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, taskNameDict
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, \
-    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream
+    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode
 from core.libs.error import errorInfo, getErrorDescription, errorSummaryDict, get_error_message_summary, get_job_error_desc
 from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
@@ -1282,11 +1282,15 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
             if 'taskbuffererrordiag' in job and len(job['taskbuffererrordiag']) > 0:
                 job['jobinfo'] = job['taskbuffererrordiag']
             elif 'specialhandling' in job and job['specialhandling'] == 'esmerge':
-                job['jobinfo'] = 'Event service merge job'
+                job['jobinfo'] = 'Event service merge job. '
             elif 'eventservice' in job and job['eventservice'] == 'jumbo':
-                job['jobinfo'] = 'Jumbo job'
+                job['jobinfo'] = 'Jumbo job. '
             else:
-                job['jobinfo'] = 'Event service job'
+                job['jobinfo'] = 'Event service job. '
+
+        if is_debug_mode(job):
+            job['jobinfo'] += 'Debug mode is activated for this job.'
+
         job['duration'] = ""
         job['durationsec'] = 0
         # if job['jobstatus'] in ['finished','failed','holding']:
@@ -2155,7 +2159,7 @@ def jobList(request, mode=None, param=None):
             'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr',
             'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount',
             'statechangetime',  'nevents', 'jobmetrics',
-            'noutputdatafiles', 'parentid', 'actualcorecount', 'schedulerid', 'pilotid',
+            'noutputdatafiles', 'parentid', 'actualcorecount', 'schedulerid', 'pilotid', 'commandtopilot',
             'cmtconfig', 'maxpss']
     if not eventservice:
         values.extend(['avgvmem', 'maxvmem', 'maxrss'])
@@ -3131,12 +3135,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 oslogpath = ospath + '/' + logfile['lfn']
 
     # Check for debug info
-    if ('specialhandling' in job and not job['specialhandling'] is None and job['specialhandling'].find('debug') >= 0) or (
-        'commandtopilot' in job and job['commandtopilot'] is not None and len(job['commandtopilot']) > 0 and job['commandtopilot'] != 'tobekilled'
-    ):
-        debugmode = True
-    else:
-        debugmode = False
+    debugmode = is_debug_mode(job)
     debugstdout = None
     if debugmode:
         if 'showdebug' in request.session['requestParams']:

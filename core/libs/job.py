@@ -25,6 +25,20 @@ def is_event_service(job):
         return False
 
 
+def is_debug_mode(job):
+    """
+    Check if a job in a debug mode, i.e. tail of stdout available or real-time logging is activated in Pilot
+    :param job: dict
+    :return: bool
+    """
+    if ('specialhandling' in job and not job['specialhandling'] is None and 'debug' in job['specialhandling']) or (
+            'commandtopilot' in job and job['commandtopilot'] is not None and len(job['commandtopilot']) > 0 and job['commandtopilot'] != 'tobekilled'
+    ):
+        return True
+    else:
+        return False
+
+
 def get_job_list(query, **kwargs):
 
     MAX_ENTRIES__IN = 100
