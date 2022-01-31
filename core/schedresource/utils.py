@@ -112,6 +112,28 @@ def get_pq_fairshare_policy():
     return fairshare_policy_dict
 
 
+def get_panda_resource(pq_name):
+    """Rerurns dict for a particular PanDA queue"""
+    pq_dict = get_panda_queues()
+
+    if pq_dict and pq_name in pq_dict:
+        return pq_dict[pq_name]
+
+    return None
+
+    url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
+    http = urllib3.PoolManager()
+    data = {}
+    try:
+        r = http.request('GET', url)
+        data = json.loads(r.data.decode('utf-8'))
+        for cs in data.keys():
+            if (data[cs] and siterec.siteid == data[cs]['siteid']):
+                return data[cs]['panda_resource']
+    except Exception as exc:
+        print(exc)
+
+
 def get_basic_info_for_pqs(pq_list):
     """
     Return list of dicts with basic info for list of PQs, including ATLAS site, region (cloud), tier, corepower, status

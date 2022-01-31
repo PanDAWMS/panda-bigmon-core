@@ -112,7 +112,7 @@ from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
-from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs
+from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs, get_panda_resource
 
 from django.template.context_processors import csrf
 
@@ -4114,30 +4114,14 @@ def siteList(request):
         return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='application/json')
 
 
-def get_panda_resource(siterec):
-    url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
-    http = urllib3.PoolManager()
-    data = {}
-    try:
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            if (data[cs] and siterec.siteid == data[cs]['siteid']):
-                return data[cs]['panda_resource']
-    except Exception as exc:
-        print(exc)
-
-
 @login_customrequired
 def siteInfo(request, site=''):
     valid, response = initRequest(request)
-    if not valid: return response
-    if site == '' and 'site' in request.session['requestParams']: site = request.session['requestParams']['site']
+    if not valid:
+        return response
+    if site == '' and 'site' in request.session['requestParams']:
+        site = request.session['requestParams']['site']
     setupView(request)
-    LAST_N_HOURS_MAX = 12
-    startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
-    startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = timezone.now().strftime(defaultDatetimeFormat)
     query = {'siteid__iexact': site}
     sites = Schedconfig.objects.filter(**query)
     colnames = []
