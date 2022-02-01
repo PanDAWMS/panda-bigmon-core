@@ -1289,7 +1289,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
                 job['jobinfo'] = 'Event service job. '
 
         if is_debug_mode(job):
-            job['jobinfo'] += 'Debug mode is activated for this job.'
+            job['jobinfo'] += 'Real-time logging is activated for this job.'
 
         job['duration'] = ""
         job['durationsec'] = 0
