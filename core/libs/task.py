@@ -1402,7 +1402,7 @@ def get_task_flow_data(jeditaskid):
     data = []
     # get datasets
     datasets = []
-    dquery = {'jeditaskid': jeditaskid, 'type__in': ['input', 'pseudo_input'], 'masterid__isnull': True}
+    dquery = {'jeditaskid': jeditaskid, 'type__in': ['input'], 'masterid__isnull': True}
     datasets.extend(JediDatasets.objects.filter(**dquery).values('jeditaskid', 'datasetname', ))
 
     dataset_dict = {}
