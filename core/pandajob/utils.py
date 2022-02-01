@@ -6,7 +6,6 @@ from core.libs.exlib import parse_datetime
 from core.settings.config import DEPLOYMENT
 
 
-
 def get_pandajob_models_by_year(timewindow):
     """
     List of PanDA job models
@@ -22,12 +21,14 @@ def get_pandajob_models_by_year(timewindow):
             2018: [Jobsarchived_y2018, ],
             2019: [Jobsarchived, ],
             2020: [Jobsarchived, ],
-            2021: [Jobsarchived, Jobsarchived4],
+            2021: [Jobsarchived, ],
+            2022: [Jobsarchived, Jobsarchived4],
         }
     else:
         pjm_year_dict = {
             2020: [Jobsarchived, ],
-            2021: [Jobsarchived, Jobsarchived4],
+            2021: [Jobsarchived, ],
+            2022: [Jobsarchived, Jobsarchived4],
         }
     pandajob_models = []
 
