@@ -10,8 +10,11 @@ import pandas as pd
 
 from django.core.cache import cache
 
+from core.pandajob.models import Jobsarchived4, Jobsarchived
+
 from core.libs.task import taskNameDict
 from core.libs.job import get_job_walltime
+from core.libs.exlib import get_tmp_table_name, insert_to_temp_table
 from core.settings.local import defaultDatetimeFormat
 
 from core.ErrorCodes import ErrorCodes
@@ -460,3 +463,47 @@ def get_error_message_summary(jobs):
             })
 
     return error_message_summary_list
+
+
+def get_job_errors(pandaids):
+    """
+    Get error info for a list of PanDA jobs
+    :param pandaids: list of pandaids
+    :return: errors_dict: dict
+    """
+    MAX_ENTRIES__IN = 100
+
+    errors_dict = {}
+
+    jobs = []
+    jquery = {}
+    extra_str = ' (1=1) '
+    values = (
+        'pandaid',
+        'transexitcode',
+        'brokerageerrorcode', 'brokerageerrordiag',
+        'ddmerrorcode', 'ddmerrordiag',
+        'exeerrorcode', 'exeerrordiag',
+        'jobdispatchererrorcode', 'jobdispatchererrordiag',
+        'piloterrorcode', 'piloterrordiag',
+        # 'superrorcode', 'superrordiag',
+        'taskbuffererrorcode', 'taskbuffererrordiag'
+        )
+
+    if len(pandaids) > 0 and len(pandaids) <= MAX_ENTRIES__IN:
+        jquery['pandaid__in'] = pandaids
+    elif len(pandaids) > 0 and len(pandaids) > MAX_ENTRIES__IN:
+        # insert pandaids to temp DB table
+        tmp_table_name = get_tmp_table_name()
+        tk_pandaids = insert_to_temp_table(pandaids)
+        extra_str += " AND pandaid in (select ID from {} where TRANSACTIONKEY={})".format(tmp_table_name, tk_pandaids)
+    else:
+        return errors_dict
+
+    jobs.extend(Jobsarchived4.objects.filter(**jquery).extra(where=[extra_str]).values(*values))
+    jobs.extend(Jobsarchived.objects.filter(**jquery).extra(where=[extra_str]).values(*values))
+
+    for job in jobs:
+        errors_dict[job['pandaid']] = errorInfo(job)
+
+    return errors_dict

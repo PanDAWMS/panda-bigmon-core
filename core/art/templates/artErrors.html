@@ -22,7 +22,7 @@
 {% if artjoberrors|length > 0 %}
 
 <div class="card bp-container-simple secondary" id="container_arterr" style="display: none; font-size: 0.875rem">
-<div class="card-divider"><p>Region summary:</p></div>
+<div class="card-divider"><p>Errors summary:</p></div>
 <div class="card-section">
 <table id='arterrors' class="data-table hover">
   <thead><tr>
@@ -52,7 +52,7 @@
 
 {% block help %}
     <a name="help"></a>
-    {% include "artStabilityHelp.html" %}
+    {% include "artHelp.html" %}
 {% endblock %}
 
 {% block js_body_page %}

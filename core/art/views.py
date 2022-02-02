@@ -24,7 +24,7 @@ from core.art.artMail import send_mail_art
 from core.art.modelsART import ARTTests, ReportEmails, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from core.common.models import Filestable4, FilestableArch
-from core.libs.job import get_job_errors
+from core.libs.error import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4
 from core.utils import is_json_request
