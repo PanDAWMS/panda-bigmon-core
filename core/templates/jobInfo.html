@@ -789,29 +789,10 @@ function togglePayloadLog() {
 
                     },
                     {
-                        title: "JediTaskID",
-                        data: "TaskID",
-                        sDefaultContent: "-"
-
-                    },
-                    {
-                        title: "WorkerID",
-                        data: "Harvester_WorkerID",
-                        sDefaultContent: "-"
-
-                    },
-                    {
-                        title: "HarvesterID",
-                        data: "Harvester_ID",
-                        sDefaultContent: "-"
-
-                    },
-                    {
                         title: "Message",
                         data: "message",
                         sDefaultContent: "-"
                     }
-
                 ],
                 "createdRow": function ( row, data, index ) {
                     $('td', row).eq(2).addClass(data['status'] + '_fill');
