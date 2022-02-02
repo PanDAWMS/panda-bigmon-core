@@ -1,6 +1,12 @@
+import logging
+import re
+
 from core.settings.local import ES
 from elasticsearch import Elasticsearch
 
+from elasticsearch_dsl import Search
+
+_logger = logging.getLogger('bigpandamon')
 
 def create_esatlas_connection(verify_certs=True, timeout=2000, max_retries=10,
                       retry_on_timeout=True):
@@ -13,7 +19,6 @@ def create_esatlas_connection(verify_certs=True, timeout=2000, max_retries=10,
     esPassword = None
 
     if 'esHost' in ES:
-        #esHost = ES['esHost']
         esHost = ES['esHost'][0:8] + '1' + ES['esHost'][8:]
     if 'esUser' in ES:
         esUser = ES['esUser']
@@ -31,5 +36,29 @@ def create_esatlas_connection(verify_certs=True, timeout=2000, max_retries=10,
         )
         return connection
     except Exception as ex:
-        print(ex)
+        _logger.error(ex)
     return None
+
+def get_payloadlog(id, connection, mode = 'pandaid'):
+    """
+    Get pilot logs from ATLAS ElasticSearch storage
+    """
+    logs_list = []
+
+    s = Search(using=connection, index='atlas_pilotlogs*')
+
+    s = s.source(["@timestamp","level", "message", "PandaJobID", "TaskID", "Harvester_WorkerID", "Harvester_ID"])
+
+    if mode == 'pandaid':
+        s = s.filter('term', PandaJobID__keyword='{0}'.format(id)).sort("@timestamp")
+    elif mode == 'jeditaskid':
+        s = s.filter('term', TaskID__keyword='{0}'.format(id)).sort("@timestamp")
+    try:
+        response = s.scan()
+        for hit in response:
+            logs_list.append(hit.to_dict())
+
+    except Exception as ex:
+        _logger.error(ex)
+
+    return logs_list

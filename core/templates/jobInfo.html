@@ -197,6 +197,9 @@
 <div class="bp-dropdown-button">
     <button class="dropdown"><span>Logs</span></button>
     <div   class=" dropdown-items">
+    {% if debugmode %}
+        <a href="#payloadlog" onclick="togglePayloadLog()"> Real-time payload log</a>
+    {% endif %}
         {% if logfile.lfn %}
           {% if viewParams.MON_VO == 'ATLAS' %}
               {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
@@ -346,6 +349,18 @@
 <div id="div-exterrorsinfo"></div>
 
 <div id="div-statuslog"></div>
+{% if debugmode %}
+<div id="payloadLog" ng-app="jobInfoAppSL" ng-controller="JobPayLoadLogController">
+    <div class="card bp-container-simple secondary ng-hide" ng-hide="payload_log.is_hidden">
+    <div class="card-section">
+      <table class="data-table left-aligned nowrap" id="payloadlogtable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {% if files %}
   <div class="card bp-container-simple secondary" id="container_files">
@@ -707,6 +722,107 @@ function buildFilesTable(data) {
   })
 }
 
+
+function togglePayloadLog() {
+    let scope = angular.element(document.getElementById('payloadLog')).scope();
+    if (scope.payload_log.is_hidden) {
+      scope.$apply(function () {
+        scope.payload_log.toggle();
+      });
+    }
+}
+    app.controller('JobPayLoadLogController', function ($scope, $http, $sce) {
+       $scope.payload_log = {
+          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+          data: [],
+          is_hidden: true,
+          data_table: "",
+          plot_data: {
+            columns: [],
+            ext: {
+              xs: {},
+              size: [getWidth() - 40, 400],
+              colors: "task_states",
+              labels: ['Time', 'Task attempt'],
+            },
+          },
+          plot: "",
+        };
+       $scope.payload_log.get = function () {
+            $http({
+                    url: "{% url 'getpayloadlog' pandaid %}",
+                    method: "GET",
+                    params: {'mode':'pandaid'}
+                }
+            ).then(function success(response) {
+                $scope.payload_log.message = "";
+                $scope.payload_log.data = angular.fromJson(response.data);
+                if ($scope.payload_log.data.length > 0) {
+                  $scope.payload_log.buildDataTable();
+                }
+                else {
+                  $scope.payload_log.message = $sce.trustAsHtml("No data received :(");
+                }
+              },
+              function error(response) {
+                console.log(response);
+                $scope.payload_log.message = $sce.trustAsHtml('Failed to load data :( ');
+              }
+            );
+       };
+       $scope.payload_log.buildDataTable = function () {
+            $scope.payload_log.data_table = $('#payloadlogtable').dataTable({
+                "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+                "paging": true,
+                "scrollX": true,
+                "aaSorting": [[0,'asc']],
+                "data": $scope.payload_log.data,
+                "aoColumns": [
+                    {
+                        title: "Time",
+                        data: "@timestamp",
+                    },
+                    {
+                        title: "LogLevel",
+                        data: "level",
+                        sDefaultContent: "-"
+
+                    },
+                    {
+                        title: "JediTaskID",
+                        data: "TaskID",
+                        sDefaultContent: "-"
+
+                    },
+                    {
+                        title: "WorkerID",
+                        data: "Harvester_WorkerID",
+                        sDefaultContent: "-"
+
+                    },
+                    {
+                        title: "HarvesterID",
+                        data: "Harvester_ID",
+                        sDefaultContent: "-"
+
+                    },
+                    {
+                        title: "Message",
+                        data: "message",
+                        sDefaultContent: "-"
+                    }
+
+                ],
+                "createdRow": function ( row, data, index ) {
+                    $('td', row).eq(2).addClass(data['status'] + '_fill');
+                }
+              })
+        };
+       $scope.payload_log.toggle = function() {
+            $scope.payload_log.is_hidden = false;
+            $scope.payload_log.get();
+        };
+    });
 </script>
 {% endblock %}
 

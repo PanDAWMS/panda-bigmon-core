@@ -106,7 +106,7 @@ from core.libs.error import errorInfo, getErrorDescription, errorSummaryDict, ge
 from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
-from core.libs.elasticsearch import create_esatlas_connection
+from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
 
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -9288,6 +9288,7 @@ def pandaLogger(request):
         return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='application/json')
 
 
+
 # def percentile(N, percent, key=lambda x:x):
 #     """
 #     Find the percentile of a list of values.
@@ -11146,6 +11147,35 @@ def get_hc_tests(request):
     response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     return response
 
+@never_cache
+def getPayloadLog(request, id=None):
+    """
+    A view to asynchronously load pilot logs from ElasticSearch storage by pandaid or taskid
+    :param request:
+    :param id:
+    :return: json
+    """
+    valid, response = initRequest(request)
+
+    connection = create_esatlas_connection()
+
+    if not valid: return response
+
+    mode = 'pandaid'
+
+    try:
+        id = int(id)
+    except:
+        HttpResponse(status=404, content_type='text/html')
+    if 'mode' in request.session['requestParams']:
+        if request.session['requestParams']['mode'] == 'jeditaskid':
+            mode = 'jeditaskid'
+
+    payloadlog = get_payloadlog  (id, connection, mode=mode)
+
+    response = HttpResponse(json.dumps(payloadlog, cls=DateEncoder), content_type='application/json')
+
+    return response
 
 
 
