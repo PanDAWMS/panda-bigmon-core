@@ -4209,7 +4209,7 @@ def siteInfo(request, site=''):
             if len(metrics) > 0:
                 for pq, m_dict in metrics.items():
                     for m in m_dict:
-                        colnames.append({'label': m, 'name': m, 'value': m_dict[m]['value']})
+                        colnames.append({'label': m, 'name': m, 'value': m_dict[m]})
 
         del request.session['TFIRST']
         del request.session['TLAST']

@@ -552,7 +552,8 @@ class MetatableArch(models.Model):
 class Metrics(models.Model):
     computingsite = models.CharField(db_column='computingsite')
     gshare = models.CharField(db_column='gshare')
-    datajson = models.TextField(db_column='data_json', blank=True)
+    metric = models.CharField(db_column='metric')
+    json = models.TextField(db_column='value_json', blank=True)
 
     class Meta:
         db_table = f'"{DB_SCHEMA_PANDA}"."metrics"'

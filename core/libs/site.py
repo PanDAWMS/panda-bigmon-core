@@ -51,13 +51,17 @@ def get_pq_metrics(pq='all'):
         query['computingsite'] = pq
 
     pq_metrics_list = []
-    values = ['computingsite', 'datajson']
+    values = ['computingsite', 'metric', 'json']
     pq_metrics_list.extend(Metrics.objects.filter(**query).values(*values))
 
     # list -> dict
     pq_metrics = {}
     if len(pq_metrics_list) > 0:
-        pq_metrics = {m['computingsite']: json.loads(m['datajson']) for m in pq_metrics_list}
+        for m in pq_metrics_list:
+            if m['computingsite'] not in pq_metrics:
+                pq_metrics[m['computingsite']] = {}
+            if m['metric'] not in pq_metrics[m['computingsite']]:
+                pq_metrics[m['computingsite']][m['metric']] = json.loads(m['json'])
 
     return pq_metrics
 
