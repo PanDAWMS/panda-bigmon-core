@@ -11096,6 +11096,8 @@ def getPayloadLog(request, id=None):
 
     mode = 'pandaid'
 
+    log_content = {}
+
     try:
         id = int(id)
     except:
@@ -11104,9 +11106,12 @@ def getPayloadLog(request, id=None):
         if request.session['requestParams']['mode'] == 'jeditaskid':
             mode = 'jeditaskid'
 
-    payloadlog = get_payloadlog  (id, connection, mode=mode)
+    payloadlog, job_running_flag = get_payloadlog(id, connection, mode=mode)
 
-    response = HttpResponse(json.dumps(payloadlog, cls=DateEncoder), content_type='application/json')
+    log_content['payloadlog'] = payloadlog
+    log_content['flag'] = job_running_flag
+
+    response = HttpResponse(json.dumps(log_content, cls=DateEncoder), content_type='application/json')
 
     return response
 
