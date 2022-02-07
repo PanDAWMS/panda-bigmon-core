@@ -102,6 +102,7 @@ from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_local
     get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, taskNameDict
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode
+from core.libs.jobmetadata import addJobMetadata
 from core.libs.error import errorInfo, getErrorDescription, errorSummaryDict, get_error_message_summary, get_job_error_desc
 from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
@@ -1210,19 +1211,19 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     return (query, extraQueryString, LAST_N_HOURS_MAX)
 
 
-def cleanJobList(request, jobl, mode='nodrop', doAddMeta=True):
+def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
-    doAddMetaStill = False
+
     if 'fields' in request.session['requestParams']:
         fieldsStr = request.session['requestParams']['fields']
         fields = fieldsStr.split("|")
         if 'metastruct' in fields:
-            doAddMetaStill = True
+            doAddMeta = True
 
     errorCodes = get_job_error_desc()
 
-    if doAddMeta or doAddMetaStill:
-        jobs = addJobMetadata(jobl, doAddMetaStill)
+    if doAddMeta:
+        jobs = addJobMetadata(jobl)
     else:
         jobs = jobl
     for job in jobs:
@@ -2027,6 +2028,10 @@ def jobList(request, mode=None, param=None):
     if 'dump' in request.session['requestParams'] and request.session['requestParams']['dump'] == 'parameters':
         return jobParamList(request)
 
+    is_job_meta_required = False
+    if 'fields' in request.session['requestParams'] and request.session['requestParams']['fields'] and 'metastruct' in request.session['requestParams']['fields']:
+        is_job_meta_required = True
+
     eventservice = False
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
@@ -2306,7 +2311,7 @@ def jobList(request, mode=None, param=None):
                         job['filemaxattempts'] = jedi_file['maxattempt']
         _logger.info('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
 
-    jobs = cleanJobList(request, jobs, doAddMeta=False)
+    jobs = cleanJobList(request, jobs, doAddMeta=is_job_meta_required)
     _logger.info('Cleaned job list: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = reconstructJobsConsumers(jobs)
@@ -2769,7 +2774,7 @@ def descendentjoberrsinfo(request):
     jobs.extend(Jobswaiting4.objects.filter(**query).values())
     jobs.extend(Jobsarchived4.objects.filter(**query).values())
     jobs.extend(Jobsarchived.objects.filter(**query).values())
-    jobs = cleanJobList(request, jobs, mode='nodrop')
+    jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=False)
 
     errorCodes = get_job_error_desc()
     errors = {}
@@ -2885,7 +2890,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             except:
                 pass
             jobs.extend(Jobsarchived.objects.filter(**query).values())
-        jobs = cleanJobList(request, jobs, mode='nodrop')
+        jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=True)
 
     if len(jobs) == 0:
         del request.session['TFIRST']
@@ -6649,7 +6654,7 @@ def taskList(request):
         # getting jobs metadata if it is requested in URL [ATLASPANDA-492]
         if 'extra' in request.session['requestParams'] and 'metastruct' in request.session['requestParams']['extra']:
             jeditaskids = list(set([task['jeditaskid'] for task in tasks]))
-            MAX_N_TASKS = 100 #protection against DB overloading
+            MAX_N_TASKS = 100  # protection against DB overloading
             if len(jeditaskids) <= MAX_N_TASKS:
                 job_pids = []
                 jobQuery = {
@@ -6659,7 +6664,7 @@ def taskList(request):
                 job_pids.extend(Jobsarchived4.objects.filter(**jobQuery).values('pandaid', 'jeditaskid', 'jobstatus', 'creationtime'))
                 job_pids.extend(Jobsarchived.objects.filter(**jobQuery).values('pandaid', 'jeditaskid', 'jobstatus', 'creationtime'))
                 if len(job_pids) > 0:
-                    jobs = addJobMetadata(job_pids, require=True)
+                    jobs = addJobMetadata(job_pids)
                     taskMetadata = {}
                     for job in jobs:
                         if not job['jeditaskid'] in taskMetadata:
@@ -10386,78 +10391,6 @@ def buildGoogleTaskFlow(request, tasks):
     return flowrows
 
 
-
-# This function created backend dependable for avoiding numerous arguments in metadata query.
-# Transaction and cursors used due to possible issues with django connection pooling
-def addJobMetadata(jobs, require=False):
-    print ('adding metadata')
-    pids = []
-
-    useMetaArch = False
-    useMeta = False
-
-    for job in jobs:
-        if (job['jobstatus'] == 'failed' or require):
-            pids.append(job['pandaid'])
-
-        if 'creationtime' in job:
-            tdelta = datetime.now() - job['creationtime']
-            delta = int(tdelta.days) + 1
-            if delta > 3:
-                useMetaArch = True
-            else:
-                useMeta = True
-
-    query = {}
-    query['pandaid__in'] = pids
-    mdict = {}
-    ## Get job metadata
-
-    random.seed()
-    tmpTableName = get_tmp_table_name()
-
-    metaTableName = f"{DB_SCHEMA_PANDA}.METATABLE"
-    metaTableNameArch = f"{DB_SCHEMA_PANDA_ARCH}.METATABLE_ARCH"
-
-    transactionKey = random.randrange(1000000)
-    new_cur = connection.cursor()
-    for id in pids:
-        new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
-        tmpTableName, id, transactionKey))  # Backend dependable
-
-    mrecs = []
-    if useMeta:
-        new_cur.execute(
-            "SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-            metaTableName, tmpTableName, transactionKey))
-        mrecs = dictfetchall(new_cur)
-    if useMetaArch:
-        new_cur.execute(
-            "SELECT METADATA,MODIFICATIONTIME,PANDAID FROM %s WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-            metaTableNameArch, tmpTableName, transactionKey))
-
-        mrecs.extend(dictfetchall(new_cur))
-
-    if mrecs:
-        for m in mrecs:
-            try:
-                mdict[m['PANDAID']] = m['METADATA']
-            except:
-                pass
-    for job in jobs:
-        if job['pandaid'] in mdict:
-            try:
-                job['metastruct'] = json.loads(mdict[job['pandaid']].read())
-            except:
-                pass
-                # job['metadata'] = mdict[job['pandaid']]
-    print ('added metadata')
-
-    return jobs
-
-
-##self monitor
-
 def g4exceptions(request):
     valid, response = initRequest(request)
     setupView(request, hours=365 * 24, limit=999999999)
@@ -10523,7 +10456,7 @@ def g4exceptions(request):
 
         jobs = filter(lambda x: not x['pandaid'] in jobsToRemove, jobs)
 
-    jobs = addJobMetadata(jobs, True)
+    jobs = addJobMetadata(jobs)
     errorFrequency = {}
     errorJobs = {}
 

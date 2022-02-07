@@ -18,7 +18,7 @@ from django.db import connections
 from django.utils import timezone
 from django.db import models
 
-from core.settings.config import DB_SCHEMA, DEPLOYMENT, DB_SCHEMA_PANDA
+from core.settings.config import DB_SCHEMA, DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
 
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
@@ -537,8 +537,9 @@ class Metatable(models.Model):
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     metadata = models.TextField(db_column='METADATA', blank=True)
     class Meta:
-        db_table = u'metatable'
+        db_table = f'"{DB_SCHEMA_PANDA}"."metatable"'
         unique_together = ('pandaid', 'modificationtime')
+        app_label = 'panda'
 
 
 class MetatableArch(models.Model):
@@ -546,7 +547,8 @@ class MetatableArch(models.Model):
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     metadata = models.TextField(db_column='METADATA', blank=True)
     class Meta:
-        db_table = u'metatable_arch'
+        db_table = f'"{DB_SCHEMA_PANDA_ARCH}"."metatable_arch"'
+        app_label = 'panda'
 
 
 class Metrics(models.Model):
