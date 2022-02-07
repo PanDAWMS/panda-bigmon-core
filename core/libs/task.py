@@ -357,6 +357,9 @@ def job_consumption_plots(jobs):
         'cputimeperevent_finished': {
             'type': 'stack_bar', 'group_by': 'computingsite',
             'title': 'CPU time/event (finished jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'cpuefficiency_finished': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'CPU efficiency (finished jobs)', 'xlabel': 'CPU efficiency, %', 'ylabel': 'N jobs'},
         'dbtime_finished': {
             'type': 'stack_bar', 'group_by': 'computingsite',
             'title': 'DB time (finished jobs)', 'xlabel': 'DB time, s', 'ylabel': 'N jobs'},
@@ -397,6 +400,9 @@ def job_consumption_plots(jobs):
         'cputimeperevent_failed': {
             'type': 'stack_bar', 'group_by': 'computingsite',
             'title': 'CPU time/event (failed jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
+        'cpuefficiency_failed': {
+            'type': 'stack_bar', 'group_by': 'computingsite',
+            'title': 'CPU efficiency (failed jobs)', 'xlabel': 'CPU efficiency, %', 'ylabel': 'N jobs'},
         'dbtime_failed': {
             'type': 'stack_bar', 'group_by': 'computingsite',
             'title': 'DB time (failed jobs)', 'xlabel': 'DB time, s', 'ylabel': 'N jobs'},
@@ -497,6 +503,9 @@ def job_consumption_plots(jobs):
                 plots_data['stack_bar']['cputimeperevent' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                     job['cpuconsumptiontime'] / (job['nevents'] * 1.0)
                 )
+            if 'actualcorecount' in job and job['actualcorecount'] > 0 and 'duration' in job and job['duration'] > 0:
+                plots_data['stack_bar']['cpuefficiency' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                    100.0 * job['cpuconsumptiontime']/job['duration']/job['actualcorecount'])
         if 'leak' in job and job['leak'] is not None:
             plots_data['stack_bar']['leak' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                 job['leak']

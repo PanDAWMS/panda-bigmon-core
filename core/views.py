@@ -1348,6 +1348,11 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
                 'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
             job['maxpssgbpercore'] = round(job['maxpss']/1024./1024./job['actualcorecount'], 2)
 
+        if ('cpuconsumptiontime' in job and job['cpuconsumptiontime'] and job['cpuconsumptiontime'] > 0) and (
+                'actualcorecount' in job and job['actualcorecount'] is not None and job['actualcorecount'] > 0) and (
+                    'durationsec' in job and job['durationsec'] is not None and job['durationsec'] > 0):
+            job['cpuefficiency'] = round(100.0 * job['cpuconsumptiontime'] / job['durationsec'] / job['actualcorecount'], 2)
+
     # drop duplicate jobs
     droplist = []
     job1 = {}
