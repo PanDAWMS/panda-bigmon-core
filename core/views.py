@@ -2250,8 +2250,8 @@ def jobList(request, mode=None, param=None):
                 if 'modificationtime__castdate__range' in query and (
                         (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], defaultDatetimeFormat)).days > 2 or
                         (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1], defaultDatetimeFormat)).days > 2):
-                    if 'jeditaskid' in request.session['requestParams'] and is_json_request(request) and (
-                            'fulllist' in request.session['requestParams'] and request.session['requestParams']['fulllist'] == 'true'):
+                    if 'jeditaskid' in request.session['requestParams'] or (is_json_request(request) and (
+                            'fulllist' in request.session['requestParams'] and request.session['requestParams']['fulllist'] == 'true')):
                         del query['modificationtime__castdate__range']
                     archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:JOB_LIMIT].values(*values)
                     listJobs.append(Jobsarchived)
