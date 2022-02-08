@@ -805,7 +805,7 @@ function togglePayloadLog() {
                clearInterval($scope.reload_interval);
            }
            else {
-               $scope.reload_interval = setInterval(() => {$scope.payload_log.get();}, 30000);
+               $scope.reload_interval = setInterval(() => {$scope.payload_log.get();}, 5000);
            }
         };
 
