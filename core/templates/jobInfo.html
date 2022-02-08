@@ -136,7 +136,7 @@
 {% endif %}
 
 
-{% if job.metastruct %}
+{% if job.metastruct and job.metastruct.exitCode and job.metastruct.exitCode > 0 %}
 <div class="card bp-container-simple alert">
   <div class="card-divider">
     <p>Error information from the {{ job.metastruct.name }}  transformation, report version {{ job.metastruct.reportVersion }}</p>
