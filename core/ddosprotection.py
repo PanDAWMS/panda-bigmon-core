@@ -24,7 +24,8 @@ class DDOSMiddleware(object):
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
                               '188.184.90.172' # J..h M......n request
                               ]
-    blacklist = ['130.132.21.90','192.170.227.149']
+    excepted_views = ['/grafana/', '/payloadlog/']
+    blacklist = ['130.132.21.90', '192.170.227.149']
     maxAllowedJSONRequstesParallel = 1
     maxAllowedSimultaneousRequestsToFileBrowser = 1
     listOfServerBackendNodesIPs = ['188.184.93.101', '188.184.116.46', '188.184.104.150',
@@ -66,6 +67,11 @@ class DDOSMiddleware(object):
             x_referer = request.META.get('HTTP_REFERER')
         except:
             x_referer = ''
+
+        try:
+            url_view = request.path if len(request.path.split('/')) <= 2 else '/'.join(request.path.split('/')[0:2]) + '/'
+        except:
+            url_view = ''
 
         cursor = connection.cursor()
         dbtotalsess, dbactivesess = 0, 0
@@ -144,7 +150,7 @@ class DDOSMiddleware(object):
 
 
         #We restrinct number of requets per hour
-        if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
+        if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress and url_view not in self.excepted_views:
                 # x_forwarded_for = '141.108.38.22'
             startdate = datetime.utcnow() - timedelta(hours=1)
             enddate = datetime.utcnow()
