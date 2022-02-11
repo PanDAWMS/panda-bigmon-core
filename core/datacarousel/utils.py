@@ -5,6 +5,7 @@
 import random
 import logging
 import json
+import time
 import datetime
 import numpy as np
 import pandas as pd
@@ -16,8 +17,12 @@ import cx_Oracle
 from django.core.cache import cache
 from django.utils.six.moves import cPickle as pickle
 from django.db import connection
+
+from core.settings.base import DATA_CAROUSEL_MAIL_REPEAT
 from core.settings.local import dbaccess
 
+from core.reports.sendMail import send_mail_bp
+from core.reports.models import ReportEmails
 from core.views import setupView
 from core.libs.exlib import dictfetchall
 from core.schedresource.utils import getCRICSEs
@@ -344,3 +349,37 @@ def extractTasksIds(datasets):
         for dataset in datasets:
             tasksIDs.append(dataset["TASKID"])
     return tasksIDs
+
+
+def send_report(data):
+    mail_template = "templated_email/dataCarouselStagingAlert.html"
+    max_mail_attempts = 10
+    try:
+        from core.settings.base import EMAIL_SUBJECT_PREFIX
+    except:
+        EMAIL_SUBJECT_PREFIX = ''
+    subject = "{} Data Carousel Alert for {}".format(EMAIL_SUBJECT_PREFIX, data['SE'])
+
+    rquery = {'report': 'dc_stalled'}
+    recipient_list = list(ReportEmails.objects.filter(**rquery).values('email'))
+
+    for recipient in recipient_list:
+        cache_key = "mail_sent_flag_{RR}_{RECIPIENT}".format(RR=data["RR"],
+                                                             TASKID=data["TASKID"],
+                                                             RECIPIENT=recipient['email'])
+        if not cache.get(cache_key, False):
+            is_sent = False
+            i = 0
+            while not is_sent:
+                i += 1
+                if i > 1:
+                    time.sleep(10)
+                is_sent = send_mail_bp(mail_template, subject, data, recipient['email'], send_html=True)
+                _logger.debug("Email to {} attempted to send with result {}".format(recipient, is_sent))
+                # put 10 seconds delay to bypass the message rate limit of smtp server
+                time.sleep(10)
+                if i >= max_mail_attempts:
+                    break
+
+            if is_sent:
+                cache.set(cache_key, "1", DATA_CAROUSEL_MAIL_REPEAT*24*3600)

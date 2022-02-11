@@ -4,20 +4,25 @@
 
 import json
 import math
+import logging
 
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
+from django.db import connection
 
-from core.libs.exlib import build_time_histogram
+from core.libs.exlib import build_time_histogram, dictfetchall
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView, DateEncoder
-from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets
+from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report
 from core.datacarousel.utils import retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds
 
+from core.settings.base import DATA_CAROUSEL_MAIL_DELAY_DAYS, DATA_CAROUSEL_MAIL_REPEAT
 from core.settings import defaultDatetimeFormat
+
+_logger = logging.getLogger('bigpandamon')
 
 
 @never_cache
@@ -208,4 +213,42 @@ def getDTCSubmissionHist(request):
     return response
 
 
+
+@never_cache
+def send_stalled_requests_report(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    # get data
+    try:
+        query = """SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
+                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence, (CURRENT_TIMESTAMP-t1.UPDATE_TIME) as UPDATE_TIME, t4.processingtype FROM ATLAS_DEFT.T_DATASET_STAGING t1
+                INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
+                INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
+                INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID where END_TIME is NULL and (t1.STATUS = 'staging') and t1.UPDATE_TIME <= TRUNC(SYSDATE) - {}
+                """.format(DATA_CAROUSEL_MAIL_DELAY_DAYS)
+        cursor = connection.cursor()
+        cursor.execute(query)
+        rows = dictfetchall(cursor)
+    except Exception as e:
+        _logger.error(e)
+        rows = []
+
+    for r in rows:
+        _logger.debug("DataCarouselMails processes this Rucio Rule: {}".format(r['RSE']))
+        data = {
+            "SE": r['SOURCE_RSE'],
+            "RR": r['RSE'],
+            "START_TIME": str(r['START_TIME']),
+            "TASKID": r['TASKID'],
+            "TOT_FILES": r['TOTAL_FILES'],
+            "STAGED_FILES": r['STAGED_FILES'],
+            "UPDATE_TIME": str(r['UPDATE_TIME'])
+        }
+
+        send_report(data)
+
+
+    return JsonResponse({'sent': len(rows)})
 

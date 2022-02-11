@@ -12,4 +12,6 @@ urlpatterns = [
     re_path(r'^datacartaildata/$', dc_views.getStagingTailsData, name='datacartaildata'),
     re_path(r'^getstaginginfofortask/$', dc_views.getStagingInfoForTask, name='getStagingInfoForTask'),
     re_path(r'^getdtcsubmissionhist/$', dc_views.getDTCSubmissionHist, name='getDTCSubmissionHist'),
+
+    re_path(r'^dc/sendstalledreport/$', dc_views.send_stalled_requests_report, name='sendStalledReport'),
 ]
