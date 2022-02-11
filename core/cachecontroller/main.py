@@ -39,7 +39,7 @@ sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
 stageProgressCollector = DataCarouselPrestageCollector()
 mlFlowCleanUp = MLFlowCleanup()
-dataCaruselMails = DataCarouselMails(EXECUTION_CAP_FOR_MAINMENUURLS)
+# dataCaruselMails = DataCarouselMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 
 
 
@@ -63,7 +63,7 @@ schedule.every().day.at("07:00").do(run_threaded, artMails.execute)  # UTC
 schedule.every().day.at("10:00").do(run_threaded, artMails.execute)  # UTC
 schedule.every(2).hours.do(run_threaded, stageProgressCollector.execute)
 schedule.every(10).minutes.do(run_threaded, mlFlowCleanUp.execute)
-schedule.every(1).hours.do(run_threaded, dataCaruselMails.execute)
+# schedule.every(1).hours.do(run_threaded, dataCaruselMails.execute)
 
 while 1:
     schedule.run_pending()
