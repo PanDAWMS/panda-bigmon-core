@@ -1,9 +1,9 @@
 """
 Created on 04.06.2018
 :author Tatiana Korchuganova
-A lib to send ART job status report by email
+A lib to send report by email
 """
-import re, logging
+import logging
 from django.utils.html import strip_tags
 from smtplib import SMTPException
 from datetime import datetime
@@ -11,7 +11,7 @@ from django.core.mail import send_mail
 from django.template import loader
 from django.core import mail
 
-_logger = logging.getLogger('bigpandamon-error')
+_logger = logging.getLogger('bigpandamon')
 
 
 def textify(html):
@@ -22,7 +22,7 @@ def textify(html):
     return text_only
 
 
-def send_mail_art(template, subject, summary, recipient, send_html=False):
+def send_mail_bp(template, subject, summary, recipient, send_html=False):
     # uncomment for debugging
     # recipient = 'tatiana.korchuganova@cern.ch'
     # ----

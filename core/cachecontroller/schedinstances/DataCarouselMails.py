@@ -1,9 +1,10 @@
 import threading
 import time
 import logging
-from core.art.artMail import send_mail_art
+from core.reports.sendMail import send_mail_bp
+from core.reports.models import ReportEmails
 from core.cachecontroller.BaseTasksProvider import BaseTasksProvider
-from core.settings.base import DATA_CAROUSEL_MAIL_DELAY_DAYS, DATA_CARUSEL_MAIL_RECIPIENTS, DATA_CAROUSEL_MAIL_REPEAT
+from core.settings.base import DATA_CAROUSEL_MAIL_DELAY_DAYS, DATA_CAROUSEL_MAIL_REPEAT
 from django.core.cache import cache
 
 mail_template = "templated_email/dataCarouselStagingAlert.html"
@@ -34,12 +35,20 @@ class DataCarouselMails(BaseTasksProvider):
             self.send_email(data)
         self.logger.info("DataCaruselMails finished")
 
-
     def send_email(self, data):
-        subject = "Data Carousel Alert for {}".format(data['SE'])
-        for recipient in DATA_CARUSEL_MAIL_RECIPIENTS:
-            cache_key = "mail_sent_flag_{RR}_{RECIPIENT}".format(RR=data["RR"], TASKID=data["TASKID"],
-                                                                        RECIPIENT=recipient)
+        try:
+            from core.settings.base import EMAIL_SUBJECT_PREFIX
+        except:
+            EMAIL_SUBJECT_PREFIX = ''
+        subject = "{} Data Carousel Alert for {}".format(EMAIL_SUBJECT_PREFIX, data['SE'])
+
+        rquery = {'report': 'dc_stalled'}
+        recipient_list = list(ReportEmails.objects.filter(**rquery).values('email'))
+
+        for recipient in recipient_list:
+            cache_key = "mail_sent_flag_{RR}_{RECIPIENT}".format(RR=data["RR"],
+                                                                 TASKID=data["TASKID"],
+                                                                 RECIPIENT=recipient)
             if not cache.get(cache_key, False):
                 is_sent = False
                 i = 0
@@ -47,7 +56,7 @@ class DataCarouselMails(BaseTasksProvider):
                     i += 1
                     if i > 1:
                         time.sleep(10)
-                    is_sent = send_mail_art(mail_template, subject, data, recipient, send_html=True)
+                    is_sent = send_mail_bp(mail_template, subject, data, recipient, send_html=True)
                     self.logger.debug("Email to {} attempted to send with result {}".format(recipient, is_sent))
                     # put 10 seconds delay to bypass the message rate limit of smtp server
                     time.sleep(10)

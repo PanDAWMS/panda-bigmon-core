@@ -20,7 +20,7 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, complete_request
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import DateEncoder
-from core.art.artMail import send_mail_art
+from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from core.common.models import Filestable4, FilestableArch
@@ -1210,7 +1210,11 @@ def sendArtReport(request):
     """
     valid, response = initRequest(request)
     template = 'templated_email/artReportPackage.html'
-    subject = '[BigPanDAmon][ART] GRID ART jobs status report'
+    try:
+        from core.settings.base import EMAIL_SUBJECT_PREFIX
+    except:
+        EMAIL_SUBJECT_PREFIX = ''
+    subject = '{}[ART] GRID ART jobs status report'.format(EMAIL_SUBJECT_PREFIX)
     if 'ntag_from' not in request.session['requestParams']:
         valid = False
         errorMessage = 'No ntag provided!'
@@ -1286,7 +1290,7 @@ def sendArtReport(request):
             i += 1
             if i > 1:
                 time.sleep(10)
-            isSent = send_mail_art(template, subject, summary, recipient)
+            isSent = send_mail_bp(template, subject, summary, recipient)
             # put 10 seconds delay to bypass the message rate limit of smtp server
             time.sleep(10)
             if i >= maxTries:
@@ -1306,7 +1310,11 @@ def sendDevArtReport(request):
         return response
     isSent = False
     template = 'templated_email/artDevReport.html'
-    subject = '[BigPanDAmon][ART] Run on specific day tests'
+    try:
+        from core.settings.base import EMAIL_SUBJECT_PREFIX
+    except:
+        EMAIL_SUBJECT_PREFIX = ''
+    subject = '{}[ART] Run on specific day tests'.format(EMAIL_SUBJECT_PREFIX)
 
     query = {'created__castdate__range': [datetime.utcnow() - timedelta(hours=1), datetime.utcnow()]}
     exquery = {'nightly_tag__exact': F('nightly_tag_display')}
@@ -1334,7 +1342,7 @@ def sendDevArtReport(request):
                 i += 1
                 if i > 1:
                     time.sleep(10)
-                isSent = send_mail_art(template, subject, tests, recipient)
+                isSent = send_mail_bp(template, subject, tests, recipient)
                 # put 10 seconds delay to bypass the message rate limit of smtp server
                 time.sleep(10)
                 if i >= maxTries:
