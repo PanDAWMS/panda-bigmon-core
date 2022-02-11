@@ -1,21 +1,24 @@
 """
-    Created on 06.06.2018
+    A set of views for DataCarousel app
 """
 
-import random, json, math
-from django.http import HttpResponse
+import json
+import math
+
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render_to_response
-from django.db import connection
 from django.utils.cache import patch_response_headers
-from core.libs.exlib import dictfetchall, build_time_histogram
-from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, DateEncoder
-from core.settings.local import dbaccess
-from core.settings import defaultDatetimeFormat
-import pandas as pd
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
-from core.schedresource.utils import getCRICSEs
+
+from core.libs.exlib import build_time_histogram
+from core.oauth.utils import login_customrequired
+from core.views import initRequest, setupView, DateEncoder
+from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets
+from core.datacarousel.utils import retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds
+
+from core.settings import defaultDatetimeFormat
+
 
 @never_cache
 @login_customrequired
@@ -41,6 +44,24 @@ def dataCarouselleDashBoard(request):
     return response
 
 
+@never_cache
+@login_customrequired
+def dataCarouselTailsDashBoard(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
+    request.session['viewParams']['selection'] = ''
+    data = {
+        'request': request,
+        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+    }
+
+    response = render_to_response('DataTapeCaruselTails.html', data, content_type='text/html')
+    return response
+
+
+@never_cache
 def getStagingInfoForTask(request):
     valid, response = initRequest(request)
     data = getStagingData(request)
@@ -49,85 +70,23 @@ def getStagingInfoForTask(request):
     return response
 
 
-def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
-    isTimeNotDelta = True
-    timesadd1 = None
-    timesadd2 = None
-
-    try:
-        times = pd.to_datetime(listData)
-        if additionalList1:
-            timesadd1 = pd.to_datetime(additionalList1)
-        if additionalList2:
-            timesadd2 = pd.to_datetime(additionalList2)
-
-    except:
-        times = pd.to_timedelta(listData)
-        isTimeNotDelta = False
-        if additionalList1:
-            timesadd1 = pd.to_timedelta(additionalList1)
-        if additionalList2:
-            timesadd2 = pd.to_timedelta(additionalList2)
-
-    #if not timesadd is None:
-    #    mergedIndex = times.union(timesadd)
-    #else:
-    #    mergedIndex = times
-
-
-    df = pd.DataFrame({
-        "Count1": [1 for _ in listData]
-    }, index=times)
-
-    if not timesadd1 is None:
-        dfadd = pd.DataFrame({
-            "Count2": [1 for _ in additionalList1]
-        }, index=timesadd1)
-        result = pd.concat([df, dfadd])
+def getStagingTailsData(request):
+    initRequest(request)
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
+    timewindow = query['modificationtime__castdate__range']
+    if 'source' in request.GET:
+        source = request.GET['source']
     else:
-        result = df
+        source = None
+    datasets = getStagingDatasets(timewindow, source)
+    tasks = extractTasksIds(datasets)
+    setOfSEs = datasets.keys()
+    outliers = None
+    if len(setOfSEs) > 0:
+        stageStat, tasks_to_rucio = retreiveStagingStatistics(setOfSEs, taskstoingnore=tasks)
+        outliers = getOutliers(datasets, stageStat, tasks_to_rucio)
+    return JsonResponse(outliers, safe=False)
 
-    if not timesadd2 is None:
-        dfadd = pd.DataFrame({
-            "Count3": [1 for _ in additionalList2]
-        }, index=timesadd2)
-        result = pd.concat([result, dfadd])
-
-    grp = result.groupby([pd.Grouper(freq="24h")]).count()
-    values = grp.values.tolist()
-    if isTimeNotDelta:
-        index = grp.index.to_pydatetime().tolist()
-    else:
-        index = (grp.index / pd.Timedelta(hours=1)).tolist()
-
-    if not additionalList1 is None and len(additionalList1) == 0:
-        tmpval = []
-        for item in values:
-            if additionalList2:
-                tmpval.append([item[0], 0, item[1]])
-            else:
-                tmpval.append([item[0], 0])
-        values = tmpval
-
-    if not additionalList2 is None and len(additionalList2) == 0:
-        tmpval = []
-        if len(values) > 1:  # temp fix, to be looked closer
-            for item in values:
-                tmpval.append([item[0], item[1], 0])
-        values = tmpval
-
-
-    data = []
-    for time, count in zip(index, values):
-        data.append([time, count])
-    return data
-
-def substitudeRSEbreakdown(rse):
-    rses = getCRICSEs().get(rse, [])
-    final_string = ""
-    for rse in rses:
-        final_string += "&var-src_endpoint=" + rse
-    return final_string
 
 @never_cache
 def getDTCSubmissionHist(request):
@@ -249,94 +208,4 @@ def getDTCSubmissionHist(request):
     return response
 
 
-def getStagingData(request):
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
-    timewindow = query['modificationtime__castdate__range']
 
-    if 'source' in request.GET:
-        source = request.GET['source']
-    else:
-        source = None
-
-    if 'destination' in request.GET:
-        destination = request.GET['destination']
-    else:
-        destination = None
-
-    if 'campaign' in request.GET:
-        campaign = request.GET['campaign']
-    else:
-        campaign = None
-
-    if 'processingtype' in request.GET:
-        processingtype = request.GET['processingtype']
-    else:
-        processingtype = None
-
-    data = {}
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
-
-    new_cur = connection.cursor()
-
-    selection = "where 1=1 "
-    jeditaskid = None
-    if 'jeditaskid' in request.session['requestParams']:
-        jeditaskid = request.session['requestParams']['jeditaskid']
-        taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
-        new_cur = connection.cursor()
-        transactionKey = random.randrange(1000000)
-        executionData = []
-        for id in taskl:
-            executionData.append((id, transactionKey))
-
-        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-        new_cur.executemany(query, executionData)
-        connection.commit()
-        selection += "and t2.taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)"  % (tmpTableName, transactionKey)
-    else:
-        selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING)"
-
-    if source:
-        sourcel = [source] if ',' not in source else [SE for SE in source.split(',')]
-        selection += " AND t1.SOURCE_RSE in (" + ','.join('\''+str(x)+'\'' for x in sourcel) + ")"
-
-    if campaign:
-        campaignl = [campaign] if ',' not in campaign else [camp for camp in campaign.split(',')]
-        selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
-
-    if processingtype:
-        processingtypel = [processingtype] if ',' not in processingtype else [pt for pt in processingtype.split(',')]
-        selection += " AND t4.processingtype in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
-
-    if not jeditaskid:
-        selection += " AND not (NVL(t4.ENDTIME, CURRENT_TIMESTAMP) < t1.start_time) AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or (END_TIME is NULL and not (t1.STATUS = 'done')))" \
-                     % (timewindow[0], timewindow[1])
-
-    new_cur.execute(
-        """
-                SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
-                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, 
-                ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence, 
-                (CURRENT_TIMESTAMP-t1.UPDATE_TIME) as UPDATE_TIME, 
-                t4.processingtype, t2.STEP_ACTION_ID FROM ATLAS_DEFT.T_DATASET_STAGING t1
-                INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
-                INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
-                INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID %s 
-        """ % selection
-    )
-    datasets = dictfetchall(new_cur)
-    for dataset in datasets:
-        # Sort out requests by request on February 19, 2020
-        if dataset['STATUS'] in ('staging', 'queued', 'done'):
-            dataset = {k.lower(): v for k, v in dataset.items()}
-
-            if dataset.get('update_time'):
-                dataset['update_time_sort'] = int(dataset['update_time'].total_seconds())
-            else:
-                dataset['update_time_sort'] = None
-
-            data[dataset['taskid']] = dataset
-    return data

@@ -135,6 +135,7 @@ INSTALLED_APPS_EXTRA = [
     "core.art",
     "core.buildmonitor",
     "core.compare",
+    "core.datacarousel",
     "core.errorsscattering",
     "core.filebrowser",
     # "core.globalpage",

@@ -6,12 +6,9 @@ from django.urls import re_path, include
 
 from core import views as coremon_views
 
-
-from core.dashboards import dtcdboard as dtcdboard
 from core.dashboards import campaignprediction as campaignprediction
 from core.dashboards import campaingprogressDKB
 from core.libs import tasksPlots as tasksPlots
-from core.dashboards import dtctails as dtctails
 
 import core.pandajob.views_support as core_coremon_support_views
 
@@ -53,8 +50,6 @@ urlpatterns = [
     re_path(r'^tasknew/(?P<jeditaskid>.*)/$', coremon_views.taskInfo, name='taskInfoNew'),  # legacy
     re_path(r'^getjobsummaryfortask/(?P<jeditaskid>.*)/$', coremon_views.getJobSummaryForTask, name='getJobSummaryForTask'),
     re_path(r'^getbadeventsfortask/$', coremon_views.getBadEventsForTask, name='getbadeventsfortask'),
-    re_path(r'^getstaginginfofortask/$', dtcdboard.getStagingInfoForTask, name='getStagingInfoForTask'),
-    re_path(r'^getdtcsubmissionhist/$', dtcdboard.getDTCSubmissionHist, name='getDTCSubmissionHist'),
     re_path(r'^taskstatuslog/(?P<jeditaskid>.*)/$', coremon_views.getTaskStatusLog, name='gettaskstatuslog'),
     re_path(r'^tasklogs/(?P<jeditaskid>.*)/$', coremon_views.getTaskLogs, name='gettasklogs'),
     re_path(r'^ttc/$', coremon_views.ttc, name='ttc'),
@@ -98,10 +93,6 @@ urlpatterns = [
     re_path(r'^status_summary/', include('core.status_summary.urls'), name='status_summary'),
     re_path(r'^workingGroups/$', coremon_views.workingGroups, name='workingGroups'),
     re_path(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),
-
-    re_path(r'^datacardash/$', dtcdboard.dataCarouselleDashBoard, name='dataCarouselleDashBoard'),
-    re_path(r'^datacartaildata/$', dtctails.getStagingTailsData, name='datacartaildata'),
-    re_path(r'^datacartails/$', dtctails.dataCarouselTailsDashBoard, name='datacartails'),
 
     re_path(r'^campaignpredictiondash/$', campaignprediction.campaignPredictionDash, name='campaignPredictionDash'),
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
