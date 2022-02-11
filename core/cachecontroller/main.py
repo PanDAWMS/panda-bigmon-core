@@ -39,7 +39,7 @@ sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
 stageProgressCollector = DataCarouselPrestageCollector()
 mlFlowCleanUp = MLFlowCleanup()
-dataCaruselMails = DataCarouselMails()
+dataCaruselMails = DataCarouselMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 
 
 
