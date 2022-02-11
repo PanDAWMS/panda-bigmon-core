@@ -21,13 +21,13 @@ from core.utils import is_json_request, complete_request
 from core.views import initRequest, extensibleURL, removeParam
 from core.views import DateEncoder
 from core.art.artMail import send_mail_art
-from core.art.modelsART import ARTTests, ReportEmails, ARTResultsQueue
+from core.art.modelsART import ARTTests, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from core.common.models import Filestable4, FilestableArch
+from core.reports.models import ReportEmails
 from core.libs.error import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4
-from core.utils import is_json_request
 
 from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test
 
