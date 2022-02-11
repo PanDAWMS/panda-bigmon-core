@@ -748,42 +748,33 @@ function togglePayloadLog() {
           },
           plot: "",
         };
-       $scope.payload_log.get = function () {
-            $http({
-                    url: "{% url 'getpayloadlog' pandaid %}",
-                    method: "GET",
-                    params: {'mode':'pandaid'}
-                }
-            ).then(function success(response) {
-                $scope.payload_log.message = "";
-                $scope.payload_log.data = angular.fromJson(response.data['payloadlog']);
-                $scope.payload_log.flag = angular.fromJson(response.data['flag']);
-                if ($scope.payload_log.data.length > 0) {
-                       $scope.payload_log.buildDataTable();
-                }
-                else {
-                  $scope.payload_log.message = $sce.trustAsHtml("No data received :(");
-                }
-              },
-              function error(response) {
-                console.log(response);
-                $scope.payload_log.message = $sce.trustAsHtml('Failed to load data :( ');
-              }
-            );
-       };
        $scope.payload_log.buildDataTable = function () {
+           $scope.payload_log.flag = false
+
            $scope.payload_log.data_table = $('#payloadlogtable').dataTable({
-                "destroy": true,
                 "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
                 "pageLength": 50,
                 "paging": true,
                 "scrollX": true,
                 "aaSorting": [[0,'desc']],
-                "data": $scope.payload_log.data,
+                "ajax": {
+                     "url": "{% url 'getpayloadlog' pandaid %}?mode=pandaid",
+                    "method": "GET",
+                    "dataSrc": function (response) {
+                         $scope.payload_log.flag = response['flag'];
+                         return response['payloadlog'];
+                }},
+                "fnInitComplete": function(oSettings, json) {
+                    if ($scope.payload_log.flag == false) {
+                       clearInterval($scope.reload_interval);
+                    } else {
+                       $scope.reload_interval = setInterval(() => {$('#payloadlogtable').DataTable().ajax.reload();}, 5000);
+                    }
+                },
                 "aoColumns": [
                     {
                         title: "Time",
-                        data: "@timestamp",
+                        data: "@timestamp_nanoseconds",
                     },
                     {
                         title: "LogLevel",
@@ -801,17 +792,12 @@ function togglePayloadLog() {
                     $('td', row).eq(2).addClass(data['status'] + '_fill');
                 }
               })
-           if ($scope.payload_log.flag == false) {
-               clearInterval($scope.reload_interval);
-           }
-           else {
-               $scope.reload_interval = setInterval(() => {$scope.payload_log.get();}, 5000);
-           }
+
         };
 
        $scope.payload_log.toggle = function() {
             $scope.payload_log.is_hidden = false;
-            $scope.payload_log.get();
+            $scope.payload_log.buildDataTable();
         };
     });
 </script>

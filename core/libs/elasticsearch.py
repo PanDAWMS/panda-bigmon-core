@@ -41,8 +41,7 @@ def create_esatlas_connection(verify_certs=True, timeout=2000, max_retries=10,
         _logger.error(ex)
     return None
 
-def \
-        get_payloadlog(id, connection, mode = 'pandaid'):
+def get_payloadlog(id, connection, mode = 'pandaid'):
     """
     Get pilot logs from ATLAS ElasticSearch storage
     """
@@ -53,7 +52,7 @@ def \
 
     s = Search(using=connection, index='atlas_pilotlogs*')
 
-    s = s.source(["@timestamp","level", "message", "PandaJobID", "TaskID", "Harvester_WorkerID", "Harvester_ID"])
+    s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID", "Harvester_WorkerID", "Harvester_ID"])
 
     if mode == 'pandaid':
         query['pandaid'] = int(id)
