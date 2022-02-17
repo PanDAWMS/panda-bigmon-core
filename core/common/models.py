@@ -485,7 +485,7 @@ class JobsStatuslog(models.Model):
     modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True)
     modiftime_extended = models.DateTimeField(db_column='MODIFTIME_EXTENDED')
     class Meta:
-        db_table = u'"ATLAS_PANDA"."JOBS_STATUSLOG"'
+        db_table = f'"{DB_SCHEMA_PANDA}"."JOBS_STATUSLOG"'
         app_label = 'panda'
 
 
