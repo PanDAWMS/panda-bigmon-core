@@ -51,6 +51,8 @@ class DDOSMiddleware(object):
 
         # check if remote is a valid IP address
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for is None:
+            x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case one server config
         if x_forwarded_for is not None:
             try:
                 x_forwarded_for = re.findall(r'[0-9]+(?:\.[0-9]+){3}', x_forwarded_for)[0]
