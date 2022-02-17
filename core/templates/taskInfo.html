@@ -622,6 +622,7 @@
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script>
+var MON_VO = '{{ viewParams.MON_VO|safe }}';
 google.charts.load('current', {'packages':['sankey']});
 
     app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
@@ -676,7 +677,9 @@ google.charts.load('current', {'packages':['sankey']});
         var init = function () {
             $scope.getStagingDS();
         };
-        init();
+        if (MON_VO === 'ATLAS') {
+          init();
+        }
     });
 
     var jc_plot_data = {{ plotsDict|safe }};
