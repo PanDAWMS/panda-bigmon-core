@@ -18,7 +18,7 @@ from django.db import connections
 from django.utils import timezone
 from django.db import models
 
-from core.settings.config import DB_SCHEMA, DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
+from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH, DB_SCHEMA_PANDA_META
 
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
@@ -518,7 +518,7 @@ class Logstable(models.Model):
     log3 = models.TextField(db_column='LOG3') 
     log4 = models.TextField(db_column='LOG4') 
     class Meta:
-        db_table = u'logstable'
+        db_table = f'"{DB_SCHEMA_PANDA_META}"."logstable"'
         app_label = 'panda'
 
 

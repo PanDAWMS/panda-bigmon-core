@@ -120,6 +120,7 @@ PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
     DB_SCHEMA = 'ATLAS_PANDABIGMON'
     DB_SCHEMA_PANDA = 'ATLAS_PANDA'
+    DB_SCHEMA_PANDA_META = 'ATLAS_PANDAMETA'
     DB_SCHEMA_PANDA_ARCH = 'ATLAS_PANDAARCH'
     DB_SCHEMA_IDDS = 'ATLAS_IDDS'
     DATABASES = dbaccess_oracle_atlas
@@ -128,6 +129,7 @@ elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA = 'doma_pandabigmon'
     DB_SCHEMA_PANDA = 'doma_panda'
     DB_SCHEMA_PANDA_ARCH = 'doma_pandaarch'
+    DB_SCHEMA_PANDA_META = 'doma_pandameta'
     DB_SCHEMA_IDDS = 'DOMA_IDDS'
     DATABASES = dbaccess_postgres
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
@@ -135,6 +137,7 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA = 'DOMA_PANDABIGMON'
     DB_SCHEMA_PANDA = 'DOMA_PANDA'
     DB_SCHEMA_PANDA_ARCH = 'DOMA_PANDAARCH'
+    DB_SCHEMA_PANDA_META = 'DOMA_PANDAMETA'
     DB_SCHEMA_IDDS = 'DOMA_IDDS'
     DATABASES = dbaccess_oracle_doma
     CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
