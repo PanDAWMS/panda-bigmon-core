@@ -351,22 +351,20 @@ def extractTasksIds(datasets):
     return tasksIDs
 
 
-def send_report(data):
+def send_report_rse(rse, data):
     mail_template = "templated_email/dataCarouselStagingAlert.html"
     max_mail_attempts = 10
     try:
         from core.settings.base import EMAIL_SUBJECT_PREFIX
     except:
         EMAIL_SUBJECT_PREFIX = ''
-    subject = "{} Data Carousel Alert for {}".format(EMAIL_SUBJECT_PREFIX, data['SE'])
+    subject = "{} Data Carousel Alert for {}".format(EMAIL_SUBJECT_PREFIX, rse)
 
     rquery = {'report': 'dc_stalled'}
     recipient_list = list(ReportEmails.objects.filter(**rquery).values('email'))
 
     for recipient in recipient_list:
-        cache_key = "mail_sent_flag_{RR}_{RECIPIENT}".format(RR=data["RR"],
-                                                             TASKID=data["TASKID"],
-                                                             RECIPIENT=recipient['email'])
+        cache_key = "mail_sent_flag_{RSE}_{RECIPIENT}".format(RSE=rse, RECIPIENT=recipient['email'])
         if not cache.get(cache_key, False):
             is_sent = False
             i = 0

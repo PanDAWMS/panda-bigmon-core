@@ -16,7 +16,7 @@ from django.db import connection
 from core.libs.exlib import build_time_histogram, dictfetchall
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView, DateEncoder
-from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report
+from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report_rse
 from core.datacarousel.utils import retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds
 
 from core.settings.base import DATA_CAROUSEL_MAIL_DELAY_DAYS, DATA_CAROUSEL_MAIL_REPEAT
@@ -235,8 +235,12 @@ def send_stalled_requests_report(request):
         _logger.error(e)
         rows = []
 
+    rows = sorted(rows, key=lambda x: x['UPDATE_TIME'], reverse=True)
+    ds_per_rse = {}
     for r in rows:
-        _logger.debug("DataCarouselMails processes this Rucio Rule: {}".format(r['RSE']))
+        if r['SOURCE_RSE'] not in ds_per_rse:
+            ds_per_rse[r['SOURCE_RSE']] = []
+
         data = {
             "SE": r['SOURCE_RSE'],
             "RR": r['RSE'],
@@ -246,9 +250,11 @@ def send_stalled_requests_report(request):
             "STAGED_FILES": r['STAGED_FILES'],
             "UPDATE_TIME": str(r['UPDATE_TIME'])
         }
+        ds_per_rse[r['SOURCE_RSE']].append(data)
 
-        send_report(data)
-
+    for rse, data in ds_per_rse.items():
+        _logger.debug("DataCarouselMails processes this RSE: {}".format(rse))
+        send_report_rse(rse, data)
 
     return JsonResponse({'sent': len(rows)})
 

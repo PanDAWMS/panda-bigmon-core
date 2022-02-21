@@ -56,7 +56,7 @@ def send_mail_bp(template, subject, summary, recipient, send_html=False):
             )
 
     except SMTPException as e:
-        msg = 'Internal Server Error! Exception was caught while sending ART jobs report to ' + recipient
+        msg = 'Internal Server Error! Exception was caught while sending report {} to {}'.format(subject, recipient)
         msg += '\n' + str(e)
         _logger.exception(msg)
         isSuccess = False
