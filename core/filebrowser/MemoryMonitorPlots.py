@@ -152,10 +152,6 @@ def getPrMonPlotsData(request, pandaid=-1):
     except:
         pandaid = -1
 
-    show_steps = False
-    if 'substeps' in request.session['requestParams'] and request.session['requestParams']['substeps'] == 'show':
-        show_steps = True
-
     # Definition of prmon labels/units for beautification from:
     # https://github.com/HSF/prmon/blob/master/package/scripts/prmon_plot.py
     axisunits = {'vmem': 'kb',
@@ -264,16 +260,15 @@ def getPrMonPlotsData(request, pandaid=-1):
                 with open(mms_path) as json_file:
                     try:
                         sum_data = json.load(json_file)
-                    except:
-                        _logger.exception('Failed to load json from memory_monitor_summary.json file')
-            # get payload steps
-            if show_steps:
-                pso_path = payload_stdout_path = get_job_log_file_path(pandaid, 'payload.stdout')
-                if pso_path is not None and os.path.exists(pso_path):
-                    try:
-                        payload_steps = get_payload_steps(pso_path)
                     except Exception as e:
-                        _logger.exception("Error in getting athena info\n{}".format(e))
+                        _logger.exception('Failed to load json from memory_monitor_summary.json file\n{}'.format(e))
+            # get payload steps
+            pso_path = get_job_log_file_path(pandaid, 'payload.stdout')
+            if pso_path is not None and os.path.exists(pso_path):
+                try:
+                    payload_steps = get_payload_steps(pso_path)
+                except Exception as e:
+                    _logger.exception("Error in getting athena info\n{}".format(e))
         else:
             msg = """No memory monitor output file found in a job log tarball. 
                      It can happen if a job failed and logs were not saved 
@@ -348,11 +343,6 @@ def getPrMonPlotsData(request, pandaid=-1):
         for pname, pdet in plots_details.items():
             plots_data[pname] = {'data': [['x']], 'details': pdet}
             plots_data[pname]['data'][0].extend(raw_data['wtime_min'].tolist())
-            if len(payload_steps) > 0:
-                plots_data[pname]['grid'] = {'x': {'lines': []}}
-                for step in payload_steps:
-                    plots_data[pname]['grid']['x']['lines'].append({'value': step[0], 'text': step[1]})
-                plots_data[pname]['details']['minx'] = -1 if len(plots_data[pname]['data'][0]) < 50 else -round(math.log(len(plots_data[pname]['data'][0])))
 
         for mc in metric_groups['count']:
             tmp = [legendnames[mc]]
@@ -418,6 +408,18 @@ def getPrMonPlotsData(request, pandaid=-1):
             tmp = [legendnames[mc]]
             tmp.extend(raw_data[mc].tolist())
             plots_data['gpu_res']['data'].append(tmp)
+
+        if len(payload_steps) > 0:
+            for pname, pdet in plots_details.items():
+                plots_data[pname]['grid'] = {'x': {'lines': []}}
+                for step in payload_steps:
+                    plots_data[pname]['grid']['x']['lines'].append({'value': step[0], 'text': step[1]})
+
+                plots_data[pname]['details']['ymax'] = 0
+                for row in plots_data[pname]['data'][1:]:
+                    if max(row[1:])+abs(min(row[1:]))/2 > plots_data[pname]['details']['ymax']:
+                        plots_data[pname]['details']['ymax'] = max(row[1:])+abs(min(row[1:]))/2
+                plots_data[pname]['details']['ymax'] *= 1.35
 
     # remove plot if no data
     remove_list = []

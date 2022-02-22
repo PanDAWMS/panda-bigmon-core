@@ -757,15 +757,14 @@ function draw_bar_hist(rawdata, divToShow)  {
 function draw_line_chart(rawdata, divid, ext={}) {
     var formatXAxis = d3.format(".0f");
 
+    let width = getWidth()-20;
+    let height = 320;
+    if (ext.size) {width = ext.size[0]; height=ext.size[1];}
+
     let data = rawdata['data'];
     let details = rawdata['details'];
     let grid = {}
-    if ('grid' in rawdata) { grid = rawdata['grid'];}
-
-    let width = getWidth()-20;
-    let height = 300;
-
-    if (ext.size) {width = ext.size[0]; height=ext.size[1];}
+    if ('grid' in rawdata) { grid = rawdata['grid']; height += 50; }
 
     var chart = c3.generate({
         bindto: '#' + divid,
@@ -783,7 +782,6 @@ function draw_line_chart(rawdata, divid, ext={}) {
         },
         axis: {
             x: {
-                min: details.minx,
                 label: {
                     text: details.xlabel,
                     position: 'outer-right'
@@ -794,7 +792,7 @@ function draw_line_chart(rawdata, divid, ext={}) {
                 }
             },
             y: {
-                // min: 0,
+                max: details.ymax,
                 padding: {
                   bottom: 0,
                 },
@@ -823,6 +821,16 @@ function draw_line_chart(rawdata, divid, ext={}) {
           right: 20,
         },
     });
+
+    if ('grid' in rawdata) {
+      d3.selectAll('.c3-xgrid-line').each(function(d, i){
+          // for each 'text' element within the group move to the right side of a vertical line
+          d3.select(this).select('text').each(function(d, i){
+              d3.select(this).attr('dy', 8);
+          })
+      });
+    }
+
     return chart
 }
 
@@ -830,8 +838,14 @@ function draw_line_chart(rawdata, divid, ext={}) {
 function draw_area_chart(rawdata, divid, ext={}) {
     var formatXAxis = d3.format(".0f");
 
+    let width = getWidth()-20;
+    let height = 300;
+    if (ext.size) {width = ext.size[0]; height=ext.size[1];}
+
     let data = rawdata['data'];
     let details = rawdata['details'];
+    let grid = {}
+    if ('grid' in rawdata) { grid = rawdata['grid']; height += 50; }
 
     let keys = [];
     data.forEach(function (row) {
@@ -839,10 +853,7 @@ function draw_area_chart(rawdata, divid, ext={}) {
     });
     keys.unshift('x');
 
-    let width = getWidth()-20;
-    let height = 300;
 
-    if (ext.size) {width = ext.size[0]; height=ext.size[1];}
 
     var chart = c3.generate({
         bindto: '#' + divid,
@@ -852,6 +863,7 @@ function draw_area_chart(rawdata, divid, ext={}) {
             type: 'area',
             groups: [keys]
         },
+        grid: grid,
         point: {
             show: false,
         },
@@ -870,7 +882,7 @@ function draw_area_chart(rawdata, divid, ext={}) {
                 }
             },
             y: {
-                // min: 0,
+                max: details.ymax,
                 padding: {
                   bottom: 0,
                 },
@@ -899,6 +911,14 @@ function draw_area_chart(rawdata, divid, ext={}) {
           right: 20,
         },
     });
+    if ('grid' in rawdata) {
+      d3.selectAll('.c3-xgrid-line').each(function(d, i){
+          // for each 'text' element within the group move to the right side of a vertical line
+          d3.select(this).select('text').each(function(d, i){
+              d3.select(this).attr('dy', 8);
+          })
+      });
+    }
     return chart
 }
 
