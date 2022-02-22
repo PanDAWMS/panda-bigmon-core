@@ -87,8 +87,11 @@
     $scope.prmon.hw_info = [];
     $scope.prmon.prmon_info = '';
     $scope.prmon.message = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
-    $scope.prmon.url_path = "{% url 'getPrMonPlotsData' pandaid %}";
-
+    $scope.prmon.request_params = {{ requestParams|safe }};
+    $scope.prmon.url_path = "{% url 'getPrMonPlotsData' pandaid %}?";
+    Object.keys($scope.prmon.request_params).forEach(key => {
+      $scope.prmon.url_path += key + '=' + $scope.prmon.request_params[key] + '&'
+    })
 
     $scope.prmon.fetch = function () {
       $http.get($scope.prmon.url_path).then(

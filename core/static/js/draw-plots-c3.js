@@ -759,6 +759,8 @@ function draw_line_chart(rawdata, divid, ext={}) {
 
     let data = rawdata['data'];
     let details = rawdata['details'];
+    let grid = {}
+    if ('grid' in rawdata) { grid = rawdata['grid'];}
 
     let width = getWidth()-20;
     let height = 300;
@@ -772,6 +774,7 @@ function draw_line_chart(rawdata, divid, ext={}) {
             columns: data,
             type: 'line',
         },
+        grid: grid,
         point: {
             show: false,
         },
@@ -780,6 +783,7 @@ function draw_line_chart(rawdata, divid, ext={}) {
         },
         axis: {
             x: {
+                min: details.minx,
                 label: {
                     text: details.xlabel,
                     position: 'outer-right'

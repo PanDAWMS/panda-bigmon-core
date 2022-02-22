@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import logging
 import math
+import re
 from datetime import datetime
 import json
 from django.http import HttpResponse
@@ -12,6 +13,7 @@ from core.pandajob.models import Jobsarchived4, Jobsarchived
 
 from core.oauth.utils import login_customrequired
 from core.views import initRequest
+from core.libs.exlib import parse_datetime
 from core.filebrowser.views import get_job_log_file_path
 from core.settings.config import PRMON_LOGS_DIRECTIO_LOCATION
 
@@ -96,6 +98,44 @@ def prMonPlots(request, pandaid=-1):
     return render_to_response('jobMemoryMonitor.html', data, content_type='text/html')
 
 
+def get_seconds(line):
+    """gets the seconds from timestamp in athena output (location of timestamp is hard-coded)"""
+    matches = re.findall(r'\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3}', line)
+    t = parse_datetime(matches[0])
+    seconds = (t-datetime(1970, 1, 1)).total_seconds()  # get seconds
+    # seconds = seconds + float("0."+line.split()[2].split(":")[2].split(',')[1])  # add fraction of the seconds
+    return seconds
+
+
+def get_payload_steps(payload_stdout_path):
+    """
+    Read payload.stdout log to find name and start time in min of each step
+    :param pandaid: int
+    :return: payload_steps: list
+    """
+    payload_steps = []
+
+    init_time = True
+    with open(payload_stdout_path) as f:
+        for line in f:
+            if "INFO" in line and init_time:
+                init_time = False
+                firsttime = get_seconds(line)
+
+            if "Starting execution" in line:
+                try:
+                    payload_steps.append([round((get_seconds(line) - firsttime)/60, 1), str(line.split()[7])])
+                except Exception as e:
+                    _logger.debug('Failed to get timestamp from log line: {}\n{}'.format(line, e))
+            if "INFO Validating output files" in line:
+                try:
+                    payload_steps.append([round((get_seconds(line) - firsttime) / 60, 1), "VALIDATION"])
+                except Exception as e:
+                    _logger.debug('Failed to get timestamp from log line: {}\n{}'.format(line, e))
+
+    return payload_steps
+
+
 @never_cache
 def getPrMonPlotsData(request, pandaid=-1):
     """
@@ -104,10 +144,17 @@ def getPrMonPlotsData(request, pandaid=-1):
     :param pandaid:
     :return: list of dicts containing data for plots
     """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
     try:
         pandaid = int(pandaid)
     except:
         pandaid = -1
+
+    show_steps = False
+    if 'substeps' in request.session['requestParams'] and request.session['requestParams']['substeps'] == 'show':
+        show_steps = True
 
     # Definition of prmon labels/units for beautification from:
     # https://github.com/HSF/prmon/blob/master/package/scripts/prmon_plot.py
@@ -201,6 +248,7 @@ def getPrMonPlotsData(request, pandaid=-1):
     plots_data = {}
     raw_data = pd.DataFrame()
     sum_data = {}
+    payload_steps = []
 
     # get memory_monitor_output.txt file
     if pandaid > 0:
@@ -218,6 +266,14 @@ def getPrMonPlotsData(request, pandaid=-1):
                         sum_data = json.load(json_file)
                     except:
                         _logger.exception('Failed to load json from memory_monitor_summary.json file')
+            # get payload steps
+            if show_steps:
+                pso_path = payload_stdout_path = get_job_log_file_path(pandaid, 'payload.stdout')
+                if pso_path is not None and os.path.exists(pso_path):
+                    try:
+                        payload_steps = get_payload_steps(pso_path)
+                    except Exception as e:
+                        _logger.exception("Error in getting athena info\n{}".format(e))
         else:
             msg = """No memory monitor output file found in a job log tarball. 
                      It can happen if a job failed and logs were not saved 
@@ -292,6 +348,11 @@ def getPrMonPlotsData(request, pandaid=-1):
         for pname, pdet in plots_details.items():
             plots_data[pname] = {'data': [['x']], 'details': pdet}
             plots_data[pname]['data'][0].extend(raw_data['wtime_min'].tolist())
+            if len(payload_steps) > 0:
+                plots_data[pname]['grid'] = {'x': {'lines': []}}
+                for step in payload_steps:
+                    plots_data[pname]['grid']['x']['lines'].append({'value': step[0], 'text': step[1]})
+                plots_data[pname]['details']['minx'] = -1 if len(plots_data[pname]['data'][0]) < 50 else -round(math.log(len(plots_data[pname]['data'][0])))
 
         for mc in metric_groups['count']:
             tmp = [legendnames[mc]]
@@ -406,4 +467,3 @@ def getPrMonPlotsData(request, pandaid=-1):
     }
 
     return HttpResponse(json.dumps(data), content_type='application/json')
-
