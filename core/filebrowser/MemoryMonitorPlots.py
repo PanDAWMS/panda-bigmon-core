@@ -124,15 +124,24 @@ def get_payload_steps(payload_stdout_path):
 
             if "Starting execution" in line:
                 try:
-                    payload_steps.append([round((get_seconds(line) - firsttime)/60, 1), str(line.split()[7])])
+                    payload_steps.append([math.floor((get_seconds(line) - firsttime)/60), str(line.split()[7])])
                 except Exception as e:
                     _logger.debug('Failed to get timestamp from log line: {}\n{}'.format(line, e))
             if "INFO Validating output files" in line:
                 try:
-                    payload_steps.append([round((get_seconds(line) - firsttime) / 60, 1), "VALIDATION"])
+                    payload_steps.append([math.floor((get_seconds(line) - firsttime) / 60), "VALIDATION"])
                 except Exception as e:
                     _logger.debug('Failed to get timestamp from log line: {}\n{}'.format(line, e))
 
+    # remove following steps if they can overlap
+    distances = [i_step[0] - payload_steps[i-1][0] for i, i_step in enumerate(payload_steps) if i > 0]
+    if len([i for i, d in enumerate(distances) if d < 1]) > 0:
+        for j in sorted([i for i, d in enumerate(distances) if d < 1], reverse=True):
+            try:
+                del payload_steps[j+1]
+                payload_steps[j][1] += '[+]'
+            except:
+                pass
     return payload_steps
 
 
