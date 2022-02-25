@@ -886,7 +886,7 @@ def input_summary_for_task(taskrec, dsets):
     else:
         ifsquery = {}
         ifsquery['jeditaskid'] = jeditaskid
-        indsids = [ds['datasetid'] for ds in dsets if ds['type'] == 'input' and ds['masterid'] is None]
+        indsids = [ds['datasetid'] for ds in dsets if ds['type'] == 'input' and (ds['masterid'] is None or ds['masterid'] == '')]
         ifsquery['datasetid__in'] = indsids if len(indsids) > 0 else [-1,]
         inputfiles_list = []
         inputfiles_list.extend(JediDatasetContents.objects.filter(**ifsquery).values())
