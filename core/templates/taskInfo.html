@@ -84,7 +84,10 @@
           <br><span class="closed">last modified</span>
         </th>
         <th>Cores</th>
-        <th>Priority</th>
+        <th>Priority:
+          <br><span class="defined">original</span>
+          <br><span class="closed">current</span>
+        </th>
         <th>Attempt</th>
         {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
           <th>Parent</th>
@@ -173,7 +176,7 @@
           <br>{% if task.modificationtime %}<span class="closed">{{ task.modificationtime }}</span>{% else %}&mdash;{% endif %}
         </td>
         <td>{{ task.corecount }}</td>
-        <td>{{ task.taskpriority }}</td>
+        <td><span class="defined">{{ task.taskpriority }}</span><br><span class="closed">{{ task.currentpriority }}</span></td>
         <td>{{ task.attemptnr }}</td>
         {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
           <td><a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a></td>

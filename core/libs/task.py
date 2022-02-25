@@ -156,8 +156,10 @@ def cleanTaskList(tasks, **kwargs):
             tasks = sorted(tasks, key=lambda x: x['dsinfo']['pctfailed'], reverse=True)
         elif sortby == 'taskname':
             tasks = sorted(tasks, key=lambda x: x['taskname'])
-        elif sortby == 'jeditaskid' or sortby == 'taskid':
+        elif sortby == 'jeditaskid' or sortby == 'taskid' or sortby == 'jeditaskid-desc' or sortby == 'taskid-desc':
             tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
+        elif sortby == 'jeditaskid-asc' or sortby == 'taskid-asc':
+            tasks = sorted(tasks, key=lambda x: x['jeditaskid'])
         elif sortby == 'cloud':
             tasks = sorted(tasks, key=lambda x: x['cloud'], reverse=True)
     else:

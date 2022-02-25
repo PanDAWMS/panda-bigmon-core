@@ -64,7 +64,10 @@
             <br><span class="closed">last modified</span>
           </th>
           <th>Cores <br>Defined <br><span class="finished">Running</span> <br><span class="activated">Normalized</span></th>
-          <th>Priority</th>
+          <th>Priority:
+            <br><span class="defined">original</span>
+            <br><span class="closed">current</span>
+          </th>
           <th>Attempt</th>
           {% if task.ticketid %}
               <th>Tracker</th>
@@ -120,7 +123,7 @@
           <td>{{ task.corecount }}
             <br><span class="finished">{% if task.accsum %}{{ task.accsum }}{% else %}-{% endif %}</span>
             <br><span class="activated">{% if task.naccsum %}{{ task.naccsum }}{% else %}-{% endif %}</span></td>
-          <td>{{ task.taskpriority }}</td>
+          <td><span class="defined">{{ task.taskpriority }}</span><br><span class="closed">{{ task.currentpriority }}</span></td>
           <td>{{ task.attemptnr }}</td>
           {% if task.ticketid %}
               <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
