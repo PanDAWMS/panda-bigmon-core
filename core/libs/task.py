@@ -140,6 +140,8 @@ def cleanTaskList(tasks, **kwargs):
             task.update(dstotals)
 
     if sortby is not None:
+        if sortby == 'creationdate-asc':
+            tasks = sorted(tasks, key=lambda x: x['creationdate'])
         if sortby == 'time-ascending':
             tasks = sorted(tasks, key=lambda x: x['modificationtime'])
         if sortby == 'time-descending':

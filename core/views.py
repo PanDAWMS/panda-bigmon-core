@@ -6292,7 +6292,7 @@ def taskList(request):
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
     else:
-        limit = 1000
+        limit = 5000
         if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'pctfailed':
             limit = 50000
 
