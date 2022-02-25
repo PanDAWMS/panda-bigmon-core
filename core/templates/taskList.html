@@ -206,7 +206,7 @@
                         <a href="{{ nosorturl }}sortby=pctfailed"><span class='failed'>Nfail</span></a>
                     </th>
                     <th>Total/<a href="{{ nosorturl }}sortby=totevrem">Remaining</a> events</th>
-                    <th>Age [days]</th>
+                    <th><a href="{{ nosorturl }}sortby=creationdate-asc">Created</a></th>
                     <th><a href="{{ nosorturl }}sortby=time-descending">Modified</a></th>
                     <th><a href="{{ nosorturl }}sortby=statetime-descending">State changed</a></th>
                     <th><a href="{{ nosorturl }}sortby=priority">Priority</a></th>
@@ -260,7 +260,7 @@
                         </td>
                         <td><font size=-1>{% if task.totev > 0 %} {{ task.totev }} /
                             {{ task.totevrem }} {% endif %}</font></td>
-                        <td><font size=-1>{{ task.age }}</font></td>
+                        <td><font size=-1>{{ task.creationdate }}</font></td>
                         <td><font size=-1>{{ task.modificationtime }}</font></td>
                         <td><font size=-1>{{ task.statechangetime }}</font></td>
                         <td>{{ task.taskpriority }}</td>
