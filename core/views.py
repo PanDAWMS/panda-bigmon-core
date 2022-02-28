@@ -1841,7 +1841,8 @@ def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays
 
 def mainPage(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     setupView(request)
 
     debuginfo = None
@@ -1853,22 +1854,8 @@ def mainPage(request):
         debuginfo += "<br>******* Environment<br>"
         for env in os.environ:
             debuginfo += "%s = %s<br>" % (env, os.environ[env])
-    #TODO It should be removed in the future
-    hostname = "dashb-atlas-job.cern.ch"
-    port = "80"
-    try:
-        import socket
-        host = socket.gethostbyname(hostname)
-        s = socket.create_connection((host, port), 2)
-        if(s):
-            old_monitoring = 1
-    except Exception as e:
-        old_monitoring = 0
 
-
-
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -1878,17 +1865,13 @@ def mainPage(request):
             'requestParams': request.session['requestParams'],
             'debuginfo': debuginfo,
             'built': datetime.now().strftime("%H:%M:%S"),
-            'old_monitoring': old_monitoring,
         }
         data.update(getContextVariables(request))
         response = render_to_response('core-mainPage.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-    elif (('HTTP_ACCEPT' in request.META) and request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or (
-        'json' in request.session['requestParams']):
-        return HttpResponse('json', content_type='text/html')
     else:
-        return HttpResponse('not understood', content_type='text/html')
+        return HttpResponse('json', content_type='text/html')
 
 
 def helpPage(request):
@@ -1964,13 +1947,11 @@ def jobParamList(request):
     if 'pandaid' in request.session['requestParams']:
         idstring = request.session['requestParams']['pandaid']
         idstringl = idstring.split(',')
-        for id in idstringl:
-            idlist.append(int(id))
-    query = {}
-    query['pandaid__in'] = idlist
+        for pid in idstringl:
+            idlist.append(int(pid))
+    query = {'pandaid__in': idlist}
     jobparams = Jobparamstable.objects.filter(**query).values()
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    if is_json_request(request):
         return HttpResponse(json.dumps(jobparams, cls=DateEncoder), content_type='application/json')
     else:
         return HttpResponse('not supported', content_type='text/html')
@@ -2006,6 +1987,7 @@ def cache_filter(timeout):
             return responce
         return _wrapped_view
     return decorator
+
 
 @login_customrequired
 def jobList(request, mode=None, param=None):
