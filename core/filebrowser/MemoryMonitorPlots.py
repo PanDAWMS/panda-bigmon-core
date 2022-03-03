@@ -426,7 +426,7 @@ def getPrMonPlotsData(request, pandaid=-1):
 
                 plots_data[pname]['details']['ymax'] = 0
                 for row in plots_data[pname]['data'][1:]:
-                    if max(row[1:])+abs(min(row[1:]))/2 > plots_data[pname]['details']['ymax']:
+                    if len(row[1:]) > 1 and max(row[1:])+abs(min(row[1:]))/2 > plots_data[pname]['details']['ymax']:
                         plots_data[pname]['details']['ymax'] = max(row[1:])+abs(min(row[1:]))/2
                 plots_data[pname]['details']['ymax'] *= 1.35
 
