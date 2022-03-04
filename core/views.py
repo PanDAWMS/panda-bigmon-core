@@ -519,6 +519,13 @@ def initRequest(request, callselfmon=True):
                     "errormessage": "Empty value '%s' for %s" % (pval, p),
                 }
                 return False, render_to_response('errorPage.html', data, content_type='text/html')
+            if p.lower() in ('jobname', 'taskname', ) and len(pval) > 0 and ('%' in pval or '%s' in pval):
+                data = {
+                    'viewParams': request.session['viewParams'],
+                    'requestParams': request.session['requestParams'],
+                    "errormessage": "Use * symbol for pattern search instead of % for {}".format(p),
+                }
+                return False, render_to_response('errorPage.html', data, content_type='text/html')
             request.session['requestParams'][p.lower()] = pval
 
     # TODO delete this as well
