@@ -21,7 +21,7 @@ def RSEtoInpDat(TASK):
                 M[count_j][0] = j
                 txt = k
                 x1 = txt.split(".")
-                if x1[0] in ("group", "user"):
+                if x1[0] in ("group", "user") or x1[0].startswith('pseudo'):
                     out_str = txt
                 else:
                     out_str = x1[0] + "_" + x1[1] + "_" + x1[3] + "_" + x1[4] + "_" + x1[5]
@@ -36,7 +36,7 @@ def RSEtoInpDat(TASK):
                 M[count_j][0] = j
                 txt = k
                 x1 = txt.split(".")
-                if x1[0] in ("group", "user"):
+                if x1[0] in ("group", "user") or x1[0].startswith('pseudo'):
                     out_str = txt
                 else:
                     out_str = x1[0] + "_" + x1[1] + "_" + x1[3] + "_" + x1[4] + "_" + x1[5]
@@ -64,7 +64,7 @@ def InpDattoSITE(TASK):
             for j in TASK["data"]["datasets"][k]["jobs"]:
                 txt = k
                 x1 = txt.split(".")
-                if x1[0] in ("group", "user"):
+                if x1[0] in ("group", "user") or x1[0].startswith('pseudo'):
                     out_str = txt
                 else:
                     out_str = x1[0] + "_" + x1[1] + "_" + x1[3] + "_" + x1[4] + "_" + x1[5]

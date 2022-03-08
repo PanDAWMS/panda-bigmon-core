@@ -1415,8 +1415,8 @@ def get_task_flow_data(jeditaskid):
     data = []
     # get datasets
     datasets = []
-    dquery = {'jeditaskid': jeditaskid, 'type__in': ['input'], 'masterid__isnull': True}
-    datasets.extend(JediDatasets.objects.filter(**dquery).values('jeditaskid', 'datasetname', ))
+    dquery = {'jeditaskid': jeditaskid, 'type__in': ['input', 'pseudo_input'], 'masterid__isnull': True}
+    datasets.extend(JediDatasets.objects.filter(**dquery).values('jeditaskid', 'datasetname', 'type'))
 
     dataset_dict = {}
     for d in datasets:
@@ -1438,24 +1438,27 @@ def get_task_flow_data(jeditaskid):
         for j in jobs:
             if len(j['proddblock']) > 0:
                 dname = j['proddblock'] if ':' not in j['proddblock'] else j['proddblock'].split(':')[1]
-                if j['computingsite'] is not None and j['computingsite'] != '':
-                    if j['computingsite'] not in dataset_dict[dname]['jobs']:
-                        dataset_dict[dname]['jobs'][j['computingsite']] = {}
-                    job_state = j['jobstatus'] if j['jobstatus'] in const.JOB_STATES_FINAL else 'active'
-                    if job_state not in dataset_dict[dname]['jobs'][j['computingsite']]:
-                        dataset_dict[dname]['jobs'][j['computingsite']][job_state] = 0
-                    dataset_dict[dname]['jobs'][j['computingsite']][job_state] += j['njobs']
+            else:
+                dname = next(iter(dataset_dict)) if len(dataset_dict) > 0 else 'pseudo_dataset'
+            if j['computingsite'] is not None and j['computingsite'] != '':
+                if j['computingsite'] not in dataset_dict[dname]['jobs']:
+                    dataset_dict[dname]['jobs'][j['computingsite']] = {}
+                job_state = j['jobstatus'] if j['jobstatus'] in const.JOB_STATES_FINAL else 'active'
+                if job_state not in dataset_dict[dname]['jobs'][j['computingsite']]:
+                    dataset_dict[dname]['jobs'][j['computingsite']][job_state] = 0
+                dataset_dict[dname]['jobs'][j['computingsite']][job_state] += j['njobs']
 
     # get RSE for datasets
     replicas = []
     if len(datasets) > 0:
         dids = []
         for d in datasets:
-            did = {
-                'scope': d['datasetname'].split(':')[0] if ':' in d['datasetname'] else d['datasetname'].split('.')[0],
-                'name': d['datasetname'].split(':')[1] if ':' in d['datasetname'] else d['datasetname'],
-                }
-            dids.append(did)
+            if d['type'] == 'input':
+                did = {
+                    'scope': d['datasetname'].split(':')[0] if ':' in d['datasetname'] else d['datasetname'].split('.')[0],
+                    'name': d['datasetname'].split(':')[1] if ':' in d['datasetname'] else d['datasetname'],
+                    }
+                dids.append(did)
 
         rw = ruciowrapper()
         replicas = rw.getRSEbyDID(dids)
@@ -1468,9 +1471,6 @@ def get_task_flow_data(jeditaskid):
                         'available_pct': round(100.0 * r['available_length']/r['length'], 1) if r['length'] > 0 else 0
                     }
 
-    # transform data for plot
-    #concat(dataset_dict)
- #   print({'data': {'datasets': dataset_dict, } })
-
+    # transform data for plot and return
     return executeTF({'data': {'datasets': dataset_dict, } })
 

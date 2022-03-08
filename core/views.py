@@ -629,8 +629,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if processor_type.lower() == 'gpu':
             extraQueryString += " AND (cmtconfig like '%%gpu%%')"
 
-
-    elif 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup'] and \
+    if 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup'] and \
                         '*' not in request.session['requestParams']['workinggroup'] and \
                         ',' not in request.session['requestParams']['workinggroup']:
         extraQueryFields.append('workinggroup')
@@ -643,13 +642,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     wildSearchFields = []
     if querytype == 'job':
         for field in Jobsactive4._meta.get_fields():
-            if (field.get_internal_type() == 'CharField'):
+            if field.get_internal_type() == 'CharField':
                 if not (field.name == 'jobstatus' or field.name == 'modificationhost'
                         or (excludeJobNameFromWildCard and field.name == 'jobname')):
                     wildSearchFields.append(field.name)
     if querytype == 'task':
         for field in JediTasks._meta.get_fields():
-            if (field.get_internal_type() == 'CharField'):
+            if field.get_internal_type() == 'CharField':
                 if not (field.name == 'modificationhost' or field.name in extraQueryFields):
                     wildSearchFields.append(field.name)
 
