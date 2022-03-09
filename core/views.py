@@ -1,41 +1,52 @@
-import logging, re, subprocess, os
-import sys, traceback
-from datetime import datetime, timedelta
+import logging
+import re
+import subprocess
+import os
+import sys
+import traceback
 import time
 import json
 import copy
-import itertools, random
+import itertools
+import random
 import numpy as np
-from io import BytesIO
 import pandas as pd
-
 import math
+import base64
+import urllib3
+import hashlib
 
-from core.pandajob.SQLLookups import CastDate
-from django.db.models import DateTimeField
-
-
+from io import BytesIO
+from datetime import datetime, timedelta
+from threading import Thread, Lock
+from functools import wraps
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
+from elasticsearch_dsl import Search
+
 from django.utils.decorators import available_attrs
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
-from django.db.models import Count, Sum, F, Value, FloatField
+from django.db.models import Count, Sum, F, Value, FloatField, Q, DateTimeField
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
 import django.utils.cache as ucache
-from functools import wraps
-
 from django.utils import timezone
 from django.utils.cache import patch_response_headers
-from django.db.models import Q
 from django.core.cache import cache
 from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.db import connection
 from django.template.loaders.app_directories import get_app_template_dirs
+from django.template.defaulttags import register
+from django.template.context_processors import csrf
 
+from core import chainsql
+import core.constants as const
+import core.Customrenderer as Customrenderer
 from core.common.utils import getPrefix, getContextVariables
 from core.settings import defaultDatetimeFormat
+from core.pandajob.SQLLookups import CastDate
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, CombinedWaitActDefArch4, PandaJob
 from core.schedresource.models import Schedconfig, SchedconfigJson
@@ -71,24 +82,11 @@ from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_AR
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
-import hashlib
-
-import core.constants as const
-
-import core.Customrenderer as Customrenderer
-
-from threading import Thread, Lock
-import base64
-import urllib3
-from django.views.decorators.cache import never_cache
-from core import chainsql
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
-
-from django.template.defaulttags import register
 
 from core.oauth.utils import login_customrequired
 
-from core.utils import is_json_request, extensibleURL, complete_request
+from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, get_tmp_table_name_debug, create_temporary_table
@@ -114,36 +112,6 @@ from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
 from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs, get_panda_resource
-
-from django.template.context_processors import csrf
-
-from elasticsearch_dsl import Search
-
-@register.filter(takes_context=True)
-def get_count(dict, key):
-    return dict[key]['count']
-
-@register.filter(takes_context=True)
-def get_tk(dict, key):
-    return dict[key]['tk']
-
-@register.filter(takes_context=True)
-def get_item(dictionary, key):
-    return dictionary.get(key)
-
-@register.simple_tag(takes_context=True)
-def get_renderedrow(context, **kwargs):
-    if kwargs['type']=="world_nucleussummary":
-        kwargs['statelist'] = statelist
-        return Customrenderer.world_nucleussummary(context, kwargs)
-
-    if kwargs['type']=="world_computingsitesummary":
-        kwargs['statelist'] = statelist
-        return Customrenderer.world_computingsitesummary(context, kwargs)
-
-    if kwargs['type']=="region_sitesummary":
-        kwargs['statelist'] = statelist
-        return Customrenderer.region_sitesummary(context, kwargs)
 
 
 inilock = Lock()
@@ -225,6 +193,33 @@ VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'cor
 VOMODE = ' '
 
 
+@register.filter(takes_context=True)
+def get_count(dict, key):
+    return dict[key]['count']
+
+@register.filter(takes_context=True)
+def get_tk(dict, key):
+    return dict[key]['tk']
+
+@register.filter(takes_context=True)
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
+@register.simple_tag(takes_context=True)
+def get_renderedrow(context, **kwargs):
+    if kwargs['type']=="world_nucleussummary":
+        kwargs['statelist'] = statelist
+        return Customrenderer.world_nucleussummary(context, kwargs)
+
+    if kwargs['type']=="world_computingsitesummary":
+        kwargs['statelist'] = statelist
+        return Customrenderer.world_computingsitesummary(context, kwargs)
+
+    if kwargs['type']=="region_sitesummary":
+        kwargs['statelist'] = statelist
+        return Customrenderer.region_sitesummary(context, kwargs)
+
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
@@ -240,7 +235,6 @@ class DateEncoder(json.JSONEncoder):
         else:
             return str(obj)
         return json.JSONEncoder.default(self, obj)
-
 
 
 def datetime_handler(x):
@@ -283,8 +277,6 @@ def getObjectStoresNames():
             objectStoresNames[OSdescr["resource"]["bucket_id"]] = OSname
         objectStoresNames[OSdescr["id"]] = OSname
         objectStoresSites[OSname] = OSdescr["site"]
-
-
 
 
 def escapeInput(strToEscape):
@@ -607,19 +599,19 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         request.session['viewParams'] = viewParams
 
     extraQueryString = '(1=1) '
-    extraQueryFields = []
+    extraQueryFields = []  # params that goes directly to the wildcards processing
 
     LAST_N_HOURS_MAX = 0
 
     for paramName, paramVal in request.session['requestParams'].items():
         try:
             request.session['requestParams'][paramName] = urllib.unquote(paramVal)
-        except: request.session['requestParams'][paramName] = paramVal
+        except:
+            request.session['requestParams'][paramName] = paramVal
 
     excludeJobNameFromWildCard = True
     if 'jobname' in request.session['requestParams']:
-        jobrequest = request.session['requestParams']['jobname']
-        if (('*' in jobrequest) or ('|' in jobrequest)):
+        if is_wildcards(request.session['requestParams']['jobname']):
             excludeJobNameFromWildCard = False
 
     processor_type = request.session['requestParams'].get('processor_type', None)
@@ -629,15 +621,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if processor_type.lower() == 'gpu':
             extraQueryString += " AND (cmtconfig like '%%gpu%%')"
 
-    if 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup'] and \
-                        '*' not in request.session['requestParams']['workinggroup'] and \
-                        ',' not in request.session['requestParams']['workinggroup']:
-        extraQueryFields.append('workinggroup')
-
-    if 'site' in request.session['requestParams'] and (request.session['requestParams']['site'] == 'hpc' or not (
-                    '*' in request.session['requestParams']['site'] or '|' in request.session['requestParams']['site'])):
+    if 'site' in request.session['requestParams'] and (
+            request.session['requestParams']['site'] == 'hpc' or not is_wildcards(request.session['requestParams']['site'])):
         extraQueryFields.append('site')
-
 
     wildSearchFields = []
     if querytype == 'job':
@@ -789,8 +775,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     #        query['vo'] = vo
     for param in request.session['requestParams']:
         if param in ('hours', 'days'): continue
-        if param == 'cloud' and request.session['requestParams'][param] == 'All':
+        elif param == 'cloud' and request.session['requestParams'][param] == 'All':
             continue
+        elif param == 'workinggroup':
+            if request.session['requestParams'][param] and not is_wildcards(request.session['requestParams'][param]):
+                query[param] = request.session['requestParams'][param]
         elif param == 'harvesterinstance' or param == 'harvesterid':
             val = request.session['requestParams'][param]
             if val == 'Not specified':
@@ -967,11 +956,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         val = escapeInput(request.session['requestParams'][param])
                         values = val.split('|')
                         query['superstatus__in'] = values
-                    elif param == 'workinggroup':
-                        if request.session['requestParams'][param] and \
-                                '*' not in request.session['requestParams'][param] and \
-                                ',' not in request.session['requestParams'][param]:
-                            query[param]=request.session['requestParams'][param]
                     elif param == 'reqid':
                         val = escapeInput(request.session['requestParams'][param])
                         if val.find('|') >= 0:

@@ -20,6 +20,13 @@ def is_json_request(request):
     return False
 
 
+def is_wildcards(value):
+    if '*' in value or '|' in value or ',' in value or '!' in value:
+        return True
+    else:
+        return False
+
+
 def extensibleURL(request, xurl=''):
     """ Return a URL that is ready for p=v query extension(s) to be appended """
     if xurl == '':
