@@ -820,6 +820,37 @@ def datasets_for_task(jeditaskid):
     return dsets, dsinfo
 
 
+def get_datasets_for_tasklist(tasks):
+    """
+    Dump datasets for each task in the list into 'datasets' dict
+    :param tasks: list of dicts
+    :return: tasks
+    """
+    task_ids = [task['jeditaskid'] for task in tasks if 'jeditaskid' in task]
+
+    query = {'type__in': ['pseudo_input', 'input', 'output']}
+    extra_str = '1=1'
+    if len(tasks) > DB_N_MAX_IN_QUERY:
+        # insert ids to tmp table, backend dependable
+        tk = insert_to_temp_table(task_ids)
+        extra_str = "JEDITASKID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})".format(get_tmp_table_name(), tk)
+    else:
+        query['jeditaskid__in'] = task_ids
+
+    dsets = JediDatasets.objects.filter(**query).extra(where=[extra_str]).values()
+
+    dsets_dict = {}
+    for ds in dsets:
+        if ds['jeditaskid'] not in dsets_dict:
+            dsets_dict[ds['jeditaskid']] = []
+        dsets_dict[ds['jeditaskid']].append(ds)
+
+    for task in tasks:
+        task['datasets'] = dsets_dict[task['jeditaskid']] if task['jeditaskid'] in dsets_dict else []
+
+    return tasks
+
+
 def input_summary_for_task(taskrec, dsets):
     """
     The function returns:
