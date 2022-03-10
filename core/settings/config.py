@@ -143,6 +143,8 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
+DB_N_MAX_IN_QUERY = 100  # number of items in IN (*,*..) query. if more - use tmp table
+
 CACHES = {
     "default": {
     'BACKEND': 'django.core.cache.backends.db.DatabaseCache',

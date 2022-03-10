@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table
 from core.common.models import Metatable, MetatableArch
+from core.settings.config import DB_N_MAX_IN_QUERY
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -19,7 +20,6 @@ def addJobMetadata(jobs):
     :return: jobs: expanded by 'metastruct' key
     """
     _logger.info('adding metadata')
-    N_MAX_ITEMS_IN = 100
     useMetaArch = False
     pids = []
     for job in jobs:
@@ -32,7 +32,7 @@ def addJobMetadata(jobs):
 
     mrecs = []
     # Get job metadata
-    if len(jobs) < N_MAX_ITEMS_IN:
+    if len(jobs) < DB_N_MAX_IN_QUERY:
         # use IN where clause
         query = {}
         query['pandaid__in'] = pids

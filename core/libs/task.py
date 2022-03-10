@@ -23,7 +23,7 @@ from core.libs.elasticsearch import create_esatlas_connection
 from elasticsearch_dsl import Search
 
 from core.settings.local import defaultDatetimeFormat
-from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA_ARCH, DEPLOYMENT
+from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA_ARCH, DEPLOYMENT, DB_N_MAX_IN_QUERY
 
 from core.libs.taskflow import RSEtoInpDat, InpDattoSITE, SITEtoJOB, frec, executeTF, concat_all, concat_NoRep
 
@@ -81,7 +81,6 @@ def cleanTaskList(tasks, **kwargs):
 
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
-        N_MAX_IN_QUERY = 100
         dvalues = ('jeditaskid', 'nfiles', 'nfilesfinished', 'nfilesfailed')
         dsquery = {
             'type__in': ['input', 'pseudo_input'],
@@ -91,7 +90,7 @@ def cleanTaskList(tasks, **kwargs):
 
         taskl = [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
 
-        if len(taskl) <= N_MAX_IN_QUERY:
+        if len(taskl) <= DB_N_MAX_IN_QUERY:
             dsquery['jeditaskid__in'] = taskl
         else:
             # Backend dependable
@@ -1378,7 +1377,6 @@ def taskNameDict(jobs):
     :param jobs: list of dist
     :return:
     """
-    N_MAX_IN_QUERY = 100
     jeditaskids = {}
     for job in jobs:
         if 'taskid' in job and job['taskid'] and job['taskid'] > 0:
@@ -1391,7 +1389,7 @@ def taskNameDict(jobs):
     tasknamedict = {}
     if len(jeditaskidl) > 0:
         tquery = {}
-        if len(jeditaskidl) < N_MAX_IN_QUERY:
+        if len(jeditaskidl) < DB_N_MAX_IN_QUERY:
             tquery['jeditaskid__in'] = jeditaskidl
             extra = "(1=1)"
         else:

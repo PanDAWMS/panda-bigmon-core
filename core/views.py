@@ -78,7 +78,7 @@ from core.filebrowser.ruciowrapper import ruciowrapper
 from core.settings.local import dbaccess
 from core.settings.local import PRODSYS
 from core.settings.local import GRAFANA
-from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH, PRMON_LOGS_DIRECTIO_LOCATION
+from core.settings.config import DEPLOYMENT, DB_N_MAX_IN_QUERY, PRMON_LOGS_DIRECTIO_LOCATION
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
@@ -9683,10 +9683,9 @@ def fileInfo(request):
     if len(files) > 0:
         # get dataset names for files
         dids = list(set([f['datasetid'] for f in files]))
-        N_MAX_WHERE_IN = 100
         dquery = {}
         extra = ' (1=1) '
-        if len(dids) < N_MAX_WHERE_IN:
+        if len(dids) < DB_N_MAX_IN_QUERY:
             dquery['datasetid__in'] = dids
         else:
             random.seed()
