@@ -6608,9 +6608,8 @@ def taskList(request):
     error_summary_table = error_codes_analyser.get_errors_table()
     error_summary_table = json.dumps(error_summary_table, cls=DateEncoder)
 
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
-        ## Add info to the json dump if the request is for a single task
+    if is_json_request(request):
+        # Add info to the json dump if the request is for a single task
         if len(tasks) == 1:
             id = tasks[0]['jeditaskid']
             dsquery = {'jeditaskid': id, 'type__in': ['pseudo_input', 'input', 'output']}
@@ -7606,9 +7605,17 @@ def taskInfo(request, jeditaskid=0):
     # get input and output containers
     inctrs = []
     outctrs = []
-    for tp in taskparams:
-        if tp == 'dsForIN':
-            inctrs = [taskparams[tp], ]
+    if 'dsForIN' in taskparams and taskparams['dsForIN'] and isinstance(taskparams['dsForIN'], str):
+        inctrs = [{'containername': cin, 'nfiles': 0, 'nfilesfinished': 0, 'nfilesfailed': 0} for cin in taskparams['dsForIN'].split(',')]
+        # fill the list of input containers with progress info
+        for inc in inctrs:
+            for ds in dsets:
+                if ds['containername'] == inc['containername']:
+                    inc['nfiles'] += ds['nfiles']
+                    inc['nfilesfinished'] += ds['nfilesfinished']
+                    inc['nfilesfailed'] += ds['nfilesfailed']
+                    inc['pct'] = math.floor(100.0*inc['nfilesfinished']/inc['nfiles'])
+
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
     # get dataset locality
     if DEPLOYMENT == 'ORACLE_ATLAS':

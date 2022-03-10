@@ -813,6 +813,10 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     color: #272727;
 }
 
+.fresh-table.slim tbody td {
+  padding: 0.25rem 0.35rem 0.25rem 0.35rem;
+}
+
 .fresh-table.alert thead th {
     background-color: #FFABA2;
     border: solid 1px #FFABA2;

@@ -495,24 +495,26 @@
   {% endif %}
 
   {% if inctrs or outctrs %}
-    <table class="fresh-table unstriped">
+    <table class="fresh-table unstriped slim">
     <thead>
       <tr><th colspan=20>Containers</th></tr>
     </thead>
     <tbody>
       {% if inctrs %}
-        <tr><th>Input:</th></tr>
+        <tr><th>Input:</th><th>Progress, %</th><th>N files | <span class="finished">finished</span> | <span class="failed">failed</span></th></tr>
         {% for dsrec in inctrs %}
           <tr>
-              <td class="wrap-words"><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></td>
+            <td class="wrap-words"><a href="{% url 'datasetList' %}?containername={% if dsrec.containername %}{{ dsrec.containername }}{% else %}{{ dsrec }}{% endif %}">{% if dsrec.containername %}{{ dsrec.containername }}{% else %}{{ dsrec }}{% endif %}</a></td>
+            <td>{% if dsrec.nfiles %}{{ dsrec.pct }}%</td>
+            <td>{{ dsrec.nfiles }} | <span class="finished">{{ dsrec.nfilesfinished }}</span> | <span class="failed">{{ dsrec.nfilesfailed }}</span> {% endif %}</td>
           </tr>
         {% endfor %}
       {% endif %}
       {% if outctrs %}
-        <tr><th>Output:</th></tr>
+        <tr><th colspan="3">Output:</th></tr>
         {% for dsrec in outctrs %}
           <tr>
-              <td class="wrap-words"><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></td>
+              <td colspan="3" class="wrap-words"><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></td>
           </tr>
         {% endfor %}
       {% endif %}
