@@ -3,8 +3,11 @@ from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 import urllib.request
 from urllib.error import HTTPError, URLError
-from core.settings.config import IDDS_HOST, IDDS_HOST_GCP
+from core.settings.config import IDDS_HOST
 import json
+import logging
+
+_logger = logging.getLogger('bigpandamon')
 
 SELECTION_CRITERIA = '/monitor_request_relation'
 
@@ -13,7 +16,11 @@ def query_idds_server(request_id, **kwargs):
     response = []
     idds_server_host = IDDS_HOST
     if 'idds_instance' in kwargs and kwargs['idds_instance'] == 'gcp':
-        idds_server_host = IDDS_HOST_GCP
+        try:
+            from core.settings.config import IDDS_HOST_GCP
+            idds_server_host = IDDS_HOST_GCP
+        except:
+            _logger.exception('Failed to import IDDS_HOST_GCP')
     url = f"{idds_server_host}{SELECTION_CRITERIA}/{request_id}/null"
     try:
         response = urllib.request.urlopen(url).read()
