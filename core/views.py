@@ -7596,10 +7596,10 @@ def taskInfo(request, jeditaskid=0):
         for inc in inctrs:
             for ds in dsets:
                 if ds['containername'] == inc['containername']:
-                    inc['nfiles'] += ds['nfiles']
-                    inc['nfilesfinished'] += ds['nfilesfinished']
-                    inc['nfilesfailed'] += ds['nfilesfailed']
-                    inc['pct'] = math.floor(100.0*inc['nfilesfinished']/inc['nfiles'])
+                    inc['nfiles'] += ds['nfiles'] if ds['nfiles'] else 0
+                    inc['nfilesfinished'] += ds['nfilesfinished'] if ds['nfilesfinished'] else 0
+                    inc['nfilesfailed'] += ds['nfilesfailed'] if ds['nfilesfailed'] else 0
+                    inc['pct'] = math.floor(100.0*inc['nfilesfinished']/inc['nfiles']) if ds['nfiles'] and ds['nfiles']>0 else inc['pct']
 
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
     # get dataset locality
