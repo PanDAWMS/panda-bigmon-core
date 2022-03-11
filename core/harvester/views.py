@@ -18,7 +18,7 @@ from core.libs.exlib import is_timestamp
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
 from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
-
+from core.harvester.utils import get_harverster_workers_for_task
 
 from core.settings.local import dbaccess, defaultDatetimeFormat
 from core.settings.config import DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
