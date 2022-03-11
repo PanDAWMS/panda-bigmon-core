@@ -318,13 +318,22 @@ def get_event_status_summary(pandaids, eventservicestatelist):
     return summary
 
 
-def dictfetchall(cursor):
+def dictfetchall(cursor, **kwargs):
     "Returns all rows from a cursor as a dict"
+    style = 'default'
+    if 'style' in kwargs:
+        style = kwargs['style']
     desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row))
-        for row in cursor.fetchall()
+    if style == 'uppercase':
+        return [
+            dict(zip([str(col[0]).upper() for col in desc], row))
+            for row in cursor.fetchall()
         ]
+    else:
+        return [
+            dict(zip([col[0] for col in desc], row))
+            for row in cursor.fetchall()
+            ]
 
 
 def is_timestamp(key):

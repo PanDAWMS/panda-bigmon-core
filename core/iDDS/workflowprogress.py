@@ -3,6 +3,7 @@ from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 
 from core.views import initRequest, login_customrequired, DateEncoder
+from core.utils import is_json_request
 from core.iDDS.useconstants import SubstitleValue
 from core.iDDS.rawsqlquery import getRequests, getTransforms, getWorkFlowProgressItemized
 from core.iDDS.algorithms import generate_requests_summary, parse_request
@@ -14,6 +15,7 @@ CACHE_TIMEOUT = 20
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 subtitleValue = SubstitleValue()
+
 
 def prepare_requests_summary(workflows):
     summary = {'status': {}, 'username': {}}
@@ -28,8 +30,9 @@ def prepare_requests_summary(workflows):
         summary['username'][workflow['username']] = summary['username'].get(workflow['username'], 0) + 1
     return summary
 
-def get_workflow_progress_data(request_params):
-    workflows_items = getWorkFlowProgressItemized(request_params)
+
+def get_workflow_progress_data(request_params, **kwargs):
+    workflows_items = getWorkFlowProgressItemized(request_params, **kwargs)
     workflows_items = pd.DataFrame(workflows_items)
     workflows_semi_grouped = []
     if not workflows_items.empty:
@@ -72,16 +75,22 @@ def get_workflow_progress_data(request_params):
 
 @login_customrequired
 def wfprogress(request):
-    initRequest(request)
-    iDDSrequests = get_workflow_progress_data(request.session['requestParams'])
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+    kwargs = {}
+    if request.path and '_gcp' in request.path:
+        kwargs['idds_instance'] = 'gcp'
+
+    iDDSrequests = get_workflow_progress_data(request.session['requestParams'], **kwargs)
     iDDSsummary = prepare_requests_summary(iDDSrequests)
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
+    if is_json_request(request):
         return JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)
 
     data = {
-        'iDDSrequests':iDDSrequests,
-        'iDDSsummary':iDDSsummary,
+        'iDDSrequests': iDDSrequests,
+        'iDDSsummary': iDDSsummary,
+        'iDDSinstance': 'gcp' if 'idds_instance' in kwargs and kwargs['idds_instance'] == 'gcp' else 'default',
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }

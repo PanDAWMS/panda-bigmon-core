@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
-from django.db import connection
+from django.db import connection, connections
 from core.libs.exlib import dictfetchall
+from core.libs.sqlsyntax import bind_var
 from core.iDDS.useconstants import SubstitleValue
 from core.settings.config import DB_SCHEMA_IDDS
 from core.settings.local import defaultDatetimeFormat
@@ -58,36 +59,54 @@ from {DB_SCHEMA_IDDS}.requests r
     return rows
 
 
-def prepareSQLQueryParameters(request_params):
+def prepareSQLQueryParameters(request_params, **kwargs):
+    db = 'oracle'
+    if 'db' in kwargs:
+        db = kwargs['db']
+
     sqlpar, condition = {}, " (1=1)  "
-    request_params = {key: value for key,value in request_params.items() if key in ['requestid', 'username', 'status']}
+    request_params = {key: value for key, value in request_params.items() if key in ['requestid', 'username', 'status']}
     query_fields_for_subst = ['status']
     dict_for_subst = {key:request_params.get(key) for key in query_fields_for_subst if key in request_params}
     query_params_substituted = subtitleValue.replaceInverseKeys('requests', dict_for_subst)
 
     sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*90)).strftime(defaultDatetimeFormat)
-    condition += 'AND r.CREATED_AT > :starttime '
+    condition += 'AND r.CREATED_AT > {} '.format(bind_var('starttime', db))
 
     for key in query_params_substituted.keys():
         request_params[key] = query_params_substituted[key]
     if request_params and len(request_params) > 0:
         if 'requestid' in request_params:
             sqlpar['requestid'] = request_params['requestid']
-            condition += 'AND r.REQUEST_ID = :requestid'
+            condition += 'AND r.REQUEST_ID = {} '.format(bind_var('requestid', db))
         if 'username' in request_params:
             if request_params['username'] == 'Not set':
                 condition += 'AND r.USERNAME is NULL '
             else:
                 sqlpar['username'] = request_params['username'].lower()
-                condition += 'AND lower(r.USERNAME) = :username'
+                condition += 'AND lower(r.USERNAME) = {} '.format(bind_var('username', db))
         if 'status' in request_params:
             sqlpar['status'] = query_params_substituted.get('status')
-            condition += 'AND r.STATUS = :status'
+            condition += 'AND r.STATUS = {} '.format(bind_var('status', db))
     return sqlpar, condition
 
 
-def getWorkFlowProgressItemized(request_params):
-    sqlpar, condition = prepareSQLQueryParameters(request_params)
+def getWorkFlowProgressItemized(request_params, **kwargs):
+    """
+    Getting workflow progress in iDDS requests
+    :param request_params:
+    :param kwargs: idds_instance - for special a clone of iDDS app that uses separate DB instance
+    :return:
+    """
+
+    connection_name = 'default'
+    if 'idds_instance' in kwargs and kwargs['idds_instance'] == 'gcp':
+        connection_name = 'doma_idds_gcp'
+    db = connections[connection_name].vendor
+    style = 'default'
+    if db == 'postgresql':
+        style = 'uppercase'
+    sqlpar, condition = prepareSQLQueryParameters(request_params, db=db)
     sql = f"""
     SELECT r.REQUEST_ID, r.NAME as r_NAME, r.STATUS as r_STATUS, r.CREATED_AT as r_CREATED_AT, r.CREATED_AT as r_CREATED_AT, c.total_files, 
     c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status, r.USERNAME FROM {DB_SCHEMA_IDDS}.requests r LEFT JOIN {DB_SCHEMA_IDDS}.collections c ON r.REQUEST_ID=c.REQUEST_ID
@@ -95,9 +114,11 @@ def getWorkFlowProgressItemized(request_params):
     LEFT JOIN {DB_SCHEMA_IDDS}.processings p on p.transform_id=t.transform_id
     where c.relation_type=0 and {condition} order by r.request_id desc
     """
-    cur = connection.cursor()
+    cur = connections[connection_name].cursor()
+    # cur = connection.cursor()
+    # cur.execute('select count(request_id) from doma_idds.requests')
     cur.execute(sql, sqlpar)
-    rows = dictfetchall(cur)
+    rows = dictfetchall(cur, style=style)
     cur.close()
     return rows
 

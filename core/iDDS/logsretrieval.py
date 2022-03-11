@@ -9,6 +9,7 @@ from core.libs.exlib import getDataSetsForATask
 c = Client(IDDS_HOST)
 import tarfile, os
 
+
 def downloadlog(request):
     initRequest(request)
     if 'workloadid' in request.session['requestParams']:

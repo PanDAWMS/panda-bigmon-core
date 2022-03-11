@@ -3,21 +3,25 @@ from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 import urllib.request
 from urllib.error import HTTPError, URLError
-from core.settings.config import IDDS_HOST
+from core.settings.config import IDDS_HOST, IDDS_HOST_GCP
 import json
 
 SELECTION_CRITERIA = '/monitor_request_relation'
 
 
-def query_idds_server(request_id):
+def query_idds_server(request_id, **kwargs):
     response = []
-    url = f"{IDDS_HOST}{SELECTION_CRITERIA}/{request_id}/null"
+    idds_server_host = IDDS_HOST
+    if 'idds_instance' in kwargs and kwargs['idds_instance'] == 'gcp':
+        idds_server_host = IDDS_HOST_GCP
+    url = f"{idds_server_host}{SELECTION_CRITERIA}/{request_id}/null"
     try:
         response = urllib.request.urlopen(url).read()
     except (HTTPError, URLError) as e:
         print('Error: {}'.format(e.reason))
     stats = json.loads(response)
     return stats
+
 
 def fill_nodes_edges(current_node):
     nodes, edges = [], []
@@ -34,9 +38,14 @@ def fill_nodes_edges(current_node):
 
 
 def daggraph(request):
-    initRequest(request)
+    valid, response = initRequest(request)
+    if not valid:
+        return response
     requestid = int(request.session['requestParams']['requestid'])
-    stats = query_idds_server(requestid)
+    kwargs = {}
+    if request.path and '_gcp' in request.path:
+        kwargs['idds_instance'] = 'gcp'
+    stats = query_idds_server(requestid, **kwargs)
     nodes_dag_vis = []
     edges_dag_vis = []
     if len(stats) > 0:

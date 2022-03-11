@@ -29,7 +29,7 @@
     <div class="comment more">
     {% for property, count  in occurences.items %}
     <span {% if attribute == 'status' %} class='{{property}} item' {% else %} class="item" {% endif %}> {{ property }} </span>
-        <a href="{% url 'workflowprogressitems' %}?{{attribute}}={{property}}">({{ count }})</a>
+        <a href="{% if iDDSinstance == 'default' %}{% url 'workflowprogressitems' %}{% else %}{% url 'workflowprogressitems_gcp' %}{% endif %}?{{attribute}}={{property}}">({{ count }})</a>
     {% endfor %}
     </div></td></tr>
     {% endfor %}
@@ -42,20 +42,20 @@
       </div>
       <div class="card-section">
         <table id="requests_table" class="display data-table" >
-         <thead>
-             <th>Request ID</th>
-             <th>Username</th>
-             <th>Request Status</th>
-             <th>Plot</th>
-             <th>WorkFlow Name</th>
-             <th>Created At</th>
-             <th>Total tasks</th>
-             <th>Tasks</th>
-             <th>Remaining files</th>
-             <th>Processed files</th>
-             <th>Total files</th>
-         </thead>
-         <tbody></tbody>
+          <thead><tr>
+            <th>Request ID</th>
+            <th>Username</th>
+            <th>Request Status</th>
+            <th>Plot</th>
+            <th>WorkFlow Name</th>
+            <th>Created At</th>
+            <th>Total tasks</th>
+            <th>Tasks</th>
+            <th>Remaining files</th>
+            <th>Processed files</th>
+            <th>Total files</th>
+          </tr></thead>
+          <tbody></tbody>
         </table>
       </div>
     </div>
@@ -65,6 +65,7 @@
 
 <script type="text/javascript">
 var iDDSrequests=JSON.parse(JSON.stringify({{ iDDSrequests | safe }}));
+const iDDSinstance = '{{ iDDSinstance|safe }}';
 
 function preprocData(dataIn){
    var dataOut = [];
@@ -87,7 +88,8 @@ var requests_table = $('#requests_table').DataTable({
         { data: "r_status", title: "workflow status" },
         { data: "request_id", title: "graph",
             render: function(data, type, row, meta) {
-                return '<a target=blank href = "{% url "daggraph" %}?requestid='+row['request_id']+'">'+'plot'+'</a>';
+                let url_base = iDDSinstance === 'default' ? '{% url "daggraph" %}' : '{% url "daggraph_gcp" %}';
+                return '<a target=blank href = "' + url_base +'?requestid='+row['request_id']+'">'+'plot'+'</a>';
             }
         },
         { data: "r_name", title: "workflow name",

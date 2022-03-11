@@ -7,6 +7,8 @@ from core.iDDS import views as idds_views
 from core.iDDS import workflowprogress as idds_progress
 from core.iDDS import DAGvisualization
 from core.settings.config import DEPLOYMENT
+
+
 urlpatterns = [
     re_path(r'^idds/$', idds_views.main, name='iddsmain'),
     re_path(r'^idds/collections/$', idds_views.collections, name='iddscollections'),
@@ -23,4 +25,8 @@ if DEPLOYMENT == 'ORACLE_ATLAS':
     urlpatterns.append(re_path(r'^idds/downloadlog/$', logsretrieval.downloadlog, name='downloadlog'))
     urlpatterns.append(re_path(r'^idds/downloadhpometrics/$', logsretrieval.downloadhpometrics, name='downloadlog'))
 
+
+if DEPLOYMENT == 'ORACLE_DOMA':
+    urlpatterns.append(re_path(r'^idds/wfprogress_gcp/$', idds_progress.wfprogress, name='workflowprogressitems_gcp'),)
+    urlpatterns.append(re_path(r'^idds/daggraph_gcp/$', DAGvisualization.daggraph, name='daggraph_gcp'),)
 

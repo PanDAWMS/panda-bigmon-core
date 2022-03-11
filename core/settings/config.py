@@ -22,9 +22,6 @@ ALLOWED_HOSTS = [
 ### VIRTUALENV
 VIRTUALENV_PATH = '/data/virtualenv37'
 
-IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
-
-
 ### WSGI
 #WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
 
@@ -114,7 +111,7 @@ except ImportError:
 
 
 #DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
-DEPLOYMENT = 'ORACLE_ATLAS'
+DEPLOYMENT = 'ORACLE_DOMA'
 
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
@@ -125,6 +122,7 @@ if DEPLOYMENT == 'ORACLE_ATLAS':
     DB_SCHEMA_IDDS = 'ATLAS_IDDS'
     DATABASES = dbaccess_oracle_atlas
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+    IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
 elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA = 'doma_pandabigmon'
     DB_SCHEMA_PANDA = 'doma_panda'
@@ -133,6 +131,7 @@ elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA_IDDS = 'DOMA_IDDS'
     DATABASES = dbaccess_postgres
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+    IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
 elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA = 'DOMA_PANDABIGMON'
     DB_SCHEMA_PANDA = 'DOMA_PANDA'
@@ -141,6 +140,8 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA_IDDS = 'DOMA_IDDS'
     DATABASES = dbaccess_oracle_doma
     CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+    IDDS_HOST = 'https://aipanda015.cern.ch:443/idds'
+    IDDS_HOST_GCP = 'https://aipanda016.cern.ch:443/idds'
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
 DB_N_MAX_IN_QUERY = 100  # number of items in IN (*,*..) query. if more - use tmp table
