@@ -103,7 +103,7 @@ packaging==18.0
 pandas==1.2.4
 paramiko==2.4.2
 patterns==0.3
-Pillow==5.3.0
+Pillow==9.0.1
 prettytable==0.7.2
 progressbar2==3.39.2
 protobuf==3.11.3
