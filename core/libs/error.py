@@ -5,6 +5,8 @@ Created by Tatiana Korchuganova on 05.03.2020
 """
 import json
 import copy
+import logging
+import time
 import numpy as np
 import pandas as pd
 
@@ -19,6 +21,8 @@ from core.settings.local import defaultDatetimeFormat
 
 from core.ErrorCodes import ErrorCodes
 import core.constants as const
+
+_logger = logging.getLogger('bigpandamon')
 
 
 def get_job_error_desc():
@@ -170,6 +174,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
             errHistL[0] = [t.strftime(defaultDatetimeFormat) for t in errHistL[0]]
             errHistL[0].insert(0, 'Timestamp')
             errHistL[1].insert(0, 'Number of failed jobs')
+    _logger.debug('Built errHist: {}'.format(time.time() - request.session['req_init_time']))
 
     if 'flist' in kwargs:
         flist = kwargs['flist']
@@ -191,6 +196,13 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
     tasknamedict = {}
     if 'errsByTask' in outputs:
         tasknamedict = taskNameDict(jobs)
+        _logger.debug('Got tasknames for summary by task: {}'.format(time.time() - request.session['req_init_time']))
+
+    # get error codes and description
+    # codes = ErrorCodes()
+    # errorFields, errorCodes, errorStages = codes.getErrorCodes()
+    errorCodes = get_job_error_desc()
+    errorcodelist = copy.deepcopy(const.JOB_ERROR_CATEGORIES)
 
     for job in jobs:
         if not testjobs:
@@ -227,13 +239,6 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
                 if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
                 sumd['specialhandling'][v] += 1
         errsByList = {}
-
-        # codes = ErrorCodes()
-        # errorFields, errorCodes, errorStages = codes.getErrorCodes()
-
-        errorCodes = get_job_error_desc()
-
-        errorcodelist = copy.deepcopy(const.JOB_ERROR_CATEGORIES)
 
         for err in errorcodelist:
             if job[err['error']] != 0 and job[err['error']] != '' and job[err['error']] is not None:
@@ -315,6 +320,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
 
         if site in errsBySite: errsBySite[site]['toterrjobs'] += 1
         if taskid in errsByTask: errsByTask[taskid]['toterrjobs'] += 1
+    _logger.debug('Built summary dicts: {}'.format(time.time() - request.session['req_init_time']))
 
     # reorganize as sorted lists
     errsByCountL = []
@@ -392,6 +398,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
     if sortby == 'count':
         for item in suml:
             item['list'] = sorted(item['list'], key=lambda x: -x['kvalue'])
+    _logger.debug('Dict -> list & sorting are done: {}'.format(time.time() - request.session['req_init_time']))
 
     return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, errHistL
 
@@ -399,7 +406,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
 def get_error_message_summary(jobs):
     """
     Aggregation of error messages for each error code
-    :param jobs: list of job dicts including error codees, error messages, timestamps of job start and end, corecount
+    :param jobs: list of job dicts including error codes, error messages, timestamps of job start and end, corecount
     :return: list of rows for datatable
     """
     error_message_summary_list = []

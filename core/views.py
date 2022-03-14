@@ -1022,10 +1022,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         else:
                             query['reqid'] = int(val)
                     elif param == 'transformation' or param == 'transpath':
-                        if '*' not in request.session['requestParams'][param]:
-                            query[param] = request.session['requestParams'][param]
-                        else:
-                            query[param + '__contains'] = request.session['requestParams'][param].replace('*', '')
+                        # we cut the transformation path and show only tail
+                        query[param + '__contains'] = request.session['requestParams'][param].replace('*', '')
                     elif param == 'modificationhost' and request.session['requestParams'][param].find('@') < 0:
                         paramQuery = request.session['requestParams'][param]
                         if paramQuery[0] == '*': paramQuery = paramQuery[1:]
@@ -1372,7 +1370,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
         if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
     jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
 
-    _logger.info('job list cleaned')
+    _logger.debug('job list cleaned')
     return jobs
 
 
@@ -2110,11 +2108,11 @@ def jobList(request, mode=None, param=None):
             select jeditaskid from atlas_panda.jedi_tasks where taskname like '{}' and username like '{}'
             ) """.format(taskname, taskusername)
 
-    _logger.info('Specific params processing: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Specific params processing: {}'.format(time.time() - request.session['req_init_time']))
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
 
-    _logger.info('Setup view: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Setup view: {}'.format(time.time() - request.session['req_init_time']))
 
     if len(extraquery_files) > 1:
         wildCardExtension += ' AND ' + extraquery_files
@@ -2261,7 +2259,7 @@ def jobList(request, mode=None, param=None):
     cntStatus = []
     if dropmode and (len(taskids) == 1):
         jobs, droplist, droppedPmerge = drop_job_retries(jobs, list(taskids.keys())[0], is_return_dropped_jobs= isReturnDroppedPMerge)
-        _logger.info('Done droppping if was requested: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Done droppping if was requested: {}'.format(time.time() - request.session['req_init_time']))
 
     # get attempts of file if fileid in request params
     files_attempts_dict = {}
@@ -2288,13 +2286,13 @@ def jobList(request, mode=None, param=None):
                         job['fileattemptnr'] = None
                     if jedi_file and 'maxattempt' in jedi_file:
                         job['filemaxattempts'] = jedi_file['maxattempt']
-        _logger.info('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = cleanJobList(request, jobs, doAddMeta=is_job_meta_required)
-    _logger.info('Cleaned job list: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Cleaned job list: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = reconstructJobsConsumers(jobs)
-    _logger.info('Reconstructed consumers: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Reconstructed consumers: {}'.format(time.time() - request.session['req_init_time']))
 
     njobs = len(jobs)
     jobtype = ''
@@ -2350,7 +2348,7 @@ def jobList(request, mode=None, param=None):
     else:
         sortby = "attemptnr-descending,pandaid-descending"
         jobs = sorted(jobs, key=lambda x: [-x['attemptnr'],-x['pandaid']])
-    _logger.info('Sorted joblist: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Sorted joblist: {}'.format(time.time() - request.session['req_init_time']))
 
     taskname = ''
     if 'jeditaskid' in request.session['requestParams'] and '|' not in request.session['requestParams']['jeditaskid']:
@@ -2364,7 +2362,7 @@ def jobList(request, mode=None, param=None):
         user = request.session['requestParams']['user']
     else:
         user = None
-    _logger.info('Got task and user names: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Got task and user names: {}'.format(time.time() - request.session['req_init_time']))
 
     # show warning or not
     if njobs <= request.session['JOB_LIMIT']:
@@ -2379,7 +2377,7 @@ def jobList(request, mode=None, param=None):
             if item['field'] == 'jeditaskid':
                 item['list'] = sorted(item['list'], key=lambda k: k['kvalue'], reverse=True)
 
-    _logger.info('Built standard params attributes summary: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Built standard params attributes summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if 'jeditaskid' in request.session['requestParams']:
         if len(jobs) > 0:
@@ -2397,9 +2395,9 @@ def jobList(request, mode=None, param=None):
         testjobs = True
 
     errsByCount, _, _, _, errdSumd, _ = errorSummaryDict(request, jobs, testjobs, output=['errsByCount', 'errdSumd'])
+    _logger.debug('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
     errsByMessage = get_error_message_summary(jobs)
-
-    _logger.info('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Built error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if not is_json_request(request):
 
@@ -2410,7 +2408,7 @@ def jobList(request, mode=None, param=None):
             jobsToShow = exlib.fileList(jobsToShow)
         except Exception as e:
             _logger.error(e)
-        _logger.info(
+        _logger.debug(
             'Got file info for list of jobs to be shown: {}'.format(time.time() - request.session['req_init_time']))
 
         # Getting PQ status for for list of jobs to be shown
@@ -2419,7 +2417,7 @@ def jobList(request, mode=None, param=None):
             if job['computingsite'] in pq_dict:
                 job['computingsitestatus'] = pq_dict[job['computingsite']]['status']
                 job['computingsitecomment'] = pq_dict[job['computingsite']]['comment']
-        _logger.info('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
 
         # closing thread for counting total jobs in DB without limiting number of rows selection
         if thread is not None:
@@ -2450,7 +2448,7 @@ def jobList(request, mode=None, param=None):
             jobsTotalCount = None
         else:
             jobsTotalCount = int(math.ceil((jobsTotalCount + 10000) / 10000) * 10000)
-        _logger.info('Total jobs count thread finished: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Total jobs count thread finished: {}'.format(time.time() - request.session['req_init_time']))
 
         # datetime type -> str in order to avoid encoding errors on template
         datetime_job_param_names = ['creationtime', 'modificationtime', 'starttime', 'statechangetime', 'endtime']
@@ -2484,11 +2482,11 @@ def jobList(request, mode=None, param=None):
                     clist = newlist
                 except:
                     clist = []
-        _logger.info('Got comparison job list for user: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Got comparison job list for user: {}'.format(time.time() - request.session['req_init_time']))
 
         # set up google flow diagram
         flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
-        _logger.info('Built google flow diagram: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Built google flow diagram: {}'.format(time.time() - request.session['req_init_time']))
 
         xurl = extensibleURL(request)
         time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
@@ -2511,7 +2509,7 @@ def jobList(request, mode=None, param=None):
         del request.session['TFIRST']
         del request.session['TLAST']
         errsByCount = importToken(request, errsByCount=errsByCount)
-        _logger.info('Extra data preporation done: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Extra data preporation done: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
             'prefix': getPrefix(request),
@@ -2557,7 +2555,7 @@ def jobList(request, mode=None, param=None):
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
 
-        _logger.info('Cache was set: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Cache was set: {}'.format(time.time() - request.session['req_init_time']))
 
         if eventservice:
             response = render_to_response('jobListES.html', data, content_type='text/html')

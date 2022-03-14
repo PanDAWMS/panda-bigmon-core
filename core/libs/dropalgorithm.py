@@ -43,7 +43,7 @@ def drop_job_retries(jobs, jeditaskid, **kwards):
         AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', 'jobset_retry', 'es_merge', 'originpandaid')
     """
     retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=[extra]).order_by('newpandaid').values()
-    _logger.info('Got {} retries whereas total number of jobs is {}: {} sec'.format(len(retries), len(jobs),
+    _logger.debug('Got {} retries whereas total number of jobs is {}: {} sec'.format(len(retries), len(jobs),
                                                                                     (time.time() - start_time)))
 
     hashRetries = {}
@@ -94,7 +94,7 @@ def drop_job_retries(jobs, jeditaskid, **kwards):
                 droppedIDs.add(pandaid)
                 drop_list.append({'pandaid': pandaid, 'newpandaid': dropJob})
 
-    _logger.info('{} jobs dropped: {} sec'.format(len(jobs) - len(newjobs), time.time() - start_time))
+    _logger.debug('{} jobs dropped: {} sec'.format(len(jobs) - len(newjobs), time.time() - start_time))
     drop_list = sorted(drop_list, key=lambda x: -x['pandaid'])
     jobs = newjobs
 
