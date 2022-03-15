@@ -5,6 +5,7 @@
 import json
 import math
 import logging
+import time
 
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render_to_response
@@ -13,7 +14,7 @@ from django.views.decorators.cache import never_cache
 from django.utils import timezone
 from django.db import connection
 
-from core.libs.exlib import build_time_histogram, dictfetchall
+from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView, DateEncoder
 from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report_rse
@@ -41,6 +42,7 @@ def dataCarouselleDashBoard(request):
     data = {
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+        'requestParams': request.session['requestParams'] if 'requestParams' in request.session else {},
         'timerange': request.session['timerange'],
     }
 
@@ -96,81 +98,83 @@ def getStagingTailsData(request):
 @never_cache
 def getDTCSubmissionHist(request):
     valid, response = initRequest(request)
+    if not valid:
+        return response
+
     staginData = getStagingData(request)
+    _logger.debug('Got data: {}'.format(time.time() - request.session['req_init_time']))
 
     timelistSubmitted = []
     timelistSubmittedFiles = []
-
     progressDistribution = []
-    summarytableDict = {}
-    summaryByPtype = {}
-    selectCampaign = []
-    selectSource = []
-    selectPtype = []
-    detailsTable = []
     timelistIntervalfin = []
     timelistIntervalact = []
     timelistIntervalqueued = []
+
+    dataset_list = []
+    summary = {
+        'processingtype': {},
+        'source_rse': {},
+        'campaign': {}
+    }
+    selection_options = {
+        'campaign': [],
+        'source_rse': [],
+        'processingtype': [],
+    }
+    calc_temp = {
+        "ds_active": 0, "ds_done": 0, "ds_queued": 0, "ds_90pdone": 0,
+        'files_total': 0, "files_rem": 0, "files_queued": 0, "files_done": 0, 'files_active': 0,
+        'bytes_total': 0, 'bytes_done': 0, "bytes_queued": 0, 'bytes_rem': 0, 'bytes_active': 0,
+    }
 
     for task, dsdata in staginData.items():
         epltime = None
         timelistSubmitted.append(dsdata['start_time'])
         timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
-        source_rse_breakdown = substitudeRSEbreakdown(dsdata['source_rse'])
-        dictSE = summarytableDict.get(dsdata['source_rse'], {
-            "source": dsdata['source_rse'], "source_rse_breakdown": source_rse_breakdown,
-            "ds_active": 0, "ds_done": 0, "ds_queued": 0, "ds_90pdone": 0,
-            "files_rem": 0, "files_q": 0, "files_done": 0, 'files_active': 0})
-        if 'processingtype' in dsdata and dsdata['processingtype']:
-            if dsdata['processingtype'] not in summaryByPtype:
-                summaryByPtype[dsdata['processingtype']] = {
-                    "processingtype": dsdata['processingtype'],
-                    "ds_active": 0, "ds_done": 0, "ds_queued": 0,
-                    "files_total": 0, "files_rem": 0, "files_queued": 0, "files_done": 0, 'files_active': 0
-                }
-        if dsdata['occurence'] == 1:
-            dictSE["files_done"] += dsdata['staged_files']
-            dictSE["files_rem"] += (dsdata['total_files'] - dsdata['staged_files'])
-            if 'processingtype' in dsdata and dsdata['processingtype']:
-                summaryByPtype[dsdata['processingtype']]['files_total'] += dsdata['total_files']
-                summaryByPtype[dsdata['processingtype']]['files_done'] += dsdata['staged_files']
-                summaryByPtype[dsdata['processingtype']]['files_rem'] += (dsdata['total_files'] - dsdata['staged_files'])
 
-            # Build the summary by SEs and create lists for histograms
-            if dsdata['end_time'] is not None:
-                dictSE["ds_done"] += 1
-                if 'processingtype' in dsdata and dsdata['processingtype']:
-                    summaryByPtype[dsdata['processingtype']]['ds_done'] += 1
-                epltime = dsdata['end_time'] - dsdata['start_time']
-                timelistIntervalfin.append(epltime)
-            elif dsdata['status'] != 'queued':
-                epltime = timezone.now() - dsdata['start_time']
-                timelistIntervalact.append(epltime)
-                dictSE["ds_active"] += 1
-                dictSE['files_active'] += (dsdata['total_files'] - dsdata['staged_files'])
-                if 'processingtype' in dsdata and dsdata['processingtype']:
-                    summaryByPtype[dsdata['processingtype']]['ds_active'] += 1
-                    summaryByPtype[dsdata['processingtype']]['files_active'] += (dsdata['total_files'] - dsdata['staged_files'])
-                if dsdata['staged_files'] >= dsdata['total_files']*0.9:
-                    dictSE["ds_90pdone"] += 1
-            elif dsdata['status'] == 'queued':
-                dictSE["ds_queued"] += 1
-                dictSE["files_q"] += (dsdata['total_files'] - dsdata['staged_files'])
-                if 'processingtype' in dsdata and dsdata['processingtype']:
-                    summaryByPtype[dsdata['processingtype']]['ds_queued'] += 1
-                    summaryByPtype[dsdata['processingtype']]['files_queued'] += (dsdata['total_files'] - dsdata['staged_files'])
-                epltime = timezone.now() - dsdata['start_time']
-                timelistIntervalqueued.append(epltime)
+        for key in summary:
+            if dsdata[key] not in summary[key]:
+                summary[key][dsdata[key]] = {
+                    key: dsdata[key],
+                }
+                summary[key][dsdata[key]].update(calc_temp)
+                if key == "source_rse":
+                    summary[key][dsdata[key]]['source_rse_breakdown'] = substitudeRSEbreakdown(dsdata['source_rse'])
+
+            if dsdata['occurence'] == 1:
+                summary[key][dsdata[key]]['files_total'] += dsdata['total_files']
+                summary[key][dsdata[key]]['files_done'] += dsdata['staged_files']
+                summary[key][dsdata[key]]['files_rem'] += (dsdata['total_files'] - dsdata['staged_files'])
+                summary[key][dsdata[key]]['bytes_total'] += convert_bytes(dsdata['dataset_bytes'], output_unit='GB')
+                summary[key][dsdata[key]]['bytes_done'] += convert_bytes(dsdata['staged_bytes'], output_unit='GB')
+                summary[key][dsdata[key]]['bytes_rem'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], output_unit='GB')
+
+                # Build the summary by SEs and create lists for histograms
+                if dsdata['end_time'] is not None:
+                    summary[key][dsdata[key]]["ds_done"] += 1
+                    epltime = dsdata['end_time'] - dsdata['start_time']
+                    timelistIntervalfin.append(epltime)
+                elif dsdata['status'] != 'queued':
+                    epltime = timezone.now() - dsdata['start_time']
+                    timelistIntervalact.append(epltime)
+                    summary[key][dsdata[key]]["ds_active"] += 1
+                    summary[key][dsdata[key]]['files_active'] += (dsdata['total_files'] - dsdata['staged_files'])
+                    summary[key][dsdata[key]]['bytes_active'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], output_unit='GB')
+                    if dsdata['staged_files'] >= dsdata['total_files'] * 0.9:
+                        summary[key][dsdata[key]]["ds_90pdone"] += 1
+                elif dsdata['status'] == 'queued':
+                    epltime = timezone.now() - dsdata['start_time']
+                    timelistIntervalqueued.append(epltime)
+                    summary[key][dsdata[key]]["ds_queued"] += 1
+                    summary[key][dsdata[key]]["files_queued"] += (dsdata['total_files'] - dsdata['staged_files'])
+                    summary[key][dsdata[key]]["bytes_queued"] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], output_unit='GB')
 
         progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
-
-        summarytableDict[dsdata['source_rse']] = dictSE
-        selectCampaign.append({"name": dsdata['campaign'], "value": dsdata['campaign'], "selected": "0"})
-        selectSource.append({"name": dsdata['source_rse'], "value": dsdata['source_rse'], "selected": "0"})
-        selectPtype.append({"name": dsdata['processingtype'], "value": dsdata['processingtype'], "selected": "0"})
-        detailsTable.append({
+        dataset_list.append({
             'campaign': dsdata['campaign'], 'pr_id': dsdata['pr_id'], 'taskid': dsdata['taskid'],
             'status': dsdata['status'], 'total_files': dsdata['total_files'], 'staged_files': dsdata['staged_files'],
+            'size': round(convert_bytes(dsdata['dataset_bytes'], output_unit='GB'), 2),
             'progress': int(math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
             'source_rse': dsdata['source_rse'],
             'elapsedtime': str(epltime).split('.')[0] if epltime is not None else '---',
@@ -180,38 +184,45 @@ def getDTCSubmissionHist(request):
             'update_time_sort': dsdata['update_time_sort'],
             'processingtype': dsdata['processingtype']})
 
-    binned_subm_datasets = build_time_histogram(timelistSubmitted)
-    binned_subm_files = build_time_histogram(timelistSubmittedFiles)
+    # fill options for selection menus
+    for key in selection_options:
+        if key in summary:
+            selection_options[key] = sorted(
+                [{"name": value, "value": value, "selected": "0"} for value in summary[key]],
+                key=lambda x: x['name'].lower()
+            )
 
-    # For uniquiness
-    selectSource = sorted(list({v['name']: v for v in selectSource}.values()), key=lambda x: x['name'].lower())
-    selectCampaign = sorted(list({v['name']: v for v in selectCampaign}.values()), key=lambda x: x['name'].lower())
-    selectPtype = sorted(list({v['name']: v for v in selectPtype}.values()), key=lambda x: x['name'].lower())
+    # round bytes
+    for param in summary:
+        for value in summary[param]:
+            for key in summary[param][value]:
+                if key.startswith('bytes'):
+                    summary[param][value][key] = round(summary[param][value][key], 2)
 
-    summarytableList = list(summarytableDict.values())
-    summaryByPtypeList = list(summaryByPtype.values())
+    # dict -> list for summary + sorting
+    for param in summary:
+        summary[param] = sorted(list(summary[param].values()), key=lambda x: x[param].lower())
 
-    binnedActFinData = getBinnedData(timelistIntervalact, additionalList1 = timelistIntervalfin, additionalList2 = timelistIntervalqueued)
-    eplTime = [['Time', 'Active staging', 'Finished staging', 'Queued staging']] + [[round(time, 1), data[0], data[1], data[2]] for (time, data) in binnedActFinData]
-    finalvalue = {"elapsedtime": eplTime}
+    binned_subm_datasets = build_time_histogram(timelistSubmitted) if len(timelistSubmitted) > 0 else {}
+    binned_subm_files = build_time_histogram(timelistSubmittedFiles) if len(timelistSubmittedFiles) > 0 else {}
 
-    arr = [["Progress"]]
-    arr.extend([[x*100] for x in progressDistribution])
-    finalvalue["progress"] = arr
+    binnedActFinData = getBinnedData(
+        timelistIntervalact,
+        additionalList1=timelistIntervalfin, additionalList2=timelistIntervalqueued)
+    eplTime = [['Time', 'Active staging', 'Finished staging', 'Queued staging']] + [[round(time_str, 1), data[0], data[1], data[2]] for (time_str, data) in binnedActFinData]
 
-    binnedSubmData = getBinnedData(timelistSubmitted)
-    finalvalue["submittime"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binned_subm_datasets]
-    finalvalue["submittimefiles"] = [['Time', 'Count']] + [[time, data[0]] for (time, data) in binned_subm_files]
-    finalvalue["progresstable"] = summarytableList
-    finalvalue['summarybyptype'] = summaryByPtypeList
+    _logger.debug('Prepared data: {}'.format(time.time() - request.session['req_init_time']))
 
-    finalvalue["selectsource"] = selectSource
-    finalvalue["selectcampaign"] = selectCampaign
-    finalvalue["selectptype"] = selectPtype
-    finalvalue["detailstable"] = detailsTable
+    finalvalue = {}
+    finalvalue["elapsedtime"] = eplTime
+    finalvalue["submittime"] = [['Time', 'Count']] + [[time_str, data[0]] for time_str, data in binned_subm_datasets]
+    finalvalue["submittimefiles"] = [['Time', 'Count']] + [[time_str, data[0]] for time_str, data in binned_subm_files]
+    finalvalue["progress"] = [["Progress"]] + [[x * 100] for x in progressDistribution]
+    finalvalue['summary'] = summary
+    finalvalue['selection'] = selection_options
+    finalvalue["detailstable"] = dataset_list
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
-
 
 
 @never_cache
@@ -222,12 +233,17 @@ def send_stalled_requests_report(request):
 
     # get data
     try:
-        query = """SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
-                t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence, (CURRENT_TIMESTAMP-t1.UPDATE_TIME) as UPDATE_TIME, t4.processingtype FROM ATLAS_DEFT.T_DATASET_STAGING t1
-                INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
-                INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
-                INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID where END_TIME is NULL and (t1.STATUS = 'staging') and t1.UPDATE_TIME <= TRUNC(SYSDATE) - {}
-                """.format(DATA_CAROUSEL_MAIL_DELAY_DAYS)
+        query = """
+        SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
+            t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, 
+            ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence, 
+            (CURRENT_TIMESTAMP-t1.UPDATE_TIME) as UPDATE_TIME, t4.processingtype 
+        FROM ATLAS_DEFT.T_DATASET_STAGING t1
+        INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
+        INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
+        INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID 
+        where END_TIME is NULL and (t1.STATUS = 'staging') and t1.UPDATE_TIME <= TRUNC(SYSDATE) - {}
+        """.format(DATA_CAROUSEL_MAIL_DELAY_DAYS)
         cursor = connection.cursor()
         cursor.execute(query)
         rows = dictfetchall(cursor)

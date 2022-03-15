@@ -33,17 +33,17 @@
 
       <div id="selectionpane" class="columns medium-4">
           <b>Campaign:</b>
-          <select id="campaign" ng-model="selectedCampaign" ng-options="campitem.value as campitem.name for campitem in selectcampaign" multiple>
+          <select id="campaign" ng-model="selection.selected.campaign" ng-options="campitem.value as campitem.name for campitem in selection.options.campaign" multiple>
               <option value="" selected="selected">All</option>
           </select>
 
           <b>Source:</b>
-          <select id="source" ng-model="selectedSource" ng-options="source.value as source.name for source in selectsource" multiple>
+          <select id="source" ng-model="selection.selected.source_rse" ng-options="source.value as source.name for source in selection.options.source_rse" multiple>
              <option value="" selected="selected">All</option>
           </select>
 
           <b>Processing type:</b>
-          <select id="source" ng-model="selectedPtype" ng-options="pt.value as pt.name for pt in selectptype" multiple>
+          <select id="source" ng-model="selection.selected.processingtype" ng-options="pt.value as pt.name for pt in selection.options.processingtype" multiple>
              <option value="" selected="selected">All</option>
           </select>
           <a ng-click="gog();" class="button primary">Update</a>
@@ -56,8 +56,9 @@
     </div>
 
     <div class="row">
-      <div id="chartTAPECH_div" class="columns medium-6"><p ng-bind-html="loading_placeholder"></p></div>
-      <div id="chartTAPEFILECH_div" class="columns medium-6"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartTAPECH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartTAPEFILECH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartTAPEBCH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
     </div>
 
     <div class="row">
@@ -75,14 +76,16 @@
                 <th class="num">Files Queued</th>
                 <th class="num">Files Active</th>
                 <th class="num">Files Done</th>
+                <th class="num">Volume Total [GB]</th>
+                <th class="num">Volume Done [GB]</th>
             </tr>
           </thead>
           <tbody>
-            <tr ng-repeat="x in progresstablearr" class="low-stat">
-                <th class="nowrap"> <a class="nowrap" href="{% url 'taskList' %}?tape=true&stagesource={$ x.source $}&{$ getTimeForQuery() $}">{$ x.source $}</a>
+            <tr ng-repeat="x in summary.source_rse" class="low-stat">
+                <th class="nowrap"> <a class="nowrap" href="{% url 'taskList' %}?tape=true&stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">{$ x.source_rse $}</a>
                 </th>
                 <td class="mid">
-                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source $}&{$ getTimeForQuery() $}"><i class="fi-graph-trend"></i></a>
+                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}"><i class="fi-graph-trend"></i></a>
                 </td>
                 <td class="mid">
                   <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}"><img src="{% static 'images/grafana.png' %}" width=14 height=14 border=0></a>
@@ -97,13 +100,19 @@
                     {$ x.ds_done $} (+{$ x.ds_90pdone $})
                 </td>
                 <td class="num queued_fill">
-                    {$ x.files_q $}
+                    {$ x.files_queued $}
                 </td>
                 <td class="num staging_fill">
                     {$ x.files_active $}
                 </td>
                 <td class="num done_fill">
                     {$ x.files_done $}
+                </td>
+                <td class="num">
+                    {$ x.bytes_total $}
+                </td>
+                <td class="num done_fill">
+                    {$ x.bytes_done $}
                 </td>
             </tr>
           </tbody>
@@ -112,8 +121,10 @@
     </div>
 
     <div class="row">
-      <div id="chartDACH_div" class="columns medium-6"><p ng-bind-html="loading_placeholder"></p></div>
-      <div id="chartFACH_div" class="columns medium-6"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartDACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartFACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+
+      <div id="chartBACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
     </div>
 
     <div class="card bp-container-simple secondary" id="container_sds">
@@ -124,6 +135,7 @@
          <thead></thead>
          <tfoot>
           <tr>
+             <th></th>
              <th></th>
              <th></th>
              <th></th>
@@ -185,11 +197,11 @@
     },
     elapsedtime: {
       options: {
-        title: 'Elapsed time (h)',
+        title: 'Elapsed time, h',
         height: 400,
         chartArea: {width: '100%', height: '70%', left: 50,},
         vAxis: {title: 'Number of datasets'},
-        hAxis: {title: 'Time (h)', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, type: 'category'},
+        hAxis: {title: 'Time, h', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, type: 'category'},
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
           axis: 'horizontal',
@@ -211,7 +223,7 @@
         legend: {position: 'none'},
         colors: ['#2174bb'],
         vAxis: {title: 'Number of datasets'},
-        hAxis: {title: 'Progress (%)', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, type: 'category'},
+        hAxis: {title: 'Progress, %', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, type: 'category'},
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
           axis: 'horizontal',
@@ -253,6 +265,27 @@
         legend: {position: 'top'},
         vAxis: {textStyle: {fontSize: 11}},
         hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    bytespertape: {
+      options: {
+        title: 'Volume of staging datasets per source RSE',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 130,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
         colors: ['#2174bb', '#934fff', '#207f20'],
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
@@ -306,6 +339,27 @@
       obj: {},
       data: [],
     },
+    bytesperactivity: {
+      options: {
+        title: 'Volume of staging datasets per activity',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 100,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
   };
 
   app.service('Service', ['$http', service])
@@ -326,17 +380,27 @@
   function controller($scope, $sce, Service){
     $scope.is_hidden = true;
     $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
+    $scope.request_params = {{ requestParams|safe }};
+    $scope.selection = {
+      options: {},
+      selected: {campaign: [], processingtype: [], source_rse: []},
+    }
+    Object.keys($scope.selection.selected).forEach(key => {
+      if (key in $scope.request_params) {
+        $scope.selection.selected[key] = $scope.request_params[key].split(',');
+      }
+    });
+
     $scope.gog = function() {
       var request = "";
-
-      request = "?"+$scope.getTimeForQuery();
-
-      if (request.length == 0) request = "?"; else request += "&";
-      if ($scope.selectedCampaign) request += ('campaign=' + $scope.selectedCampaign);
-      if (request.length == 0) request = "?"; else request += "&";
-      if ($scope.selectedSource) request += ('source=' + $scope.selectedSource);
-      if (request.length == 0) request = "?"; else request += "&";
-      if ($scope.selectedPtype) request += ('processingtype=' + $scope.selectedPtype);
+      request = "?" + $scope.getTimeForQuery();
+      Object.keys($scope.selection.selected).forEach(key => {
+        if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
+          request += '&' + key + '=' + $scope.selection.selected[key]
+        } else if (key in $scope.request_params) {
+          request += '&' + key + '=' + $scope.request_params[key]
+        }
+      })
 
       Service.get(request).then($scope.processResponce);
     };
@@ -369,19 +433,26 @@
       $scope.submittimefiles = response.data.submittimefiles;
       $scope.elapsedtime = response.data.elapsedtime;
       $scope.progress = response.data.progress;
-      $scope.progresstablearr = response.data.progresstable;
+
+      $scope.summary = response.data.summary;
+
       $scope.reqpertape = [['Source', 'Queued', 'Staging', 'Done']];
       $scope.filespertape = [['Source', 'Queued', 'Active', 'Done']];
-      $scope.progresstablearr.forEach(row => {
-        $scope.reqpertape.push([row['source'], row['ds_queued'], row['ds_active'], row['ds_done']]);
-        $scope.filespertape.push([row['source'], row['files_q'], row['files_active'], row['files_done']])
+      $scope.bytespertape = [['Source', 'Queued', 'Active', 'Done']];
+
+      $scope.summary.source_rse.forEach(row => {
+        $scope.reqpertape.push([row['source_rse'], row['ds_queued'], row['ds_active'], row['ds_done']]);
+        $scope.filespertape.push([row['source_rse'], row['files_queued'], row['files_active'], row['files_done']]);
+        $scope.bytespertape.push([row['source_rse'], row['bytes_queued'], row['bytes_active'], row['bytes_done']]);
       });
-      $scope.summarybyptype = response.data.summarybyptype;
+
       $scope.datasetperactivity = [['Processing Type', 'Queued', 'Staging', 'Done']];
       $scope.filesperactivity = [['Processing Type', 'Queued', 'Active', 'Done']];
-      $scope.summarybyptype.forEach(row => {
+      $scope.bytesperactivity = [['Processing Type', 'Queued', 'Active', 'Done']];
+      $scope.summary.processingtype.forEach(row => {
         $scope.datasetperactivity.push([row['processingtype'], row['ds_queued'], row['ds_active'], row['ds_done']]);
-        $scope.filesperactivity.push([row['processingtype'], row['files_queued'], row['files_active'], row['files_done']])
+        $scope.filesperactivity.push([row['processingtype'], row['files_queued'], row['files_active'], row['files_done']]);
+        $scope.bytesperactivity.push([row['processingtype'], row['bytes_queued'], row['bytes_active'], row['bytes_done']]);
       });
 
       charts.submittime.obj = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
@@ -390,30 +461,22 @@
       charts.progress.obj = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
       charts.reqpertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPECH_div'));
       charts.filespertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPEFILECH_div'));
+      charts.bytespertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPEBCH_div'));
       charts.datasetperactivity.obj = new google.visualization.BarChart(document.getElementById('chartDACH_div'));
       charts.filesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartFACH_div'));
+      charts.bytesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartBACH_div'));
 
       Object.keys(charts).forEach(name => {
         charts[name].data = google.visualization.arrayToDataTable($scope[name]);
         charts[name].obj.draw(charts[name].data, charts[name].options);
       });
 
-      $scope.selectedCampaign = null;
-      $scope.selectedSource = null;
-      $scope.selectedPtype = null;
-
-      $scope.selectcampaign = response.data.selectcampaign;
-      $scope.selectsource = response.data.selectsource;
-      $scope.selectptype = response.data.selectptype;
-
-      if ($scope.selectcampaign.length === 1) $scope.selectedCampaign = [$scope.selectcampaign[0].name];
-      if ($scope.selectsource.length === 1) $scope.selectedSource = [$scope.selectsource[0].name];
-      if ($scope.selectptype.length === 1) $scope.selectedPtype = [$scope.selectptype[0].name];
+      $scope.selection.options = response.data.selection;
 
       detailsDataTable = $('#stagingdatasetstable').DataTable({
           bDestroy: true,
           scrollX: true,
-          columnDefs: [{"type": "num-html", "targets": [5,6,7,9,12] }],
+          columnDefs: [{"type": "num-html", "targets": [5,6,7,8,10,13] }],
           data: response.data.detailstable,
           columns: [
             { title: 'Campaign', data: 'campaign' },
@@ -428,6 +491,7 @@
             },
             { title: 'Status', data: 'status', className: 'state'},
             { title: 'P-type', data: 'processingtype', className: 'state' },
+            { title: 'Size [GB]', data: 'size', className: 'num' },
             { title: 'Total files', data: 'total_files', className: 'num' },
             { title: 'Staged files', data: 'staged_files', className: 'num' },
             { title: 'Progress [%]', data: 'progress', className: 'num' },
@@ -450,7 +514,7 @@
               $('td', row).eq(3).addClass(data['status'] + '_fill');
           },
           initComplete: function () {
-              this.api().columns([3,4]).every( function () {
+              this.api().columns([0,3,4,9]).every( function () {
                   var column = this;
                   var select = $('<select><option value="">All</option></select>')
                       .appendTo( $(column.footer()).empty() )
@@ -472,7 +536,8 @@
       });
     };
 
-    Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);
+    $scope.gog();
+    {#Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);#}
   }
 
   //create trigger to resizeEnd event
