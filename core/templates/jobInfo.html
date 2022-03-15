@@ -329,7 +329,7 @@
 <div class="bp-dropdown-button">
     <button class="dropdown">Memory and IO plots</button>
     <div class=" dropdown-items">
-      <a {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'cancelled' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging' %}{% else %}class="disabled"{% endif %} href="{% url 'prMonPlots' job.pandaid %}" target="_blank">Memory and IO plots</a>
+      <a {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus ==  'transferring' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging' %}{% else %}class="disabled"{% endif %} href="{% url 'prMonPlots' job.pandaid %}" target="_blank">Memory and IO plots</a>
     </div>
 </div>
 {% if request.user.is_tester %}
