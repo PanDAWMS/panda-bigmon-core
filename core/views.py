@@ -23,7 +23,6 @@ from functools import wraps
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 from elasticsearch_dsl import Search
 
-from django.utils.decorators import available_attrs
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
@@ -1949,7 +1948,7 @@ def jobParamList(request):
 def cache_filter(timeout):
     # This function provides splitting cache keys depending on conditions above the parameters specified in the URL
     def decorator(view_func):
-        @wraps(view_func, assigned=available_attrs(view_func))
+        @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
             is_json = False
             request._cache_update_cache = False
