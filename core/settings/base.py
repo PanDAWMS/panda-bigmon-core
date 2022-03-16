@@ -112,7 +112,6 @@ INSTALLED_APPS_DJANGO_PLUGINS = (
     # Django plugins
     'rest_framework',
     'django_datatables_view',
-    'djangojs',
     'django_extensions',
 )
 COMMON_INSTALLED_APPS = \
