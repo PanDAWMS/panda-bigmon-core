@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from datetime import datetime
 from core.views import initRequest
 from django.db import connection, transaction
@@ -22,7 +22,7 @@ def globaldemo(request):
     valid, response = initRequest(request)
     nname = '20.20.X-VAL'
     data={"nightly": nname, 'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,}
-    return render_to_response('globaldemo.html', data, content_type='text/html')
+    return render(request, 'globaldemo.html', data, content_type='text/html')
 
 def globaldata(request):
     valid, response = initRequest(request)
@@ -111,4 +111,4 @@ j.jid BETWEEN to_number(to_char(SYSDATE-6, 'YYYYMMDD'))*10000000
         list9.append(row[1]);list9.append(row[0]);list9.append(row[14]);list9.append(row[9]);list9.append(a0001);list9.append(a0002);list9.append(row[29]);
         reslt3.append(list9)
     return HttpResponse(json.dumps(reslt3, cls=DateEncoder), content_type='application/json')
-    #return render_to_response('demonstrator.html', data, content_type='text/html')
+    #return render(request, 'demonstrator.html', data, content_type='text/html')

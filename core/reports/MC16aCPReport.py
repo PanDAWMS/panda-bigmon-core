@@ -1,6 +1,6 @@
 from django.db import connection
 import time
-from django.shortcuts import render_to_response, render, redirect
+from django.shortcuts import render, redirect
 from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
@@ -495,7 +495,7 @@ class MC16aCPReport:
         if data is not None:
             data = json.loads(data)
             data['request'] = request
-            response = render_to_response('reportCampaign.html', data, RequestContext(request))
+            response = render(request, 'reportCampaign.html', data, RequestContext(request))
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
@@ -533,7 +533,7 @@ class MC16aCPReport:
                 "taskstatelistRecent":self.taskstatelistRecent,
                 "built": datetime.now().strftime("%d %b %Y %H:%M:%S")}
         self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 180*60)
-        return render_to_response('reportCampaign.html', data, RequestContext(request))
+        return render(request, 'reportCampaign.html', data, RequestContext(request))
 
 
     def prepareReportJEDIMC16c(self, request):
@@ -542,7 +542,7 @@ class MC16aCPReport:
         if data is not None:
             data = json.loads(data)
             data['request'] = request
-            response = render_to_response('reportCampaignHash.html', data, RequestContext(request))
+            response = render(request, 'reportCampaignHash.html', data, RequestContext(request))
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
@@ -581,7 +581,7 @@ class MC16aCPReport:
                 "taskstatelistRecent":self.taskstatelistRecent,
                 "built": datetime.now().strftime("%d %b %Y %H:%M:%S")}
         self.setCacheEntry(request, "prepareReportMC16c", json.dumps(data, cls=self.DateEncoder), 180*60)
-        return render_to_response('reportCampaignHash.html', data, RequestContext(request))
+        return render(request, 'reportCampaignHash.html', data, RequestContext(request))
 
 
 

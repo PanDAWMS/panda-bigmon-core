@@ -2,7 +2,7 @@
 
 """
 import json
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from django.contrib.auth import logout as auth_logout
 from django.views.decorators.cache import never_cache
 from django.utils.cache import patch_response_headers
@@ -35,7 +35,7 @@ def loginauth2(request):
 
     # store the redirect url in the session to be picked up after the auth completed
     request.session['next'] = next
-    response = render_to_response('login.html', {'request': request, }, content_type='text/html')
+    response = render(request, 'login.html', {'request': request, }, content_type='text/html')
     response.delete_cookie('sessionid')
     return response
 
@@ -43,14 +43,14 @@ def loginauth2(request):
 def loginerror(request):
     warning = """The login to BigPanDA monitor is failed. Cleaning of your browser cookies might help. 
                  If the error is persistent, please write to """
-    response = render_to_response('login.html', {'request': request, 'warning': warning}, content_type='text/html')
+    response = render(request, 'login.html', {'request': request, 'warning': warning}, content_type='text/html')
     #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
 @login_customrequired
 def testauth(request):
-    response = render_to_response('testauth.html', {'request': request,}, content_type='text/html')
+    response = render(request, 'testauth.html', {'request': request,}, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 

@@ -2,7 +2,7 @@ import json, urllib3
 from datetime import datetime, timedelta
 
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, DateEncoder
@@ -50,7 +50,7 @@ def jbhome(request):
         data = json.loads(data)
         if not ('message' in data and 'warning' in data['message'] and len(data['message']['warning']) > 1):
             data['request'] = request
-            response = render_to_response('jobsbuster.html', data, content_type='text/html')
+            response = render(request, 'jobsbuster.html', data, content_type='text/html')
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
@@ -190,7 +190,7 @@ def jbhome(request):
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json',))) and (
                 'json' not in request.session['requestParams'])):
-        response = render_to_response('jobsbuster.html', data, content_type='text/html')
+        response = render(request, 'jobsbuster.html', data, content_type='text/html')
     else:
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     if resp and len(resp.data) > 10:

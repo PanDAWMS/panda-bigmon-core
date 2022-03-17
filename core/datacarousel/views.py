@@ -8,7 +8,7 @@ import logging
 import time
 
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
@@ -46,7 +46,7 @@ def dataCarouselleDashBoard(request):
         'timerange': request.session['timerange'],
     }
 
-    response = render_to_response('DataTapeCarouselle.html', data, content_type='text/html')
+    response = render(request, 'DataTapeCarouselle.html', data, content_type='text/html')
     # patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response
 
@@ -64,7 +64,7 @@ def dataCarouselTailsDashBoard(request):
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
 
-    response = render_to_response('DataTapeCaruselTails.html', data, content_type='text/html')
+    response = render(request, 'DataTapeCaruselTails.html', data, content_type='text/html')
     return response
 
 

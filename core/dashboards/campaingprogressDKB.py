@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from core.settings import DKB_CAMPAIGN_URL
 from django.db import connection
 from core.views import initRequest, escapeInput
@@ -91,5 +91,5 @@ def campaignProgressDash(request):
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
 
-    response = render_to_response('campaignProgressDKB.html', data, content_type='text/html')
+    response = render(request, 'campaignProgressDKB.html', data, content_type='text/html')
     return response

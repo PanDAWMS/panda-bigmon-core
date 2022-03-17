@@ -1,5 +1,5 @@
 from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.db import connection
 
 
@@ -49,7 +49,7 @@ class TitanProgressReport:
                 data["datefrom"] = result[0]['DATEFROM']
                 data["dateto"] = result[0]['DATETO']
         data["failrate"] = '-' if not (data["countfinishedj"]+data["countfailedj"]) > 0 else int((data["countfailedj"]*1.0/(data["countfinishedj"]+data["countfailedj"]))*100)
-        return render_to_response('titanreport.html', data, RequestContext(request))
+        return render(request, 'titanreport.html', data, RequestContext(request))
 
 
 

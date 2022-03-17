@@ -8,7 +8,7 @@ from django.db import connection
 from django.db.models import Count
 
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 
 from django.utils.cache import patch_cache_control, patch_response_headers
 from django.utils import timezone
@@ -75,7 +75,7 @@ def harvesterWorkersDash(request):
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    response = render_to_response('harvworksummarydash.html', data, content_type='text/html')
+    response = render(request, 'harvworksummarydash.html', data, content_type='text/html')
     return response
 
 @login_customrequired
@@ -116,7 +116,7 @@ def harvesterWorkerList(request):
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    response = render_to_response('harvworkerslist.html', data, content_type='text/html')
+    response = render(request, 'harvworkerslist.html', data, content_type='text/html')
     return response
 
 @login_customrequired
@@ -191,7 +191,7 @@ def harvesterWorkerInfo(request):
             'json' in request.session['requestParams']):
         return HttpResponse(json.dumps(data['workerinfo'], cls=DateEncoder), content_type='application/json')
     else:
-        response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
+        response = render(request, 'harvworkerinfo.html', data, content_type='text/html')
         return response
 
 def harvesterfm (request):
@@ -207,7 +207,7 @@ def harvestermon(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('harvestermon.html', data, content_type='text/html')
+        response = render(request, 'harvestermon.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -484,7 +484,7 @@ def harvestermon(request):
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
 
-        return render_to_response('harvestermon.html', data, content_type='text/html')
+        return render(request, 'harvestermon.html', data, content_type='text/html')
 
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
 
@@ -723,7 +723,7 @@ def harvestermon(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        return render_to_response('harvestermon.html', data, content_type='text/html')
+        return render(request, 'harvestermon.html', data, content_type='text/html')
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
 
         pandaid = request.session['requestParams']['pandaid']
@@ -873,7 +873,7 @@ def harvestermon(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        return render_to_response('harvestermon.html', data, content_type='text/html')
+        return render(request, 'harvestermon.html', data, content_type='text/html')
     else:
         sqlQuery = f"""
           SELECT HARVESTER_ID as HARVID,
@@ -909,7 +909,7 @@ def harvestermon(request):
         #data =json.dumps(data,cls=DateEncoder)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
-            return render_to_response('harvestermon.html', data, content_type='text/html')
+            return render(request, 'harvestermon.html', data, content_type='text/html')
         else:
             return HttpResponse(json.dumps(instanceDictionary, cls=DateTimeEncoder), content_type='application/json')
 
@@ -1103,7 +1103,7 @@ def harvesterslots(request):
         'built': datetime.now().strftime("%H:%M:%S"),
 
     }
-    return render_to_response('harvesterslots.html', data, content_type='text/html')
+    return render(request, 'harvesterslots.html', data, content_type='text/html')
 
 def getWorkersList(sqlWorkersList):
 

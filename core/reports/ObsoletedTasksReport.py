@@ -1,5 +1,5 @@
 from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.db import connection
 from collections import OrderedDict
 from datetime import datetime
@@ -76,7 +76,7 @@ class ObsoletedTasksReport:
         data['type'] = type
         data['clusters'] = cluserssummaryList
 
-        return render_to_response('reportObsoletedTasksv4.html', data, RequestContext(request))
+        return render(request, 'reportObsoletedTasksv4.html', data, RequestContext(request))
 
 
 
@@ -161,7 +161,7 @@ class ObsoletedTasksReport:
         data['type'] = type
         data['clusters'] = cluserssummaryList
 
-        return render_to_response('reportObsoletedTasksv3.html', data, RequestContext(request))
+        return render(request, 'reportObsoletedTasksv3.html', data, RequestContext(request))
 
 
 
@@ -215,7 +215,7 @@ class ObsoletedTasksReport:
         data = {}
         data['tasksInfo'] = tasksInfoList
         data['built'] = datetime.now().strftime("%d %b %Y %H:%M:%S")
-        return render_to_response('reportObsoletedTasks.html', data, RequestContext(request))
+        return render(request, 'reportObsoletedTasks.html', data, RequestContext(request))
 
 
     def prepareReport(self, request):

@@ -6,7 +6,7 @@ import logging
 import re
 import json
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.template.loader import get_template
 from django.conf import settings
@@ -140,7 +140,7 @@ def index(request):
         data = {
             'errormessage': errormessage
         }
-        return render_to_response('errorPage.html', data, content_type='text/html')
+        return render(request, 'errorPage.html', data, content_type='text/html')
     if not (guid is None or lfn is None or scope is None):
         files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid, 100)
     else:
@@ -155,7 +155,7 @@ def index(request):
         data = {
             'errormessage': errormessage
         }
-        return render_to_response('errorPage.html', data, content_type='text/html')
+        return render(request, 'errorPage.html', data, content_type='text/html')
     if not len(files):
         msg = 'Something went wrong while the log file downloading. [guid=%s, site=%s, scope=%s, lfn=%s] \n' % \
               (guid, site, scope, lfn)
@@ -206,7 +206,7 @@ def index(request):
         if 'download' in errors and errors['download'] and len(errors['download']) > 0:
             if len(fsize) > 0 and 'status' in fsize[0] and fsize[0]['status'] != 'failed' and sizemb <= 0:
                 status = 500
-        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
+        return render(request, 'filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
     else:
         resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
         _logger.debug("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
@@ -333,7 +333,7 @@ def api_single_pandaid(request):
                     settings.MEDIA_URL + dirprefix + '/' + lfn
         data['url'] = url
         ### set request response data
-        return render_to_response('filebrowser/filebrowser_api_single_pandaid.html', {'data': data}, RequestContext(request))
+        return render(request, 'filebrowser/filebrowser_api_single_pandaid.html', {'data': data}, RequestContext(request))
     elif 'pandaid' not in request.GET.keys() or pandaid == None:
         t = get_template('filebrowser/filebrowser_api_single_pandaid.html')
         context = RequestContext(request, {'data':data})

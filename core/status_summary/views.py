@@ -9,7 +9,7 @@ import pytz
 from datetime import datetime, timedelta
 
 from django.db.models import Count, Sum, Q
-from django.shortcuts import render_to_response, render
+from django.shortcuts import render
 from django.template import RequestContext, loader
 from django.http import HttpResponse
 from django.template.loader import get_template
@@ -218,6 +218,6 @@ def index(request):
 
     data, errors, warnings, query, GET_parameters = index_data(request)
     data['viewParams'] = {'MON_VO': 'ATLAS'},
-    return render_to_response('status_summary/index-status_summary.html', data, RequestContext(request))
+    return render(request, 'status_summary/index-status_summary.html', data, RequestContext(request))
 
 

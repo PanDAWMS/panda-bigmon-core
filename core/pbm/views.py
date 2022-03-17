@@ -8,7 +8,7 @@ import pytz
 from datetime import datetime, timedelta
 
 from django.db.models import Count, Sum
-from django.shortcuts import render_to_response, render
+from django.shortcuts import render
 from django.template import RequestContext, loader
 from django.http import HttpResponse
 from django.template.loader import get_template
@@ -278,7 +278,7 @@ def index(request):
         'title27': title27,
         'colors27': colors27,
     }
-    return render_to_response('pbm/index.html', data, RequestContext(request))
+    return render(request, 'pbm/index.html', data, RequestContext(request))
 
 
 def single_plot(request):
@@ -314,7 +314,7 @@ def single_plot(request):
         'colorsX': colorsX,
         'plotid': plotid,
     }
-    return render_to_response('pbm/plot.html', data, RequestContext(request))
+    return render(request, 'pbm/plot.html', data, RequestContext(request))
 
 
 def single_table(request):
@@ -350,7 +350,7 @@ def single_table(request):
         'colorsX': colorsX,
         'plotid': plotid,
     }
-    return render_to_response('pbm/table.html', data, RequestContext(request))
+    return render(request, 'pbm/table.html', data, RequestContext(request))
 
 
 
@@ -387,7 +387,7 @@ def detail(request):
         'colorsX': colorsX,
         'plotid': plotid,
     }
-    return render_to_response('pbm/detail.html', data, RequestContext(request))
+    return render(request, 'pbm/detail.html', data, RequestContext(request))
 
 
 def api_pbm_collector(request):
@@ -533,7 +533,7 @@ def api_pbm_collector(request):
     }
     if not len(errors):
         ### set request response data
-#        return render_to_response('pbm/api_pbm_collector.html', {'data': data}, RequestContext(request))
+#        return render(request, 'pbm/api_pbm_collector.html', {'data': data}, RequestContext(request))
         return  HttpResponse(json.dumps(data), content_type='application/json')
     elif 'type' not in request.GET.keys() or logtype == None:
 #        t = get_template('pbm/api_pbm_collector.html')

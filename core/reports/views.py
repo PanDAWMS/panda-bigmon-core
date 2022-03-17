@@ -5,7 +5,7 @@ import json
 
 from django.views.decorators.cache import never_cache
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 
 from core.views import initRequest, DateEncoder
 
@@ -49,7 +49,7 @@ def report(request):
     if 'requestParams' in request.session and 'step' in request.session['requestParams']:
         step = int(request.session['requestParams']['step'])
     if step == 0:
-        response = render_to_response('reportWizard.html', {'nevents': 0}, content_type='text/html')
+        response = render(request, 'reportWizard.html', {'nevents': 0}, content_type='text/html')
     else:
         if 'reporttype' in request.session['requestParams'] and request.session['requestParams']['reporttype'] == 'rep0':
             reportGen = MC16aCPReport.MC16aCPReport()

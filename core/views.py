@@ -24,7 +24,7 @@ from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 from elasticsearch_dsl import Search
 
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from django.template import RequestContext
 from django.db.models import Count, Sum, F, Value, FloatField, Q, DateTimeField
 from django.views.decorators.csrf import csrf_exempt
@@ -379,7 +379,7 @@ def initRequest(request, callselfmon=True):
         data = {
             'errormessage': 'Error appeared while encoding URL!'
         }
-        return False, render_to_response('errorPage.html', data, content_type='text/html')
+        return False, render(request, 'errorPage.html', data, content_type='text/html')
     request.session['urls_cut']['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
 
     notimerangeurl = extensibleURL(request)
@@ -461,7 +461,7 @@ def initRequest(request, callselfmon=True):
                     'requestParams': request.session['requestParams'],
                     "errormessage": "Illegal value '%s' for %s" % (pval, p),
                 }
-                return False, render_to_response('errorPage.html', data, content_type='text/html')
+                return False, render(request, 'errorPage.html', data, content_type='text/html')
             pval = pval.replace('+', ' ')
             pval = pval.replace("\'", '')
             if p.lower() != 'batchid':  # Special requester exception
@@ -492,7 +492,7 @@ def initRequest(request, callselfmon=True):
                         'requestParams': request.session['requestParams'],
                         "errormessage": "Illegal value '%s' for %s" % (pval, p),
                     }
-                    return False, render_to_response('errorPage.html', data, content_type='text/html')
+                    return False, render(request, 'errorPage.html', data, content_type='text/html')
             if p.lower() in ('date_from', 'date_to'):
                 try:
                     requestVal = request.GET[p]
@@ -503,21 +503,21 @@ def initRequest(request, callselfmon=True):
                         'requestParams': request.session['requestParams'],
                         "errormessage": "Illegal value '%s' for %s" % (pval, p),
                     }
-                    return False, render_to_response('errorPage.html', data, content_type='text/html')
+                    return False, render(request, 'errorPage.html', data, content_type='text/html')
             if p.lower() not in allowedemptyparams and len(pval) == 0:
                 data = {
                     'viewParams': request.session['viewParams'],
                     'requestParams': request.session['requestParams'],
                     "errormessage": "Empty value '%s' for %s" % (pval, p),
                 }
-                return False, render_to_response('errorPage.html', data, content_type='text/html')
+                return False, render(request, 'errorPage.html', data, content_type='text/html')
             if p.lower() in ('jobname', 'taskname', ) and len(pval) > 0 and ('%' in pval or '%s' in pval):
                 data = {
                     'viewParams': request.session['viewParams'],
                     'requestParams': request.session['requestParams'],
                     "errormessage": "Use * symbol for pattern search instead of % for {}".format(p),
                 }
-                return False, render_to_response('errorPage.html', data, content_type='text/html')
+                return False, render(request, 'errorPage.html', data, content_type='text/html')
             request.session['requestParams'][p.lower()] = pval
 
     # TODO delete this as well
@@ -1855,7 +1855,7 @@ def mainPage(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
-        response = render_to_response('core-mainPage.html', data, content_type='text/html')
+        response = render(request, 'core-mainPage.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -1923,7 +1923,7 @@ def helpPage(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'templates': help_template_list,
         }
-        response = render_to_response('help.html', data, content_type='text/html')
+        response = render(request, 'help.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -1994,9 +1994,9 @@ def jobList(request, mode=None, param=None):
             return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         data['request'] = request
         if data['eventservice'] == True:
-            response = render_to_response('jobListES.html', data, content_type='text/html')
+            response = render(request, 'jobListES.html', data, content_type='text/html')
         else:
-            response = render_to_response('jobList.html', data, content_type='text/html')
+            response = render(request, 'jobList.html', data, content_type='text/html')
         _logger.info('Rendered template with data from cache: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -2123,7 +2123,7 @@ def jobList(request, mode=None, param=None):
         data = {
             'desc': 'Request token is not found or data is outdated. Please reload the original page.',
         }
-        return render_to_response('message.html', data, content_type='text/html')
+        return render(request, 'message.html', data, content_type='text/html')
 
     jobs = []
 
@@ -2557,9 +2557,9 @@ def jobList(request, mode=None, param=None):
         _logger.debug('Cache was set: {}'.format(time.time() - request.session['req_init_time']))
 
         if eventservice:
-            response = render_to_response('jobListES.html', data, content_type='text/html')
+            response = render(request, 'jobListES.html', data, content_type='text/html')
         else:
-            response = render_to_response('jobList.html', data, content_type='text/html')
+            response = render(request, 'jobList.html', data, content_type='text/html')
 
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         request = complete_request(request)
@@ -2759,7 +2759,7 @@ def descendentjoberrsinfo(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    response = render_to_response('jobDescentErrors.html', {'errors': errors}, content_type='text/html')
+    response = render(request, 'jobDescentErrors.html', {'errors': errors}, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -2800,9 +2800,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         data = json.loads(data)
         data['request'] = request
         if data['eventservice'] is True:
-            response = render_to_response('jobInfoES.html', data, content_type='text/html')
+            response = render(request, 'jobInfoES.html', data, content_type='text/html')
         else:
-            response = render_to_response('jobInfo.html', data, content_type='text/html')
+            response = render(request, 'jobInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -2879,7 +2879,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'job': None,
             'jobid': jobid,
         }
-        response = render_to_response('jobInfo.html', data, content_type='text/html')
+        response = render(request, 'jobInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -3310,9 +3310,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
         if is_event_service(job):
-            response = render_to_response('jobInfoES.html', data, content_type='text/html')
+            response = render(request, 'jobInfoES.html', data, content_type='text/html')
         else:
-            response = render_to_response('jobInfo.html', data, content_type='text/html')
+            response = render(request, 'jobInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     elif is_json_request(request):
@@ -3406,7 +3406,7 @@ def get_job_relationships(request, pandaid=-1):
         'message': message,
         'countOfInvocations': countOfInvocations,
     }
-    response = render_to_response('jobRelationships.html', data, content_type='text/html')
+    response = render(request, 'jobRelationships.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=-1)
     return response
 
@@ -3423,7 +3423,7 @@ def userList(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('userList.html', data, content_type='text/html')
+        response = render(request, 'userList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -3546,7 +3546,7 @@ def userList(request):
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "userList", json.dumps(data, cls=DateEncoder), 60 * 20)
-        response = render_to_response('userList.html', data, content_type='text/html')
+        response = render(request, 'userList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -3676,7 +3676,7 @@ def userInfo(request, user=''):
                 'metrics': metrics_total,
                 'userstats': userstats,
             }
-            response = render_to_response('userDash.html', data, content_type='text/html')
+            response = render(request, 'userDash.html', data, content_type='text/html')
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
     else:
@@ -3836,7 +3836,7 @@ def userInfo(request, user=''):
                 'links': links,
             }
             data.update(getContextVariables(request))
-            response = render_to_response('userInfo.html', data, content_type='text/html')
+            response = render(request, 'userInfo.html', data, content_type='text/html')
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
         else:
@@ -3958,7 +3958,7 @@ def siteList(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('siteList.html', data, content_type='text/html')
+        response = render(request, 'siteList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -4084,7 +4084,7 @@ def siteList(request):
         # data.update(getContextVariables(request))
         ##self monitor
         setCacheEntry(request, "siteList", json.dumps(data, cls=DateEncoder), 60 * 20)
-        response = render_to_response('siteList.html', data, content_type='text/html')
+        response = render(request, 'siteList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -4209,7 +4209,7 @@ def siteInfo(request, site=''):
             'pandaqueue': panda_queue,
         }
         data.update(getContextVariables(request))
-        response = render_to_response('siteInfo.html', data, content_type='text/html')
+        response = render(request, 'siteInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -4441,7 +4441,7 @@ def wnInfo(request, site, wnname='all'):
                       'message': 'There is no {} registered in the system, please check spelling.'.format(site)},
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        response = render_to_response('wnInfo.html', data, content_type='text/html')
+        response = render(request, 'wnInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -4450,7 +4450,7 @@ def wnInfo(request, site, wnname='all'):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('wnInfo.html', data, content_type='text/html')
+        response = render(request, 'wnInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -4647,7 +4647,7 @@ def wnInfo(request, site, wnname='all'):
             'warning': warning,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        response = render_to_response('wnInfo.html', data, content_type='text/html')
+        response = render(request, 'wnInfo.html', data, content_type='text/html')
         setCacheEntry(request, "wnInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -5111,7 +5111,7 @@ def preProcess(request):
 
     #    data = {}
     #    dashTaskSummary_preprocess(request)
-    #    response = render_to_response('preprocessLog.html', data, RequestContext(request))
+    #    response = render(request, 'preprocessLog.html', data, RequestContext(request))
     #    patch_response_headers(response, cache_timeout=-1)
 
     return None
@@ -5379,7 +5379,7 @@ def dashboard(request, view='all'):
         data = json.loads(data)
         data['request'] = request
         template = data['template']
-        response = render_to_response(template, data, content_type='text/html')
+        response = render(request, template, data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -5583,7 +5583,7 @@ def dashboard(request, view='all'):
                 'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             }
             ##self monitor
-            response = render_to_response('worldjobs.html', data, content_type='text/html')
+            response = render(request, 'worldjobs.html', data, content_type='text/html')
             setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 30)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
@@ -5678,7 +5678,7 @@ def dashboard(request, view='all'):
             'template': 'dashObjectStore.html',
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
         }
-        response = render_to_response('dashObjectStore.html', data, content_type='text/html')
+        response = render(request, 'dashObjectStore.html', data, content_type='text/html')
         setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 25)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -5738,7 +5738,7 @@ def dashboard(request, view='all'):
                 'built': datetime.now().strftime("%H:%M:%S"),
             }
             ##self monitor
-            response = render_to_response('dashboard.html', data, content_type='text/html')
+            response = render(request, 'dashboard.html', data, content_type='text/html')
             setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 60)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
@@ -5794,7 +5794,7 @@ def dashRegion(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
+        response = render(request, 'JobSummaryRegion.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -5897,7 +5897,7 @@ def dashRegion(request):
             'show': 'all',
         }
 
-        response = render_to_response('JobSummaryRegion.html', data, content_type='text/html')
+        response = render(request, 'JobSummaryRegion.html', data, content_type='text/html')
         setCacheEntry(request, "JobSummaryRegion", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -5915,7 +5915,7 @@ def dashNucleus(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('JobSummaryNucleus.html', data, content_type='text/html')
+        response = render(request, 'JobSummaryNucleus.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -5979,7 +5979,7 @@ def dashNucleus(request):
             'nuclei': jsn_nucleus_list,
             'satellites': jsn_satellite_list,
         }
-        response = render_to_response('JobSummaryNucleus.html', data, content_type='text/html')
+        response = render(request, 'JobSummaryNucleus.html', data, content_type='text/html')
         setCacheEntry(request, "JobSummaryNucleus", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -6002,7 +6002,7 @@ def dashES(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('EventService.html', data, content_type='text/html')
+        response = render(request, 'EventService.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -6082,7 +6082,7 @@ def dashES(request):
             'show': 'all',
         }
 
-        response = render_to_response('EventService.html', data, content_type='text/html')
+        response = render(request, 'EventService.html', data, content_type='text/html')
         setCacheEntry(request, "EventService", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -6178,7 +6178,7 @@ def dashTasks(request, hours, view='production'):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 60)
-        response = render_to_response('dashboard.html', data, content_type='text/html')
+        response = render(request, 'dashboard.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -6230,7 +6230,7 @@ def getCSRFToken(request):
     user = request.user
     if user.is_authenticated:
         c.update(csrf(request))
-        return render_to_response("csrftoken.html", c)
+        return render(request, "csrftoken.html", c)
     else:
         resp = {"detail": "User not authenticated. Please login to bigpanda"}
         dump = json.dumps(resp, cls=DateEncoder)
@@ -6253,9 +6253,9 @@ def taskList(request):
         data = json.loads(data)
         data['request'] = request
         if data['eventservice'] == True:
-            response = render_to_response('taskListES.html', data, content_type='text/html')
+            response = render(request, 'taskListES.html', data, content_type='text/html')
         else:
-            response = render_to_response('taskList.html', data, content_type='text/html')
+            response = render(request, 'taskList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -6677,9 +6677,9 @@ def taskList(request):
 
         setCacheEntry(request, "taskList", json.dumps(data, cls=DateEncoder), 60 * 20)
         if eventservice:
-            response = render_to_response('taskListES.html', data, content_type='text/html')
+            response = render(request, 'taskListES.html', data, content_type='text/html')
         else:
-            response = render_to_response('taskList.html', data, content_type='text/html')
+            response = render(request, 'taskList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -7000,7 +7000,7 @@ def getErrorSummaryForEvents(request):
 
     data = {'errors': eventsErrors}
 
-    response = render_to_response('eventsErrorSummary.html', data, content_type='text/html')
+    response = render(request, 'eventsErrorSummary.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -7094,7 +7094,7 @@ def taskProfile(request, jeditaskid=0):
         'viewParams': request.session['viewParams'],
         'jeditaskid': jeditaskid,
     }
-    response = render_to_response('taskProgressMonitor.html', data, content_type='text/html')
+    response = render(request, 'taskProgressMonitor.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -7263,7 +7263,7 @@ def userProfile(request, username=""):
         'username': username,
         'timerange': request.session['timerange'],
     }
-    response = render_to_response('userProfile.html', data, content_type='text/html')
+    response = render(request, 'userProfile.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -7470,11 +7470,11 @@ def taskInfo(request, jeditaskid=0):
                 if data['eventservice']:
                     if 'version' not in request.session['requestParams'] or (
                             'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
-                        response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
+                        response = render(request, 'taskInfoESNew.html', data, content_type='text/html')
                     else:
-                        response = render_to_response('taskInfoES.html', data, content_type='text/html')
+                        response = render(request, 'taskInfoES.html', data, content_type='text/html')
                 else:
-                    response = render_to_response('taskInfo.html', data, content_type='text/html')
+                    response = render(request, 'taskInfo.html', data, content_type='text/html')
                 patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
                 return response
 
@@ -7519,7 +7519,7 @@ def taskInfo(request, jeditaskid=0):
             'requestParams': request.session['requestParams'],
             'columns': None,
         }
-        return render_to_response('taskInfo.html', data, content_type='text/html')
+        return render(request, 'taskInfo.html', data, content_type='text/html')
 
     eventservice = False
     if 'eventservice' in taskrec and (taskrec['eventservice'] == 1 or taskrec['eventservice'] == 'eventservice'):
@@ -7808,7 +7808,7 @@ def taskInfo(request, jeditaskid=0):
                 data['jobsummarylightsplitted'] = jobsummarylightsplitted
                 data['tkdj'] = transactionKeyDJ
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
-                response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
+                response = render(request, 'taskInfoESNew.html', data, content_type='text/html')
             else:
                 _logger.info("This old style ES taskInfo request")
                 # getting job summary and plots
@@ -7820,7 +7820,7 @@ def taskInfo(request, jeditaskid=0):
                 data['plotsDict'] = plotsDict
                 data['jobscoutids'] = scouts
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
-                response = render_to_response('taskInfoES.html', data, content_type='text/html')
+                response = render(request, 'taskInfoES.html', data, content_type='text/html')
         else:
             _logger.info("This is ordinary non-ES task")
             # getting job summary and plots
@@ -7833,7 +7833,7 @@ def taskInfo(request, jeditaskid=0):
             data['jobscoutids'] = scouts
             data['task'].update(metrics)
             setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
-            response = render_to_response('taskInfo.html', data, content_type='text/html')
+            response = render(request, 'taskInfo.html', data, content_type='text/html')
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -7915,9 +7915,9 @@ def taskInfoNew(request, jeditaskid=0):
         if not doRefresh:
             data['request'] = request
             if data['eventservice']:
-                response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
+                response = render(request, 'taskInfoESNew.html', data, content_type='text/html')
             else:
-                response = render_to_response('taskInfo.html', data, content_type='text/html')
+                response = render(request, 'taskInfo.html', data, content_type='text/html')
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
@@ -7944,7 +7944,7 @@ def taskInfoNew(request, jeditaskid=0):
             'requestParams': request.session['requestParams'],
             'columns': None,
         }
-        return render_to_response('taskInfoESNew.html', data, content_type='text/html')
+        return render(request, 'taskInfoESNew.html', data, content_type='text/html')
     _logger.info('Got task info: {}'.format(time.time() - request.session['req_init_time']))
 
     if 'eventservice' in taskrec and taskrec['eventservice'] == 1:
@@ -8172,9 +8172,9 @@ def taskInfoNew(request, jeditaskid=0):
         setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), cacheexpiration)
 
         if eventservice:
-            response = render_to_response('taskInfoESNew.html', data, content_type='text/html')
+            response = render(request, 'taskInfoESNew.html', data, content_type='text/html')
         else:
-            response = render_to_response('taskInfo.html', data, content_type='text/html')
+            response = render(request, 'taskInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -8248,7 +8248,7 @@ def taskchain(request):
         'taskChain': ts,
         'jeditaskid': jeditaskid
     }
-    response = render_to_response('taskchain.html', data, content_type='text/html')
+    response = render(request, 'taskchain.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -8277,7 +8277,7 @@ def ganttTaskChain(request):
         'jeditaskid': jeditaskid,
         'request': request,
     }
-    response = render_to_response('ganttTaskChain.html', data, content_type='text/html')
+    response = render(request, 'ganttTaskChain.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -8318,9 +8318,9 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         data['request'] = request
 
         if infotype == 'jobsummary':
-            response = render_to_response('jobSummaryForTask.html', data, content_type='text/html')
+            response = render(request, 'jobSummaryForTask.html', data, content_type='text/html')
         elif infotype == 'scouts':
-            response = render_to_response('scoutsForTask.html', data, content_type='text/html')
+            response = render(request, 'scoutsForTask.html', data, content_type='text/html')
         elif infotype == 'plots':
             response = HttpResponse(json.dumps(data['plotsDict'], cls=DateEncoder), content_type='application/json')
         else:
@@ -8357,13 +8357,13 @@ def getJobSummaryForTask(request, jeditaskid=-1):
             'mode': mode,
             'jobsummary': jobsummary,
         }
-        response = render_to_response('jobSummaryForTask.html', data, content_type='text/html')
+        response = render(request, 'jobSummaryForTask.html', data, content_type='text/html')
     elif infotype == 'scouts':
         data = {
             'jeditaskid': jeditaskid,
             'jobscoutids': jobScoutIDs,
         }
-        response = render_to_response('scoutsForTask.html', data, content_type='text/html')
+        response = render(request, 'scoutsForTask.html', data, content_type='text/html')
     elif infotype == 'plots':
         response = HttpResponse(json.dumps(plotsDict, cls=DateEncoder), content_type='application/json')
     else:
@@ -8476,7 +8476,7 @@ def errorSummary(request):
                 except:
                     pass
         _logger.info('Processed cached data: {}'.format(time.time() - request.session['req_init_time']))
-        response = render_to_response('errorSummary.html', data, content_type='text/html')
+        response = render(request, 'errorSummary.html', data, content_type='text/html')
         _logger.info('Rendered template from cached data: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -8759,7 +8759,7 @@ def errorSummary(request):
         # Filtering data due to user settings
         if request.user.is_authenticated and request.user.is_tester:
             data = filterErrorData(request, data)
-        response = render_to_response('errorSummary.html', data, content_type='text/html')
+        response = render(request, 'errorSummary.html', data, content_type='text/html')
 
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -8817,7 +8817,7 @@ def incidentList(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('incidents.html', data, content_type='text/html')
+        response = render(request, 'incidents.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -8928,7 +8928,7 @@ def incidentList(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         setCacheEntry(request, "incidents", json.dumps(data, cls=DateEncoder), 60 * 20)
-        response = render_to_response('incidents.html', data, content_type='text/html')
+        response = render(request, 'incidents.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -9121,7 +9121,7 @@ def esatlasPandaLogger(request):
 
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
-        response = render_to_response('esatlasPandaLogger.html', data, content_type='text/html')
+        response = render(request, 'esatlasPandaLogger.html', data, content_type='text/html')
         return response
 
 def pandaLogger(request):
@@ -9256,7 +9256,7 @@ def pandaLogger(request):
     }
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
         'json' not in request.session['requestParams'])):
-        response = render_to_response('pandaLogger.html', data, content_type='text/html')
+        response = render(request, 'pandaLogger.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
@@ -9380,7 +9380,7 @@ def ttc(request):
         'profile': taskprofile,
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    response = render_to_response('ttc.html', data, content_type='text/html')
+    response = render(request, 'ttc.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -9396,7 +9396,7 @@ def workingGroups(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('workingGroups.html', data, content_type='text/html')
+        response = render(request, 'workingGroups.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -9477,7 +9477,7 @@ def workingGroups(request):
         }
         setCacheEntry(request, "workingGroups", json.dumps(data, cls=DateEncoder), 60 * 20)
 
-        response = render_to_response('workingGroups.html', data, content_type='text/html')
+        response = render(request, 'workingGroups.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -9562,7 +9562,7 @@ def datasetInfo(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
-        response = render_to_response('datasetInfo.html', data, content_type='text/html')
+        response = render(request, 'datasetInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -9613,7 +9613,7 @@ def datasetList(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
-        response = render_to_response('datasetList.html', data, content_type='text/html')
+        response = render(request, 'datasetList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -9776,7 +9776,7 @@ def fileInfo(request):
             'plotData': plot_data,
         }
         data.update(getContextVariables(request))
-        response = render_to_response('fileInfo.html', data, RequestContext(request))
+        response = render(request, 'fileInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -9820,7 +9820,7 @@ def fileList(request):
             'requestParams': request.session['requestParams'],
             "errormessage": "No datasetid or datasetname was provided",
         }
-        return render_to_response('errorPage.html', data, content_type='text/html')
+        return render(request, 'errorPage.html', data, content_type='text/html')
 
     extraparams = ''
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
@@ -9851,7 +9851,7 @@ def fileList(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
-        response = render_to_response('fileList.html', data, content_type='text/html')
+        response = render(request, 'fileList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
@@ -9923,7 +9923,7 @@ def workQueues(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('workQueues.html', data, content_type='text/html')
+        response = render(request, 'workQueues.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     if not valid: return response
@@ -9948,7 +9948,7 @@ def workQueues(request):
             'xurl': extensibleURL(request),
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        response = render_to_response('workQueues.html', data, content_type='text/html')
+        response = render(request, 'workQueues.html', data, content_type='text/html')
         setCacheEntry(request, "workQueues", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -10594,7 +10594,7 @@ def grafana_image(request):
 
 
 def handler500(request):
-    response = render_to_response('500.html', {},
+    response = render(request, '500.html', {},
                                   context_instance=RequestContext(request))
     response.status_code = 500
     return response
@@ -10788,7 +10788,7 @@ def getJobStatusLog(request, pandaid = None):
     if is_json_request(request):
         response = JsonResponse(statusLog, safe=False)
     else:
-        response = render_to_response('jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
+        response = render(request, 'jobStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -10833,7 +10833,7 @@ def getTaskStatusLog(request, jeditaskid=None):
     if is_json_request(request):
         response = HttpResponse(json.dumps(statusLog, cls=DateEncoder), content_type='application/json')
     else:
-        response = render_to_response('taskStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
+        response = render(request, 'taskStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 

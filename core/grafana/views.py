@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import hashlib
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import loader
 from django.utils import encoding
 
@@ -133,7 +133,7 @@ def index(request):
         'plots': plots,
     }
 
-    response = render_to_response('grafana-api-plots.html', data, content_type='text/html')
+    response = render(request, 'grafana-api-plots.html', data, content_type='text/html')
     return response
 
 
@@ -154,7 +154,7 @@ def chartjs(request):
         'plots': plots,
     }
 
-    response = render_to_response('grafana-chartjs-plots.html', data, content_type='text/html')
+    response = render(request, 'grafana-chartjs-plots.html', data, content_type='text/html')
     return response
 
 

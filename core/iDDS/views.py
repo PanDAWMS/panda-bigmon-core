@@ -1,6 +1,6 @@
 import json
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 from django.template.defaulttags import register
@@ -46,7 +46,7 @@ def main(request):
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
         'iDDSrequests':json.dumps(iDDSrequests, cls=DateEncoder),
     }
-    response = render_to_response('landing.html', data, content_type='text/html')
+    response = render(request, 'landing.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
 
     return response

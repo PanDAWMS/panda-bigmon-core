@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from json import dumps as json_dumps  ### FIXME - cleanup
 
 import re
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse
 
@@ -30,7 +30,7 @@ def maxpandaid(request):
         pandaid = Jobsarchived4.objects.all().order_by("-pandaid").values()[0]['pandaid']
     except:
         pandaid = 0
-    return render_to_response('pandajob/support/maxpandaid.html', {'maxpandaid': pandaid}, RequestContext(request))
+    return render(request, 'pandajob/support/maxpandaid.html', {'maxpandaid': pandaid}, RequestContext(request))
 
 
 def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
@@ -112,7 +112,7 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
             'jobInfo': jobs, 'name': name, 'nhours': nhours,
     }
     data.update(getContextVariables(request))
-    return render_to_response('pandajob/info_jobs.html', data, RequestContext(request))
+    return render(request, 'pandajob/info_jobs.html', data, RequestContext(request))
 
 
 def jobInfoHoursOrig(request, prodUserName, nhours=LAST_N_HOURS):
@@ -225,7 +225,7 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
             'jobInfo': jobs, 'name': name, 'nhours': nhours,
     }
     data.update(getContextVariables(request))
-    return render_to_response('pandajob/info_jobs_vo.html', data, RequestContext(request))
+    return render(request, 'pandajob/info_jobs_vo.html', data, RequestContext(request))
 
 
 def jobUserDaysOrig(request, vo, ndays=LAST_N_DAYS):

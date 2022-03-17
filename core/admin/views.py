@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import time
 import json
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, render, redirect
+from django.shortcuts import render, render, redirect
 from django.template import RequestContext, loader
 from django.db.models import Count
 from django import forms
@@ -34,7 +34,7 @@ def login(request):
                      'requestParams' : request.session['requestParams'],
                      "errormessage" : "Sorry, we could not find your DN '%s' in database" % request.session['userdn'],\
                     }
-             return False, render_to_response('adError.html', data, RequestContext(request))
+             return False, render(request, 'adError.html', data, RequestContext(request))
 
     else:
         try:
@@ -47,7 +47,7 @@ def login(request):
                 'url': url,
                 "errormessage" : "No valid client certificate found.",\
                }
-        return False, render_to_response('adError.html', data, RequestContext(request))
+        return False, render(request, 'adError.html', data, RequestContext(request))
  
 def adMain(request):
    
@@ -64,7 +64,7 @@ def adMain(request):
        'url' : request.path,\
     }
 
-    return render_to_response('adMain.html', data, RequestContext(request))
+    return render(request, 'adMain.html', data, RequestContext(request))
 
 def listReqPlot(request):
     valid, response = initRequest(request)
@@ -170,5 +170,5 @@ def listReqPlot(request):
        'reqHist': reqHists,\
     }
 
-    return render_to_response('req_plot.html', data, RequestContext(request))
+    return render(request, 'req_plot.html', data, RequestContext(request))
 
