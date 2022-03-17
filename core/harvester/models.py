@@ -1,13 +1,10 @@
 from django.db import models
 from core.settings.config import DB_SCHEMA_PANDA
 
-models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
-                                 'primaryColumns', 'secondaryColumns', \
-                                 'columnTitles', 'filterFields',)
 
 class HarvesterWorkers(models.Model):
     harvesterid = models.CharField(max_length=50, db_column='HARVESTERID', null=False, blank=True)
-    workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='WORKERID', null=False)
+    workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='WORKERID', null=False, primary_key=True)
     lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
     status = models.CharField(max_length=80, db_column='STATUS', null=False, blank=True)
     batchid = models.CharField(max_length=80, db_column='BATCHID', null=False, blank=True)
@@ -32,6 +29,7 @@ class HarvesterWorkers(models.Model):
     class Meta:
         db_table = f'"{DB_SCHEMA_PANDA}"."HARVESTER_WORKERS"'
 
+
 class HarvesterDialogs(models.Model):
     harvesterid = models.CharField(max_length=50, db_column='HARVESTER_ID', null=False, blank=True)
     diagid = models.IntegerField(db_column='DIAGID', null=False, blank=True)
@@ -42,6 +40,7 @@ class HarvesterDialogs(models.Model):
     diagmessage = models.CharField(max_length=500, db_column='DIAGMESSAGE')
     class Meta:
         db_table = f'"{DB_SCHEMA_PANDA}"."HARVESTER_DIALOGS"'
+
 
 class HarvesterWorkerStats(models.Model):
     harvesterid = models.CharField(max_length=50, db_column='HARVESTER_ID', null=False, blank=True)
@@ -54,13 +53,15 @@ class HarvesterWorkerStats(models.Model):
     class Meta:
         db_table = f'"{DB_SCHEMA_PANDA}"."HARVESTER_WORKER_STATS"'
 
+
 class HarvesterRelJobsWorkers(models.Model):
     harvesterid = models.CharField(max_length=50, db_column='HARVESTERID', null=False, blank=True)
     workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='WORKERID', null=False)
-    pandaid = models.DecimalField(decimal_places=0, max_digits=11, db_column='PANDAID', null=False)
+    pandaid = models.DecimalField(decimal_places=0, max_digits=11, db_column='PANDAID', null=False, primary_key=True)
     lastupdate = models.DateTimeField(null=True, db_column='LASTUPDATE', blank=True)
     class Meta:
         db_table = f'"{DB_SCHEMA_PANDA}"."HARVESTER_REL_JOBS_WORKERS"'
+
 
 class HarvesterSlots(models.Model):
     pandaqueuename = models.CharField(max_length=50, db_column='PANDAQUEUENAME', null=False, blank=True)

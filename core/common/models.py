@@ -885,7 +885,7 @@ class TRequest(models.Model):
     phys_group = models.CharField(max_length=20, db_column='PHYS_GROUP', null=False, choices=PHYS_GROUPS, blank=True)
     energy_gev = models.DecimalField(decimal_places=0, max_digits=8, db_column='ENERGY_GEV', null=False, blank=True)
     project = models.ForeignKey(TProject,db_column='PROJECT', null=True, blank=False, on_delete=models.DO_NOTHING)
-    is_error = models.NullBooleanField(db_column='EXCEPTION', null=True, blank=False)
+    is_error = models.BooleanField(db_column='EXCEPTION', null=True, blank=False)
     jira_reference = models.CharField(max_length=50, db_column='REFERENCE', null=True, blank=True)
 
     def save(self, *args, **kwargs):
@@ -1027,7 +1027,7 @@ class InputRequestList(models.Model):
     project_mode = models.CharField(max_length=256, db_column='PROJECT_MODE')
     priority = models.DecimalField(decimal_places=0, max_digits=12, db_column='PRIORITY')
     input_events = models.DecimalField(decimal_places=0, max_digits=12, db_column='INPUT_EVENTS')
-    is_hide = models.NullBooleanField(db_column='HIDED', null=True, blank=False)
+    is_hide = models.BooleanField(db_column='HIDED', null=True, blank=False)
 
     def save(self, *args, **kwargs):
         if not self.id:

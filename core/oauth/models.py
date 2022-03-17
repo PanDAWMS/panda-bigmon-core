@@ -7,7 +7,7 @@ from django.db import models
 from core.settings.config import DB_SCHEMA
 
 class BPUser(AbstractUser):
-    is_tester = models.NullBooleanField(db_column='is_tester', null=True, blank=False)
+    is_tester = models.BooleanField(db_column='is_tester', null=True, blank=False)
     last_login = models.DateTimeField(db_column='last_login', auto_now_add=True, blank=False)
     class Meta:
         db_table = f'"{DB_SCHEMA}"."auth_user"'

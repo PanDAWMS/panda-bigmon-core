@@ -49,10 +49,6 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             join(dirname(core.__file__), 'templates'),
-            join(dirname(admin.__file__), 'templates'),
-            join(dirname(core.__file__), 'templates'),
-            join(dirname(core.filebrowser.__file__), 'templates'),
-            join(dirname(core.pbm.__file__), 'templates'),
         ],
         'OPTIONS': {
             'context_processors': [
@@ -95,7 +91,6 @@ SECRET_KEY = MY_SECRET_KEY
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
-
 try:
     from core.settings.local import dbaccess_postgres
 except ImportError:
@@ -108,7 +103,6 @@ try:
     from core.settings.local import dbaccess_oracle_doma
 except ImportError:
     dbaccess_oracle_atlas = None
-
 
 #DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
 DEPLOYMENT = 'ORACLE_ATLAS'
@@ -144,6 +138,7 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     IDDS_HOST_GCP = 'https://aipanda016.cern.ch:443/idds'
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 DB_N_MAX_IN_QUERY = 100  # number of items in IN (*,*..) query. if more - use tmp table
 
 CACHES = {

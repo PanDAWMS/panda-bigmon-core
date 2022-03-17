@@ -66,7 +66,7 @@ def getTitles(myColumnsID, allColumnsID, smry=0):
     except:
         _logger.error('something went wrong: titles=' + str(titles))
         return titles
-    _logger.debug('returning: titles=' + str(titles))
+    # _logger.debug('returning: titles=' + str(titles))
     return titles
 
 
