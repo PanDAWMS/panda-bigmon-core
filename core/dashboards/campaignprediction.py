@@ -9,7 +9,7 @@ from django.views.decorators.cache import never_cache
 import core.libs.CampaignPredictionHelper as cph
 from django.core.cache import cache
 import operator
-from django.utils.six.moves import cPickle as pickle
+import pickle
 from django.http import JsonResponse
 import numpy as np
 import humanize

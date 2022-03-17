@@ -7,6 +7,7 @@ import logging
 import json
 import time
 import datetime
+import pickle
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import scale
@@ -15,7 +16,7 @@ from urllib.error import HTTPError
 import cx_Oracle
 
 from django.core.cache import cache
-from django.utils.six.moves import cPickle as pickle
+
 from django.db import connection
 
 from core.settings.base import DATA_CAROUSEL_MAIL_REPEAT
