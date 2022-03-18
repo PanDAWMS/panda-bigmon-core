@@ -108,12 +108,14 @@ from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
+from core.libs.sqlcustom import fix_lob
 
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
-from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs, get_panda_resource
+from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs, \
+    get_panda_resource, get_object_stores, get_pq_clouds, get_pq_object_store_path
 
 
 inilock = Lock()
@@ -125,14 +127,6 @@ try:
 except:
     hostname = ''
 
-callCount = 0
-homeCloud = {}
-objectStores = {}
-objectStoresNames = {}
-objectStoresSites = {}
-
-
-pandaSites = {}
 cloudList = ['CA', 'CERN', 'DE', 'ES', 'FR', 'IT', 'ND', 'NL', 'RU', 'TW', 'UK', 'US']
 
 statelist = ['pending', 'defined', 'waiting', 'assigned', 'throttled',
@@ -246,24 +240,6 @@ def datetime_handler(x):
     raise TypeError("Unknown type")
 
 
-def getObjectStoresNames():
-    global objectStoresNames
-    url = "https://atlas-cric.cern.ch/api/atlas/ddmendpoint/query/?json&type=OS_ES"
-    http = urllib3.PoolManager()
-    try:
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-    except Exception as exc:
-        print (exc)
-        return
-
-    for OSname, OSdescr in data.items():
-        if "resource" in OSdescr and "bucket_id" in OSdescr["resource"]:
-            objectStoresNames[OSdescr["resource"]["bucket_id"]] = OSname
-        objectStoresNames[OSdescr["id"]] = OSname
-        objectStoresSites[OSname] = OSdescr["site"]
-
-
 def escapeInput(strToEscape):
     charsToEscape = '$%^&()[]{};<>?\`~+%\'\"'
     charsToReplace = '_' * len(charsToEscape)
@@ -271,33 +247,6 @@ def escapeInput(strToEscape):
     strToEscape = encoding.smart_str(strToEscape, encoding='ascii', errors='ignore')
     strToEscape = strToEscape.translate(tbl)
     return strToEscape
-
-
-def setupSiteInfo(request):
-    requestParams = {}
-    if not 'requestParams' in request.session:
-        request.session['requestParams'] = requestParams
-    global homeCloud, objectStores, pandaSites, callCount
-    callCount += 1
-    if len(homeCloud) > 0 and callCount % 100 != 1 and 'refresh' not in request.session['requestParams']: return
-    sflist = ('siteid', 'site', 'status', 'cloud', 'tier', 'comment_field', 'objectstore', 'catchall', 'corepower','gocname')
-    sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
-    for site in sites:
-        pandaSites[site['siteid']] = {}
-        for f in ('siteid', 'status', 'tier', 'site', 'comment_field', 'cloud', 'corepower', 'gocname'):
-            pandaSites[site['siteid']][f] = site[f]
-        homeCloud[site['siteid']] = site['cloud']
-        if (site['catchall'] != None) and (
-                        site['catchall'].find('log_to_objectstore') >= 0 or site['objectstore'] != ''):
-            # print 'object store site', site['siteid'], site['catchall'], site['objectstore']
-            try:
-                fpath = getFilePathForObjectStore(site['objectstore'], filetype="logs")
-                #### dirty hack
-                fpath = fpath.replace('root://atlas-objectstore.cern.ch/atlas/logs',
-                                      'https://atlas-objectstore.cern.ch:1094/atlas/logs')
-                if fpath != "" and fpath.startswith('http'): objectStores[site['siteid']] = fpath
-            except:
-                pass
 
 
 def initRequest(request, callselfmon=True):
@@ -504,9 +453,6 @@ def initRequest(request, callselfmon=True):
                 }
                 return False, render_to_response('errorPage.html', data, content_type='text/html')
             request.session['requestParams'][p.lower()] = pval
-
-    # TODO delete this as well
-    setupSiteInfo(request)
 
     return True, None
 
@@ -1093,15 +1039,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     if 'region' in request.session['requestParams']:
         region = request.session['requestParams']['region']
+        pq_clouds = get_pq_clouds()
         siteListForRegion = []
-        try:
-            homeCloud
-        except NameError:
-            setupSiteInfo(request)
-        else:
-            setupSiteInfo(request)
-
-        for sn, rn in homeCloud.items():
+        for sn, rn in pq_clouds.items():
             if rn == region:
                 siteListForRegion.append(str(sn))
         query['computingsite__in'] = siteListForRegion
@@ -1195,6 +1135,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
             doAddMeta = True
 
     errorCodes = get_job_error_desc()
+    pq_clouds = get_pq_clouds()
 
     if doAddMeta:
         jobs = addJobMetadata(jobl)
@@ -1238,7 +1179,7 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
             #     print job['destinationdblock'], job['outputfiletype'], job['pandaid']
 
         try:
-            job['homecloud'] = homeCloud[job['computingsite']]
+            job['homecloud'] = pq_clouds[job['computingsite']]
         except:
             job['homecloud'] = None
         if 'produsername' in job and not job['produsername']:
@@ -2956,6 +2897,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     typeFiles = {}
     fileSummary = ''
     inputFilesSize = 0
+    panda_queues = get_panda_queues()
+    computeSvsAtlasS = get_pq_atlas_sites()
     if 'nofiles' not in request.session['requestParams']:
         # Get job files. First look in JEDI datasetcontents
         _logger.info("Pulling file info")
@@ -2966,6 +2909,11 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         noutput = 0
         npseudo_input = 0
         if len(files) > 0:
+            dquery = {}
+            dquery['datasetid__in'] = [f['datasetid'] for f in files]
+            dsets = JediDatasets.objects.filter(**dquery).values('datasetid', 'datasetname')
+            datasets_dict = {ds['datasetid']: ds['datasetname'] for ds in dsets}
+
             for f in files:
                 f['destination'] = ' '
                 if f['type'] == 'input':
@@ -2983,27 +2931,19 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                                 logBucketID = int(s.split('=')[1])
                                 if logBucketID in [45, 41, 105, 106, 42, 61, 103, 2, 82, 101, 117, 115]:  # Bucket Codes for S3 destination
                                     f['destination'] = 'S3'
-
-                                    # if len(jobs[0]['jobmetrics'])  > 0:
-                                    #    jobmetrics = dict(s.split('=') for s in jobs[0]['jobmetrics'].split(' '))
-                                    #    if 'logBucketID' in jobmetrics:
-                                    #        if int(jobmetrics['logBucketID']) in [3, 21, 45, 46, 104, 41, 105, 106, 42, 61, 21, 102, 103, 2, 82, 81, 82, 101]: #Bucket Codes for S3 destination
-                                    #            f['destination'] = 'S3'
                 if f['type'] == 'pseudo_input': npseudo_input += 1
                 f['fsizemb'] = round(convert_bytes(f['fsize'], output_unit='MB'), 2)
-                dsets = JediDatasets.objects.filter(datasetid=f['datasetid']).values()
-                if len(dsets) > 0:
-                    if f['scope'] + ":" in f['dataset']:
-                        f['datasetname'] = dsets[0]['datasetname']
-                        f['ruciodatasetname'] = dsets[0]['datasetname'].split(":")[1]
+
+                if f['datasetid'] in datasets_dict:
+                    f['datasetname'] = datasets_dict[f['datasetid']]
+                    if f['scope'] + ":" in f['datasetname']:
+                        f['ruciodatasetname'] = f['datasetname'].split(":")[1]
                     else:
-                        f['ruciodatasetname'] = dsets[0]['datasetname']
-                        f['datasetname'] = dsets[0]['datasetname']
-                    if job['computingsite'] in pandaSites.keys():
+                        f['ruciodatasetname'] = f['datasetname']
+                    if job['computingsite'] in panda_queues:
                         if job['computingsite'] in ('CERN-P1'):
-                            f['ddmsite'] = pandaSites[job['computingsite']]['gocname']
+                            f['ddmsite'] = panda_queues[job['computingsite']]['gocname']
                         else:
-                            computeSvsAtlasS = get_pq_atlas_sites()
                             f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
                 if 'dst' in f['destinationdblocktoken']:
                     parced = f['destinationdblocktoken'].split("_")
@@ -3092,8 +3032,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     # Check for object store based log
     oslogpath = None
-    if 'computingsite' in job and job['computingsite'] in objectStores:
-        ospath = objectStores[job['computingsite']]
+    pq_object_store_paths = get_pq_object_store_path()
+    if 'computingsite' in job and job['computingsite'] in pq_object_store_paths:
+        ospath = pq_object_store_paths[job['computingsite']]
         if 'lfn' in logfile:
             if ospath.endswith('/'):
                 oslogpath = ospath + logfile['lfn']
@@ -3107,7 +3048,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         if 'showdebug' in request.session['requestParams']:
             debugstdoutrec = Jobsdebug.objects.filter(pandaid=pandaid).values()
             if len(debugstdoutrec) > 0:
-                if 'stdout' in debugstdoutrec[0]: debugstdout = debugstdoutrec[0]['stdout']
+                if 'stdout' in debugstdoutrec[0]:
+                    debugstdout = debugstdoutrec[0]['stdout']
 
     # Get job parameters
     _logger.info("getting job parameters")
@@ -4417,7 +4359,8 @@ def wnInfo(request, site, wnname='all'):
         if p not in exclude_params:
             jobs_url += '&{}={}'.format(p, v)
 
-    if site and site not in pandaSites:
+    panda_queues = get_panda_queues()
+    if site and site not in panda_queues:
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -4515,7 +4458,7 @@ def wnInfo(request, site, wnname='all'):
             wns[wn]['states'][jobstatus]['count'] = 0
         wns[wn]['states'][jobstatus]['count'] += count
 
-    ## Remove None wn from failed jobs plot if it is in system, add warning banner
+    # Remove None wn from failed jobs plot if it is in system, add warning banner
     warning = {}
     if 'None' in wnPlotFailed:
         warning['message'] = '%i failed jobs are excluded from "Failed jobs per WN slot" plot because of None value of modificationhost.' % (wnPlotFailed['None'])
@@ -4523,7 +4466,7 @@ def wnInfo(request, site, wnname='all'):
             del wnPlotFailed['None']
         except: pass
 
-    ## Convert dict to summary list
+    # Convert dict to summary list
     wnkeys = wns.keys()
     wnkeys = sorted(wnkeys)
     wntot = len(wnkeys)
@@ -4609,8 +4552,7 @@ def wnInfo(request, site, wnname='all'):
     for k in kys:
         wnPlotFinishedL.append([k, wnPlotFinished[k]])
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         xurl = extensibleURL(request)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -4641,9 +4583,6 @@ def wnInfo(request, site, wnname='all'):
         del request.session['TLAST']
 
         data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
             'url': request.path,
             'site': site,
             'wnname': wnname,
@@ -4711,13 +4650,14 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
     totstates = {}
     totjobs = 0
     cloudsresources = {}
+    pq_clouds = get_pq_clouds()
     for state in sitestatelist:
         totstates[state] = 0
     for rec in sitesummarydata:
 
         if cloudview == 'region':
-            if rec['computingsite'] in homeCloud:
-                cloud = homeCloud[rec['computingsite']]
+            if rec['computingsite'] in pq_clouds:
+                cloud = pq_clouds[rec['computingsite']]
             else:
                 _logger.info("ERROR ComputingSite {} not found in Shedconfig, adding to mismatched sites".format(rec['computingsite']), rec)
                 mismatchedSites.append([rec['computingsite'], rec['cloud']])
@@ -4894,13 +4834,14 @@ def dashSummary(request, hours, limit=999999, view='all', cloudview='region', no
 
     _logger.info('[dashSummary] Updated Cache with  mistmatched cloud|sites : {}'.format(time.time() - request.session['req_init_time']))
 
-    ## Go through the sites, add any that are missing (because they have no jobs in the interval)
+    # Go through the sites, add any that are missing (because they have no jobs in the interval)
+    panda_queues = get_panda_queues()
     if cloudview != 'cloud':
-        for site in pandaSites:
+        for site in panda_queues:
             if view.find('test') < 0:
                 if view != 'analysis' and site.startswith('ANALY'): continue
                 if view == 'analysis' and not site.startswith('ANALY'): continue
-            cloud = pandaSites[site]['cloud']
+            cloud = panda_queues[site]['cloud']
             if cloud not in clouds:
                 ## Bail. Adding sites is one thing; adding clouds is another
                 continue
@@ -5580,20 +5521,26 @@ def dashboard(request, view='all'):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
     elif view == 'objectstore':
-        global objectStoresNames
-        if len(objectStoresNames) == 0:
-            getObjectStoresNames()
 
-        sqlRequest = """SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST FROM 
+        object_stores = get_object_stores()
+
+        sqlRequest = """
+        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST 
+        FROM 
           (SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE 
           FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
           LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID =  t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0) 
-          LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '13' hour) 
-          AND t3.MODIFICATIONTIME >  (sysdate - interval '13' hour)) WHERE NOT OBJSE IS NULL GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE order by OBJSE;"""
+          LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '{hours}' hour) 
+          AND t3.MODIFICATIONTIME >  (sysdate - interval '{hours}' hour)
+          ) 
+        WHERE NOT OBJSE IS NULL 
+        GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE 
+        order by OBJSE;
+        """.format(hours=13)
 
         cur = connection.cursor()
         cur.execute(sqlRequest)
-        rawsummary = fixLob(cur)
+        rawsummary = fix_lob(cur)
         #rawsummary = cur.fetchall()
         mObjectStores = {}
         mObjectStoresTk = {}
@@ -5605,15 +5552,15 @@ def dashboard(request, view='all'):
                 except ValueError:
                     pass
 
-                if not row[3] is None and id in objectStoresNames:
-                    osName = objectStoresNames[id]
+                if not row[3] is None and id in object_stores:
+                    osName = object_stores[id]['name']
                 else:
                     osName = "Not defined"
                 compsite = row[2]
                 status = row[0]
                 count = row[1]
 
-                tk = setCacheData(request, pandaid = row[4],compsite = row[2])
+                tk = setCacheData(request, pandaid=row[4], compsite=row[2])
                 if osName in mObjectStores:
                     if not compsite in mObjectStores[osName]:
                         mObjectStores[osName][compsite] = {}
@@ -5626,13 +5573,13 @@ def dashboard(request, view='all'):
                 else:
                     mObjectStores[osName] = {}
                     mObjectStores[osName][compsite] = {}
-                    mObjectStoresTk[osName]={}
-                    mObjectStoresTk[osName][status]=[]
+                    mObjectStoresTk[osName] = {}
+                    mObjectStoresTk[osName][status] = []
                     for state in sitestatelist + ["closed"]:
                         mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
                     mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
                     mObjectStoresTk[osName][status].append(tk)
-        ### Getting tk's for parents ####
+        # Getting tk's for parents
         for osName in mObjectStoresTk:
             for state in mObjectStoresTk[osName]:
                 mObjectStoresTk[osName][state] = setCacheData(request, childtk=','.join(mObjectStoresTk[osName][state]))
@@ -5666,7 +5613,6 @@ def dashboard(request, view='all'):
         setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 25)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
 
     else:
 
@@ -6388,7 +6334,7 @@ def taskList(request):
         tasksEventInfo = GetEventsForTask.objects.filter(**tquery).extra(
             where=["JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (tmpTableName, transactionKey)]).values('jeditaskid', 'totevrem', 'totev')
 
-        #We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
+        # We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
         for tasksEventInfoItem in tasksEventInfo:
             listItem = {}
             listItem["jeditaskid"] = tasksEventInfoItem["jeditaskid"]
@@ -6620,7 +6566,6 @@ def taskList(request):
         del request.session
         return JsonResponse(tasks, encoder=DateEncoder, safe=False)
     else:
-        #tasks = removeDublicates(tasks, "jeditaskid")
         sumd = taskSummaryDict(request, tasks, copy.deepcopy(standard_taskfields) +
                                                ['stagesource'] if 'tape' in  request.session['requestParams'] else copy.deepcopy(standard_taskfields))
         del request.session['TFIRST']
@@ -8503,7 +8448,8 @@ def errorSummary(request):
         '|' not in request.session['requestParams']['cloud']):
         cloud = request.session['requestParams']['cloud']
         del request.session['requestParams']['cloud']
-        sites = set([site['site'] for site in pandaSites.values() if site['cloud'] == cloud])
+        panda_queues = get_panda_queues()
+        sites = set([site['site'] for site in panda_queues.values() if site['cloud'] == cloud])
         siteStr = ""
         for site in sites:
             siteStr += "|" + site
@@ -8803,6 +8749,7 @@ def incidentList(request):
         else:
             hours = int(request.session['requestParams']['hours'])
     setupView(request, hours=hours, limit=9999999)
+    pq_clouds = get_pq_clouds()
     iquery = {}
     cloudQuery = Q()
     startdate = timezone.now() - timedelta(hours=hours)
@@ -8818,7 +8765,7 @@ def incidentList(request):
     if 'notifier' in request.session['requestParams']:
         iquery['description__contains'] = 'DN=%s' % request.session['requestParams']['notifier']
     if 'cloud' in request.session['requestParams']:
-        sites = [site for site, cloud in homeCloud.items() if cloud == request.session['requestParams']['cloud']]
+        sites = [site for site, cloud in pq_clouds.items() if cloud == request.session['requestParams']['cloud']]
         for site in sites:
             cloudQuery = cloudQuery | Q(description__contains='queue=%s' % site)
     incidents = []
@@ -8839,8 +8786,8 @@ def incidentList(request):
             pars['site'] = parsmat.group(2)
             pars['notifier'] = parsmat.group(3)
             pars['type'] = inc['typekey']
-            if pars['site'] in  homeCloud:
-                pars['cloud'] = homeCloud[pars['site']]
+            if pars['site'] in pq_clouds:
+                pars['cloud'] = pq_clouds[pars['site']]
             if parsmat.group(4): pars['comment'] = parsmat.group(4)
         else:
             parsmat = re.match('^([A-Za-z\s]+):.*$', desc)
@@ -9933,13 +9880,16 @@ def workQueues(request):
 def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=standard_fields, count=False,
                     wildCardExtension='(1=1)'):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     query = setupView(request, opmode='notime', limit=99999999)
-    if 'jobstatus' in request.session['requestParams']: state = request.session['requestParams']['jobstatus']
-    if 'transferringnotupdated' in request.session['requestParams']: hoursSinceUpdate = int(
-        request.session['requestParams']['transferringnotupdated'])
-    if 'statenotupdated' in request.session['requestParams']: hoursSinceUpdate = int(
-        request.session['requestParams']['statenotupdated'])
+    pq_clouds = get_pq_clouds()
+    if 'jobstatus' in request.session['requestParams']:
+        state = request.session['requestParams']['jobstatus']
+    if 'transferringnotupdated' in request.session['requestParams']:
+        hoursSinceUpdate = int(request.session['requestParams']['transferringnotupdated'])
+    if 'statenotupdated' in request.session['requestParams']:
+        hoursSinceUpdate = int(request.session['requestParams']['statenotupdated'])
     moddate = timezone.now() - timedelta(hours=hoursSinceUpdate)
     moddate = moddate.strftime(defaultDatetimeFormat)
     mindate = timezone.now() - timedelta(hours=24 * 30)
@@ -9969,8 +9919,8 @@ def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=s
             perRCloud[cloud] = 0
         for job in jobs:
             site = job['computingsite']
-            if site in homeCloud:
-                cloud = homeCloud[site]
+            if site in pq_clouds:
+                cloud = pq_clouds[site]
                 if not cloud in perCloud:
                     perCloud[cloud] = 0
                 perCloud[cloud] += job['jobstatus__count']
@@ -10031,47 +9981,6 @@ def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, value
     else:
         tasks = JediTasks.objects.filter(**query).extra(where=[wildCardExtension]).values()
         return tasks
-
-
-def getFilePathForObjectStore(objectstore, filetype="logs"):
-    """ Return a proper file path in the object store """
-
-    # For single object stores
-    # root://atlas-objectstore.cern.ch/|eventservice^/atlas/eventservice|logs^/atlas/logs
-    # For multiple object stores
-    # eventservice^root://atlas-objectstore.cern.ch//atlas/eventservice|logs^root://atlas-objectstore.bnl.gov//atlas/logs
-
-    basepath = ""
-
-    # Which form of the schedconfig.objectstore field do we currently have?
-    if objectstore != "":
-        _objectstore = objectstore.split("|")
-        if "^" in _objectstore[0]:
-            for obj in _objectstore:
-                if obj[:len(filetype)] == filetype:
-                    basepath = obj.split("^")[1]
-                    break
-        else:
-            _objectstore = objectstore.split("|")
-            url = _objectstore[0]
-            for obj in _objectstore:
-                if obj[:len(filetype)] == filetype:
-                    basepath = obj.split("^")[1]
-                    break
-            if basepath != "":
-                if url.endswith('/') and basepath.startswith('/'):
-                    basepath = url + basepath[1:]
-                else:
-                    basepath = url + basepath
-
-        if basepath == "":
-            _logger.warning("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
-            filetype, objectstore))
-
-    else:
-        _logger.info("Object store not defined in queuedata")
-
-    return basepath
 
 
 def buildGoogleFlowDiagram(request, jobs=[], tasks=[]):
@@ -10613,19 +10522,6 @@ def getCacheData(request,requestid):
         return data
     else:
         return None
-
-def fixLob(cur):
-    fixRowsList = []
-    for row in cur:
-        newRow = []
-        for col in row:
-            if type(col).__name__ == 'LOB':
-                newRow.append(str(col))
-            else:
-                newRow.append(col)
-        fixRowsList.append(tuple(newRow))
-    return fixRowsList
-############################
 
 
 #@never_cache

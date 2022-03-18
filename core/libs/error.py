@@ -208,8 +208,6 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
         if not testjobs:
             if job['jobstatus'] not in ['failed', 'holding', 'finished', 'closed', 'cancelled']: continue
         site = job['computingsite']
-        #        if 'cloud' in request.session['requestParams']:
-        #            if site in homeCloud and homeCloud[site] != request.session['requestParams']['cloud']: continue
         user = job['produsername']
         taskname = ''
         if job['jeditaskid'] is not None and job['jeditaskid'] > 0:

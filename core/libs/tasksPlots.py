@@ -16,8 +16,6 @@ from core.libs.task import drop_duplicates, add_job_category, job_consumption_pl
 
 from core.pandajob.models import Jobsdefined4, Jobsarchived, Jobswaiting4, Jobsactive4, Jobsarchived4
 
-pandaSites = {}
-
 
 def getJobsData(request):
 

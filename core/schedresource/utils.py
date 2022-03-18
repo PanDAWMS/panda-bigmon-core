@@ -134,6 +134,19 @@ def get_panda_resource(pq_name):
         print(exc)
 
 
+def get_pq_clouds():
+    """
+    Return dict of PQ:cloud
+    :return: pq_clouds: dict
+    """
+    pq_clouds = {}
+    pq_dict = get_panda_queues()
+    for pq, pq_info in pq_dict.items():
+        pq_clouds[pq_info['siteid']] = pq_info['cloud']
+
+    return pq_clouds
+
+
 def get_basic_info_for_pqs(pq_list):
     """
     Return list of dicts with basic info for list of PQs, including ATLAS site, region (cloud), tier, corepower, status
@@ -168,7 +181,8 @@ def get_basic_info_for_pqs(pq_list):
     return pq_info_list
 
 
-def get_object_stores():
+def get_object_stores(**kwargs):
+
     object_stores_dict = cache.get('objectStores')
     if not object_stores_dict:
         object_stores_dict = {}
@@ -203,6 +217,30 @@ def get_object_stores():
         cache.set('objectStores', object_stores_dict, 3600)
 
     return object_stores_dict
+
+
+def get_pq_object_store_path():
+    """
+
+    :return:
+    """
+    pq_object_store_paths = {}
+    pq_dict = get_panda_queues()
+    for pq, pq_info in pq_dict.items():
+        if pq_info['catchall'] is not None and 'objectstore' in pq_info and (
+                pq_info['catchall'].find('log_to_objectstore') >= 0 or pq_info['objectstore'] != ''):
+            try:
+                fpath = getFilePathForObjectStore(pq_info['objectstore'], filetype="logs")
+                # dirty hack
+                fpath = fpath.replace('root://atlas-objectstore.cern.ch/atlas/logs',
+                                      'https://atlas-objectstore.cern.ch:1094/atlas/logs')
+                if fpath != "" and fpath.startswith('http'):
+                    pq_object_store_paths[pq_info['siteid']] = fpath
+            except:
+                pass
+
+    return pq_object_store_paths
+
 
 def getCRICSEs():
     SEs = cache.get('CRIC_SEs')
@@ -257,3 +295,44 @@ def getCRICSites():
         cache.set('computevsAtlasCE', computevsAtlasCE, 3600)
 
     return sitesUcore, sitesHarvester, sitesType, computevsAtlasCE
+
+
+def getFilePathForObjectStore(objectstore, filetype="logs"):
+    """ Return a proper file path in the object store """
+
+    # For single object stores
+    # root://atlas-objectstore.cern.ch/|eventservice^/atlas/eventservice|logs^/atlas/logs
+    # For multiple object stores
+    # eventservice^root://atlas-objectstore.cern.ch//atlas/eventservice|logs^root://atlas-objectstore.bnl.gov//atlas/logs
+
+    basepath = ""
+
+    # Which form of the schedconfig.objectstore field do we currently have?
+    if objectstore != "":
+        _objectstore = objectstore.split("|")
+        if "^" in _objectstore[0]:
+            for obj in _objectstore:
+                if obj[:len(filetype)] == filetype:
+                    basepath = obj.split("^")[1]
+                    break
+        else:
+            _objectstore = objectstore.split("|")
+            url = _objectstore[0]
+            for obj in _objectstore:
+                if obj[:len(filetype)] == filetype:
+                    basepath = obj.split("^")[1]
+                    break
+            if basepath != "":
+                if url.endswith('/') and basepath.startswith('/'):
+                    basepath = url + basepath[1:]
+                else:
+                    basepath = url + basepath
+
+        if basepath == "":
+            _logger.warning("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
+            filetype, objectstore))
+
+    else:
+        _logger.info("Object store not defined in queuedata")
+
+    return basepath
