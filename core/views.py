@@ -101,6 +101,7 @@ from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_local
     get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, taskNameDict
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode
+from core.libs.eventservice import job_suppression
 from core.libs.jobmetadata import addJobMetadata
 from core.libs.error import errorInfo, getErrorDescription, errorSummaryDict, get_error_message_summary, get_job_error_desc
 from core.libs.site import get_pq_metrics
@@ -243,23 +244,6 @@ def datetime_handler(x):
     if isinstance(x, datetime.datetime):
         return x.isoformat()
     raise TypeError("Unknown type")
-
-
-def jobSuppression(request):
-
-    extra = '(1=1)'
-
-    if not 'notsuppress' in request.session['requestParams']:
-        suppressruntime = 10
-        if 'suppressruntime' in request.session['requestParams']:
-            try:
-                suppressruntime = int(request.session['requestParams']['suppressruntime'])
-            except:
-                pass
-        extra = '( not( (JOBDISPATCHERERRORCODE=100 OR ' \
-                'PILOTERRORCODE in (1200, 1201, 1202, 1203, 1204, 1206, 1207) ) and ((ENDTIME-STARTTIME)*24*60 < ' + str(
-        suppressruntime) + ')))'
-    return extra
 
 
 def getObjectStoresNames():
@@ -5497,11 +5481,10 @@ def dashboard(request, view='all'):
         elif view == 'analysis':
             query['tasktype'] = 'anal'
 
-
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
             query['es__in'] = [1, 5]
             estailtojobslinks = '&eventservice=eventservice|cojumbo'
-            extra = jobSuppression(request)
+            extra = job_suppression(request)
 
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
             query['es'] = 0
@@ -6213,16 +6196,6 @@ def taskESExtendedInfo(request):
         estaskstr += " %s(%s) " % (s['statusname'], s['count'])
     return HttpResponse(estaskstr, content_type='text/html')
 
-
-def removeDublicates(inlist, key):
-
-    ids = set([item[key] for item in inlist])
-    outlist = []
-    for item in inlist:
-        if item[key] in ids:
-            outlist.append(item)
-            ids.remove(item[key])
-    return outlist
 
 
 @login_customrequired
