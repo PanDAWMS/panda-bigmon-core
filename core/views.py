@@ -5535,7 +5535,7 @@ def dashboard(request, view='all'):
           ) 
         WHERE NOT OBJSE IS NULL 
         GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE 
-        order by OBJSE;
+        order by OBJSE
         """.format(hours=13)
 
         cur = connection.cursor()

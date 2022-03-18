@@ -1,5 +1,4 @@
 /workingGroups/
-/dash/objectstore/
 /dash/analysis/?mode=task
 /dash/production/?mode=task
 /tasks/?display_limit=300
