@@ -34,7 +34,6 @@ import django.utils.cache as ucache
 from django.utils import timezone
 from django.utils.cache import patch_response_headers
 from django.core.cache import cache
-from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.db import connection
 from django.template.loaders.app_directories import get_app_template_dirs
@@ -108,7 +107,7 @@ from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
-from core.libs.sqlcustom import fix_lob
+from core.libs.sqlcustom import fix_lob, escape_input
 
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -240,13 +239,7 @@ def datetime_handler(x):
     raise TypeError("Unknown type")
 
 
-def escapeInput(strToEscape):
-    charsToEscape = '$%^&()[]{};<>?\`~+%\'\"'
-    charsToReplace = '_' * len(charsToEscape)
-    tbl = str.maketrans(charsToEscape, charsToReplace)
-    strToEscape = encoding.smart_str(strToEscape, encoding='ascii', errors='ignore')
-    strToEscape = strToEscape.translate(tbl)
-    return strToEscape
+
 
 
 def initRequest(request, callselfmon=True):
@@ -753,7 +746,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             query['taskname__icontains'] = val
 
         elif param == 'harvesterid':
-            val = escapeInput(request.session['requestParams'][param])
+            val = escape_input(request.session['requestParams'][param])
             values = val.split(',')
             query['harvesterid__in'] = values
 
@@ -875,20 +868,20 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             ttype = 'prod'
                         query[param] = ttype
                     elif param == 'jeditaskid':
-                        val = escapeInput(request.session['requestParams'][param])
+                        val = escape_input(request.session['requestParams'][param])
                         values = val.split('|')
                         query['jeditaskid__in'] = values
                     elif param == 'status':
-                        val = escapeInput(request.session['requestParams'][param])
+                        val = escape_input(request.session['requestParams'][param])
                         if '*' not in val and '|' not in val and '!' not in val:
                             values = val.split(',')
                             query['status__in'] = values
                     elif param == 'superstatus':
-                        val = escapeInput(request.session['requestParams'][param])
+                        val = escape_input(request.session['requestParams'][param])
                         values = val.split('|')
                         query['superstatus__in'] = values
                     elif param == 'reqid':
-                        val = escapeInput(request.session['requestParams'][param])
+                        val = escape_input(request.session['requestParams'][param])
                         if val.find('|') >= 0:
                             values = val.split('|')
                             values = [int(val) for val in values]
@@ -944,7 +937,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     elif param == 'prodsourcelabel':
                         query['prodsourcelabel'] = request.session['requestParams'][param]
                     elif param == 'reqid':
-                        val = escapeInput(request.session['requestParams'][param])
+                        val = escape_input(request.session['requestParams'][param])
                         if val.find('|') >= 0:
                             values = val.split('|')
                             values = [int(val) for val in values]
@@ -960,7 +953,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if paramQuery[-1] == '*': paramQuery = paramQuery[:-1]
                         query['%s__contains' % param] = paramQuery
                     elif param == 'jeditaskid' or param == 'taskid':
-                        val = escapeInput(request.session['requestParams'][param])
+                        val = escape_input(request.session['requestParams'][param])
                         if '|' in val:
                             values = val.split('|')
                             values = [int(val) for val in values]
@@ -983,7 +976,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                 'jobtype'] == 'eventservice')):
                         query['jobstatus__in'] = ('finished', 'cancelled')
                     elif param == 'jobstatus':
-                        val = escapeInput(request.session['requestParams'][param])
+                        val = escape_input(request.session['requestParams'][param])
                         values = val.split('|') if '|' in val else val.split(',')
                         query['jobstatus__in'] = values
                     elif param == 'eventservice':
@@ -1101,7 +1094,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         jobParCurrentCardCount = 1
         extraJobParCondition = '('
         for card in jobParWildCards:
-            extraJobParCondition += preprocessWildCardString(escapeInput(card), 'JOBPARAMETERS')
+            extraJobParCondition += preprocessWildCardString(escape_input(card), 'JOBPARAMETERS')
             if (jobParCurrentCardCount < jobParCountCards): extraJobParCondition += ' OR '
             jobParCurrentCardCount += 1
         extraJobParCondition += ')'
@@ -3515,7 +3508,7 @@ def userInfo(request, user=''):
 
     requestParams = {}
     for param in request.session['requestParams']:
-        requestParams[escapeInput(param.strip())] = escapeInput(request.session['requestParams'][param.strip()].strip())
+        requestParams[escape_input(param.strip())] = escape_input(request.session['requestParams'][param.strip()].strip())
     request.session['requestParams'] = requestParams
 
     # Tasks owned by the user
@@ -3891,7 +3884,7 @@ def siteList(request):
 
 
     for param in request.session['requestParams']:
-        request.session['requestParams'][param] = escapeInput(request.session['requestParams'][param])
+        request.session['requestParams'][param] = escape_input(request.session['requestParams'][param])
     setupView(request, opmode='notime')
     query = {}
     ### Add any extensions to the query determined from the URL
@@ -3913,14 +3906,14 @@ def siteList(request):
             currentCardCount = 1
             extraParCondition = '('
             for card in wildCards:
-                extraParCondition += preprocessWildCardString(escapeInput(card), 'catchall')
+                extraParCondition += preprocessWildCardString(escape_input(card), 'catchall')
                 if (currentCardCount < countCards): extraParCondition += ' OR '
                 currentCardCount += 1
             extraParCondition += ')'
 
         for field in Schedconfig._meta.get_fields():
             if param == field.name and not (param == 'catchall'):
-                query[param] = escapeInput(request.session['requestParams'][param])
+                query[param] = escape_input(request.session['requestParams'][param])
 
     siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').extra(where=[extraParCondition]).values()
     mcpres = Schedconfig.objects.filter(status='online').exclude(cloud='CMS').exclude(siteid__icontains='test').values(
@@ -9054,7 +9047,7 @@ def pandaLogger(request):
         iquery['name'] = request.session['requestParams']['category']
         getrecs = True
     if 'type' in request.session['requestParams']:
-        val = escapeInput(request.session['requestParams']['type'])
+        val = escape_input(request.session['requestParams']['type'])
         iquery['type__in'] = val.split('|')
         getrecs = True
     if 'level' in request.session['requestParams']:

@@ -5,26 +5,18 @@
 """
 
 import json
-import urllib3
 import multiprocessing
+from datetime import datetime
 
-from datetime import datetime, timedelta
-
-from django.utils import timezone
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, redirect
-from django.db import connection, transaction, DatabaseError
+from django.shortcuts import render_to_response
 
-from django.utils.cache import patch_cache_control, patch_response_headers
+from django.utils.cache import patch_response_headers
 
 from core.oauth.utils import login_customrequired
-from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
-from core.views import initRequest, setupView, escapeInput, DateEncoder, \
-    extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
+from core.libs.cache import getCacheEntry
+from core.views import initRequest, DateEncoder, extensibleURL
 
-from core.pandajob.models import Jobsactive4, Jobsarchived4, Jobswaiting4, Jobsdefined4, Jobsarchived
-from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison, job_info_getter
 

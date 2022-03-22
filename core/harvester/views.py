@@ -15,8 +15,9 @@ from django.utils import timezone
 
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import is_timestamp
+from core.libs.sqlcustom import escape_input
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
+from core.views import initRequest, setupView, DateEncoder, extensibleURL, DateTimeEncoder
 from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
 from core.harvester.utils import get_harverster_workers_for_task
 
@@ -129,7 +130,7 @@ def harvesterWorkerInfo(request):
     workerinfo = {}
 
     if 'harvesterid' in request.session['requestParams']:
-        harvesterid = escapeInput(request.session['requestParams']['harvesterid'])
+        harvesterid = escape_input(request.session['requestParams']['harvesterid'])
     if 'workerid' in request.session['requestParams']:
         workerid = int(request.session['requestParams']['workerid'])
 
