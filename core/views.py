@@ -109,6 +109,7 @@ from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humani
 from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
 from core.libs.sqlcustom import fix_lob, escape_input, preprocess_wild_card_string
 from core.libs.datetimestrings import datetime_handler
+from core.libs.jobconsumers import reconstruct_job_consumers
 
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -1216,53 +1217,6 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
     return jobs
 
 
-def reconstructJobsConsumersHelper(chainsDict):
-    reconstructionDict = {}
-    modified = False
-    for pandaid, parentids in chainsDict.items():
-        if parentids and parentids[-1] in chainsDict:
-            if chainsDict[parentids[-1]]:
-                reconstructionDict[pandaid] = parentids + chainsDict[parentids[-1]]
-                modified = True
-            else:
-                reconstructionDict[pandaid] = parentids
-        else:
-            reconstructionDict[pandaid] = parentids
-
-    if modified:
-        return reconstructJobsConsumersHelper(reconstructionDict)
-    else:
-        return reconstructionDict
-
-
-
-def reconstructJobsConsumers(jobsList):
-    consumers = []
-    jobsInheritance = {}
-    chainsList = {}
-
-    #Fill out all possible consumers
-    for job in jobsList:
-        jobsInheritance[job['pandaid']] = [job['parentid']]
-
-    chains = reconstructJobsConsumersHelper(jobsInheritance)
-    cleanChain = {}
-    for name, value in chains.items():
-        if len(value) > 1:
-            cleanChain[name] = value[-2]
-            for pandaid in value[:-2]:
-                cleanChain[pandaid] = value[-2]
-
-    
-    for job in jobsList:
-        if job['pandaid'] in cleanChain:
-            job['consumer'] = cleanChain[job['pandaid']]
-        else:
-            job['consumer'] = None
-
-    return jobsList
-
-
 def jobSummaryDict(request, jobs, fieldlist=None):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
     sumd = {}
@@ -2133,7 +2087,7 @@ def jobList(request, mode=None, param=None):
     jobs = cleanJobList(request, jobs, doAddMeta=is_job_meta_required)
     _logger.debug('Cleaned job list: {}'.format(time.time() - request.session['req_init_time']))
 
-    jobs = reconstructJobsConsumers(jobs)
+    jobs = reconstruct_job_consumers(jobs)
     _logger.debug('Reconstructed consumers: {}'.format(time.time() - request.session['req_init_time']))
 
     njobs = len(jobs)
