@@ -11,7 +11,7 @@ from core.runningprod.models import ProdNeventsHistory, RunningProdTasksModel
 from core.common.models import JediTasks
 import core.constants as const
 
-from core.views import preprocessWildCardString
+from core.libs.sqlcustom import preprocess_wild_card_string
 
 
 def updateView(request, query, exquery, wild_card_str):
@@ -69,7 +69,7 @@ def updateView(request, query, exquery, wild_card_str):
                         card = card + '*'
                     elif card.endswith('*'):
                         card = '*' + card
-                    wild_card_str += preprocessWildCardString(card, 'hashtags')
+                    wild_card_str += preprocess_wild_card_string(card, 'hashtags')
                     if currentCardCount < countCards:
                         wild_card_str += ' AND '
                     currentCardCount += 1

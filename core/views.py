@@ -107,7 +107,8 @@ from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
-from core.libs.sqlcustom import fix_lob, escape_input
+from core.libs.sqlcustom import fix_lob, escape_input, preprocess_wild_card_string
+from core.libs.datetimestrings import datetime_handler
 
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -230,16 +231,6 @@ class DateEncoder(json.JSONEncoder):
         else:
             return str(obj)
         return json.JSONEncoder.default(self, obj)
-
-
-def datetime_handler(x):
-    import datetime
-    if isinstance(x, datetime.datetime):
-        return x.isoformat()
-    raise TypeError("Unknown type")
-
-
-
 
 
 def initRequest(request, callselfmon=True):
@@ -448,73 +439,6 @@ def initRequest(request, callselfmon=True):
             request.session['requestParams'][p.lower()] = pval
 
     return True, None
-
-
-def preprocessWildCardString(strToProcess, fieldToLookAt):
-    if len(strToProcess) == 0:
-        return '(1=1)'
-    isNot = False
-    if strToProcess.startswith('!'):
-        isNot = True
-        strToProcess = strToProcess[1:]
-
-    cardParametersRaw = strToProcess.split('*')
-    cardRealParameters = [s for s in cardParametersRaw if len(s) >= 1]
-    countRealParameters = len(cardRealParameters)
-    countParameters = len(cardParametersRaw)
-
-    if countParameters == 0:
-        return '(1=1)'
-    currentRealParCount = 0
-    currentParCount = 0
-    extraQueryString = '('
-
-    for parameter in cardParametersRaw:
-        leadStar = False
-        trailStar = False
-        if len(parameter) > 0:
-
-            if (currentParCount - 1 >= 0):
-                #                if len(cardParametersRaw[currentParCount-1]) == 0:
-                leadStar = True
-
-            if (currentParCount + 1 < countParameters):
-                #                if len(cardParametersRaw[currentParCount+1]) == 0:
-                trailStar = True
-
-            if fieldToLookAt.lower() == 'produserid':
-                leadStar = True
-                trailStar = True
-
-            if fieldToLookAt.lower() == 'resourcetype':
-                fieldToLookAt = 'resource_type'
-
-            isEscape = False
-            if '_' in parameter and fieldToLookAt.lower() != 'nucleus':
-                parameter = parameter.replace('_', '!_')
-                isEscape = True
-
-            extraQueryString += "(UPPER(" + fieldToLookAt + ") "
-            if isNot:
-                extraQueryString += "NOT "
-            if leadStar and trailStar:
-                extraQueryString += " LIKE UPPER('%%" + parameter + "%%')"
-            elif not leadStar and not trailStar:
-                extraQueryString += " LIKE UPPER('" + parameter + "')"
-            elif leadStar and not trailStar:
-                extraQueryString += " LIKE UPPER('%%" + parameter + "')"
-            elif not leadStar and trailStar:
-                extraQueryString += " LIKE UPPER('" + parameter + "%%')"
-            if isEscape:
-                extraQueryString += " ESCAPE '!'"
-            extraQueryString += ")"
-            currentRealParCount += 1
-            if currentRealParCount < countRealParameters:
-                extraQueryString += ' AND '
-        currentParCount += 1
-    extraQueryString += ')'
-    extraQueryString = extraQueryString.replace("%20", " ") if not '%%20' in extraQueryString else extraQueryString
-    return extraQueryString
 
 
 def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardExt=False):
@@ -1045,7 +969,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif opmode.startswith('prod'):
             query['prodsourcelabel__in'] = ['managed']
 
-    if (wildCardExt == False):
+    if wildCardExt == False:
         return query
 
     try:
@@ -1074,12 +998,12 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     extraQueryString += '('
                     wildCardsAnd = card_or.split(',')
                     for i_and, card_and in enumerate(wildCardsAnd, start=1):
-                        extraQueryString += preprocessWildCardString(card_and, field_name)
+                        extraQueryString += preprocess_wild_card_string(card_and, field_name)
                         if i_and < len(wildCardsAnd):
                             extraQueryString += ' AND '
                     extraQueryString += ')'
                 else:
-                    extraQueryString += preprocessWildCardString(card_or, field_name)
+                    extraQueryString += preprocess_wild_card_string(card_or, field_name)
                 if i_or < len(wildCardsOr):
                     extraQueryString += ' OR '
 
@@ -1087,21 +1011,21 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             if i_field < len(wildSearchFields):
                 extraQueryString += ' AND '
 
-
-    if ('jobparam' in request.session['requestParams'].keys()):
+    if 'jobparam' in request.session['requestParams']:
         jobParWildCards = request.session['requestParams']['jobparam'].split('|')
         jobParCountCards = len(jobParWildCards)
         jobParCurrentCardCount = 1
         extraJobParCondition = '('
         for card in jobParWildCards:
-            extraJobParCondition += preprocessWildCardString(escape_input(card), 'JOBPARAMETERS')
+            extraJobParCondition += preprocess_wild_card_string(escape_input(card), 'JOBPARAMETERS')
             if (jobParCurrentCardCount < jobParCountCards): extraJobParCondition += ' OR '
             jobParCurrentCardCount += 1
         extraJobParCondition += ')'
 
         pandaIDs = []
-        jobParamQuery = {'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat),
-                                                     enddate.strftime(defaultDatetimeFormat)]}
+        jobParamQuery = {'modificationtime__castdate__range': [
+            startdate.strftime(defaultDatetimeFormat),
+            enddate.strftime(defaultDatetimeFormat)]}
 
         jobs = Jobparamstable.objects.filter(**jobParamQuery).extra(where=[extraJobParCondition]).values('pandaid')
         for values in jobs:
@@ -3906,7 +3830,7 @@ def siteList(request):
             currentCardCount = 1
             extraParCondition = '('
             for card in wildCards:
-                extraParCondition += preprocessWildCardString(escape_input(card), 'catchall')
+                extraParCondition += preprocess_wild_card_string(escape_input(card), 'catchall')
                 if (currentCardCount < countCards): extraParCondition += ' OR '
                 currentCardCount += 1
             extraParCondition += ')'

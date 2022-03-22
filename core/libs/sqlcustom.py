@@ -28,3 +28,69 @@ def escape_input(str_to_escape):
 
     return str_to_escape
 
+
+def preprocess_wild_card_string(strToProcess, fieldToLookAt):
+    if len(strToProcess) == 0:
+        return '(1=1)'
+    isNot = False
+    if strToProcess.startswith('!'):
+        isNot = True
+        strToProcess = strToProcess[1:]
+
+    cardParametersRaw = strToProcess.split('*')
+    cardRealParameters = [s for s in cardParametersRaw if len(s) >= 1]
+    countRealParameters = len(cardRealParameters)
+    countParameters = len(cardParametersRaw)
+
+    if countParameters == 0:
+        return '(1=1)'
+    currentRealParCount = 0
+    currentParCount = 0
+    extraQueryString = '('
+
+    for parameter in cardParametersRaw:
+        leadStar = False
+        trailStar = False
+        if len(parameter) > 0:
+
+            if currentParCount - 1 >= 0:
+                leadStar = True
+
+            if currentParCount + 1 < countParameters:
+                trailStar = True
+
+            if fieldToLookAt.lower() == 'produserid':
+                leadStar = True
+                trailStar = True
+
+            if fieldToLookAt.lower() == 'resourcetype':
+                fieldToLookAt = 'resource_type'
+
+            isEscape = False
+            if '_' in parameter and fieldToLookAt.lower() != 'nucleus':
+                parameter = parameter.replace('_', '!_')
+                isEscape = True
+
+            extraQueryString += "(UPPER(" + fieldToLookAt + ") "
+            if isNot:
+                extraQueryString += "NOT "
+            if leadStar and trailStar:
+                extraQueryString += " LIKE UPPER('%%" + parameter + "%%')"
+            elif not leadStar and not trailStar:
+                extraQueryString += " LIKE UPPER('" + parameter + "')"
+            elif leadStar and not trailStar:
+                extraQueryString += " LIKE UPPER('%%" + parameter + "')"
+            elif not leadStar and trailStar:
+                extraQueryString += " LIKE UPPER('" + parameter + "%%')"
+            if isEscape:
+                extraQueryString += " ESCAPE '!'"
+            extraQueryString += ")"
+            currentRealParCount += 1
+            if currentRealParCount < countRealParameters:
+                extraQueryString += ' AND '
+        currentParCount += 1
+
+    extraQueryString += ')'
+    extraQueryString = extraQueryString.replace("%20", " ") if not '%%20' in extraQueryString else extraQueryString
+
+    return extraQueryString
