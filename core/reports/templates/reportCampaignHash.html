@@ -80,60 +80,6 @@
 
     </table>
 
-
-
-
-
-
-
-
-
-    {% comment %}
-    <script type="text/javascript">
-        function toggleTable(hashtag) {
-            var lTable = document.getElementById(hashtag);
-            lTable.style.display = (lTable.style.display == "table") ? "none" : "table";
-        };
-    </script>
-
-    <table>
-        <tr><th>Overall events processing summary, avaliable #HashTags breakdown</th></tr>
-        <tr><td>
-            {% for hashtag in hashTable %}
-                <a onclick="javascript:toggleTable('{{ hashtag }}')"> {{ hashtag }} </a>
-            {% endfor %}
-        </td></tr>
-    </table>
-
-    {% for data in JediEventsHashsTable %}
-    <table id="{{ data.hashtag }}" style="display: none">
-        <tr>
-            <th colspan=20>Overall events processing summary, HashTag: #{{ data.hashtag }}</th>
-        </tr>
-        <tr>
-            <th></th>
-            <th>Event Generation</th>
-            <th>Simulation</th>
-            <th>Reconstruction</th>
-            <th>Merge</th>
-        </tr>
-        {% for key, values in data.items %}
-            {% ifnotequal key 'hashtag' %}
-            <tr>
-                <td>{{ key }}</td>
-                <td>{{ values.evgen }}</td>
-                <td>{{ values.simul }}</td>
-                <td>{{ values.recon }}</td>
-                <td>{{ values.merge }}</td>
-            </tr>
-            {% endifnotequal %}
-        {% endfor %}
-    </table>
-    {% endfor %}
-    {% endcomment %}
-
-
-
     <table id="{{ totalEvents.title }}">
         <tr>
             <th colspan=24>{{ totalEvents.title }}</th>

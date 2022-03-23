@@ -6,6 +6,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from core.settings.config import DB_SCHEMA
 
+
 class BPUser(AbstractUser):
     is_tester = models.BooleanField(db_column='is_tester', null=True, blank=False)
     last_login = models.DateTimeField(db_column='last_login', auto_now_add=True, blank=False)
@@ -14,7 +15,7 @@ class BPUser(AbstractUser):
 
 
 class BPUserSettings(models.Model):
-    userid = models.IntegerField(db_column='USERID', null=False)
+    userid = models.IntegerField(db_column='USERID', null=False, primary_key=True)
     page = models.CharField(db_column='PAGE', max_length=100, null=False)
     preferences = models.CharField(db_column='PREFERENCES', max_length=4000)
 

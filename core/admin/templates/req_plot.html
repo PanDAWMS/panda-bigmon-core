@@ -77,7 +77,7 @@
 <div class="pagination" style="float: right;">
     <span class="step-links">
         {% if reqPages.has_previous %}
-            <a href="?page={{ reqPages.previous_page_number }}{% for key,value in request.GET.items %}{% ifnotequal key 'page' %}&{{ key }}={{ value }}{% endifnotequal %}{% endfor %}">previous</a>
+            <a href="?page={{ reqPages.previous_page_number }}{% for key,value in request.GET.items %}{% if key == 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">previous</a>
         {% endif %}
 
         <span class="current">
@@ -85,7 +85,7 @@
         </span>
 
         {% if reqPages.has_next %}
-            <a href="?page={{ reqPages.next_page_number }}{% for key,value in request.GET.items %}{% ifnotequal key 'page' %}&{{ key }}={{ value }}{% endifnotequal %}{% endfor %}">next</a>
+            <a href="?page={{ reqPages.next_page_number }}{% for key,value in request.GET.items %}{% if key == 'page' %}&{{ key }}={{ value }}{% end %}{% endfor %}">next</a>
         {% endif %}
     </span>
 </div>
