@@ -222,25 +222,24 @@
                         </td>
                         {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
                             <td>{{ task.reqid }}</td>{% endif %}
-                        <td><font size=-1><a
-                                href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}
+                        <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}
                             {% if task.processingtype %}/{{ task.processingtype }} {% endif %}
                             {% if task.campaign %}
-                                <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}
+                                <a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}
                             {% if task.workinggroup %}
                                 <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}
-                            <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font>
+                            <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a>
                             {% if task.ticketid %}<a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">
-                                {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %}
-                                    JIRA {% endif %}</a> {% endif %}
+                                {% if task.ticketsystemtype %}{{ task.ticketsystemtype }}{% else %} JIRA {% endif %}</a>
+                            {% endif %}
                             {% if task.deftreqid %}     RequestID:
                                 <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/">{{ task.deftreqid }}</a> {% endif %}
                             <a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">Errors</a>
-                            <br><font color='brown'>{{ task.errordialog|safe }}</font></td>
-                        <td  {% if task.scoutinghascritfailures == True %} class='broken_fill'
-                        {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
-                                                                           {% else %}class='{{ task.superstatus }}_fill'
-                        {% endif %}>
+                            <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
+                        <td {% if task.scoutinghascritfailures == True %} class='broken_fill'
+                            {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
+                            {% else %} class='{{ task.superstatus }}_fill'
+                            {% endif %}>
                             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">
                                 {% if task.superstatus %}
                                     <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %}
