@@ -2,7 +2,7 @@
 
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
     Jobsarchived_y2018, Jobsarchived, Jobsarchived4
-from core.libs.exlib import parse_datetime
+from core.libs.datetimestrings import parse_datetime
 from core.settings.config import DEPLOYMENT
 
 

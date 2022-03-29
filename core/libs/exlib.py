@@ -3,8 +3,9 @@ import math, random, datetime
 import numpy as np
 import pandas as pd
 from django.db import connection
-from dateutil.parser import parse
 from datetime import datetime
+
+from core.libs.datetimestrings import parse_datetime
 from core.settings.local import dbaccess
 from core.settings.config import DB_SCHEMA, DEPLOYMENT
 import core.constants as const
@@ -341,18 +342,6 @@ def is_timestamp(key):
                     'creationdate', 'frozentime', 'ttcrequested', 'submittime', 'lastupdate'):
         return True
     return False
-
-
-def parse_datetime(datetime_str):
-    """
-    :param datetime_str: datetime str in any format
-    :return: datetime value
-    """
-    try:
-        datetime_val = parse(datetime_str)
-    except ValueError:
-        datetime_val = datetime.utcfromtimestamp(datetime_str)
-    return datetime_val
 
 
 def get_job_walltime(job):

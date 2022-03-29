@@ -11,8 +11,9 @@ from django.db.models import Count, Sum
 from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4, Jobsarchived_y2015
 from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
-    job_states_count_by_param, get_tmp_table_name, parse_datetime, get_job_queuetime, convert_bytes
+    job_states_count_by_param, get_tmp_table_name, get_job_queuetime, convert_bytes
 from core.libs.job import parse_jobmetrics
+from core.libs.datetimestrings import parse_datetime
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 from core.pandajob.utils import get_pandajob_models_by_year
 from core.filebrowser.ruciowrapper import ruciowrapper

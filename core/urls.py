@@ -120,7 +120,6 @@ urlpatterns = [
     re_path(r'^api/user_dash/(?P<agg>.*)/$', coremon_views.userDashApi, name='userdashapi'),
 
     # ????
-    re_path(r'^preprocess/$', coremon_views.preProcess, name='preprocess'),
     re_path(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
 
     # robots.txt

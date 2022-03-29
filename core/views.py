@@ -7,7 +7,6 @@ import traceback
 import time
 import json
 import copy
-import itertools
 import random
 import numpy as np
 import pandas as pd
@@ -19,18 +18,15 @@ import hashlib
 from io import BytesIO
 from datetime import datetime, timedelta
 from threading import Thread, Lock
-from functools import wraps
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 from elasticsearch_dsl import Search
 
-from django.utils.decorators import available_attrs
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 from django.db.models import Count, Sum, F, Value, FloatField, Q, DateTimeField
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
-import django.utils.cache as ucache
 from django.utils import timezone
 from django.utils.cache import patch_response_headers
 from django.core.cache import cache
@@ -51,7 +47,6 @@ from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsar
 from core.schedresource.models import Schedconfig, SchedconfigJson
 from core.common.models import Filestable4
 from core.common.models import Datasets
-from core.common.models import Sitedata
 from core.common.models import FilestableArch
 from core.common.models import Users
 from core.common.models import Jobparamstable
@@ -87,17 +82,17 @@ from core.oauth.utils import login_customrequired
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
-from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, get_tmp_table_name_debug, create_temporary_table
-from core.libs.exlib import is_timestamp, parse_datetime, get_job_walltime, \
+from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData, setCacheData
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
+from core.libs.exlib import is_timestamp, get_job_walltime, \
     is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
-    add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall, getPilotCounts
+    add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
-    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, taskNameDict
+    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode
 from core.libs.eventservice import job_suppression
@@ -107,16 +102,22 @@ from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
-from core.libs.sqlcustom import fix_lob, escape_input, preprocess_wild_card_string
-from core.libs.datetimestrings import datetime_handler
+from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
+from core.libs.datetimestrings import datetime_handler, parse_datetime
 from core.libs.jobconsumers import reconstruct_job_consumers
+
+from core.pandajob.summary_task import task_summary
+from core.pandajob.summary_site import cloud_site_summary, vo_summary
+from core.pandajob.summary_wg import wg_summary
+from core.pandajob.summary_wn import wn_summary
+from core.pandajob.summary_os import objectstore_summary
 
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
-from core.schedresource.utils import getCRICSites, get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs, \
-    get_panda_resource, get_object_stores, get_pq_clouds, get_pq_object_store_path
+from core.schedresource.utils import get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs, \
+    get_panda_resource, get_pq_clouds, get_pq_object_store_path
 
 
 inilock = Lock()
@@ -1742,38 +1743,6 @@ def jobParamList(request):
         return HttpResponse('not supported', content_type='text/html')
 
 
-def cache_filter(timeout):
-    # This function provides splitting cache keys depending on conditions above the parameters specified in the URL
-    def decorator(view_func):
-        @wraps(view_func, assigned=available_attrs(view_func))
-        def _wrapped_view(request, *args, **kwargs):
-            is_json = False
-            request._cache_update_cache = False
-
-            # here we can apply any conditions to separate cache streams
-            if ((('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) or (
-                        'json' in request.GET)):
-                is_json = True
-
-            key_prefix = "%s_%s_" % (is_json, djangosettings.CACHE_MIDDLEWARE_KEY_PREFIX)
-
-            cache_key = ucache.get_cache_key(request, key_prefix, 'GET', cache)
-            if cache_key is None:
-                # we should add saving result
-                responce = (view_func)(request, *args, **kwargs)
-                cache_key = ucache.learn_cache_key(request, responce, timeout, key_prefix, cache)
-                cache.set(cache_key, responce, timeout)
-                return responce
-            responce = cache.get(cache_key, None)
-            if responce is None:
-                responce = (view_func)(request, *args, **kwargs)
-                cache_key = ucache.learn_cache_key(request, responce, timeout, key_prefix, cache)
-                cache.set(cache_key, responce, timeout)
-            return responce
-        return _wrapped_view
-    return decorator
-
-
 @login_customrequired
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
@@ -2304,7 +2273,6 @@ def jobList(request, mode=None, param=None):
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
         del request.session['TLAST']
-        errsByCount = importToken(request, errsByCount=errsByCount)
         _logger.debug('Extra data preporation done: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
@@ -2451,38 +2419,6 @@ def jobList(request, mode=None, param=None):
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
-
-def importToken(request, errsByCount):
-    newErrsByCount = []
-    random.seed()
-    tmpTableName = get_tmp_table_name_debug()
-    isListPID = False
-    new_cur = connection.cursor()
-    transactionKey = random.randrange(1000000)
-    for item in errsByCount:
-        executionData = []
-        if (type(item) is not int):
-            transactionKey = random.randrange(1000000)
-            if ('pandalist' in item):
-                item['tk'] = transactionKey
-                for key,values in item['pandalist'].items():
-            #print item['error'] , key , values
-                    executionData.append((key, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-            #setCacheEntry(request,transactionKey,executionData,60*60, isData=True)
-        else:
-            executionData.append((item, transactionKey, timezone.now().strftime(defaultDatetimeFormat)))
-            if isListPID == False:
-                isListPID = True
-        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY,INS_TIME) VALUES (%s, %s, %s)"""
-        new_cur.executemany(query, executionData)
-        newErrsByCount.append(item)
-    if isListPID == True:
-        #newErrsByCount =  {'tk':transactionKey, 'pandalist':newErrsByCount}
-        newErrsByCount = transactionKey
-        #print newErrsByCount['tk']
-        print (len(errsByCount))
-    return newErrsByCount
 
 
 def descendentjoberrsinfo(request):
@@ -4017,195 +3953,6 @@ def siteInfo(request, site=''):
         return HttpResponse(json.dumps(panda_queue), content_type='application/json')
 
 
-def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
-    try:
-        listOfCloudSitesMismatched = cache.get('mismatched-cloud-sites-list')
-    except:
-        listOfCloudSitesMismatched = None
-    if (listOfCloudSitesMismatched is None) or (len(listOfCloudSitesMismatched) == 0):
-        cache.set('mismatched-cloud-sites-list', mismatchedSites, 31536000)
-    else:
-        listOfCloudSitesMismatched.extend(mismatchedSites)
-        listOfCloudSitesMismatched = sorted(listOfCloudSitesMismatched)
-        cache.set('mismatched-cloud-sites-list', list(listOfCloudSitesMismatched for listOfCloudSitesMismatched, _ in
-                                                      itertools.groupby(listOfCloudSitesMismatched)), 31536000)
-
-
-def getListOfFailedBeforeSiteAssignedJobs(query, mismatchedSites, notime=True):
-    jobs = []
-    querynotime = copy.deepcopy(query)
-    if notime: del querynotime['modificationtime__castdate__range']
-    siteCondition = ''
-    for site in mismatchedSites:
-        siteQuery = Q(computingsite=site[0]) & Q(cloud=site[1])
-        siteCondition = siteQuery if (siteCondition == '') else (siteCondition | siteQuery)
-    jobs.extend(Jobsactive4.objects.filter(siteCondition).filter(**querynotime).values('pandaid'))
-    jobs.extend(Jobsdefined4.objects.filter(siteCondition).filter(**querynotime).values('pandaid'))
-    jobs.extend(Jobswaiting4.objects.filter(siteCondition).filter(**querynotime).values('pandaid'))
-    jobs.extend(Jobsarchived4.objects.filter(siteCondition).filter(**query).values('pandaid'))
-    jobsString = ''
-    if (len(jobs) > 0):
-        jobsString = '&pandaid='
-        for job in jobs:
-            jobsString += str(job['pandaid']) + ','
-    jobsString = jobsString[:-1]
-    return jobsString
-
-
-def siteSummary(query, notime=True, extra="(1=1)"):
-    summary = []
-    querynotime = copy.deepcopy(query)
-    summaryResources=[]
-    if notime:
-        if 'modificationtime__castdate__range' in querynotime:
-            del querynotime['modificationtime__castdate__range']
-    ejquery = {'jobstatus__in': ['failed', 'finished', 'closed', 'cancelled']}
-    jvalues = ('cloud', 'computingsite', 'jobstatus', 'resourcetype', 'corecount')
-    orderby = ('cloud', 'computingsite', 'jobstatus')
-    summaryResources.extend(
-        Jobsactive4.objects.filter(**querynotime).exclude(**ejquery).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
-    summaryResources.extend(
-        Jobsactive4.objects.filter(**query).filter(**ejquery).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
-    summaryResources.extend(
-        Jobsdefined4.objects.filter(**querynotime).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
-    summaryResources.extend(
-        Jobswaiting4.objects.filter(**querynotime).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
-    summaryResources.extend(
-        Jobsarchived4.objects.filter(**query).values(*jvalues).extra(where=[extra]).annotate(Count('jobstatus')).order_by(*orderby))
-
-    summaryResourcesDict = {}
-    actualcorecount = 0
-    for sumS in summaryResources:
-        if sumS['corecount'] is None:
-            actualcorecount = 1
-        else:
-            actualcorecount = sumS['corecount']
-
-        if sumS['cloud'] not in summaryResourcesDict:
-            summaryResourcesDict[sumS['cloud']] = {}
-        if sumS['computingsite'] not in summaryResourcesDict[sumS['cloud']]:
-            summaryResourcesDict[sumS['cloud']][sumS['computingsite']] = {}
-        if sumS['jobstatus'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']]:
-            summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']] = {}
-        if sumS['resourcetype'] not in summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']]:
-            summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']] = {
-                'jobstatus__count': 0,
-                'corecount': actualcorecount
-            }
-        summaryResourcesDict[sumS['cloud']][sumS['computingsite']][sumS['jobstatus']][sumS['resourcetype']]['jobstatus__count'] += sumS['jobstatus__count']
-
-    summaryList = []
-    obj = {}
-    for cloud in summaryResourcesDict.keys():
-        for site in summaryResourcesDict[cloud].keys():
-            for jobstatus in summaryResourcesDict[cloud][site].keys():
-                jobscount =0
-                obj['resource'] = {}
-                for i,resource in enumerate(summaryResourcesDict[cloud][site][jobstatus]):
-                    # obj['resource'].append({resource:summaryResourcesDict[cloud][site][jobstatus][resource]})
-                    #obj['resource'][resource] = summaryResourcesDict[cloud][site][jobstatus][resource]
-                    if resource not in obj['resource']:
-                        obj['resource'][resource] = {}
-                        obj['resource'][resource]['jobstatus__count'] = {}
-                    if resource not in obj['resource']:
-                        obj['resource'][resource] = {}
-                        obj['resource'][resource]['corecount'] = {}
-                    obj['resource'][resource]['jobstatus__count'] = summaryResourcesDict[cloud][site][jobstatus][resource]['jobstatus__count']
-                    obj['resource'][resource]['corecount'] = summaryResourcesDict[cloud][site][jobstatus][resource]['corecount']
-                    jobscount += summaryResourcesDict[cloud][site][jobstatus][resource]['jobstatus__count']
-                    if i == len(summaryResourcesDict[cloud][site][jobstatus]) - 1:
-
-                        obj['cloud'] = cloud
-                        obj['computingsite'] = site
-                        obj['jobstatus'] = jobstatus
-                        obj['jobstatus__count'] = jobscount
-                        summaryList.append(obj)
-                        obj = {}
-    return summaryList
-
-
-def taskSummaryData(request, query):
-    summary = []
-    querynotime = query
-    del querynotime['modificationtime__castdate__range']
-    summary.extend(
-        Jobsactive4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(Count('jobstatus')).order_by(
-            'taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    summary.extend(
-        Jobsdefined4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(Count('jobstatus')).order_by(
-            'taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    summary.extend(
-        Jobswaiting4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(Count('jobstatus')).order_by(
-            'taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    summary.extend(
-        Jobsarchived4.objects.filter(**query).values('taskid', 'jobstatus').annotate(Count('jobstatus')).order_by(
-            'taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    summary.extend(Jobsactive4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    summary.extend(Jobsdefined4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    summary.extend(Jobswaiting4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    summary.extend(
-        Jobsarchived4.objects.filter(**query).values('jeditaskid', 'jobstatus').annotate(Count('jobstatus')).order_by(
-            'jeditaskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    return summary
-
-
-def voSummary(query):
-    summary = []
-    querynotime = query
-    del querynotime['modificationtime__castdate__range']
-    summary.extend(Jobsactive4.objects.filter(**querynotime).values('vo', 'jobstatus').annotate(Count('jobstatus')))
-    summary.extend(Jobsdefined4.objects.filter(**querynotime).values('vo', 'jobstatus').annotate(Count('jobstatus')))
-    summary.extend(Jobswaiting4.objects.filter(**querynotime).values('vo', 'jobstatus').annotate(Count('jobstatus')))
-    summary.extend(Jobsarchived4.objects.filter(**query).values('vo', 'jobstatus').annotate(Count('jobstatus')))
-    return summary
-
-
-def wgSummary(query):
-    summary = []
-    querynotime = query
-    del querynotime['modificationtime__castdate__range']
-    summary.extend(
-        Jobsdefined4.objects.filter(**querynotime).values('workinggroup', 'jobstatus').annotate(Count('jobstatus')))
-    summary.extend(
-        Jobsactive4.objects.filter(**querynotime).values('workinggroup', 'jobstatus').annotate(Count('jobstatus')))
-    summary.extend(
-        Jobswaiting4.objects.filter(**querynotime).values('workinggroup', 'jobstatus').annotate(Count('jobstatus')))
-    summary.extend(
-        Jobsarchived4.objects.filter(**query).values('workinggroup', 'jobstatus').annotate(Count('jobstatus')))
-    return summary
-
-
-def wnSummary(query):
-    summary = []
-    querynotime = copy.deepcopy(query)
-    cores_running = Sum('actualcorecount', filter=Q(jobstatus__exact='running'))
-    minramcount_running = Sum('minramcount', filter=Q(jobstatus__exact='running'))
-    is_archive = False
-    if 'modificationtime__castdate__range' in querynotime:
-        if parse_datetime(querynotime['modificationtime__castdate__range'][0]) < (datetime.now() - timedelta(days=3)):
-            is_archive = True
-        try:
-            del querynotime['modificationtime__castdate__range']    # creates inconsistency with job lists. Stick to advertised 12hrs
-        except KeyError:
-            _logger.warning('Failed to remove modificationtime range from query')
-
-    summary.extend(Jobsdefined4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
-    summary.extend(Jobswaiting4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
-    summary.extend(Jobsactive4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
-    summary.extend(Jobsarchived4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
-    if is_archive:
-        summary.extend(Jobsarchived.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-            Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
-
-    return summary
-
 
 @login_customrequired
 def wnInfo(request, site, wnname='all'):
@@ -4265,147 +4012,8 @@ def wnInfo(request, site, wnname='all'):
     elif wnname_rgx is not None:
         query['modificationhost__contains'] = wnname_rgx.replace('*', '')
     query['computingsite'] = site
-    wnsummarydata = wnSummary(query)
-    totstates = {}
-    totjobs = 0
-    totrcores = 0
-    totrminramcount = 0
-    wns = {}
-    wnPlotFailed = {}
-    wnPlotFinished = {}
-    for state in sitestatelist:
-        totstates[state] = 0
-    for rec in wnsummarydata:
-        jobstatus = rec['jobstatus']
-        count = rec['jobstatus__count']
-        rcores = rec['rcores'] if rec['rcores'] is not None else 0
-        rminramcount = rec['rminramcount'] if rec['rminramcount'] is not None else 0
-        wnfull = rec['modificationhost']
-        wnsplit = wnfull.split('@')
-        if len(wnsplit) == 2:
-            if wnname == 'all':
-                wn = wnsplit[1]
-            else:
-                wn = wnfull
-            slot = wnsplit[0]
-        else:
-            wn = wnfull
-            slot = '1'
-        if wn.startswith('aipanda'):
-            wn = 'Unknown'
-            slot = ''
-        if jobstatus == 'failed':
-            if not wn in wnPlotFailed: wnPlotFailed[wn] = 0
-            wnPlotFailed[wn] += count
-        elif jobstatus == 'finished':
-            if not wn in wnPlotFinished: wnPlotFinished[wn] = 0
-            wnPlotFinished[wn] += count
-        totjobs += count
-        if jobstatus not in totstates:
-            totstates[jobstatus] = 0
-        totstates[jobstatus] += count
-        totrcores += rcores
-        totrminramcount += rminramcount
-        if wn not in wns:
-            wns[wn] = {}
-            wns[wn]['name'] = wn
-            wns[wn]['count'] = 0
-            wns[wn]['states'] = {}
-            wns[wn]['rcores'] = 0
-            wns[wn]['rminramcount'] = 0
-            wns[wn]['slotd'] = {}
-            wns[wn]['statelist'] = []
-            for state in sitestatelist:
-                wns[wn]['states'][state] = {}
-                wns[wn]['states'][state]['name'] = state
-                wns[wn]['states'][state]['count'] = 0
-        if slot not in wns[wn]['slotd']: wns[wn]['slotd'][slot] = 0
-        wns[wn]['slotd'][slot] += 1
-        wns[wn]['count'] += count
-        wns[wn]['rcores'] += rcores
-        wns[wn]['rminramcount'] += rminramcount
-        if jobstatus not in wns[wn]['states']:
-            wns[wn]['states'][jobstatus] = {}
-            wns[wn]['states'][jobstatus]['count'] = 0
-        wns[wn]['states'][jobstatus]['count'] += count
 
-    # Remove None wn from failed jobs plot if it is in system, add warning banner
-    warning = {}
-    if 'None' in wnPlotFailed:
-        warning['message'] = '%i failed jobs are excluded from "Failed jobs per WN slot" plot because of None value of modificationhost.' % (wnPlotFailed['None'])
-        try:
-            del wnPlotFailed['None']
-        except: pass
-
-    # Convert dict to summary list
-    wnkeys = wns.keys()
-    wnkeys = sorted(wnkeys)
-    wntot = len(wnkeys)
-    fullsummary = []
-
-    allstated = {}
-    allstated['finished'] = allstated['failed'] = 0
-    allwns = {}
-    allwns['name'] = 'All'
-    allwns['slotcount'] = sum([len(row['slotd']) for key, row in wns.items()])
-    allwns['count'] = totjobs
-    allwns['rcores'] = totrcores
-    allwns['rminramcount'] = round(totrminramcount*1.0/1000, 2)
-    allwns['states'] = totstates
-    allwns['statelist'] = []
-    for state in sitestatelist:
-        allstate = {}
-        allstate['name'] = state
-        allstate['count'] = totstates[state]
-        allstated[state] = totstates[state]
-        allwns['statelist'].append(allstate)
-    if int(allstated['finished']) + int(allstated['failed']) > 0:
-        allwns['pctfail'] = int(100. * float(allstated['failed']) / (allstated['finished'] + allstated['failed']))
-    else:
-        allwns['pctfail'] = 0
-    if wnname == 'all': fullsummary.append(allwns)
-    avgwns = {}
-    avgwns['name'] = 'Average'
-    if wntot > 0:
-        avgwns['count'] = "%0.2f" % (totjobs / wntot)
-    else:
-        avgwns['count'] = ''
-    avgwns['states'] = totstates
-    avgwns['statelist'] = []
-    avgstates = {}
-    for state in sitestatelist:
-        if wntot > 0:
-            avgstates[state] = totstates[state] / wntot
-        else:
-            avgstates[state] = ''
-        allstate = {}
-        allstate['name'] = state
-        if wntot > 0:
-            allstate['count'] = "%0.2f" % (int(totstates[state]) / wntot)
-            allstated[state] = "%0.2f" % (int(totstates[state]) / wntot)
-        else:
-            allstate['count'] = ''
-            allstated[state] = ''
-        avgwns['statelist'].append(allstate)
-        avgwns['pctfail'] = allwns['pctfail']
-    if wnname == 'all': fullsummary.append(avgwns)
-
-    for wn in wnkeys:
-        outlier = ''
-        wns[wn]['slotcount'] = len(wns[wn]['slotd'])
-        wns[wn]['rminramcount'] = round(wns[wn]['rminramcount']*1.0/1000, 2)
-        wns[wn]['pctfail'] = 0
-        for state in sitestatelist:
-            wns[wn]['statelist'].append(wns[wn]['states'][state])
-        if wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count'] > 0:
-            wns[wn]['pctfail'] = int(100. * float(wns[wn]['states']['failed']['count']) / (
-            wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count']))
-        if float(wns[wn]['states']['finished']['count']) < float(avgstates['finished']) / 5.:
-            outlier += " LowFinished "
-        if float(wns[wn]['states']['failed']['count']) > max(float(avgstates['failed']) * 3., 5.):
-            outlier += " HighFailed "
-        wns[wn]['outlier'] = outlier
-        fullsummary.append(wns[wn])
+    fullsummary, plots_data = wn_summary(wnname, query)
 
     if 'sortby' in request.session['requestParams']:
         if request.session['requestParams']['sortby'] in sitestatelist:
@@ -4414,14 +4022,22 @@ def wnInfo(request, site, wnname='all'):
         elif request.session['requestParams']['sortby'] == 'pctfail':
             fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
 
-    wnPlotFailedL = [[k, v] for k, v in wnPlotFailed.items()]
-    wnPlotFailedL = sorted(wnPlotFailedL, key=lambda x: x[0])
+    # Remove None wn from failed jobs plot if it is in system, add warning banner
+    warning = {}
+    if 'None' in plots_data['failed']:
+        warning['message'] = '%i failed jobs are excluded from "Failed jobs per WN slot" plot because of None value of modificationhost.' % (plots_data['failed']['None'])
+        try:
+            del plots_data['failed']['None']
+        except:
+            pass
 
-    kys = wnPlotFinished.keys()
+    wnPlotFailedL = sorted([[k, v] for k, v in plots_data['failed'].items()], key=lambda x: x[0])
+
+    kys = plots_data['finished'].keys()
     kys = sorted(kys)
     wnPlotFinishedL = []
     for k in kys:
-        wnPlotFinishedL.append([k, wnPlotFinished[k]])
+        wnPlotFinishedL.append([k, plots_data['finished'][k]])
 
     if not is_json_request(request):
         xurl = extensibleURL(request)
@@ -4468,619 +4084,8 @@ def wnInfo(request, site, wnname='all'):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 
-def checkUcoreSite(site, usites):
-    isUsite = False
-    if site in usites:
-       isUsite = True
-    return isUsite
 
 
-
-def dashSummary(request, hours, limit=999999, view='all', cloudview='region', notime=True):
-    start_time = time.time()
-    pilots = getPilotCounts(view)
-    query = setupView(request, hours=hours, limit=limit, opmode=view)
-    ucoreComputingSites, harvesterComputingSites, typeComputingSites, _ = getCRICSites()
-
-    _logger.info('[dashSummary] Got CRIC json: {}'.format(time.time() - request.session['req_init_time']))
-
-    if VOMODE == 'atlas' and len(request.session['requestParams']) == 0:
-        cloudinfol = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values('name', 'status')
-    else:
-        cloudinfol = []
-    cloudinfo = {}
-    for c in cloudinfol:
-        cloudinfo[c['name']] = c['status']
-
-    siteinfol = Schedconfig.objects.filter().exclude(cloud='CMS').values('siteid', 'status')
-    siteinfo = {}
-    for s in siteinfol:
-        siteinfo[s['siteid']] = s['status']
-
-    _logger.info('[dashSummary] Got list of sites: {}'.format(time.time() - request.session['req_init_time']))
-
-    extra = "(1=1)"
-    if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
-        extra = "(not eventservice is null and eventservice in (1, 5) and not specialhandling like '%%sc:%%')"
-    elif 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
-        extra = "(not (not eventservice is null and eventservice in (1, 5) and not specialhandling like '%%sc:%%'))"
-    elif 'esmerge' in request.session['requestParams'] and request.session['requestParams'][
-        'esmerge'].upper() == 'TRUE':
-        extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
-
-    sitesummarydata = siteSummary(query, notime, extra)
-    nojobabs = Sitedata.objects.filter(hours=3).values('site').annotate(dcount=Sum('nojobabs'))
-    nojobabshash = {}
-    for item in nojobabs:
-        nojobabshash[item['site']] = item['dcount']
-
-    _logger.info('[dashSummary] Got njobsabs for for sites: {}'.format(time.time() - request.session['req_init_time']))
-
-    mismatchedSites = []
-    clouds = {}
-    totstates = {}
-    totjobs = 0
-    cloudsresources = {}
-    pq_clouds = get_pq_clouds()
-    for state in sitestatelist:
-        totstates[state] = 0
-    for rec in sitesummarydata:
-
-        if cloudview == 'region':
-            if rec['computingsite'] in pq_clouds:
-                cloud = pq_clouds[rec['computingsite']]
-            else:
-                _logger.info("ERROR ComputingSite {} not found in Shedconfig, adding to mismatched sites".format(rec['computingsite']), rec)
-                mismatchedSites.append([rec['computingsite'], rec['cloud']])
-                cloud = ''
-        else:
-            cloud = rec['cloud']
-        site = rec['computingsite']
-        jobstatus = rec['jobstatus']
-        count = rec['jobstatus__count']
-        resources = rec['resource']
-        if jobstatus not in sitestatelist: continue
-        totjobs += count
-        totstates[jobstatus] += count
-
-        if cloud not in clouds:
-            clouds[cloud] = {}
-            clouds[cloud]['name'] = cloud
-            if cloud in cloudinfo: clouds[cloud]['status'] = cloudinfo[cloud]
-            clouds[cloud]['count'] = 0
-            clouds[cloud]['pilots'] = 0
-            clouds[cloud]['nojobabs'] = 0
-            clouds[cloud]['sites'] = {}
-            clouds[cloud]['states'] = {}
-            clouds[cloud]['statelist'] = []
-            cloudsresources[cloud] = {}
-            cloudsresources[cloud]['sites'] = {}
-            for state in sitestatelist:
-                clouds[cloud]['states'][state] = {}
-                clouds[cloud]['states'][state]['name'] = state
-                clouds[cloud]['states'][state]['count'] = 0
-        clouds[cloud]['count'] += count
-        clouds[cloud]['states'][jobstatus]['count'] += count
-        if site not in clouds[cloud]['sites']:
-            clouds[cloud]['sites'][site] = {}
-            cloudsresources[cloud]['sites'][site] = {}
-            cloudsresources[cloud]['sites'][site]['sumres'] = set()
-            clouds[cloud]['sites'][site]['name'] = site
-            if site in siteinfo: clouds[cloud]['sites'][site]['status'] = siteinfo[site]
-            clouds[cloud]['sites'][site]['count'] = 0
-            if site in pilots:
-                clouds[cloud]['sites'][site]['pilots'] = pilots[site]['count']
-                clouds[cloud]['pilots'] += pilots[site]['count']
-            else:
-                clouds[cloud]['sites'][site]['pilots'] = 0
-
-            if site in nojobabshash:
-                clouds[cloud]['sites'][site]['nojobabs'] = nojobabshash[site]
-                clouds[cloud]['nojobabs'] += nojobabshash[site]
-            else:
-                clouds[cloud]['sites'][site]['nojobabs'] = 0
-
-            if site in harvesterComputingSites:
-                clouds[cloud]['sites'][site]['isHarvester'] = True
-
-            if site in typeComputingSites.keys():
-                clouds[cloud]['sites'][site]['type'] = typeComputingSites[site]
-
-            clouds[cloud]['sites'][site]['states'] = {}
-            for state in sitestatelist:
-                clouds[cloud]['sites'][site]['states'][state] = {}
-                clouds[cloud]['sites'][site]['states'][state]['name'] = state
-                clouds[cloud]['sites'][site]['states'][state]['count'] = 0
-        clouds[cloud]['sites'][site]['count'] += count
-        clouds[cloud]['sites'][site]['states'][jobstatus]['count'] += count
-
-        if checkUcoreSite(site, ucoreComputingSites):
-            if 'resources' not in clouds[cloud]['sites'][site]['states'][jobstatus]:
-                clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = {}
-                clouds[cloud]['sites'][site]['states'][jobstatus]['resources'] = resources
-
-                for reshash in resources.keys():
-                    ressite = site + ' ' + reshash
-                    if ressite not in clouds[cloud]['sites']:
-                        clouds[cloud]['sites'][ressite] = {}
-                        clouds[cloud]['sites'][ressite]['states'] = {}
-                        clouds[cloud]['sites'][ressite]['resource'] = reshash
-                        for parentjobstatus in clouds[cloud]['sites'][site]['states']:
-                            if parentjobstatus not in clouds[cloud]['sites'][ressite]['states']:
-                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus] = {}
-                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['count'] = 0
-                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['corecount'] = 0
-                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['name'] = parentjobstatus
-                        clouds[cloud]['sites'][ressite]['count'] = resources[reshash][
-                            'jobstatus__count']
-
-                        clouds[cloud]['sites'][ressite]['name'] = ressite
-                        clouds[cloud]['sites'][ressite]['nojobabs'] = -1
-                        clouds[cloud]['sites'][ressite]['parent'] = site
-                        clouds[cloud]['sites'][ressite]['parent_type'] = typeComputingSites[site]
-
-                        if site in siteinfo:
-                            clouds[cloud]['sites'][ressite]['status'] = siteinfo[site]
-                        else:
-                            clouds[cloud]['sites'][ressite]['status'] = ''
-                        clouds[cloud]['sites'][ressite]['pilots'] = -1
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['corecount'] = resources[reshash][
-                            'corecount']
-
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['count'] = resources[reshash][
-                            'jobstatus__count']
-                    else:
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus] = {}
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['count'] = resources[reshash][
-                             'jobstatus__count']
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['name'] = jobstatus
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['corecount'] = resources[reshash][
-                                'corecount']
-                        clouds[cloud]['sites'][ressite]['count'] += resources[reshash][
-                            'jobstatus__count']
-            else:
-                hashreskeys = clouds[cloud]['sites'][site]['states'][jobstatus]['resources'].keys()
-                for reshash in resources.keys():
-                    if reshash in hashreskeys:
-                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['jobstatus__count'] += resources[reshash]['jobstatus__count']
-                    else:
-                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash] = {}
-                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['jobstatus__count'] = resources[reshash]['jobstatus__count']
-                        clouds[cloud]['sites'][site]['states'][jobstatus]['resources'][reshash]['corecount'] = resources[reshash]['corecount']
-                    ressite = site + ' ' + reshash
-                    if ressite not in clouds[cloud]['sites']:
-                        clouds[cloud]['sites'][ressite] = {}
-                        clouds[cloud]['sites'][ressite]['states'] = {}
-                        clouds[cloud]['sites'][ressite]['resource'] = reshash
-                        for parentjobstatus in clouds[cloud]['sites'][site]['states']:
-                            if parentjobstatus not in clouds[cloud]['sites'][ressite]['states']:
-                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus] = {}
-                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['count'] = 0
-                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['corecount'] = 0
-                                clouds[cloud]['sites'][ressite]['states'][parentjobstatus]['name'] = parentjobstatus
-                        clouds[cloud]['sites'][ressite]['count'] = resources[reshash][
-                            'jobstatus__count']
-
-                        clouds[cloud]['sites'][ressite]['name'] = ressite
-                        clouds[cloud]['sites'][ressite]['nojobabs'] = -1
-                        clouds[cloud]['sites'][ressite]['parent'] = site
-                        if site in siteinfo:
-                            clouds[cloud]['sites'][ressite]['status'] = siteinfo[site]
-                        else:
-                            clouds[cloud]['sites'][ressite]['status'] = ''
-                        clouds[cloud]['sites'][ressite]['pilots'] = -1
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['corecount'] = resources[reshash][
-                            'corecount']
-
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['count'] = resources[reshash][
-                            'jobstatus__count']
-                    else:
-                        clouds[cloud]['sites'][ressite]['states'][jobstatus]['count'] += resources[reshash][
-                            'jobstatus__count']
-                        clouds[cloud]['sites'][ressite]['count'] += resources[reshash][
-                            'jobstatus__count']
-            if 'sumres' not in clouds[cloud]['sites'][site]:
-                clouds[cloud]['sites'][site]['sumres'] = set()
-                for res in resources.keys():
-                    clouds[cloud]['sites'][site]['sumres'].add(res)
-                    cloudsresources[cloud]['sites'][site]['sumres'].add(res)
-            else:
-                for res in resources.keys():
-                    clouds[cloud]['sites'][site]['sumres'].add(res)
-                    cloudsresources[cloud]['sites'][site]['sumres'].add(res)
-
-    for cloud in clouds.keys():
-        for site in clouds[cloud]['sites'].keys():
-            if 'sumres' in clouds[cloud]['sites'][site]:
-                clouds[cloud]['sites'][site]['sumres']=list(clouds[cloud]['sites'][site]['sumres'])
-            for jobstate in clouds[cloud]['sites'][site]['states'].keys():
-                if 'resources' in clouds[cloud]['sites'][site]['states'][jobstate]:
-                    for res in cloudsresources[cloud]['sites'][site]['sumres']:
-                        if res not in clouds[cloud]['sites'][site]['states'][jobstate]['resources'].keys():
-                            clouds[cloud]['sites'][site]['states'][jobstate]['resources'][res] = {'jobstatus__count':0, 'corecount':0}
-
-    _logger.info('[dashSummary] Precessed data for site summary: {}'.format(time.time() - request.session['req_init_time']))
-
-    updateCacheWithListOfMismatchedCloudSites(mismatchedSites)
-
-    _logger.info('[dashSummary] Updated Cache with  mistmatched cloud|sites : {}'.format(time.time() - request.session['req_init_time']))
-
-    # Go through the sites, add any that are missing (because they have no jobs in the interval)
-    panda_queues = get_panda_queues()
-    if cloudview != 'cloud':
-        for site in panda_queues:
-            if view.find('test') < 0:
-                if view != 'analysis' and site.startswith('ANALY'): continue
-                if view == 'analysis' and not site.startswith('ANALY'): continue
-            cloud = panda_queues[site]['cloud']
-            if cloud not in clouds:
-                ## Bail. Adding sites is one thing; adding clouds is another
-                continue
-            if site not in clouds[cloud]['sites']:
-                clouds[cloud]['sites'][site] = {}
-                clouds[cloud]['sites'][site]['name'] = site
-                if site in siteinfo: clouds[cloud]['sites'][site]['status'] = siteinfo[site]
-                clouds[cloud]['sites'][site]['count'] = 0
-                clouds[cloud]['sites'][site]['pctfail'] = 0
-
-                if site in nojobabshash:
-                    clouds[cloud]['sites'][site]['nojobabs'] = nojobabshash[site]
-                    clouds[cloud]['nojobabs'] += nojobabshash[site]
-                else:
-                    clouds[cloud]['sites'][site]['nojobabs'] = 0
-
-                if site in pilots:
-                    clouds[cloud]['sites'][site]['pilots'] = pilots[site]['count']
-                    clouds[cloud]['pilots'] += pilots[site]['count']
-                else:
-                    clouds[cloud]['sites'][site]['pilots'] = 0
-
-                clouds[cloud]['sites'][site]['states'] = {}
-                for state in sitestatelist:
-                    clouds[cloud]['sites'][site]['states'][state] = {}
-                    clouds[cloud]['sites'][site]['states'][state]['name'] = state
-                    clouds[cloud]['sites'][site]['states'][state]['count'] = 0
-
-    ## Convert dict to summary list
-    cloudkeys = clouds.keys()
-    cloudkeys = sorted(cloudkeys)
-    fullsummary = []
-    allstated = {}
-    allstated['finished'] = allstated['failed'] = 0
-    allclouds = {}
-    allclouds['name'] = 'All'
-    allclouds['count'] = totjobs
-    allclouds['pilots'] = 0
-    allclouds['nojobabs'] = 0
-
-    allclouds['sites'] = {}
-    allclouds['states'] = totstates
-    allclouds['statelist'] = []
-    for state in sitestatelist:
-        allstate = {}
-        allstate['name'] = state
-        allstate['count'] = totstates[state]
-        allstated[state] = totstates[state]
-        allclouds['statelist'].append(allstate)
-    if int(allstated['finished']) + int(allstated['failed']) > 0:
-        allclouds['pctfail'] = int(100. * float(allstated['failed']) / (allstated['finished'] + allstated['failed']))
-    else:
-        allclouds['pctfail'] = 0
-    for cloud in cloudkeys:
-        allclouds['pilots'] += clouds[cloud]['pilots']
-    fullsummary.append(allclouds)
-
-    for cloud in cloudkeys:
-        for state in sitestatelist:
-            clouds[cloud]['statelist'].append(clouds[cloud]['states'][state])
-        sites = clouds[cloud]['sites']
-        sitekeys = list(sites.keys())
-        sitekeys = sorted(sitekeys)
-        cloudsummary = []
-        for site in sitekeys:
-            sitesummary = []
-            for state in sitestatelist:
-                sitesummary.append(sites[site]['states'][state])
-            sites[site]['summary'] = sitesummary
-            if sites[site]['states']['finished']['count'] + sites[site]['states']['failed']['count'] > 0:
-                sites[site]['pctfail'] = int(100. * float(sites[site]['states']['failed']['count']) / (
-                sites[site]['states']['finished']['count'] + sites[site]['states']['failed']['count']))
-            else:
-                sites[site]['pctfail'] = 0
-
-            cloudsummary.append(sites[site])
-        clouds[cloud]['summary'] = cloudsummary
-        if clouds[cloud]['states']['finished']['count'] + clouds[cloud]['states']['failed']['count'] > 0:
-            clouds[cloud]['pctfail'] = int(100. * float(clouds[cloud]['states']['failed']['count']) / (
-                clouds[cloud]['states']['finished']['count'] + clouds[cloud]['states']['failed']['count']))
-        else:
-            clouds[cloud]['pctfail'] = 0
-
-        fullsummary.append(clouds[cloud])
-
-    _logger.info('[dashSummary] Finished cloud|sites summary: {}'.format(time.time() - request.session['req_init_time']))
-
-    if 'sortby' in request.session['requestParams']:
-        if request.session['requestParams']['sortby'] in statelist:
-            #fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']]['count'],
-            #                     reverse=True)
-            #cloudsummary = sorted(cloudsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']],
-            #                      reverse=True)
-            for cloud in clouds:
-                clouds[cloud]['summary'] = sorted(clouds[cloud]['summary'],
-                                                  key=lambda x: x['states'][request.session['requestParams']['sortby']][
-                                                      'count'], reverse=True)
-        elif request.session['requestParams']['sortby'] == 'pctfail':
-            fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
-            cloudsummary = sorted(cloudsummary, key=lambda x: x['pctfail'], reverse=True)
-            for cloud in clouds:
-                clouds[cloud]['summary'] = sorted(clouds[cloud]['summary'], key=lambda x: x['pctfail'], reverse=True)
-
-    _logger.info('[dashSummary] Sorted cloud|sites summary: {}'.format(time.time() - request.session['req_init_time']))
-
-    return fullsummary
-
-
-def dashTaskSummary(request, hours, limit=999999, view='all'):
-    query = setupView(request, hours=hours, limit=limit, opmode=view)
-    tasksummarydata = taskSummaryData(request, query)
-    tasks = {}
-    totstates = {}
-    totjobs = 0
-    for state in sitestatelist:
-        totstates[state] = 0
-
-    taskids = []
-    for rec in tasksummarydata:
-        if 'jeditaskid' in rec and rec['jeditaskid'] and rec['jeditaskid'] > 0:
-            taskids.append({'jeditaskid': rec['jeditaskid']})
-        elif 'taskid' in rec and rec['taskid'] and rec['taskid'] > 0:
-            taskids.append({'taskid': rec['taskid']})
-    tasknamedict = taskNameDict(taskids)
-    for rec in tasksummarydata:
-        if 'jeditaskid' in rec and rec['jeditaskid'] and rec['jeditaskid'] > 0:
-            taskid = rec['jeditaskid']
-            tasktype = 'JEDI'
-        elif 'taskid' in rec and rec['taskid'] and rec['taskid'] > 0:
-            taskid = rec['taskid']
-            tasktype = 'old'
-        else:
-            continue
-        jobstatus = rec['jobstatus']
-        count = rec['jobstatus__count']
-        if jobstatus not in sitestatelist: continue
-        totjobs += count
-        totstates[jobstatus] += count
-        if taskid not in tasks:
-            tasks[taskid] = {}
-            tasks[taskid]['taskid'] = taskid
-            if taskid in tasknamedict:
-                tasks[taskid]['name'] = tasknamedict[taskid]
-            else:
-                tasks[taskid]['name'] = str(taskid)
-            tasks[taskid]['count'] = 0
-            tasks[taskid]['states'] = {}
-            tasks[taskid]['statelist'] = []
-            for state in sitestatelist:
-                tasks[taskid]['states'][state] = {}
-                tasks[taskid]['states'][state]['name'] = state
-                tasks[taskid]['states'][state]['count'] = 0
-        tasks[taskid]['count'] += count
-        tasks[taskid]['states'][jobstatus]['count'] += count
-    if view == 'analysis':
-        ## Show only tasks starting with 'user.'
-        kys = list(tasks.keys())
-        for t in kys:
-            if not str(tasks[t]['name'].encode('ascii', 'ignore')).startswith('user.'): del tasks[t]
-    ## Convert dict to summary list
-    taskkeys = list(tasks.keys())
-    taskkeys = sorted(taskkeys)
-    fullsummary = []
-    for taskid in taskkeys:
-        for state in sitestatelist:
-            tasks[taskid]['statelist'].append(tasks[taskid]['states'][state])
-        if tasks[taskid]['states']['finished']['count'] + tasks[taskid]['states']['failed']['count'] > 0:
-            tasks[taskid]['pctfail'] = int(100. * float(tasks[taskid]['states']['failed']['count']) / (
-            tasks[taskid]['states']['finished']['count'] + tasks[taskid]['states']['failed']['count']))
-
-        fullsummary.append(tasks[taskid])
-    if 'sortby' in request.session['requestParams']:
-        if request.session['requestParams']['sortby'] in sitestatelist:
-            fullsummary = sorted(fullsummary, key=lambda x: x['states'][request.session['requestParams']['sortby']],
-                                 reverse=True)
-        elif request.session['requestParams']['sortby'] == 'pctfail':
-            fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
-    return fullsummary
-
-
-def preProcess(request):
-    ''' todo:
-    0. Decide tables structure and parameters aggregates approach
-    1. Get List of Jobs modified later than previosly saved last modified job
-    2. For each of them calculate output variables of Error summary.
-    Factorize using set of request parameters causing different flow.
-    3. Save new variables in the dedicated table in form - jobid ~ variable
-    4. When a new query comes, select from job tables correspondent ids.
-    5. Select variables from the transistent table.
-    6. Merge them and display output.
-
-    '''
-
-    #    data = {}
-    #    dashTaskSummary_preprocess(request)
-    #    response = render_to_response('preprocessLog.html', data, RequestContext(request))
-    #    patch_response_headers(response, cache_timeout=-1)
-
-    return None
-
-
-# class prepDashTaskSummary:
-
-
-
-
-
-
-def dashTaskSummary_preprocess(request):
-    #    query = setupView(request,hours=hours,limit=limit,opmode=view)
-    query = {'modificationtime__castdate__range': [timezone.now() - timedelta(hours=LAST_N_HOURS_MAX), timezone.now()]}
-
-    tasksummarydata = []
-    querynotime = query
-    del querynotime['modificationtime__castdate__range']
-    tasksummarydata.extend(
-        Jobsactive4.objects.filter(**querynotime).values('taskid', 'jobstatus', 'computingsite', 'produsername',
-                                                         'transexitcode', 'piloterrorcode', 'processingtype',
-                                                         'prodsourcelabel').annotate(Count('jobstatus'),
-                                                                                     Count('computingsite'),
-                                                                                     Count('produsername'),
-                                                                                     Count('transexitcode'),
-                                                                                     Count('piloterrorcode'),
-                                                                                     Count('processingtype'),
-                                                                                     Count('prodsourcelabel')).order_by(
-            'taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    tasksummarydata.extend(
-        Jobsdefined4.objects.filter(**querynotime).values('taskid', 'jobstatus', 'computingsite', 'produsername',
-                                                          'transexitcode', 'piloterrorcode', 'processingtype',
-                                                          'prodsourcelabel').annotate(Count('jobstatus'),
-                                                                                      Count('computingsite'),
-                                                                                      Count('produsername'),
-                                                                                      Count('transexitcode'),
-                                                                                      Count('piloterrorcode'),
-                                                                                      Count('processingtype'), Count(
-                'prodsourcelabel')).order_by('taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    tasksummarydata.extend(
-        Jobswaiting4.objects.filter(**querynotime).values('taskid', 'jobstatus', 'computingsite', 'produsername',
-                                                          'transexitcode', 'piloterrorcode', 'processingtype',
-                                                          'prodsourcelabel').annotate(Count('jobstatus'),
-                                                                                      Count('computingsite'),
-                                                                                      Count('produsername'),
-                                                                                      Count('transexitcode'),
-                                                                                      Count('piloterrorcode'),
-                                                                                      Count('processingtype'), Count(
-                'prodsourcelabel')).order_by('taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    tasksummarydata.extend(
-        Jobsarchived4.objects.filter(**query).values('taskid', 'jobstatus', 'computingsite', 'produsername',
-                                                     'transexitcode', 'piloterrorcode', 'processingtype',
-                                                     'prodsourcelabel').annotate(Count('jobstatus'),
-                                                                                 Count('computingsite'),
-                                                                                 Count('produsername'),
-                                                                                 Count('transexitcode'),
-                                                                                 Count('piloterrorcode'),
-                                                                                 Count('processingtype'),
-                                                                                 Count('prodsourcelabel')).order_by(
-            'taskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    tasksummarydata.extend(
-        Jobsactive4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus', 'computingsite', 'produsername',
-                                                         'transexitcode', 'piloterrorcode', 'processingtype',
-                                                         'prodsourcelabel').annotate(Count('jobstatus'),
-                                                                                     Count('computingsite'),
-                                                                                     Count('produsername'),
-                                                                                     Count('transexitcode'),
-                                                                                     Count('piloterrorcode'),
-                                                                                     Count('processingtype'),
-                                                                                     Count('prodsourcelabel')).order_by(
-            'jeditaskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    tasksummarydata.extend(
-        Jobsdefined4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus', 'computingsite', 'produsername',
-                                                          'transexitcode', 'piloterrorcode', 'processingtype',
-                                                          'prodsourcelabel').annotate(Count('jobstatus'),
-                                                                                      Count('computingsite'),
-                                                                                      Count('produsername'),
-                                                                                      Count('transexitcode'),
-                                                                                      Count('piloterrorcode'),
-                                                                                      Count('processingtype'), Count(
-                'prodsourcelabel')).order_by('jeditaskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    tasksummarydata.extend(
-        Jobswaiting4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus', 'computingsite', 'produsername',
-                                                          'transexitcode', 'piloterrorcode', 'processingtype',
-                                                          'prodsourcelabel').annotate(Count('jobstatus'),
-                                                                                      Count('computingsite'),
-                                                                                      Count('produsername'),
-                                                                                      Count('transexitcode'),
-                                                                                      Count('piloterrorcode'),
-                                                                                      Count('processingtype'), Count(
-                'prodsourcelabel')).order_by('jeditaskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-    tasksummarydata.extend(
-        Jobsarchived4.objects.filter(**query).values('jeditaskid', 'jobstatus', 'computingsite', 'produsername',
-                                                     'transexitcode', 'piloterrorcode', 'processingtype',
-                                                     'prodsourcelabel').annotate(Count('jobstatus'),
-                                                                                 Count('computingsite'),
-                                                                                 Count('produsername'),
-                                                                                 Count('transexitcode'),
-                                                                                 Count('piloterrorcode'),
-                                                                                 Count('processingtype'),
-                                                                                 Count('prodsourcelabel')).order_by(
-            'jeditaskid', 'jobstatus')[:request.session['JOB_LIMIT']])
-
-    '''
-    tasks = {}
-    totstates = {}
-    totjobs = 0
-    for state in sitestatelist:
-        totstates[state] = 0
-
-    taskids = []
-    for rec in tasksummarydata:
-        if 'jeditaskid' in rec and rec['jeditaskid'] and rec['jeditaskid'] > 0:
-            taskids.append( { 'jeditaskid' : rec['jeditaskid'] } )
-        elif 'taskid' in rec and rec['taskid'] and rec['taskid'] > 0 :
-            taskids.append( { 'taskid' : rec['taskid'] } )
-    tasknamedict = taskNameDict(taskids)
-    for rec in tasksummarydata:
-        if 'jeditaskid' in rec and rec['jeditaskid'] and rec['jeditaskid'] > 0:
-            taskid = rec['jeditaskid']
-            tasktype = 'JEDI'
-        elif 'taskid' in rec and rec['taskid'] and rec['taskid'] > 0 :
-            taskid = rec['taskid']
-            tasktype = 'old'
-        else:
-            continue
-        jobstatus = rec['jobstatus']
-        count = rec['jobstatus__count']
-        if jobstatus not in sitestatelist: continue
-        totjobs += count
-        totstates[jobstatus] += count
-        if taskid not in tasks:
-            tasks[taskid] = {}
-            tasks[taskid]['taskid'] = taskid
-            if taskid in tasknamedict:
-                tasks[taskid]['name'] = tasknamedict[taskid]
-            else:
-                tasks[taskid]['name'] = str(taskid)
-            tasks[taskid]['count'] = 0
-            tasks[taskid]['states'] = {}
-            tasks[taskid]['statelist'] = []
-            for state in sitestatelist:
-                tasks[taskid]['states'][state] = {}
-                tasks[taskid]['states'][state]['name'] = state
-                tasks[taskid]['states'][state]['count'] = 0
-        tasks[taskid]['count'] += count
-        tasks[taskid]['states'][jobstatus]['count'] += count
-    if view == 'analysis':
-        ## Show only tasks starting with 'user.'
-        kys = tasks.keys()
-        for t in kys:
-            if not str(tasks[t]['name'].encode('ascii','ignore')).startswith('user.'): del tasks[t]
-    ## Convert dict to summary list
-    taskkeys = tasks.keys()
-    taskkeys = sorted(taskkeys)
-    fullsummary = []
-    for taskid in taskkeys:
-        for state in sitestatelist:
-            tasks[taskid]['statelist'].append(tasks[taskid]['states'][state])
-        if tasks[taskid]['states']['finished']['count'] + tasks[taskid]['states']['failed']['count'] > 0:
-            tasks[taskid]['pctfail'] =  int(100.*float(tasks[taskid]['states']['failed']['count'])/(tasks[taskid]['states']['finished']['count']+tasks[taskid]['states']['failed']['count']))
-
-        fullsummary.append(tasks[taskid])
-    if 'sortby' in request.session['requestParams']:
-        if request.session['requestParams']['sortby'] in sitestatelist:
-            fullsummary = sorted(fullsummary, key=lambda x:x['states'][request.session['requestParams']['sortby']],reverse=True)
-        elif request.session['requestParams']['sortby'] == 'pctfail':
-            fullsummary = sorted(fullsummary, key=lambda x:x['pctfail'],reverse=True)
-    '''
-
-    return -1
 
 
 # https://github.com/PanDAWMS/panda-jedi/blob/master/pandajedi/jedicore/JediCoreUtils.py
@@ -5192,8 +4197,8 @@ def dashboard(request, view='all'):
 
     hoursSinceUpdate = 36
     estailtojobslinks = ''
+    extra = "(1=1)"
     if view == 'production':
-        extra = "(1=1)"
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
             extra = "(not eventservice is null and eventservice in (1, 5) and not specialhandling like '%%sc:%%')"
             estailtojobslinks = '&eventservice=eventservice'
@@ -5223,44 +4228,10 @@ def dashboard(request, view='all'):
         return dashTasks(request, hours, view)
 
     if VOMODE != 'atlas':
-        vosummarydata = voSummary(query)
-        vos = {}
-        for rec in vosummarydata:
-            vo = rec['vo']
-            # if vo == None: vo = 'Unassigned'
-            if vo == None: continue
-            jobstatus = rec['jobstatus']
-            count = rec['jobstatus__count']
-            if vo not in vos:
-                vos[vo] = {}
-                vos[vo]['name'] = vo
-                vos[vo]['count'] = 0
-                vos[vo]['states'] = {}
-                vos[vo]['statelist'] = []
-                for state in sitestatelist:
-                    vos[vo]['states'][state] = {}
-                    vos[vo]['states'][state]['name'] = state
-                    vos[vo]['states'][state]['count'] = 0
-            vos[vo]['count'] += count
-            vos[vo]['states'][jobstatus]['count'] += count
-        ## Convert dict to summary list
-        vokeys = list(vos.keys())
-        vokeys = sorted(vokeys)
-        vosummary = []
-        for vo in vokeys:
-            for state in sitestatelist:
-                vos[vo]['statelist'].append(vos[vo]['states'][state])
-                if int(vos[vo]['states']['finished']['count']) + int(vos[vo]['states']['failed']['count']) > 0:
-                    vos[vo]['pctfail'] = int(100. * float(vos[vo]['states']['failed']['count']) / (
-                    vos[vo]['states']['finished']['count'] + vos[vo]['states']['failed']['count']))
-            vosummary.append(vos[vo])
-
+        sortby = 'name'
         if 'sortby' in request.session['requestParams']:
-            if request.session['requestParams']['sortby'] in statelist:
-                vosummary = sorted(vosummary, key=lambda x: x['states'][request.session['requestParams']['sortby']],
-                                   reverse=True)
-            elif request.session['requestParams']['sortby'] == 'pctfail':
-                vosummary = sorted(vosummary, key=lambda x: x['pctfail'], reverse=True)
+            sortby = request.session['requestParams']['sortby']
+        vosummary = vo_summary(query, sortby=sortby)
 
     else:
         if view == 'production':
@@ -5271,7 +4242,7 @@ def dashboard(request, view='all'):
             errthreshold = 10
         vosummary = []
 
-    if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): #cloud view is the old way of jobs distributing;
+    if view == 'production' and (cloudview == 'world' or cloudview == 'cloud'): # cloud view is the old way of jobs distributing;
         # just to avoid redirecting
         if 'modificationtime__castdate__range' in query:
             query = {'modificationtime__castdate__range': query['modificationtime__castdate__range']}
@@ -5300,7 +4271,6 @@ def dashboard(request, view='all'):
 
         if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
             query['es'] = 0
-
 
         # This is done for compartibility with /jobs/ results
         excludedTimeQuery = copy.deepcopy(query)
@@ -5356,8 +4326,7 @@ def dashboard(request, view='all'):
                     else:
                         nucleusSummary[nucleusInfo][state] = nucleus[nucleusInfo][site][state]
 
-        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                    'json' not in request.session['requestParams'])):
+        if not is_json_request(request):
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
             if 'TFIRST' in request.session: del request.session['TFIRST']
@@ -5378,7 +4347,7 @@ def dashboard(request, view='all'):
                 'template': 'worldjobs.html',
                 'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             }
-            ##self monitor
+            # self monitor
             response = render_to_response('worldjobs.html', data, content_type='text/html')
             setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 30)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -5393,85 +4362,7 @@ def dashboard(request, view='all'):
 
     elif view == 'objectstore':
 
-        object_stores = get_object_stores()
-
-        sqlRequest = """
-        SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST 
-        FROM 
-          (SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE 
-          FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
-          LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID =  t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0) 
-          LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '{hours}' hour) 
-          AND t3.MODIFICATIONTIME >  (sysdate - interval '{hours}' hour)
-          ) 
-        WHERE NOT OBJSE IS NULL 
-        GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE 
-        order by OBJSE
-        """.format(hours=13)
-
-        cur = connection.cursor()
-        cur.execute(sqlRequest)
-        rawsummary = fix_lob(cur)
-        #rawsummary = cur.fetchall()
-        mObjectStores = {}
-        mObjectStoresTk = {}
-        if len(rawsummary) > 0:
-            for row in rawsummary:
-                id = -1
-                try:
-                    id = int(row[3])
-                except ValueError:
-                    pass
-
-                if not row[3] is None and id in object_stores:
-                    osName = object_stores[id]['name']
-                else:
-                    osName = "Not defined"
-                compsite = row[2]
-                status = row[0]
-                count = row[1]
-
-                tk = setCacheData(request, pandaid=row[4], compsite=row[2])
-                if osName in mObjectStores:
-                    if not compsite in mObjectStores[osName]:
-                        mObjectStores[osName][compsite] = {}
-                        for state in sitestatelist + ["closed"]:
-                            mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
-                    mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
-                    if not status in mObjectStoresTk[osName]:
-                        mObjectStoresTk[osName][status] = []
-                    mObjectStoresTk[osName][status].append(tk)
-                else:
-                    mObjectStores[osName] = {}
-                    mObjectStores[osName][compsite] = {}
-                    mObjectStoresTk[osName] = {}
-                    mObjectStoresTk[osName][status] = []
-                    for state in sitestatelist + ["closed"]:
-                        mObjectStores[osName][compsite][state] = {'count': 0, 'tk': 0}
-                    mObjectStores[osName][compsite][status] = {'count': count, 'tk': tk}
-                    mObjectStoresTk[osName][status].append(tk)
-        # Getting tk's for parents
-        for osName in mObjectStoresTk:
-            for state in mObjectStoresTk[osName]:
-                mObjectStoresTk[osName][state] = setCacheData(request, childtk=','.join(mObjectStoresTk[osName][state]))
-
-        mObjectStoresSummary = {}
-        for osName in mObjectStores:
-            mObjectStoresSummary[osName] ={}
-            for site in mObjectStores[osName]:
-                for state in mObjectStores[osName][site]:
-                    if state in mObjectStoresSummary[osName]:
-                        mObjectStoresSummary[osName][state]['count'] += mObjectStores[osName][site][state]['count']
-                        mObjectStoresSummary[osName][state]['tk'] = 0
-
-                    else:
-                        mObjectStoresSummary[osName][state] = {}
-                        mObjectStoresSummary[osName][state]['count'] = mObjectStores[osName][site][state]['count']
-                        mObjectStoresSummary[osName][state]['tk'] = 0
-        for osName in mObjectStoresSummary:
-            for state in mObjectStoresSummary[osName]:
-                if (mObjectStoresSummary[osName][state]['count'] > 0):
-                    mObjectStoresSummary[osName][state]['tk'] = mObjectStoresTk[osName][state]
+        mObjectStores, mObjectStoresSummary = objectstore_summary(request, hours=hours)
         data = {
             'mObjectStoresSummary': mObjectStoresSummary,
             'mObjectStores': mObjectStores,
@@ -5491,7 +4382,7 @@ def dashboard(request, view='all'):
         if len({'date_to', 'hours'}.intersection(request.session['requestParams'].keys())) > 0:
             notime = False
 
-        fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview, notime=notime)
+        fullsummary = cloud_site_summary(query, extra=extra, view=view, cloudview=cloudview, notime=notime)
         cloudTaskSummary = wgTaskSummary(request, fieldname='cloud', view=view, taskdays=taskdays)
         jobsLeft = {}
         rw = {}
@@ -5504,8 +4395,7 @@ def dashboard(request, view='all'):
                 if cloud['name'] in rwData.keys():
                     rw[cloud['name']] = rwData[cloud['name']]
 
-        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])) or ('keephtml' in request.session['requestParams']):
+        if not is_json_request(request) or 'keephtml' in request.session['requestParams']:
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
             del request.session['TFIRST']
@@ -5538,7 +4428,7 @@ def dashboard(request, view='all'):
                 'template': 'dashboard.html',
                 'built': datetime.now().strftime("%H:%M:%S"),
             }
-            ##self monitor
+            # self monitor
             response = render_to_response('dashboard.html', data, content_type='text/html')
             setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 60)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -5900,6 +4790,7 @@ def dashProduction(request):
 def dashObjectStore(request):
     return dashboard(request, view='objectstore')
 
+
 def dashTasks(request, hours, view='production'):
     valid, response = initRequest(request)
     if not valid: return response
@@ -5937,7 +4828,7 @@ def dashTasks(request, hours, view='production'):
     elif view != 'production':
         cloudview = 'N/A'
 
-    fullsummary = dashSummary(request, hours=hours, view=view, cloudview=cloudview)
+    fullsummary = cloud_site_summary(query, view=view, cloudview=cloudview)
 
     jobsLeft = {}
     rw = {}
@@ -5949,8 +4840,7 @@ def dashTasks(request, hours, view='production'):
         if cloud['name'] in rwData.keys():
             rw[cloud['name']] = rwData[cloud['name']]
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby', mode='extensible')
         del request.session['TFIRST']
@@ -8272,8 +7162,7 @@ def errorSummary(request):
         return response
 
     testjobs = False
-    if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
-        'prodsourcelabel'].lower().find('test') >= 0:
+    if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0:
         testjobs = True
 
     jobtype = ''
@@ -8379,9 +7268,9 @@ def errorSummary(request):
             Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
                 *values))
         listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4, Jobsarchived
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
-        thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension,dkey))
+
+    if not is_json_request(request):
+        thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension, dkey))
         thread.start()
     else:
         thread = None
@@ -8398,16 +7287,14 @@ def errorSummary(request):
 
     njobs = len(jobs)
 
-    ## Build the error summary.
+    # Build the error summary.
     errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, testjobs, errHist=True)
 
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
-    ## Build the state summary and add state info to site error summary
-    # notime = True
-    # if testjobs: notime = False
-    notime = False  #### behave as it used to before introducing notime for dashboards. Pull only 12hrs.
-    statesummary = dashSummary(request, hours, limit=limit, view=jobtype, cloudview='region', notime=notime)
+    # Build the state summary and add state info to site error summary
+    notime = False  # behave as it used to before introducing notime for dashboards. Pull only 12hrs.
+    statesummary = cloud_site_summary(query, extra=wildCardExtension, view=jobtype, cloudview='region', notime=notime)
     sitestates = {}
     savestates = ['finished', 'failed', 'cancelled', 'holding', ]
     for cloud in statesummary:
@@ -8429,8 +7316,8 @@ def errorSummary(request):
 
     taskname = ''
     if not testjobs:
-        ## Build the task state summary and add task state info to task error summary
-        taskstatesummary = dashTaskSummary(request, hours, limit=limit, view=jobtype)
+        # Build the task state summary and add task state info to task error summary
+        taskstatesummary = task_summary(query, limit=limit, view=jobtype)
 
         _logger.info('Prepared data for errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -8440,13 +7327,16 @@ def errorSummary(request):
             taskstates[taskid] = {}
             for s in savestates:
                 taskstates[taskid][s] = task['states'][s]['count']
-            if 'pctfail' in task: taskstates[taskid]['pctfail'] = task['pctfail']
+            if 'pctfail' in task:
+                taskstates[taskid]['pctfail'] = task['pctfail']
         for task in errsByTask:
             taskid = task['name']
             if taskid in taskstates:
                 for s in savestates:
-                    if s in taskstates[taskid]: task[s] = taskstates[taskid][s]
-                if 'pctfail' in taskstates[taskid]: task['pctfail'] = taskstates[taskid]['pctfail']
+                    if s in taskstates[taskid]:
+                        task[s] = taskstates[taskid][s]
+                if 'pctfail' in taskstates[taskid]:
+                    task['pctfail'] = taskstates[taskid]['pctfail']
         if 'jeditaskid' in request.session['requestParams']:
             taskname = getTaskName('jeditaskid', request.session['requestParams']['jeditaskid'])
 
@@ -8469,8 +7359,10 @@ def errorSummary(request):
             del tcount[dkey]
             print(tcount)
             print(jobsErrorsTotalCount)
-        except: jobsErrorsTotalCount = -1
-    else: jobsErrorsTotalCount = -1
+        except:
+            jobsErrorsTotalCount = -1
+    else:
+        jobsErrorsTotalCount = -1
 
     _logger.info('Finished thread counting total number of jobs: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -8500,7 +7392,6 @@ def errorSummary(request):
         jobsurl = xurlsubst.replace('/errors/', '/jobs/')
         jobsurlNoSite = xurlsubstNoSite.replace('/errors/', '')
 
-        errsByCount = importToken(request,errsByCount=errsByCount)
         TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
         TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
         del request.session['TFIRST']
@@ -9181,7 +8072,8 @@ def ttc(request):
 @login_customrequired
 def workingGroups(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
 
     # Here we try to get cached data
     data = getCacheEntry(request, "workingGroups")
@@ -9202,53 +8094,21 @@ def workingGroups(request):
         days = 30
     else:
         days = taskdays
+
+    errthreshold = 15
     hours = days * 24
     query = setupView(request, hours=hours, limit=999999)
     query['workinggroup__isnull'] = False
 
-    ## WG task summary
+    # WG task summary
     tasksummary = wgTaskSummary(request, view='working group', taskdays=taskdays)
 
-    ## WG job summary
+    # WG job summary
     if 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup']:
         query['workinggroup'] = request.session['requestParams']['workinggroup']
-    wgsummarydata = wgSummary(query)
-    wgs = {}
-    for rec in wgsummarydata:
-        wg = rec['workinggroup']
-        if wg == None: continue
-        jobstatus = rec['jobstatus']
-        count = rec['jobstatus__count']
-        if wg not in wgs:
-            wgs[wg] = {}
-            wgs[wg]['name'] = wg
-            wgs[wg]['count'] = 0
-            wgs[wg]['states'] = {}
-            wgs[wg]['statelist'] = []
-            for state in statelist:
-                wgs[wg]['states'][state] = {}
-                wgs[wg]['states'][state]['name'] = state
-                wgs[wg]['states'][state]['count'] = 0
-        wgs[wg]['count'] += count
-        wgs[wg]['states'][jobstatus]['count'] += count
+    wgsummary = wg_summary(query)
 
-    errthreshold = 15
-    ## Convert dict to summary list
-    wgkeys = wgs.keys()
-    wgkeys = sorted(wgkeys)
-    wgsummary = []
-    for wg in wgkeys:
-        for state in statelist:
-            wgs[wg]['statelist'].append(wgs[wg]['states'][state])
-            if int(wgs[wg]['states']['finished']['count']) + int(wgs[wg]['states']['failed']['count']) > 0:
-                wgs[wg]['pctfail'] = int(100. * float(wgs[wg]['states']['failed']['count']) / (
-                wgs[wg]['states']['finished']['count'] + wgs[wg]['states']['failed']['count']))
-
-        wgsummary.append(wgs[wg])
-    if len(wgsummary) == 0: wgsummary = None
-
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         xurl = extensibleURL(request)
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -10354,48 +9214,7 @@ def handler500(request):
     return response
 
 
-#### URL Section ####
-import uuid
-from collections import defaultdict
 
-def setCacheData(request,lifetime=60*120,**parametrlist):
-    #transactionKey = random.getrandbits(128)
-    transactionKey = uuid.uuid4().hex
-    dictinoary = {}
-    dictinoary[transactionKey] = {}
-    keys = parametrlist.keys()
-    for key in keys:
-        dictinoary[transactionKey][key] = str(parametrlist[key])
-    data = json.dumps(dictinoary, cls=DateEncoder)
-    setCacheEntry(request, str(transactionKey), data, lifetime,isData=True)
-
-    return transactionKey
-
-def getCacheData(request,requestid):
-    data = getCacheEntry(request,str(requestid),isData=True)
-    if data is not None:
-        data = json.loads(data)
-        if 'childtk'in data[requestid]:
-            tklist = defaultdict(list)
-            data = str(data[requestid]['childtk']).split(',')
-            if data is not None:
-                for child in data:
-                    ch = getCacheEntry(request,str(child),isData=True)
-                    if ch is not None:
-                        ch = json.loads(ch)
-                        ### merge data
-                        for k, v in ch[child].items():
-                            tklist[k].append(v)
-                data = {}
-                for k,v in tklist.items():
-                    data[k] =','.join(v)
-        else: data = data[requestid]
-        return data
-    else:
-        return None
-
-
-#@never_cache
 def getBadEventsForTask(request):
 
     if 'jeditaskid' in request.GET:

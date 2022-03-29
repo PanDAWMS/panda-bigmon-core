@@ -1,18 +1,18 @@
 import json
-
 import hashlib
+import socket
+import uuid
+import logging
+from collections import defaultdict
 
 from django.utils import encoding
 from django.conf import settings as djangosettings
 from django.core.cache import cache
+
 from core.utils import is_json_request
+from core.libs.DateEncoder import DateEncoder
 
 notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
-
-
-import socket
-import uuid
-import logging
 
 
 def cacheIsAvailable(request):
@@ -99,6 +99,44 @@ def preparePlotData(data):
     else:
         newPlotData = oldPlotData
     return newPlotData
+
+
+def setCacheData(request,lifetime=60*120,**parametrlist):
+    transactionKey = uuid.uuid4().hex
+    dictinoary = {}
+    dictinoary[transactionKey] = {}
+    keys = parametrlist.keys()
+    for key in keys:
+        dictinoary[transactionKey][key] = str(parametrlist[key])
+    data = json.dumps(dictinoary, cls=DateEncoder)
+    setCacheEntry(request, str(transactionKey), data, lifetime,isData=True)
+
+    return transactionKey
+
+
+def getCacheData(request,requestid):
+    data = getCacheEntry(request, str(requestid), isData=True)
+    if data is not None:
+        data = json.loads(data)
+        if 'childtk'in data[requestid]:
+            tklist = defaultdict(list)
+            data = str(data[requestid]['childtk']).split(',')
+            if data is not None:
+                for child in data:
+                    ch = getCacheEntry(request, str(child), isData=True)
+                    if ch is not None:
+                        ch = json.loads(ch)
+                        # merge data
+                        for k, v in ch[child].items():
+                            tklist[k].append(v)
+                data = {}
+                for k,v in tklist.items():
+                    data[k] = ','.join(v)
+        else:
+            data = data[requestid]
+        return data
+    else:
+        return None
 
 
 # Managing static cache

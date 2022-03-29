@@ -7,7 +7,7 @@ from django.utils.cache import patch_response_headers
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.libs.exlib import parse_datetime
+from core.libs.datetimestrings import parse_datetime
 
 from core.oi.utils import round_time
 from django import template

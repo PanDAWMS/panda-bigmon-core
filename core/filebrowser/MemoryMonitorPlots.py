@@ -13,7 +13,7 @@ from core.pandajob.models import Jobsarchived4, Jobsarchived
 
 from core.oauth.utils import login_customrequired
 from core.views import initRequest
-from core.libs.exlib import parse_datetime
+from core.libs.datetimestrings import parse_datetime
 from core.filebrowser.views import get_job_log_file_path
 from core.settings.config import PRMON_LOGS_DIRECTIO_LOCATION
 

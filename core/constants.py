@@ -35,6 +35,24 @@ JOB_STATES = (
     'closed'
 )
 
+JOB_STATES_SITE = (
+    'defined',
+    'waiting',
+    'assigned',
+    'throttled',
+    'activated',
+    'sent',
+    'starting',
+    'running',
+    'holding',
+    'merging',
+    'transferring',
+    'finished',
+    'failed',
+    'cancelled',
+    'closed'
+)
+
 JOB_STATES_FINAL = (
     'finished',
     'failed',
