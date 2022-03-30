@@ -348,9 +348,16 @@ def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
 
 
 def site_summary_data(query, notime=True, extra="(1=1)"):
+    """
+    Summary of jobs in different states for errors page to indicate if the errors caused by massive site failures or not
+    """
     summary = []
+    summaryResources = []
+    # remove jobstatus from the query
+    if 'jobstatus__in' in query:
+        del query['jobstatus__in']
+    # remove the time window limit for active jobs table
     querynotime = copy.deepcopy(query)
-    summaryResources=[]
     if notime:
         if 'modificationtime__castdate__range' in querynotime:
             del querynotime['modificationtime__castdate__range']
