@@ -7,7 +7,8 @@ from django.views.decorators.cache import never_cache
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 
-from core.views import initRequest, DateEncoder
+from core.libs.DateEncoder import DateEncoder
+from core.views import initRequest
 
 from core.reports import MC16aCPReport, ObsoletedTasksReport, TitanProgressReport
 

@@ -2,12 +2,13 @@ from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 
-from core.views import initRequest, login_customrequired, DateEncoder
+from core.views import initRequest, login_customrequired
 from core.utils import is_json_request
 from core.iDDS.useconstants import SubstitleValue
 from core.iDDS.rawsqlquery import getRequests, getTransforms, getWorkFlowProgressItemized
 from core.iDDS.algorithms import generate_requests_summary, parse_request
 from core.libs.exlib import lower_dicts_in_list
+from core.libs.DateEncoder import DateEncoder
 import pandas as pd
 
 

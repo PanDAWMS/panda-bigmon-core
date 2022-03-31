@@ -16,8 +16,9 @@ from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_fi
 from core.settings.config import PRMON_LOGS_DIRECTIO_LOCATION
 from core.oauth.utils import login_customrequired
 from core.common.models import Filestable4, FilestableArch
-from core.views import DateTimeEncoder, initSelfMonitor
+from core.views import initSelfMonitor
 from core.libs.job import get_job_list
+from core.libs.DateTimeEncoder import DateTimeEncoder
 from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')

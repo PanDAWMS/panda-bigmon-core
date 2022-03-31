@@ -13,8 +13,9 @@ from django.db import connection
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
+from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, extensibleURL, DateEncoder
+from core.views import initRequest, setupView, extensibleURL
 from core.schedresource.utils import get_pq_fairshare_policy, get_pq_resource_types
 import json
 

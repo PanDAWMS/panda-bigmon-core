@@ -105,6 +105,8 @@ from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
 from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
 from core.libs.datetimestrings import datetime_handler, parse_datetime
 from core.libs.jobconsumers import reconstruct_job_consumers
+from core.libs.DateEncoder import DateEncoder
+from core.libs.DateTimeEncoder import DateTimeEncoder
 
 from core.pandajob.summary_task import task_summary
 from core.pandajob.summary_site import cloud_site_summary, vo_summary
@@ -218,21 +220,21 @@ def get_renderedrow(context, **kwargs):
         return Customrenderer.region_sitesummary(context, kwargs)
 
 
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, datetime):
-            return o.isoformat()
-        elif o is None:
-            return ''
-
-
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
+# class DateTimeEncoder(json.JSONEncoder):
+#     def default(self, o):
+#         if isinstance(o, datetime):
+#             return o.isoformat()
+#         elif o is None:
+#             return ''
+#
+#
+# class DateEncoder(json.JSONEncoder):
+#     def default(self, obj):
+#         if hasattr(obj, 'isoformat'):
+#             return obj.isoformat()
+#         else:
+#             return str(obj)
+#         return json.JSONEncoder.default(self, obj)
 
 
 def initRequest(request, callselfmon=True):

@@ -15,7 +15,8 @@ from django.utils.cache import patch_response_headers
 
 from core.oauth.utils import login_customrequired
 from core.libs.cache import getCacheEntry
-from core.views import initRequest, DateEncoder, extensibleURL
+from core.libs.DateEncoder import DateEncoder
+from core.views import initRequest, extensibleURL
 
 from core.compare.modelsCompare import ObjectsComparison
 from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison, job_info_getter

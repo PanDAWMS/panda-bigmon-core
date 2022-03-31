@@ -19,7 +19,7 @@ from django.db.models import Value as V, F
 from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, complete_request
 from core.views import initRequest, extensibleURL, removeParam
-from core.views import DateEncoder
+from core.libs.DateEncoder import DateEncoder
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result

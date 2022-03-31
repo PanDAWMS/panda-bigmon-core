@@ -23,8 +23,7 @@ def cacheIsAvailable(request):
         s = socket.create_connection((host, port), 2)
         if(s):
             cache_key = uuid.uuid4()
-            from core.views import DateEncoder
-            data = json.dumps({"message":"ping-pong"}, cls=DateEncoder)
+            data = json.dumps({"message": "ping-pong"}, cls=DateEncoder)
             timeout = 0.5
             cache.set(cache_key, data, timeout)
             data = cache.get(cache_key, None)

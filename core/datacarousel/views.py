@@ -15,8 +15,9 @@ from django.utils import timezone
 from django.db import connection
 
 from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes
+from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, DateEncoder
+from core.views import initRequest, setupView
 from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report_rse
 from core.datacarousel.utils import retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds
 

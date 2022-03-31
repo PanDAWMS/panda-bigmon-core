@@ -16,8 +16,10 @@ from django.utils import timezone
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import is_timestamp
 from core.libs.sqlcustom import escape_input
+from core.libs.DateEncoder import DateEncoder
+from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, DateEncoder, extensibleURL, DateTimeEncoder
+from core.views import initRequest, setupView, extensibleURL
 from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
 from core.harvester.utils import get_harverster_workers_for_task
 

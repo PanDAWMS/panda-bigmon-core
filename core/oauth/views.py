@@ -11,9 +11,11 @@ from django.utils import timezone
 
 import core.constants as const
 from core.utils import extensibleURL
-from core.views import initRequest, DateTimeEncoder
+from core.views import initRequest
+from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired, grant_rights, deny_rights
 from core.oauth.models import BPUser, BPUserSettings, Visits
+
 
 @never_cache
 def loginauth2(request):

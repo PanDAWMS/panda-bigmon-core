@@ -8,4 +8,3 @@ class DateEncoder(json.JSONEncoder):
             return obj.isoformat()
         else:
             return str(obj)
-        return json.JSONEncoder.default(self, obj)
