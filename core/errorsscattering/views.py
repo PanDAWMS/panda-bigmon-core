@@ -366,10 +366,10 @@ def errorsScatteringDetailed(request, cloud, reqid):
     cloudsDict ={}
     pq_clouds = get_pq_clouds()
     clouds = sorted(list(set(pq_clouds.values())))
-    for pq, cloud in pq_clouds.items():
-        if cloud not in cloudsDict:
-            cloudsDict[cloud] = []
-        cloudsDict[cloud].append(pq)
+    for pq, cloud_name in pq_clouds.items():
+        if cloud_name not in cloudsDict:
+            cloudsDict[cloud_name] = []
+        cloudsDict[cloud_name].append(pq)
 
     sitesDictForOrdering = {}
     i = 0
