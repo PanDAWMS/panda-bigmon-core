@@ -90,7 +90,8 @@ from core.libs.task import job_summary_for_task, event_summary_for_task, input_s
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
-    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict
+    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, \
+    wg_task_summary
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
     job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode
@@ -3961,7 +3962,7 @@ def dashboard(request, view='all'):
             notime = False
 
         fullsummary = cloud_site_summary(query, extra=extra, view=view, cloudview=cloudview, notime=notime)
-        cloudTaskSummary = wgTaskSummary(request, fieldname='cloud', view=view, taskdays=taskdays)
+        cloudTaskSummary = wg_task_summary(request, fieldname='cloud', view=view, taskdays=taskdays)
         jobsLeft = {}
         rw = {}
 
@@ -4385,7 +4386,7 @@ def dashTasks(request, hours, view='production'):
     hours = taskdays * 24
     query = setupView(request, hours=hours, limit=999999, opmode=view, querytype='task')
 
-    cloudTaskSummary = wgTaskSummary(request, fieldname='cloud', view=view, taskdays=taskdays)
+    cloudTaskSummary = wg_task_summary(request, fieldname='cloud', view=view, taskdays=taskdays)
 
     # taskJobSummary = dashTaskSummary(request, hours, view)     not particularly informative
     taskJobSummary = []
@@ -7679,7 +7680,7 @@ def workingGroups(request):
     query['workinggroup__isnull'] = False
 
     # WG task summary
-    tasksummary = wgTaskSummary(request, view='working group', taskdays=taskdays)
+    tasksummary = wg_task_summary(request, view='working group', taskdays=taskdays)
 
     # WG job summary
     if 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup']:

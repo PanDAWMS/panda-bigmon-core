@@ -82,6 +82,31 @@ EVENT_STATES = (
     'corrupted',
 )
 
+TASK_STATES = (
+    'registered',
+    'defined',
+    'assigning',
+    'ready',
+    'pending',
+    'scouting',
+    'scouted',
+    'running',
+    'prepared',
+    'done',
+    'failed',
+    'finished',
+    'aborting',
+    'aborted',
+    'finishing',
+    'topreprocess',
+    'preprocessing',
+    'tobroken',
+    'broken',
+    'toretry',
+    'toincexec',
+    'rerefine'
+)
+
 TASK_STATES_FINAL = (
     'broken',
     'aborted',

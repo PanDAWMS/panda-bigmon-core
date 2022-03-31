@@ -1,4 +1,4 @@
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta
 
 import core.constants as const
 
@@ -25,7 +25,7 @@ def user_summary_dict(jobs):
             sumd[user]['nclouds'] = 0
             sumd[user]['clouds'] = {}
             sumd[user]['nqueued'] = 0
-            sumd[user]['latest'] = timezone.now() - timedelta(hours=2400)
+            sumd[user]['latest'] = datetime.now() - timedelta(hours=2400)
             sumd[user]['pandaid'] = 0
         cloud = job['cloud']
         site = job['computingsite']
