@@ -9,10 +9,10 @@ from datetime import datetime, timedelta
 from django.db import connection
 from django.db.models import Count, Sum
 from core.common.models import JediEvents, JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
-from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4, Jobsarchived_y2015
-from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, add_job_category, get_job_walltime, \
-    job_states_count_by_param, get_tmp_table_name, get_job_queuetime, convert_bytes
-from core.libs.job import parse_jobmetrics
+from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from core.libs.exlib import dictfetchall, insert_to_temp_table, drop_duplicates, get_tmp_table_name, convert_bytes
+from core.libs.job import parse_jobmetrics, add_job_category, job_states_count_by_param, get_job_queuetime, \
+    get_job_walltime
 from core.libs.datetimestrings import parse_datetime
 from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
 from core.pandajob.utils import get_pandajob_models_by_year
@@ -26,7 +26,7 @@ from elasticsearch_dsl import Search
 from core.settings.local import defaultDatetimeFormat
 from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA_ARCH, DEPLOYMENT, DB_N_MAX_IN_QUERY
 
-from core.libs.taskflow import RSEtoInpDat, InpDattoSITE, SITEtoJOB, frec, executeTF, concat_all, concat_NoRep
+from core.libs.taskflow import executeTF
 
 _logger = logging.getLogger('bigpandamon')
 

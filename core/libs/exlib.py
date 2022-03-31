@@ -1,14 +1,12 @@
-from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
-import math, random, datetime
+
+import math
+import random
 import numpy as np
 import pandas as pd
 from django.db import connection
-from datetime import datetime
 
-from core.libs.datetimestrings import parse_datetime
-from core.settings.local import dbaccess
+from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
 from core.settings.config import DB_SCHEMA, DEPLOYMENT
-import core.constants as const
 
 
 def drop_duplicates(object_list, **kwargs):
@@ -38,81 +36,12 @@ def drop_duplicates(object_list, **kwargs):
     return unique_object_list
 
 
-def add_job_category(jobs):
-    """
-    Determine which category job belong to among: build, run or merge and add 'category' param to dict of a job
-    Need 'processingtype', 'eventservice' and 'transformation' params to make a decision
-    :param jobs: list of dicts
-    :return: jobs: list of updated dicts
-    """
-
-    for job in jobs:
-        if 'transformation' in job and 'build' in job['transformation']:
-            job['category'] = 'build'
-        elif 'processingtype' in job and job['processingtype'] == 'pmerge':
-            job['category'] = 'merge'
-        elif 'eventservice' in job and (job['eventservice'] == 2 or job['eventservice'] == 'esmerge'):
-            job['category'] = 'merge'
-        else:
-            job['category'] = 'run'
-
-    return jobs
-
-
-def job_states_count_by_param(jobs, **kwargs):
-    """
-    Counting jobs in different states and group by provided param
-    :param jobs:
-    :param kwargs:
-    :return:
-    """
-    param = 'category'
-    if 'param' in kwargs:
-        param = kwargs['param']
-
-    job_states_count_dict = {}
-    param_values = list(set([job[param] for job in jobs if param in job]))
-
-    if len(param_values) > 0:
-        for pv in param_values:
-            job_states_count_dict[pv] = {}
-            for state in const.JOB_STATES:
-                job_states_count_dict[pv][state] = 0
-
-    for job in jobs:
-        job_states_count_dict[job[param]][job['jobstatus']] += 1
-
-    job_summary_dict = {}
-    for pv, data in job_states_count_dict.items():
-        if pv not in job_summary_dict:
-            job_summary_dict[pv] = []
-
-            for state in const.JOB_STATES:
-                statecount = {
-                    'name': state,
-                    'count': job_states_count_dict[pv][state],
-                }
-                job_summary_dict[pv].append(statecount)
-
-    # dict -> list
-    job_summary_list = []
-    for key, val in job_summary_dict.items():
-        tmp_dict = {
-            'param': param,
-            'value': key,
-            'job_state_counts': val,
-        }
-        job_summary_list.append(tmp_dict)
-
-    return job_summary_list
-
-
-def getDataSetsForATask(taskid, type = None):
+def getDataSetsForATask(taskid, type=None):
     query = {
         'jeditaskid': taskid
     }
     if type:
-        query['type']=type
+        query['type'] = type
     ret = []
     dsets = JediDatasets.objects.filter(**query).values()
     for dset in dsets:
@@ -121,8 +50,6 @@ def getDataSetsForATask(taskid, type = None):
             'type': dset['type']
         })
     return ret
-
-
 
 
 def fileList(jobs):
@@ -137,7 +64,6 @@ def fileList(jobs):
         for job in jobs:
             pandaIDQ.append(job['pandaid'])
         query['pandaid__in'] = pandaIDQ
-        #query['type'] = 'INPUT'
         pandaLFN = {}
         datasetsFromFileTable.extend(
             Filestable4.objects.filter(**query).extra(where=["TYPE like %s"], params=["input"]).values())
@@ -160,8 +86,9 @@ def fileList(jobs):
                 else:
                     if jds['endevent']!=None and jds['startevent']!=None:
                         njob[jds['pandaid']]['nevents'] = int(jds['endevent'])+1-int(jds['startevent'])
-                    else: njob[jds['pandaid']]['nevents'] = int(jds['nevents'])
-                if jds['type']=='input':
+                    else:
+                        njob[jds['pandaid']]['nevents'] = int(jds['nevents'])
+                if jds['type'] == 'input':
                     njob[jds['pandaid']]['ninputs'] = []
                     njob[jds['pandaid']]['ninputs'].append(jds['lfn'])
             else:
@@ -170,41 +97,31 @@ def fileList(jobs):
                 else:
                     if jds['nevents'] != None:
                         njob[jds['pandaid']]['nevents'] += int(jds['nevents'])
-                    else: njob[jds['pandaid']]['nevents'] += 0
-                if jds['type']=='input':
+                    else:
+                        njob[jds['pandaid']]['nevents'] += 0
+                if jds['type'] =='input':
                     njob[jds['pandaid']]['ninputs'].append(jds['lfn'])
         listpandaidsDS = njob.keys()
         listpandaidsF4 = pandaLFN.keys()
         for job in jobs:
             if job['pandaid'] in listpandaidsDS:
-                # job['nevents'] = int(math.fabs(job['nevents']-njob[job['pandaid']]['nevents']))
                 job['nevents'] = njob[job['pandaid']]['nevents']
                 if 'ninputs' in njob[job['pandaid']]:
                     job['ninputs'] = len(njob[job['pandaid']]['ninputs'])
                 else:
-                    job['ninputs'] = 0 #0
+                    job['ninputs'] = 0
                     if job['processingtype'] == 'pmerge':
                         if len(job['jobinfo']) == 0:
                             job['jobinfo'] = 'Pmerge job'
                         else:
                             job['jobinfo'] += 'Pmerge job'
             else:
-                #if isEventService(job):
                 if job['pandaid'] in listpandaidsF4:
                     job['ninputs'] = len(pandaLFN[job['pandaid']])
                 else: job['ninputs'] = 0
             if job['pandaid'] in listpandaidsF4 and 'ninputs' not in job:
                  job['ninputs'] = len(pandaLFN[job['pandaid']])
-            #print str(job['pandaid'])+' '+str(job['ninputs'])
-            #if job['ninputs']==0:
-            #    job['ninputs'] = len(pandaLFN[job['pandaid']])
-                #else: job['ninputs'] = len(pandaLFN[job['pandaid']])
-            # if (job['jobstatus'] == 'finished' and job['nevents'] == 0) or (job['jobstatus'] == 'cancelled' and job['nevents'] == 0):
-            #     job['ninputs'] = 0
-            # if job['jobstatus'] == 'finished' and job['pandaid'] not in listpandaidsDS:
-            #     job['ninputs'] = 0
-            #     job['nevents'] = 0
-            if job['nevents']!= 0 and 'ninputs' not in job and job['pandaid'] in listpandaidsF4:
+            if job['nevents'] != 0 and 'ninputs' not in job and job['pandaid'] in listpandaidsF4:
                 job['ninputs'] = len(pandaLFN[job['pandaid']])
 
     newjobs = jobs
@@ -344,64 +261,23 @@ def is_timestamp(key):
     return False
 
 
-def get_job_walltime(job):
-    """
-    :param job: dict of job params, starttime and endtime is obligatory;
-                creationdate, statechangetime, and modificationtime are optional
-    :return: walltime in seconds or None if not enough data provided
-    """
-    walltime = None
-
-    if 'endtime' in job and job['endtime'] is not None:
-        endtime = parse_datetime(job['endtime']) if not isinstance(job['endtime'], datetime) else job['endtime']
-    elif 'statechangetime' in job and job['statechangetime'] is not None:
-        endtime = parse_datetime(job['statechangetime']) if not isinstance(job['statechangetime'], datetime) else job['statechangetime']
-    elif 'modificationtime' in job and job['modificationtime'] is not None:
-        endtime = parse_datetime(job['modificationtime']) if not isinstance(job['modificationtime'], datetime) else job['modificationtime']
-    else:
-        endtime = None
-
-    if 'starttime' in job and job['starttime'] is not None:
-        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
-    elif 'creationdate' in job and job['creationdate'] is not None:
-        starttime = parse_datetime(job['creationdate']) if not isinstance(job['creationdate'], datetime) else job['creationdate']
-    else:
-        starttime = 0
-
-    if starttime and endtime:
-        walltime = (endtime-starttime).total_seconds()
-
-    return walltime
-
-
-def is_job_active(jobststus):
-    """
-    Check if jobstatus is one of the active
-    :param jobststus: str
-    :return: True or False
-    """
-    end_status_list = ['finished', 'failed', 'cancelled', 'closed']
-    if jobststus in end_status_list:
-        return False
-
-    return True
-
-
 def get_tmp_table_name():
     tmpTableName = f"{DB_SCHEMA}.TMP_IDS1"
     if DEPLOYMENT == 'POSTGRES':
         tmpTableName = "TMP_IDS1"
     return tmpTableName
 
+
 def get_tmp_table_name_debug():
     tmpTableName = f"{DB_SCHEMA}.TMP_IDS1DEBUG"
     return tmpTableName
 
+
 def create_temporary_table(cursor, tmpTableName):
-    #Postgres does not keep the temporary table definition across connections, this is why we should recreate them
+    # Postgres does not keep the temporary table definition across connections, this is why we should recreate them
     sql_query = f"""
     CREATE TEMPORARY TABLE if not exists {tmpTableName} 
-   ("id" bigint, "transactionkey" bigint) ON COMMIT PRESERVE ROWS;
+    ("id" bigint, "transactionkey" bigint) ON COMMIT PRESERVE ROWS;
     COMMIT;
     """
     cursor.execute(sql_query)
@@ -417,28 +293,6 @@ def lower_dicts_in_list(input_list):
         out_dict = {lower_string(k): lower_string(v) for k,v in row_dict.items()}
         output_list.append(out_dict)
     return output_list
-
-
-def get_job_queuetime(job):
-    """
-    :param job: dict of job params, starttime and creationtime is obligatory
-    :return: queuetime in seconds or None if not enough data provided
-    """
-    queueutime = None
-
-    if 'starttime' in job and job['starttime'] is not None:
-        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
-    else:
-        starttime = None
-    if 'creationtime' in job and job['creationtime'] is not None:
-        creationtime = parse_datetime(job['creationtime']) if not isinstance(job['creationtime'], datetime) else job['creationtime']
-    else:
-        creationtime = None
-
-    if starttime and creationtime:
-        queueutime = (starttime-creationtime).total_seconds()
-
-    return queueutime
 
 
 def convert_bytes(n_bytes, output_unit='MB'):

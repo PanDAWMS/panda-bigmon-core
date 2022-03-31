@@ -9,8 +9,10 @@ from core.libs.exlib import convert_bytes
 from datetime import datetime, timedelta
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.common.models import JediJobRetryHistory
-from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, get_job_walltime, get_job_queuetime, \
-    drop_duplicates, add_job_category
+from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, drop_duplicates
+from core.libs.datetimestrings import parse_datetime
+
+import core.constants as const
 
 
 def is_event_service(job):
@@ -37,6 +39,140 @@ def is_debug_mode(job):
         return True
     else:
         return False
+
+
+def is_job_active(jobststus):
+    """
+    Check if jobstatus is one of the active
+    :param jobststus: str
+    :return: True or False
+    """
+    end_status_list = ['finished', 'failed', 'cancelled', 'closed']
+    if jobststus in end_status_list:
+        return False
+
+    return True
+
+
+def get_job_queuetime(job):
+    """
+    :param job: dict of job params, starttime and creationtime is obligatory
+    :return: queuetime in seconds or None if not enough data provided
+    """
+    queueutime = None
+
+    if 'starttime' in job and job['starttime'] is not None:
+        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
+    else:
+        starttime = None
+    if 'creationtime' in job and job['creationtime'] is not None:
+        creationtime = parse_datetime(job['creationtime']) if not isinstance(job['creationtime'], datetime) else job['creationtime']
+    else:
+        creationtime = None
+
+    if starttime and creationtime:
+        queueutime = (starttime-creationtime).total_seconds()
+
+    return queueutime
+
+
+def get_job_walltime(job):
+    """
+    :param job: dict of job params, starttime and endtime is obligatory;
+                creationdate, statechangetime, and modificationtime are optional
+    :return: walltime in seconds or None if not enough data provided
+    """
+    walltime = None
+
+    if 'endtime' in job and job['endtime'] is not None:
+        endtime = parse_datetime(job['endtime']) if not isinstance(job['endtime'], datetime) else job['endtime']
+    elif 'statechangetime' in job and job['statechangetime'] is not None:
+        endtime = parse_datetime(job['statechangetime']) if not isinstance(job['statechangetime'], datetime) else job['statechangetime']
+    elif 'modificationtime' in job and job['modificationtime'] is not None:
+        endtime = parse_datetime(job['modificationtime']) if not isinstance(job['modificationtime'], datetime) else job['modificationtime']
+    else:
+        endtime = None
+
+    if 'starttime' in job and job['starttime'] is not None:
+        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
+    elif 'creationdate' in job and job['creationdate'] is not None:
+        starttime = parse_datetime(job['creationdate']) if not isinstance(job['creationdate'], datetime) else job['creationdate']
+    else:
+        starttime = 0
+
+    if starttime and endtime:
+        walltime = (endtime-starttime).total_seconds()
+
+    return walltime
+
+
+def add_job_category(jobs):
+    """
+    Determine which category job belong to among: build, run or merge and add 'category' param to dict of a job
+    Need 'processingtype', 'eventservice' and 'transformation' params to make a decision
+    :param jobs: list of dicts
+    :return: jobs: list of updated dicts
+    """
+
+    for job in jobs:
+        if 'transformation' in job and 'build' in job['transformation']:
+            job['category'] = 'build'
+        elif 'processingtype' in job and job['processingtype'] == 'pmerge':
+            job['category'] = 'merge'
+        elif 'eventservice' in job and (job['eventservice'] == 2 or job['eventservice'] == 'esmerge'):
+            job['category'] = 'merge'
+        else:
+            job['category'] = 'run'
+
+    return jobs
+
+
+def job_states_count_by_param(jobs, **kwargs):
+    """
+    Counting jobs in different states and group by provided param
+    :param jobs:
+    :param kwargs:
+    :return:
+    """
+    param = 'category'
+    if 'param' in kwargs:
+        param = kwargs['param']
+
+    job_states_count_dict = {}
+    param_values = list(set([job[param] for job in jobs if param in job]))
+
+    if len(param_values) > 0:
+        for pv in param_values:
+            job_states_count_dict[pv] = {}
+            for state in const.JOB_STATES:
+                job_states_count_dict[pv][state] = 0
+
+    for job in jobs:
+        job_states_count_dict[job[param]][job['jobstatus']] += 1
+
+    job_summary_dict = {}
+    for pv, data in job_states_count_dict.items():
+        if pv not in job_summary_dict:
+            job_summary_dict[pv] = []
+
+            for state in const.JOB_STATES:
+                statecount = {
+                    'name': state,
+                    'count': job_states_count_dict[pv][state],
+                }
+                job_summary_dict[pv].append(statecount)
+
+    # dict -> list
+    job_summary_list = []
+    for key, val in job_summary_dict.items():
+        tmp_dict = {
+            'param': param,
+            'value': key,
+            'job_state_counts': val,
+        }
+        job_summary_list.append(tmp_dict)
+
+    return job_summary_list
 
 
 def get_job_list(query, **kwargs):

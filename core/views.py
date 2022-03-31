@@ -82,18 +82,18 @@ from core.oauth.utils import login_customrequired
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
-from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData, setCacheData
+from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
-from core.libs.exlib import is_timestamp, get_job_walltime, \
-    is_job_active, get_event_status_summary, get_file_info, get_job_queuetime, job_states_count_by_param, \
-    add_job_category, convert_bytes, convert_hs06, split_into_intervals, dictfetchall
+from core.libs.exlib import is_timestamp, get_event_status_summary, get_file_info, \
+    convert_bytes, convert_hs06, split_into_intervals, dictfetchall
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
     get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid
-from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, \
+from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
+    job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode
 from core.libs.eventservice import job_suppression
 from core.libs.jobmetadata import addJobMetadata
@@ -9117,10 +9117,7 @@ def initSelfMonitor(request):
     request.session["useragent"] = useragent
 
 
-#@cache_page(60 * 20)
 
-# taken from https://raw.githubusercontent.com/PanDAWMS/panda-server/master/pandaserver/taskbuffer/OraDBProxy.py
-# retrieve global shares
 
 from PIL import Image
 import urllib.request
@@ -9212,7 +9209,6 @@ def handler500(request):
                                   context_instance=RequestContext(request))
     response.status_code = 500
     return response
-
 
 
 def getBadEventsForTask(request):

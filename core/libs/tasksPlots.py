@@ -1,18 +1,13 @@
-import time
-
-from datetime import timedelta, datetime
 
 import json
-
-import numpy as np
 
 from django.http import HttpResponse
 
 from core.libs.CustomJSONSerializer import NpEncoder
-
-from core.libs.cache import getCacheEntry, setCacheEntry
+from core.libs.cache import getCacheEntry
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
-from core.libs.task import drop_duplicates, add_job_category, job_consumption_plots
+from core.libs.task import drop_duplicates, job_consumption_plots
+from core.libs.job import add_job_category
 
 from core.pandajob.models import Jobsdefined4, Jobsarchived, Jobswaiting4, Jobsactive4, Jobsarchived4
 
