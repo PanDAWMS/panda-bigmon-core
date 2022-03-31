@@ -11,10 +11,11 @@ from django.shortcuts import render_to_response, redirect
 from django.utils.cache import patch_response_headers
 
 from core.settings import defaultDatetimeFormat
-from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
+from core.libs.cache import getCacheEntry, setCacheEntry
+from core.libs.task import task_summary_dict
 from core.oauth.utils import login_customrequired
 from core.libs.DateEncoder import DateEncoder
-from core.views import initRequest, setupView, removeParam, taskSummaryDict
+from core.views import initRequest, setupView, removeParam
 from core.utils import is_json_request
 
 from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots, updateView
@@ -125,7 +126,7 @@ def runningProdTasks(request):
     plots_dict = prepare_plots(task_list, productiontype=productiontype)
 
     # get param summaries for select drop down menus
-    sumd = taskSummaryDict(request, task_list, ['status', 'workinggroup', 'cutcampaign', 'processingtype'])
+    sumd = task_summary_dict(request, task_list, ['status', 'workinggroup', 'cutcampaign', 'processingtype'])
 
     # get global sum
     gsum = {
@@ -361,7 +362,7 @@ def runningProdRequests(request):
 
     plotageshistogram = 0
     # if sum(ages) == 0: plotageshistogram = 0
-    # sumd = taskSummaryDict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
+    # sumd = task_summary_dict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
 
     ### Putting list of requests to cache separately for dataTables plugin
     transactionKey = random.randrange(100000000)

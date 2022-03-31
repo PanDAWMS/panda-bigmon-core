@@ -5,6 +5,7 @@ import logging
 import copy
 import time
 import itertools
+import re
 
 from django.db.models import Count
 from django.core.cache import cache
@@ -16,6 +17,54 @@ from core.pandajob.models import Jobswaiting4, Jobsdefined4, Jobsactive4, Jobsar
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
+
+
+def site_summary_dict(sites, VOMODE='atlas'):
+    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
+    sumd = {}
+    sumd['category'] = {}
+    sumd['category']['test'] = 0
+    sumd['category']['production'] = 0
+    sumd['category']['analysis'] = 0
+    sumd['category']['multicloud'] = 0
+    for site in sites:
+        for f in const.SITE_FIELDS_STANDARD:
+            if f in site:
+                if f not in sumd:
+                    sumd[f] = {}
+                if not site[f] in sumd[f]:
+                    sumd[f][site[f]] = 0
+                sumd[f][site[f]] += 1
+        isProd = True
+        if site['siteid'].find('ANALY') >= 0:
+            isProd = False
+            sumd['category']['analysis'] += 1
+        if site['siteid'].lower().find('test') >= 0:
+            isProd = False
+            sumd['category']['test'] += 1
+        if site['multicloud'] is not None and site['multicloud'] != 'None' and re.match('[A-Z]+', site['multicloud']):
+            sumd['category']['multicloud'] += 1
+        if isProd:
+            sumd['category']['production'] += 1
+    if VOMODE != 'atlas':
+        del sumd['cloud']
+
+    # convert to ordered lists
+    suml = []
+    for f in sumd:
+        itemd = {}
+        itemd['field'] = f
+        iteml = []
+        kys = sumd[f].keys()
+
+        kys = sorted(kys, key=lambda x: (x is None, x))
+
+        for ky in kys:
+            iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
+        itemd['list'] = iteml
+        suml.append(itemd)
+    suml = sorted(suml, key=lambda x: x['field'])
+    return suml
 
 
 def cloud_site_summary(query, extra='(1=1)', view='all', cloudview='region', notime=True, sortby='cloud'):

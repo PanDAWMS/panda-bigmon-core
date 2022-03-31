@@ -84,14 +84,13 @@ from core.utils import is_json_request, extensibleURL, complete_request, is_wild
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
-from core.libs.exlib import is_timestamp, get_event_status_summary, get_file_info, \
-    convert_bytes, convert_hs06, split_into_intervals, dictfetchall
+from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, dictfetchall
 from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
     job_summary_for_task_light, get_top_memory_consumers, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist
 from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
-    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid
+    get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
     job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode
@@ -109,10 +108,12 @@ from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
 
 from core.pandajob.summary_task import task_summary
-from core.pandajob.summary_site import cloud_site_summary, vo_summary
+from core.pandajob.summary_site import cloud_site_summary, vo_summary, site_summary_dict
 from core.pandajob.summary_wg import wg_summary
 from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_os import objectstore_summary
+from core.pandajob.summary_user import user_summary_dict
+from core.pandajob.utils import job_summary_dict
 
 from core.iDDS.algorithms import checkIfIddsTask
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -215,26 +216,9 @@ def get_renderedrow(context, **kwargs):
         kwargs['statelist'] = statelist
         return Customrenderer.world_computingsitesummary(context, kwargs)
 
-    if kwargs['type']=="region_sitesummary":
+    if kwargs['type'] == "region_sitesummary":
         kwargs['statelist'] = statelist
         return Customrenderer.region_sitesummary(context, kwargs)
-
-
-# class DateTimeEncoder(json.JSONEncoder):
-#     def default(self, o):
-#         if isinstance(o, datetime):
-#             return o.isoformat()
-#         elif o is None:
-#             return ''
-#
-#
-# class DateEncoder(json.JSONEncoder):
-#     def default(self, obj):
-#         if hasattr(obj, 'isoformat'):
-#             return obj.isoformat()
-#         else:
-#             return str(obj)
-#         return json.JSONEncoder.default(self, obj)
 
 
 def initRequest(request, callselfmon=True):
@@ -1220,413 +1204,6 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
     return jobs
 
 
-def jobSummaryDict(request, jobs, fieldlist=None):
-    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
-    sumd = {}
-    if fieldlist:
-        flist = fieldlist
-    else:
-        flist = standard_fields
-
-    numeric_fields = ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount',
-                      'reqid', 'jobsetid',)
-    numeric_intervals = ('durationmin', 'nevents',)
-
-    agg_fields = {
-        'nevents': 'neventsrange'
-    }
-
-    for job in jobs:
-        for f in flist:
-            if f == 'pilotversion':
-                if 'pilotid' in job and job['pilotid'] and '|' in job['pilotid']:
-                    job[f] = job['pilotid'].split('|')[-1]
-                else:
-                    job[f] = 'Not specified'
-            if f == 'schedulerid':
-                if 'schedulerid' in job and job[f] is not None:
-                    if 'harvester' in job[f]:
-                        job[f] = job[f].replace('harvester-', '')
-                    else:
-                        job[f] = 'Not specified'
-            if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session['requestParams']:
-                continue
-            elif f == 'specialhandling':
-                if not 'specialhandling' in sumd:
-                    sumd['specialhandling'] = {}
-                shl = job['specialhandling'].split() if job['specialhandling'] is not None else []
-                for v in shl:
-                    if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
-                    sumd['specialhandling'][v] += 1
-            else:
-                if f not in sumd:
-                    sumd[f] = {}
-                if f in job and (job[f] is None or job[f] == ''):
-                    kval = -1 if f in numeric_fields else 'Not specified'
-                elif f in job:
-                    kval = job[f]
-                else:
-                    kval = 'Not specified'
-                if kval not in sumd[f]:
-                    sumd[f][kval] = 0
-                sumd[f][kval] += 1
-        for extra in ('jobmode', 'substate', 'outputfiletype', 'durationmin'):
-            if extra in job:
-                if extra not in sumd:
-                    sumd[extra] = {}
-                if job[extra] not in sumd[extra]:
-                    sumd[extra][job[extra]] = 0
-                sumd[extra][job[extra]] += 1
-    if 'schedulerid' in sumd:
-        sumd['harvesterinstance'] = sumd['schedulerid']
-        del sumd['schedulerid']
-
-    ## event service
-    esjobdict = {}
-    esjobs = []
-    for job in jobs:
-        if is_event_service(job):
-            esjobs.append(job['pandaid'])
-    if len(esjobs) > 0:
-        sumd['eventservicestatus'] = get_event_status_summary(esjobs, eventservicestatelist)
-
-
-    sumd['processor_type'] = {
-        'GPU': len(list(filter(lambda x: x.get('cmtconfig') and 'gpu' in x.get('cmtconfig'), jobs))),
-        'CPU': len(list(filter(lambda x: x.get('cmtconfig') and not 'gpu' in x.get('cmtconfig'), jobs)))
-    }
-
-    ## convert to ordered lists
-    suml = []
-    for f in sumd:
-        itemd = {}
-        if f in agg_fields:
-            itemd['field'] = agg_fields[f]
-        else:
-            itemd['field'] = f
-        iteml = []
-        kys = list(sumd[f].keys())
-        if f == 'minramcount':
-            newvalues = {}
-            for ky in kys:
-                roundedval = int(ky / 1000)
-                if roundedval in newvalues:
-                    newvalues[roundedval] += sumd[f][ky]
-                else:
-                    newvalues[roundedval] = sumd[f][ky]
-            for ky in newvalues:
-                iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
-            iteml = sorted(iteml, key=lambda x: int(x['kname'].split("-")[0]))
-        elif f in numeric_intervals:
-            if len(kys) == 1 and kys[0] == 0:
-                iteml.append({'kname': '0-0', 'kvalue': sumd[f][0]})
-            else:
-                if f == 'nevents':
-                    minstep = 1000
-                elif f == 'durationmin':
-                    minstep = 10
-                else:
-                    minstep = 1
-                iteml.extend(split_into_intervals([job[f] for job in jobs if f in job], minstep=minstep))
-        else:
-            if f in ('priorityrange', 'jobsetrange'):
-                skys = []
-                for k in kys:
-                    if k != 'Not specified':
-                        skys.append({'key': k, 'val': int(k[:k.index(':')])})
-                    else:
-                        skys.append({'key': 'Not specified', 'val': -1})
-                skys = sorted(skys, key=lambda x: x['val'])
-                kys = []
-                for sk in skys:
-                    kys.append(sk['key'])
-            elif f in numeric_fields:
-                kys = sorted(kys, key=lambda x: int(x))
-            else:
-                try:
-                    kys = sorted(kys)
-                except:
-                    _logger.exception('Failed to sort list of values for {} attribute \n {}'.format(str(f), str(kys)))
-            for ky in kys:
-                if ky == -1:
-                    iteml.append({'kname': 'Not specified', 'kvalue': sumd[f][ky]})
-                else:
-                    iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
-            if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
-                iteml = sorted(iteml, key=lambda x: x['kvalue'], reverse=True)
-            elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
-                iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
-
-        itemd['list'] = iteml
-        if f in ('actualcorecount', ):
-            itemd['stats'] = {}
-            itemd['stats']['sum'] = sum([x['kname'] * x['kvalue'] for x in iteml if isinstance(x['kname'], int)])
-        suml.append(itemd)
-        suml = sorted(suml, key=lambda x: x['field'])
-    return suml, esjobdict
-
-
-def siteSummaryDict(sites):
-    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
-    sumd = {}
-    sumd['category'] = {}
-    sumd['category']['test'] = 0
-    sumd['category']['production'] = 0
-    sumd['category']['analysis'] = 0
-    sumd['category']['multicloud'] = 0
-    for site in sites:
-        for f in standard_sitefields:
-            if f in site:
-                if not f in sumd: sumd[f] = {}
-                if not site[f] in sumd[f]: sumd[f][site[f]] = 0
-                sumd[f][site[f]] += 1
-        isProd = True
-        if site['siteid'].find('ANALY') >= 0:
-            isProd = False
-            sumd['category']['analysis'] += 1
-        if site['siteid'].lower().find('test') >= 0:
-            isProd = False
-            sumd['category']['test'] += 1
-        if (site['multicloud'] is not None) and (site['multicloud'] != 'None') and (
-        re.match('[A-Z]+', site['multicloud'])):
-            sumd['category']['multicloud'] += 1
-        if isProd: sumd['category']['production'] += 1
-    if VOMODE != 'atlas': del sumd['cloud']
-    ## convert to ordered lists
-    suml = []
-    for f in sumd:
-        itemd = {}
-        itemd['field'] = f
-        iteml = []
-        kys = sumd[f].keys()
-
-        kys = sorted(kys, key=lambda x: (x is None, x))
-
-        for ky in kys:
-            iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
-        itemd['list'] = iteml
-        suml.append(itemd)
-    suml = sorted(suml, key=lambda x: x['field'])
-    return suml
-
-
-def userSummaryDict(jobs):
-    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
-    sumd = {}
-    for job in jobs:
-        if 'produsername' in job and job['produsername'] != None:
-            user = job['produsername'].lower()
-        else:
-            user = 'Unknown'
-        if not user in sumd:
-            sumd[user] = {}
-            for state in statelist:
-                sumd[user][state] = 0
-            sumd[user]['name'] = job['produsername']
-            sumd[user]['cputime'] = 0
-            sumd[user]['njobs'] = 0
-            for state in statelist:
-                sumd[user]['n' + state] = 0
-            sumd[user]['nsites'] = 0
-            sumd[user]['sites'] = {}
-            sumd[user]['nclouds'] = 0
-            sumd[user]['clouds'] = {}
-            sumd[user]['nqueued'] = 0
-            sumd[user]['latest'] = timezone.now() - timedelta(hours=2400)
-            sumd[user]['pandaid'] = 0
-        cloud = job['cloud']
-        site = job['computingsite']
-        cpu = float(job['cpuconsumptiontime']) / 1.
-        state = job['jobstatus']
-        if job['modificationtime'] > sumd[user]['latest']: sumd[user]['latest'] = job['modificationtime']
-        if job['pandaid'] > sumd[user]['pandaid']: sumd[user]['pandaid'] = job['pandaid']
-        sumd[user]['cputime'] += cpu
-        sumd[user]['njobs'] += 1
-        if 'n%s' % (state) not in sumd[user]:
-            sumd[user]['n' + state] = 0
-        sumd[user]['n' + state] += 1
-        if not site in sumd[user]['sites']: sumd[user]['sites'][site] = 0
-        sumd[user]['sites'][site] += 1
-        if not cloud in sumd[user]['clouds']: sumd[user]['clouds'][cloud] = 0
-        sumd[user]['clouds'][cloud] += 1
-    for user in sumd:
-        sumd[user]['nsites'] = len(sumd[user]['sites'])
-        sumd[user]['nclouds'] = len(sumd[user]['clouds'])
-        sumd[user]['nqueued'] = sumd[user]['ndefined'] + sumd[user]['nwaiting'] + sumd[user]['nassigned'] + sumd[user][
-            'nactivated']
-        sumd[user]['cputime'] = "%d" % float(sumd[user]['cputime'])
-    ## convert to list ordered by username
-    ukeys = list(sumd.keys())
-    ukeys = sorted(ukeys)
-    suml = []
-    for u in ukeys:
-        uitem = {}
-        uitem['name'] = u
-        uitem['latest'] = sumd[u]['pandaid']
-        uitem['dict'] = sumd[u]
-        suml.append(uitem)
-    suml = sorted(suml, key=lambda x: -x['latest'])
-    return suml
-
-
-def taskSummaryDict(request, tasks, fieldlist=None):
-    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
-    sumd = {}
-    logger = logging.getLogger('bigpandamon-error')
-    numeric_fields_task = ['reqid', 'corecount', 'taskpriority', 'workqueue_id']
-
-    if fieldlist:
-        flist = fieldlist
-    else:
-        flist = copy.deepcopy(standard_taskfields)
-
-    for task in tasks:
-        for f in flist:
-            if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype'].startswith('analy'):
-                # Remove the noisy useless parameters in analysis listings
-                if flist in ('reqid', 'stream', 'tag'):
-                    continue
-
-            if 'taskname' in task and len(task['taskname'].split('.')) == 5:
-                if f == 'project':
-                    try:
-                        if not f in sumd: sumd[f] = {}
-                        project = task['taskname'].split('.')[0]
-                        if not project in sumd[f]: sumd[f][project] = 0
-                        sumd[f][project] += 1
-                    except:
-                        pass
-                if f == 'stream':
-                    try:
-                        if not f in sumd: sumd[f] = {}
-                        stream = task['taskname'].split('.')[2]
-                        if not re.match('[0-9]+', stream):
-                            if not stream in sumd[f]: sumd[f][stream] = 0
-                            sumd[f][stream] += 1
-                    except:
-                        pass
-                if f == 'tag':
-                    try:
-                        if not f in sumd: sumd[f] = {}
-                        tags = task['taskname'].split('.')[4]
-                        if not tags.startswith('job_'):
-                            tagl = tags.split('_')
-                            tag = tagl[-1]
-                            if not tag in sumd[f]: sumd[f][tag] = 0
-                            sumd[f][tag] += 1
-                    except:
-                        pass
-            if f in task:
-                val = task[f]
-                if val is None or val == '':
-                    val = 'Not specified'
-                if val == 'anal': val = 'analy'
-                if f not in sumd:
-                    sumd[f] = {}
-                if val not in sumd[f]:
-                    sumd[f][val] = 0
-                sumd[f][val] += 1
-
-    # convert to ordered lists
-    suml = []
-    for f in sumd:
-        itemd = {}
-        itemd['field'] = f
-        iteml = []
-        kys = sumd[f].keys()
-        if f != 'ramcount':
-            for ky in kys:
-                iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
-            iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
-        else:
-            newvalues = {}
-            for ky in kys:
-                if ky != 'Not specified':
-                    roundedval = int(ky / 1000)
-                else:
-                    roundedval = -1
-                if roundedval in newvalues:
-                    newvalues[roundedval] += sumd[f][ky]
-                else:
-                    newvalues[roundedval] = sumd[f][ky]
-            for ky in newvalues:
-                if ky >= 0:
-                    iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
-                else:
-                    iteml.append({'kname': 'Not specified', 'kvalue': newvalues[ky]})
-            iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
-        itemd['list'] = iteml
-        suml.append(itemd)
-    suml = sorted(suml, key=lambda x: x['field'])
-    return suml
-
-
-def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays=3):
-    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
-    query = {}
-    hours = 24 * taskdays
-    startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = timezone.now().strftime(defaultDatetimeFormat)
-    query['modificationtime__castdate__range'] = [startdate, enddate]
-    if fieldname == 'workinggroup': query['workinggroup__isnull'] = False
-    if view == 'production':
-        query['tasktype'] = 'prod'
-    elif view == 'analysis':
-        query['tasktype'] = 'anal'
-
-    if 'processingtype' in request.session['requestParams']:
-        query['processingtype'] = request.session['requestParams']['processingtype']
-
-    if 'workinggroup' in request.session['requestParams']:
-        query['workinggroup'] = request.session['requestParams']['workinggroup']
-
-    if 'project' in request.session['requestParams']:
-        query['taskname__istartswith'] = request.session['requestParams']['project']
-
-    summary = JediTasks.objects.filter(**query).values(fieldname, 'status').annotate(Count('status')).order_by(
-        fieldname, 'status')
-    totstates = {}
-    tottasks = 0
-    wgsum = {}
-    for state in taskstatelist:
-        totstates[state] = 0
-    for rec in summary:
-        wg = rec[fieldname]
-        status = rec['status']
-        count = rec['status__count']
-        if status not in taskstatelist: continue
-        tottasks += count
-        totstates[status] += count
-        if wg not in wgsum:
-            wgsum[wg] = {}
-            wgsum[wg]['name'] = wg
-            wgsum[wg]['count'] = 0
-            wgsum[wg]['states'] = {}
-            wgsum[wg]['statelist'] = []
-            for state in taskstatelist:
-                wgsum[wg]['states'][state] = {}
-                wgsum[wg]['states'][state]['name'] = state
-                wgsum[wg]['states'][state]['count'] = 0
-        wgsum[wg]['count'] += count
-        wgsum[wg]['states'][status]['count'] += count
-
-    ## convert to ordered lists
-    suml = []
-    for f in wgsum:
-        itemd = {}
-        itemd['field'] = f
-        itemd['count'] = wgsum[f]['count']
-        kys = taskstatelist
-        iteml = []
-        for ky in kys:
-            iteml.append({'kname': ky, 'kvalue': wgsum[f]['states'][ky]['count']})
-        itemd['list'] = iteml
-        suml.append(itemd)
-    suml = sorted(suml, key=lambda x: x['field'])
-    return suml
-
-
 def mainPage(request):
     valid, response = initRequest(request)
     if not valid:
@@ -2138,7 +1715,7 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     # Sort in order to see the most important tasks
-    sumd, esjobdict = jobSummaryDict(request, jobs, standard_fields+['corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement', 'container_name', 'nevents'])
+    sumd, esjobdict = job_summary_dict(request, jobs, standard_fields+['corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement', 'container_name', 'nevents'])
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
@@ -3246,7 +2823,7 @@ def userList(request):
         jobs.extend(Jobsarchived4.objects.filter(**query).values(*values))
 
         jobs = cleanJobList(request, jobs, doAddMeta=False)
-        sumd = userSummaryDict(jobs)
+        sumd = user_summary_dict(jobs)
         for user in sumd:
             if user['dict']['latest']:
                 user['dict']['latest'] = user['dict']['latest'].strftime(defaultDatetimeFormat)
@@ -3257,7 +2834,7 @@ def userList(request):
         else:
             sumparams.append('vo')
 
-        jobsumd = jobSummaryDict(request, jobs, sumparams)[0]
+        jobsumd = job_summary_dict(request, jobs, sumparams)[0]
 
     if not is_json_request(request):
         TFIRST = request.session['TFIRST']
@@ -3427,7 +3004,7 @@ def userInfo(request, user=''):
         _logger.info('Tasks scouting info loaded: {}'.format(time.time() - request.session['req_init_time']))
 
         ntasks = len(tasks)
-        tasksumd = taskSummaryDict(request, tasks)
+        tasksumd = task_summary_dict(request, tasks)
         _logger.info('Tasks summary generated: {}'.format(time.time() - request.session['req_init_time']))
 
         # Jobs
@@ -3506,7 +3083,7 @@ def userInfo(request, user=''):
         njobsmax = display_limit_jobs
         url_nolimit_jobs = removeParam(extensibleURL(request), 'display_limit_jobs', mode='extensible') + 'display_limit_jobs=' + str(len(jobs))
 
-        sumd = userSummaryDict(jobs)
+        sumd = user_summary_dict(jobs)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
             'json' not in request.session['requestParams'])):
             flist = ['jobstatus', 'prodsourcelabel', 'processingtype', 'specialhandling', 'transformation', 'jobsetid',
@@ -3516,7 +3093,7 @@ def userInfo(request, user=''):
                 flist.append('vo')
             else:
                 flist.append('atlasrelease')
-            jobsumd, esjobssumd = jobSummaryDict(request, jobs, flist)
+            jobsumd, esjobssumd = job_summary_dict(request, jobs, flist)
             njobsetmax = 100
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
@@ -3799,9 +3376,8 @@ def siteList(request):
         clouds = None
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
-        sumd = siteSummaryDict(sites)
+    if not is_json_request(request):
+        sumd = site_summary_dict(sites, VOMODE=VOMODE)
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -5329,8 +4905,8 @@ def taskList(request):
         del request.session
         return JsonResponse(tasks, encoder=DateEncoder, safe=False)
     else:
-        sumd = taskSummaryDict(request, tasks, copy.deepcopy(standard_taskfields) +
-                                               ['stagesource'] if 'tape' in  request.session['requestParams'] else copy.deepcopy(standard_taskfields))
+        sumd = task_summary_dict(request, tasks, copy.deepcopy(standard_taskfields) +
+                                               ['stagesource'] if 'tape' in request.session['requestParams'] else copy.deepcopy(standard_taskfields))
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {

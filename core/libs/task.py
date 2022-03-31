@@ -4,7 +4,9 @@ import time
 import copy
 import random
 import json
+import re
 import numpy as np
+
 from datetime import datetime, timedelta
 from django.db import connection
 from django.db.models import Count, Sum
@@ -168,6 +170,104 @@ def cleanTaskList(tasks, **kwargs):
         tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
 
     return tasks
+
+
+def task_summary_dict(request, tasks, fieldlist=None):
+    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
+    sumd = {}
+    numeric_fields_task = ['reqid', 'corecount', 'taskpriority', 'workqueue_id']
+
+    if fieldlist:
+        flist = fieldlist
+    else:
+        flist = copy.deepcopy(const.TASK_FIELDS_STANDARD)
+
+    for task in tasks:
+        for f in flist:
+            if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype'].startswith('analy'):
+                # Remove the noisy useless parameters in analysis listings
+                if flist in ('reqid', 'stream', 'tag'):
+                    continue
+
+            if 'taskname' in task and len(task['taskname'].split('.')) == 5:
+                if f == 'project':
+                    try:
+                        if not f in sumd:
+                            sumd[f] = {}
+                        project = task['taskname'].split('.')[0]
+                        if not project in sumd[f]:
+                            sumd[f][project] = 0
+                        sumd[f][project] += 1
+                    except:
+                        pass
+                if f == 'stream':
+                    try:
+                        if not f in sumd:
+                            sumd[f] = {}
+                        stream = task['taskname'].split('.')[2]
+                        if not re.match('[0-9]+', stream):
+                            if not stream in sumd[f]:
+                                sumd[f][stream] = 0
+                            sumd[f][stream] += 1
+                    except:
+                        pass
+                if f == 'tag':
+                    try:
+                        if not f in sumd:
+                            sumd[f] = {}
+                        tags = task['taskname'].split('.')[4]
+                        if not tags.startswith('job_'):
+                            tagl = tags.split('_')
+                            tag = tagl[-1]
+                            if not tag in sumd[f]:
+                                sumd[f][tag] = 0
+                            sumd[f][tag] += 1
+                    except:
+                        pass
+            if f in task:
+                val = task[f]
+                if val is None or val == '':
+                    val = 'Not specified'
+                if val == 'anal':
+                    val = 'analy'
+                if f not in sumd:
+                    sumd[f] = {}
+                if val not in sumd[f]:
+                    sumd[f][val] = 0
+                sumd[f][val] += 1
+
+    # convert to ordered lists
+    suml = []
+    for f in sumd:
+        itemd = {}
+        itemd['field'] = f
+        iteml = []
+        kys = sumd[f].keys()
+        if f != 'ramcount':
+            for ky in kys:
+                iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
+            iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
+        else:
+            newvalues = {}
+            for ky in kys:
+                if ky != 'Not specified':
+                    roundedval = int(ky / 1000)
+                else:
+                    roundedval = -1
+                if roundedval in newvalues:
+                    newvalues[roundedval] += sumd[f][ky]
+                else:
+                    newvalues[roundedval] = sumd[f][ky]
+            for ky in newvalues:
+                if ky >= 0:
+                    iteml.append({'kname': str(ky) + '-' + str(ky + 1) + 'GB', 'kvalue': newvalues[ky]})
+                else:
+                    iteml.append({'kname': 'Not specified', 'kvalue': newvalues[ky]})
+            iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
+        itemd['list'] = iteml
+        suml.append(itemd)
+    suml = sorted(suml, key=lambda x: x['field'])
+    return suml
 
 
 def job_summary_for_task(query, extra="(1=1)", **kwargs):

@@ -89,17 +89,6 @@ def setCacheEntry(request, viewType, data, timeout, isData = False):
         cache.set(cache_key, data, timeout)
 
 
-def preparePlotData(data):
-    oldPlotData = data
-    if isinstance(oldPlotData, dict):
-        newPlotData = {}
-        for key, value in oldPlotData.items():
-            newPlotData[str(key)] = float(value)
-    else:
-        newPlotData = oldPlotData
-    return newPlotData
-
-
 def setCacheData(request,lifetime=60*120,**parametrlist):
     transactionKey = uuid.uuid4().hex
     dictinoary = {}

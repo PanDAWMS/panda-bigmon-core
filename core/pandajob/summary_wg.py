@@ -11,6 +11,72 @@ import core.constants as const
 _logger = logging.getLogger('bigpandamon')
 
 
+def wgTaskSummary(request, fieldname='workinggroup', view='production', taskdays=3):
+    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
+    query = {}
+    hours = 24 * taskdays
+    startdate = timezone.now() - timedelta(hours=hours)
+    startdate = startdate.strftime(defaultDatetimeFormat)
+    enddate = timezone.now().strftime(defaultDatetimeFormat)
+    query['modificationtime__castdate__range'] = [startdate, enddate]
+    if fieldname == 'workinggroup': query['workinggroup__isnull'] = False
+    if view == 'production':
+        query['tasktype'] = 'prod'
+    elif view == 'analysis':
+        query['tasktype'] = 'anal'
+
+    if 'processingtype' in request.session['requestParams']:
+        query['processingtype'] = request.session['requestParams']['processingtype']
+
+    if 'workinggroup' in request.session['requestParams']:
+        query['workinggroup'] = request.session['requestParams']['workinggroup']
+
+    if 'project' in request.session['requestParams']:
+        query['taskname__istartswith'] = request.session['requestParams']['project']
+
+    summary = JediTasks.objects.filter(**query).values(fieldname, 'status').annotate(Count('status')).order_by(
+        fieldname, 'status')
+    totstates = {}
+    tottasks = 0
+    wgsum = {}
+    for state in taskstatelist:
+        totstates[state] = 0
+    for rec in summary:
+        wg = rec[fieldname]
+        status = rec['status']
+        count = rec['status__count']
+        if status not in taskstatelist: continue
+        tottasks += count
+        totstates[status] += count
+        if wg not in wgsum:
+            wgsum[wg] = {}
+            wgsum[wg]['name'] = wg
+            wgsum[wg]['count'] = 0
+            wgsum[wg]['states'] = {}
+            wgsum[wg]['statelist'] = []
+            for state in taskstatelist:
+                wgsum[wg]['states'][state] = {}
+                wgsum[wg]['states'][state]['name'] = state
+                wgsum[wg]['states'][state]['count'] = 0
+        wgsum[wg]['count'] += count
+        wgsum[wg]['states'][status]['count'] += count
+
+    ## convert to ordered lists
+    suml = []
+    for f in wgsum:
+        itemd = {}
+        itemd['field'] = f
+        itemd['count'] = wgsum[f]['count']
+        kys = taskstatelist
+        iteml = []
+        for ky in kys:
+            iteml.append({'kname': ky, 'kvalue': wgsum[f]['states'][ky]['count']})
+        itemd['list'] = iteml
+        suml.append(itemd)
+    suml = sorted(suml, key=lambda x: x['field'])
+    return suml
+
+
 def wg_summary(query):
 
     # get data
