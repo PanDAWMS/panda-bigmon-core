@@ -17,8 +17,8 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F
 
 from core.oauth.utils import login_customrequired
-from core.utils import is_json_request, complete_request
-from core.views import initRequest, extensibleURL, removeParam
+from core.utils import is_json_request, complete_request, removeParam
+from core.views import initRequest, extensibleURL
 from core.libs.DateEncoder import DateEncoder
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue

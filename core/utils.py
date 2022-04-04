@@ -2,6 +2,7 @@
     core.utils
 """
 import logging
+import re
 _logger = logging.getLogger('bigpandamon')
 
 
@@ -43,6 +44,23 @@ def extensibleURL(request, xurl=''):
         xurl += '?'
 
     return xurl
+
+
+def removeParam(urlquery, parname, mode='complete'):
+    """Remove a parameter from current query"""
+    urlquery = urlquery.replace('&&', '&')
+    urlquery = urlquery.replace('?&', '?')
+    pstr = '.*({}}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
+    pat = re.compile(pstr)
+    mat = pat.match(urlquery)
+    if mat:
+        pstr = mat.group(1)
+        urlquery = urlquery.replace(pstr, '')
+        urlquery = urlquery.replace('&&', '&')
+        urlquery = urlquery.replace('?&', '?')
+        if mode != 'extensible' and (urlquery.endswith('?') or urlquery.endswith('&')):
+            urlquery = urlquery[:len(urlquery) - 1]
+    return urlquery
 
 
 def complete_request(request, **kwargs):

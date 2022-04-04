@@ -80,7 +80,7 @@ from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
 from core.oauth.utils import login_customrequired
 
-from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards
+from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
@@ -7051,22 +7051,6 @@ def errorSummary(request):
                          'produserid': job['produserid']})
         return HttpResponse(json.dumps(resp), content_type='application/json')
 
-
-def removeParam(urlquery, parname, mode='complete'):
-    """Remove a parameter from current query"""
-    urlquery = urlquery.replace('&&', '&')
-    urlquery = urlquery.replace('?&', '?')
-    pstr = '.*(%s=[a-zA-Z0-9\.\-\_\,\:]*).*' % parname
-    pat = re.compile(pstr)
-    mat = pat.match(urlquery)
-    if mat:
-        pstr = mat.group(1)
-        urlquery = urlquery.replace(pstr, '')
-        urlquery = urlquery.replace('&&', '&')
-        urlquery = urlquery.replace('?&', '?')
-        if mode != 'extensible':
-            if urlquery.endswith('?') or urlquery.endswith('&'): urlquery = urlquery[:len(urlquery) - 1]
-    return urlquery
 
 @login_customrequired
 def incidentList(request):
