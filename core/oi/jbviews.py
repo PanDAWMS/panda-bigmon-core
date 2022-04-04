@@ -13,7 +13,7 @@ from core.libs.datetimestrings import parse_datetime
 from core.oi.utils import round_time
 import matplotlib
 
-from core.views import removeParam
+from core.utils import removeParam
 
 from django.template.defaulttags import register
 

@@ -15,8 +15,8 @@ from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.task import task_summary_dict
 from core.oauth.utils import login_customrequired
 from core.libs.DateEncoder import DateEncoder
-from core.views import initRequest, setupView, removeParam
-from core.utils import is_json_request
+from core.views import initRequest, setupView
+from core.utils import is_json_request, removeParam
 
 from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots, updateView
 from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
