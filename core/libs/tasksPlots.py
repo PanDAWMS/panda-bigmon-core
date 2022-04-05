@@ -53,7 +53,7 @@ def get_jobs_plot_data(taskid_list):
     values = 'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid', \
              'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', \
              'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr', \
-             'processingtype', 'transformation', 'creationtime'
+             'processingtype', 'transformation', 'creationtime', 'pilottiming'
 
     jobs = []
     jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[extra_str]).values(*values))
