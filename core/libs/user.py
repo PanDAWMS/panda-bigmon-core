@@ -4,7 +4,7 @@ Created by Tatiana Korchuganova on 18.11.2020
 
 from core.settings import defaultDatetimeFormat
 
-from core.libs.task import build_stack_histogram
+from core.libs.exlib import build_stack_histogram
 from core.common.models import Users
 
 

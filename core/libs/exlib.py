@@ -379,6 +379,52 @@ def split_into_intervals(input_data, **kwargs):
     return output_data
 
 
+def build_stack_histogram(data_raw, **kwargs):
+    """
+    Prepare stack histogram data and calculate mean and std metrics
+    :param data_raw: dict of lists
+    :param kwargs:
+    :return:
+    """
+
+    n_decimals = 0
+    if 'n_decimals' in kwargs:
+        n_decimals = kwargs['n_decimals']
+
+    N_BINS_MAX = 50
+    stats = []
+    columns = []
+
+    data_all = []
+    for site, sd in data_raw.items():
+        data_all.extend(sd)
+
+    stats.append(np.average(data_all) if not np.isnan(np.average(data_all)) else 0)
+    stats.append(np.std(data_all) if not np.isnan(np.std(data_all)) else 0)
+
+    bins_all, ranges_all = np.histogram(data_all, bins='auto')
+    if len(ranges_all) > N_BINS_MAX + 1:
+        bins_all, ranges_all = np.histogram(data_all, bins=N_BINS_MAX)
+    ranges_all = list(np.round(ranges_all, n_decimals))
+
+    x_axis_ticks = ['x']
+    x_axis_ticks.extend(ranges_all[:-1])
+
+    for stack_param, data in data_raw.items():
+        column = [stack_param]
+        column.extend(list(np.histogram(data, ranges_all)[0]))
+        # do not add if all the values are zeros
+        if sum(column[1:]) > 0:
+            columns.append(column)
+
+    # sort by biggest impact
+    columns = sorted(columns, key=lambda x: sum(x[1:]), reverse=True)
+
+    columns.insert(0, x_axis_ticks)
+
+    return stats, columns
+
+
 def build_time_histogram(data):
     """
     Preparing data for time-based histogram.

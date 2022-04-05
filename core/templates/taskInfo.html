@@ -699,22 +699,25 @@ google.charts.load('current', {'packages':['sankey']});
         options: {
           category: []
         },
-        plot_data: jc_plot_data,
+        plot_data: {},
         charts: {}
       };
 
-      if (Object.keys($scope.taskinfo.jc_plots.plot_data).length > 1) {
-        Object.keys($scope.taskinfo.jc_plots.plot_data[1].data.data).forEach((key) => {
-          $scope.taskinfo.jc_plots.options.category.push(key);
-        });
-        $scope.taskinfo.jc_plots.options.category.sort();
-        if ($scope.taskinfo.jc_plots.options.category.includes('run')) {
-          $scope.taskinfo.jc_plots.selection.category = 'run';
+      $scope.taskinfo.jc_plots.fill = function () {
+        $scope.taskinfo.jc_plots.plot_data = jc_plot_data;
+        if (Object.keys($scope.taskinfo.jc_plots.plot_data).length > 1) {
+          Object.keys($scope.taskinfo.jc_plots.plot_data[1].data.data).forEach((key) => {
+            $scope.taskinfo.jc_plots.options.category.push(key);
+          });
+          $scope.taskinfo.jc_plots.options.category.sort();
+          if ($scope.taskinfo.jc_plots.options.category.includes('run')) {
+            $scope.taskinfo.jc_plots.selection.category = 'run';
+          }
+          else {
+            $scope.taskinfo.jc_plots.selection.category = 'all';
+          }
         }
-        else {
-          $scope.taskinfo.jc_plots.selection.category = 'all';
-        }
-      }
+      };
 
       $scope.taskinfo.jc_plots.build = function () {
         $scope.taskinfo.jc_plots.plot_data.forEach((item) => {
@@ -742,6 +745,9 @@ google.charts.load('current', {'packages':['sankey']});
       };
 
       $scope.taskinfo.jc_plots.toggle = function () {
+
+        if (Object.keys($scope.taskinfo.jc_plots.plot_data).length === 0) $scope.taskinfo.jc_plots.fill();
+
         if ($scope.taskinfo.jc_plots.options.category.length > 0) {
           ($scope.taskinfo.jc_plots.selection.is_hidden) ? $scope.taskinfo.jc_plots.selection.is_hidden = false : $scope.taskinfo.jc_plots.selection.is_hidden = true;
         }
@@ -1060,8 +1066,8 @@ google.charts.load('current', {'packages':['sankey']});
 
 function togglePlots() {
   let scope = angular.element(document.getElementById('plots')).scope();
-  scope.$apply(function(){
-        scope.taskinfo.jc_plots.toggle();
+  scope.$apply(function() {
+      scope.taskinfo.jc_plots.toggle();
   });
 }
 function toggletaskflow() {

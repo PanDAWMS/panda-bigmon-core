@@ -127,6 +127,24 @@ def add_job_category(jobs):
     return jobs
 
 
+def parse_job_pilottiming(pilottiming_str):
+    """
+    Parsing pilot timing str into dict
+    :param pilottiming_str: dict
+    :return: dict of separate pilot timings
+    """
+    pilot_timings_names = ['timegetjob', 'timestagein', 'timepayload', 'timestageout', 'timetotal_setup']
+
+    try:
+        pilot_timings = [int(pti) for pti in pilottiming_str.split('|')]
+    except:
+        pilot_timings = [None] * 5
+
+    pilot_timings_dict = dict(zip(pilot_timings_names, pilot_timings))
+
+    return pilot_timings_dict
+
+
 def job_states_count_by_param(jobs, **kwargs):
     """
     Counting jobs in different states and group by provided param
