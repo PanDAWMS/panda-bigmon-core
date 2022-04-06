@@ -1,6 +1,7 @@
 
 from core.pandajob.models import Jobsarchived4, Jobsarchived, Jobsactive4, Jobsdefined4, Jobswaiting4
-from core.libs.job import add_job_category, drop_duplicates
+from core.libs.exlib import drop_duplicates
+from core.libs.job import add_job_category
 import core.constants as const
 import logging
 _logger = logging.getLogger('bigpandamon')

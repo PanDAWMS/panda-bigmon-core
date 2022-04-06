@@ -50,7 +50,7 @@ def removeParam(urlquery, parname, mode='complete'):
     """Remove a parameter from current query"""
     urlquery = urlquery.replace('&&', '&')
     urlquery = urlquery.replace('?&', '?')
-    pstr = '.*({}}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
+    pstr = '.*({}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
     pat = re.compile(pstr)
     mat = pat.match(urlquery)
     if mat:
@@ -72,7 +72,7 @@ def complete_request(request, **kwargs):
     """
     _logger.info("Len of session dict at the end: {}".format(len(str(request.session._session))))
 
-    keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls']
+    keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls', 'TFIRST', 'TLAST', 'PLOW', 'PHIGH']
     if 'extra_keys' in kwargs:
         keys_to_remove.extend(kwargs['extra_keys'])
 
