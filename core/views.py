@@ -85,19 +85,19 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
 from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, dictfetchall
-from core.libs.task import job_summary_for_task, event_summary_for_task, input_summary_for_task, \
-    job_summary_for_task_light, get_top_memory_consumers, datasets_for_task, \
+from core.libs.eventservice import event_summary_for_task
+from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist
-from core.libs.task import get_job_state_summary_for_tasklist, get_dataset_locality, is_event_service_task, \
+from core.libs.task import get_dataset_locality, is_event_service_task, \
     get_prod_slice_by_taskid, get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, \
     wg_task_summary
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
     job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, \
-    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode
+    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode, clean_job_list
 from core.libs.eventservice import job_suppression
 from core.libs.jobmetadata import addJobMetadata
-from core.libs.error import errorInfo, getErrorDescription, errorSummaryDict, get_error_message_summary, get_job_error_desc
+from core.libs.error import errorInfo, getErrorDescription, get_job_error_desc
 from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
@@ -108,7 +108,9 @@ from core.libs.jobconsumers import reconstruct_job_consumers
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
 
-from core.pandajob.summary_task import task_summary
+from core.pandajob.summary_error import errorSummaryDict, get_error_message_summary
+from core.pandajob.summary_task import task_summary, job_summary_for_task, job_summary_for_task_light, \
+    get_job_state_summary_for_tasklist, get_top_memory_consumers
 from core.pandajob.summary_site import cloud_site_summary, vo_summary, site_summary_dict
 from core.pandajob.summary_wg import wg_summary
 from core.pandajob.summary_wn import wn_summary
@@ -605,6 +607,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     request.session['TFIRST'] = startdate  # startdate[:18]
     request.session['TLAST'] = enddate  # enddate[:18]
 
+    request.session['PLOW'] = 1000000
+    request.session['PHIGH'] = -1000000
+
     ### Add any extensions to the query determined from the URL
     #query['vo'] = 'atlas'
     #for vo in ['atlas', 'core']:
@@ -1031,178 +1036,178 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     return (query, extraQueryString, LAST_N_HOURS_MAX)
 
 
-def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
-    if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
-
-    if 'fields' in request.session['requestParams']:
-        fieldsStr = request.session['requestParams']['fields']
-        fields = fieldsStr.split("|")
-        if 'metastruct' in fields:
-            doAddMeta = True
-
-    errorCodes = get_job_error_desc()
-    pq_clouds = get_pq_clouds()
-
-    if doAddMeta:
-        jobs = addJobMetadata(jobl)
-    else:
-        jobs = jobl
-    for job in jobs:
-        if is_event_service(job):
-            if 'jobmetrics' in job:
-                pat = re.compile('.*mode\=([^\s]+).*HPCStatus\=([A-Za-z0-9]+)')
-                mat = pat.match(job['jobmetrics'])
-                if mat:
-                    job['jobmode'] = mat.group(1)
-                    job['substate'] = mat.group(2)
-                pat = re.compile('.*coreCount\=([0-9]+)')
-                mat = pat.match(job['jobmetrics'])
-                if mat:
-                    job['corecount'] = mat.group(1)
-            if 'jobsubstatus' in job and job['jobstatus'] == 'closed' and job['jobsubstatus'] == 'toreassign':
-                job['jobstatus'] += ':' + job['jobsubstatus']
-        if 'eventservice' in job:
-            if is_event_service(job) and job['eventservice'] == 1:
-                job['eventservice'] = 'eventservice'
-            elif is_event_service(job) and job['eventservice'] == 2:
-                job['eventservice'] = 'esmerge'
-            elif job['eventservice'] == 3:
-                job['eventservice'] = 'clone'
-            elif is_event_service(job) and job['eventservice'] == 4:
-                job['eventservice'] = 'jumbo'
-            elif job['eventservice'] == 5:
-                job['eventservice'] = 'cojumbo'
-            else:
-                job['eventservice'] = 'ordinary'
-        if 'destinationdblock' in job and job['destinationdblock']:
-            ddbfields = job['destinationdblock'].split('.')
-            if len(ddbfields) == 6 and ddbfields[0] != 'hc_test':
-                job['outputfiletype'] = ddbfields[4]
-            elif len(ddbfields) >= 7:
-                job['outputfiletype'] = ddbfields[6]
-            # else:
-            #     job['outputfiletype'] = None
-            #     print job['destinationdblock'], job['outputfiletype'], job['pandaid']
-
-        try:
-            job['homecloud'] = pq_clouds[job['computingsite']]
-        except:
-            job['homecloud'] = None
-        if 'produsername' in job and not job['produsername']:
-            if ('produserid' in job) and job['produserid']:
-                job['produsername'] = job['produserid']
-            else:
-                job['produsername'] = 'Unknown'
-        if job['transformation']: job['transformation'] = job['transformation'].split('/')[-1]
-
-        job['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
-
-        job['jobinfo'] = ''
-        if is_event_service(job):
-            if 'taskbuffererrordiag' in job and job['taskbuffererrordiag'] is None:
-                job['taskbuffererrordiag'] = ''
-            if 'taskbuffererrordiag' in job and len(job['taskbuffererrordiag']) > 0:
-                job['jobinfo'] = job['taskbuffererrordiag']
-            elif 'specialhandling' in job and job['specialhandling'] == 'esmerge':
-                job['jobinfo'] = 'Event service merge job. '
-            elif 'eventservice' in job and job['eventservice'] == 'jumbo':
-                job['jobinfo'] = 'Jumbo job. '
-            else:
-                job['jobinfo'] = 'Event service job. '
-
-        if is_debug_mode(job):
-            job['jobinfo'] += 'Real-time logging is activated for this job.'
-
-        job['duration'] = ""
-        job['durationsec'] = 0
-        # if job['jobstatus'] in ['finished','failed','holding']:
-        if 'endtime' in job and 'starttime' in job and job['starttime']:
-            starttime = job['starttime']
-            if job['endtime']:
-                endtime = job['endtime']
-            else:
-                endtime = timezone.now()
-
-            duration = max(endtime - starttime, timedelta(seconds=0))
-            ndays = duration.days
-            strduration = str(timedelta(seconds=duration.seconds))
-            job['duration'] = "%s:%s" % (ndays, strduration)
-            job['durationsec'] = ndays * 24 * 3600 + duration.seconds
-            job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
-
-        # durationmin for active jobs = now - starttime, for non-started = 0
-        if not 'durationmin' in job:
-            if 'starttime' in job and job['starttime'] is not None and 'endtime' in job and job['endtime'] is None:
-                endtime = timezone.now()
-                starttime = job['starttime']
-                duration = max(endtime - starttime, timedelta(seconds=0))
-                ndays = duration.days
-                job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
-            else:
-                job['durationmin'] = 0
-
-        job['waittime'] = ""
-        # if job['jobstatus'] in ['running','finished','failed','holding','cancelled','transferring']:
-        if 'creationtime' in job and 'starttime' in job and job['creationtime']:
-            creationtime = job['creationtime']
-            if job['starttime']:
-                starttime = job['starttime']
-            elif job['jobstatus'] in ('finished', 'failed', 'closed', 'cancelled'):
-                starttime = job['modificationtime']
-            else:
-                starttime = datetime.now()
-            wait = starttime - creationtime
-            ndays = wait.days
-            strwait = str(timedelta(seconds=wait.seconds))
-            job['waittime'] = "%s:%s" % (ndays, strwait)
-        if 'currentpriority' in job:
-            plo = int(job['currentpriority']) - int(job['currentpriority']) % 100
-            phi = plo + 99
-            job['priorityrange'] = "%d:%d" % (plo, phi)
-        if 'jobsetid' in job and job['jobsetid']:
-                plo = int(job['jobsetid']) - int(job['jobsetid']) % 100
-                phi = plo + 99
-                job['jobsetrange'] = "%d:%d" % (plo, phi)
-        if 'corecount' in job and job['corecount'] is None:
-            job['corecount'] = 1
-        if 'maxpss' in job and isinstance(job['maxpss'], int) and (
-                'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
-            job['maxpssgbpercore'] = round(job['maxpss']/1024./1024./job['actualcorecount'], 2)
-
-        if ('cpuconsumptiontime' in job and job['cpuconsumptiontime'] and job['cpuconsumptiontime'] > 0) and (
-                'actualcorecount' in job and job['actualcorecount'] is not None and job['actualcorecount'] > 0) and (
-                    'durationsec' in job and job['durationsec'] is not None and job['durationsec'] > 0):
-            job['cpuefficiency'] = round(100.0 * job['cpuconsumptiontime'] / job['durationsec'] / job['actualcorecount'], 2)
-
-    # drop duplicate jobs
-    droplist = []
-    job1 = {}
-    newjobs = []
-    for job in jobs:
-        pandaid = job['pandaid']
-        dropJob = 0
-        if pandaid in job1:
-            ## This is a duplicate. Drop it.
-            dropJob = 1
-        else:
-            job1[pandaid] = 1
-        if (dropJob == 0):
-            newjobs.append(job)
-    jobs = newjobs
-
-    # find max and min values of priority and modificationtime for current selection of jobs
-    global PLOW, PHIGH
-    PLOW = 1000000
-    PHIGH = -1000000
-    for job in jobs:
-        if job['modificationtime'] > request.session['TLAST']: request.session['TLAST'] = job['modificationtime']
-        if job['modificationtime'] < request.session['TFIRST']: request.session['TFIRST'] = job['modificationtime']
-        if job['currentpriority'] > PHIGH: PHIGH = job['currentpriority']
-        if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
-    jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
-
-    _logger.debug('job list cleaned')
-    return jobs
+# def cleanJobList(request, jobl, mode='nodrop', doAddMeta=False):
+#     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop': mode = 'drop'
+#
+#     if 'fields' in request.session['requestParams']:
+#         fieldsStr = request.session['requestParams']['fields']
+#         fields = fieldsStr.split("|")
+#         if 'metastruct' in fields:
+#             doAddMeta = True
+#
+#     errorCodes = get_job_error_desc()
+#     pq_clouds = get_pq_clouds()
+#
+#     if doAddMeta:
+#         jobs = addJobMetadata(jobl)
+#     else:
+#         jobs = jobl
+#     for job in jobs:
+#         if is_event_service(job):
+#             if 'jobmetrics' in job:
+#                 pat = re.compile('.*mode\=([^\s]+).*HPCStatus\=([A-Za-z0-9]+)')
+#                 mat = pat.match(job['jobmetrics'])
+#                 if mat:
+#                     job['jobmode'] = mat.group(1)
+#                     job['substate'] = mat.group(2)
+#                 pat = re.compile('.*coreCount\=([0-9]+)')
+#                 mat = pat.match(job['jobmetrics'])
+#                 if mat:
+#                     job['corecount'] = mat.group(1)
+#             if 'jobsubstatus' in job and job['jobstatus'] == 'closed' and job['jobsubstatus'] == 'toreassign':
+#                 job['jobstatus'] += ':' + job['jobsubstatus']
+#         if 'eventservice' in job:
+#             if is_event_service(job) and job['eventservice'] == 1:
+#                 job['eventservice'] = 'eventservice'
+#             elif is_event_service(job) and job['eventservice'] == 2:
+#                 job['eventservice'] = 'esmerge'
+#             elif job['eventservice'] == 3:
+#                 job['eventservice'] = 'clone'
+#             elif is_event_service(job) and job['eventservice'] == 4:
+#                 job['eventservice'] = 'jumbo'
+#             elif job['eventservice'] == 5:
+#                 job['eventservice'] = 'cojumbo'
+#             else:
+#                 job['eventservice'] = 'ordinary'
+#         if 'destinationdblock' in job and job['destinationdblock']:
+#             ddbfields = job['destinationdblock'].split('.')
+#             if len(ddbfields) == 6 and ddbfields[0] != 'hc_test':
+#                 job['outputfiletype'] = ddbfields[4]
+#             elif len(ddbfields) >= 7:
+#                 job['outputfiletype'] = ddbfields[6]
+#             # else:
+#             #     job['outputfiletype'] = None
+#             #     print job['destinationdblock'], job['outputfiletype'], job['pandaid']
+#
+#         try:
+#             job['homecloud'] = pq_clouds[job['computingsite']]
+#         except:
+#             job['homecloud'] = None
+#         if 'produsername' in job and not job['produsername']:
+#             if ('produserid' in job) and job['produserid']:
+#                 job['produsername'] = job['produserid']
+#             else:
+#                 job['produsername'] = 'Unknown'
+#         if job['transformation']: job['transformation'] = job['transformation'].split('/')[-1]
+#
+#         job['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
+#
+#         job['jobinfo'] = ''
+#         if is_event_service(job):
+#             if 'taskbuffererrordiag' in job and job['taskbuffererrordiag'] is None:
+#                 job['taskbuffererrordiag'] = ''
+#             if 'taskbuffererrordiag' in job and len(job['taskbuffererrordiag']) > 0:
+#                 job['jobinfo'] = job['taskbuffererrordiag']
+#             elif 'specialhandling' in job and job['specialhandling'] == 'esmerge':
+#                 job['jobinfo'] = 'Event service merge job. '
+#             elif 'eventservice' in job and job['eventservice'] == 'jumbo':
+#                 job['jobinfo'] = 'Jumbo job. '
+#             else:
+#                 job['jobinfo'] = 'Event service job. '
+#
+#         if is_debug_mode(job):
+#             job['jobinfo'] += 'Real-time logging is activated for this job.'
+#
+#         job['duration'] = ""
+#         job['durationsec'] = 0
+#         # if job['jobstatus'] in ['finished','failed','holding']:
+#         if 'endtime' in job and 'starttime' in job and job['starttime']:
+#             starttime = job['starttime']
+#             if job['endtime']:
+#                 endtime = job['endtime']
+#             else:
+#                 endtime = timezone.now()
+#
+#             duration = max(endtime - starttime, timedelta(seconds=0))
+#             ndays = duration.days
+#             strduration = str(timedelta(seconds=duration.seconds))
+#             job['duration'] = "%s:%s" % (ndays, strduration)
+#             job['durationsec'] = ndays * 24 * 3600 + duration.seconds
+#             job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
+#
+#         # durationmin for active jobs = now - starttime, for non-started = 0
+#         if not 'durationmin' in job:
+#             if 'starttime' in job and job['starttime'] is not None and 'endtime' in job and job['endtime'] is None:
+#                 endtime = timezone.now()
+#                 starttime = job['starttime']
+#                 duration = max(endtime - starttime, timedelta(seconds=0))
+#                 ndays = duration.days
+#                 job['durationmin'] = round((ndays * 24 * 3600 + duration.seconds)/60)
+#             else:
+#                 job['durationmin'] = 0
+#
+#         job['waittime'] = ""
+#         # if job['jobstatus'] in ['running','finished','failed','holding','cancelled','transferring']:
+#         if 'creationtime' in job and 'starttime' in job and job['creationtime']:
+#             creationtime = job['creationtime']
+#             if job['starttime']:
+#                 starttime = job['starttime']
+#             elif job['jobstatus'] in ('finished', 'failed', 'closed', 'cancelled'):
+#                 starttime = job['modificationtime']
+#             else:
+#                 starttime = datetime.now()
+#             wait = starttime - creationtime
+#             ndays = wait.days
+#             strwait = str(timedelta(seconds=wait.seconds))
+#             job['waittime'] = "%s:%s" % (ndays, strwait)
+#         if 'currentpriority' in job:
+#             plo = int(job['currentpriority']) - int(job['currentpriority']) % 100
+#             phi = plo + 99
+#             job['priorityrange'] = "%d:%d" % (plo, phi)
+#         if 'jobsetid' in job and job['jobsetid']:
+#                 plo = int(job['jobsetid']) - int(job['jobsetid']) % 100
+#                 phi = plo + 99
+#                 job['jobsetrange'] = "%d:%d" % (plo, phi)
+#         if 'corecount' in job and job['corecount'] is None:
+#             job['corecount'] = 1
+#         if 'maxpss' in job and isinstance(job['maxpss'], int) and (
+#                 'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
+#             job['maxpssgbpercore'] = round(job['maxpss']/1024./1024./job['actualcorecount'], 2)
+#
+#         if ('cpuconsumptiontime' in job and job['cpuconsumptiontime'] and job['cpuconsumptiontime'] > 0) and (
+#                 'actualcorecount' in job and job['actualcorecount'] is not None and job['actualcorecount'] > 0) and (
+#                     'durationsec' in job and job['durationsec'] is not None and job['durationsec'] > 0):
+#             job['cpuefficiency'] = round(100.0 * job['cpuconsumptiontime'] / job['durationsec'] / job['actualcorecount'], 2)
+#
+#     # drop duplicate jobs
+#     droplist = []
+#     job1 = {}
+#     newjobs = []
+#     for job in jobs:
+#         pandaid = job['pandaid']
+#         dropJob = 0
+#         if pandaid in job1:
+#             ## This is a duplicate. Drop it.
+#             dropJob = 1
+#         else:
+#             job1[pandaid] = 1
+#         if (dropJob == 0):
+#             newjobs.append(job)
+#     jobs = newjobs
+#
+#     # find max and min values of priority and modificationtime for current selection of jobs
+#     global PLOW, PHIGH
+#     PLOW = 1000000
+#     PHIGH = -1000000
+#     for job in jobs:
+#         if job['modificationtime'] > request.session['TLAST']: request.session['TLAST'] = job['modificationtime']
+#         if job['modificationtime'] < request.session['TFIRST']: request.session['TFIRST'] = job['modificationtime']
+#         if job['currentpriority'] > PHIGH: PHIGH = job['currentpriority']
+#         if job['currentpriority'] < PLOW: PLOW = job['currentpriority']
+#     jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
+#
+#     _logger.debug('job list cleaned')
+#     return jobs
 
 
 def mainPage(request):
@@ -1633,7 +1638,7 @@ def jobList(request, mode=None, param=None):
                         job['filemaxattempts'] = jedi_file['maxattempt']
         _logger.debug('Got file attempts: {}'.format(time.time() - request.session['req_init_time']))
 
-    jobs = cleanJobList(request, jobs, doAddMeta=is_job_meta_required)
+    jobs = clean_job_list(request, jobs, do_add_metadata=is_job_meta_required, do_add_errorinfo=True)
     _logger.debug('Cleaned job list: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = reconstruct_job_consumers(jobs)
@@ -1849,10 +1854,6 @@ def jobList(request, mode=None, param=None):
             Some of jobs in this listing are outside of the default 'last {} hours' time window, 
             because this limit was applied to jobs in final state only. Please explicitly add &hours=N to URL, 
             if you want to force applying the time window limit on active jobs also.""".format(LAST_N_HOURS_MAX)
-        TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
-        TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
-        del request.session['TFIRST']
-        del request.session['TLAST']
         _logger.debug('Extra data preporation done: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
@@ -1872,10 +1873,10 @@ def jobList(request, mode=None, param=None):
             'xurlnopref': xurl[5:],
             'droplist': droplist,
             'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
-            'tfirst': TFIRST,
-            'tlast': TLAST,
-            'plow': PLOW,
-            'phigh': PHIGH,
+            'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
+            'tlast': request.session['TLAST'].strftime(defaultDatetimeFormat),
+            'plow': request.session['PLOW'],
+            'phigh': request.session['PHIGH'],
             'showwarn': showwarn,
             'joblimit': request.session['JOB_LIMIT'],
             'limit': JOB_LIMIT,
@@ -2000,7 +2001,7 @@ def jobList(request, mode=None, param=None):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-
+@never_cache
 def descendentjoberrsinfo(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -2063,17 +2064,14 @@ def descendentjoberrsinfo(request):
     jobs.extend(Jobswaiting4.objects.filter(**query).values())
     jobs.extend(Jobsarchived4.objects.filter(**query).values())
     jobs.extend(Jobsarchived.objects.filter(**query).values())
-    jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=False)
+    jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
 
-    errorCodes = get_job_error_desc()
     errors = {}
     for job in jobs:
-        errors[job['pandaid']] = getErrorDescription(job, mode='txt', errorCodes=errorCodes)
+        errors[job['pandaid']] = job['errorinfo']
 
-    del request.session['TFIRST']
-    del request.session['TLAST']
     response = render_to_response('jobDescentErrors.html', {'errors': errors}, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    request = complete_request(request)
     return response
 
 
@@ -2179,11 +2177,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             except:
                 pass
             jobs.extend(Jobsarchived.objects.filter(**query).values())
-        jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=True)
+        jobs = clean_job_list(request, jobs, do_add_metadata=True, do_add_errorinfo=True)
 
     if len(jobs) == 0:
-        del request.session['TFIRST']
-        del request.session['TLAST']
         data = {
             'prefix': getPrefix(request),
             'viewParams': request.session['viewParams'],
@@ -2193,6 +2189,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'jobid': jobid,
         }
         response = render_to_response('jobInfo.html', data, content_type='text/html')
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -2813,9 +2810,10 @@ def userList(request):
         query = setupView(request, hours=nhours, limit=999999)
         # looking into user analysis jobs only
         query['prodsourcelabel'] = 'user'
-        ## dynamically assemble user summary info
+        # dynamically assemble user summary info
         values = ('eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
-                  'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid',
+                  'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'pandaid',
+                  'starttime', 'endtime', 'modificationtime',
                   'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig')
         jobs = []
         jobs.extend(Jobsdefined4.objects.filter(**query).values(*values))
@@ -2823,7 +2821,7 @@ def userList(request):
         jobs.extend(Jobswaiting4.objects.filter(**query).values(*values))
         jobs.extend(Jobsarchived4.objects.filter(**query).values(*values))
 
-        jobs = cleanJobList(request, jobs, doAddMeta=False)
+        jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=False)
         sumd = user_summary_dict(jobs)
         for user in sumd:
             if user['dict']['latest']:
@@ -2838,10 +2836,6 @@ def userList(request):
         jobsumd = job_summary_dict(request, jobs, sumparams)[0]
 
     if not is_json_request(request):
-        TFIRST = request.session['TFIRST']
-        TLAST = request.session['TLAST']
-        del request.session['TFIRST']
-        del request.session['TLAST']
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -2852,20 +2846,20 @@ def userList(request):
             'jobsumd': jobsumd,
             'userdb': userdbl,
             'userstats': userstats,
-            'tfirst': TFIRST.strftime(defaultDatetimeFormat),
-            'tlast': TLAST.strftime(defaultDatetimeFormat),
-            'plow': PLOW,
-            'phigh': PHIGH,
+            'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
+            'tlast': request.session['TLAST'].strftime(defaultDatetimeFormat),
+            'plow': request.session['PLOW'],
+            'phigh': request.session['PHIGH'],
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "userList", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render_to_response('userList.html', data, content_type='text/html')
+        request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
+        request = complete_request(request)
         return HttpResponse(json.dumps(sumd), content_type='application/json')
 
 
@@ -3042,7 +3036,7 @@ def userInfo(request, user=''):
                     query['produsername__startswith'] = fullname
                     jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
 
-        jobs = cleanJobList(request, jobs, doAddMeta=False)
+        jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
 
         # Divide up jobs by jobset and summarize
         jobsets = {}
@@ -3085,8 +3079,8 @@ def userInfo(request, user=''):
         url_nolimit_jobs = removeParam(extensibleURL(request), 'display_limit_jobs', mode='extensible') + 'display_limit_jobs=' + str(len(jobs))
 
         sumd = user_summary_dict(jobs)
-        if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])):
+
+        if not is_json_request(request):
             flist = ['jobstatus', 'prodsourcelabel', 'processingtype', 'specialhandling', 'transformation', 'jobsetid',
                      'jeditaskid', 'computingsite', 'cloud', 'workinggroup', 'homepackage', 'inputfileproject',
                      'inputfiletype', 'attemptnr', 'priorityrange', 'jobsetrange']
@@ -3114,11 +3108,6 @@ def userInfo(request, user=''):
                     if tsv in job and job[tsv]:
                         job[tsv] = job[tsv].strftime(defaultDatetimeFormat)
 
-            TFIRST = request.session['TFIRST']
-            TLAST = request.session['TLAST']
-            del request.session['TFIRST']
-            del request.session['TLAST']
-
             data = {
                 'request': request,
                 'viewParams': request.session['viewParams'],
@@ -3134,10 +3123,10 @@ def userInfo(request, user=''):
                 'url_nolimit_jobs': url_nolimit_jobs,
                 'query': query,
                 'userstats': userstats,
-                'tfirst': TFIRST.strftime(defaultDatetimeFormat),
-                'tlast': TLAST.strftime(defaultDatetimeFormat),
-                'plow': PLOW,
-                'phigh': PHIGH,
+                'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
+                'tlast': request.session['TLAST'].strftime(defaultDatetimeFormat),
+                'plow': request.session['PLOW'],
+                'phigh': request.session['PHIGH'],
                 'jobsets': jobsetl[:njobsetmax - 1],
                 'njobsetmax': njobsetmax,
                 'njobsets': len(jobsetl),
@@ -3151,13 +3140,13 @@ def userInfo(request, user=''):
             }
             data.update(getContextVariables(request))
             response = render_to_response('userInfo.html', data, content_type='text/html')
+            request = complete_request(request)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
         else:
-            del request.session['TFIRST']
-            del request.session['TLAST']
+            request = complete_request(request)
             resp = sumd
-            return HttpResponse(json.dumps(resp,default=datetime_handler),content_type='application/json')
+            return HttpResponse(json.dumps(resp, default=datetime_handler), content_type='application/json')
 
 
 def userDashApi(request, agg=None):
@@ -6856,7 +6845,7 @@ def errorSummary(request):
 
     _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-    jobs = cleanJobList(request, jobs, mode='nodrop', doAddMeta=False)
+    jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
 
     _logger.info('Cleaned jobs list: {}'.format(time.time() - request.session['req_init_time']))
 

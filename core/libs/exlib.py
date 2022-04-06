@@ -3,6 +3,7 @@ import math
 import random
 import numpy as np
 import pandas as pd
+from datetime import timedelta
 from django.db import connection
 
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
@@ -335,6 +336,20 @@ def convert_hs06(input, unit):
         output = input * multipliers_dict[unit]
 
     return output
+
+
+def convert_sec(duration_sec):
+    """Convert seconds to dd:hh:mm:ss str"""
+    duration_str = '-'
+    if duration_sec is not None and duration_sec > 0:
+        duration_str = str(timedelta(seconds=duration_sec)).split('.')[0]
+        if 'day' in duration_str:
+            duration_str = duration_str.replace(' day, ', ':')
+            duration_str = duration_str.replace(' days, ', ':')
+        else:
+            duration_str = '0:' + duration_str
+
+    return duration_str
 
 
 def split_into_intervals(input_data, **kwargs):

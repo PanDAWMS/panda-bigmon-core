@@ -1,5 +1,5 @@
 """"""
-
+import logging
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
     Jobsarchived_y2018, Jobsarchived, Jobsarchived4
 from core.libs.datetimestrings import parse_datetime
@@ -7,6 +7,8 @@ from core.libs.job import is_event_service
 from core.libs.exlib import get_event_status_summary, split_into_intervals
 from core.settings.config import DEPLOYMENT
 import core.constants as const
+
+_logger = logging.getLogger('bigpandamon')
 
 
 def get_pandajob_models_by_year(timewindow):

@@ -7,7 +7,8 @@ import os
 from django.db import connection
 from core.common.models import JediTasks, TasksStatusLog
 from core.pandajob.models import Jobsarchived4, Jobsarchived
-from core.libs.job import add_job_category, drop_duplicates
+from core.libs.exlib import drop_duplicates
+from core.libs.job import add_job_category
 import io
 import matplotlib as mpl
 mpl.use('Agg')
