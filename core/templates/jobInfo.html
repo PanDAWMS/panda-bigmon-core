@@ -756,7 +756,7 @@ function togglePayloadLog() {
                 "pageLength": 50,
                 "paging": true,
                 "scrollX": true,
-                "aaSorting": [[0,'desc']],
+                "aaSorting": [[0,'asc']],
                 "ajax": {
                      "url": "{% url 'getpayloadlog' pandaid %}?mode=pandaid",
                     "method": "GET",
@@ -768,7 +768,7 @@ function togglePayloadLog() {
                     if ($scope.payload_log.flag == false) {
                        clearInterval($scope.reload_interval);
                     } else {
-                       $scope.reload_interval = setInterval(() => {$('#payloadlogtable').DataTable().ajax.reload();}, 5000);
+                       $scope.reload_interval = setInterval(() => {$('#payloadlogtable').DataTable().ajax.reload();}, 10000);
                     }
                 },
                 "aoColumns": [
@@ -780,7 +780,6 @@ function togglePayloadLog() {
                         title: "LogLevel",
                         data: "level",
                         sDefaultContent: "-"
-
                     },
                     {
                         title: "Message",
