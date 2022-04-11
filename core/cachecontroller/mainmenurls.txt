@@ -39,3 +39,4 @@
 /dash/region/?jobtype=prod&splitby=jobtype
 /dash/world/
 /dc/sendstalledreport/
+/slowtasks/

@@ -40,7 +40,9 @@
     <table class="data-table" id="taskstable">
         <thead></thead>
         <tbody></tbody>
-        <tfoot></tfoot>
+        <tfoot><tr>
+        {% for col in tasks.0 %}<th></th>{% endfor %}
+        </tr></tfoot>
     </table>
   </div>
   </div>
@@ -268,6 +270,23 @@ var task_errors = {{ error_summary_table|safe }};
         },
 
       ],
+      initComplete: function () {
+        this.api().columns([1,4,5]).every(function () {
+          var column = this;
+          var select = $('<select><option value="">Show all</option></select>')
+              .appendTo($(column.footer()).empty())
+              .on('change', function () {
+                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                  column
+                    .search(val ? '^' + val + '$' : '', true, false)
+                    .draw();
+              });
+          column.data().unique().sort().each(function (d, j) {
+              select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+        this.api().columns.adjust().draw();
+      },
       createdRow: function ( row, data, index ) {
           $('td', row).eq(4).addClass(data[4] + '_fill');
           $('td', row).eq(5).addClass(data[5] + '_fill');

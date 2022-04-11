@@ -99,7 +99,7 @@ urlpatterns = [
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
     re_path(r'^campprog/$', campaingprogressDKB.campaignProgressDash, name='campaignProgressDash'),
 
-    re_path(r'^taskproblem/$', taskproblemexplorer.taskProblemExplorer, name='taskProblemExplorer'),
+    re_path(r'^slowtasks/$', taskproblemexplorer.taskProblemExplorer, name='taskProblemExplorer'),
 
     # auth
     re_path('', include('core.oauth.urls')),
