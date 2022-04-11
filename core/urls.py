@@ -8,6 +8,7 @@ from core import views as coremon_views
 
 from core.dashboards import campaignprediction as campaignprediction
 from core.dashboards import campaingprogressDKB
+from core.dashboards import taskproblemexplorer
 from core.libs import tasksPlots as tasksPlots
 
 import core.pandajob.views_support as core_coremon_support_views
@@ -97,6 +98,8 @@ urlpatterns = [
     re_path(r'^campaignpredictiondash/$', campaignprediction.campaignPredictionDash, name='campaignPredictionDash'),
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
     re_path(r'^campprog/$', campaingprogressDKB.campaignProgressDash, name='campaignProgressDash'),
+
+    re_path(r'^taskproblem/$', taskproblemexplorer.taskProblemExplorer, name='taskProblemExplorer'),
 
     # auth
     re_path('', include('core.oauth.urls')),

@@ -508,6 +508,33 @@ def build_time_histogram(data):
     return data
 
 
+def count_occurrences(obj_list, params_to_count, output='dict'):
+    """
+    Count occurrences of each param value for list of dicts
+    :param obj_list:
+    :param params_to_count:
+    :param output: str (list or dict). list - for plots
+    :return: param_counts: dict
+    """
+    param_counts = {}
+
+    for obj in obj_list:
+        for p in params_to_count:
+            if p in obj and obj[p] is not None and obj[p] != '':
+                if p not in param_counts:
+                    param_counts[p] = {}
+                if obj[p] not in param_counts[p]:
+                    param_counts[p][obj[p]] = 0
+                param_counts[p][obj[p]] += 1
+
+    if output == 'list':
+        for p in param_counts:
+            param_counts[p] = [[v, c] for v, c in param_counts[p].items()]
+            param_counts[p] = sorted(param_counts[p], key=lambda x: x[1], reverse=True)
+
+    return param_counts
+
+
 def round_to_n(x, n):
     if not x:
         return 0
