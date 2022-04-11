@@ -96,7 +96,7 @@ class TasksErrorCodesAnalyser:
         return tasks_errors_groups
 
     def add_site_information(self, tasks_list, tasks_errors_groups):
-        tasks_to_site = {t['jeditaskid']: t['nucleus'] for t in tasks_list if t['nucleus']}
+        tasks_to_site = {t['jeditaskid']: t['nucleus'] for t in tasks_list if 'nucleus' in t and t['nucleus']}
         tasks_errors_groups['sites'] = tasks_errors_groups.apply(lambda row: ', '.join(set([tasks_to_site.get(task,'')
                                                                               for task in row['taskid']])), axis=1)
 

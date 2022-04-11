@@ -76,6 +76,10 @@ def cleanTaskList(tasks, **kwargs):
         task['age'] = get_task_age(task)
         if 'campaign' in task and task['campaign']:
             task['campaign_cut'] = ':'.join(task['campaign'].split(':')[1:]) if ':' in task['campaign'] else task['campaign']
+        if 'workinggroup' in task and task['workinggroup'] is not None and task['workinggroup'] != '':
+            task['owner'] = task['workinggroup']
+        else:
+            task['owner'] = task['username']
 
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
@@ -691,14 +695,17 @@ def get_task_age(task):
     """
     task_age = -1
 
-    if 'endtime' in task and task['endtime'] is not None:
-        endtime = parse_datetime(task['endtime']) if not isinstance(task['endtime'], datetime) else task['endtime']
-    else:
-        endtime = datetime.now()
     if 'creationdate' in task and task['creationdate'] is not None:
         creationtime = parse_datetime(task['creationdate']) if not isinstance(task['creationdate'], datetime) else task['creationdate']
     else:
         creationtime = None
+    if 'endtime' in task and task['endtime'] is not None:
+        endtime = parse_datetime(task['endtime']) if not isinstance(task['endtime'], datetime) else task['endtime']
+    else:
+        endtime = datetime.now()
+
+    if 'status' in task and task['status'] not in const.TASK_STATES_FINAL:
+        endtime = datetime.now()
 
     if endtime and creationtime:
         task_age = round((endtime-creationtime).total_seconds() / 60. / 60. / 24., 2)
