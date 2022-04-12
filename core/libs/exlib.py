@@ -535,6 +535,24 @@ def count_occurrences(obj_list, params_to_count, output='dict'):
     return param_counts
 
 
+def duration_df(data_raw, id_name='JEDITASKID', timestamp_name='MODIFICATIONTIME'):
+    """
+    Calculates duration of each status by modificationtime delta
+    (in days)
+    """
+    df = pd.DataFrame(data_raw)
+    groups = df.groupby([id_name])
+    task_states_duration = {}
+    for k, v in groups:
+        v.sort_values(by=[timestamp_name], inplace=True)
+        v['START_TS'] = pd.to_datetime(v[timestamp_name])
+        v['END_TS'] = v['START_TS'].shift(-1).fillna(v['START_TS'])
+        v['DURATION'] = (v['END_TS'] - v['START_TS']).dt.total_seconds()/60./60./24.
+        task_states_duration[k] = v.groupby(['status'])['DURATION'].sum().to_dict()
+
+    return task_states_duration
+
+
 def round_to_n(x, n):
     if not x:
         return 0

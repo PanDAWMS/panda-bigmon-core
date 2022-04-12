@@ -17,7 +17,7 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, extensibleURL
 from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, build_time_histogram, count_occurrences
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, build_time_histogram, count_occurrences, duration_df
 from core.libs.task import cleanTaskList
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 from core.views import initRequest, setupView
@@ -95,28 +95,40 @@ def taskProblemExplorer(request):
 
     # check if a task were in exhausted|throttled states
     task_error_messages = []
-    task_transient_state_count = []
-    ts_query = {'status__in': ['exhausted', 'throttled', 'broken', 'failed']}
-    task_transient_state_count.extend(
-        TasksStatusLog.objects.filter(**ts_query).extra(where=[where_in_tids_str]).values('jeditaskid', 'status', 'reason'))
+    task_transient_states = []
+    ts_query = {}
+    # ts_query = {'status__in': ['exhausted', 'throttled', 'broken', 'failed']}
+    task_transient_states.extend(
+        TasksStatusLog.objects.filter(**ts_query).extra(where=[where_in_tids_str]).values('jeditaskid', 'status', 'modificationtime', 'reason'))
     task_transient_states_dict = {}
-    for row in task_transient_state_count:
-        if row['jeditaskid'] not in task_transient_states_dict:
-            task_transient_states_dict[row['jeditaskid']] = {}
-            task_transient_states_dict[row['jeditaskid']]['status'] = {}
-            task_transient_states_dict[row['jeditaskid']]['reasons'] = []
-        if row['status'] not in task_transient_states_dict[row['jeditaskid']]['status']:
-            task_transient_states_dict[row['jeditaskid']]['status'][row['status']] = 0
-        task_transient_states_dict[row['jeditaskid']]['status'][row['status']] += 1
-        task_transient_states_dict[row['jeditaskid']]['reasons'].append(row['reason'])
-        # put reasons for error messages analyser
-        task_error_messages.append({'jeditaskid': row['jeditaskid'], 'errordialog': re.sub('<[^>]*>', '', row['reason'])})
+    for row in task_transient_states:
+        if row['status'] in ('exhausted', 'throttled', 'broken', 'failed'):
+            if row['jeditaskid'] not in task_transient_states_dict:
+                task_transient_states_dict[row['jeditaskid']] = {}
+                task_transient_states_dict[row['jeditaskid']]['status'] = {}
+                task_transient_states_dict[row['jeditaskid']]['reasons'] = []
+            if row['status'] not in task_transient_states_dict[row['jeditaskid']]['status']:
+                task_transient_states_dict[row['jeditaskid']]['status'][row['status']] = 0
+            task_transient_states_dict[row['jeditaskid']]['status'][row['status']] += 1
+            task_transient_states_dict[row['jeditaskid']]['reasons'].append(row['reason'])
+            # put reasons for error messages analyser
+            task_error_messages.append({'jeditaskid': row['jeditaskid'], 'errordialog': re.sub('<[^>]*>', '', row['reason'])})
 
     for task in tasks:
         task['problematic_transient_states'] = '-'
         if task['jeditaskid'] in task_transient_states_dict:
             task['problematic_transient_states'] = ','.join([' {} times {}'.format(c, ts) for ts, c in task_transient_states_dict[task['jeditaskid']]['status'].items()])
-    _logger.debug('Got {} problematic tasks'.format(len(set([t['jeditaskid'] for t in task_transient_state_count]))))
+
+    # calculate duration of each task state
+    task_transient_states_duration = duration_df(task_transient_states, id_name='jeditaskid', timestamp_name='modificationtime')
+    states_duration_summary = {}
+    for task, states_duration in task_transient_states_duration.items():
+        for state, duration in states_duration.items():
+            if state not in states_duration_summary:
+                states_duration_summary[state] = 0
+            states_duration_summary[state] += duration
+
+    _logger.debug('Got and processed tasks transient states')
 
     error_codes_analyser = TasksErrorCodesAnalyser()
     error_codes_analyser.schedule_preprocessing(task_error_messages)
@@ -156,6 +168,15 @@ def taskProblemExplorer(request):
                     'labels': ['Owner', 'Count'],
                 },
                 'data': counts['owner'] if 'owner' in counts else [],
+            },
+            'state_duration': {
+                'name': 'state_duration',
+                'type': 'pie',
+                'title': 'Duration, days',
+                'options': {
+                    'labels': ['State', 'Duration, days'],
+                },
+                'data': [[state, int(dur)] for state, dur in states_duration_summary.items()],
             },
         }
         for time, count in build_time_histogram([t['creationdate'] for t in tasks]):
