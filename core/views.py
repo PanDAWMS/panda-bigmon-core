@@ -8085,15 +8085,21 @@ def loadFileList(request, datasetid=-1):
         pandaids.append(f['pandaid'])
 
     query = {}
+    extra_str = '(1=1)'
     files_ft = []
     files_ft_dict = {}
-    query['pandaid__in'] = pandaids
+    if len(pandaids) > DB_N_MAX_IN_QUERY:
+        tk = insert_to_temp_table(pandaids)
+        extra_str = 'pandaid in (select id from {} where transactionkey={} )'.format(get_tmp_table_name(), tk)
+    else:
+        query['pandaid__in'] = pandaids
+
     # JEDITASKID, DATASETID, FILEID
     files_ft.extend(
-        Filestable4.objects.filter(**query).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
+        Filestable4.objects.filter(**query).extra(where=[extra_str]).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
     if len(files_ft) == 0:
         files_ft.extend(
-            FilestableArch.objects.filter(**query).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
+            FilestableArch.objects.filter(**query).extra(where=[extra_str]).values('fileid', 'dispatchdblock', 'scope', 'destinationdblock'))
     if len(files_ft) > 0:
         for f in files_ft:
             files_ft_dict[f['fileid']] = f
