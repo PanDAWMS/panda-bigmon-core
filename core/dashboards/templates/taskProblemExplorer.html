@@ -227,6 +227,24 @@ var task_errors = {{ error_summary_table|safe }};
           },
         },
         {
+          title: "Queueing, hours",
+          sDefaultContent: "-",
+          className: 'num',
+          render: $.fn.dataTable.render.number( ',', '.', 2),
+        },
+        {
+          title: "Running, hours",
+          sDefaultContent: "-",
+          className: 'num',
+          render: $.fn.dataTable.render.number( ',', '.', 2),
+        },
+        {
+          title: "Problematic, hours",
+          sDefaultContent: "-",
+          className: 'num',
+          render: $.fn.dataTable.render.number( ',', '.', 2),
+        },
+        {
           title: "N files total",
           sDefaultContent: "-",
           className: 'num',
@@ -332,8 +350,6 @@ var task_errors = {{ error_summary_table|safe }};
           }
       };
   });
-
-  draw_stacked_bar_hist
 
 </script>
 {% endblock %}

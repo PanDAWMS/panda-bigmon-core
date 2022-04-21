@@ -127,24 +127,42 @@ def taskProblemExplorer(request):
             # put reasons for error messages analyser
             task_error_messages.append({'jeditaskid': row['jeditaskid'], 'errordialog': re.sub('<[^>]*>', '', row['reason'])})
 
+    # calculate duration of each task state
+    task_status_agg = {
+        'queued': ['defined', 'ready'],
+        'running': ['scouting', 'running'],
+        'troubling': ['pending', 'exhausted', 'throttled'],
+        'final': ['finished', 'failed', 'broken', 'aborted']
+    }
+    task_transient_states_duration = duration_df(task_transient_states, id_name='jeditaskid', timestamp_name='modificationtime')
+    states_duration_summary = {}
+    states_duration_lists = {}
+    states_agg_duration_dict = {}
+    for task, states_duration in task_transient_states_duration.items():
+        if task not in states_agg_duration_dict:
+            states_agg_duration_dict[task] = {k: 0 for k in task_status_agg}
+        for state, duration in states_duration.items():
+            if duration > 0.0001:
+                if state not in states_duration_summary:
+                    states_duration_summary[state] = 0
+                states_duration_summary[state] += duration
+                if state not in const.TASK_STATES_FINAL:
+                    if state not in states_duration_lists:
+                        states_duration_lists[state] = []
+                    states_duration_lists[state].append(duration*24)
+
+                for agg_state, task_states_list in task_status_agg.items():
+                    if state in task_states_list:
+                        states_agg_duration_dict[task][agg_state] += duration*24
+
     for task in tasks:
         task['problematic_transient_states'] = '-'
         if task['jeditaskid'] in task_transient_states_dict:
             task['problematic_transient_states'] = ','.join([' {} times {}'.format(c, ts) for ts, c in task_transient_states_dict[task['jeditaskid']]['status'].items()])
 
-    # calculate duration of each task state
-    task_transient_states_duration = duration_df(task_transient_states, id_name='jeditaskid', timestamp_name='modificationtime')
-    states_duration_summary = {}
-    states_duration_lists = {}
-    for task, states_duration in task_transient_states_duration.items():
-        for state, duration in states_duration.items():
-            if state not in states_duration_summary:
-                states_duration_summary[state] = 0
-            states_duration_summary[state] += duration
-            if state not in const.TASK_STATES_FINAL:
-                if state not in states_duration_lists:
-                    states_duration_lists[state] = []
-                states_duration_lists[state].append(duration*24)
+        if task['jeditaskid'] in states_agg_duration_dict:
+            task.update(states_agg_duration_dict[task['jeditaskid']])
+
     _logger.debug('Got and processed tasks transient states')
 
     error_codes_analyser = TasksErrorCodesAnalyser()
@@ -192,9 +210,9 @@ def taskProblemExplorer(request):
                 'title': 'Duration, days',
                 'options': {
                     'labels': ['State', 'Duration, days'],
-                    'size_mp': 0.5,
+                    'size_mp': 0.3,
                 },
-                'data': [[state, int(dur)] for state, dur in states_duration_summary.items()],
+                'data': [[state, round(dur, 3)] for state, dur in states_duration_summary.items() if dur > 0.0001],
             },
             'state_duration_hist': {
                 'name': 'state_duration_hist',
@@ -202,7 +220,7 @@ def taskProblemExplorer(request):
                 'options': {
                     'labels': ['Total time in task state, hours', 'Number of tasks'],
                     'title': 'Task active state duration, hours',
-                    'size_mp': 0.5,
+                    'size_mp': 0.7,
                 },
                 'data': {'columns': [], 'stats': [], }
             },
@@ -225,7 +243,8 @@ def taskProblemExplorer(request):
 
         # prepare data for datatable
         task_list_table_headers = [
-            'jeditaskid', 'owner', 'attemptnr', 'age', 'superstatus', 'status', 'problematic_transient_states',
+            'jeditaskid', 'owner', 'attemptnr', 'age', 'superstatus', 'status',
+            'problematic_transient_states', 'queued', 'running', 'troubling',
             'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished', 'errordialog',
         ]
         tasks_to_show = []

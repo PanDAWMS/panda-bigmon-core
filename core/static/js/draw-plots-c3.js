@@ -519,6 +519,8 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
     let width = getPlotWidth();
     let height = 300 + legend_height;
 
+    if (details.size) {width = details.size[0]}
+
     let options = {
         bindto: '#' + divToShow,
         data: {
