@@ -17,8 +17,10 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, extensibleURL
 from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, build_time_histogram, count_occurrences, duration_df
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, build_time_histogram, count_occurrences, \
+    duration_df, build_stack_histogram
 from core.libs.task import cleanTaskList
+from core.libs.sqlcustom import preprocess_wild_card_string
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 from core.views import initRequest, setupView
 
@@ -46,25 +48,36 @@ def taskProblemExplorer(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    query, extra, _ = setupView(request, querytype='task', wildCardExt=True)
+    query, extra_str, _ = setupView(request, querytype='task', wildCardExt=True)
 
     age = 3
     if 'age' in request.session['requestParams']:
         age = int(request.session['requestParams']['age'])
     request.session['viewParams']['selection'] = ', active analysis tasks older than {} days'.format(age)
-    query = {
-        'tasktype': 'anal',
-        'creationdate__castdate__range': [
+    if 'modificationtime__castdate__range' in query:
+        del query['modificationtime__castdate__range']
+    query['tasktype'] = 'anal'
+    query['creationdate__castdate__range'] = [
             (datetime.now() - timedelta(days=360)).strftime(defaultDatetimeFormat),
             datetime.now().strftime(defaultDatetimeFormat)]
-    }
     exquery = {
         'status__in': const.TASK_STATES_FINAL + ('paused', ),
         # 'superstatus__in': const.TASK_STATES_FINAL,
     }
-    extra_str = 'creationdate < sysdate - {}'.format(age)
+    extra_str += ' AND creationdate < sysdate - {}'.format(age)
     if 'owner' in request.session['requestParams'] and request.session['requestParams']['owner']:
-        extra_str += " AND (workinggroup='{owner}' OR username='{owner}') ".format(owner=request.session['requestParams']['owner'])
+        owner = request.session['requestParams']['owner']
+        if '!' in owner:
+            extra_str += ' AND (({} {}) AND ({}))'.format(
+                preprocess_wild_card_string(owner, 'workinggroup'), 'OR workinggroup IS NULL' if owner.startswith('!') else '',
+                preprocess_wild_card_string(owner, 'username'), 'OR username IS NULL' if owner.startswith('!') else '',
+            )
+        elif '*' in owner:
+            extra_str += ' AND ({} OR {})'.format(
+                preprocess_wild_card_string(owner, 'workinggroup'), preprocess_wild_card_string(owner, 'username'),
+            )
+        else:
+            extra_str += " AND (workinggroup='{owner}' OR username='{owner}') ".format(owner=request.session['requestParams']['owner'])
     values = (
         'jeditaskid', 'tasktype', 'creationdate', 'starttime', 'statechangetime', 'modificationtime',
         'superstatus', 'status', 'corecount', 'taskpriority', 'currentpriority', 'username',
@@ -122,12 +135,16 @@ def taskProblemExplorer(request):
     # calculate duration of each task state
     task_transient_states_duration = duration_df(task_transient_states, id_name='jeditaskid', timestamp_name='modificationtime')
     states_duration_summary = {}
+    states_duration_lists = {}
     for task, states_duration in task_transient_states_duration.items():
         for state, duration in states_duration.items():
             if state not in states_duration_summary:
                 states_duration_summary[state] = 0
             states_duration_summary[state] += duration
-
+            if state not in const.TASK_STATES_FINAL:
+                if state not in states_duration_lists:
+                    states_duration_lists[state] = []
+                states_duration_lists[state].append(duration*24)
     _logger.debug('Got and processed tasks transient states')
 
     error_codes_analyser = TasksErrorCodesAnalyser()
@@ -175,13 +192,27 @@ def taskProblemExplorer(request):
                 'title': 'Duration, days',
                 'options': {
                     'labels': ['State', 'Duration, days'],
+                    'size_mp': 0.5,
                 },
                 'data': [[state, int(dur)] for state, dur in states_duration_summary.items()],
+            },
+            'state_duration_hist': {
+                'name': 'state_duration_hist',
+                'type': 'bar_hist',
+                'options': {
+                    'labels': ['Total time in task state, hours', 'Number of tasks'],
+                    'title': 'Task active state duration, hours',
+                    'size_mp': 0.5,
+                },
+                'data': {'columns': [], 'stats': [], }
             },
         }
         for time, count in build_time_histogram([t['creationdate'] for t in tasks]):
             plots['time_hist']['data'][0].append(time.strftime(plots['time_hist']['options']['timeFormat']))
             plots['time_hist']['data'][1].append(count[0])
+        stats, columns = build_stack_histogram(states_duration_lists, n_decimals=2)
+        plots['state_duration_hist']['data']['columns'] = columns
+        plots['state_duration_hist']['data']['stats'] = stats
 
         timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
                           'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate']

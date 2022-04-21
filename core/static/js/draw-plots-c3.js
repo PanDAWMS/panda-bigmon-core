@@ -481,6 +481,12 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
         "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
         "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
 
+    var ylabel = 'Number of jobs';
+    var xlabel = '';
+    if ('labels' in details) {xlabel = details.labels[0]; ylabel = details.labels[1];}
+    if (details.xlabel) {xlabel = details.xlabel}
+
+
     let statistics = [{type: "\u03BC", val:formatStats(rawdata['stats'][0])}];
 	  statistics.push({type:"\u03C3", val:formatStats(rawdata['stats'][1])});
 
@@ -539,7 +545,7 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
                     format: function (d) {return formatXAxis(d);},
                 },
                 label: {
-                    text: details.xlabel,
+                    text: xlabel,
                     position: 'outer-right'
                 }
             },
@@ -548,7 +554,7 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
                     format: function (d) { return d; }
                 },
                 label: {
-                  text: 'Number of jobs',
+                  text: ylabel,
                   position: 'outer-middle'
                 }
             }

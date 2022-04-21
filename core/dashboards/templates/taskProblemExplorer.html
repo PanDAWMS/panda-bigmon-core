@@ -99,7 +99,8 @@ var task_errors = {{ error_summary_table|safe }};
         item.options.size = [getWidth() - 40, 300];
       }
       else {
-        item.options.size = [getWidth() - 40, 300];
+        if (item.options.size_mp) {item.options.size = [getWidth() * item.options.size_mp  - 40, 300];}
+        else {item.options.size = [getWidth() - 40, 300];}
       }
     });
 
@@ -142,7 +143,6 @@ var task_errors = {{ error_summary_table|safe }};
       "aoColumns": [
         {
           title: "Task ID",
-          {#data: "jeditaskid",#}
           sDefaultContent: "-",
           render: function(data, type, row, meta) {
             if (data) {
@@ -155,7 +155,6 @@ var task_errors = {{ error_summary_table|safe }};
         },
         {
           title: "Owner",
-          {#data: "tasktype",#}
           sDefaultContent: "-",
           className: 'nowrap',
           render: function(data, type, row, meta) {
@@ -180,7 +179,6 @@ var task_errors = {{ error_summary_table|safe }};
         },
         {
           title: "Status (PS2)",
-          {#data: "superstatus",#}
           sDefaultContent: "-",
           className: 'state',
           render: function(data, type, row, meta) {
@@ -194,7 +192,6 @@ var task_errors = {{ error_summary_table|safe }};
         },
         {
           title: "Status (JEDI)",
-          {#data: "status",#}
           sDefaultContent: "-",
           className: 'state',
           render: function(data, type, row, meta) {
@@ -208,7 +205,6 @@ var task_errors = {{ error_summary_table|safe }};
         },
         {
           title: "Transient states",
-          {#data: "taskname",#}
           sDefaultContent: "-",
           render: function(data, type, row, meta) {
             if (data && data.length > 0) {
@@ -232,31 +228,26 @@ var task_errors = {{ error_summary_table|safe }};
         },
         {
           title: "N files total",
-          {#data: "nfiles",#}
           sDefaultContent: "-",
           className: 'num',
         },
         {
           title: "N files done",
-          {#data: "nfilesfinished",#}
           sDefaultContent: "-",
           className: 'num',
         },
         {
           title: "N files failed",
-          {#data: "nfilesfailed",#}
           sDefaultContent: "-",
           className: 'num',
         },
         {
           title: "Progress, %",
-          {#data: "pctfinished",#}
           sDefaultContent: "-",
           className: 'num',
         },
         {
           title: "Task logged status",
-          {#data: "errordialog",#}
           sDefaultContent: "-",
           className: 'alert',
           render: function(data, type, row, meta) {
@@ -323,6 +314,13 @@ var task_errors = {{ error_summary_table|safe }};
                     scope.plot.title,
                     scope.plot.options)
                 }
+                else if (scope.plot.type === 'bar_hist') {
+                  scope.parent.taskproblem.plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(
+                    scope.plot.data,
+                    scope.plot.options,
+                    scope.plot.name + "_chart",
+                    )
+                }
                 else if (scope.plot.type === 'bar_time') {
                   scope.parent.taskproblem.plots.charts[scope.plot.name + "_chart"] = draw_bar_timeseries(
                     scope.plot.data,
@@ -334,6 +332,8 @@ var task_errors = {{ error_summary_table|safe }};
           }
       };
   });
+
+  draw_stacked_bar_hist
 
 </script>
 {% endblock %}
