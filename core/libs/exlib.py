@@ -407,6 +407,8 @@ def build_stack_histogram(data_raw, **kwargs):
         n_decimals = kwargs['n_decimals']
 
     N_BINS_MAX = 50
+    if 'n_bin_max' in kwargs:
+        N_BINS_MAX = kwargs['n_bin_max']
     stats = []
     columns = []
 

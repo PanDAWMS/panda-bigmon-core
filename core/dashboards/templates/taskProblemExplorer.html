@@ -135,9 +135,9 @@ var task_errors = {{ error_summary_table|safe }};
       "iDisplayLength": 20,
       "paging": true,
       "scrollX": true,
-      "aaSorting": [[3, 'desc']],
+      "aaSorting": [[4, 'desc']],
       "columnDefs": [
-          {"type": "num-html", "targets": [0,2,3,6,7,8,9,10 ] }
+          {"type": "num-html", "targets": [0,3,4,8,9,10,11,12,13,14 ] }
       ],
       "data": $scope.taskproblem.tasks.list,
       "aoColumns": [
@@ -147,6 +147,19 @@ var task_errors = {{ error_summary_table|safe }};
           render: function(data, type, row, meta) {
             if (data) {
               return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Category",
+          sDefaultContent: "-",
+          className: 'nowrap',
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              return '<a href="{{ xurl }}category=' + data + '">' + data + '</a>'
             }
             else {
               return '-'
@@ -280,9 +293,9 @@ var task_errors = {{ error_summary_table|safe }};
 
       ],
       initComplete: function () {
-        this.api().columns([1,4,5]).every(function () {
+        this.api().columns([1,2,5,6]).every(function () {
           var column = this;
-          var select = $('<select><option value="">Show all</option></select>')
+          var select = $('<select><option value="">All</option></select>')
               .appendTo($(column.footer()).empty())
               .on('change', function () {
                   var val = $.fn.dataTable.util.escapeRegex($(this).val());
@@ -297,8 +310,8 @@ var task_errors = {{ error_summary_table|safe }};
         this.api().columns.adjust().draw();
       },
       createdRow: function ( row, data, index ) {
-          $('td', row).eq(4).addClass(data[4] + '_fill');
           $('td', row).eq(5).addClass(data[5] + '_fill');
+          $('td', row).eq(6).addClass(data[6] + '_fill');
         },
   })
   }

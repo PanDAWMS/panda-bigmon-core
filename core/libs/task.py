@@ -81,6 +81,17 @@ def cleanTaskList(tasks, **kwargs):
         else:
             task['owner'] = task['username']
 
+        if 'tasktype' in task and task['tasktype'].startswith('ana'):
+            if 'workinggroup' in task and task['workinggroup'] is not None and task['workinggroup'] != '':
+                task['category'] = 'group analysis' if 'username' in task and task['username'] not in ('artprod', 'atlevind', 'gangarbt') else 'service'
+            else:
+                task['category'] = 'user analysis'
+        else:
+            if 'workinggroup' in task and task['workinggroup'].startswith('GP_'):
+                task['category'] = 'group production'
+            else:
+                task['category'] = 'production'
+
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
         dvalues = ('jeditaskid', 'nfiles', 'nfilesfinished', 'nfilesfailed')

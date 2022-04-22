@@ -762,6 +762,22 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 return 'reqtoken', None, None
 
         if querytype == 'task':
+            if param == 'category':
+                if request.session['requestParams'][param] == 'group production':
+                    query['workinggroup__icontains'] = 'GP_'
+                elif request.session['requestParams'][param] == 'production':
+                    query['tasktype'] = 'prod'
+                    query['workinggroup__icontains'] = 'AP_'
+                elif request.session['requestParams'][param] == 'group analysis':
+                    query['tasktype'] = 'anal'
+                    query['workinggroup__isnull'] = False
+                    extraQueryString += " AND username not in ('artprod', 'atlevind', 'gangarbt') "
+                elif request.session['requestParams'][param] == 'user analysis':
+                    query['tasktype'] = 'anal'
+                    query['workinggroup__isnull'] = True
+                    extraQueryString += " AND username not in ('artprod', 'atlevind', 'gangarbt') "
+                elif request.session['requestParams'][param] == 'service':
+                    query['username__in'] = ('artprod', 'atlevind', 'gangarbt')
             for field in JediTasks._meta.get_fields():
                 # for param in requestParams:
                 if param == field.name:

@@ -228,7 +228,7 @@ def taskProblemExplorer(request):
         for time, count in build_time_histogram([t['creationdate'] for t in tasks]):
             plots['time_hist']['data'][0].append(time.strftime(plots['time_hist']['options']['timeFormat']))
             plots['time_hist']['data'][1].append(count[0])
-        stats, columns = build_stack_histogram(states_duration_lists, n_decimals=2)
+        stats, columns = build_stack_histogram(states_duration_lists, n_decimals=2, n_bin_max=100)
         plots['state_duration_hist']['data']['columns'] = columns
         plots['state_duration_hist']['data']['stats'] = stats
 
@@ -243,7 +243,7 @@ def taskProblemExplorer(request):
 
         # prepare data for datatable
         task_list_table_headers = [
-            'jeditaskid', 'owner', 'attemptnr', 'age', 'superstatus', 'status',
+            'jeditaskid', 'category', 'owner', 'attemptnr', 'age', 'superstatus', 'status',
             'problematic_transient_states', 'queued', 'running', 'troubling',
             'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished', 'errordialog',
         ]
