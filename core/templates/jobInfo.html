@@ -769,7 +769,10 @@ function togglePayloadLog() {
                        clearInterval($scope.reload_interval);
                     } else {
                        {#$scope.payload_log.data_table.page('last').draw('page');#}
-                       $scope.reload_interval = setInterval(() => {$('#payloadlogtable').DataTable().ajax.reload(null, false);}, 10000);
+                       $scope.reload_interval = setInterval(() => {
+                           $('#payloadlogtable').DataTable().ajax.reload(null, false);
+                           $('#payloadlogtable').DataTable().page('last').draw('page');
+                           }, 10000);
 
                     }
                 },
