@@ -752,11 +752,11 @@ function togglePayloadLog() {
            $scope.payload_log.flag = false
 
            $scope.payload_log.data_table = $('#payloadlogtable').dataTable({
-                "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
-                "pageLength": 50,
-                "paging": true,
-                "scrollX": true,
-                "aaSorting": [[0,'asc']],
+               "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+               "pageLength": 50,
+               "paging": true,
+               "scrollX": true,
+               "aaSorting": [[0, 'asc']],
                 "ajax": {
                      "url": "{% url 'getpayloadlog' pandaid %}?mode=pandaid",
                     "method": "GET",
@@ -768,7 +768,9 @@ function togglePayloadLog() {
                     if ($scope.payload_log.flag == false) {
                        clearInterval($scope.reload_interval);
                     } else {
-                       $scope.reload_interval = setInterval(() => {$('#payloadlogtable').DataTable().ajax.reload();}, 10000);
+                       {#$scope.payload_log.data_table.page('last').draw('page');#}
+                       $scope.reload_interval = setInterval(() => {$('#payloadlogtable').DataTable().ajax.reload(null, false);}, 10000);
+
                     }
                 },
                 "aoColumns": [
