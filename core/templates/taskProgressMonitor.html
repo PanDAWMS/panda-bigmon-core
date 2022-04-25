@@ -96,8 +96,8 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
           style: {},
         },
         selection: {
-            jobtype: ['run'],
-            jobstatus: ['finished'],
+            jobtype: ['build', 'run', 'merge'],
+            jobstatus: ['finished', 'failed', 'closed', 'cancelled'],
             progressunit: 'jobs',
         },
         charts: {},
