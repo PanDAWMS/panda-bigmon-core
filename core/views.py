@@ -7797,22 +7797,26 @@ def datasetList(request):
     query = {}
     extrastr = '(1=1)'
 
-    for par in ('jeditaskid', 'containername', 'datasetname'):
-        if par in request.session['requestParams']:
-            query[par] = request.session['requestParams'][par]
+    if 'datasetname' in request.session['requestParams']:
+        query['datasetname__icontains'] = request.session['requestParams']['datasetname'] if ':' not in request.session['requestParams']['datasetname'] else request.session['requestParams']['datasetname'].split(':')[1]
+    if 'containername' in request.session['requestParams']:
+        query['datasetname'] = request.session['requestParams']['containername']
+    if 'jeditaskid' in request.session['requestParams']:
+        query['jeditaskid'] = int(request.session['requestParams']['jeditaskid'])
 
     dsets = []
     if len(query) > 0 or len(extrastr) > 5:
         dsets = JediDatasets.objects.filter(**query).extra(where=[extrastr]).values()
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
-        # redirect to datasetInfo if only one dataset found
-        if len(dsets) == 1:
-            return redirect('/datasetInfo/?datasetname=' + dsets[0]['datasetname'])
 
     del request.session['TFIRST']
     del request.session['TLAST']
 
     if not is_json_request(request):
+        # redirect to datasetInfo if only one dataset found
+        if len(dsets) == 1:
+            return redirect('/datasetInfo/?datasetname=' + dsets[0]['datasetname'])
+
         timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
                           'endtime', 'lockedtime', 'frozentime', 'creationtime', 'statechecktime']
         for ds in dsets:
@@ -7837,7 +7841,7 @@ def datasetList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(dsets), content_type='application/json')
+        return HttpResponse(json.dumps(dsets, cls=DateEncoder), content_type='application/json')
 
 
 @login_customrequired
