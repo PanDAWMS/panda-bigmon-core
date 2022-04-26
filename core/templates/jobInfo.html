@@ -767,14 +767,17 @@ function togglePayloadLog() {
                 "fnInitComplete": function(oSettings, json) {
                     if ($scope.payload_log.flag == false) {
                        clearInterval($scope.reload_interval);
+                       clearInterval($scope.last_page);
                     } else {
                        {#$scope.payload_log.data_table.page('last').draw('page');#}
                        $scope.reload_interval = setInterval(() => {
                            $('#payloadlogtable').DataTable().ajax.reload(null, false);
-                           $('#payloadlogtable').DataTable().page('last').draw('page');
                            }, 10000);
-
+                       $scope.last_page = setInterval(() => {
+                           $('#payloadlogtable').DataTable().page('last').draw('page');
+                           }, 12000);
                     }
+
                 },
                 "aoColumns": [
                     {
