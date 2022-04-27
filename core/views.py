@@ -5760,7 +5760,7 @@ def taskInfo(request, jeditaskid=0):
     if jeditaskid < 1:
         if 'taskname' in request.session['requestParams']:
             querybyname = {'taskname': request.session['requestParams']['taskname']}
-            tasks = JediTasks.objects.filter(**querybyname).values()
+            tasks.extend(JediTasks.objects.filter(**querybyname).values())
             if len(tasks) > 0:
                 jeditaskid = tasks[0]['jeditaskid']
         else:
