@@ -2,6 +2,7 @@ import logging
 import ipaddress, re
 from core.common.models import AllRequests
 from core.settings.config import DB_SCHEMA, DEPLOYMENT
+from core.utils import is_json_request
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -24,7 +25,7 @@ class DDOSMiddleware(object):
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
                               '188.184.90.172'  # J..h M......n request
                               ]
-    excepted_views = ['/grafana/', '/payloadlog/']
+    excepted_views = ['/grafana/', '/payloadlog/', '/statpixel/']
     blacklist = ['130.132.21.90', '192.170.227.149']
     maxAllowedJSONRequstesParallel = 1
     maxAllowedSimultaneousRequestsToFileBrowser = 1
@@ -119,8 +120,8 @@ class DDOSMiddleware(object):
         )
         reqs.save()
 
-        # do not check requests from excepted views
-        if url_view not in self.excepted_views:
+        # do not check requests from excepted views and not JSON requests
+        if url_view not in self.excepted_views and is_json_request(request):
 
             # Check against number of unprocessed requests to filebrowser from ART subsystem
             if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
