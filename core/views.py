@@ -8051,6 +8051,7 @@ def fileList(request):
         query['procstatus'] = request.session['requestParams']['procstatus']
         extraparams += '&procstatus=' + request.session['requestParams']['procstatus']
 
+    dataset = []
     nfilestotal = 0
     nfilesunique = 0
     if int(datasetid) > 0:
@@ -8072,6 +8073,7 @@ def fileList(request):
             'nfilestotal': nfilestotal,
             'nfilesunique': nfilesunique,
             'extraparams': extraparams,
+            'datasetname': datasetname,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
