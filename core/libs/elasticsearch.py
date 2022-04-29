@@ -41,7 +41,7 @@ def create_esatlas_connection(verify_certs=True, timeout=2000, max_retries=10,
         _logger.error(ex)
     return None
 
-def get_payloadlog(id, connection, mode = 'pandaid'):
+def get_payloadlog(id, connection, start = 0, length = 50, mode = 'pandaid'):
     """
     Get pilot logs from ATLAS ElasticSearch storage
     """
@@ -49,7 +49,7 @@ def get_payloadlog(id, connection, mode = 'pandaid'):
     query = {}
     jobs = []
     flag_running_job = True
-
+    end = start + length
     s = Search(using=connection, index='atlas_pilotlogs*')
 
     s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID", "Harvester_WorkerID", "Harvester_ID"])
@@ -63,10 +63,13 @@ def get_payloadlog(id, connection, mode = 'pandaid'):
     elif mode == 'jeditaskid':
         s = s.filter('term', TaskID__keyword='{0}'.format(id)).sort("@timestamp")
     try:
-        response = s.scan()
+        response = s[start:end].execute()
+
+        total = response.hits.total.value
+
         for hit in response:
             logs_list.append(hit.to_dict())
     except Exception as ex:
         _logger.error(ex)
 
-    return logs_list, flag_running_job
+    return logs_list, flag_running_job, total
