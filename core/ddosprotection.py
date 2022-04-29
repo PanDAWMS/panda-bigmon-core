@@ -2,6 +2,7 @@ import logging
 import ipaddress, re
 from core.common.models import AllRequests
 from core.settings.config import DB_SCHEMA, DEPLOYMENT
+from core.utils import is_json_request
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -119,8 +120,8 @@ class DDOSMiddleware(object):
         )
         reqs.save()
 
-        # do not check requests from excepted views
-        if url_view not in self.excepted_views:
+        # do not check requests from excepted views and not JSON requests
+        if url_view not in self.excepted_views and is_json_request(request):
 
             # Check against number of unprocessed requests to filebrowser from ART subsystem
             if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:

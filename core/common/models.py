@@ -196,6 +196,7 @@ class JediDatasetContents(models.Model):
     failedattempt = models.IntegerField(null=True, db_column='FAILEDATTEMPT', blank=True)
     lumiblocknr = models.IntegerField(null=True, db_column='LUMIBLOCKNR', blank=True)
     procstatus = models.CharField(max_length=192, db_column='PROC_STATUS')
+    ramcount = models.IntegerField(null=True, db_column='RAMCOUNT', blank=True)
 
     class Meta:
         db_table = u'jedi_dataset_contents'

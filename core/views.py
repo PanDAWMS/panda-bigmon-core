@@ -5760,7 +5760,7 @@ def taskInfo(request, jeditaskid=0):
     if jeditaskid < 1:
         if 'taskname' in request.session['requestParams']:
             querybyname = {'taskname': request.session['requestParams']['taskname']}
-            tasks = JediTasks.objects.filter(**querybyname).values()
+            tasks.extend(JediTasks.objects.filter(**querybyname).values())
             if len(tasks) > 0:
                 jeditaskid = tasks[0]['jeditaskid']
         else:
@@ -8051,6 +8051,7 @@ def fileList(request):
         query['procstatus'] = request.session['requestParams']['procstatus']
         extraparams += '&procstatus=' + request.session['requestParams']['procstatus']
 
+    dataset = []
     nfilestotal = 0
     nfilesunique = 0
     if int(datasetid) > 0:
@@ -8072,6 +8073,7 @@ def fileList(request):
             'nfilestotal': nfilestotal,
             'nfilesunique': nfilesunique,
             'extraparams': extraparams,
+            'datasetname': datasetname,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
@@ -9184,9 +9186,8 @@ def get_hc_tests(request):
     data = {'tests': tests}
     response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     return response
-
-@never_cache
-def getPayloadLog(request, id=None):
+@csrf_exempt
+def getPayloadLog(request):
     """
     A view to asynchronously load pilot logs from ElasticSearch storage by pandaid or taskid
     :param request:
@@ -9202,19 +9203,24 @@ def getPayloadLog(request, id=None):
     mode = 'pandaid'
 
     log_content = {}
-
-    try:
-        id = int(id)
-    except:
+    if request.POST and "pandaid" in request.POST:
+        try:
+            id = int(request.POST['pandaid'])
+            start_var = int(request.POST['start'])
+            length_var = int(request.POST['length'])
+            draw_var = int(request.POST['draw'])
+        except:
+            HttpResponse(status=404, content_type='text/html')
+    else:
         HttpResponse(status=404, content_type='text/html')
-    if 'mode' in request.session['requestParams']:
-        if request.session['requestParams']['mode'] == 'jeditaskid':
-            mode = 'jeditaskid'
 
-    payloadlog, job_running_flag = get_payloadlog(id, connection, mode=mode)
+    payloadlog, job_running_flag, total = get_payloadlog(id, connection, start=start_var, length=length_var, mode=mode)
 
     log_content['payloadlog'] = payloadlog
     log_content['flag'] = job_running_flag
+    log_content['recordsTotal'] = total
+    log_content['recordsFiltered'] = total
+    log_content['draw'] = draw_var
 
     response = HttpResponse(json.dumps(log_content, cls=DateEncoder), content_type='application/json')
 
