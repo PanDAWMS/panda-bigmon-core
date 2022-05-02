@@ -69,7 +69,7 @@ urlpatterns = [
     re_path(r'^incidents/$', coremon_views.incidentList, name='incidentList'),
     re_path(r'^logger/$', coremon_views.pandaLogger, name='pandaLogger'),
     re_path(r'^esatlaslogger/$', coremon_views.esatlasPandaLogger, name='esatlasPandaLogger'),
-    re_path(r'^payloadlog/(?P<id>.*)/$', coremon_views.getPayloadLog, name='getpayloadlog'),
+    re_path(r'^payloadlog/$', coremon_views.getPayloadLog, name='getpayloadlog'),
     re_path(r'^datatable/data/jeditaskid', coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
 
     re_path(r'^fileInfo/$', coremon_views.fileInfo, name='fileInfoLegacy'),
