@@ -272,4 +272,4 @@ def taskProblemExplorer(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps({}), content_type='application/json')
+        return HttpResponse(json.dumps(tasks, cls=DateEncoder), content_type='application/json')
