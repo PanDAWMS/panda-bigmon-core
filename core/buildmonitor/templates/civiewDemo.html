@@ -71,7 +71,8 @@ var cidisplayTable = $('#CISummary').dataTable({
                  else if ( v0I >= 44000 && v0I < 46000 ) { v0F = (v0I - 42000)/11000;}
                  else if ( v0I >= 46000 && v0I < 48000 ) { v0F = (v0I - 44000)/11000;}
                  else if ( v0I >= 48000 && v0I < 52000 ) { v0F = (v0I - 46000)/11000;}
-                 else if ( v0I >= 52000 ) { v0F = (v0I - 50000)/11000;}
+                 else if ( v0I >= 52000 && v0I < 56000 ) { v0F = (v0I - 50000)/11000;}
+                 else if ( v0I >= 56000 ) { v0F = (v0I - 54000)/11000;}
                  var hexV0 = '#F'+Math.floor(v0F*1048575).toString(16);
                  $('td:eq(0)', row).css("background-color", hexV0).css("border", "1px solid rgb(197, 219, 236)");
                  var v9=($('td:eq(9)',row).text().split(" "))[0];

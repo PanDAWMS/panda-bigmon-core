@@ -30,7 +30,7 @@ def compviewDemo(request):
     if 'ar' in request.session['requestParams'] and len(request.session['requestParams']['ar']) < 100:
         arname = request.session['requestParams']['ar']
     else:
-        arname = 'x86_64-slc6-gcc62-opt'
+        arname = 'x86_64-centos7-gcc11-opt'
     if 'proj' in request.session['requestParams'] and len(request.session['requestParams']['proj']) < 100:
         pjname = request.session['requestParams']['proj']
     else:

@@ -41,7 +41,6 @@
                 <th>ART<BR>LOCAL</th>
                 <th>ART<BR>GRID</th>
                 <th>CVMFS<BR>(on client)</th>
-                <th>IMAGE<BR>(developing)</th>
                 <th>ORDER string</th>
      </thead>
      <tbody></tbody>
@@ -56,14 +55,14 @@
 var json=JSON.stringify({{ reslt3 | safe }});
 
 var globaldisplayTable = $('#firstGlobalExample').dataTable({
-"order": [[10, 'asc']],
+"order": [[9, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "data": JSON.parse(json),
 
 "columnDefs": [
        {
-                "targets": [ 10 ],
+                "targets": [ 9 ],
                 "visible": false,
                 "searchable": false
        }],
