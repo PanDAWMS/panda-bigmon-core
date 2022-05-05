@@ -2,19 +2,36 @@
 {% load static %}{% load common_tags %}
 {% block page_title %}ART nightly tests{% endblock %}
 {% block css_page %}
-    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+  <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
+{% endblock %}
+{% block js_head_page_library %}
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
 {% endblock %}
 {% block subtitle %}Overview of ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
 
-
+<div data-ng-controller="artOverviewController">
 <a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
 {% if requestParams.view and requestParams.view == 'branches' %}
     <a href="{{ noviewurl }}view=packages" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to packages view</a>
 {% else %}
     <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
 {% endif %}
-    <br>
+
+<div style="float: right">
+  <a class="button back-to-home" ng-click="art.plot.toggle()">Show results plot</a>
+</div>
+<br>
+<div id="plot" class="ng-hide" ng-hide="art.plot.is_hidden" >
+  <p ng-bind-html="art.plot.message"></p>
+</div>
+
+</div>
+
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
@@ -45,9 +62,9 @@
               <tr>
                   <td class="cell-left">
                       {% if requestParams.view and requestParams.view == 'packages' %}
-                        <a class="link-in-table" href="{%  url "artTasks" %}?package={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d" }}&view={{ requestParams.view }}">All branches</a>
+                        <a class="link-in-table" href="{%  url "artTasks" %}?package={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d" }}&view={{ requestParams.view }}">All {% if requestParams.branch %}selected{% endif %} branches</a>
                       {% else %}
-                        <a class="link-in-table" href="{%  url "artTasks" %}?branch={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d"}}&view={{ requestParams.view }}">All packages</a>
+                        <a class="link-in-table" href="{%  url "artTasks" %}?branch={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d"}}&view={{ requestParams.view }}">All {% if requestParams.package %}selected{% endif %} packages</a>
                       {% endif %}</td>
                   {% for ntag in ntaglist %}
                       {% for tags,files in pack.items %}
@@ -93,7 +110,84 @@
 
 {% endblock %}
 
-{% block helptext %}
+{% block help %}
     <a name="help"></a>
-    {% include "artHelp.html" with helptitle="ART GRID jobs help" %}
+    {% include "artHelp.html" %}
+{% endblock %}
+
+{% block js_body_page %}
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+<script>
+app.controller('artOverviewController', function($scope, $sce) {
+  $scope.art = {
+    plot: {
+      is_hidden: true,
+      message: '',
+      options: {
+        title: 'Overall ART tests result',
+        timeFormat: '%Y-%m-%d',
+        labels: ['Nightly tag, date', 'Number of tests'],
+        size: [getWidth()-40, 400],
+        grouped: true,
+        legend: true,
+        colors: {
+          active: '#6495ED',
+          finished: '#FADA5E',
+          succeeded: '#3adb76',
+          failed: '#ff6347',
+        }
+      },
+      data: []
+    },
+    data_raw: {{ artpackages|safe }},
+    test_states: ['succeeded', 'finished', 'failed', 'active'],
+  };
+
+  $scope.art.plot.toggle = function () {
+    $scope.art.plot.is_hidden = false;
+    $scope.art.plot.message = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... ');
+
+    if ($scope.art.plot.data.length === 0) {$scope.art.plot.prepare_data();}
+    $scope.art.plot.message = $sce.trustAsHtml('');
+    draw_bar_cat(
+      $scope.art.plot.data,
+      'plot',
+      $scope.art.plot.options.title,
+      $scope.art.plot.options
+    );
+
+  };
+
+  $scope.art.plot.prepare_data = function () {
+    let tmp_dict = {};
+    Object.keys($scope.art.data_raw).forEach((key) => {
+      Object.keys($scope.art.data_raw[key]).forEach((ntag) => {
+        if (!(ntag in tmp_dict)) {
+          tmp_dict[ntag] = $scope.art.test_states.reduce((a, c) => (a[c]=0, a), {});
+        }
+        $scope.art.test_states.forEach((v) => {
+          (v in $scope.art.data_raw[key][ntag]) ? tmp_dict[ntag][v] += $scope.art.data_raw[key][ntag][v] : tmp_dict[ntag][v] += 0;
+        })
+      })
+    });
+
+    $scope.art.plot.options.y_grid_lines = [{
+      text: '',
+      value: Math.max(...Object.keys(tmp_dict).map((d) => Object.values(tmp_dict[d]).reduce((a, c) => a + c))),
+    }];
+
+    $scope.art.plot.data.push(['x', ...Object.keys(tmp_dict)]);
+    $scope.art.test_states.forEach((v) => {
+      let tmp_list = [v,];
+      Object.keys(tmp_dict).forEach((ntag) => {
+        tmp_list.push(tmp_dict[ntag][v]);
+      });
+      $scope.art.plot.data.push(tmp_list);
+    });
+
+  }
+
+
+});
+</script>
 {% endblock %}

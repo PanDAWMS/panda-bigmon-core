@@ -3,7 +3,7 @@ from os.path import dirname, join
 
 import core
 from core import filebrowser, pbm, admin
-from core.settings.local import dbaccess, MY_SECRET_KEY, LOG_ROOT
+from core.settings.local import MY_SECRET_KEY, LOG_ROOT
 
 ALLOWED_HOSTS = [
     ### cern.ch
@@ -22,8 +22,6 @@ ALLOWED_HOSTS = [
 ### VIRTUALENV
 VIRTUALENV_PATH = '/data/virtualenv37'
 
-IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
-
 ### WSGI
 #WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
 
@@ -32,8 +30,19 @@ DATABASE_ROUTERS = [
     'core.dbrouter.ProdMonDBRouter',
     'core.pbm.dbrouter.PandaBrokerageMonDBRouter',
 ]
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# name spaces of DB tables per application
+DATABASE_NAME_SPACES = {
+    'bigpandamon': 'ATLAS_PANDABIGMON',
+    'pandajob': 'ATLAS_PANDA',
+    'pandaarchjob': 'ATLAS_PANDAARCH',
+    'schedresource': 'ATLAS_PANDAMETA',
+    'harvester': 'ATLAS_PANDA',
+    'jedi': 'ATLAS_PANDA',
+    'prodsys': 'ATLAS_DEFT',
+}
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TEMPLATES = [
     {
@@ -44,7 +53,6 @@ TEMPLATES = [
             join(dirname(core.__file__), 'templates'),
             join(dirname(core.filebrowser.__file__), 'templates'),
             join(dirname(core.pbm.__file__), 'templates'),
-
         ],
         'OPTIONS': {
             'context_processors': [
@@ -86,7 +94,71 @@ SECRET_KEY = MY_SECRET_KEY
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-DATABASES = dbaccess
+
+
+try:
+    from core.settings.local import dbaccess_postgres
+except ImportError:
+    dbaccess_postgres = None
+try:
+    from core.settings.local import dbaccess_oracle_atlas
+except ImportError:
+    dbaccess_oracle_atlas = None
+try:
+    from core.settings.local import dbaccess_oracle_doma
+except ImportError:
+    dbaccess_oracle_atlas = None
+
+
+#DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
+DEPLOYMENT = 'ORACLE_ATLAS'
+
+PRMON_LOGS_DIRECTIO_LOCATION = None
+if DEPLOYMENT == 'ORACLE_ATLAS':
+    DB_SCHEMA = 'ATLAS_PANDABIGMON'
+    DB_SCHEMA_PANDA = 'ATLAS_PANDA'
+    DB_SCHEMA_PANDA_META = 'ATLAS_PANDAMETA'
+    DB_SCHEMA_PANDA_ARCH = 'ATLAS_PANDAARCH'
+    DB_SCHEMA_IDDS = 'ATLAS_IDDS'
+    DATABASES = dbaccess_oracle_atlas
+    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+    IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
+elif DEPLOYMENT == 'POSTGRES':
+    DB_SCHEMA = 'doma_pandabigmon'
+    DB_SCHEMA_PANDA = 'doma_panda'
+    DB_SCHEMA_PANDA_ARCH = 'doma_pandaarch'
+    DB_SCHEMA_PANDA_META = 'doma_pandameta'
+    DB_SCHEMA_IDDS = 'DOMA_IDDS'
+    DATABASES = dbaccess_postgres
+    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+    IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
+elif DEPLOYMENT == 'ORACLE_DOMA':
+    DB_SCHEMA = 'DOMA_PANDABIGMON'
+    DB_SCHEMA_PANDA = 'DOMA_PANDA'
+    DB_SCHEMA_PANDA_ARCH = 'DOMA_PANDAARCH'
+    DB_SCHEMA_PANDA_META = 'DOMA_PANDAMETA'
+    DB_SCHEMA_IDDS = 'DOMA_IDDS'
+    DATABASES = dbaccess_oracle_doma
+    CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+    IDDS_HOST = 'https://aipanda015.cern.ch:443/idds'
+    IDDS_HOST_GCP = 'https://aipanda016.cern.ch:443/idds'
+    PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
+
+DB_N_MAX_IN_QUERY = 100  # number of items in IN (*,*..) query. if more - use tmp table
+
+CACHES = {
+    "default": {
+    'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+    'LOCATION': f'"{DB_SCHEMA}"."DJANGOCACHE"',
+    'TIMEOUT': 31536000,
+    'OPTIONS': {
+        'MAX_ENTRIES': 1000000000
+        }
+    }
+}
+
+if DEPLOYMENT == 'POSTGRES':
+    CACHES['default']['LOCATION'] = f'"{DB_SCHEMA}"."djangocache"'
 
 
 ### URL_PATH_PREFIX for multi-developer apache/wsgi instance
@@ -291,7 +363,7 @@ LOGGING = {
             'handlers': ['logfile-pbm'],
             'level': 'DEBUG',
         },
-        'social':{
+        'social': {
             'handlers': ['logfile-error', 'social'],
             'level': 'DEBUG',
             'propagate': True,
@@ -310,8 +382,8 @@ LOGGING = {
         },
     },
     'logfile': {
-        'level':'DEBUG',
-        'class':'logging.handlers.RotatingFileHandler',
+        'level': 'DEBUG',
+        'class': 'logging.handlers.RotatingFileHandler',
         'filename': LOG_ROOT + "/logfile",
         'maxBytes': 10000000,
         'backupCount': 5,
@@ -332,3 +404,4 @@ ENV = {
     ### Navigation chain item separator
     'SEPARATOR_NAVIGATION_ITEM': "   &#187;   ",
 }
+

@@ -1,25 +1,9 @@
+"""
+ART related models
+"""
+
 from __future__ import unicode_literals
-
-from ..pandajob.columns_config import COLUMNS, ORDER_COLUMNS, COL_TITLES, FILTERS
-
-import json
-from django.core.exceptions import ObjectDoesNotExist
-from django.db import connection
-from django.db import connections
-from django.utils import timezone
-from django.contrib.auth.models import AbstractUser
-#from rest_framework.authtoken.models import Token
-#import uuid
-#from hashlib import sha1
-#import hmac
-
-
 from django.db import models
-models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
-                                 'primaryColumns', 'secondaryColumns', \
-                                 'columnTitles', 'filterFields',)
-
-
 
 
 class ARTTask(models.Model):
@@ -33,6 +17,7 @@ class ARTTask(models.Model):
     task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASK_ID')
     class Meta:
         db_table = u'"ATLAS_DEFT"."T_ART"'
+
 
 class ARTTest(models.Model):
     test_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TEST_ID', primary_key=True)
@@ -53,6 +38,7 @@ class ARTTasks(models.Model):
     nfilesfailed = models.DecimalField(decimal_places=0, max_digits=12, db_column='NFILESFAILED')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ARTTasks"'
+
 
 class ARTResults(models.Model):
     row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
@@ -103,12 +89,3 @@ class ARTTests(models.Model):
     created = models.DateTimeField(null=True, db_column='CREATED')
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."ART_TESTS"'
-
-
-class ReportEmails(models.Model):
-    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='ID', primary_key=True)
-    report = models.CharField(max_length=150, db_column='REPORT', null=False)
-    type = models.CharField(max_length=150, db_column='TYPE', null=False)
-    email = models.CharField(max_length=256, db_column='EMAIL', null=False)
-    class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."REPORT_EMAIL"'

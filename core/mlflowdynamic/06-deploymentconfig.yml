@@ -1,0 +1,76 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  creationTimestamp: null
+  name: bigpanda-mlflow-randomstring
+  namespace: bigpanda-mlflow
+  labels:
+    name: bigpanda-mlflow-randomstring
+    app: bigpanda-mlflow
+    instance: randomstring
+spec:
+  replicas: 1
+  selector:
+    deployment-config.name: bigpanda-mlflow-randomstring
+    app: bigpanda-mlflow
+    name: bigpanda-mlflow-randomstring
+    instance: randomstring
+  strategy:
+    resources: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        deployment-config.name: bigpanda-mlflow-randomstring
+        app: bigpanda-mlflow
+        name: bigpanda-mlflow-randomstring
+        instance: randomstring
+    spec:
+      containers:
+      - env:
+          - name: MLARTEFACTS_SOURCE
+            value: MLARTEFACTSVAL
+        image: docker-registry.default.svc:5000/bigpanda-mlflow/bigpanda-mlflow:latest
+        name: default-container
+        resources: {}
+      - image: nginx:stable-alpine
+        name: nginx-redirection
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /etc/nginx/conf.d
+          name: config-randomstring
+        - mountPath: /var/cache/nginx
+          name: nginx-redirector-cache-randomstring
+        - mountPath: /var/run
+          name: nginx-redirector-run-randomstring
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: nginx-redirection-randomstring
+        name: config-randomstring
+      - emptyDir: {}
+        name: nginx-redirector-cache-randomstring
+      - emptyDir: {}
+        name: nginx-redirector-run-randomstring
+  test: false
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - default-container
+      from:
+        kind: ImageStreamTag
+        name: bigpanda-mlflow:latest
+        namespace: bigpanda-mlflow
+      lastTriggeredImage: null
+    type: ImageChange
+status:
+  availableReplicas: 0
+  latestVersion: 0
+  observedGeneration: 0
+  replicas: 0
+  unavailableReplicas: 0
+  updatedReplicas: 0

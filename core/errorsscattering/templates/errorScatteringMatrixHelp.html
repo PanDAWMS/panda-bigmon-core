@@ -1,0 +1,48 @@
+{% load static %}
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Errors scattering matrix help:</p></div>
+<div class="card-section">
+
+<p>
+  <a href="{% url 'errorsScattering' %}">The page</a> represents a correlation matrix between ATLAS production Requests/Tasks and Regions/Queues.
+</p>
+<p>
+    The displayed tasks are in <span class="running"><b>running</b></span>  or <span class="submitting"><b>submitting</b></span>  states only. <span class="paused"><b>Paused</b></span> tasks are removed.
+</p>
+<p>
+On the main page the first column shows all the active production Requests and the first row shows all the Regions participating in production. The second column displays the number of Tasks in each Request with various job execution success rates (>80%, <80%, <50%). The second row displays the number of Queues in each Region with various job execution success rates (>80%, <80%, <50%). The cells of the table show the production job success rate, as well as number of finished and failed jobs for each Request vs. Region combination/intersection.
+</p>
+<p>
+Legend on the upper right corner clarifies the color codding of the cells and numbers used in the page. Lighter colors indicate cells with low job statistics (number of jobs < 10).
+</p>
+<p>
+Rows are ordered by average success rate, with Requests having the highest failing rate on top.
+</p>
+<p>
+Each Request (first column) has a <b><i class="fi-plus"></i></b> sign in front.
+  Clicking on the Request number on the other hand will open the PanDA page of that Request.
+  Clicking it will open a similar correlation matrix page with all the Tasks belonging to that Request.
+  Clicking on a Grafana icon <img src="{% static 'images/grafana-black.png' %}" width=15 height=15 border=0> leads to job monitoring dashboard for given request with more detailed information.
+</p>
+<p>
+Each Region (first row) has a <b><i class="fi-plus"></i></b> sign under the Region name. Clicking it will open a similar correlation matrix page with all the Queues belonging to that Region. Clicking on the Region name on the other hand will open the panda page of that Region.
+</p>
+<p>
+    The default time window for the overall job statistics at each cell is 8 hours. But the page has a <b><q>Time window</q></b> menu with other time window options (24 hours, 7 days). You can also manually modify the time window to any other value in the page URL.
+</p>
+<p>
+The page has various display or filtering options through the following buttons:
+</p>
+<ul>
+    <li> <b><q>Switch to the queues view</q></b> button allows you to display all the queues at once. </li>
+    <li> <b><q>Exclude scouts</q></b> button will exclude the scouting jobs from the statistics, so basically the matrix will skip the Requests/Tasks which are still running scouting jobs. </li>
+    <li> <b><q>Hide low statistics cells</q></b> button will omit the cells with <100 statistics, so basically it will condense the matrix, showing only the cells with higher contributions to production. </li>
+</ul>
+
+<p>
+  On the request page, there is a Grafana icon <img src="{% static 'images/grafana.png' %}" width=15 height=15 border=0> on the top left (next to the request number). This leads to job monitoring dashboard for given request with more detailed information.
+  There, one can also select specific tasks of the request.
+</p>
+
+</div>
+</div>

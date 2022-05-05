@@ -50,10 +50,10 @@
 <th class='running'> running </th>
 <th class='holding'> holding </th>
 <th class='transferring'> transferring </th>
+<th class='merging'> merging </th>
 <th class='finished'> finished </th>
 <th class='failed'> failed </th>
 <th class='cancelled'> cancelled </th>
-<th class='merging'> merging </th>
 <th class='closed'> closed </th>
 </tr>
 
@@ -77,6 +77,6 @@ No jobs with working group set were found.
 
 {% endblock %}
 
-{% block helptext %}
-{% include "workingGroupsHelp.html" with helptitle="Working groups job dashboard" %}
+{% block help %}
+{% include "dashboardWorkingGroupsHelp.html" %}
 {% endblock %}

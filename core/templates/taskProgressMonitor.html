@@ -51,7 +51,7 @@
       </label>
   </div>
   <div class="medium-1 column align-middle">
-      <a class="button primary" ng-click="taskprofile.update()">Update</a>
+      <a class="button primary" ng-style="taskprofile.button.style" ng-click="taskprofile.update()">{$ taskprofile.button.text $}</a>
   </div>
   <div class="medium-5 column"></div>
   </div>
@@ -78,6 +78,7 @@
     to include build and merge jobs types ended up in failed, cancelled and closed states to the plot.</p>
   <p>Also you can select a task progress unit: job or events. It will be applied to y axis. </p>
   <p>The plot is interactive, if one hover a point the extra information as pandaid of a job will be shown in tooltip.
+    If you can click on a point a new tab for the selected job will be opened.
     You can click on legend items to hide points associated to its category. </p>
 </div>
 
@@ -90,9 +91,13 @@ var jeditaskid = '{{ jeditaskid }}';
 var request_params = {{ requestParams | safe }};
 app.controller('taskProfileController', ['$scope', '$http', function($scope, $http) {
     $scope.taskprofile = {
+        button: {
+          text: 'Update',
+          style: {},
+        },
         selection: {
-            jobtype: ['run'],
-            jobstatus: ['finished'],
+            jobtype: ['build', 'run', 'merge'],
+            jobstatus: ['finished', 'failed', 'closed', 'cancelled'],
             progressunit: 'jobs',
         },
         charts: {},
@@ -150,6 +155,8 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
     };
 
     $scope.taskprofile.update = function() {
+      $scope.taskprofile.button.text = 'Updating...';
+      $scope.taskprofile.button.style = {'background-color': '#222222', 'pointer-events': 'none'};
       let resp = $scope.taskprofile.fetch();
       resp.then(function (data) {
         $scope.taskprofile.charts["profile_chart"].data.datasets = $scope.taskprofile.data;
@@ -160,6 +167,8 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
           $scope.taskprofile.charts["profile_chart"].config.options.scales.yAxes[0].scaleLabel.labelString = 'Number of ended jobs';
         }
         $scope.taskprofile.charts["profile_chart"].update();
+        $scope.taskprofile.button.text = 'Update';
+        $scope.taskprofile.button.style = {};
       });
     };
 
@@ -202,7 +211,16 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
     let resp = $scope.taskprofile.fetch();
     resp.then(function (data) {
       $scope.taskprofile.charts["profile_chart"] = $scope.taskprofile.buildChart($scope.taskprofile.data);
+
+      document.getElementById("task_profile_chart").onclick = function (evt) {
+        var points = $scope.taskprofile.charts["profile_chart"].getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+        if (points.length && points.length === 1) {
+          window.open('/job/' + $scope.taskprofile.charts["profile_chart"].data.datasets[points[0]._datasetIndex].data[points[0]._index].label + '/', '_blank')
+        }
+      };
     });
+
+
 }]);
 
 

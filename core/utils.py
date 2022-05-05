@@ -2,6 +2,7 @@
     core.utils
 """
 import logging
+import re
 _logger = logging.getLogger('bigpandamon')
 
 
@@ -19,3 +20,66 @@ def is_json_request(request):
 
     return False
 
+
+def is_wildcards(value):
+    if '*' in value or '|' in value or ',' in value or '!' in value:
+        return True
+    else:
+        return False
+
+
+def extensibleURL(request, xurl=''):
+    """ Return a URL that is ready for p=v query extension(s) to be appended """
+    if xurl == '':
+        xurl = request.get_full_path()
+    if xurl.endswith('/'):
+        if 'tag' or '/job/' or '/task/' in xurl:
+            xurl = xurl[0:len(xurl)]
+        else:
+            xurl = xurl[0:len(xurl) - 1]
+
+    if xurl.find('?') > 0:
+        xurl += '&'
+    else:
+        xurl += '?'
+
+    return xurl
+
+
+def removeParam(urlquery, parname, mode='complete'):
+    """Remove a parameter from current query"""
+    urlquery = urlquery.replace('&&', '&')
+    urlquery = urlquery.replace('?&', '?')
+    pstr = '.*({}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
+    pat = re.compile(pstr)
+    mat = pat.match(urlquery)
+    if mat:
+        pstr = mat.group(1)
+        urlquery = urlquery.replace(pstr, '')
+        urlquery = urlquery.replace('&&', '&')
+        urlquery = urlquery.replace('?&', '?')
+        if mode != 'extensible' and (urlquery.endswith('?') or urlquery.endswith('&')):
+            urlquery = urlquery[:len(urlquery) - 1]
+    return urlquery
+
+
+def complete_request(request, **kwargs):
+    """
+    Remove temporary params from session to avoid ORA-22835
+    :param request:
+    :param kwargs: expects extra_keys as list
+    :return:
+    """
+    _logger.info("Len of session dict at the end: {}".format(len(str(request.session._session))))
+
+    keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls', 'TFIRST', 'TLAST', 'PLOW', 'PHIGH']
+    if 'extra_keys' in kwargs:
+        keys_to_remove.extend(kwargs['extra_keys'])
+
+    for k in keys_to_remove:
+        if k in request.session:
+            del request.session[k]
+    request.session.modified = True
+    _logger.info("Len of session dict after cleaning: {}".format(len(str(request.session._session))))
+
+    return request

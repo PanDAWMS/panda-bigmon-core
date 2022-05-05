@@ -6,5 +6,5 @@ from django.urls import re_path
 from core.oi import jbviews
 
 urlpatterns = [
-    re_path(r'^jobsbuster/$', jbviews.jbhome, name='jobsBuster'),
+    re_path(r'^oi/jobsbuster/$', jbviews.jbhome, name='jobsBuster'),
 ]

@@ -4,9 +4,80 @@ Utils for runningProdTasks module
 """
 
 import numpy as np
+import copy
 from datetime import datetime
 from django.db import transaction, DatabaseError
-from core.runningprod.models import ProdNeventsHistory
+from core.runningprod.models import ProdNeventsHistory, RunningProdTasksModel
+from core.common.models import JediTasks
+import core.constants as const
+
+from core.libs.sqlcustom import preprocess_wild_card_string
+
+
+def updateView(request, query, exquery, wild_card_str):
+    """
+    Add specific to runningProd view params to query
+    :param request:
+    :param query:
+    :param wild_card_str:
+    :return:
+    """
+    query = copy.deepcopy(query)
+    exquery = copy.deepcopy(exquery)
+
+    if 'workinggroup' in query and 'preset' in request.session['requestParams'] and \
+            request.session['requestParams']['preset'] == 'MC' and ',' in query['workinggroup']:
+        #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
+        #     exquery['workinggroup__in'] = excludeWGList
+        try:
+            del query['workinggroup']
+        except:
+            pass
+    if 'status' in request.session['requestParams'] and request.session['requestParams']['status'] == '':
+        try:
+            del query['status']
+        except:
+            pass
+    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
+        try:
+            del query['site']
+        except:
+            pass
+        exquery['site__isnull'] = True
+    if 'currentpriority__gte' in query and 'currentpriority__lte' in query:
+        query['priority__gte'] = query['currentpriority__gte']
+        query['priority__lte'] = query['currentpriority__lte']
+        del query['currentpriority__gte']
+        del query['currentpriority__lte']
+
+    jedi_tasks_fields = [field.name for field in JediTasks._meta.get_fields() if field.get_internal_type() == 'CharField']
+    running_prod_fields = (set([
+        field.name for field in RunningProdTasksModel._meta.get_fields() if field.get_internal_type() == 'CharField'
+    ])).difference(set(jedi_tasks_fields))
+
+    for f in running_prod_fields:
+        if f in request.session['requestParams'] and request.session['requestParams'][f] and f not in query and f not in wild_card_str:
+            if f == 'hashtags':
+                wild_card_str += ' AND ('
+                wildCards = request.session['requestParams'][f].split(',')
+                currentCardCount = 1
+                countCards = len(wildCards)
+                for card in wildCards:
+                    if '*' not in card:
+                        card = '*' + card + '*'
+                    elif card.startswith('*'):
+                        card = card + '*'
+                    elif card.endswith('*'):
+                        card = '*' + card
+                    wild_card_str += preprocess_wild_card_string(card, 'hashtags')
+                    if currentCardCount < countCards:
+                        wild_card_str += ' AND '
+                    currentCardCount += 1
+                    wild_card_str += ')'
+            else:
+                query[f] = request.session['requestParams'][f]
+
+    return query, exquery, wild_card_str
 
 
 def clean_running_task_list(task_list):
@@ -21,9 +92,18 @@ def clean_running_task_list(task_list):
         task['nevents'] = task['nevents'] if task['nevents'] is not None else 0
         task['neventsused'] = task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
         task['neventstobeused'] = task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
-        task['neventsrunning'] = task['neventsrunning'] if 'neventsrunning' in task and task['neventsrunning'] is not None else 0
-        task['neventswaiting'] = task['neventstobeused']
-        task['neventsdone'] = task['neventsused']
+
+        if task['status'] not in const.TASK_STATES_FINAL and task['neventsrunning'] + task['neventsfinished'] + task['neventsfailed'] + task['neventswaiting'] == task['nevents']:
+            task['neventsdone'] = task['neventsfinished']
+        else:
+            task['neventsdone'] = task['neventsused']
+            task['neventswaiting'] = task['neventstobeused']
+
+        # # check if running + waiting + done = total
+        # if task['neventsdone'] + task['neventsrunning'] + task['neventswaiting'] > task['nevents'] and \
+        #         task['neventsdone'] + task['neventswaiting'] == task['nevents']:
+        #     task['neventswaiting'] -= task['neventsrunning']
+
         task['slots'] = task['slots'] if task['slots'] else 0
         task['aslots'] = task['aslots'] if task['aslots'] else 0
 
@@ -50,7 +130,7 @@ def clean_running_task_list(task_list):
             outputtypes = task['outputdatasettype'].split(',')
         else:
             outputtypes = []
-        if len(outputtypes) > 0:
+        if len(outputtypes) > 0 and len(outputtypes[0]) > 0:
             clean_outputtypes = []
             for outputtype in outputtypes:
                 task['outputtypes'] += outputtype.split('_')[1] + ' ' if '_' in outputtype else ''
@@ -62,6 +142,9 @@ def clean_running_task_list(task_list):
                 clean_outputtypes.append(cot)
             clean_outputtypes = list(set(clean_outputtypes))
             task['outputdatatype'] = clean_outputtypes[0] if len(clean_outputtypes) == 1 else ' '.join(clean_outputtypes)
+        else:
+            task['outputtypes'] = 'N/A'
+            task['outputdatatype'] = 'N/A'
 
         if 'hashtags' in task and len(task['hashtags']) > 1:
             task['hashtaglist'] = []
@@ -78,7 +161,7 @@ def prepare_plots(task_list, productiontype=''):
     :param productiontype: str
     :return:
     """
-    ev_states = ['waiting', 'running', 'done']
+    ev_states = ['waiting', 'running', 'done', 'failed']
     plots_groups = {
         'main': ['nevents_sum_status', 'age_hist'],
         'main_preset': [],
@@ -152,6 +235,7 @@ def prepare_plots(task_list, productiontype=''):
                     'waiting': 0,
                     'running': 0,
                     'done': 0,
+                    'failed': 0,
                 }
             }
         },
@@ -251,6 +335,7 @@ def prepare_plots(task_list, productiontype=''):
 
     # build histograms
     N_BIN_MAX = 50
+    plots_to_delete = []
     for pname, pdata in plots_data['hist'].items():
         rawdata = pdata['rawdata']
         if len(rawdata) > 0:
@@ -267,6 +352,12 @@ def prepare_plots(task_list, productiontype=''):
             plots_data['hist'][pname]['data'][0].extend(list(np.floor(mranges)))
             plots_data['hist'][pname]['data'][1].extend(list(np.histogram(rawdata, ranges)[0]))
         else:
+            plots_to_delete.append(pname)
+
+    # deleting plots if no data
+    if len(plots_to_delete) > 0:
+        print(plots_to_delete)
+        for pname in plots_to_delete:
             try:
                 del (plots_data['hist'][pname])
             except:

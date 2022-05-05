@@ -19,18 +19,16 @@ class BigTasks(BaseURLTasksProvider):
 
         if esTaskList:
             for task in esTaskList:
-                urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid']) + '/?version=old'))
-                urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid']) + '/?version=old&mode=nodrop'))
-                urlsQueue.put((self.BASIC_PRIORITY, '/tasknew/' + str(task['jeditaskid']) + '/'))
+                urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid']) + '/'))
 
-                # cache of jobsummary and plots for tasknew page
+                # cache of jobsummary and plots for input-centric task page
                 urlsQueue.put((self.BASIC_PRIORITY, '/getjobsummaryfortask/' + str(task['jeditaskid']) + '/?mode=nodrop&infotype=jobsummary'))
                 urlsQueue.put((self.BASIC_PRIORITY, '/getjobsummaryfortask/' + str(task['jeditaskid']) + '/?mode=drop&infotype=jobsummary'))
 
         bigTaskList = self.downloadPayloadJSON(URL_WITH_BIG_TASKS)
         if bigTaskList:
             for task in bigTaskList:
-                urlsQueue.put((self.BASIC_PRIORITY, '/task/'+str(task['jeditaskid'])+'/'))
+                urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid'])+'/'))
                 urlsQueue.put((self.BASIC_PRIORITY, '/task/' + str(task['jeditaskid']) + '/?mode=nodrop'))
 
         return urlsQueue

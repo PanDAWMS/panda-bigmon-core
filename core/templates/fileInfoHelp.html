@@ -1,5 +1,6 @@
-<tr class="docsection"><th><a name="fileInfoHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>File detail page help:</p></div>
+<div class="card-section">
 
 <p>
 PanDA's JEDI file information records the processing status and history of a file (as well as its static parameters). 'Occurrences' of a file are usages of the file in processing. A file may be used many times, if different jobs are assigned different event ranges in the file to process (in which case firstevent and endevent record the assigned range), and/or if a job fails and is retried.
@@ -14,5 +15,29 @@ Documentation on PanDA JEDI files:
 <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#The_JEDI_Dataset_Contents_table">schema</a>.<p>
 </p>
 
-</td>
+<p><b>Input</b> file states description:</p>
+<ul>
+{% if show == 'all' or  frec.status == 'ready' %} <li>  Status <b class='ready'>ready</b> indicates the file information is correctly retrieved from DDM and is inserted to the JEDI_Dataset_Contents table </li> {% endif %}
+{% if show == 'all' or  frec.status == 'missing' %} <li>  Status <b class='missing'>missing</b> indicates the file is missing in the cloud/site where corresponding task is assigned </li> {% endif %}
+{% if show == 'all' or  frec.status == 'lost' %} <li>  Status <b class='lost'>lost</b> indicates the file was available in the previous lookup but is now unavailable </li> {% endif %}
+{% if show == 'all' or  frec.status == 'broken' %} <li>  Status <b class='broken'>broken</b> indicates the file is corrupted </li> {% endif %}
+{% if show == 'all' or  frec.status == 'picked' %} <li>  Status <b class='picked'>picked</b> indicates the file is picked up to generate jobs </li> {% endif %}
+{% if show == 'all' or  frec.status == 'running' %} <li>  Status <b class='running'>running</b> indicates one or more jobs are using the file </li> {% endif %}
+{% if show == 'all' or  frec.status == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates the file was successfully used </li> {% endif %}
+{% if show == 'all' or  frec.status == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates the file was tried multiple times but not succeeded </li> {% endif %}
+{% if show == 'all' or  frec.status == 'partial' %} <li>  Status <b class='partial'>partial</b> indicates the file was split at event-level and some of event chunks were successfully finished </li> {% endif %}
+</ul>
+
+<p><b>Output</b> file states description:</p>
+<ul>
+{% if show == 'all' or  frec.status == 'defined' %} <li>  Status <b class='defined'>defined</b> indicates the file information is inserted to the JEDI_Dataset_Contents table </li> {% endif %}
+{% if show == 'all' or  frec.status == 'running' %} <li>  Status <b class='running'>running</b> indicates the file is being produced </li> {% endif %}
+{% if show == 'all' or  frec.status == 'prepared' %} <li>  Status <b class='prepared'>prepared</b> indicates the file is produced </li> {% endif %}
+{% if show == 'all' or  frec.status == 'merging' %} <li>  Status <b class='merging'>merging</b> indicates the file is being merged </li> {% endif %}
+{% if show == 'all' or  frec.status == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates the file was successfully processed </li> {% endif %}
+{% if show == 'all' or  frec.status == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates the file was not produced or failed to be merged </li> {% endif %}
+</ul>
+
+</div>
+</div>
 

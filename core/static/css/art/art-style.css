@@ -6,8 +6,12 @@
 /* ART Main Menu styles */
 /* --------------------------------------------------------------------------------------------------- */
 fieldset.artmenu {
-    margin: 1rem 0.3rem;
-    padding: 0.5rem 0.5rem;
+    margin: 0 0.3rem;
+    padding: 0 0.5rem;
+}
+fieldset.artmenu.scrollable {
+    height: 85vh;
+    overflow-y: scroll;
 }
 
 li.artmenu-item {
@@ -49,6 +53,7 @@ fieldset.artmenu li.input-group button.hollow.alert {
     max-width: 500px; /*250 px for status box with tar index and link to logs, +250px for sub results  */
     display: inline-flex;
     white-space: normal;
+    line-height: 1.43rem;
 }
 
 .with-ntagfull {
@@ -340,7 +345,7 @@ fieldset.artmenu li.input-group button.hollow.alert {
 }
 
 .cell.extra-info {
-    line-height: 1.8rem;
+  line-height: 1.43rem;
 }
 
 .left-aligned {
@@ -600,22 +605,30 @@ fieldset.artmenu li.input-group button.hollow.alert {
     font-weight: bold;
 }
 
-.art-legend.finished_job {
+.finished_job {
     background: #FADA5E;
 }
 
-.art-legend.done_job {
+.done_job {
     background: #3adb76;
 }
 
-.art-legend.succeeded_job {
+.succeeded_job {
     background: #3adb76;
 }
 
-.art-legend.failed_job {
+.failed_job {
     background: tomato;
 }
 
-.art-legend.active_job {
+.active_job {
     background: cornflowerblue;
 }
+
+.na_fill {color:black;  background-color:#fefefe}
+.active_fill {color:black;  background-color:#E6F0F6}
+.alert_fill {  color:black;  background-color:#ffcccc }
+.warning_fill { color:black;  background-color:#fffdb1 }
+.warning_b_fill { color:black;  background-color:#ecfeb8 }
+.warning_w_fill { color:black;  background-color:#fff0b3 }
+.ok_fill {color:black;  background-color:#d6f5d6}

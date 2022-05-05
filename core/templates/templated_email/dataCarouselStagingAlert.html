@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <h4>Warning about staging from {{ summary.0.SE }} in ATLAS Data Carousel</h4>
+</head>
+<body>
+
+{% for row in summary %}
+<p>The Rucio rule <b><a href="https://rucio-ui.cern.ch/rule?rule_id={{ row.RR }}">{{ row.RR }}</a></b> started on
+  <b>{{ row.START_TIME }}</b>, updated last time <b>{{ row.UPDATE_TIME }}</b> ago and used, in particular, by task
+  <b><a href="https://bigpanda.cern.ch/{% url 'taskInfo' %}?jeditaskid={{ row.TASKID }}">{{ row.TASKID }}</a></b> is still lasting.
+  Current progress is <b>{{ row.STAGED_FILES }}</b> out of <b>{{ row.TOT_FILES }}</b> files.</p>
+{% endfor %}
+
+<p>Please perform necessary interventions if you found it wrong.</p>
+
+Truly yours,<br>
+Data Carousel Team
+
+</body>
+</html>

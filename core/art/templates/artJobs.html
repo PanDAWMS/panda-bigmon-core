@@ -13,12 +13,15 @@
 {% else %}
     <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
 {% endif %}
-{% if taskids|length == 1 %}
-    <div style="float: right">
-        <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
-    </div>
-{% endif %}
-    <br>
+
+<div style="float: right">
+  {% if taskids|length == 1 %}
+    <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
+  {% elif taskids|length >= 0 and taskids|length < 50 %}
+    <a href="{% url 'jobList' %}?jeditaskid={% for id in taskids %}{{ id }}{% if not forloop.last %}|{% endif %}{% endfor %}" class="button back-to-home">PanDA job list</a>
+  {% endif %}
+</div>
+<br>
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
@@ -140,7 +143,7 @@
                                                               <a  class="to-logs greylink" target="_blank" href="{% url "filebrowser" %}{{ job.linktopreviousattemptlogs }}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of previous attempt</span></i></a>
                                                           {% endif %}
                                                           {% if job.finalresult != 'active' %}
-                                                              <a  class="to-logs blacklink" target="_blank" href="https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{{job.linktext}}/"><i class="fi-clipboard tooltip-upper"><span class="tooltip-text">Link to ART EOS copy area</span></i></a>
+                                                              <a  class="to-logs blacklink" target="_blank" href="{{job.eoslink}}"><i class="fi-clipboard tooltip-upper"><span class="tooltip-text">Link to EOS copy area</span></i></a>
                                                           {% endif %}
                                                           {% if job.finalresult != 'active' and job.htmllink %}
                                                               <a  class="to-logs blacklink" target="_blank" href="{{job.htmllink}}"><i class="fi-graph-bar tooltip-upper"><span class="tooltip-text">Link to result HTML</span></i></a>
@@ -163,7 +166,7 @@
                                       {% if ntaglist|length == 1 %}
                                           <td class="cell extra-info left-aligned">
                                             {% for job in jobs.jobs %}
-                                              <a class="bluelink" href="{% url 'siteInfo' job.computingsite  %}"><b>{{ job.computingsite }}</b></a><br>
+                                              <div><a class="bluelink" href="{% url 'siteInfo' job.computingsite  %}"><b>{{ job.computingsite }}</b></a></div>
                                             {% endfor %}
                                           </td>
                                           <td class="cell extra-info right-aligned">
@@ -235,7 +238,7 @@ function toggleShowHide(divID, linkID) {
 {% endblock %}
 
 
-{% block helptext %}
+{% block help %}
     <a name="help"></a>
-    {% include "artHelp.html" with helptitle="ART GRID jobs help" %}
+    {% include "artHelp.html" %}
 {% endblock %}

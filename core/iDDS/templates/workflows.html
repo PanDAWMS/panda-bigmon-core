@@ -1,0 +1,147 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% load common_tags %}
+
+{% block page_title %}Workflow monitor{% endblock %}
+{% block subtitle %}Workflow monitor{{ viewParams.selection|safe }} {% endblock %}
+
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.min.css" %}">
+{% endblock %}
+{% block css_page %}
+    <link rel="stylesheet" href="{% static "css/idds.css" %}?{% cache_bust "css/idds.css" %}">
+{% endblock %}
+
+{% block js_head_page_library %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+    <table>
+    <tr class='tablesection'><th colspan=20><a name="tasks"></a> Workflows attribute summary</th></tr>
+    {% for attribute, occurences in iDDSsummary.items %}
+    <tr><th> {{ attribute }} ({{ occurences|length }}) </th><td>
+    <div class="comment more">
+    {% for property, count  in occurences.items %}
+    <span {% if attribute == 'status' %} class='{{property}} item' {% else %} class="item" {% endif %}> {{ property }} </span>
+        <a href="{% if iDDSinstance == 'default' %}{% url 'workflowprogressitems' %}{% else %}idds/wfprogress_gcp/{% endif %}?{{attribute}}={{property}}">({{ count }})</a>
+    {% endfor %}
+    </div></td></tr>
+    {% endfor %}
+    </table>
+
+
+    <div class="card bp-container-simple">
+      <div class="card-divider">
+        <p>Requests:</p>
+      </div>
+      <div class="card-section">
+        <table id="requests_table" class="display data-table" >
+          <thead><tr>
+            <th>Request ID</th>
+            <th>Username</th>
+            <th>Request Status</th>
+            <th>Plot</th>
+            <th>WorkFlow Name</th>
+            <th>Created At</th>
+            <th>Total tasks</th>
+            <th>Tasks</th>
+            <th>Remaining files</th>
+            <th>Processed files</th>
+            <th>Total files</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+{% endblock %}
+
+{% block js_body_page %}
+
+<script type="text/javascript">
+var iDDSrequests=JSON.parse(JSON.stringify({{ iDDSrequests | safe }}));
+const iDDSinstance = '{{ iDDSinstance|safe }}';
+
+function preprocData(dataIn){
+   var dataOut = [];
+   for(id in dataIn){
+      if(dataIn.hasOwnProperty(id)){
+         dataOut.push(dataIn[id]);
+         dataOut[dataOut.length - 1].Id = id;
+      }
+   }
+   return dataOut;
+}
+
+
+var requests_table = $('#requests_table').DataTable({
+    scrollX: true,
+    order: [[0, "desc"]],
+    columns: [
+        { data: "request_id", title: "request id", className: "num" },
+        { data: "username", title: "username" },
+        { data: "r_status", title: "workflow status" },
+        { data: "request_id", title: "graph",
+            render: function(data, type, row, meta) {
+                let url_base = iDDSinstance === 'default' ? '{% url "daggraph" %}' : 'idds/daggraph_gcp/';
+                return '<a target=blank href = "' + url_base +'?requestid='+row['request_id']+'">'+'plot'+'</a>';
+            }
+        },
+        { data: "r_name", title: "workflow name",
+            render: function(data, type, row, meta) {
+                return '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links_all']+'">'+row['r_name']+'</a>';
+            }
+        },
+        { data: "created_at", title: "created on (UTC)" },
+        { data: "total_tasks", title: "total tasks" },
+        { data: "tasks_links", title: "tasks",
+           render: function(data, type, row, meta) {
+            retVal = ''
+            for (var key in row['tasks_links']) {
+
+                switch(key) {
+                  case 'Finished':
+                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="finished">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
+                    break;
+                  case 'Failed':
+                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="failed">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
+                    break;
+                  case 'Running':
+                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="running">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
+                    break;
+                  default:
+                    retVal += '<span class="registered">'+key+'('+row['tasks_statuses'][key]+')'+'</span> ';
+                }
+            }
+            return retVal;
+           }
+        },
+
+        { data: "remaining_files", title: "remaining_files" },
+        { data: "processed_files", title: "released_files" },
+        { data: "total_files", title: "total_files" },
+    ],
+    data: preprocData(iDDSrequests),
+    selectable: true,
+    select: {
+        style: 'single'
+    },
+
+});
+
+
+(function ($) {
+    $.fn.goTo = function () {
+        $('html, body').animate({scrollTop: $(this).offset().top + 'px'}, 'fast');
+        return this;
+    }
+})(jQuery);
+
+</script>
+
+{% endblock %}

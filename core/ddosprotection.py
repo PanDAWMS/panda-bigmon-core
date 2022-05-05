@@ -1,5 +1,8 @@
 import logging
+import ipaddress, re
 from core.common.models import AllRequests
+from core.settings.config import DB_SCHEMA, DEPLOYMENT
+from core.utils import is_json_request
 
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -9,6 +12,7 @@ import json
 import psutil
 from django.db import connection
 
+
 _logger = logging.getLogger('bigpandamon')
 # We postpone JSON requests is server is overloaded
 # Done for protection from bunch of requests from JSON
@@ -16,24 +20,25 @@ _logger = logging.getLogger('bigpandamon')
 
 class DDOSMiddleware(object):
 
-    sleepInterval = 5 #sec
+    sleepInterval = 5  # sec
     maxAllowedJSONRequstesPerHour = 600
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
-                              '188.184.90.172' # J..h M......n request
+                              '188.184.90.172'  # J..h M......n request
                               ]
-    blacklist = ['130.132.21.90','192.170.227.149']
+    excepted_views = ['/grafana/', '/payloadlog/', '/statpixel/', '/idds/getiddsfortask/', '/getstaginginfofortask/']
+    blacklist = ['130.132.21.90', '192.170.227.149']
     maxAllowedJSONRequstesParallel = 1
     maxAllowedSimultaneousRequestsToFileBrowser = 1
     listOfServerBackendNodesIPs = ['188.184.93.101', '188.184.116.46', '188.184.104.150',
                                    '188.184.84.149', '188.184.108.134', '188.184.108.131']
 
-    restrictedIPs = ['137.138.77.2', # Incident on 13-01-2020 14:30:00
-                     '188.185.76.164', #EI Machine
-                     '147.156.116.63', #EI Machine
-                     '147.156.116.43', #EI Machine
-                     '147.156.116.44', #EI Machine
-                     '147.156.116.81', #EI Machine
-                     '147.156.116.83', #EI Machine
+    restrictedIPs = ['137.138.77.2',  # Incident on 13-01-2020 14:30:00
+                     '188.185.76.164',  # EI Machine
+                     '147.156.116.63',  # EI Machine
+                     '147.156.116.43',  # EI Machine
+                     '147.156.116.44',  # EI Machine
+                     '147.156.116.81',  # EI Machine
+                     '147.156.116.83',  # EI Machine
                      ]
 
     def __init__(self, get_response):
@@ -44,43 +49,31 @@ class DDOSMiddleware(object):
             _logger.info('Request: {}'.format(request.get_full_path()))
         except:
             _logger.exception('Can not get full path of request')
+
+        # check if remote is a valid IP address
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for is None:
+            x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case one server config
+        if x_forwarded_for is not None:
+            try:
+                x_forwarded_for = re.findall(r'[0-9]+(?:\.[0-9]+){3}', x_forwarded_for)[0]
+                ip = ipaddress.ip_address(x_forwarded_for)
+            except:
+                _logger.warning('Provided HTTP_X_FORWARDED_FOR={} is not a correct IP address.'.format(x_forwarded_for))
+                return HttpResponse(
+                    json.dumps({'message': 'provided remote address is wrong'}),
+                    status=400,
+                    content_type='application/json')
+
         try:
             x_referer = request.META.get('HTTP_REFERER')
         except:
             x_referer = ''
-        dbtotalsess, dbactivesess = 0, 0
-        cursor = connection.cursor()
-        cursor.execute("SELECT SUM(NUM_ACTIVE_SESS), SUM(NUM_SESS) FROM ATLAS_DBA.COUNT_PANDAMON_SESSIONS")
-        rows = cursor.fetchall()
-        for row in rows:
-            dbactivesess = row[0]
-            dbtotalsess = row[1]
-            break
 
-        sqlRequest = "SELECT ATLAS_PANDABIGMON.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
-        cursor.execute(sqlRequest)
-        requestToken = cursor.fetchall()
-        requestToken = requestToken[0][0]
-        cursor.close()
-
-        reqs = AllRequests(
-            id = requestToken,
-            server = request.META.get('HTTP_HOST'),
-            remote = x_forwarded_for,
-            qtime = timezone.now(),
-            url= request.META.get('QUERY_STRING'),
-            urlview = request.path,
-            referrer = x_referer[:3900] if x_referer and len(x_referer) > 3900 else x_referer,
-            useragent = request.META.get('HTTP_USER_AGENT'),
-            is_rejected = 0,
-            load=psutil.cpu_percent(interval=1),
-            mem = psutil.virtual_memory().percent,
-            dbtotalsess = dbtotalsess,
-            dbactivesess = dbactivesess
-        )
-        reqs.save()
-
+        try:
+            url_view = request.path if len(request.path.split('/')) <= 2 else '/'.join(request.path.split('/')[0:2]) + '/'
+        except:
+            url_view = ''
 
         # we limit number of requests per hour for a set of IPs
         try:
@@ -88,77 +81,122 @@ class DDOSMiddleware(object):
         except:
             useragent = None
 
-        if (not x_forwarded_for is None) and x_forwarded_for in self.restrictedIPs:
-            _logger.info('[DDOS protection] got request from agent: {}'.format(useragent))
-            countRestictedrequests = []
-            startdate = datetime.utcnow() - timedelta(hours=1)
-            enddate = datetime.utcnow()
-            eiquery = {
-                'qtime__range': [startdate, enddate],
-                'remote':x_forwarded_for,
-                'is_rejected': 0,
-                'rtime': None,
-            }
-            countRestictedrequests.extend(
-                AllRequests.objects.filter(**eiquery).values('remote').exclude(urlview='/grafana/').annotate(
-                    Count('remote')))
-            if len(countRestictedrequests) > 0 and 'remote__count' in countRestictedrequests[0]:
-                _logger.info('[DDOS protection] found number of non rejected request for last minute: {}'.format(countRestictedrequests[0]['remote__count']))
-                if countRestictedrequests[0]['remote__count'] > self.maxAllowedJSONRequstesParallel:
-                    reqs.is_rejected = 1
-                    reqs.save()
-                    return HttpResponse(
-                        json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
-                        status=429,
-                        content_type='application/json')
+        cursor = connection.cursor()
+        dbtotalsess, dbactivesess = 0, 0
+        # try:
+        #     cursor.execute("SELECT SUM(NUM_ACTIVE_SESS), SUM(NUM_SESS) FROM ATLAS_DBA.COUNT_PANDAMON_SESSIONS")
+        #     rows = cursor.fetchall()
+        #     for row in rows:
+        #         dbactivesess = row[0]
+        #         dbtotalsess = row[1]
+        #         break
+        # except:
+        #     _logger.warning('Failed to get connections number from ATLAS_DBA')
 
-            response = self.get_response(request)
-            reqs.rtime = datetime.utcnow()
-            reqs.save()
-            return response
+        if DEPLOYMENT == 'POSTGRES':
+            sqlRequest = f"SELECT nextval('{DB_SCHEMA}.\"ALL_REQUESTS_SEQ\"') as my_req_token;"
+        else:
+            sqlRequest = f"SELECT {DB_SCHEMA}.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
 
+        cursor.execute(sqlRequest)
+        requestToken = cursor.fetchall()
+        requestToken = requestToken[0][0]
+        cursor.close()
 
-        #We restrinct number of requets per hour
-        if (not x_forwarded_for is None) and x_forwarded_for not in self.notcachedRemoteAddress:
-                # x_forwarded_for = '141.108.38.22'
-            startdate = datetime.utcnow() - timedelta(hours=1)
-            enddate = datetime.utcnow()
-            query = {
-                'remote':x_forwarded_for,
-                'qtime__range': [startdate, enddate],
-                'is_rejected': 0,
-                 }
-            countRequest = []
-            countRequest.extend(AllRequests.objects.filter(**query).values('remote').exclude(urlview='/grafana/').annotate(Count('remote')))
+        reqs = AllRequests(
+            id=requestToken,
+            server=request.META.get('HTTP_HOST'),
+            remote=x_forwarded_for,
+            qtime=timezone.now(),
+            url=request.META.get('QUERY_STRING'),
+            urlview=request.path,
+            referrer=x_referer[:3900] if x_referer and len(x_referer) > 3900 else x_referer,
+            useragent=request.META.get('HTTP_USER_AGENT'),
+            is_rejected=0,
+            load=psutil.cpu_percent(interval=1),
+            mem=psutil.virtual_memory().percent,
+            dbtotalsess=dbtotalsess,
+            dbactivesess=dbactivesess
+        )
+        reqs.save()
 
-            #Check against general number of request
-            if len(countRequest) > 0:
-                if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour or x_forwarded_for in self.blacklist:
-                    reqs.is_rejected = 1
-                    reqs.save()
-                    return HttpResponse(json.dumps({'message':'your IP produces too many requests per hour, please try later'}), status=429, content_type='application/json')
+        # do not check requests from excepted views and not JSON requests
+        if url_view not in self.excepted_views and is_json_request(request):
 
+            # Check against number of unprocessed requests to filebrowser from ART subsystem
+            if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
+                startdate = datetime.utcnow() - timedelta(minutes=20)
+                enddate = datetime.utcnow()
+                query = {
+                    'qtime__range': [startdate, enddate],
+                    'is_rejected': 0,
+                    'urlview': '/filebrowser/',
+                    'rtime': None,
+                }
+                countRequest = []
+                countRequest.extend(AllRequests.objects.filter(**query).values('remote').annotate(Count('urlview')))
+                if len(countRequest) > 0:
+                    if countRequest[0]['urlview__count'] > self.maxAllowedSimultaneousRequestsToFileBrowser or x_forwarded_for in self.blacklist:
+                        reqs.is_rejected = 1
+                        reqs.save()
+                        return HttpResponse(
+                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
+                            status=429,
+                            content_type='application/json')
+                response = self.get_response(request)
+                reqs.rtime = datetime.utcnow()
+                reqs.save()
+                return response
 
-        #Check against number of unprocessed requests to filebrowser from ART subsystem
-        #if 1==1:
-        if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
-            startdate = datetime.utcnow() - timedelta(minutes=20)
-            enddate = datetime.utcnow()
-            query = {
-                'qtime__range': [startdate, enddate],
-                'is_rejected': 0,
-                'urlview': '/filebrowser/',
-                'rtime': None,
-                 }
-            countRequest = []
-            countRequest.extend(AllRequests.objects.filter(**query).values('remote').annotate(Count('urlview')))
-            if len(countRequest) > 0:
-                if countRequest[0]['urlview__count'] > self.maxAllowedSimultaneousRequestsToFileBrowser or x_forwarded_for in self.blacklist:
-                    reqs.is_rejected = 1
-                    reqs.save()
-                    return HttpResponse(
-                        json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
-                        status=429, content_type='application/json')
+            if x_forwarded_for is not None and x_forwarded_for in self.restrictedIPs:
+                _logger.info('[DDOS protection] got request from agent: {}'.format(useragent))
+                countRestictedrequests = []
+                startdate = datetime.utcnow() - timedelta(hours=1)
+                enddate = datetime.utcnow()
+                eiquery = {
+                    'qtime__range': [startdate, enddate],
+                    'remote': x_forwarded_for,
+                    'is_rejected': 0,
+                    'rtime': None,
+                }
+                countRestictedrequests.extend(
+                    AllRequests.objects.filter(**eiquery).values('remote').annotate(Count('remote')))
+                if len(countRestictedrequests) > 0 and 'remote__count' in countRestictedrequests[0]:
+                    _logger.info('[DDOS protection] found number of non rejected request for last minute: {}'.format(
+                        countRestictedrequests[0]['remote__count']))
+                    if countRestictedrequests[0]['remote__count'] > self.maxAllowedJSONRequstesParallel:
+                        reqs.is_rejected = 1
+                        reqs.save()
+                        return HttpResponse(
+                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
+                            status=429,
+                            content_type='application/json')
+                response = self.get_response(request)
+                reqs.rtime = datetime.utcnow()
+                reqs.save()
+                return response
+
+            # We restrict number of requests per hour
+            if x_forwarded_for is not None and x_forwarded_for not in self.notcachedRemoteAddress:
+                startdate = datetime.utcnow() - timedelta(hours=1)
+                enddate = datetime.utcnow()
+                query = {
+                    'remote': x_forwarded_for,
+                    'qtime__range': [startdate, enddate],
+                    'is_rejected': 0,
+                     }
+                countRequest = []
+                countRequest.extend(AllRequests.objects.filter(**query).values('remote').annotate(Count('remote')))
+
+                # Check against general number of request
+                if len(countRequest) > 0:
+                    if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour or x_forwarded_for in self.blacklist:
+                        reqs.is_rejected = 1
+                        reqs.save()
+                        return HttpResponse(
+                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
+                            status=429,
+                            content_type='application/json')
 
         response = self.get_response(request)
         reqs.rtime = datetime.utcnow()

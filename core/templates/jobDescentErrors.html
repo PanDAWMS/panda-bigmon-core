@@ -1,0 +1,19 @@
+{% if errors and errors|length > 0 %}
+  <table class="fresh-table alert">
+  <thead>
+    <tr><th colspan="20">Errors of previous attempts of the job:</th></tr>
+  </thead>
+  <tbody>
+    <tr><th>PanDA ID</th><th>Message</th></tr>
+    {% for job, value in errors.items %}
+      <tr><td><a href="{% url 'jobInfo' %}?pandaid={{ job }}"> {{ job }} </a></td><td>{{ value|safe }}</td></tr>
+    {% endfor %}
+  </tbody>
+  </table>
+{% else %}
+  <div class="card bp-container-simple info">
+    <div class="card-divider">
+      <p>No errors of previous attempts found for the job</p>
+    </div>
+  </div>
+{% endif %}

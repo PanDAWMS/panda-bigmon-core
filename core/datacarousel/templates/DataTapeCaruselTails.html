@@ -1,0 +1,155 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Data Carousel Tails{% endblock %}
+{% block subtitle %}Data Carousel Tails {{ viewParams.selection|safe }} {% endblock %}
+
+{% block body %}
+
+    {# http://jsfiddle.net/r2zgmgq1/ #}
+    <div data-ng-controller="tails_view_ctrl">
+        <div class="row" >
+            <div class="large-3 columns text-center">
+                <select id="timewindow">
+                    <option ng-repeat="timeitem in selecttime" ng-value="timeitem.name" ng-selected="timeitem.selected == 1" >
+                        {$ timeitem.name $}
+                    </option>
+                </select>
+            </div>
+        </div>
+{#        <div class="row" >#}
+{#            <div class="large-3 columns text-center">#}
+{#                <select id="sourcese" ng-model="selectedSE" ng-options="timeitem as timeitem for timeitem in selecttime" >#}
+{#                       <option value="" disabled>All Source Tape SEs</option>#}
+{#                </select>#}
+{#            </div>#}
+{#        </div>#}
+        <div class="row" >
+            <div class="large-3 columns">
+                <a ng-click="updateTimeWindow();" class="button primary">Update</a>
+            </div>
+        </div>
+        <div id="chart_container" class="row">
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block js_body_page %}
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {packages: ['corechart']});
+
+        app.service('Service', ['$http', service]).controller('tails_view_ctrl', ['$scope', 'Service', controller]);
+
+        function service($http, $scope) {
+            var get = function (requestparams) {
+                return $http({
+                    method: 'GET',
+                    url: '{% url 'datacartaildata' %}' + requestparams,
+                    cache: false
+                })
+            };
+            return {
+                get: get
+            }
+        }
+
+        function controller($scope, Service) {
+            var request = "";
+            request = "?days=3";
+            $scope.selecttime =[
+                    {name:'1 day', value:1, selected:0},
+                    {name:'3 days',value:3, selected:1},
+                    {name:'10 days', value:10, selected:0},
+                    {name:'20 days', value:20, selected:0},
+                    {name:'30 days', value:30, selected:0},
+                    {name:'60 days', value:60, selected:0}
+                ];
+
+            google.charts.setOnLoadCallback(function () {
+                $scope.updateTimeWindow();
+            });
+
+            $scope.updateTimeWindow = function(){
+                request = "";
+                var e = document.getElementById("timewindow");
+                request = "?1=4&days=" + ($scope.selecttime[e.selectedIndex].value);
+
+                Service.get(request).then(function successCallback(response) {
+                    $scope.processResponce(response);
+                }, function errorCallback(response) {
+                    $scope.processResponce(response);
+                });
+            };
+
+            $scope.processResponce = function (response) {
+                var targetElement = document.getElementById('chart_container');
+                angular.element(targetElement).empty();
+
+                if (response.data) {
+                    var diventry = '<div class="large-6">Outliers:<br><table>';
+                    for (var key in response.data.tasks_rucio) {
+                        diventry += '<tr><th>' + key +'</th>'
+                        for (var items in response.data.tasks_rucio[key]) {
+                            var entry = response.data.tasks_rucio[key][items];
+                            diventry += '<td><a href="/task/'+entry[0]+'" target="_blank">'+entry[0]+'</a>, <a href="https://rucio-ui.cern.ch/rule?rule_id='+entry[1]+'" target="_blank">'+entry[1]+'</a></td>'
+                        }
+                        diventry += '</tr>'
+                    }
+                    diventry += '<table></div>';
+                    var newEle = angular.element(diventry);
+                    angular.element(targetElement).append(newEle);
+
+
+                    for (var key in response.data.plotsdata) {
+                        drawChart(response.data.plotsdata[key], key, targetElement);
+                    }
+                } else {
+                    var newEle = angular.element("<div class=\"large-12\">No progress data found</div>");
+                    angular.element(targetElement).append(newEle);
+                }
+            }
+
+            function drawChart(data, se_name, targetElement) {
+                var linewight = {};
+                var colors = [];
+                var index = 0;
+                for (var key in data.outliers) {
+                    if (data.outliers[key]) {
+                        linewight[index] = {lineWidth: 7};
+                        //colors[index] = 'red';
+                    } else {
+                        //colors[index] = 'gray';
+                        linewight[index] = {lineWidth: 2};
+                    }
+                    index++;
+                }
+
+
+                var options = {
+                    title: se_name,
+                    intervals: {'style': 'line'},
+                    series: linewight,
+                    //colors: colors,
+                    hAxis: {
+                        title: "Hours since staging queued",
+                    },
+                    vAxis: {
+                        title: "N files staged"
+                    }
+
+                };
+
+                var newEle = angular.element("<div id=\"chart_" + se_name + "\" style=\"width: 800px; height: 500px;\" ></div>");
+                angular.element(targetElement).append(newEle);
+
+                var datatails = google.visualization.arrayToDataTable(data.series);
+                var chart_series = new google.visualization.LineChart(document.getElementById('chart_' + se_name));
+                chart_series.draw(datatails, options);
+            }
+        }
+
+    </script>
+{% endblock %}

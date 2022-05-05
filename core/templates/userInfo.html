@@ -14,6 +14,13 @@
 {% endblock %}
 {% block body %}
 
+<div class="callout info" data-closable>
+  <h5><b>Please participate in testing a completely new <a href="{{ xurl }}view=dash">MyBigPanDA page</a></b></h5>
+  <p>The new user dashboard focuses on the progress of your tasks and highlighting of possible problems. </p>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
 
 <p>
 {% if ntasks > 0 or njobsets > 0 or njobs > 0 %}
@@ -143,7 +150,7 @@
 			{% endif %}
 		</td>
 		<td>{{ task.reqid }} </td>
-		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %}     <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}     {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %}     <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} <br><font color='brown'>{{ task.errordialog|safe }}</font></td>
+		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %}     <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}     {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %}     <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
 		<td  {% if task.scoutinghascritfailures == True %} class='broken_fill'
              {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
              {% else %} class='{{task.superstatus}}_fill'
@@ -298,9 +305,9 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 
 {% endblock %}
 
-{% block helptext %}
-{% include "userInfoHelp.html" with helptitle="User information page help" %}
-{% include "taskInfoHelp.html" with helptitle="Tasks" %}
-{% include "jobListHelp.html" with helptitle="Job list" %}
-{% include "jobInfoHelp.html" with helptitle="Jobs" %}
+{% block help %}
+{% include "userInfoHelp.html" %}
+{% include "taskInfoHelp.html" %}
+{% include "jobListHelp.html" %}
+{% include "jobInfoHelp.html" with show='all' %}
 {% endblock %}

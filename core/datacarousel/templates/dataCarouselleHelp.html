@@ -1,0 +1,15 @@
+{% load static %}
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Data Carouselle dashboard:</p></div>
+<div class="card-section">
+  <p><a href="{% url 'dataCarouselleDashBoard' %}">This page</a> summarizes input datasets staging from TAPE RSE. </p>
+  <p>By default page shows all non-finished stagings and staged datasets that were modified in last 24 hours.
+    To change the time range of the selection, use the <b>Change</b> button in the top sub-bar.
+    To apply the new time range push the <b>Apply</b> button.</p>
+  <p>Use <b>multi-select menus</b> in top-right corner of the page to select particular campaign or source RSE.
+    Click on the <b>Update</b> button to reload the data.</p>
+
+  <p>If you notice any issue or if you have an advise how to improve the page, please let us know
+    <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
+</div>
+</div>

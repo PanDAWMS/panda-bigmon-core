@@ -1,0 +1,68 @@
+{% load staticfiles %}
+{% load common_tags %}
+
+<!DOCTYPE>
+<html>
+<head>
+    <title>DAG visualization</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+    <script src="{% static 'js/cytoscape.min.js' %}"></script>
+    <script src="{% static 'js/dagre.js' %}"></script>
+    <script src="{% static 'js/cytoscape-dagre.js' %}"></script>
+    <script src="{% static 'js/cytoscape-node-html-label.min.js' %}"></script>
+    <link href="{% static 'css/dagvisualization.css' %}" rel="stylesheet"/>
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            var cy = window.cy = cytoscape({
+                container: document.getElementById('cy'), // container to render in
+                elements: {{ DAG | safe }},
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            label: '',
+                            'font-size': 10
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 4,
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'dagre',
+                    rankDir: 'LR',
+                    nodeDimensionsIncludeLabels: false
+                }
+            });
+            cy.nodeHtmlLabel(
+                [
+                    {
+                        query: 'node',
+                        valign: "top",
+                        valignBox: "top",
+                        tpl: function(data){
+                        return '<a target=blank href="{% url 'taskInfo' %}/'+data.id+'/">'+data.id+'</a>'}
+                    }
+                ]
+            );
+
+        });
+    </script>
+</head>
+
+<body>
+{% if DAG|length > 0 %}
+    <div id="cy"></div>
+{% else %}
+    <div id="centerDIV">
+        DAG Data is missing. Probably the workflow was submitted with the legacy iDDS API.
+    </div>
+{% endif %}
+</body>
+
+</html>

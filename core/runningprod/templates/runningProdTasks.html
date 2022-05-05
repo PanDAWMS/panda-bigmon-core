@@ -255,8 +255,8 @@
             <th>Evts done</th>
             <th>Evts running</th>
             <th>Evts waiting</th>
+            <th>Evts failed</th>
             <th>%</th>
-            <th>Failed files</th>
             <th>Priority</th>
             {% if requestParams.preset == 'DPD' %}
                 <th>pTag</th>
@@ -264,6 +264,10 @@
             {% endif %}
             {% if requestParams.preset == 'MC' %}
                 <th>Sim</th>
+                <th>aTag</th>
+            {% endif %}
+            {% if requestParams.preset == 'DATA' %}
+                <th>rTag</th>
             {% endif %}
             <th>Age</th>
             <th>Cores</th>
@@ -277,6 +281,7 @@
             <th>Jumbo</th>
             <th>Hastags</th>
             <th>Site</th>
+            <th>Container name</th>
         </tr>
         </thead>
     <tbody>
@@ -287,19 +292,12 @@
       <p>No matches to query.</p>
   {% endif %}
 
-  <div class="callout primary" data-closable>
-    <h5><b>This is a running production tasks page!</b></h5>
-    <p>It summarizes the status of different productions such as MC, derivation, reprocessing and other. </p>
-    <p>Only active tasks are taken into account and shown.
-      The plots on the top represents the current status of a production in number of events and allocated slots.</p>
-    <p>Use the row of drop-down menus to more narrow selection of tasks by processing type, working group, campaign etc.</p>
-    <p>Click on <b><i class="fi fi-plus"></i></b> icon next to Events title of number of events pie charts section to see extra charts.</p>
-    <p>Click on <b>show historical trend</b> to see a line plot showing how number of waiting and running events have been changing for last 7 days. </p>
-    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
 {% endblock %}
+
+{% block help %}
+  {% include 'taskRunningProductionHelp.html' %}
+{% endblock %}
+
 
 {% block js_body_page %}
 
@@ -319,11 +317,12 @@ $(document).ready(function () {
         charts[item] = draw_bar(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
       }
       else if (options.type && options.type === 'sbar') {
-        options['size'] = [440, 260];
+        options['size'] = [440, 280];
         options['colors'] = {
           'done': '#207f20',
           'running': '#34a934',
           'waiting': '#c7c7c7',
+          'failed': '#d62728',
         };
         charts[item] = draw_bar_cat(plots_dict[pgroup][item]['data'], item, plots_dict[pgroup][item]['title'], options)
       }
@@ -362,6 +361,7 @@ $(document).ready(function () {
             'registered': '#4a4a4a',
             'scouting': '#47D147',
             'aborting': '#ff9896',
+            'failed': '#d62728',
             'broken': '#b22222',
             'passed': '#1a1a1a',
             'defined': '#2174bb',
@@ -590,14 +590,14 @@ $(document).ready(function () {
       "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
       "paging": true,
       "scrollX": true,
-      "aaSorting": [[16,'desc']],
+      "aaSorting": [[17,'desc']],
 
       "ajax": {
           "processing": true,
           "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
           "dataSrc" : ''},
       "columnDefs": [
-          {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17,20] }
+          {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,17,18,21] }
       ],
       "aoColumns": [
           {
@@ -611,7 +611,8 @@ $(document).ready(function () {
               "data": "reqid",
               sDefaultContent: "",
               "render": function ( data, type, full, meta ) {
-                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
               }
           },
           {
@@ -672,7 +673,7 @@ $(document).ready(function () {
 
           },
           {
-              "data": "neventsused",
+              "data": "neventsdone",
               sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
@@ -684,8 +685,14 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventstobeused",
+              "data": "neventswaiting",
               sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsfailed",
+              sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
           },
@@ -693,11 +700,6 @@ $(document).ready(function () {
               "data": "percentage",
               sDefaultContent: "",
               className: 'num'
-          },
-          {
-              "data": "nfilesfailed",
-              sDefaultContent: "---",
-              className: 'num',
           },
           {
               "data": "priority",
@@ -710,6 +712,18 @@ $(document).ready(function () {
               "render": function(data, type, full, meta) {
                   return '<a href = "{{ xurl }}simtype=' + full['simtype'] + '">' + full['simtype'] + '</a>'
               }
+          },
+          {
+              "data": "atag",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}atag=' + full['atag'] + '">' + full['atag'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
           },
           {
               "data": "age",
@@ -810,6 +824,18 @@ $(document).ready(function () {
                       return '---';
                   }
               }
+          },
+          {
+              "data": "container_name",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}container_name=' + full['container_name'] + '">' + full['container_name'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
           }
 
       ],
@@ -847,7 +873,8 @@ $(document).ready(function () {
               "data": "reqid",
               sDefaultContent: "",
               "render": function ( data, type, full, meta ) {
-                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
               }
           },
           {
@@ -900,7 +927,7 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventsused",
+              "data": "neventsdone",
               sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
@@ -912,19 +939,20 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventstobeused",
+              "data": "neventswaiting",
               sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsfailed",
+              sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
               "data": "percentage",
               sDefaultContent: "",
-              className: 'num',
-          },
-          {
-              "data": "nfilesfailed",
-              sDefaultContent: "---",
               className: 'num',
           },
           {
@@ -1023,6 +1051,18 @@ $(document).ready(function () {
               "render": function(data, type, full, meta) {
                   return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
               }
+          },
+          {
+              "data": "container_name",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}container_name=' + full['container_name'] + '">' + full['container_name'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
           }
 
       ],
@@ -1060,7 +1100,8 @@ $(document).ready(function () {
               "data": "reqid",
               sDefaultContent: "",
               "render": function ( data, type, full, meta ) {
-                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/reqtask/' + full['reqid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
               }
           },
           {
@@ -1120,7 +1161,7 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventsused",
+              "data": "neventsdone",
               sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
@@ -1132,8 +1173,14 @@ $(document).ready(function () {
               render: $.fn.dataTable.render.number( ',', '.')
           },
           {
-              "data": "neventstobeused",
+              "data": "neventswaiting",
               sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsfailed",
+              sDefaultContent: "",
               className: 'num',
               render: $.fn.dataTable.render.number( ',', '.')
           },
@@ -1143,14 +1190,17 @@ $(document).ready(function () {
               className: 'num'
           },
           {
-              "data": "nfilesfailed",
-              sDefaultContent: "---",
-              className: 'num',
-          },
-          {
               "data": "priority",
               sDefaultContent: "",
               className: 'num'
+          },
+          {
+              "data": "rtag",
+              sDefaultContent: "",
+              className: '',
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}rtag=' + full['rtag'] + '">' + full['rtag'] + '</a>'
+              }
           },
           {
               "data": "age",
@@ -1231,6 +1281,18 @@ $(document).ready(function () {
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
                   return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+              }
+          },
+          {
+              "data": "container_name",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}container_name=' + full['container_name'] + '">' + full['container_name'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
               }
           }
 

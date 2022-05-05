@@ -11,11 +11,14 @@ from django.shortcuts import render_to_response, redirect
 from django.utils.cache import patch_response_headers
 
 from core.settings import defaultDatetimeFormat
-from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
-from core.views import login_customrequired, initRequest, setupView, DateEncoder, removeParam, preprocessWildCardString, taskSummaryDict
-from core.utils import is_json_request
+from core.libs.cache import getCacheEntry, setCacheEntry
+from core.libs.task import task_summary_dict
+from core.oauth.utils import login_customrequired
+from core.libs.DateEncoder import DateEncoder
+from core.views import initRequest, setupView
+from core.utils import is_json_request, removeParam
 
-from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots
+from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots, updateView
 from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
 
 
@@ -72,85 +75,42 @@ def runningProdTasks(request):
             if 'processingtype' not in request.session['requestParams']:
                 request.session['requestParams']['processingtype'] = 'reprocessing'
 
-    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=0, limit=9999999, querytype='task',
+    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request,
+                                                            hours=0,
+                                                            limit=9999999,
+                                                            querytype='task',
                                                             wildCardExt=True)
+    tquery, exquery, wildCardExtension = updateView(request, tquery, exquery, wildCardExtension)
 
-    if 'workinggroup' in tquery and 'preset' in request.session['requestParams'] and request.session['requestParams']['preset'] == 'MC' and ',' in tquery['workinggroup']:
-        #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))
-        #     exquery['workinggroup__in'] = excludeWGList
-        try:
-            del tquery['workinggroup']
-        except:
-            pass
-    if 'status' in request.session['requestParams'] and request.session['requestParams']['status'] == '':
-        try:
-            del tquery['status']
-        except:
-            pass
-    if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] == 'hpc':
-        try:
-            del tquery['site']
-        except:
-            pass
-        exquery['site__isnull'] = True
-    if 'simtype' in request.session['requestParams'] and request.session['requestParams']['simtype']:
-            tquery['simtype'] = request.session['requestParams']['simtype']
-    if 'runnumber' in request.session['requestParams'] and request.session['requestParams']['runnumber']:
-            tquery['runnumber'] = request.session['requestParams']['runnumber']
-    if 'ptag' in request.session['requestParams'] and request.session['requestParams']['ptag']:
-            tquery['ptag'] = request.session['requestParams']['ptag']
-    if 'hashtags' in request.session['requestParams']:
-        wildCardExtension += ' AND ('
-        wildCards = request.session['requestParams']['hashtags'].split(',')
-        currentCardCount = 1
-        countCards = len(wildCards)
-        for card in wildCards:
-            if '*' not in card:
-                card = '*' + card + '*'
-            elif card.startswith('*'):
-                card = card + '*'
-            elif card.endswith('*'):
-                card = '*' + card
-            wildCardExtension += preprocessWildCardString(card, 'hashtags')
-            if (currentCardCount < countCards): wildCardExtension += ' AND '
-            currentCardCount += 1
-        wildCardExtension += ')'
-    if 'jumbo' in request.session['requestParams'] and request.session['requestParams']['jumbo']:
-        tquery['jumbo'] = request.session['requestParams']['jumbo']
-    if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby'] :
-        sortby = request.session['requestParams']['sortby']
-    else:
-        sortby = 'creationdate-desc'
-    if 'currentpriority__gte' in tquery and 'currentpriority__lte' in tquery:
-        tquery['priority__gte'] = tquery['currentpriority__gte']
-        tquery['priority__lte'] = tquery['currentpriority__lte']
-        del tquery['currentpriority__gte']
-        del tquery['currentpriority__lte']
+    load_ended_tasks = False
+    if 'days' in request.session['requestParams'] and ((
+            'show_ended_tasks' in request.session['requestParams'] and request.session['requestParams']['show_ended_tasks'] == 'true') or (
+                 'eventservice' in tquery and tquery['eventservice'] == 1)):
+        load_ended_tasks = True
 
-    oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
+        tquery_timelimited = copy.deepcopy(tquery)
 
-    tasks = []
-#    if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension and tquery['eventservice'] == 1:
-    if 'eventservice' in tquery and tquery['eventservice'] == 1 and 'days' in request.session['requestParams']:
-
-        setupView(request)
-        if 'status__in' in tquery:
-            del tquery['status__in']
-        excludedTimeQuery = copy.deepcopy(tquery)
-
-        if ('days' in request.GET) and (request.GET['days']):
-            days = int(request.GET['days'])
-            hours = 24 * days
-            startdate = timezone.now() - timedelta(hours=hours)
-            startdate = startdate.strftime(defaultDatetimeFormat)
-            enddate = timezone.now().strftime(defaultDatetimeFormat)
-            tquery['modificationtime__range'] = [startdate, enddate]
+        # add time window selection for query from Frozen* model
+        days = int(request.session['requestParams']['days'])
+        tquery_timelimited['modificationtime__castdate__range'] = [
+            (timezone.now() - timedelta(days=days)).strftime(defaultDatetimeFormat),
+            timezone.now().strftime(defaultDatetimeFormat)
+        ]
 
         if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension:
             wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
-        tasks.extend(RunningProdTasksModel.objects.filter(**excludedTimeQuery).extra(where=[wildCardExtension]).exclude(
+
+    if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby']:
+        sortby = request.session['requestParams']['sortby']
+    else:
+        sortby = 'creationdate-desc'
+    oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
+
+    tasks = []
+    if load_ended_tasks:
+        tasks.extend(RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(
             **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
-        tasks.extend(FrozenProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(
+        tasks.extend(FrozenProdTasksModel.objects.filter(**tquery_timelimited).extra(where=[wildCardExtension]).exclude(
             **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
     else:
         tasks.extend(RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery))
@@ -166,7 +126,7 @@ def runningProdTasks(request):
     plots_dict = prepare_plots(task_list, productiontype=productiontype)
 
     # get param summaries for select drop down menus
-    sumd = taskSummaryDict(request, task_list, ['status', 'workinggroup', 'cutcampaign', 'processingtype'])
+    sumd = task_summary_dict(request, task_list, ['status', 'workinggroup', 'cutcampaign', 'processingtype'])
 
     # get global sum
     gsum = {
@@ -202,10 +162,7 @@ def runningProdTasks(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'transKey': transactionKey,
             'qtime': qtime,
-
             'productiontype': json.dumps(productiontype),
-            # 'tasks': task_list,
-            # 'ntasks': ntasks,
             'sumd': sumd,
             'gsum': gsum,
             'plots': plots_dict,
@@ -405,7 +362,7 @@ def runningProdRequests(request):
 
     plotageshistogram = 0
     # if sum(ages) == 0: plotageshistogram = 0
-    # sumd = taskSummaryDict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
+    # sumd = task_summary_dict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
 
     ### Putting list of requests to cache separately for dataTables plugin
     transactionKey = random.randrange(100000000)

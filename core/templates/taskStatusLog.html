@@ -1,26 +1,33 @@
-<table>
+<div class="table-scroll">
+<table class="fresh-table unstriped">
+<thead>
+  <tr><th colspan="200">Task status log</th></tr>
+</thead>
+<tbody>
 <tr>
-    <th class="tablesection">Modification time</th>
+    <th>Modification time</th>
     {% for item in statusLog %}
         <td>{{ item.modiftime_str }}</td>
     {% endfor %}
 </tr>
 <tr>
-    <th class="tablesection">States</th>
+    <th>States</th>
     {% for item in statusLog %}
         <td class="{{ item.status }}_fill">{{ item.status }}</td>
     {% endfor %}
 </tr>
 <tr>
-    <th class="tablesection">Duration, d:h:m:s</th>
+    <th>Duration, d:h:m:s</th>
     {% for item in statusLog %}
         <td>{{ item.duration }}</td>
     {% endfor %}
 </tr>
 <tr>
-    <th class="tablesection">Modification host</th>
+    <th>Modification host</th>
     {% for item in statusLog %}
         <td>{{ item.modificationhost }}</td>
     {% endfor %}
 </tr>
+</tbody>
 </table>
+</div>

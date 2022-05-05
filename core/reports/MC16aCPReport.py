@@ -1,17 +1,14 @@
 from django.db import connection
 import time
-from django.shortcuts import render_to_response, render, redirect
-from reportlab.lib.enums import TA_JUSTIFY
+from django.shortcuts import render_to_response
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 from django.http import HttpResponse
-from reportlab.pdfgen import canvas
-from django.template import RequestContext, loader
+from django.template import RequestContext
 from io import StringIO
 import humanize
-from django.utils.cache import patch_cache_control, patch_response_headers
+from django.utils.cache import patch_response_headers
 import json
 import hashlib
 from django.conf import settings as djangosettings
@@ -19,6 +16,8 @@ from django.core.cache import cache
 from django.utils import encoding
 from datetime import datetime
 from collections import OrderedDict
+
+from core.libs.DateEncoder import DateEncoder
 
 notcachedRemoteAddress = ['188.184.185.129']
 
@@ -532,7 +531,7 @@ class MC16aCPReport:
                 "stepsLabels":self.stepsLabels,
                 "taskstatelistRecent":self.taskstatelistRecent,
                 "built": datetime.now().strftime("%d %b %Y %H:%M:%S")}
-        self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=self.DateEncoder), 180*60)
+        self.setCacheEntry(request, "prepareReportMC16", json.dumps(data, cls=DateEncoder), 180*60)
         return render_to_response('reportCampaign.html', data, RequestContext(request))
 
 
@@ -580,7 +579,7 @@ class MC16aCPReport:
                 "stepsLabels":self.stepsLabels,
                 "taskstatelistRecent":self.taskstatelistRecent,
                 "built": datetime.now().strftime("%d %b %Y %H:%M:%S")}
-        self.setCacheEntry(request, "prepareReportMC16c", json.dumps(data, cls=self.DateEncoder), 180*60)
+        self.setCacheEntry(request, "prepareReportMC16c", json.dumps(data, cls=DateEncoder), 180*60)
         return render_to_response('reportCampaignHash.html', data, RequestContext(request))
 
 
@@ -816,14 +815,4 @@ class MC16aCPReport:
             listHashProgress.append(rowDict)
         return listHashProgress
 
-
-
-
-    class DateEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if hasattr(obj, 'isoformat'):
-                return obj.isoformat()
-            else:
-                return str(obj)
-            return json.JSONEncoder.default(self, obj)
 

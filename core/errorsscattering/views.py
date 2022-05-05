@@ -10,11 +10,13 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.db import connection
 from django.utils.cache import patch_response_headers
-from core.libs.cache import getCacheEntry, setCacheEntry
+from core.libs.cache import getCacheEntry, setCacheEntry, setCacheData
 from core.libs.exlib import dictfetchall
-from core.views import login_customrequired, initRequest, setupView, DateEncoder, setCacheData
+from core.libs.DateEncoder import DateEncoder
+from core.oauth.utils import login_customrequired
+from core.views import initRequest, setupView
 from core.common.models import JediTasksOrdered
-from core.schedresource.models import Schedconfig
+from core.schedresource.utils import get_pq_clouds
 from core.settings.local import dbaccess
 
 
@@ -209,14 +211,8 @@ def errorsScattering(request):
     errorsRaw = dictfetchall(new_cur)
     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
-    homeCloud = {}
-    sflist = ('siteid', 'site', 'status', 'cloud', 'tier', 'comment_field', 'objectstore', 'catchall', 'corepower')
-    sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
-    for site in sites:
-        homeCloud[site['siteid']] = site['cloud']
-
-    clouds = []
-    clouds = sorted(list(set(homeCloud.values())))
+    pq_clouds = get_pq_clouds()
+    clouds = sorted(list(set(pq_clouds.values())))
     reqerrors = {}
     clouderrors = {}
     successrateIntervals = {'green': [80, 100], 'yellow':[50,79], 'red':[0, 49]}
@@ -367,16 +363,13 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
     grouping = []
 
-    homeCloud = {}
     cloudsDict ={}
-    sflist = ('siteid', 'site', 'status', 'cloud', 'tier', 'comment_field', 'objectstore', 'catchall', 'corepower')
-    sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
-    for site in sites:
-        homeCloud[site['siteid']] = site['cloud']
-
-        if site['cloud'] not in cloudsDict:
-            cloudsDict[site['cloud']] = []
-        cloudsDict[site['cloud']].append(site['siteid'])
+    pq_clouds = get_pq_clouds()
+    clouds = sorted(list(set(pq_clouds.values())))
+    for pq, cloud_name in pq_clouds.items():
+        if cloud_name not in cloudsDict:
+            cloudsDict[cloud_name] = []
+        cloudsDict[cloud_name].append(pq)
 
     sitesDictForOrdering = {}
     i = 0
@@ -385,7 +378,6 @@ def errorsScatteringDetailed(request, cloud, reqid):
             sitesDictForOrdering[sitename] = i
             i += 1
 
-    clouds = sorted(list(set(homeCloud.values())))
     condition = '(1=1)'
     if cloud == '' or len(cloud)==0:
         return HttpResponse("No cloud supplied", content_type='text/html')
@@ -440,7 +432,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
     if cloud != 'ALL':
         request.session['requestParams']['region'] = cloud
         cloudstr = ''
-        for sn, cn in homeCloud.items():
+        for sn, cn in pq_clouds.items():
             if cn == cloud:
                 cloudstr += "\'%s\'," % (str(sn))
         if cloudstr.endswith(','):

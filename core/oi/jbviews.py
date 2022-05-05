@@ -4,17 +4,16 @@ from datetime import datetime, timedelta
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils.cache import patch_response_headers
-
-from core.views import initRequest, login_customrequired, DateEncoder
+from core.oauth.utils import login_customrequired
+from core.views import initRequest
+from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.libs.exlib import parse_datetime
+from core.libs.datetimestrings import parse_datetime
 
 from core.oi.utils import round_time
-from django import template
-from django.http import HttpResponseRedirect
 import matplotlib
 
-from core.views import removeParam
+from core.utils import removeParam
 
 from django.template.defaulttags import register
 
@@ -171,11 +170,12 @@ def jbhome(request):
 
     url_no_computetype = removeParam(request.get_full_path(), 'computetype')
 
+    request.session['timerange'] = [starttime.strftime(OI_DATETIME_FORMAT), endtime.strftime(OI_DATETIME_FORMAT)]
     data = {
         'request': request,
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
-        'timerange': [starttime.strftime(OI_DATETIME_FORMAT), endtime.strftime(OI_DATETIME_FORMAT)],
+        'timerange': request.session['timerange'],
         'message': message,
         'mesures': [],
         'metric': metric,

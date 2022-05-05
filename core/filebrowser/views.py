@@ -13,14 +13,20 @@ from django.conf import settings
 from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
     remove_folder, get_fullpath_filebrowser_directory, list_file_directory
 
+from core.settings.config import PRMON_LOGS_DIRECTIO_LOCATION
+from core.oauth.utils import login_customrequired
 from core.common.models import Filestable4, FilestableArch
-from core.views import DateTimeEncoder, initSelfMonitor
+from core.views import initSelfMonitor
+from core.libs.job import get_job_list
+from core.libs.DateTimeEncoder import DateTimeEncoder
 from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
 hostname = "bigpanda.cern.ch"
 
+
+@login_customrequired
 def index(request):
     """
         index -- filebrowser's default page
@@ -40,7 +46,8 @@ def index(request):
     _logger.debug("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
     ### check that all expected parameters are in URL
-    expectedFields = ['guid', 'site', 'scope', 'lfn']
+    # 'site' is not mandatory anymore, so removing it from the list
+    expectedFields = ['guid', 'scope', 'lfn']
     for expectedField in expectedFields:
         try:
             request.GET[expectedField]
@@ -97,9 +104,10 @@ def index(request):
     except:
         pass
 
-    # check if size of logfile is too big return to user error message containing rucio cli command to download it locally
+    # check if size of logfile is too big return to user error message with rucio cli command to download it locally
     max_sizemb = 1000
-    sizemb = None
+    sizemb = -1
+    fsize = []
     try:
         fileid = int(request.GET['fileid'])
     except:
@@ -107,9 +115,9 @@ def index(request):
     lquery = {'type': 'log'}
     if lfn and len(lfn) > 0:
         lquery['lfn'] = lfn
-        fsize = Filestable4.objects.filter(**lquery).values('fsize', 'fileid')
+        fsize.extend(Filestable4.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
         if len(fsize) == 0:
-            fsize = FilestableArch.objects.filter(**lquery).values('fsize', 'fileid')
+            fsize.extend(FilestableArch.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
         if len(fsize) > 0:
             try:
                 if fileid > 0:
@@ -125,7 +133,7 @@ def index(request):
     files = []
     dirprefix = ''
     tardir = ''
-    if sizemb and sizemb > max_sizemb:
+    if sizemb > max_sizemb:
         _logger.warning('Size of the requested log is {} MB which is more than limit {} MB'.format(sizemb, max_sizemb))
         errormessage = """The size of requested log is too big ({}MB). 
                             Please try to download it locally using Rucio CLI by the next command: 
@@ -194,7 +202,12 @@ def index(request):
 
     _logger.debug("index step3 - " + datetime.now().strftime("%H:%M:%S") + "  ")
     if 'json' not in request.GET:
-        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request))
+        status = 200
+        # return 500 if most probably there were issue   
+        if 'download' in errors and errors['download'] and len(errors['download']) > 0:
+            if len(fsize) > 0 and 'status' in fsize[0] and fsize[0]['status'] != 'failed' and sizemb <= 0:
+                status = 500
+        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
     else:
         resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
         _logger.debug("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
@@ -336,13 +349,22 @@ def api_single_pandaid(request):
         return HttpResponse(t.render(context), status=400)
 
 
-def get_job_memory_monitor_output(pandaid):
+def get_job_log_file_path(pandaid, filename=''):
     """
     Download log tarball of a job and return path to a local copy of memory_monitor_output.txt file
+    If the directIO is enabled for prmon, return the remote location
     :param pandaid:
-    :return: mmo_path: str
+    :param filename: str, if empty the function returm path to tarball folder
+    :return: file_path: str
     """
-    mmo_path = None
+
+    if PRMON_LOGS_DIRECTIO_LOCATION and filename in ('memory_monitor_summary.json','memory_monitor_output.txt'):
+        joblist = get_job_list(query={"pandaid":pandaid})
+        if joblist and len(joblist) > 0:
+            computingsite = joblist[0].get('computingsite')
+        return PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name = computingsite, panda_id = pandaid) + '/' + filename
+
+    file_path = None
     files = []
     scope = ''
     lfn = ''
@@ -384,12 +406,13 @@ def get_job_memory_monitor_output(pandaid):
                 _logger.debug('log tarball has not been downloaded, so downloading it now')
                 files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
                 _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
-            if type(files) is list and len(files) > 0:
+            if type(files) is list and len(files) > 0 and len(filename) > 0:
                 for f in files:
-                    if f['name'] == 'memory_monitor_output.txt':
-                        mmo_path = tarball_path + '/' + tardir + '/' + 'memory_monitor_output.txt'
-    _logger.debug('Final mmo_path: {}'.format(mmo_path))
-    return mmo_path
+                    if f['name'] == filename:
+                        file_path = tarball_path + '/' + tardir + '/' + filename
+
+    _logger.debug('Final path of {} file: {}'.format(filename, file_path))
+    return file_path
 
 
 def delete_files(request):

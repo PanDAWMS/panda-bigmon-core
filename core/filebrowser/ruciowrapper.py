@@ -7,6 +7,8 @@ import os
 from .utils import get_rucio_account, get_x509_proxy
 from core.filebrowser.utils import get_fullpath_filebrowser_directory, get_filebrowser_directory
 import uuid
+_logger = logging.getLogger('bigpandamon-filebrowser')
+
 
 class ruciowrapper(object):
     if 'RUCIO_ACCOUNT' not in os.environ:
@@ -24,13 +26,13 @@ class ruciowrapper(object):
     def download_ds(self, ds_name):
         try:
             dclient = downloadclient.DownloadClient(self.client)
-            basedir = get_fullpath_filebrowser_directory() +'/'+ str(uuid.uuid4())+'/'
+            basedir = get_fullpath_filebrowser_directory() +'/'+ str(uuid.uuid3(uuid.NAMESPACE_URL, ds_name))+'/'
             dclient.download_dids([{'did':ds_name,
                                     'base_dir':basedir}])
         except Exception as e:
             logging.error('Failed to download: ' + ds_name +' ' + str(e))
             return {'exception': 'Failed to download: ' + ds_name +' ' + str(e)}
-        return {'exception':None, 'basedir':basedir}
+        return {'exception':None, 'basedir':basedir+'/'+ds_name}
 
     def getRucioAccountByDN(self, DN):
         values = ['rucio_account', 'create_time']
@@ -59,6 +61,27 @@ class ruciowrapper(object):
         else:
             accounts = [account['rucio_account'] for account in accounts]
         return accounts
+
+    def getRSEbyDID(self, dids):
+        """
+        :param dids: list of dicts {'scope': scope, 'name': name}
+        :return: list of replicas
+        """
+        if self.client is not None:
+            try:
+                raw_data = self.client.list_dataset_replicas_bulk(dids=dids)
+                replicas = list(raw_data)
+            except Exception as e:
+                replicas = []
+                _logger.exception('Failed to get list of replicas:\n {}'.format(e))
+
+            _logger.info('List of replicas got from Rucio for dids:\n {}\n {}'.format(dids, replicas))
+
+            return replicas
+        else:
+            _logger.warning('Failed to initiate Rucio client, so it is impossible to get list of replicas for dids')
+            return None
+
 
 """
     def getT1TapeSEForRR(self, RR = None, dataset = None):

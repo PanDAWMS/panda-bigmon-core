@@ -1,0 +1,562 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Data Carousel Dashboard{% endblock %}
+{% block subtitle %}Data Carousel Dashboard {{ viewParams.selection|safe }} {% endblock %}
+
+{% block time_window %}
+    Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
+    - <span class="time-window-range">{{ timerange.1 }}</span> UTC
+{% endblock %}
+
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block css_page %}
+  <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+  <div data-ng-controller="dataviewctrl">
+    <div class="row">
+      <div class="columns medium-8">
+        <div id="chartACTCH_div"><p ng-bind-html="loading_placeholder"></p></div>
+        <div id="chartACTFILECH_div"><p ng-bind-html="loading_placeholder"></p></div>
+      </div>
+
+      <div id="selectionpane" class="columns medium-4">
+          <b>Campaign:</b>
+          <select id="campaign" ng-model="selection.selected.campaign" ng-options="campitem.value as campitem.name for campitem in selection.options.campaign" multiple>
+              <option value="" selected="selected">All</option>
+          </select>
+
+          <b>Source:</b>
+          <select id="source" ng-model="selection.selected.source_rse" ng-options="source.value as source.name for source in selection.options.source_rse" multiple>
+             <option value="" selected="selected">All</option>
+          </select>
+
+          <b>Processing type:</b>
+          <select id="source" ng-model="selection.selected.processingtype" ng-options="pt.value as pt.name for pt in selection.options.processingtype" multiple>
+             <option value="" selected="selected">All</option>
+          </select>
+          <a ng-click="gog();" class="button primary">Update</a>
+      </div>
+    </div>
+
+    <div class="row">
+       <div id="chartETCH_div" class="columns medium-8" ><p ng-bind-html="loading_placeholder"></p></div>
+       <div id="chartPRCH_div" class="columns medium-4" ><p ng-bind-html="loading_placeholder"></p></div>
+    </div>
+
+    <div class="row">
+      <div id="chartTAPECH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartTAPEFILECH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartTAPEBCH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+    </div>
+
+    <div class="row">
+      <div class="columns medium-12 table-scroll">
+        <p ng-bind-html="loading_placeholder"></p>
+        <table id="transfersmatrix" class="bp-table blank unstriped ng-hide" ng-hide="is_hidden" >
+          <thead>
+            <tr>
+                <th>Source</th>
+                <th class="mid">Progress plot</th>
+                <th class="mid">DDM Dash</th>
+                <th class="num">Datasets Queued</th>
+                <th class="num">Datasets Active</th>
+                <th class="num">Datasets Done <br>(+ 90% readiness)</th>
+                <th class="num">Files Queued</th>
+                <th class="num">Files Active</th>
+                <th class="num">Files Done</th>
+                <th class="num">Volume Total [GB]</th>
+                <th class="num">Volume Done [GB]</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="x in summary.source_rse" class="low-stat">
+                <th class="nowrap"> <a class="nowrap" href="{% url 'taskList' %}?tape=true&stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">{$ x.source_rse $}</a>
+                </th>
+                <td class="mid">
+                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}"><i class="fi-graph-trend"></i></a>
+                </td>
+                <td class="mid">
+                  <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}"><img src="{% static 'images/grafana.png' %}" width=14 height=14 border=0></a>
+                </td>
+                <td class="queued_fill num">
+                    {$ x.ds_queued $}
+                </td>
+                <td class="staging_fill num">
+                    {$ x.ds_active $}
+                </td>
+                <td class="done_fill num">
+                    {$ x.ds_done $} (+{$ x.ds_90pdone $})
+                </td>
+                <td class="num queued_fill">
+                    {$ x.files_queued $}
+                </td>
+                <td class="num staging_fill">
+                    {$ x.files_active $}
+                </td>
+                <td class="num done_fill">
+                    {$ x.files_done $}
+                </td>
+                <td class="num">
+                    {$ x.bytes_total $}
+                </td>
+                <td class="num done_fill">
+                    {$ x.bytes_done $}
+                </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row">
+      <div id="chartDACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+      <div id="chartFACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+
+      <div id="chartBACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
+    </div>
+
+    <div class="card bp-container-simple secondary" id="container_sds">
+      <div class="card-divider"><p>Staging datasets:</p></div>
+      <div class="card-section">
+        <p ng-bind-html="loading_placeholder"></p>
+        <table class="data-table nowrap" id="stagingdatasetstable">
+         <thead></thead>
+         <tfoot>
+          <tr>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+          </tr>
+         </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block js_body_page %}
+  <script src="{% static 'js/hideCells.js' %}"></script>
+  <script type="text/javascript" src='https://www.google.com/jsapi?autoload={"modules":[{"name":"visualization","version":"1.1","packages":["sankey","corechart"]}]}'></script>
+  <script type="text/javascript">
+  google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
+
+  var detailsDataTable;
+  var chart_list = ['submittime', 'submittimefiles', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];
+  var charts = {
+    submittime: {
+      options: {
+        title: '',
+        height: 250,
+        chartArea: {width: '100%', height: '100%', left: 80, top: 20, bottom: 80},
+        legend: { position: 'none' },
+        colors: ['#2174bb'],
+        vAxis: {title: 'Number of datasets'},
+        hAxis: {title: 'Date', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
+        explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+      },
+      obj: {},
+      data: [],
+    },
+    submittimefiles: {
+      options: {
+        title: '',
+        height: 250,
+        chartArea: {width: '100%', height: '100%', left: 80, top: 20, bottom: 80},
+        legend: { position: 'none' },
+        colors: ['#2174bb'],
+        vAxis: {title: 'Number of files'},
+        hAxis: {title: 'Date', titleTextStyle: {color: 'black'},  textStyle: { fontSize:11}, type: 'category'},
+        explorer: {actions: ['dragToZoom', 'rightClickToReset'], axis: 'horizontal', keepInBounds: true, maxZoomIn: 4.0},
+      },
+      obj: {},
+      data: [],
+    },
+    elapsedtime: {
+      options: {
+        title: 'Elapsed time, h',
+        height: 400,
+        chartArea: {width: '100%', height: '70%', left: 50,},
+        vAxis: {title: 'Number of datasets'},
+        hAxis: {title: 'Time, h', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, type: 'category'},
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+        colors: ['#934fff', '#207f20', '#2174bb'],
+        legend: {position: "top"},
+        isStacked: true,
+      },
+      obj: {},
+      data: [],
+    },
+    progress: {
+      options: {
+        title: 'Progress of selected stagings (%)',
+        height: 400,
+        chartArea: {width: '100%', height: '70%', left: 50,},
+        legend: {position: 'none'},
+        colors: ['#2174bb'],
+        vAxis: {title: 'Number of datasets'},
+        hAxis: {title: 'Progress, %', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, type: 'category'},
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    reqpertape: {
+      options: {
+        title: 'Staging datasets per source RSE',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 130,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Number of datasets', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    filespertape: {
+      options: {
+        title: 'Staging files per source RSE',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 130,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    bytespertape: {
+      options: {
+        title: 'Volume of staging datasets per source RSE',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 130,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    datasetperactivity: {
+      options: {
+        title: 'Staging datasets per activity',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 100,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Number of datasets', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    filesperactivity: {
+      options: {
+        title: 'Staging files per activity',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 100,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    bytesperactivity: {
+      options: {
+        title: 'Volume of staging datasets per activity',
+        height: 400,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 100,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 11}},
+        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+  };
+
+  app.service('Service', ['$http', service])
+     .controller('dataviewctrl', ['$scope', '$sce','Service', controller]);
+
+  function service($http, $scope){
+    var get = function(requestparams) {
+      return $http({
+        method: 'GET',
+        url: '{% url 'getDTCSubmissionHist' %}'+requestparams,
+        cache: false
+      })};
+    return {
+      get: get
+    }
+  }
+
+  function controller($scope, $sce, Service){
+    $scope.is_hidden = true;
+    $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
+    $scope.request_params = {{ requestParams|safe }};
+    $scope.selection = {
+      options: {},
+      selected: {campaign: [], processingtype: [], source_rse: []},
+    }
+    Object.keys($scope.selection.selected).forEach(key => {
+      if (key in $scope.request_params) {
+        $scope.selection.selected[key] = $scope.request_params[key].split(',');
+      }
+    });
+
+    $scope.gog = function() {
+      var request = "";
+      request = "?" + $scope.getTimeForQuery();
+      Object.keys($scope.selection.selected).forEach(key => {
+        if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
+          request += '&' + key + '=' + $scope.selection.selected[key]
+        } else if (key in $scope.request_params) {
+          request += '&' + key + '=' + $scope.request_params[key]
+        }
+      })
+
+      Service.get(request).then($scope.processResponce);
+    };
+
+    $scope.getTimeForQuery = function(forGrafana = false) {
+      var timerange = {{ timerange|safe }};
+
+      if (forGrafana) { return 'from=' + timerange[0] + '&to=' + timerange[1];}
+      else { return 'date_from=' + timerange[0]  + '&date_to=' + timerange[1];}
+    };
+
+    $scope.processResponce = function(response) {
+      $scope.is_hidden = false;
+      $scope.loading_placeholder = "";
+
+      response.data.submittime = response.data.submittime.map(function (row) {
+         return [
+         new Date(row[0]),
+                  row[1]
+            ];
+      });
+      response.data.submittimefiles = response.data.submittimefiles.map(function (row) {
+         return [
+         new Date(row[0]),
+                  row[1]
+            ];
+      });
+
+      $scope.submittime = response.data.submittime;
+      $scope.submittimefiles = response.data.submittimefiles;
+      $scope.elapsedtime = response.data.elapsedtime;
+      $scope.progress = response.data.progress;
+
+      $scope.summary = response.data.summary;
+
+      $scope.reqpertape = [['Source', 'Queued', 'Staging', 'Done']];
+      $scope.filespertape = [['Source', 'Queued', 'Active', 'Done']];
+      $scope.bytespertape = [['Source', 'Queued', 'Active', 'Done']];
+
+      $scope.summary.source_rse.forEach(row => {
+        $scope.reqpertape.push([row['source_rse'], row['ds_queued'], row['ds_active'], row['ds_done']]);
+        $scope.filespertape.push([row['source_rse'], row['files_queued'], row['files_active'], row['files_done']]);
+        $scope.bytespertape.push([row['source_rse'], row['bytes_queued'], row['bytes_active'], row['bytes_done']]);
+      });
+
+      $scope.datasetperactivity = [['Processing Type', 'Queued', 'Staging', 'Done']];
+      $scope.filesperactivity = [['Processing Type', 'Queued', 'Active', 'Done']];
+      $scope.bytesperactivity = [['Processing Type', 'Queued', 'Active', 'Done']];
+      $scope.summary.processingtype.forEach(row => {
+        $scope.datasetperactivity.push([row['processingtype'], row['ds_queued'], row['ds_active'], row['ds_done']]);
+        $scope.filesperactivity.push([row['processingtype'], row['files_queued'], row['files_active'], row['files_done']]);
+        $scope.bytesperactivity.push([row['processingtype'], row['bytes_queued'], row['bytes_active'], row['bytes_done']]);
+      });
+
+      charts.submittime.obj = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
+      charts.submittimefiles.obj = new google.visualization.ColumnChart(document.getElementById('chartACTFILECH_div'));
+      charts.elapsedtime.obj = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
+      charts.progress.obj = new google.visualization.Histogram(document.getElementById('chartPRCH_div'));
+      charts.reqpertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPECH_div'));
+      charts.filespertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPEFILECH_div'));
+      charts.bytespertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPEBCH_div'));
+      charts.datasetperactivity.obj = new google.visualization.BarChart(document.getElementById('chartDACH_div'));
+      charts.filesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartFACH_div'));
+      charts.bytesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartBACH_div'));
+
+      Object.keys(charts).forEach(name => {
+        charts[name].data = google.visualization.arrayToDataTable($scope[name]);
+        charts[name].obj.draw(charts[name].data, charts[name].options);
+      });
+
+      $scope.selection.options = response.data.selection;
+
+      detailsDataTable = $('#stagingdatasetstable').DataTable({
+          bDestroy: true,
+          scrollX: true,
+          columnDefs: [{"type": "num-html", "targets": [5,6,7,8,10,13] }],
+          data: response.data.detailstable,
+          columns: [
+            { title: 'Campaign', data: 'campaign' },
+            { title: 'Request ID', data: 'pr_id', className: 'num' },
+            { title: 'Task ID', data: 'taskid',
+              className: 'text icons1',
+              "render": function(data, type, full, meta) {
+                let entry = '<a href="{% url 'taskInfo' %}'+full['taskid']+'">'+full['taskid']+'</a> ';
+                entry += '<a target="_blank" href="{% url 'staginprogressplot' %}'+'?jeditaskid='+full['taskid']+'"><i class="fi-graph-trend"></i></a>';
+                return entry;
+              },
+            },
+            { title: 'Status', data: 'status', className: 'state'},
+            { title: 'P-type', data: 'processingtype', className: 'state' },
+            { title: 'Size [GB]', data: 'size', className: 'num' },
+            { title: 'Total files', data: 'total_files', className: 'num' },
+            { title: 'Staged files', data: 'staged_files', className: 'num' },
+            { title: 'Progress [%]', data: 'progress', className: 'num' },
+            { title: 'Source RSE', data: 'source_rse' },
+            { title: 'Time elapsed', data: 'elapsedtime', defaultValue: '---'},
+            { title: 'Started at', data: 'start_time' },
+            { title: 'Rucio rule', data: 'rse',
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                    return '<a href="https://rucio-ui.cern.ch/rule?rule_id=' + full['rse'] + '">' + full['rse'].slice(0,3) + '...' + full['rse'].slice(full['rse'].length-3, full['rse'].length) + ' <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  }
+                  else {
+                    return '---'
+                  }
+                },
+            },
+            { title: 'Update time', data: 'update_time', defaultValue: '---',},
+          ],
+          createdRow: function ( row, data, index ) {
+              $('td', row).eq(3).addClass(data['status'] + '_fill');
+          },
+          initComplete: function () {
+              this.api().columns([0,3,4,9]).every( function () {
+                  var column = this;
+                  var select = $('<select><option value="">All</option></select>')
+                      .appendTo( $(column.footer()).empty() )
+                      .on( 'change', function () {
+                          var val = $.fn.dataTable.util.escapeRegex(
+                              $(this).val()
+                          );
+
+                          column
+                              .search( val ? '^'+val+'$' : '', true, false )
+                              .draw();
+                      });
+
+                  column.data().unique().sort().each( function ( d, j ) {
+                      select.append( '<option value="'+d+'">'+d+'</option>' )
+                  });
+              });
+          }
+      });
+    };
+
+    $scope.gog();
+    {#Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);#}
+  }
+
+  //create trigger to resizeEnd event
+  $(window).resize(function() {
+    if(this.resize_to) clearTimeout(this.resize_to);
+    this.resize_to = setTimeout(function() {
+      $(this).trigger('resize_ended');
+    }, 500);
+  });
+
+  //redraw graph when window resize is completed
+  $(window).on('resize_ended', function() {
+    Object.keys(charts).forEach(name => {
+      charts[name].obj.draw(charts[name].data, charts[name].options);
+    });
+  });
+  </script>
+{% endblock %}
+
+{% block help %}
+{% include 'dataCarouselleHelp.html' %}
+{% endblock %}

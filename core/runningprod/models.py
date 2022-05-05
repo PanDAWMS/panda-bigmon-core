@@ -35,12 +35,20 @@ class RunningProdTasksModel(models.Model):
     site = models.CharField(max_length=384, db_column='SITE', blank=True)
     outputdatasettype = models.CharField(max_length=384, db_column='OUTPUTDATASETTYPE')
     ptag = models.CharField(max_length=72, db_column='PTAG', blank=True)
+    atag = models.CharField(max_length=72, db_column='ATAG', blank=True)
+    rtag = models.CharField(max_length=72, db_column='RTAG', blank=True)
     simtype = models.CharField(max_length=72, db_column='SIMTYPE', blank=True)
     gshare = models.CharField(max_length=72, db_column='GSHARE', blank=True)
     hashtags = models.CharField(max_length=400, db_column='HASHTAGS', blank=True)
     eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
     neventsrunning = models.BigIntegerField(db_column='NRUNNINGEVENTS')
+    neventsfinished = models.BigIntegerField(db_column='NFINISHEDEVENTS')
+    neventsfailed = models.BigIntegerField(db_column='NFAILEDEVENTS')
+    neventswaiting = models.BigIntegerField(db_column='NWAITINGEVENTS')
     jumbo = models.IntegerField(null=True, db_column='JUMBO', blank=True)
+    container_name = models.BigIntegerField(db_column='CONTAINER_NAME')
+    stepid = models.IntegerField(null=True, db_column='STEPID', blank=True)
+    sliceid = models.IntegerField(null=True, db_column='SLICEID', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."RUNNINGPRODTASKS"'
 
@@ -70,12 +78,21 @@ class FrozenProdTasksModel(models.Model):
     site = models.CharField(max_length=384, db_column='SITE', blank=True)
     outputdatasettype = models.CharField(max_length=384, db_column='OUTPUTDATASETTYPE')
     ptag = models.CharField(max_length=72, db_column='PTAG', blank=True)
+    atag = models.CharField(max_length=72, db_column='ATAG', blank=True)
+    rtag = models.CharField(max_length=72, db_column='RTAG', blank=True)
     simtype = models.CharField(max_length=72, db_column='SIMTYPE', blank=True)
     gshare = models.CharField(max_length=72, db_column='GSHARE', blank=True)
     hashtags = models.CharField(max_length=400, db_column='HASHTAGS', blank=True)
     eventservice = models.IntegerField(null=True, db_column='EVENTSERVICE', blank=True)
+    neventsrunning = models.BigIntegerField(db_column='NRUNNINGEVENTS')
+    neventsfinished = models.BigIntegerField(db_column='NFINISHEDEVENTS')
+    neventsfailed = models.BigIntegerField(db_column='NFAILEDEVENTS')
+    neventswaiting = models.BigIntegerField(db_column='NWAITINGEVENTS')
     modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
     jumbo = models.IntegerField(null=True, db_column='JUMBO', blank=True)
+    container_name = models.BigIntegerField(db_column='CONTAINER_NAME')
+    stepid = models.IntegerField(null=True, db_column='STEPID', blank=True)
+    sliceid = models.IntegerField(null=True, db_column='SLICEID', blank=True)
     class Meta:
         db_table = u'"ATLAS_PANDABIGMON"."FROZENPRODTASKS"'
 
@@ -107,7 +124,7 @@ class RunningProdRequestsModel(models.Model):
 
 
 class ProdNeventsHistory(models.Model):
-    id = models.IntegerField(null=True, db_column='ID', primary_key=True)
+    id = models.IntegerField(db_column='ID', primary_key=True)
     processingtype = models.CharField(max_length=192, db_column='PROCESSING_TYPE')
     timestamp = models.DateTimeField(db_column='TIMESTAMP')
     neventsused = models.BigIntegerField(db_column='NEVENTS_USED')

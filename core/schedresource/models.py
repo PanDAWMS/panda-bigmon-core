@@ -4,6 +4,8 @@ topology.models -- for Schedconfig and other topology-related objects
 """
 
 from django.db import models
+from core.settings.config import DB_SCHEMA_PANDA
+
 # Create your models here.
 class Schedconfig(models.Model):
     name = models.CharField(max_length=180, db_column='NAME')
@@ -21,7 +23,7 @@ class Schedconfig(models.Model):
     jdl = models.CharField(max_length=180, db_column='JDL', blank=True)
     jdltxt = models.CharField(max_length=1500, db_column='JDLTXT', blank=True)
     version = models.CharField(max_length=180, db_column='VERSION', blank=True)
-    site = models.CharField(max_length=180, db_column='SITE')
+    site = models.CharField(max_length=180, db_column='site')
     region = models.CharField(max_length=180, db_column='REGION', blank=True)
     gstat = models.CharField(max_length=180, db_column='GSTAT', blank=True)
     tags = models.CharField(max_length=600, db_column='TAGS', blank=True)
@@ -29,7 +31,7 @@ class Schedconfig(models.Model):
     lastmod = models.DateTimeField(db_column='LASTMOD')
     errinfo = models.CharField(max_length=240, db_column='ERRINFO', blank=True)
     nqueue = models.IntegerField(db_column='NQUEUE')
-    comment_field = models.CharField(max_length=1500, db_column='COMMENT_', blank=True)  # Field renamed because it was a Python reserved word.
+    comment_field = models.CharField(max_length=1500, db_column='comment_', blank=True)  # Field renamed because it was a Python reserved word.
     appdir = models.CharField(max_length=1500, db_column='APPDIR', blank=True)
     datadir = models.CharField(max_length=240, db_column='DATADIR', blank=True)
     tmpdir = models.CharField(max_length=240, db_column='TMPDIR', blank=True)
@@ -38,14 +40,14 @@ class Schedconfig(models.Model):
     special_par = models.CharField(max_length=240, db_column='SPECIAL_PAR', blank=True)
     python_path = models.CharField(max_length=240, db_column='PYTHON_PATH', blank=True)
     nodes = models.IntegerField(db_column='NODES')
-    status = models.CharField(max_length=30, db_column='STATUS', blank=True)
+    status = models.CharField(max_length=30, db_column='status', blank=True)
     copytool = models.CharField(max_length=240, db_column='COPYTOOL', blank=True)
     releases = models.CharField(max_length=1500, db_column='RELEASES', blank=True)
     envsetup = models.CharField(max_length=600, db_column='ENVSETUP', blank=True)
     lfcpath = models.CharField(max_length=240, db_column='LFCPATH', blank=True)
     lfchost = models.CharField(max_length=240, db_column='LFCHOST', blank=True)
-    cloud = models.CharField(max_length=180, db_column='CLOUD', blank=True)
-    siteid = models.CharField(max_length=180, db_column='SITEID', blank=True)
+    cloud = models.CharField(max_length=180, db_column='cloud', blank=True)
+    siteid = models.CharField(max_length=180, db_column='siteid', blank=True)
     proxy = models.CharField(max_length=240, db_column='PROXY', blank=True)
     retry = models.CharField(max_length=30, db_column='RETRY', blank=True)
     queuehours = models.IntegerField(db_column='QUEUEHOURS')
@@ -82,8 +84,8 @@ class Schedconfig(models.Model):
     pledgedstorage = models.CharField(max_length=192, db_column='PLEDGEDSTORAGE', blank=True)
     statusoverride = models.CharField(max_length=768, db_column='STATUSOVERRIDE', blank=True)
     allowdirectaccess = models.CharField(max_length=30, db_column='ALLOWDIRECTACCESS', blank=True)
-    gocname = models.CharField(max_length=192, db_column='GOCNAME', blank=True)
-    tier = models.CharField(max_length=45, db_column='TIER', blank=True)
+    gocname = models.CharField(max_length=192, db_column='gocname', blank=True)
+    tier = models.CharField(max_length=45, db_column='tier', blank=True)
     multicloud = models.CharField(max_length=192, db_column='MULTICLOUD', blank=True)
     lfcregister = models.CharField(max_length=30, db_column='LFCREGISTER', blank=True)
     stageinretry = models.IntegerField(null=True, db_column='STAGEINRETRY', blank=True)
@@ -99,16 +101,16 @@ class Schedconfig(models.Model):
     maxrss = models.IntegerField(null=True, db_column='MAXRSS', blank=True)
     mintime = models.IntegerField(null=True, db_column='MINTIME', blank=True)
     allowjem = models.CharField(null=True, max_length=64, db_column='ALLOWJEM', blank=True)
-    catchall = models.CharField(null=True, max_length=512, db_column='CATCHALL', blank=True)
+    catchall = models.CharField(null=True, max_length=512, db_column='catchall', blank=True)
     faxdoor = models.CharField(null=True, max_length=128, db_column='FAXDOOR', blank=True)
     wansourcelimit = models.IntegerField(null=True, db_column='WANSOURCELIMIT', blank=True)
     wansinklimit = models.IntegerField(null=True, db_column='WANSINKLIMIT', blank=True)
     auto_mcu = models.SmallIntegerField(null=True, db_column='AUTO_MCU', blank=True)
-    objectstore = models.CharField(null=True, max_length=512, db_column='OBJECTSTORE', blank=True)
+    objectstore = models.CharField(null=True, max_length=512, db_column='objectstore', blank=True)
     allowhttp = models.CharField(null=True, max_length=64, db_column='ALLOWHTTP', blank=True)
     httpredirector = models.CharField(null=True, max_length=256, db_column='HTTPREDIRECTOR', blank=True)
     multicloud_append = models.CharField(null=True, max_length=64, db_column='MULTICLOUD_APPEND', blank=True)
-    corepower = models.IntegerField(null=True, db_column='COREPOWER', blank=True)
+    corepower = models.IntegerField(null=True, db_column='corepower', blank=True)
     #Were added 21.12.17
     directaccesslan = models.CharField(null=True, max_length=64, db_column='DIRECT_ACCESS_LAN', blank=True)
     directaccesswan = models.CharField(null=True, max_length=64, db_column='DIRECT_ACCESS_WAN', blank=True)
@@ -124,6 +126,8 @@ class Schedconfig(models.Model):
     container_type = models.CharField(null=True, max_length=256, db_column='CONTAINER_TYPE', blank=True)
     jobseed = models.CharField(null=True, max_length=16, db_column='JOBSEED', blank=True)
     pilot_manager = models.CharField(null=True, max_length=16, db_column='PILOT_MANAGER', blank=True)
+
+
     def __str__(self):
         return 'Schedconfig:' + str(self.nickname)
 
@@ -201,12 +205,12 @@ class Schedconfig(models.Model):
 
 
 class SchedconfigJson(models.Model):
-    pandaqueue = models.CharField(max_length=180, db_column='PANDA_QUEUE', primary_key=True)
-    data = models.TextField(db_column='DATA', blank=True)
-    lastupdate = models.DateField(db_column='LAST_UPDATE')
+    pandaqueue = models.CharField(max_length=180, db_column='panda_queue', primary_key=True)
+    data = models.TextField(db_column='data', blank=True)
+    lastupdate = models.DateField(db_column='last_update')
 
     class Meta:
-        db_table = u'"ATLAS_PANDA"."SCHEDCONFIG_JSON"'
+        db_table = f'"{DB_SCHEMA_PANDA}"."schedconfig_json"'
 
 
 class Schedinstance(models.Model):

@@ -5,10 +5,10 @@
 <!--[if IE 8]>    <html class="lt-ie9"> <![endif]-->
 <!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
 <head profile="http://www.w3.org/2005/10/profile">
-<link rel="icon" type="image/png" href='{% static "images/favicon.png" %}' />
+<link rel="icon" type="image/png" href='{% static "images/favicon.ico" %}' />
 
 <!-- Set the viewport width to device width for mobile -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>{% block page_title %}{% if viewParams.MON_VO %} {{ viewParams.MON_VO }} {% endif %}{{ PAGE_TITLE }}{% endblock %}</title>
 
@@ -60,7 +60,7 @@
       $interpolateProvider.endSymbol('$}');
       });
     app.config(['$compileProvider', function ($compileProvider) {
-      $compileProvider.debugInfoEnabled(false);
+      $compileProvider.debugInfoEnabled(true);
       }]);
   </script>
   {% endblock %}
@@ -98,6 +98,7 @@
         <li class="has-submenu">
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
+            <li><a href="{% url 'workflowprogressitems' %}">Workflows progress</a></li>
             {% if viewParams.MON_VO == 'ATLAS' %}
                 <li><a>Region view</a>
                     <ul class="submenu menu">
@@ -116,13 +117,17 @@
                 <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
                 <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
                 <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
+                <li><a>Data Carousel</a>
+                    <ul class="submenu menu">
+                        <li><a href="{% url 'dataCarouselleDashBoard' %}">Dashboard</a></li>
+                        <li><a href="{% url 'datacartails' %}">Staging Tails</a></li>
+                    </ul>
+                </li>
+                <li><a href="{% url 'iddsmain' %}">iDDS</a></li>
                 <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
-                <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>
+{#                <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>#}
                 <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
-                <li><a href="{% url 'dataCarouselleDashBoard' %}">Data Carousel</a></li>
                 <li><a href="{% url 'BuildGlobal' %}">Nightlies and CI</a></li>
-
-
             {% else %}
                 <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
                 <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
@@ -343,7 +348,7 @@
 {#            </ul>#}
 {#            </li>#}
 
-            {% if request.session.username %}
+            {% if "username" in request.session %}
             <li>
             <a href="{% url 'userInfo' request.session.username %}?display_limit=200">{{request.session.username}}</a>
             </li>
@@ -466,7 +471,7 @@
 
     <div class="column small-6 medium-3 large-2 right">
         {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
-        {% if built != None %} {{ built }}, {% endif %} <a href="{{ request.session.notimestampurl }}timestamp={% now "H:i:s" %}"> Refresh</a>
+        {% if built != None %} {{ built }}, {% endif %} <a onclick="refreshPage()"> Refresh</a>
     </div>
 </div>
 <!-- End sub-title -->
@@ -524,10 +529,10 @@
   </div>
   <div class="footer row collapse">
     <div class="columns small-3">
-      <img src="{% static "images/panda-verysmall-notext.png" %}"><p style="display: inline"><a target="_blank" href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA docs</a></p>
+      <img src="{% static "images/panda-verysmall-notext.png" %}"><p style="display: inline"><a target="_blank" href="https://panda-wms.readthedocs.io/en/latest/">PanDA docs</a></p>
     </div>
     <div class="columns small-9">
-      <p>Contact us via <a href="mailto:atlas-adc-pandamon-support@cern.ch">e-mail</a>,
+      <p>Contact BigPanDAmon support via <a href="mailto:atlas-adc-pandamon-support@cern.ch">e-mail</a>,
         <a target="_blank" href="https://its.cern.ch/jira/projects/ATLASPANDA/"><img src="{% static 'images/jira-logo.png' %}"></a>, or
         <a target="_blank" href="https://mattermost.web.cern.ch/adcvcr/channels/adc-bigpanda"><img src="{% static 'images/mattermost-logo.png' %}"> Mattermost</a>
       </p>
@@ -548,11 +553,19 @@
       {% else %}
           var timerange =  ['', ''];
       {% endif %}
-      {% if request.session.notimerangeurl %}
-          var notimerangeurl = '{{ request.session.notimerangeurl|safe }}';
+      {% if request.session.urls_cut.notimerangeurl %}
+          var notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
       {% else %}
-          var notimerangeurl =  window.location.href ;
+          var notimerangeurl =  window.location.href + '?';
       {% endif %}
+
+      {% if request.session.urls_cut.notimestampurl %}
+          var notimestampurl = '{{ request.session.urls_cut.notimestampurl|safe }}';
+      {% else %}
+          var notimestampurl =  window.location.href + '?' ;
+      {% endif %}
+
+
       app.controller('timeWindowController', ['$scope', function($scope) {
         $scope.timewindow = {
             selection : {
@@ -610,8 +623,8 @@
             let query = notimerangeurl;
             if (location.pathname.indexOf('jobsbuster') > -1) {
               let timeparamname = 'endtime';
-              query += timeparamname + '_from=' + $scope.timewindow.selection.from + '&';
-              query += timeparamname + '_to=' + $scope.timewindow.selection.to;
+              query += timeparamname + '_from=' + $scope.timewindow.selection.from.replace(' ', 'T') + '&';
+              query += timeparamname + '_to=' + $scope.timewindow.selection.to.replace(' ', 'T');
             }
             else {
               switch ($scope.timewindow.data.quick) {
@@ -622,8 +635,8 @@
                   query += 'days=' + $scope.timewindow.data.days;
                   break;
                 case 'custom':
-                  query += 'date_from=' + $scope.timewindow.selection.from + '&';
-                  query += 'date_to=' + $scope.timewindow.selection.to;
+                  query += 'date_from=' + $scope.timewindow.selection.from.replace(' ', 'T') + '&';
+                  query += 'date_to=' + $scope.timewindow.selection.to.replace(' ', 'T');
                   break;
               }
             }
@@ -686,8 +699,8 @@
                       url = "?user=";
                       break;
                   case 'dataset':
-                      urlBase = "{% url 'datasetInfo' %}" ;
-                      url = "?dataset=";
+                      urlBase = "{% url 'datasetList' %}" ;
+                      url = "?datasetname=";
                       break;
                   case 'filename':
                       urlBase = "{% url 'fileInfo' %}" ;
@@ -695,14 +708,19 @@
                       break;
 
               }
-              url += searchvalue.value;
+              url += encodeURIComponent(searchvalue.value);
           }
 
           window.location = urlBase + url;
       }
 
+      function refreshPage() {
+        let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+        window.location = notimestampurl + 'timestamp=' + d;
+      }
+
       function clearComparisonList(object) {
-          var newURL = document.getElementById('reloadlink').href;
+          var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/clearcomparison/',
               data: 'object='+object,
@@ -714,7 +732,7 @@
       }
 
       function grantRights(type) {
-          var newURL = document.getElementById('reloadlink').href;
+          var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/grantrights/',
               data: 'type='+type,
@@ -726,7 +744,7 @@
       }
 
       function denyRights(type) {
-          var newURL = document.getElementById('reloadlink').href;
+          var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/denyrights/',
               data: 'type='+type,

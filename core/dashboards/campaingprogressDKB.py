@@ -1,15 +1,8 @@
 from django.shortcuts import render_to_response
 from core.settings import DKB_CAMPAIGN_URL
-from django.db import connection
-from core.views import initRequest, escapeInput
-from django.views.decorators.cache import never_cache
-import core.libs.CampaignPredictionHelper as cph
-from django.core.cache import cache
-import operator
-from django.http import JsonResponse
-import numpy as np
-import humanize
-from core.views import login_customrequired
+from core.views import initRequest
+from core.libs.sqlcustom import escape_input
+from core.oauth.utils import login_customrequired
 import urllib3
 import json
 
@@ -26,7 +19,7 @@ stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Mer
 def campaignProgressDash(request):
     initRequest(request)
     if 'hashtag' in request.GET:
-        hashtag = escapeInput(request.GET['hashtag'])
+        hashtag = escape_input(request.GET['hashtag'])
     else:
         hashtag = 'newfastcalosimntuponly'
 

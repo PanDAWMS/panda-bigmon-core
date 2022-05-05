@@ -28,71 +28,43 @@
 
 {% block body %}
 
-<div class="callout primary" data-closable>
-  <h5><b>This is a new dashboard page!</b></h5>
-  <p>The old one is still available, via the links:
-    <a class="blacklink" href="{% url 'dashboard' %}?version=old"><b>all</b></a>,
-    <a class="blacklink" href="{% url 'dashProduction' %}?version=old"><b>production</b></a>,
-    <a class="blacklink" href="{% url 'dashAnalysis' %}?version=old"><b>analysis</b></a>. But it will be decommissioned soon.
-  </p>
-  <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
-  <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
-    Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
-      I.e. if you check the <b>split by job type</b> checkbox, you will get up to 2 rows in tables for each Region/PQ showing number of production and analysis jobs separately.
-      If you check the <b>split by resource type</b> checkbox, you will get up to 4 rows in tables for each Region/PQ showing number of jobs using SCORE, MCORE, SCORE_HIMEM and MCORE_HIMEM resources separately.
-      If you check both checkboxes, you will get up to 8 rows for each Region/PQ showing split statistics of jobs.
-    Click on <b>Update</b> button to apply selection.</p>
-  <p><b>By default the view is minimized</b>, i.e. some short transient states and Harvester workers summary numbers are hidden.
-    Press <b>Show details</b> buttons to see all the states of jobs and workers.</p>
-  <p>Click the job counts to go to job listings. Click on workers counts to go to harvester workers listings.
-    Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
-  <p>Click on PQ name to go to a BigPanDA site info page. Next to a PQ name there are 3 links:
-    <img src="{% static '/images/grafana.png' %}" width=14 height=14 border=0> goes to Jobs accounting for a PQ at MONIT Grafana;
-    <img src="{% static '/images/grafana-black.png' %}" width=14 height=14 border=0> - Jobs monitoring for a PQ at MONIT Grafana (Eric's monitoring);
-    <img src="{% static '/images/kibana-logo.png' %}" width=14 height=14 border=0> - recent brokerage actions related to a PQ at Kibana.
-  </p>
-  <p>Click on a PQ status to go to blacklisting history at CRIC UI.</p>
-  <p><b>N running workers</b> column has the next color coding scheme:
-    <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
-    <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
-  <p>If you notice any issue or if you have an advise how to improve the page, please let us know
-    <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
-  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-    <span aria-hidden="true">&times;</span>
-  </button>
-</div>
-
 {% if viewParams.selection %}
   {{ viewParams.selection|safe }}
 {% endif %}
 
 <div data-ng-app="jobSummaryRegion">
-<div data-ng-controller="JobSummaryRegionController">
+<div data-ng-controller="JobSummaryRegionController" id="div-jobSummaryRegion">
 <form novalidate class="simple-form">
 <div class="row form-container">
 <div class="medium-1 column">
     <label>Region:
-    <select id="region__select" ng-model="dash.selection.region" ng-options="qt.value as qt.name for qt in dash.availableOptions.region">
+    <select id="region__select" ng-model="dash.selection.region" ng-options="qt.name as qt.name for qt in dash.availableOptions.region">
+    </select>
+    </label>
+</div>
+<div class="medium-2 column">
+    <label>Site:
+    <select id="region__select" ng-model="dash.selection.site" ng-options="qt.name as qt.name for qt in dash.availableOptions.site | filter:{region:dash.selection.region}">
     </select>
     </label>
 </div>
 <div class="medium-2 column">
     <label>Queue type:
-    <select id="queuetype__select" ng-model="dash.selection.queuetype" ng-options="qt.value as qt.name for qt in dash.availableOptions.queuetype">
+    <select id="queuetype__select" ng-model="dash.selection.queuetype" ng-options="qt.name as qt.name for qt in dash.availableOptions.queuetype">
     </select>
     </label>
 </div>
-<div class="medium-2 column">
+<div class="medium-1 column">
     <label>Queue status:
-    <select id="queuestatus__select" ng-model="dash.selection.queuestatus" ng-options="qs.value as qs.name for qs in dash.availableOptions.queuestatus">
+    <select id="queuestatus__select" ng-model="dash.selection.queuestatus" ng-options="qs.name as qs.name for qs in dash.availableOptions.queuestatus">
     </select>
     </label>
 </div>
-<div class="medium-2 column">
+<div class="medium-1 column">
     <label>Job type:
     <select id="jobtype__select"
             ng-model="dash.selection.jobtype"
-            ng-options="jt.value as jt.name for jt in dash.availableOptions.jobtype"
+            ng-options="jt.name as jt.name for jt in dash.availableOptions.jobtype"
             ng-change="change(dash.selection)">
     </select>
     </label>
@@ -101,7 +73,7 @@
     <label>Resource type:
     <select id="resourcetype__select"
             ng-model="dash.selection.resourcetype"
-            ng-options="rt.value as rt.name for rt in dash.availableOptions.resourcetype"
+            ng-options="rt.name as rt.name for rt in dash.availableOptions.resourcetype"
             ng-change="change(dash.selection)">
     </select>
     </label>
@@ -175,6 +147,8 @@
     <th class="text">Status</th>
     <th class="text">Job type</th>
     <th class="text">Resource type</th>
+    <th class="num">N getJob requests</th>
+    <th class="num">N nojob returns</th>
     <th class="num">N submitted workers</th>
     <th class="num">N running workers</th>
     <th class="num">N running slots</th>
@@ -195,6 +169,8 @@
     <th class="text">Status</th>
     <th class="text">Job type</th>
     <th class="text">Resource type</th>
+    <th class="num">N getJob requests</th>
+    <th class="num">N nojob returns</th>
     <th class="num">N submitted workers</th>
     <th class="num">N running workers</th>
     <th class="num">N running slots</th>
@@ -221,11 +197,12 @@ var err_threshold = 15;
 app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     $scope.dash = {
         selection: {
-            region: '',
-            queuetype: '',
-            queuestatus: '',
-            jobtype: '',
-            resourcetype: '',
+            region: 'all',
+            site: 'all',
+            queuetype: 'all',
+            queuestatus: 'all',
+            jobtype: 'all',
+            resourcetype: 'all',
             splitby: {
                 jobtype: false,
                 resourcetype: false,
@@ -235,6 +212,7 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
 
     $scope.dash.availableOptions = {
         region: [{name:'all', value:'', query: ''},],
+        site: [{name:'all', value:'', region:'all', query:'' },],
         queuetype: [{name:'all', value:'', query: ''},],
         queuestatus: [{name:'all', value:'', query: ''},],
         jobtype: [
@@ -252,6 +230,11 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     };
     select_params.region.forEach(function (param) {
      $scope.dash.availableOptions.region.push({name:param, value:param, query:'region' + param + '&'});
+     $scope.dash.availableOptions.site.push({name:'all', value:'', region:param, query:'' });
+    });
+
+    select_params.site.forEach(function (param) {
+     $scope.dash.availableOptions.site.push({name:param.site, value:param.site, region:param.region + '_all', query:'site' + param + '&' });
     });
 
     select_params.queuetype.forEach(function (param) {
@@ -293,7 +276,7 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
                 }
             }
             else {
-                if (selection[key].toString().length > 0) {
+                if (selection[key] !== 'all') {
                     query += key + '=' + selection[key].toString() + '&'
                 }
             }
@@ -333,7 +316,7 @@ function buildRegionSummary(data, divid) {
           {
             extend: 'colvisGroup',
             text: 'Minimize view',
-            hide: [ 3,4,5,8,9,10,12,14,15,17,22,23 ],
+            hide: [ 3,4,8,9,10,12,14,15,17,22,23 ],
           },
           {
             extend: 'colvisGroup',
@@ -392,7 +375,22 @@ function buildRegionSummary(data, divid) {
           },
           {
             sDefaultContent: "---",
-            className: "alert num",
+            className: "num",
+            "render": function(data, type, row, meta) {
+              if (data && data > 0) {
+                let url_link = '<a target="_blank"';
+                (data > err_threshold) ? url_link += ' class="alert" ': url_link += ' ';
+                url_link += 'href = "{% url 'errorSummary' %}?hours=' + '{{ hours }}' + '&jobstatus=failed';
+                (row[0] === 'all') ? url_link += '': url_link += '&region=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '">'+row[7]+'</a>';
+                return url_link
+              }
+              else {
+                return data
+              }
+            }
           },
           {
             sDefaultContent: "---",
@@ -593,7 +591,7 @@ function buildRegionSummary(data, divid) {
           }
         },
     });
-    regionsTable.columns( [3,4,5,8,9,10,12,14,15,17,22,23] ).visible( false );
+    regionsTable.columns( [3,4,8,9,10,12,14,15,17,22,23] ).visible( false );
     regionsTable.buttons().container()
         .appendTo( '#regionsummary_wrapper .small-6.columns:eq(0)' );
     return regionsTable
@@ -618,13 +616,16 @@ function buildQueueSummary(data, divid) {
       {
         extend: 'colvisGroup',
         text: 'Minimize view',
-        hide: [ 6,7,8,11,12,13,15,17,18,20,25,26 ]
+        hide: [ 6,7,8,9,13,14,15,17,19,20,22,27,28 ]
       },
       {
         extend: 'colvisGroup',
         text: 'Show details',
         show: ':hidden'
       }
+    ],
+    "columnDefs": [
+        {"type": "num-html", "targets": [6,7] }
     ],
     "columns": [
       {
@@ -634,8 +635,8 @@ function buildQueueSummary(data, divid) {
             let link = '<a href = "{% url 'siteInfo' %}' + row[0] + '/">'+row[0]+'</a>';
             link += ' <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite=' + row[0] + '&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-right"><img src="/static/images/grafana.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Jobs accounting (MONIT Grafana)</span></div></a>\n';
             link += ' <a onclick=\'PopUpGrafana("' + row[0] + '", "' + row[4] +  '", "' + row[5] +  '", "jmonit")\'><div class="tooltip-right"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Jobs monitoring (rendered Grafana plot)</span></div></a>\n';
-            link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'Job%20brokerage\',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),panels:!((gridData:(h:2,i:\'4\',w:3,x:0,y:0),id:e9b265f0-6627-11e7-9c82-4bf763932475,panelIndex:\'4\',type:visualization,version:\'6.2.4\'),(gridData:(h:8,i:\'5\',w:12,x:0,y:18),id:c3a4f160-50aa-11e9-a744-833d910adbcf,panelIndex:\'5\',type:visualization,version:\'6.2.4\'),(gridData:(h:6,i:\'6\',w:3,x:0,y:5),id:\'991ce6b0-aa5d-11ea-88a6-cd72c8759873\',panelIndex:\'6\',type:visualization,version:\'6.2.4\'),(gridData:(h:11,i:\'7\',w:9,x:3,y:0),id:\'5c7b65a0-aa5e-11ea-88a6-cd72c8759873\',panelIndex:\'7\',type:visualization,version:\'6.2.4\'),(gridData:(h:7,i:\'8\',w:12,x:0,y:11),id:b7c043e0-aa5e-11ea-88a6-cd72c8759873,panelIndex:\'8\',type:search,version:\'6.2.4\'),(gridData:(h:3,i:\'9\',w:3,x:0,y:2),id:\'6c76ff00-aa68-11ea-88a6-cd72c8759873\',panelIndex:\'9\',type:visualization,version:\'6.2.4\')),query:(language:lucene,query:\'site.keyword:%20%2F' + row[0] + '%5C%2F.*%2F%20OR%20site.keyword:%20%22' + row[0] + '%22\'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-right"><img src="/static/images/kibana-logo.png" width=14 height=14 border=0><span class="tooltip-text">Brokerage actions (Kibana)</span></div></a>\n';
-            link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'09f5a610-6810-11e9-a744-833d910adbcf\',key:computingsite.keyword,negate:!f,params:(query:' + row[0] + ',type:phrase),type:phrase,value:' + row[0] + '),query:(match:(computingsite.keyword:(query:' + row[0] + ',type:phrase))))))" ><div class="tooltip-right"><img src="/static/images/kibana-logo-black.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Harvester particular computingsite dashboard (Kibana)</span> </div></a>';
+            link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(description:\'Job%20brokerage\',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),query:(language:lucene,query:\'site.keyword:%20%2F' + row[0] +'%5C%2F.*%2F%20OR%20site.keyword:%20%22' + row[0] +'%22\'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-right"><img src="/static/images/kibana-logo.png" width=14 height=14 border=0><span class="tooltip-text">Brokerage actions (Kibana)</span></div></a>\n';
+            link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'006980c0-857a-11ea-9233-1dd73e396ea6\',key:computingsite.keyword,negate:!f,params:(query:' + row[0] + '),type:phrase),query:(match_phrase:(computingsite.keyword:' + row[0] + ')))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),query:(language:lucene,query:\'\'),timeRestore:!t,title:\'Harvester%20particular%20computingsite\',viewMode:view)" ><div class="tooltip-right"><img src="/static/images/kibana-logo-black.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Harvester particular computingsite dashboard (Kibana)</span> </div></a>';
             return link
         }
       },
@@ -675,8 +676,32 @@ function buildQueueSummary(data, divid) {
       {
         sDefaultContent: "---",
         className: "num",
+        "render": function(data, type, row, meta) {
+          if (data >= 0) {
+            return data
+          }
+          else {
+            return '---'
+          }
+        },
+      },
+      {
+        sDefaultContent: "---",
+        className: "num",
+        "render": function(data, type, row, meta) {
+          if (data >= 0) {
+            return data
+          }
+          else {
+            return '---'
+          }
+        },
+      },
+      {
+        sDefaultContent: "---",
+        className: "num",
         render: function(data, type, row, meta) {
-            return '<a href = "{% url 'harvesters' %}?hours=100&status=submitted&computingsite=' + row[0] + '">' + row[6] + '</a>';
+            return '<a href = "{% url 'harvesters' %}?hours=12&status=submitted&computingsite=' + row[0] + '">' + row[8] + '</a>';
         }
       },
       {
@@ -685,10 +710,10 @@ function buildQueueSummary(data, divid) {
         render: function(data, type, row, meta) {
           let cellstr = '<a target="_blank" class="';
           let diffpct = 0;
-          (row[19] !== 0) ? diffpct = (row[7] - row[19])*100./row[19] : diffpct = 0;
+          (row[21] !== 0) ? diffpct = (row[9] - row[21])*100./row[21] : diffpct = 0;
           if (diffpct > 20) {cellstr += 'alert';}
           else if (diffpct > 10) {cellstr += 'warning';}
-          cellstr += '" href = "{% url 'harvesters' %}?hours=100&status=running&computingsite=' + row[0] + '">' + row[7] + '</a>';
+          cellstr += '" href = "{% url 'harvesters' %}?hours=12&status=running&computingsite=' + row[0] + '">' + row[9] + '</a>';
           return cellstr
         }
       },
@@ -704,13 +729,27 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '">'+row[9]+'</a>';
+            url_link += '">'+row[11]+'</a>';
             return url_link
         }
       },
       {
         sDefaultContent: "---",
-        className: "alert num",
+        className: "num",
+        "render": function(data, type, row, meta) {
+          if (data && data > 0) {
+            let url_link = '<a target="_blank"';
+            (data > err_threshold) ? url_link += ' class="alert" ': url_link += '';
+            url_link += 'href = "{% url 'errorSummary' %}?hours=' + '{{ hours }}' + '&jobstatus=failed&computingsite=' + row[0];
+            (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
+            (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
+            url_link += '">'+row[12]+'</a>';
+            return url_link
+          }
+          else {
+            return data
+          }
+        }
       },
       {
         sDefaultContent: "---",
@@ -719,7 +758,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[11]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[13]+'</a>';
             return url_link
         }
       },
@@ -730,7 +769,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[12]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[14]+'</a>';
             return url_link
         }
       },
@@ -742,7 +781,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[13]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[15]+'</a>';
             return url_link
         }
       },
@@ -754,7 +793,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[14]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[16]+'</a>';
             return url_link
         }
       },
@@ -766,7 +805,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[15]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[17]+'</a>';
             return url_link
         }
       },
@@ -778,7 +817,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[16]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[18]+'</a>';
             return url_link
         }
       },
@@ -790,7 +829,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[17]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[19]+'</a>';
             return url_link
         }
       },
@@ -802,7 +841,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[18]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[20]+'</a>';
             return url_link
         }
       },
@@ -814,7 +853,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[19]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[21]+'</a>';
             return url_link
         }
       },
@@ -826,7 +865,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[20]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[22]+'</a>';
             return url_link
         }
       },
@@ -838,7 +877,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[21]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[23]+'</a>';
             return url_link
         }
       },
@@ -850,7 +889,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[22]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[24]+'</a>';
             return url_link
         }
       },
@@ -862,7 +901,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[23]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[25]+'</a>';
             return url_link
         }
       },
@@ -874,7 +913,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[24]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[26]+'</a>';
             return url_link
         }
       },
@@ -886,7 +925,7 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[25]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[27]+'</a>';
             return url_link
         }
       },
@@ -898,18 +937,13 @@ function buildQueueSummary(data, divid) {
             let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}' + '&computingsite=' + row[0];
             (row[4] === 'all') ? url_link += '': url_link += '&jobtype=' + row[4];
             (row[5] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[5];
-            url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[26]+'</a>';
+            url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[28]+'</a>';
             return url_link
         }
       },
     ],
-    "createdRow": function (row, data, index) {
-      if (data[10] > err_threshold) {
-        $('td', row).eq(10).addClass('bold');
-      }
-    },
   });
-  queuesTable.columns( [ 6,7,8,11,12,13,15,17,18,20,25,26 ] ).visible( false );
+  queuesTable.columns( [ 6,7,8,9,13,14,15,17,19,20,22,27,28 ] ).visible( false );
   queuesTable.buttons().container()
     .appendTo( '#queuesummary_wrapper .small-6.columns:eq(0)' );
   return queuesTable
@@ -965,54 +999,7 @@ function PopUpGrafana(site, prod_source = 'All', res_cap = 'All', montype = 'jac
 {% endblock %}
 
 {% block help %}
-<div class="card bp-container-simple help">
-<div class="card-divider"><p>Job summary help:</p></div>
-<div class="card-section">
-  <p>This page summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
-  <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
-    Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
-      I.e. if you check the <b>split by job type</b> checkbox, you will get up to 2 rows in tables for each Region/PQ showing number of production and analysis jobs separately.
-      If you check the <b>split by resource type</b> checkbox, you will get up to 4 rows in tables for each Region/PQ showing number of jobs using SCORE, MCORE, SCORE_HIMEM and MCORE_HIMEM resources separately.
-      If you check both checkboxes, you will get up to 8 rows for each Region/PQ showing split statistics of jobs.
-    Click on <b>Update</b> button to apply selection.</p>
-  <p><b>By default the view is minimized</b>, i.e. some short transient states and Harvester workers summary numbers are hidden.
-    Press <b>Show details</b> buttons to see all the states of jobs and workers.</p>
-  <p>Click the job counts to go to job listings. Click on workers counts to go to harvester workers listings.
-    Use the <b>Search</b> text input on the top of second table to find a PQ by name.</p>
-  <p>Click on PQ name to go to a BigPanDA site info page. Next to a PQ name there are 3 links:</p>
-  <p><ul class="no-bullet">
-    <li><img src="{% static '/images/grafana.png' %}" width=14 height=14 border=0> goes to Jobs accounting for a PQ at MONIT Grafana;
-    <li><img src="{% static '/images/grafana-black.png' %}" width=14 height=14 border=0> opens a new tab with rendered plot of Jobs monitoring for a PQ at MONIT Grafana (Eric's monitoring);
-    <li><img src="{% static '/images/kibana-logo.png' %}" width=14 height=14 border=0> goes to recent brokerage actions related to a PQ at Kibana.
-  </ul></p>
-  <p>Click on a PQ status to go to blacklisting history at CRIC UI.</p>
-  <p><b>N running workers</b> column has the next color coding scheme:
-    <span class="alert"><b>dark red</b></span> if N running workers > N running jobs for more than 20%,
-    <span class="warning"><b>orange</b></span> if N running workers > N running jobs for more than 10% and less than 20%.</p>
-  <p><b>Job states description:</b></p>
-  <p>
-  <ul>
-  {% if show == 'all' or  job.jobstatus == 'pending' %} <li>  Status <b class='pending'>pending</b> indicates that the job record has been injected into the PanDA DB but PanDA has not yet dealt with it. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'defined' %} <li>  Status <b class='defined'>defined</b> indicates that the job has been received by PanDA and the process of assigning it for execution has begun. {% endif %}
-  {% if show == 'all' or job.jobstatus == 'waiting' %} <li>  Status <b class='waiting'>waiting</b> indicates that data handling preparations for the job are underway and have to be completed before the job can be activated. {% endif %}
-  {% if show == 'all' or job.jobstatus == 'assigned' %} <li>  Status <b class='assigned'>assigned</b> indicates the job has been assigned to a site and preparations to have the input data ready are underway (e.g. subscriptions, tape staging). {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'throttled' %} <li>  Status <b class='throttled'>throttled</b> indicates that dispatch of the job has been postponed due to heavy network use by other jobs. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'activated' %} <li>  Status <b class='activated'>activated</b> indicates that the job is ready to be dispatched to a pilot at the site where it will run. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'sent' %} <li>  Status <b class='sent'>sent</b> indicates that the job was sent to a pilot for execution but the pilot has not yet acknowledged receipt. If this state persists for any length of time, all is not well with the job.{% endif %}
-  {% if show == 'all' or  job.jobstatus == 'starting' %} <li>  Status <b class='starting'>starting</b> indicates that the job has been picked up for execution but not yet launched by a pilot on a worker node. Used in environments where pilots don't directly pick up jobs (e.g. Nordugrid). {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'running' %} <li>  Status <b class='running'>running</b> indicates that the job is running at its execution site. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'holding' %} <li>  Status <b class='holding'>holding</b> indicates that the job has completed but output validation and processing (eg. registering outputs in datasets) is still underway. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'transferring' %} <li>  Status <b class='transferring'>transferring</b> indicates that transferring of outputs to their final destination after job completion is underway. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'merging' %} <li>  Status <b class='transferring'>merging</b> indicates that job is waiting while the correspondent merge job is done and merged files are transferred to the final destination. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates that the job has successfully completed. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates that the job has failed at some stage. Information on where the error occurred and with what error condition can be found in the job parameters table. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'cancelled' %} <li>  Status <b class='cancelled'>cancelled</b> indicates that the job has been cancelled, either by the user or by the system. Further information may be available in the job parameters table. {% endif %}
-  {% if show == 'all' or  job.jobstatus == 'closed' %} <li>  Status <b class='closed'>closed</b> terminated by the system before completing the allocated workload. E.g., killed to be reassigned to another site.{% endif %}
-  </ul>
-  </p>
-
-</div>
-</div>
+{% include 'dashboardRegionViewHelp.html' with show='all' %}
 {% endblock %}
 
 

@@ -39,5 +39,50 @@ function disable_input(item, options) {
     for (let i = 0; i < els.length; i++) { els[i].disabled = false; }
 }
 
+(function ($) {
+  $.fn.goTo = function () {
+      $('html, body').animate({
+          scrollTop: $(this).offset().top + 'px'
+      }, 'fast');
+      return this;
+  }
+})(jQuery);
 
+function getWidth() {
+  return Math.min(
+    document.body.scrollWidth,
+    document.documentElement.scrollWidth,
+    document.body.offsetWidth,
+    document.documentElement.offsetWidth,
+    document.documentElement.clientWidth
+  );
+}
 
+function getScreenCategory(width) {
+  let scrnCat = '';
+  let breakpoints = {
+    small: [0, 640],
+    medium: [640, 1280],
+    large: [1280, 99999],
+  };
+  for (const item in breakpoints) {
+    if (width >= breakpoints[item][0] && width < breakpoints[item][1]) {
+      scrnCat = item;
+    }
+  }
+  (scrnCat.length === 0) ? scrnCat = 'small' : scrnCat;
+
+  return scrnCat
+}
+
+function getNCharsShorten() {
+  let nChars = 1000;
+  let width = getWidth();
+  if (width >= 1440) {
+      nChars = 4000;
+  }
+  else if (width >= 1024) {
+      nChars = 2500;
+  }
+  return nChars
+}

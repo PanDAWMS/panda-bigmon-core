@@ -2,14 +2,14 @@ from requests import post, get
 from json import loads
 from core.settings.local import GRAFANA as token
 from django.http import JsonResponse
-from core.views import login_customrequired, initRequest,  DateTimeEncoder
 from core.libs.exlib import dictfetchall
 from django.db import connection
 from django.utils import timezone
 from datetime import timedelta
 from core.settings import defaultDatetimeFormat
 from django.shortcuts import render_to_response
-from core.views import login_customrequired, initRequest, setupView
+from core.oauth.utils import login_customrequired
+from core.views import initRequest, setupView
 import pandas as pd
 
 
@@ -23,7 +23,7 @@ def run_query(rules):
 
     rulequery = rulequery[:-3]
     paramQuery = """{"filter":[{"query_string":{"analyze_wildcard":true,"query":"data.event_type:rule_progress AND (%s)"}}]}""" % rulequery
-    query = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["monit_prod_rucio_raw_events*"]}\n{"size":500,"query":{"bool":"""+paramQuery+"""},"sort":{"metadata.timestamp":{"order":"desc","unmapped_type":"boolean"}},"script_fields":{},"docvalue_fields":["metadata.timestamp"]}\n"""
+    query = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["monit_prod_ddm_enr_transfer*"]}\n{"size":500,"query":{"bool":"""+paramQuery+"""},"sort":{"metadata.timestamp":{"order":"desc","unmapped_type":"boolean"}},"script_fields":{},"docvalue_fields":["metadata.timestamp"]}\n"""
     headers = token
     headers['Content-Type'] = 'application/json'
     headers['Accept'] = 'application/json'
@@ -31,11 +31,12 @@ def run_query(rules):
     request_url = "%s/%s" % (base, url)
     r = post(request_url, headers=headers, data=query)
     resultdict = {}
+
     if r.ok:
         results = loads(r.text)['responses'][0]['hits']['hits']
         for result in results:
             dictEntry = resultdict.get(result['_source']['data']['rule_id'], {})
-            dictEntry[result['_source']['data']['created_at']] = result['_source']['data']['progress']
+            dictEntry[result['_source']['data']['created_at']] = result['_source']['data'].get('progress')
             resultdict[result['_source']['data']['rule_id']] = dictEntry
         result = resultdict
     else:
@@ -90,9 +91,11 @@ def getStageProfileData(request):
     chunksize = 50
     chunks = [RRules[i:i + chunksize] for i in range(0, len(RRules), chunksize)]
     resDict = {}
-    for chunk in chunks:
-        resDict = {**resDict, **run_query(chunk)}
-
+    try: #TODO fix the query to Grafana
+        for chunk in chunks:
+            resDict = {**resDict, **run_query(chunk)}
+    except:
+        resDict = None
     """
     s1 = pd.Series([0,1], index=list('AB'))
     s2 = pd.Series([2,3], index=list('AC'))
@@ -103,18 +106,19 @@ def getStageProfileData(request):
     pandaDFs = {}
     RRuleNames = []
     result = []
-    for RRule, progEvents in resDict.items():
-        timesList = list(progEvents.keys())
-        progList = list(progEvents.values())
-        pandasDF = pd.Series(progList, index=timesList)
-        pandaDFs[RRule] = pandasDF
-        RRuleNames.append(RRule)
-    if pandaDFs:
-        result = pd.concat(pandaDFs.values(), join='outer', axis=1, sort=True)
-        result.index = pd.to_datetime(result.index)
-        result = result.resample('15min').last().reset_index().fillna(method='ffill').fillna(0)
-        result['index'] = result['index'].dt.strftime('%Y-%m-%d %H:%M:%S')
-        result = [['TimeStamp',] + RRuleNames] + result.values.tolist()
+    if resDict is not None:
+        for RRule, progEvents in resDict.items():
+            timesList = list(progEvents.keys())
+            progList = list(progEvents.values())
+            pandasDF = pd.Series(progList, index=timesList)
+            pandaDFs[RRule] = pandasDF
+            RRuleNames.append(RRule)
+        if pandaDFs:
+            result = pd.concat(pandaDFs.values(), join='outer', axis=1, sort=True)
+            result.index = pd.to_datetime(result.index)
+            result = result.resample('15min').last().reset_index().fillna(method='ffill').fillna(0)
+            result['index'] = result['index'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            result = [['TimeStamp',] + RRuleNames] + result.values.tolist()
     return JsonResponse(result, safe=False)
 
 @login_customrequired

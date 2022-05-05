@@ -11,14 +11,7 @@ import json, re, os
 from pprint import pprint
 from collections import defaultdict
 from operator import itemgetter, attrgetter
-
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
+from core.libs.DateEncoder import DateEncoder
 
 
 def globalviewDemo(request):

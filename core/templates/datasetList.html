@@ -1,58 +1,186 @@
 {% extends "_base_core.html" %}
-
+{% load static %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA datasets {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block subtitle %}PanDA datasets<font size=-1>{{ viewParams.selection|safe }}</font>{% endblock %}
-
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
 {% block body %}
 
-{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task ID: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}</a></b> {% endif %}
-{% if requestParams.containername %}<br><b>Container: {{ requestParams.containername }}</b> {% endif %}
-
+{% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<b>Task ID: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}</a></b><br> {% endif %}
+{% if requestParams.containername %}<b>Container: {{ requestParams.containername }}</b><br> {% endif %}
+{% if requestParams.datasetname %}<b>Dataset name: {{ requestParams.datasetname }}</b><br> {% endif %}
 
 {% if datasets %}
-<p>
 
-<table>
-<tr class='tablesection'><th colspan=20> Datasets </th></tr>
-<tr class='tablesection'>
-	<th>Name</th>
-	<th>ID</th>
-	<th>Type</th>
-	<th>Stream</th>
-	<th>Task</th>
-	<th>State</th>
-	<th>Status</th>
-	<th>Nfiles</th>
-	<th>Created</th>
-	<th>Modified</th>
-</tr>
-{% for dsrec in datasets %}
-    {% if requestParams.containername != dsrec.datasetname %}
-	<tr>
-		<td><font size=-1><a href="{% url 'datasetInfo' %}?datasetname={{ dsrec.datasetname }}&jeditaskid={{ dsrec.jeditaskid }}">{{ dsrec.datasetname }}</a></font></td>
-		<td>{{ dsrec.datasetid }}</td>
-		<td>{{ dsrec.type }}</td>
-		<td>{{ dsrec.streamname }}</td>
-		<td><a href="{% url 'taskInfo' %}?jeditaskid={{ dsrec.jeditaskid }}">{{ dsrec.jeditaskid }}</a></td>
-		<td>{{ dsrec.state }}</td>
-		<td class='{{dsrec.status}}'>{{ dsrec.status }}</td>
-		<td>{{ dsrec.nfiles }}</td>
-		<td>{{ dsrec.creationtime }}</td>
-		<td>{{ dsrec.modificationtime }}</td>
-	</tr>
-    {% endif %}
-{% endfor %}
-</table>
+<div class="card bp-container-simple secondary" id="container_dst">
+<div class="card-divider"><p>{{ datasets|length }} datasets listed :</p></div>
+<div class="card-section">
+  <table id='datasetlist' class="data-table">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+</div>
+</div>
 
 {% else %}
 
-No datasets matching search were found.
+No datasets matching search were found. Check the URL parameters and be aware that wildcards search is not available in this page.
 
 {% endif %}
 
 {% endblock %}
 
-{% block helptext %}
-{% include "datasetListHelp.html" with helptitle="Dataset list help" %}
+{% block js_body_page %}
+<script>
+  $(document).ready(function () {
+      var datasets = {{ datasets|safe }};
+      var dsTable = datasetListTable(datasets);
+  });
+
+function datasetListTable(data) {
+  var dsTable = $('#datasetlist').dataTable({
+    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+    "paging": true,
+    "scrollX": true,
+    "aaSorting": [[0,'asc']],
+    "columnDefs": [
+        {"type": "num-html", "targets": [0,4,7,8,9] }
+    ],
+    "data": data,
+    "aoColumns": [
+        {
+            title: 'ID',
+            "data": "datasetid",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Name',
+            "data": "datasetname",
+            sDefaultContent: "---",
+            "render": function(data, type, row, meta) {
+                return '<a href = "{% url 'datasetInfo' %}?datasetid=' + row['datasetid'] + '">'+row['datasetname'].replace(/\./g, '.<wbr>')+'</a>'
+            }
+        },
+        {
+            title: 'Type',
+            "data": "type",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Stream',
+            "data": "streamname",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'JEDI Task ID',
+            "data": "jeditaskid",
+            sDefaultContent: "---",
+            "render": function(data, type, row, meta) {
+                return '<a href = "{% url 'taskInfo' %}?jeditaskid=' + row['jeditaskid'] + '">'+row['jeditaskid']+'</a>'
+            }
+        },
+        {
+            title: 'State',
+            "data": "state",
+            sDefaultContent: "-",
+            className: 'state',
+        },
+        {
+            title: 'Precessing status',
+            "data": "status",
+            sDefaultContent: "-",
+            className: 'state',
+        },
+        {
+            title: 'Number of files',
+            "data": "nfiles",
+            sDefaultContent: "-",
+            className: 'num',
+            "render": function(data, type, full, meta) {
+                if (data > 0) {
+                    return '<a href = "{% url 'fileList' %}?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '">' + full['nfiles'] + '</a>'
+                }
+                else {
+                    return data;
+                }
+            }
+        },
+        {
+            title: 'Number of finished files',
+            "data": "nfilesfinished",
+            sDefaultContent: "-",
+            className: 'num',
+            "render": function(data, type, full, meta) {
+                if (full['type'] == 'input' && data > 0) {
+                    return '<a href = "{% url 'fileList' %}?procstatus=finished&jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] +  '"><snap class="finished">' + full['nfilesfinished'] + '</snap></a>'
+                }
+                else if (full['type'] == 'input' && data == 0) {
+                    return data;
+                }
+                else {
+                    return '-';
+                }
+                }
+        },
+        {
+            title: 'Number of failed files',
+            "data": "nfilesfailed",
+            sDefaultContent: "-",
+            className: 'num',
+            "render": function(data, type, full, meta) {
+                if (full['type'] == 'input' && data > 0) {
+                    return '<a href = "{% url 'fileList' %}?procstatus=failed&jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '"><snap class="failed">' + full['nfilesfailed'] + '</snap></a>'
+                }
+                else if (full['type'] == 'input' && data == 0) {
+                    return data;
+                }
+                else {
+                    return '-';
+                }
+            }
+        },
+        {
+            title: 'Creation time',
+            "data": "creationtime",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Last modification time',
+            "data": "modificationtime",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Links',
+            "data": "type",
+            sDefaultContent: "-",
+            "render": function(data, type, row, meta) {
+                var links = '<a href="https://rucio-ui.cern.ch/did?name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                return links;
+            }
+
+        },
+
+    ],
+    "createdRow": function ( row, data, index ) {
+        $('td', row).eq(5).addClass(data['state'] + '_fill');
+        $('td', row).eq(6).addClass(data['status'] + '_fill');
+    }
+  });
+  return dsTable
+}
+</script>
+{% endblock %}
+
+
+{% block help %}
+{% include "datasetListHelp.html" %}
+{% include "datasetInfoHelp.html" with show='all' %}
 {% endblock %}

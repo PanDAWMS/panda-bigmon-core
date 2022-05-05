@@ -3,17 +3,16 @@
 """
 import logging
 import copy
-from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.db import connection
-from django.db.models import Q, Count, Sum
 
-from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.models import PandaJob
-
+from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
+from core.libs.exlib import getPilotCounts
+from core.settings.config import DB_SCHEMA_PANDA
 
-from core.settings.local import defaultDatetimeFormat
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -41,6 +40,8 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
                 row.append(params['pq_params']['status'])
                 row.append(jt)
                 row.append(rt)
+                row.append(params['pq_pilots']['count'])
+                row.append(params['pq_pilots']['count_nojob'])
                 row.append(summary['nwsubmitted'])
                 row.append(summary['nwrunning'])
                 row.append(summary['rcores'])
@@ -131,6 +132,15 @@ def get_job_summary_region(query, **kwargs):
         job_types = [kwargs['jobtype']]
     else:
         jobtype = 'all'
+    if 'resourcetype' in kwargs and kwargs['resourcetype'] != 'all':
+        resourcetype = kwargs['jobtype']
+        resource_types = [kwargs['resourcetype']]
+    else:
+        resourcetype = 'all'
+    if 'split_by' in kwargs and kwargs['split_by']:
+        split_by = kwargs['split_by']
+    else:
+        split_by = None
 
     # filter out queues by queue related selection params
     pq_to_remove = []
@@ -142,16 +152,26 @@ def get_job_summary_region(query, **kwargs):
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['status'] != query['queuestatus']])
     if 'queuetype' in query:
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['type'] != query['queuetype']])
+    if 'queuegocname' in query:
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['gocname'] != query['queuegocname']])
+        regions_list = list(set(regions_list).intersection([params['cloud'] for pqn, params in panda_queues_dict.items() if params['gocname'] == query['queuegocname']]))
     if len(pq_to_remove) > 0:
         for pqr in list(set(pq_to_remove)):
             del panda_queues_dict[pqr]
 
+    # get PanDA getJob, updateJob request counts
+    psq_dict = {}
+    if split_by is None and jobtype == 'all' and resourcetype == 'all':
+        psq_dict = getPilotCounts('all')
+
     # create template structure for grouping by queue
     for pqn, params in panda_queues_dict.items():
-        jsr_queues_dict[pqn] = {'pq_params': {}, 'summary': {'all': {'all': {}}}}
+        jsr_queues_dict[pqn] = {'pq_params': {}, 'pq_pilots': {},  'summary': {'all': {'all': {}}}}
         jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type']
         jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud']
         jsr_queues_dict[pqn]['pq_params']['status'] = params['status']
+        jsr_queues_dict[pqn]['pq_pilots']['count'] = psq_dict[pqn]['count_abs'] if pqn in psq_dict else -1
+        jsr_queues_dict[pqn]['pq_pilots']['count_nojob'] = psq_dict[pqn]['count_nojobabs'] if pqn in psq_dict else -1
         for jt in job_types:
             if is_jobtype_match_queue(jt, params):
                 jsr_queues_dict[pqn]['summary'][jt] = {}
@@ -198,10 +218,13 @@ def get_job_summary_region(query, **kwargs):
     jsq = get_job_summary_split(query, extra=extra)
 
     # get workers info
-    if 'computingsite__in' not in query:
-        # put full list of compitingsites to use index in workers table
-        query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
-    wsq = get_workers_summary_split(query)
+    wsq = []
+    if 'core.harvester' in settings.INSTALLED_APPS:
+        from core.harvester.utils import get_workers_summary_split
+        if 'computingsite__in' not in query:
+            # put full list of compitingsites to use index in workers table
+            query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
+        wsq = get_workers_summary_split(query)
 
     # fill template with real values of job states counts
     for row in jsq:
@@ -273,30 +296,30 @@ def get_job_summary_split(query, extra):
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
             case when jobstatus in ('finished', 'failed') then (ja4.endtime-ja4.starttime)*60*60*24 else 0 end as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
+        from {2}.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.jobsactive4 jav4 where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and 
+        from {2}.jobsactive4 jav4 where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and 
             jobstatus in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {1}
+        from {2}.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {1}
         union
         select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.jobswaiting4 jw4 where {1}
+        from {2}.jobswaiting4 jw4 where {1}
         union
         select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from ATLAS_PANDA.jobsdefined4 jd4  where {1}
+        from {2}.jobsdefined4 jd4  where {1}
         )
         GROUP BY computingsite, prodsourcelabel, transform, resource_type, jobstatus
         order by computingsite, prodsourcelabel, transform, resource_type, jobstatus
-    """.format(query['modificationtime__castdate__range'][0], extra_str)
+    """.format(query['modificationtime__castdate__range'][0], extra_str, DB_SCHEMA_PANDA)
 
     cur = connection.cursor()
     cur.execute(query_raw)
@@ -308,73 +331,6 @@ def get_job_summary_split(query, extra):
     summary = identify_jobtype(summary)
 
     return summary
-
-
-def get_workers_summary_split(query, **kwargs):
-    """Get statistics of submitted and running Harvester workers"""
-    N_HOURS = 100
-    wquery = {}
-    if 'computingsite__in' in query:
-        wquery['computingsite__in'] = query['computingsite__in']
-    if 'resourcetype' in query:
-        wquery['resourcetype'] = query['resourcetype']
-
-    if 'source' in kwargs and kwargs['source'] == 'HarvesterWorkers':
-        wquery['submittime__castdate__range'] = [
-            (datetime.utcnow()-timedelta(hours=N_HOURS)).strftime(defaultDatetimeFormat),
-            datetime.utcnow().strftime(defaultDatetimeFormat)
-        ]
-        wquery['status__in'] = ['running', 'submitted']
-        # wquery['jobtype__in'] = ['managed', 'user', 'panda']
-        w_running = Count('jobtype', filter=Q(status__exact='running'))
-        w_submitted = Count('jobtype', filter=Q(status__exact='submitted'))
-        w_values = ['computingsite', 'resourcetype', 'jobtype']
-        worker_summary = HarvesterWorkers.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
-    else:
-        wquery['jobtype__in'] = ['managed', 'user', 'panda']
-        w_running = Sum('nworkers', filter=Q(status__exact='running'))
-        w_submitted = Sum('nworkers', filter=Q(status__exact='submitted'))
-        w_values = ['computingsite', 'resourcetype', 'jobtype']
-        worker_summary = HarvesterWorkerStats.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
-
-    # Translate prodsourcelabel values to descriptive analy|prod job types
-    worker_summary = identify_jobtype(worker_summary, field_name='jobtype')
-
-    return list(worker_summary)
-
-
-def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
-    """
-    Translate prodsourcelabel values to descriptive analy|prod job types
-    The base param is prodsourcelabel, but to identify which HC test template a job belong to we need transformation.
-    If transformation ends with '.py' - prod, if it is PanDA server URL - analy.
-    Using this as complementary info to make a decision.
-    """
-
-    psl_to_jt = {
-        'panda': 'analy',
-        'user': 'analy',
-        'managed': 'prod',
-        'prod_test': 'prod',
-        'ptest': 'prod',
-        'rc_alrb': 'analy',
-        'rc_test2': 'analy',
-    }
-
-    trsfrm_to_jt = {
-        'run': 'analy',
-        'py': 'prod',
-    }
-
-    new_list_of_dict = []
-    for row in list_of_dict:
-        if field_name in row and row[field_name] in psl_to_jt.keys():
-            row['jobtype'] = psl_to_jt[row[field_name]]
-            if 'transform' in row and row['transform'] in trsfrm_to_jt and row[field_name] in ('rc_alrb', 'rc_test2'):
-                row['jobtype'] = trsfrm_to_jt[row['transform']]
-            new_list_of_dict.append(row)
-
-    return new_list_of_dict
 
 
 def prettify_json_output(jsr_queues_dict, jsr_regions_dict, **kwargs):

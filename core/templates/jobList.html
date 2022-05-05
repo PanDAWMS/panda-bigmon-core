@@ -1,5 +1,5 @@
 {% extends "_base_core.html" %}
-{% load static %}
+{% load static %}{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block subtitle %}PanDA jobs {{ viewParams.selection|safe }}
 {% if showwarn and njobs%}
@@ -147,7 +147,10 @@
 <table>
 <tr class='tablesection'><th colspan=20> Job attribute summary, sort by {% if requestParams.sortby == 'count' %} count, <a href="{{nosorturl}}">alpha</a> {% else %} <a href="{{nosorturl}}sortby=count">count</a>, alpha {% endif %} </th></tr>
 {% for fdict in sumd %}
-<tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th>
+<tr><th>
+  <p>{{ fdict.field }} ({{ fdict.list|length }})</p>
+  {% if fdict.stats %}{% if fdict.stats.sum and 'jobstatus' in requestParams and requestParams.jobstatus == 'running' %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}{% endif %}
+</th>
     <td><div class="comment more">
         {% for item in fdict.list %}
             {% if fdict.field == 'jeditaskid' and item.kname != 'Not specified' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
@@ -250,10 +253,9 @@
 
 <div class="table-scroll">
 <table>
-<tr class='tablesection'><th colspan=20>
+<tr class='tablesection'><th colspan=20 class="small">
 <a name="joblist"></a> Job list.
-{% if display_limit  and display_limit < njobs %}
-<font size=-1> Only the most recent {{ display_limit }} jobs are shown. Remove the limit and sort by
+{% if display_limit  and display_limit < njobs %} Only the most recent {{ display_limit }} jobs are shown. Remove the limit and sort by
 {% if sortby == "PandaID" %}
 <b>PandaID</b>,
 {% else %}
@@ -268,25 +270,29 @@ Sort by
 {% endif %}
 {% endif %}
 
-
 {% if sortby == "statetime" %}
-time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+time since last state change, <a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+
+{% elif sortby == "create-ascending" %}
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <b>ascending creation time</b>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+{% elif sortby == "create-descending" %}
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <b>descending creation time</b>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+
 {% elif sortby == "time-ascending" %}
-<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <b>ascending mod time</b>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <b>ascending mod time</b>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "time-descending" %}
-<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <b>descending mod time</b>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a> ,<a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <b>descending mod time</b>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "priority" %}
-<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <b>priority</b>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <b>priority</b>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "attemptnr" %}
-<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <b>attemptnr</b>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <b>attemptnr</b>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "duration-ascending" %}
-<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
 {% elif sortby == "duration-descending" %}
-<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>
 {% else %}
-<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
+<a href="{{nosorturl}}sortby=statetime">time since last state change</a>, <a href="{{nosorturl}}sortby=create-ascending">ascending creation time</a>, <a href="{{nosorturl}}sortby=create-descending">descending creation time</a>, <a href="{{nosorturl}}sortby=time-ascending">ascending mod time</a>, <a href="{{nosorturl}}sortby=time-descending">descending mod time</a>, <a href="{{nosorturl}}sortby=priority">priority</a>, <a href="{{nosorturl}}sortby=attemptnr">attemptnr</a>, <a href="{{nosorturl}}sortby=duration-ascending">ascending duration</a>, <a href="{{nosorturl}}sortby=duration-descending">descending duration</a>
 {% endif %}
-</font>
 </th></tr>
 <tr class='tablesection'>
 	<th>PanDA ID<br>Attempt# of maxAttempts#{% if requestParams.fileid %}<br><span style="color: gray">FileAttempt# of maxFileAttempt</span>{% endif %}</th>
@@ -300,10 +306,8 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 	<th>Mod</th>
 	<th>{% if viewParams.MON_VO == 'ATLAS' %}Cloud {% endif%}Site</th>
 	<th>Priority</th>
-    <th>N input events (N input files)</th>
-    {% if requestParams.jeditaskid  %}
-        <th>Maximum <br>PSS</th>
-    {% endif %}
+  <th>N input events (N input files)</th>
+  <th>Max PSS/core, GB</th>
 	<th>Job info</th>
 </tr>
     {% for job in jobList %}
@@ -328,26 +332,23 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
 		</td>
 		<td> {% if job.reqid %} <a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
 		{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
-		<td><font size=-1><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></font></td>
-
+		<td class="small"><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></td>
 		<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
-		<td><font size=-1>{{ job.creationtime }}</font></td>
-		<td><font size=-1>{{ job.waittime }}</font></td>
-		<td><font size=-1>{{ job.duration }}</font></td>
-		<td><font size=-1>{{ job.modificationtime }}</font></td>
-		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'> {{job.computingsitestatus}}</span> {{job.computingsitecomment}} </font></td>
+		<td class="small">{{ job.creationtime }}</td>
+		<td class="small">{{ job.waittime }}</td>
+		<td class="small">{{ job.duration }}</td>
+		<td class="small">{{ job.modificationtime }}</td>
+		<td class="small">{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %} <a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'>{{job.computingsitestatus}}</span> {{job.computingsitecomment}} </td>
 		<td>{{ job.currentpriority }}</td>
-        <td>{{ job.nevents }} ({{ job.ninputs }})</td>
-        {% if requestParams.jeditaskid  %}
-        <td><font size=-1>{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</font></td>
-         {% endif %}
-		<td class="wrap">{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
-		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
+    <td>{{ job.nevents }} ({{ job.ninputs }})</td>
+    <td>{% if 'maxpssgbpercore' in job and job.maxpssgbpercore %}{{ job.maxpssgbpercore }}{% endif %}</td>
+		<td class="wrap small">{% if job.jobinfo != '' %}{{job.jobinfo|safe}}<br>{% endif %}
+		{% if job.errorinfo != '' %}<span class='alarm'>{{job.errorinfo|safe}}</span>{% endif %}
 		</td>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan=12> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></font>  #{{ job.attemptnr }}
-    </td></tr>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan="20" class='highlightcell'> Datasets: {% if job.proddblock %} <b> In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> {% endif %} <b> Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
-
+	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
+    <td colspan="20" class="small">Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a>  #{{ job.attemptnr }}</td></tr>
+	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
+    <td colspan="20" class="highlightcell small">Datasets: {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> {% endif %} <b> Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
     {% endfor %}
 </table>
 </div>
@@ -474,7 +475,7 @@ function DisplayErrorMessagesListTableData() {
 
 $(document).ready(function () {
 
-    $(".comment").shorten();
+    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
 
     DisplayErrorCountListTableData();
     DisplayErrorMessagesListTableData();
@@ -498,8 +499,8 @@ $(document).ready(function () {
 </script>
 {% endblock %}
 
-{% block helptext %}
-{% include "jobListHelp.html" with helptitle="Job list help" %}
-{% include "jobInfoHelp.html" with helptitle="Job information" show="all" %}
+{% block help %}
+{% include "jobListHelp.html" %}
+{% include "jobInfoHelp.html" with show="all" %}
 {% endblock %}
 

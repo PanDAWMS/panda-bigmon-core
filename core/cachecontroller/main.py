@@ -12,10 +12,15 @@ from schedinstances.SQLAggregator import SQLAggregator
 from schedinstances.SQLAggregatorCampaign import SQLAggregatorCampaign
 from schedinstances.PandaLogsStorageCleanUp import PandaLogsStorageCleanUp
 from schedinstances.GrafanaPlots import GrafanaPlots
+from schedinstances.DataCarouselPrestageCollector import DataCarouselPrestageCollector
+from schedinstances.MLFlowCleanup import MLFlowCleanup
+from schedinstances.DataCarouselMails import DataCarouselMails
 
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
 from settingscron import LOG_PATH
 
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
 
 logging.basicConfig(level=logging.DEBUG, filename=LOG_PATH, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -32,8 +37,10 @@ grafanaPlots = GrafanaPlots(EXECUTION_CAP_FOR_MAINMENUURLS)
 cephCleanUp = PandaLogsStorageCleanUp()
 sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
+stageProgressCollector = DataCarouselPrestageCollector()
+mlFlowCleanUp = MLFlowCleanup()
+# dataCaruselMails = DataCarouselMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 
-#mainMenuURLs.processPayload()
 
 
 def run_threaded(job_func):
@@ -45,15 +52,18 @@ def run_threaded(job_func):
 schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
 schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
 schedule.every(10).minutes.do(run_threaded, harvester.execute)
-schedule.every(20).minutes.do(run_threaded, artPackages.execute)
+schedule.every(10).minutes.do(run_threaded, artPackages.execute)
 schedule.every(1).hours.do(run_threaded, artDevMails.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)
 schedule.every().hour.at(":05").do(run_threaded, grafanaPlots.execute)
 schedule.every(2).hours.do(run_threaded, infrequentURLS.execute)
 schedule.every().day.at("20:18").do(run_threaded, cephCleanUp.execute)
-schedule.every().day.at("09:00").do(run_threaded, artMails.execute)
-schedule.every().day.at("12:00").do(run_threaded, artMails.execute)
+schedule.every().day.at("07:00").do(run_threaded, artMails.execute)  # UTC
+schedule.every().day.at("10:00").do(run_threaded, artMails.execute)  # UTC
+schedule.every(2).hours.do(run_threaded, stageProgressCollector.execute)
+schedule.every(10).minutes.do(run_threaded, mlFlowCleanUp.execute)
+# schedule.every(1).hours.do(run_threaded, dataCaruselMails.execute)
 
 while 1:
     schedule.run_pending()

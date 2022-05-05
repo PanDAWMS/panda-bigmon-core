@@ -8,7 +8,7 @@ numOfProcesses = 10  # be careful with this value on production systems
 timeOutForQuery = 300  # in seconds
 
 monHost = 'aipanda163.cern.ch'
-monPort = '8001'
+monPort = '8007'
 
 # monHost = 'localhost'
 # monPort = '10001'

@@ -1,14 +1,95 @@
-<tr class="docsection"><th><a name="userInfoHelp"></a> {{ helptitle }} </th></tr>
-<tr><td class="doctextlight">
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>User information page help:</p></div>
+<div class="card-section">
 
-<p>
-The task list in this page shows tasks with a modification date in the last 7 days.
-If deeper searches are required, the Tasks -&gt; Analysis -&gt; (select your username) page can be used with &amp;days=N on the URL to set the search depth.
+{% if view and view == 'dash' %}
+  <p>
+    This page summarizes all the recent user tasks.
+    By default the tasks with a modification date in the last 7 days are selected.
+    You can change the time window by clicking on blue "Change" button in the top subbar.
+  </p>
+  <p>
+    The <b>"User activity overview"</b> section shows overall metrics, that can give a clue of potential problems.
+    Each metric label has 3 color codes:
+    <span class="label ok">OK</span>, <span class="label warning">Warning</span> and <span class="label alert">Alert</span>.
+    For example, if you see <span class="label warning">Average MaxPSS/core: <b>2.3</b>GB</span> ,
+      most probably your jobs consume a lof of memory that can be a cause of jobs failure.
+  </p>
+  <p>
+    Also the <b>"User activity overview"</b> section has 3 plots:
+    <ul>
+      <li><b>Inputs by status</b> represents the total number of input files for all the tasks (excluding aborted) grouped by 3 states:
+        <span class="done">done</span>, <span class="registered">remaining</span> and <span class="failed">failed</span>.
+      </li>
+      <li><b>Tasks by status</b> shows the number of tasks grouped by detailed JEDI task status.
+        The description of task states can be found below. </li>
+      <li><b>Task age histogram</b> displays the distribution of task age.
+        If task ended, the age is difference between end time and creation time.
+        If task is in active state, the age is the current time - creation time.</li>
+    </ul>
+  </p>
+  <p>
+    The full list of tasks are in the table. It is based on a popular DataTable plugin,
+      so the pagination is enabled by default showing 20 tasks by page. You can use "Search" input to filter the tasks.
+    The jobs metrics are calculated per task as well, you can show/hide them by using 2 buttons:
+      <b>"Show all metrics"</b> and <b>"Minimize view"</b>.
+    The <b>"Top job errors, count [code] message"</b> column shows the top-3 job errors per task,
+      the count is clickable and goes to a classic jobs page.
+    The <b>"Task ID"</b> links goes to a task page,
+      the  <b>"Jobs failure, %"</b> links goes to error summary page for a task.
+  </p>
+
+  <p>
+    The task status shown in the monitor is in JEDI terms the simplified 'superstatus' the task is in. In ATLAS, these are in sync with DEFT states.
+    JEDI uses internally a more complex set of states, shown on task detail pages as 'Detailed JEDI status' (when it differs from the superstatus);
+    this is the 'status' field in the JEDI task.
+  </p>
+
+  <ul>
+    {% if show == 'all' or task.superstatus == 'registered' %} <li>Status <b class='registered'>registered</b> indicates the task has been received by JEDI and the task information is inserted to the JEDI_Tasks table.{% endif %}
+    {% if show == 'all' or task.superstatus == 'defined' %}  <li>Status <b class="defined">defined</b> indicates all task parameters are properly defined.{% endif %}
+    {% if show == 'all' or task.superstatus == 'assigning' %}  <li>Status <b class="assigning">assigning</b> indicates the task brokerage is assigning the task to a cloud.{% endif %}
+    {% if show == 'all' or task.superstatus == 'ready' %}  <li>Status <b class="ready">ready</b> indicates the task is ready to generate jobs. New jobs are generated once computing resources become available.{% endif %}
+    {% if show == 'all' or task.superstatus == 'pending' %}  <li>Status <b class="pending">pending</b> indicates the task has a temporary problem, e.g. there is no sites to assign jobs.{% endif %}
+    {% if show == 'all' or task.superstatus == 'scouting' %}  <li>Status <b class="scouting">scouting</b> indicates the task is running scout jobs to collect job data.{% endif %}
+    {% if show == 'all' or task.superstatus == 'scouted' %}  <li>Status <b class="scouted">scouted</b> indicates all scout jobs were successfully finished.{% endif %}
+    {% if show == 'all' or task.superstatus == 'submitting' %}  <li>Status <b class='submitting'>submitting</b> indicates the task is progressing through the steps preparing it to be run, including scouting (sending scout jobs to validate the task and measure its parameters).{% endif %}
+    {% if show == 'all' or task.superstatus == 'running' %}  <li>Status <b class='running'>running</b> indicates the task has successfully validated and is running.{% endif %}
+    {% if show == 'all' or task.superstatus == 'prepared' %}  <li>Status <b class="prepared">prepared</b> indicates the task is ready to go to a final status{% endif %}
+    {% if show == 'all' or task.superstatus == 'finishing' %}  <li>Status <b class="finishing">finishing</b> indicates the task is forced to get finished{% endif %}
+    {% if show == 'all' or task.superstatus == 'paused' %}  <li>Status <b class="paused">paused</b> indicates the task is paused and doesn't do anything until it is resumed{% endif %}
+    {% if show == 'all' or task.superstatus == 'throttled' %}  <li>Status <b class="throttled">throttled</b> indicates the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minites{% endif %}
+    {% if show == 'all' or task.superstatus == 'exhausted' %}  <li>Status <b class="exhausted">exhausted</b> for production tasks indicates, all reattempts were done but some inputs were still unsuccessful, and the task is configured to go to this state instead of finished to wait for manual intervention or timeout of 10 days. Also, if cpuTime of scouts jobs > 2x cpuTime of task definition, the task goes to exhausted. For analysis tasks, if there are more than 5 scout jobs with short execution time (< 4 min) and more than 1000 jobs are expected, they will go to exhausted to prevent automatic avalanche since so many short jobs are problematic at grid sites. Analysis tasks in exhausted state can be retried using pbook but it is better to change some parameters like nFilesPerJob to have longer execution time. Also both production and analysis tasks will go to exhausted if they are timed-out while pending in the brokerage.{% endif %}
+    {% if show == 'all' or task.superstatus == 'tobroken' %}  <li>Status <b class="tobroken">tobroken</b> indicates the task is going to broken{% endif %}
+    {% if show == 'all' or task.superstatus == 'aborting' %}  <li>Status <b class="aborting">aborting</b> indicates the task is being killed{% endif %}
+    {% if show == 'all' or task.superstatus == 'finished' %}  <li>Status <b class='finished'>finished</b> indicates that some inputs of the task were successfully processed but others were failed or not processed (e.g. because files were unavailable) when the task was terminated. It can be re-tried by resubmitting the same command again, in order to try again the files not yet processed. It is possible to set/unset --site, --cloud, and --excludedSite when re-submitting the task.{% endif %}
+    {% if show == 'all' or task.superstatus == 'done' %}  <li>Status <b class='done'>done</b> indicates that all inputs of the task were successfully processed.{% endif %}
+    {% if show == 'all' or task.superstatus == 'failed' %}  <li>Status <b class='failed'>failed</b> indicates the task has failed, all inputs have failed, in a way that retry is possible (if retry is judged to be impossible the task goes to status 'broken'). If some inputs succeeded while others failed and the class is terminated, the task goes to 'finished' status.{% endif %}
+    {% if show == 'all' or task.superstatus == 'aborted' %}  <li>Status <b class='aborted'>aborted</b> indicates the task has been killed. Aborted tasks can be re-executed.{% endif %}
+    {% if show == 'all' or task.superstatus == 'broken' %}  <li>Status <b class='broken'>broken</b> indicates the task has failed in a way that makes retry very likely impossible. Tasks are declared as broken only in very limited circumstances, e.g. when all scout jobs failed, build jobs failed at multiple sites, etc. Users can force retry from broken state at their own risk see the pathena/prun documentation.{% endif %}
+    {% if show == 'all' or task.superstatus == 'toretry' %}  <li>Status <b class="toretry">toretry</b> indicates the retry command was received for the task.{% endif %}
+    {% if show == 'all' or task.superstatus == 'toincexec' %}  <li>Status <b class="toincexec">toincexec</b> indicates the incexec command was received for the task.{% endif %}
+    {% if show == 'all' or task.superstatus == 'rerefine' %}  <li>Status <b class="rerefine">rerefine</b> indicates task parameters are going to be changed for incremental execution{% endif %}
+    {% if show == 'all' or task.superstatus == 'topreprocess' %}  <li>Status <b class="topreprocess">topreprocess</b> indicates preprocess job is ready for the task{% endif %}
+    {% if show == 'all' or task.superstatus == 'preprocessing' %}  <li>Status <b class="preprocessing">preprocessing</b> indicates preprocess job is running for the task{% endif %}
+    {% if show == 'all' or task.superstatus == 'passed' %}  <li>Status <b class="passed">passed</b> indicates the task is ready to go to a final state after manual intervention or timeout{% endif %}
+  </ul>
+
+{% else %}
+  <p>
+    This page summarizes all the recent user tasks and jobs.
+  </p>
+
+  <p>
+  The task list in this page shows tasks with a modification date in the last 7 days.
+  If deeper searches are required, the Tasks -&gt; Analysis -&gt; (select your username) page can be used with &amp;days=N on the URL to set the search depth.
+  </p>
+{% endif %}
 
 <p>
 Documentation on JEDI for analysis, its advantages and how to use it, 
 <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJediAnalysis">can be found here</a>.
-This monitor supports analysis with JEDI. JEDI based analysis centers around tasks, no longer around jobs as in the old system.
+This monitor supports analysis with JEDI. JEDI based analysis centers around tasks.
 </p>
 
 <p>
@@ -21,4 +102,5 @@ The JEDI twiki has information on JEDI task
 Documentation on <a href='https://twiki.cern.ch/twiki/bin/view/PanDA/DAonPanda'>distributed analysis on PanDA</a> (how to use pathena, prun etc.)
 </p>
 
-</td>
+</div>
+</div>

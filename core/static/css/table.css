@@ -9,6 +9,13 @@ table {
     border-width:1px;
     border-color:grey;}
 
+tr {
+  background-color: #fefefe;
+}
+
+tr > td {
+  background-color: inherit;
+}
 
 th {
     text-align:left;
@@ -26,16 +33,20 @@ td {
     font-size: 0.875rem;
 }
 
-th.num {
+th.num, td.num {
   text-align: right;
 }
 
-td.num {
-  text-align: right;
+th.mid, td.mid {
+  text-align: center;
 }
 
 td.wrap{
     word-break: break-word;
+}
+
+td.small, th.small {
+  font-size: 0.8rem;
 }
 
 th.main {
@@ -347,7 +358,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   width: 100%;
   background-color: #fefefe;
   border: 1px solid #5e789a;
-  border-collapse: separate;
+  border-collapse: collapse;
   border-spacing: 0;
 }
   .bp-table thead {
@@ -376,29 +387,61 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     font-weight: bold;
     border: none;
   }
-  .bp-table tbody td {
+  .bp-table tbody td, .bp-table tbody th {
     border: none;
     padding: 0.3rem 0.7rem;
-  }
-  .bp-table tbody th {
-    border: none;
-    background-color: #fefefe;
   }
   .bp-table tbody td a {
     color: #355681;
     font-weight: bold;
   }
-  .bp-table tbody td a:hover {
+  .bp-table tbody th a:hover, .bp-table tbody td a:hover {
     color: #272727;
   }
-  .bp-table tbody tr:nth-child(even):hover td{
-    background-color: #d4dfed !important;
+  .bp-table tbody tr:nth-child(even):hover td {
+    /*background-color: #d4dfed !important;*/
+    filter: brightness(90%) !important;
   }
   .bp-table tbody tr:nth-child(odd):hover td {
-    background-color: #d4dfed !important;
+    /*background-color: #d4dfed !important;*/
+    filter: brightness(90%) !important;
   }
   .bp-table tbody tr:last-child td {
     border-bottom: none !important;
+  }
+  .bp-table tbody tr > th.nowrap, .bp-table tbody tr > th.nowrap > a,
+    .bp-table tbody tr > td.nowrap, .bp-table tbody tr > td.nowrap > a {
+      white-space: nowrap;
+  }
+
+.bp-table.blank {
+  border: none;
+  margin: 0.7rem 0;
+}
+  .bp-table.blank thead, .bp-table.blank tbody,.bp-table.blank tfoot {
+    border: none;
+  }
+  .bp-table.blank thead th {
+    background-color: #e6e6e6;
+    color: #272727;
+    border: 1px solid #fefefe;
+  }
+  .bp-table.blank thead th > a {
+    color: #272727;
+  }
+  .bp-table.blank thead th > a:hover {
+    color: #fefefe;
+  }
+  .bp-table.blank tbody th {
+    background-color: #e6e6e6;
+    color: #272727;
+    border: 1px solid #fefefe;
+  }
+  .bp-table.blank tbody td {
+    border: 1px solid #e6e6e6;
+  }
+  .bp-table.blank tbody th > a {
+    color: #272727;
   }
 
 
@@ -419,9 +462,21 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .dataTables_wrapper .dt-buttons {
   margin-bottom: 0;
 }
+.dataTables_wrapper .dt-buttons > a.button {
+  color: #fefefe;
+}
 
 .dataTables_wrapper .dataTables_length label {
   margin-right: 1rem;
+}
+.dataTables_wrapper .dataTables_length label select {
+  height: 1.75rem;
+  padding: 0 1.4rem 0 0.3rem;
+}
+
+.dataTables_wrapper .dataTables_filter label input {
+  height: 1.75rem;
+  padding: 0.3rem 0.7rem;
 }
 
 .dataTables_info {
@@ -438,7 +493,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   font-weight: bold;
 }
 
-.dataTables_paginate .paginate_button > a {
+.dataTables_paginate > ul.pagination > li.paginate_button > a {
   background-color: #5e789a;
   color: #fefefe;
 }
@@ -483,7 +538,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     padding: 0.25rem 1.2rem 0.25rem 0.35rem;
   }
   table.data-table tfoot > tr > th {
-    padding: 0.25rem 1.2rem 0.25rem 0.35rem;
+    padding: 0.25rem 0.35rem 0.25rem 0.35rem;
   }
   .data-table tfoot th.num {
     padding: 0.25rem 0.35rem 0.25rem 1.5rem;
@@ -503,6 +558,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     min-width: 3.3rem;
   }
   .data-table div.rotate70 {
+          white-space: nowrap;
            text-align: left;
                margin: 5rem 1rem 0 0;
                filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);  /* IE6,IE7 */
@@ -515,9 +571,16 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   }
   .data-table tfoot div.rotate70 {
     text-align: right;
+    white-space: nowrap;
     margin: 0 0 0 -1rem;
     width: 5rem;
     padding: 0;
+  }
+  .data-table thead th.fixed-width-small, .data-table tbody td.fixed-width-small {
+    padding: 0;
+    width: 3.5rem;
+    max-width: 3.5rem;
+    min-width: 3.5rem;
   }
   .data-table tbody td {
     border-left: none;
@@ -551,6 +614,12 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table td.icons3 {
     padding-right: 3.5rem;
   }
+  .data-table td.icons2 {
+    padding-right: 2.5rem;
+  }
+  .data-table td.icons1 {
+    padding-right: 1.5rem;
+  }
   .data-table tbody td > a.alert {
     color: firebrick !important;
   }
@@ -560,17 +629,42 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table .num {
     text-align: right !important;
   }
+  .data-table td.num_dt {
+    text-align: right !important;
+    padding-right: 0.7rem;
+  }
   .data-table .text {
     text-align: left !important;
   }
   .data-table .state {
     text-align: center !important;
   }
-  .data-table tbody tr:nth-child(even):hover td{
-    background-color: #d4dfed !important;
+  .data-table tbody tr:nth-child(even):hover td {
+    /*background-color: #d4dfed !important;*/
+    filter: brightness(90%) !important;
+    ;
   }
   .data-table tbody tr:nth-child(odd):hover td {
-    background-color: #d4dfed !important;
+    /*background-color: #d4dfed !important;*/
+    filter: brightness(90%) !important;
+  }
+
+  .data-table tbody th.fixed30 {
+    width: 30%;
+    max-width: 30%;
+    min-width: 30%;
+  }
+  .data-table tbody td.fixed30 {
+    width: 30%;
+    max-width: 30%;
+    min-width: 30%;
+    white-space: -moz-pre-wrap !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    white-space: -webkit-pre-wrap;
+    word-break: break-all;
+    white-space: normal;
+
   }
 
 /*Style for compare table*/
@@ -662,13 +756,10 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .fresh-table {
     width: 100%;
     background-color: #fefefe;
+    margin: 0 0 0.7rem 0;
 }
 
-.fresh-table thead {
-    border: none;
-}
-
-.fresh-table tbody {
+.fresh-table thead, .fresh-table tbody, .fresh-table tfoot {
     border: none;
 }
 
@@ -677,10 +768,11 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     color: #272727;
     text-align: left;
     border: solid 1px #d3deed;
+    padding: 0.7rem;
 }
 
 .fresh-table thead th a {
-    color: rgba(53,86,129, 0.8);
+    color: #49668d;
     font-weight: bold;
 }
 
@@ -704,18 +796,55 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     background-color: #f1f1f1;
 }
 
+.fresh-table tbody td.bold {
+  font-weight: bold;
+}
+
 .fresh-table tbody td a {
-    color: rgba(53,86,129, 0.8);
+    color: #49668d;
     font-weight: bold;
+}
+.fresh-table tbody td[class$="_fill"] a {
+  font-weight: bold;
+  color: #0a0a0a;
 }
 
 .fresh-table tbody td a:hover {
     color: #272727;
 }
 
-.wrap-words {
-    word-wrap: break-word;
+.fresh-table.slim tbody td {
+  padding: 0.25rem 0.35rem 0.25rem 0.35rem;
 }
+
+.fresh-table.alert thead th {
+    background-color: #FFABA2;
+    border: solid 1px #FFABA2;
+}
+.fresh-table.alert tbody a {
+  color: firebrick;
+  font-weight: bold;
+}
+
+
+
+.table-scroll {
+  margin: 0 0 0.7rem 0;
+}
+.table-scroll table {
+  width: 100%;
+  margin: 0;
+}
+
+.wrap-words {
+    white-space: -moz-pre-wrap !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    white-space: -webkit-pre-wrap;
+    word-break: break-all;
+    white-space: normal;
+}
+
 
 .fixed {
     table-layout: fixed;

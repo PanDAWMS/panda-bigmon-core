@@ -6,10 +6,8 @@ from datetime import datetime, timedelta
 
 from django.db.models.functions import Substr
 
-from core.views import preprocessWildCardString
+from core.libs.sqlcustom import preprocess_wild_card_string
 from core.art.modelsART import ARTTests
-
-
 
 artdateformat = '%Y-%m-%d'
 
@@ -56,14 +54,22 @@ def setupView(request, querytype='task'):
         except:
             del request.session['requestParams']['ntag_full']
 
-    if request.path != '/art/updatejoblist/':
+    if request.path == '/art/updatejoblist/':
+        ndaysdefault = 30
+        ndaysmax = 30
+    elif request.path == '/art/stability/':
+        ndaysdefault = 8
+        ndaysmax = 15
+    elif request.path == '/art/errors/':
+        ndaysdefault = 1
         ndaysmax = 6
     else:
-        ndaysmax = 30
+        ndaysmax = 6
+        ndaysdefault = 6
     if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        enddate = startdate + timedelta(days=ndaysmax)
+        enddate = startdate + timedelta(days=ndaysdefault)
     elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
-        startdate = enddate - timedelta(days=ndaysmax)
+        startdate = enddate - timedelta(days=ndaysdefault)
     elif not 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
         if 'ntag' in request.session['requestParams']:
             enddate = startdate
@@ -71,15 +77,15 @@ def setupView(request, querytype='task'):
             enddate = startdate
         else:
             enddate = datetime.now()
-            startdate = enddate - timedelta(days=ndaysmax)
-    elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > 7:
+            startdate = enddate - timedelta(days=ndaysdefault)
+    elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > ndaysmax:
         enddate = startdate + timedelta(days=ndaysmax)
 
     if 'days' in request.session['requestParams']:
         try:
             ndays = int(request.session['requestParams']['days'])
         except:
-            ndays = ndaysmax
+            ndays = ndaysdefault
         enddate = datetime.now()
         if ndays <= ndaysmax:
             startdate = enddate - timedelta(days=ndays)
@@ -92,6 +98,7 @@ def setupView(request, querytype='task'):
         if len(datelist) == 0:
             startdate = datetime.strptime('2017-05-03', artdateformat)
             enddate = datetime.now()
+
 
     if not 'ntag' in request.session['requestParams']:
         if 'ntags' in request.session['requestParams'] or 'nlastnightlies' in request.session['requestParams']:
@@ -113,7 +120,7 @@ def setupView(request, querytype='task'):
         if 'package' in request.session['requestParams']:
             packages = request.session['requestParams']['package'].split(',')
             if len(packages) == 1 and '*' in packages[0]:
-                querystr += preprocessWildCardString(packages[0], 'package').replace('\'', '\'\'') + ' AND '
+                querystr += preprocess_wild_card_string(packages[0], 'package').replace('\'', '\'\'') + ' AND '
             else:
                 querystr += '(UPPER(PACKAGE) IN ( '
                 for p in packages:
@@ -177,7 +184,7 @@ def find_last_n_nightlies(request, limit=7):
     elif 'package' in request.session['requestParams'] and ',' in request.session['requestParams']['package']:
         nquery['package__in'] = [p for p in request.session['requestParams']['package'].split(',')]
     elif 'package' in request.session['requestParams'] and '*' in request.session['requestParams']['package']:
-        querystr += ' AND ' + preprocessWildCardString(request.session['requestParams']['package'], 'package')
+        querystr += ' AND ' + preprocess_wild_card_string(request.session['requestParams']['package'], 'package')
     if 'branch' in request.session['requestParams']:
         branches = request.session['requestParams']['branch'].split(',')
         querystr += ' AND (NIGHTLY_RELEASE_SHORT || \'/\' || PROJECT || \'/\' || PLATFORM)  IN ( '
@@ -202,3 +209,86 @@ def find_last_n_nightlies(request, limit=7):
 def getjflag(job):
     """Returns flag if job in finished state"""
     return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
+
+
+def get_result_for_multijob_test(states):
+    """Return worst final result for a test that has several PanDA jobs"""
+    result = None
+    state_dict = {
+        'active': 0,
+        'failed': 1,
+        'finished': 2,
+        'succeeded': 3,
+    }
+
+    result_index = min([state_dict[s] for s in list(set(states)) if s in state_dict])
+    result = list(state_dict.keys())[result_index] if result_index < len(state_dict) else None
+
+    return result
+
+
+def remove_duplicates(jobs):
+    """
+    Removee test duplicates which may come from JOBSARCHIVED4 and JOBSARCHIVED
+    :return:
+    """
+    jobs_new = []
+
+    pandaids = {}
+    for job in jobs:
+        if job['pandaid'] not in pandaids:
+            pandaids[job['pandaid']] = []
+        pandaids[job['pandaid']].append(job)
+
+    for pid, plist in pandaids.items():
+        if len(plist) == 1:
+            jobs_new.append(plist[0])
+        elif len(plist) > 1:
+            # find one that has bigger attemptmark
+            jobs_new.append(sorted(plist, key=lambda d: d['attemptmark'], reverse=True)[0])
+
+    return jobs_new
+
+
+def get_test_diff(test_a, test_b):
+    """
+    Finding difference in 2 test results
+    :param test_1: dict, {finalstatus, subresults} - previous.
+    :param test_2: dict, {finalstatus, subresults} - current.
+    :return: index
+
+    """
+    state_index = {'active': 3, 'succeeded': 2, 'finished': 1, 'failed': 0}
+    result_translation = {
+        -1: 'active',
+        0: 'ok',
+        1: 'warning_b',
+        2: 'warning',
+        3: 'warning_w',
+        4: 'alert',
+    }
+    diff_matrix = [
+        [4,   2,  0, -1],
+        [4,   9,  0, -1],
+        [4,   2,  0, -1],
+        [-1, -1, -1, -1]
+    ]
+    result = diff_matrix[state_index[test_a['finalresult']]][state_index[test_b['finalresult']]]
+
+    if result == 9:
+        # compare substep results
+        is_diff = None
+        for step in range(0, len(test_b['subresults'])):
+            try:
+                if len(test_a['subresults']) - 1 > step and test_a['subresults'][step]['name'] == test_b['subresults'][step]['name']:
+                    if test_a['subresults'][step]['result'] != test_b['subresults'][step]['result']:
+                        is_diff = test_b['subresults'][step]['result'] - test_a['subresults'][step]['result']
+                        break
+            except:
+                print('ddd')
+        if is_diff is not None:
+            result = 1 if is_diff < 0 else 3
+        else:
+            result = 2
+
+    return result_translation[result]
