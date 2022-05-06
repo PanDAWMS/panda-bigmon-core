@@ -759,6 +759,10 @@ function togglePayloadLog() {
                "paging": true,
                "scrollX": true,
                "aaSorting": [[0, 'asc']],
+               "columnDefs": [
+                { "width": "10%", "targets": 0 },
+                { "width": "3%", "targets": 1 }
+                ],
                 "ajax": {
                      "url": "{% url 'getpayloadlog' %}",
                     "method": "POST",
