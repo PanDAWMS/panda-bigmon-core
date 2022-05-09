@@ -9209,12 +9209,15 @@ def getPayloadLog(request):
             start_var = int(request.POST['start'])
             length_var = int(request.POST['length'])
             draw_var = int(request.POST['draw'])
+            sort = request.POST['order[0][dir]']
+            search_string = request.POST['search[value]']
         except:
             HttpResponse(status=404, content_type='text/html')
     else:
         HttpResponse(status=404, content_type='text/html')
 
-    payloadlog, job_running_flag, total = get_payloadlog(id, connection, start=start_var, length=length_var, mode=mode)
+    payloadlog, job_running_flag, total = get_payloadlog(id, connection, start=start_var, length=length_var, mode=mode,
+                                                         sort=sort, search_string=search_string)
 
     log_content['payloadlog'] = payloadlog
     log_content['flag'] = job_running_flag

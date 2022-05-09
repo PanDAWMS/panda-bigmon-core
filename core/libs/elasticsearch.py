@@ -4,7 +4,7 @@ import re
 from core.settings.local import ES
 from elasticsearch import Elasticsearch
 
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Search, Q
 
 from core.pandajob.models import Jobsactive4
 
@@ -41,7 +41,7 @@ def create_esatlas_connection(verify_certs=True, timeout=2000, max_retries=10,
         _logger.error(ex)
     return None
 
-def get_payloadlog(id, connection, start = 0, length = 50, mode = 'pandaid'):
+def get_payloadlog(id, connection, start = 0, length = 50, mode = 'pandaid', sort = 'asc', search_string =''):
     """
     Get pilot logs from ATLAS ElasticSearch storage
     """
@@ -52,14 +52,21 @@ def get_payloadlog(id, connection, start = 0, length = 50, mode = 'pandaid'):
     end = start + length
     s = Search(using=connection, index='atlas_pilotlogs*')
 
-    s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID", "Harvester_WorkerID", "Harvester_ID"])
+    s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID",
+                  "Harvester_WorkerID", "Harvester_ID"])
 
     if mode == 'pandaid':
         query['pandaid'] = int(id)
         jobs.extend(Jobsactive4.objects.filter(**query).values())
         if len(jobs) == 0:
             flag_running_job = False
-        s = s.filter('term', PandaJobID__keyword='{0}'.format(id)).sort("@timestamp")
+        if sort == 'asc':
+            s = s.filter('term', PandaJobID__keyword='{0}'.format(id)).sort("@timestamp")
+        else:
+            s = s.filter('term', PandaJobID__keyword='{0}'.format(id)).sort("-@timestamp")
+        if search_string != '':
+            q = Q("multi_match", query=search_string, fields=['level', 'message'])
+            s = s.query(q)
     elif mode == 'jeditaskid':
         s = s.filter('term', TaskID__keyword='{0}'.format(id)).sort("@timestamp")
     try:
