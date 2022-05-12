@@ -115,7 +115,7 @@ def getStageProfileData(request):
             RRuleNames.append(RRule)
         if pandaDFs:
             result = pd.concat(pandaDFs.values(), join='outer', axis=1, sort=True)
-            result.index = pd.to_datetime(result.index)
+            result.index = pd.to_datetime(result.index, unit='ms')
             result = result.resample('15min').last().reset_index().fillna(method='ffill').fillna(0)
             result['index'] = result['index'].dt.strftime('%Y-%m-%d %H:%M:%S')
             result = [['TimeStamp',] + RRuleNames] + result.values.tolist()
