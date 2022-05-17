@@ -306,7 +306,7 @@ def getCachedProgress(se, taskid):
 
 def setCachedProgress(se, taskid, stagestatus, progress):
     progress = pickle.dumps(progress)
-    timeout = 3600
+    timeout = 3600 * 2
     if stagestatus == 'done':
         timeout = 3600 * 24 * 30 * 6
     cache.set('serialized_staging_progress' + se + "_" + str(taskid), progress, timeout)
@@ -359,7 +359,7 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
             if len(list(filter(lambda x: x, report['outliers']))) > 0:
                 outliers_tasks_rucio = [(tasksids[idx], tasks_to_rucio.get(int(tasksids[idx]), None)) for idx, state in enumerate(report['outliers']) if state]
                 output_table.setdefault(se, []).extend(outliers_tasks_rucio)
-            
+
     return {'plotsdata': output, 'tasks_rucio': output_table}
 
 

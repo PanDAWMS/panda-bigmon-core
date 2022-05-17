@@ -666,7 +666,7 @@ google.charts.load('current', {'packages':['sankey']});
         $scope.getStagingDS = function () {
 
             $http({
-                    url: '/getstaginginfofortask/',
+                    url: '/api/dc/staginginfofortask/',
                     method: "GET",
                     params: {'jeditaskid':{{ jeditaskid|safe }}}
                 }

@@ -25,7 +25,7 @@ class DDOSMiddleware(object):
     notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
                               '188.184.90.172'  # J..h M......n request
                               ]
-    excepted_views = ['/grafana/', '/payloadlog/', '/statpixel/', '/idds/getiddsfortask/', '/getstaginginfofortask/']
+    excepted_views = ['/grafana/', '/payloadlog/', '/statpixel/', '/idds/getiddsfortask/', '/api/dc/staginginfofortask/']
     blacklist = ['130.132.21.90', '192.170.227.149']
     maxAllowedJSONRequstesParallel = 1
     maxAllowedSimultaneousRequestsToFileBrowser = 1
