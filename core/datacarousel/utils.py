@@ -316,21 +316,31 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
     output = {}
     output_table = {}
     basicstat = None
+    _logger.debug('Getting staging progress and identifying outliers for {} RSEs:'.format(len(datasets_dict)))
     for se, datasets in datasets_dict.items():
+        _logger.debug('RSE: {}, {} datasets to analyze'.format(se, len(datasets)))
         basicstat = stageStat.get(se, [])
         for ds in datasets:
-            progress_info = getCachedProgress(se, ds['TASKID'])
+            try:
+                progress_info = getCachedProgress(se, ds['TASKID'])
+            except:
+                progress_info = None
+            # protection against wrong epoch -> datatime transformation stored in cache
+            if progress_info and len(progress_info) > 1 and '1970' in progress_info[1][0]:
+                progress_info = None
             if not progress_info:
                 progress_info = getStaginProgress(str(ds['TASKID']))
                 if progress_info:
                     setCachedProgress(se, ds['TASKID'], ds['STATUS'], progress_info)
-            if progress_info:
+            if progress_info and len(progress_info) > 1 and '1970' not in progress_info[1][0]:
                 progress_info = patch_start_time((ds['START_TIME'], progress_info, ds['TOTAL_FILES']))
                 progress_info = transform_into_eq_intervals(progress_info, str(ds['TASKID']))
                 basicstat.append(progress_info)
                 tasks_to_rucio[ds['TASKID']] = ds['RRULE']
+                _logger.debug('Length of progress data: {}, task {}, RSE {}'.format(len(progress_info), ds['TASKID'], se))
         if basicstat:
             datamerged = pd.concat([s for s in basicstat], axis=1)
+            _logger.debug('Merged data shape: {}'.format(datamerged.shape))
             zscore = datamerged.copy(deep=True)
             zscore = zscore.apply(lambda V: scale(V,axis=0,with_mean=True, with_std=True,copy=False),axis=1)
             zscore_df = pd.DataFrame.from_dict(dict(zip(zscore.index, zscore.values))).T
@@ -344,12 +354,13 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
             report = {}
             report['series'] = [["Time"]+tasksids] + list_of_val
             report['tasksids'] = tasksids
-            report['outliers'] =  outliers.tolist()
+            report['outliers'] = outliers.tolist()
             output[se] = report
             if len(list(filter(lambda x: x, report['outliers']))) > 0:
                 outliers_tasks_rucio = [(tasksids[idx], tasks_to_rucio.get(int(tasksids[idx]), None)) for idx, state in enumerate(report['outliers']) if state]
                 output_table.setdefault(se, []).extend(outliers_tasks_rucio)
-    return {'plotsdata':output, 'tasks_rucio':output_table}
+            
+    return {'plotsdata': output, 'tasks_rucio': output_table}
 
 
 def extractTasksIds(datasets):
