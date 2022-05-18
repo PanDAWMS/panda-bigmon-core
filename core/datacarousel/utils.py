@@ -359,8 +359,12 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
             if len(list(filter(lambda x: x, report['outliers']))) > 0:
                 outliers_tasks_rucio = [(tasksids[idx], tasks_to_rucio.get(int(tasksids[idx]), None)) for idx, state in enumerate(report['outliers']) if state]
                 output_table.setdefault(se, []).extend(outliers_tasks_rucio)
-
-    return {'plotsdata': output, 'tasks_rucio': output_table}
+    # dict -> list of output table
+    output_table_list = []
+    for se, outlier_data in output_table.items():
+        for row in outlier_data:
+            output_table_list.append({'rse': se, 'jeditaskid': row[0], 'rucio_rule': row[1]})
+    return {'plotsdata': output, 'tasks_rucio': output_table_list}
 
 
 def extractTasksIds(datasets):

@@ -5,34 +5,52 @@
 {% block page_title %}Data Carousel Tails{% endblock %}
 {% block subtitle %}Data Carousel Tails {{ viewParams.selection|safe }} {% endblock %}
 
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 
-    {# http://jsfiddle.net/r2zgmgq1/ #}
-    <div data-ng-controller="tails_view_ctrl">
-        <div class="row" >
-            <div class="large-3 columns text-center">
-                <select id="timewindow">
-                    <option ng-repeat="timeitem in selecttime" ng-value="timeitem.name" ng-selected="timeitem.selected == 1" >
-                        {$ timeitem.name $}
-                    </option>
-                </select>
-            </div>
-        </div>
-{#        <div class="row" >#}
-{#            <div class="large-3 columns text-center">#}
-{#                <select id="sourcese" ng-model="selectedSE" ng-options="timeitem as timeitem for timeitem in selecttime" >#}
-{#                       <option value="" disabled>All Source Tape SEs</option>#}
-{#                </select>#}
-{#            </div>#}
-{#        </div>#}
-        <div class="row" >
-            <div class="large-3 columns">
-                <a ng-click="updateTimeWindow();" class="button primary">Update</a>
-            </div>
-        </div>
-        <div id="chart_container" class="row">
-        </div>
+<div data-ng-controller="tails_view_ctrl">
+  <div class="row" >
+    <div class="medium-3 columns text-center">
+      <select id="timewindow">
+        <option ng-repeat="timeitem in selecttime" ng-value="timeitem.name" ng-selected="timeitem.selected == 1" >
+            {$ timeitem.name $}
+        </option>
+      </select>
     </div>
+
+{#    <div class="large-3 columns text-center">#}
+{#        <select id="sourcese" ng-model="selectedSE" ng-options="timeitem as timeitem for timeitem in selecttime" >#}
+{#               <option value="" disabled>All Source Tape SEs</option>#}
+{#        </select>#}
+{#    </div>#}
+
+    <div class="medium-1 columns">
+        <a ng-click="updateTimeWindow();" class="button primary">Update</a>
+    </div>
+    <div class="medium-8 columns"></div>
+  </div>
+  <div id="outliers_container">
+    <p ng-bind-html="dctails.message"></p>
+    <div class="card bp-container-simple secondary ng-hide" ng-hide="dctails.is_hidden">
+    <div class="card-divider"><p>Outliers</p></div>
+    <div class="card-section">
+      <table class="data-table left-aligned nowrap" id="outlierstable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    </div>
+  </div>
+  <div id="chart_container"></div>
+</div>
 
 {% endblock %}
 
@@ -41,7 +59,7 @@
     <script type="text/javascript">
         google.charts.load('current', {packages: ['corechart']});
 
-        app.service('Service', ['$http', service]).controller('tails_view_ctrl', ['$scope', 'Service', controller]);
+        app.service('Service', ['$http', service]).controller('tails_view_ctrl', ['$scope', '$sce', 'Service', controller]);
 
         function service($http, $scope) {
             var get = function (requestparams) {
@@ -56,7 +74,7 @@
             }
         }
 
-        function controller($scope, Service) {
+        function controller($scope, $sce, Service) {
             var request = "";
             request = "?days=3";
             $scope.selecttime =[
@@ -67,15 +85,25 @@
                     {name:'30 days', value:30, selected:0},
                     {name:'60 days', value:60, selected:0}
                 ];
+            $scope.dctails = {
+              is_hidden: true,
+              message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+            };
 
             google.charts.setOnLoadCallback(function () {
                 $scope.updateTimeWindow();
             });
 
             $scope.updateTimeWindow = function(){
+
+                $scope.dctails.is_hidden = false;
+                $scope.dctails.message = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... ');
+                angular.element(document.getElementById('chart_container')).empty();
+                if ('table' in $scope.dctails) $('#outlierstable').DataTable().clear().destroy();
+
                 request = "";
                 var e = document.getElementById("timewindow");
-                request = "?1=4&days=" + ($scope.selecttime[e.selectedIndex].value);
+                request = "?days=" + ($scope.selecttime[e.selectedIndex].value);
 
                 Service.get(request).then(function successCallback(response) {
                     $scope.processResponce(response);
@@ -85,32 +113,67 @@
             };
 
             $scope.processResponce = function (response) {
-                var targetElement = document.getElementById('chart_container');
-                angular.element(targetElement).empty();
+                $scope.dctails.message = '';
+                var chartContainer = document.getElementById('chart_container');
 
                 if (response.data) {
-                    var diventry = '<div class="large-6">Outliers:<br><table>';
-                    for (var key in response.data.tasks_rucio) {
-                        diventry += '<tr><th>' + key +'</th>'
-                        for (var items in response.data.tasks_rucio[key]) {
-                            var entry = response.data.tasks_rucio[key][items];
-                            diventry += '<td><a href="/task/'+entry[0]+'" target="_blank">'+entry[0]+'</a>, <a href="https://rucio-ui.cern.ch/rule?rule_id='+entry[1]+'" target="_blank">'+entry[1]+'</a></td>'
-                        }
-                        diventry += '</tr>'
+                    if (response.data.tasks_rucio.length > 0) {
+                      $scope.buildDataTable(response.data.tasks_rucio);
                     }
-                    diventry += '<table></div>';
-                    var newEle = angular.element(diventry);
-                    angular.element(targetElement).append(newEle);
-
-
+                    else {
+                      $scope.dctails.message = $sce.trustAsHtml('No outliers found for the selected time period');
+                      $scope.dctails.is_hidden = true;
+                    }
                     for (var key in response.data.plotsdata) {
-                        drawChart(response.data.plotsdata[key], key, targetElement);
+                        drawChart(response.data.plotsdata[key], key, chartContainer);
                     }
                 } else {
-                    var newEle = angular.element("<div class=\"large-12\">No progress data found</div>");
-                    angular.element(targetElement).append(newEle);
+                  $scope.dctails.message = $sce.trustAsHtml('<span class="alert">Failed to load data :(</span>');
                 }
-            }
+            };
+
+            $scope.buildDataTable = function (data) {
+              $scope.dctails.table = $('#outlierstable').DataTable({
+                "paging": false,
+                "info": false,
+                "aaSorting": [[0,'asc']],
+                "data": data,
+                "aoColumns": [
+                  {
+                    title: "RSE",
+                    data: "rse",
+                    sDefaultContent: "-",
+                  },
+                  {
+                    title: "Task ID",
+                    data: "jeditaskid",
+                    sDefaultContent: "-",
+                    render: function(data, type, full, meta) {
+                      if (data.length > 0) {
+                        return '<a href = "{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+                      }
+                      else {
+                        return data;
+                      }
+                    }
+                  },
+                  {
+                    title: "Rucio rule",
+                    data: "rucio_rule",
+                    sDefaultContent: "-",
+                    render: function(data, type, full, meta) {
+                      if (data.length > 0) {
+                        return '<a target="_blank" href="https://rucio-ui.cern.ch/rule?rule_id=' + data + '">' + data + '</a>'
+                      }
+                      else {
+                        return data;
+                      }
+                    }
+                  },
+
+                ],
+              })
+            };
 
             function drawChart(data, se_name, targetElement) {
                 var linewight = {};
@@ -127,7 +190,6 @@
                     index++;
                 }
 
-
                 var options = {
                     title: se_name,
                     intervals: {'style': 'line'},
@@ -138,11 +200,11 @@
                     },
                     vAxis: {
                         title: "N files staged"
-                    }
-
+                    },
+                    chartArea: {width: '100%', height: '100%', left: 80, top: 20, bottom: 40, right:150}
                 };
 
-                var newEle = angular.element("<div id=\"chart_" + se_name + "\" style=\"width: 800px; height: 500px;\" ></div>");
+                var newEle = angular.element('<div class="c3-chart-block" id=\"chart_' + se_name + '\" style=\"width: 700px; height: 400px;\" ></div>');
                 angular.element(targetElement).append(newEle);
 
                 var datatails = google.visualization.arrayToDataTable(data.series);
