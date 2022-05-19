@@ -7,17 +7,19 @@ from json import dumps as json_dumps  ### FIXME - cleanup
 import re
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 
 from .models import Jobsarchived4, Jobsactive4, Jobsdefined4, Jobswaiting4
 from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from core.common.utils import getPrefix, getContextVariables, subDictToStr
+from core.libs.DateEncoder import DateEncoder
 
 _logger = logging.getLogger('bigpandamon')
 
 LAST_N_DAYS = FILTER_UI_ENV['DAYS']  # FIXME: put to utils
 LAST_N_HOURS = FILTER_UI_ENV['HOURS']  # FIXME: put to utils
 LAST_N_DAYS_MAX = FILTER_UI_ENV['MAXDAYS']  # FIXME: put to utils
+
 
 def maxpandaid(request):
     """
@@ -30,7 +32,7 @@ def maxpandaid(request):
         pandaid = Jobsarchived4.objects.all().order_by("-pandaid").values()[0]['pandaid']
     except:
         pandaid = 0
-    return render_to_response('pandajob/support/maxpandaid.html', {'maxpandaid': pandaid}, RequestContext(request))
+    return JsonResponse({'maxpandaid': pandaid}, safe=False)
 
 
 def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
@@ -111,8 +113,7 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
             'prefix': getPrefix(request),
             'jobInfo': jobs, 'name': name, 'nhours': nhours,
     }
-    data.update(getContextVariables(request))
-    return render_to_response('pandajob/info_jobs.html', data, RequestContext(request))
+    return JsonResponse(data, encoder=DateEncoder, safe=False)
 
 
 def jobInfoHoursOrig(request, prodUserName, nhours=LAST_N_HOURS):
@@ -225,7 +226,7 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
             'jobInfo': jobs, 'name': name, 'nhours': nhours,
     }
     data.update(getContextVariables(request))
-    return render_to_response('pandajob/info_jobs_vo.html', data, RequestContext(request))
+    return JsonResponse(data, encoder=DateEncoder, safe=False)
 
 
 def jobUserDaysOrig(request, vo, ndays=LAST_N_DAYS):

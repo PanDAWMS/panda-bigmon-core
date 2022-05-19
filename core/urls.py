@@ -106,11 +106,9 @@ urlpatterns = [
     re_path(r'^csrftoken/$', coremon_views.getCSRFToken, name='getCSRFToken'),
 
     # support views for core
-    re_path(r'^support/$', core_coremon_support_views.maxpandaid, name='supportRoot'),
-    re_path(r'^api/$', core_coremon_support_views.maxpandaid, name='supportRoot'),
-    re_path(r'^support/maxpandaid/$', core_coremon_support_views.maxpandaid, name='supportMaxpandaid'),
-    re_path(r'^support/jobinfouservohrs/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<nhours>\d+)/$', core_coremon_support_views.jobUserOrig, name='supportJobUserVoHrs'),
-    re_path(r'^support/jobinfouservo/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<ndays>\d+)/$', core_coremon_support_views.jobUserDaysOrig, name='supportJobUserVo'),
+    re_path(r'^api/support/maxpandaid/$', core_coremon_support_views.maxpandaid, name='supportMaxpandaid'),
+    re_path(r'^api/support/jobinfouservohrs/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<nhours>\d+)/$', core_coremon_support_views.jobUserOrig, name='supportJobUserVoHrs'),
+    re_path(r'^api/support/jobinfouservo/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<ndays>\d+)/$', core_coremon_support_views.jobUserDaysOrig, name='supportJobUserVo'),
 
     # images
     re_path('^img/', coremon_views.image, name='img'),
