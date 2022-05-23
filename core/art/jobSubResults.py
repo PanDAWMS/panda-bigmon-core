@@ -1,61 +1,16 @@
 
-
+import os
+import shutil
 import urllib3, json, math
 import numpy as np
 from datetime import datetime
-from core.art.modelsART import ARTSubResult
+from core.art.modelsART import ARTSubResult, ARTTests
 from django.db import transaction, DatabaseError
 from core.settings import defaultDatetimeFormat
 import logging
 
 _logger_error = logging.getLogger('bigpandamon-error')
 _logger = logging.getLogger('bigpandamon')
-
-def getJobReport(guid, lfn, scope):
-    filebrowserURL = "http://bigpanda.cern.ch/filebrowser/"  # This is deployment specific because memory monitoring is intended to work in ATLAS
-    jobSubResult = []
-    http = urllib3.PoolManager()
-    resp = http.request('GET', filebrowserURL, fields={'guid': guid, 'lfn': lfn, 'scope': scope, 'json': 1})
-    if resp and len(resp.data) > 0:
-        try:
-            data = json.loads(resp.data)
-            HOSTNAME = data['HOSTNAME']
-            tardir = data['tardir']
-            MEDIA_URL = data['MEDIA_URL']
-            dirprefix = data['dirprefix']
-            files = data['files']
-            files = [f for f in files if 'jobReport.json' in f['name']]
-        except:
-            return -2
-    else:
-        return -2
-
-    urlBase = "http://" + HOSTNAME + "/" + MEDIA_URL + dirprefix + "/" + tardir
-
-    for f in files:
-        url = urlBase + "/" + f['name']
-        response = http.request('GET', url)
-        data = json.loads(response.data)
-
-    return data
-
-
-def getARTjobSubResults(data):
-    jobSubResult = {}
-
-    if isinstance(data, dict) and 'art' in data:
-        jobSubResult = data['art']
-
-    # protection of json format change from list to list of dicts
-    if 'result' in jobSubResult and isinstance(jobSubResult['result'], list):
-        resultlist = []
-        for r in jobSubResult['result']:
-            if not isinstance(r, dict):
-                resultlist.append({'name': '', 'result': r})
-            else:
-                resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
-        jobSubResult['result'] = resultlist
-    return jobSubResult
 
 
 def subresults_getter(url_params_str):
@@ -100,6 +55,11 @@ def subresults_getter(url_params_str):
             url = media_path + "/" + f['name']
             response = http.request('GET', url)
             data = json.loads(response.data)
+        # copy logs for further analysis by ISP tool
+        try:
+            copy_payload_log_for_analysis(pandaid, media_path)
+        except:
+            _logger.exception('Copying of payload logs failed')
     else:
         _logger.error('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
         return {pandaid: subresults_dict}
@@ -144,7 +104,7 @@ def save_subresults(subResultsDict):
 
 def lock_nqueuedjobs(cur, nrows):
     """
-    Function to lock first N rows for futher processing
+    Function to lock first N rows for further processing
     :param nrows:
     :return: lock_time
     """
@@ -290,3 +250,46 @@ def analize_test_subresults(subresults):
             finalstate = 3
 
     return finalstate
+
+
+def copy_payload_log_for_analysis(pandaid, path_to_logs):
+    """
+    Copy payload logs for further analysis
+    :return:
+    """
+    # get test params
+    art_test = list(ARTTests.objects.filter(pandaid=pandaid).values())
+    if len(art_test) > 0:
+        art_test = art_test[0]
+    else:
+        return False
+
+    if art_test['package'] not in ('Tier0ChainTests', 'TrfTestsART'):
+        return False
+
+    src = path_to_logs
+    dst = '/cephfs/atlpan/pandajoblogs/{}/'.format('/'.join([
+        art_test['package'],
+        art_test['nightly_release_short'],
+        art_test['project'],
+        art_test['platform'],
+        art_test['testname'],
+        art_test['nightly_tag'][:10]
+        ]))
+
+    if not os.path.exists(dst):
+        try:
+            os.makedirs(dst)
+        except Exception as e:
+            _logger.error('Failed to create dst path dirs {}:\n{}'.format(dst, e))
+
+    logs_to_collect = [f for f in os.listdir(src) if f in ('payload.stdout', 'pilotlog.txt', 'artReport.json') or (
+                f.startswith("log.") and '.tgz' not in f)]
+    for file in logs_to_collect:
+        try:
+            shutil.copy(src + file, dst + file)
+            _logger.debug('Copying log file {}'.format(src + file))
+        except Exception as e:
+            _logger.error('Failed to copy log file {}:\n{}'.format(src + file, e))
+
+    return True
