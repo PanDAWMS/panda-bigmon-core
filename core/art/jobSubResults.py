@@ -56,10 +56,10 @@ def subresults_getter(url_params_str):
             response = http.request('GET', url)
             data = json.loads(response.data)
         # copy logs for further analysis by ISP tool
-        try:
-            copy_payload_log_for_analysis(pandaid, media_path)
-        except:
-            _logger.exception('Copying of payload logs failed')
+        # try:
+        #     copy_payload_log_for_analysis(pandaid, media_path)
+        # except:
+        #     _logger.exception('Copying of payload logs failed')
     else:
         _logger.error('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
         return {pandaid: subresults_dict}
