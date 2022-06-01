@@ -31,7 +31,6 @@ def drop_job_retries(jobs, jeditaskid, **kwards):
         is_return_dropped_jobs = True
 
     drop_list = []
-    droppedIDs = set()
     drop_merge_list = set()
 
     # get job retry history for a task

@@ -18,19 +18,29 @@ def subresults_getter(url_params_str):
     A function for getting ART jobs sub results in multithreading mode
     :return: dictionary with sub-results
     """
-    base_url = "http://bigpanda.cern.ch/"
-    fb_path = "filebrowser/?json=1"
+    base_url = "http://bigpanda.cern.ch"
+    fb_url = base_url + "/filebrowser/"
     subresults_dict = {}
 
-    pandaidstr = url_params_str.split('=')[-1]
+    url_params_dict = {pair.split('=')[0]: pair.split('=')[1] for pair in url_params_str.split('&')}
+    url_params_dict['json'] = 1
+
+    dst_postfix = None
+    if 'dst' in url_params_dict:
+        dst_postfix = url_params_dict['dst']
+        try:
+            del url_params_dict['dst']
+        except:
+            _logger.exception('Failed to remove dst from url params dict')
+
     try:
-        pandaid = int(pandaidstr)
+        pandaid = int(url_params_dict['pandaid'])
     except:
         _logger.exception('Exception was caught while transforming pandaid from str to int.')
         raise
 
     http = urllib3.PoolManager()
-    resp = http.request('GET', base_url + fb_path + url_params_str, timeout=300)
+    resp = http.request('GET', fb_url, fields=url_params_dict, timeout=300)
     if resp and resp.status == 200 and len(resp.data) > 0:
         try:
             data = json.loads(resp.data)
@@ -55,11 +65,12 @@ def subresults_getter(url_params_str):
             url = media_path + "/" + f['name']
             response = http.request('GET', url)
             data = json.loads(response.data)
+
         # copy logs for further analysis by ISP tool
-        # try:
-        #     copy_payload_log_for_analysis(pandaid, media_path)
-        # except:
-        #     _logger.exception('Copying of payload logs failed')
+        try:
+            copy_payload_log_for_analysis(dirprefix + "/" + tardir, dst_postfix)
+        except:
+            _logger.exception('Copying of payload logs failed')
     else:
         _logger.error('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
         return {pandaid: subresults_dict}
@@ -252,30 +263,16 @@ def analize_test_subresults(subresults):
     return finalstate
 
 
-def copy_payload_log_for_analysis(pandaid, path_to_logs):
+def copy_payload_log_for_analysis(src_postfix, dst_postfix):
     """
     Copy payload logs for further analysis
     :return:
     """
-    # get test params
-    art_test = list(ARTTests.objects.filter(pandaid=pandaid).values())
-    if len(art_test) > 0:
-        art_test = art_test[0]
-    else:
+    if dst_postfix is None:
         return False
 
-    if art_test['package'] not in ('Tier0ChainTests', 'TrfTestsART'):
-        return False
-
-    src = path_to_logs
-    dst = '/cephfs/atlpan/pandajoblogs/{}/'.format('/'.join([
-        art_test['package'],
-        art_test['nightly_release_short'],
-        art_test['project'],
-        art_test['platform'],
-        art_test['testname'],
-        art_test['nightly_tag'][:10]
-        ]))
+    src = '/cephfs/atlpan/' + src_postfix
+    dst = '/cephfs/atlpan/pandajoblogs/{}/'.format(dst_postfix)
 
     if not os.path.exists(dst):
         try:

@@ -994,10 +994,30 @@ def loadSubResults(request):
                 except:
                     pass
 
+            # Getting ART tests params to provide a destination path for logs copying
+            aquery = {'pandaid__in': [id['pandaid'] for id in ids]}
+            art_test = list(ARTTests.objects.filter(**aquery).values())
+            art_test_dst = {}
+            for t in art_test:
+                if t['package'] in ('Tier0ChainTests', 'TrfTestsART'):
+                    art_test_dst[t['pandaid']] = '/'.join([
+                        t['package'],
+                        t['nightly_release_short'],
+                        t['project'],
+                        t['platform'],
+                        t['testname'],
+                        t['nightly_tag'][:10]
+                    ])
+
             # Forming url params to single str for request to filebrowser
             url_params = []
             if len(file_properties):
-                url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&fileid=' + str(filei['fileid']) + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
+                for filei in file_properties:
+                    url_params_file = 'guid={}&lfn={}&scope={}&fileid={}&pandaid={}'.format(
+                        filei['guid'], filei['lfn'], filei['scope'], str(filei['fileid']), str(filei['pandaid']))
+                    if filei['pandaid'] in art_test_dst:
+                        url_params_file += '&dst={}'.format(art_test_dst[filei['pandaid']])
+                    url_params.append(url_params_file)
 
             # Loading subresults in parallel and collecting to list of dictionaries
             pool = multiprocessing.Pool(processes=N_ROWS)
