@@ -27,7 +27,7 @@ def subresults_getter(url_params_str):
 
     dst_postfix = None
     if 'dst' in url_params_dict:
-        dst_postfix = url_params_dict['dst']
+        dst_postfix = url_params_dict['dst'] + '/'
         try:
             del url_params_dict['dst']
         except:
@@ -271,7 +271,7 @@ def copy_payload_log_for_analysis(src_postfix, dst_postfix):
     if dst_postfix is None:
         return False
 
-    src = '/cephfs/atlpan/' + src_postfix
+    src = '/cephfs/atlpan/' + src_postfix + '/'
     dst = '/cephfs/atlpan/pandajoblogs/{}/'.format(dst_postfix)
 
     if not os.path.exists(dst):
