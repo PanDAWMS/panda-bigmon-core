@@ -256,18 +256,23 @@ def send_stalled_requests_report(request):
     ds_per_rse = {}
     for r in rows:
         if r['SOURCE_RSE'] not in ds_per_rse:
-            ds_per_rse[r['SOURCE_RSE']] = []
+            ds_per_rse[r['SOURCE_RSE']] = {}
+        if r['RSE'] not in ds_per_rse[r['SOURCE_RSE']]:
+            ds_per_rse[r['SOURCE_RSE']][r['RSE']] = {
+                "SE": r['SOURCE_RSE'],
+                "RR": r['RSE'],
+                "START_TIME": r['START_TIME'].strftime(defaultDatetimeFormat),
+                "TOT_FILES": r['TOTAL_FILES'],
+                "STAGED_FILES": r['STAGED_FILES'],
+                "UPDATE_TIME": str(r['UPDATE_TIME']).split('.')[0] if r['UPDATE_TIME'] is not None else '',
+                "TASKS": []
+            }
+        if r['TASKID'] not in ds_per_rse[r['SOURCE_RSE']][r['RSE']]['TASKS']:
+            ds_per_rse[r['SOURCE_RSE']][r['RSE']]['TASKS'].append(r['TASKID'])
 
-        data = {
-            "SE": r['SOURCE_RSE'],
-            "RR": r['RSE'],
-            "START_TIME": str(r['START_TIME']),
-            "TASKID": r['TASKID'],
-            "TOT_FILES": r['TOTAL_FILES'],
-            "STAGED_FILES": r['STAGED_FILES'],
-            "UPDATE_TIME": str(r['UPDATE_TIME'])
-        }
-        ds_per_rse[r['SOURCE_RSE']].append(data)
+    # dict -> list of rules
+    for source_rse, rucio_rules in ds_per_rse.items():
+        ds_per_rse[source_rse] = [rucio_rules[rule] for rule in rucio_rules]
 
     for rse, data in ds_per_rse.items():
         _logger.debug("DataCarouselMails processes this RSE: {}".format(rse))
