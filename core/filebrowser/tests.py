@@ -110,7 +110,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                             "/etc/grid-security/certificates"))
 
 
-    @unittest2.skip('skipping on purpose')
+    # @unittest2.skip('skipping on purpose')
     def test_settings_rucio_account(self):
         """
             test_settings_rucio_account
@@ -149,7 +149,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                     getattr(settings, "RUCIO_SERVER_HOST", \
                             "https://voatlasrucio-server-prod.cern.ch"))
 
-
+    @unittest2.skip('skipping on purpose')
     def test_download_with_rucio_metalink_file(self, \
                 test_file_config='test_file_exists', \
                 eval_len_metalink=True, eval_len_surls=True, \
@@ -209,7 +209,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                 self.assertEqual(os.path.exists(f_path), fpath_exists)
                 self.assertEqual(os.path.getsize(f_path), f_size)
 
-
+    @unittest2.skip('skipping on purpose')
     def test_download_with_rucio_redirect(self, \
                 test_file_config='test_file_exists', \
                 eval_len_redirectURL=True, eval_len_surls=True, \
@@ -269,55 +269,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                 self.assertEqual(os.path.exists(f_path), fpath_exists)
                 self.assertEqual(os.path.getsize(f_path), f_size)
 
-    @unittest2.skipUnless(os.path.exists(TESTS_DATA['cvmfs_path']), \
-            'You do not have ATLAS cvmfs available. ' + \
-            'DQ2 client installation is missing.')
-    def test_download_with_dq2client(self, \
-                test_file_config='test_file_exists'):
-        """
-            test_download_with_dq2client
-
-            1. Obtain Rucio OAuth Token.
-            2. Use DQ2 client to get PFN from guid,site,lfn,scope
-            3. Fetch file with PFN
-            4. Test that log directory and files exist and have expected sizes
-        """
-        ### test file properties
-        lfn = TESTS_DATA[test_file_config]['lfn']
-        scope = TESTS_DATA[test_file_config]['scope']
-        guid = TESTS_DATA[test_file_config]['guid']
-        site = TESTS_DATA[test_file_config]['site']
-        ### rucio oauth token
-        oauth_token = get_rucio_oauth_token()
-        self.assertEqual(len(oauth_token) > 0, True)
-        ### pfns
-        pfns, errors = get_rucio_pfns_from_guids_with_dq2client(\
-                        [guid, ], site, [lfn, ], [scope, ])
-        self.assertEqual(len(errors) > 0, False)
-        self.assertEqual(len(pfns) > 0, True)
-        ### fetch file with PFN
-        if len(pfns)>0:
-            pfn = pfns[0]
-        else:
-            pfn='na'
-        files, errtxt, dirprefix = fetch_file(pfn, guid)
-        self.assertEqual(len(errors) > 0, False)
-        self.assertEqual(len(files) > 0, True)
-        self.assertEqual(len(dirprefix) > 0, True)
-        ### test that the log tarball directory exists
-        dirpath = getattr(settings, "MEDIA_ROOT", "/tmp") + '/' + dirprefix
-        self.assertEqual(os.path.isdir(dirpath), True)
-        self.assertEqual(len(os.listdir(dirpath)) > 0, True)
-        ### test that the files exist and have expected size
-        for f in files:
-            if 'name' in f and 'size' in f:
-                f_name = f['name']
-                f_size = f['size']
-                f_path = os.path.join(dirpath, f_name)
-                self.assertEqual(os.path.exists(f_path), True)
-                self.assertEqual(os.path.getsize(f_path), f_size)
-
-
+    @unittest2.skip('skipping on purpose')
     def test_download_with_rucio_metalink_file_forcefailure(self, \
                 test_file_config='test_file_failure', \
                 eval_len_metalink=False, eval_len_surls=False, \
@@ -334,7 +286,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                 dirpath_exists, dirpath_listing, \
                 fpath_exists)
 
-
+    @unittest2.skip('skipping on purpose')
     def test_download_with_rucio_redirect_forcefailure(self, \
                 test_file_config='test_file_failure', \
                 eval_len_redirectURL=True, eval_len_surls=False, \
@@ -351,12 +303,5 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                 dirpath_exists, dirpath_listing, \
                 fpath_exists)
 
-
-    @unittest2.skipUnless(os.path.exists(TESTS_DATA['cvmfs_path']), \
-            'You do not have ATLAS cvmfs available. ' + \
-            'DQ2 client installation is missing.')
-    def test_download_with_dq2client_forcefailure(self, \
-                test_file_config='test_file_exists'):
-        return self.test_download_with_dq2client(test_file_config)
 
 
