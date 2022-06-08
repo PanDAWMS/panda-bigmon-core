@@ -1001,12 +1001,12 @@ def loadSubResults(request):
             for t in art_test:
                 if t['package'] in ('Tier0ChainTests', 'TrfTestsART'):
                     art_test_dst[t['pandaid']] = '/'.join([
+                        t['nightly_tag'][:10],
                         t['package'],
                         t['nightly_release_short'],
                         t['project'],
                         t['platform'],
                         t['testname'],
-                        t['nightly_tag'][:10]
                     ])
 
             # Forming url params to single str for request to filebrowser
