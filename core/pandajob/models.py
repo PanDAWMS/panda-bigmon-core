@@ -477,3 +477,9 @@ class Jobsarchived_y2018(PandaJobArch):
     class Meta:
         db_table = u'"atlas_pandaarch"."y2018_jobsarchived"'
         app_label = 'pandaarch'
+
+
+class Jobsarchived_y2019(PandaJobArch):
+    class Meta:
+        db_table = u'"atlas_pandaarch"."y2019_jobsarchived"'
+        app_label = 'pandaarch'
