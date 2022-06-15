@@ -181,20 +181,8 @@ def prodNeventsTrend(request):
     """
     valid, response=  initRequest(request)
     defaultdays = 7
-    equery = {}
-    if 'days' in request.session['requestParams'] and request.session['requestParams']['days']:
-        try:
-            days = int(request.session['requestParams']['days'])
-        except:
-            days = defaultdays
-        starttime = datetime.now() - timedelta(days=days)
-        endtime = datetime.now()
-        request.session['requestParams']['days'] = days
-    else:
-        starttime = datetime.now() - timedelta(days=defaultdays)
-        endtime = datetime.now()
-        request.session['requestParams']['days'] = defaultdays
-    equery['timestamp__range'] = [starttime, endtime]
+    tquery = setupView(request, hours=defaultdays*24, querytype='task', wildCardExt=False)
+    equery = {'timestamp__castdate__range': tquery['modificationtime__castdate__range']}
 
     if 'processingtype' in request.session['requestParams'] and request.session['requestParams']['processingtype']:
         if '|' not in request.session['requestParams']['processingtype']:

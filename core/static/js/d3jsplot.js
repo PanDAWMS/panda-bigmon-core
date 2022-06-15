@@ -2,6 +2,12 @@
  * Created by spadolski on 12/22/15.
  */
 
+// Replace the confusing G (for Giga) with  the more recognizable B (for Billion) in default SI prefixes.
+function hFormat(num) {
+    var siFormat = d3.format(",.3s");
+return siFormat(num).replace("G", "B");
+}
+
 function pandamonplotHist(data, divToShow, title, numberofbins) {
 
 
@@ -1820,7 +1826,7 @@ function multiLineChartFunc(values,divToShow,title){
 
     var svg = d3.select(divToShow),
         margin = {top: 20, right: 220, bottom: 40, left: 60},
-        width = 1000 - margin.left - margin.right,
+        width = 1400 - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
 
     var formatDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
@@ -1866,7 +1872,7 @@ function multiLineChartFunc(values,divToShow,title){
     var yAxis = d3.svg.axis()
         .scale(y)
         .orient("left")
-        .tickFormat(d3.format(".2s"));
+        .tickFormat(hFormat);
 
     var vis = svg
 	.data([data])
