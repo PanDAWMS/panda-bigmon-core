@@ -129,7 +129,7 @@
   <div class="card-divider"><p>{{ ntasks }} tasks:</p></div>
   <div class="card-section">
     <p ng-bind-html="userinfo.message"></p>
-    <table class="data-table" id="taskstable">
+    <table class="data-table hover" id="taskstable">
         <thead></thead>
         <tbody></tbody>
         <tfoot></tfoot>
@@ -249,7 +249,7 @@
         {
           extend: 'colvisGroup',
           text: 'Minimize view',
-          hide: [ 5,11,12,13,14,15, ],
+          hide: [ 1,2,5,8,11,12,13,14,15, ],
         },
         {
           extend: 'colvisGroup',
@@ -342,7 +342,7 @@
           className: 'state',
           render: function(data, type, row, meta) {
             if (data) {
-              return '<a href="{{ xurl }}superstatus=' + data + '">' + data + '</a>'
+              return '<a class="bp_tooltip task_' + data + ' href="{{ xurl }}superstatus=' + data + '">' + data + '</a>'
             }
             else {
               return '-'
@@ -356,7 +356,7 @@
           className: 'state',
           render: function(data, type, row, meta) {
             if (data) {
-              return '<a href="{{ xurl }}status=' + data + '">' + data + '</a>'
+              return '<a class="bp_tooltip task_' + data + ' href="{{ xurl }}status=' + data + '">' + data + '</a>'
             }
             else {
               return '-'
@@ -468,7 +468,7 @@
           },
         },
         {
-          title: 'Top job errors, count [code] "sample message"',
+          title: 'Top job errors, count [component:code] "sample message" [log example]',
           {#data: "top_errors",#}
           sDefaultContent: "-",
           className: 'alert',
@@ -488,7 +488,7 @@
         },
       });
 
-      $scope.userinfo.tasksDataTable.columns( [ 5,11,12,13,14,15 ] ).visible( false );
+      $scope.userinfo.tasksDataTable.columns( [ 1,2,5,8,11,12,13,14,15, ] ).visible( false );
       $scope.userinfo.tasksDataTable.buttons().container().appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
 
     };

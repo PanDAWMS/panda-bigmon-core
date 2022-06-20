@@ -590,6 +590,8 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     text-align: left;
     padding: 0.25rem 0.35rem 0.25rem 0.35rem;
     font-size: 0.875rem;
+    overflow: inherit;
+    z-index: 1;
   }
   .data-table.nowrap tbody td {
     white-space: nowrap;
@@ -639,15 +641,9 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table .state {
     text-align: center !important;
   }
-  .data-table tbody tr:nth-child(even):hover td {
-    /*background-color: #d4dfed !important;*/
-    filter: brightness(90%) !important;
-    ;
-  }
-  .data-table tbody tr:nth-child(odd):hover td {
-    /*background-color: #d4dfed !important;*/
-    filter: brightness(90%) !important;
-  }
+  /*.data-table tbody tr:hover td {*/
+    /*backdrop-filter: brightness(90%) !important;*/
+  /*}*/
 
   .data-table tbody th.fixed30 {
     width: 30%;

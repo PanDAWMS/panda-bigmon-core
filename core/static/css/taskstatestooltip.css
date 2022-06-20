@@ -1,13 +1,17 @@
 .bp_tooltip {
   position: relative;
+  /*overflow-x: inherit;*/
+  display: inline-block;
 }
   .bp_tooltip:hover {
     cursor: hand;
     text-decoration: underline;
+    z-index: 100;
   }
-  .bp_tooltip:after {
+  .bp_tooltip::after {
+    visibility: hidden;
     content: '';
-    display:none;
+    /*display:none;*/
     width: 250px;
     background-color: #272727;
     color: #fff;
@@ -18,26 +22,25 @@
     border-radius: 6px;
     padding: 0.3rem;
     position: absolute;
-    z-index: 1;
+    z-index: 100;
     top: -5px;
     left: 110%;
   }
-  .bp_tooltip:before {
+  .bp_tooltip::before {
     content: '';
     position: absolute;
     display:none;
     top: 50%;
     right: -10%;
+    z-index: 100;
     margin-top: -5px;
     border-width: 5px;
     border-style: solid;
     border-color: transparent #272727 transparent transparent;
   }
-  .bp_tooltip:hover:before {
-    display: inline-block;
-  }
-  .bp_tooltip:hover:after {
-    display: inline-block;
+  .bp_tooltip:hover:before, .bp_tooltip:hover:after {
+    display: block;
+    visibility: visible;
   }
 
   .bp_tooltip.task_registered:after {

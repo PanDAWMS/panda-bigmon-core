@@ -190,6 +190,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
                     errsByCount[errcode]['codename'] = err['error']
                     errsByCount[errcode]['codeval'] = errnum
                     errsByCount[errcode]['diag'] = errdiag
+                    errsByCount[errcode]['example_pandaid'] = job['pandaid']
                     errsByCount[errcode]['count'] = 0
                     errsByCount[errcode]['pandalist'] = {}
                 errsByCount[errcode]['count'] += 1
@@ -205,6 +206,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
                     errsByUser[user]['errors'][errcode]['codename'] = err['error']
                     errsByUser[user]['errors'][errcode]['codeval'] = errnum
                     errsByUser[user]['errors'][errcode]['diag'] = errdiag
+                    errsByUser[user]['errors'][errcode]['example_pandaid'] = job['pandaid']
                     errsByUser[user]['errors'][errcode]['count'] = 0
                 errsByUser[user]['errors'][errcode]['count'] += 1
                 errsByUser[user]['toterrors'] += 1
@@ -221,6 +223,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
                     errsBySite[site]['errors'][errcode]['codename'] = err['error']
                     errsBySite[site]['errors'][errcode]['codeval'] = errnum
                     errsBySite[site]['errors'][errcode]['diag'] = errdiag
+                    errsBySite[site]['errors'][errcode]['example_pandaid'] = job['pandaid']
                     errsBySite[site]['errors'][errcode]['count'] = 0
                 errsBySite[site]['errors'][errcode]['count'] += 1
                 errsBySite[site]['toterrors'] += 1
@@ -240,6 +243,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
                         errsByTask[taskid]['errors'][errcode]['codename'] = err['error']
                         errsByTask[taskid]['errors'][errcode]['codeval'] = errnum
                         errsByTask[taskid]['errors'][errcode]['diag'] = errdiag
+                        errsByTask[taskid]['errors'][errcode]['example_pandaid'] = job['pandaid']
                         errsByTask[taskid]['errors'][errcode]['count'] = 0
                     errsByTask[taskid]['errors'][errcode]['count'] += 1
                     errsByTask[taskid]['toterrors'] += 1

@@ -3231,9 +3231,11 @@ def userDashApi(request, agg=None):
                     t['job_' + metric] = ''
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
                 link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
+                link_logs_base = '/filebrowser/?'
                 t['top_errors'] = '<br>'.join(
-                    ['<a href="{}{}={}">{}</a> [{}] "{}"'.format(
-                        link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag']
+                    ['<a href="{}{}={}">{}</a> [{}] "{}" <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(
+                        link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag'],
+                        link_logs_base, err['example_pandaid'],
                     ) for err in errs_by_task_dict[t['jeditaskid']]['errorlist']][:2])
             else:
                 t['top_errors'] = -1
