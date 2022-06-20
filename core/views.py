@@ -2949,61 +2949,8 @@ def userInfo(request, user=''):
         }
         links = get_relevant_links(userid, fields)
 
-    # new user dashboard
-    if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'dash':
-
-        if query and 'modificationtime__castdate__range' in query:
-            request.session['timerange'] = query['modificationtime__castdate__range']
-
-        plots = prepare_user_dash_plots(tasks)
-
-        # put list of tasks to cache for further usage
-        tk_taskids = random.randrange(100000000)
-        setCacheEntry(request, tk_taskids, json.dumps(tasks, cls=DateTimeEncoder), 60 * 30, isData=True)
-
-        metrics_total = {}
-        if userstats:
-            metrics_total['cpua7'] = userstats['cpua7'] if 'cpua7' in userstats else 0
-            metrics_total['cpup7'] = userstats['cpup7'] if 'cpup7' in userstats else 0
-        metrics_total = humanize_metrics(metrics_total)
-
-        if is_json_request(request):
-            pass
-        else:
-            timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
-                              'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate', 'ttcrequested']
-            for task in tasks:
-                for tp in task:
-                    if tp in timestamp_vars and task[tp] is not None:
-                        task[tp] = task[tp].strftime(defaultDatetimeFormat)
-                    if task[tp] is None:
-                        task[tp] = ''
-                    if task[tp] is True:
-                        task[tp] = 'true'
-                    if task[tp] is False:
-                        task[tp] = 'false'
-
-            xurl = extensibleURL(request)
-
-            data = {
-                'request': request,
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'timerange': request.session['timerange'],
-                'built': datetime.now().strftime("%H:%M:%S"),
-                'tk': tk_taskids,
-                'xurl': xurl,
-                'user': user,
-                'links': links,
-                'ntasks': len(tasks),
-                'plots': plots,
-                'metrics': metrics_total,
-                'userstats': userstats,
-            }
-            response = render_to_response('userDash.html', data, content_type='text/html')
-            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-            return response
-    else:
+    # old classic page
+    if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'classic':
         if 'display_limit_tasks' not in request.session['requestParams']:
             display_limit_tasks = 100
         else:
@@ -3163,6 +3110,61 @@ def userInfo(request, user=''):
             request = complete_request(request)
             resp = sumd
             return HttpResponse(json.dumps(resp, default=datetime_handler), content_type='application/json')
+
+    else:
+        # user dashboard
+        if query and 'modificationtime__castdate__range' in query:
+            request.session['timerange'] = query['modificationtime__castdate__range']
+
+        plots = prepare_user_dash_plots(tasks)
+
+        # put list of tasks to cache for further usage
+        tk_taskids = random.randrange(100000000)
+        setCacheEntry(request, tk_taskids, json.dumps(tasks, cls=DateTimeEncoder), 60 * 30, isData=True)
+
+        metrics_total = {}
+        if userstats:
+            metrics_total['cpua7'] = userstats['cpua7'] if 'cpua7' in userstats else 0
+            metrics_total['cpup7'] = userstats['cpup7'] if 'cpup7' in userstats else 0
+        metrics_total = humanize_metrics(metrics_total)
+
+        if is_json_request(request):
+            return HttpResponse(json.dumps({'tasks': tasks}, default=datetime_handler), content_type='application/json')
+        else:
+            timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
+                              'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate', 'ttcrequested']
+            for task in tasks:
+                for tp in task:
+                    if tp in timestamp_vars and task[tp] is not None:
+                        task[tp] = task[tp].strftime(defaultDatetimeFormat)
+                    if task[tp] is None:
+                        task[tp] = ''
+                    if task[tp] is True:
+                        task[tp] = 'true'
+                    if task[tp] is False:
+                        task[tp] = 'false'
+
+            xurl = extensibleURL(request)
+            url_noview = removeParam(xurl, 'view', mode='extensible')
+            data = {
+                'request': request,
+                'viewParams': request.session['viewParams'],
+                'requestParams': request.session['requestParams'],
+                'timerange': request.session['timerange'],
+                'built': datetime.now().strftime("%H:%M:%S"),
+                'tk': tk_taskids,
+                'xurl': xurl,
+                'urlnoview': url_noview,
+                'user': user,
+                'links': links,
+                'ntasks': len(tasks),
+                'plots': plots,
+                'metrics': metrics_total,
+                'userstats': userstats,
+            }
+            response = render_to_response('userDash.html', data, content_type='text/html')
+            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+            return response
 
 
 def userDashApi(request, agg=None):

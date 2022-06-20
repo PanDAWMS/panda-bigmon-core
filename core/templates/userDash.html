@@ -70,7 +70,11 @@
 {% endif %}
 
 <div class="callout info" data-closable>
-  <h5>This is the new user dashboard page! Send your feedback to: <a href="mailto:atlas-adc-pandamon-support@cern.ch">atlas-adc-pandamon-support@cern.ch</a></h5>
+  <h5>This is the new user dashboard page! In case of problems or improvement wishes drop a email to:
+    <a href="mailto:atlas-adc-pandamon-support@cern.ch">atlas-adc-pandamon-support@cern.ch</a>
+    or write to
+    <a target="_blank" href="https://mattermost.web.cern.ch/adcvcr/channels/adc-bigpanda">BigPanDAmon Mattermost channel</a>
+  </h5>
   <p>
     The new user dashboard focuses on the progress of your tasks and highlighting of possible problems.
     This page summarizes all the recent user tasks.
@@ -98,15 +102,18 @@
     </ul>
   </p>
   <p>
-    The full list of tasks are in the table. It is based on a popular DataTable plugin,
-      so the pagination is enabled by default showing 20 tasks by page. You can use "Search" input to filter the tasks.
+    The full list of tasks are in the interactive table, where the pagination is enabled by default showing 20 tasks by page.
+    You can use "Search" input to filter the tasks.
     The jobs metrics are calculated per task as well, you can show/hide them by using 2 buttons:
       <b>"Show all metrics"</b> and <b>"Minimize view"</b>.
-    The <b>"Top job errors, count [code] message"</b> column shows the top-3 job errors per task,
+    The <b>"Top job errors, count [code] message"</b> column shows the top-2 job errors per task,
       the count is clickable and goes to a classic jobs page.
+    At the end of each error message there is a link to logs of one of the jobs in the category.
+    Sometimes logs of a job can be lost. In that case click on count of errors and then in the opened page try to look at logs of other jobs.
     The <b>"Task ID"</b> links goes to a task page,
-      the  <b>"Jobs failure, %"</b> links goes to error summary page for a task.
+      the <b>"Jobs failure, %"</b> links goes to error summary page for a task.
   </p>
+  <p>The old style page is still available via <a href="{{ urlnoview }}view=classic">this link</a>.</p>
   <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
         <span aria-hidden="true">&times;</span>
   </button>
@@ -242,14 +249,14 @@
       "scrollX": true,
       "aaSorting": [[0, 'desc']],
       "columnDefs": [
-          {"type": "num-html", "targets": [0,1,4,5,7,10,11,12,13,14,15,17,18] }
+          {"type": "num-html", "targets": [0,1,4,5,6,7,10,11,12,13,14,15,17,18] }
       ],
       "data": $scope.userinfo.tasks.list,
       "buttons": [
         {
           extend: 'colvisGroup',
           text: 'Minimize view',
-          hide: [ 1,2,5,8,11,12,13,14,15, ],
+          hide: [ 1,2,8,11,12,13,14,15, ],
         },
         {
           extend: 'colvisGroup',
@@ -321,16 +328,16 @@
           title: "N files done",
           {#data: "nfilesfinished",#}
           sDefaultContent: "-",
-          className: 'num',
+          className: 'num done',
         },
         {
           title: "N files failed",
           {#data: "nfilesfailed",#}
           sDefaultContent: "-",
-          className: 'num',
+          className: 'num alarm',
         },
         {
-          title: "Progress, %",
+          title: "%",
           {#data: "pctfinished",#}
           sDefaultContent: "-",
           className: 'num',
@@ -488,7 +495,7 @@
         },
       });
 
-      $scope.userinfo.tasksDataTable.columns( [ 1,2,5,8,11,12,13,14,15, ] ).visible( false );
+      $scope.userinfo.tasksDataTable.columns( [ 1,2,8,11,12,13,14,15, ] ).visible( false );
       $scope.userinfo.tasksDataTable.buttons().container().appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
 
     };
