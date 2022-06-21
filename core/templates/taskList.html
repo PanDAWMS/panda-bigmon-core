@@ -30,6 +30,22 @@
 {% endblock %}
 
 {% block body %}
+
+{% if requestParams.username and ' ' in requestParams.username %}
+<div class="callout info" data-closable>
+  <h5>You might be interested in <a href="{% url 'userInfo' %}?user={{ requestParams.username }}">the new task-centric user dashboard page</a>,
+    please try it out via <a href="{% url 'userInfo' %}?user={{ requestParams.username }}">the link</a>
+  </h5>
+  <p>
+    The new user dashboard focuses on the progress of tasks and highlighting of possible problems.
+    Also it provides a direct link to logs of failed jobs for each task.
+  </p>
+  <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
 <div class="bp-selected-params">
   {% if requestParams.statenotupdated %}
       <b>Tasks in <span class="{{ requestParams.status }}">{{ requestParams.status }}</span> state for more

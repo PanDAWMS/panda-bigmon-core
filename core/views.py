@@ -4920,6 +4920,7 @@ def taskList(request):
                                                ['stagesource'] if 'tape' in request.session['requestParams'] else copy.deepcopy(standard_taskfields))
         del request.session['TFIRST']
         del request.session['TLAST']
+
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
