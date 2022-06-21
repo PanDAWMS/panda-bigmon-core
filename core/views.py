@@ -3131,21 +3131,9 @@ def userInfo(request, user=''):
         if is_json_request(request):
             return HttpResponse(json.dumps({'tasks': tasks}, default=datetime_handler), content_type='application/json')
         else:
-            timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
-                              'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate', 'ttcrequested']
-            for task in tasks:
-                for tp in task:
-                    if tp in timestamp_vars and task[tp] is not None:
-                        task[tp] = task[tp].strftime(defaultDatetimeFormat)
-                    if task[tp] is None:
-                        task[tp] = ''
-                    if task[tp] is True:
-                        task[tp] = 'true'
-                    if task[tp] is False:
-                        task[tp] = 'false'
-
             xurl = extensibleURL(request)
             url_noview = removeParam(xurl, 'view', mode='extensible')
+
             data = {
                 'request': request,
                 'viewParams': request.session['viewParams'],
@@ -3251,8 +3239,21 @@ def userDashApi(request, agg=None):
         data['data']['tasks_metrics'] = tasks
 
         # prepare data for datatable
+        timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
+                          'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate', 'ttcrequested']
+        for task in tasks:
+            for tp in task:
+                if tp in timestamp_vars and task[tp] is not None and isinstance(task[tp], datetime):
+                    task[tp] = task[tp].strftime(defaultDatetimeFormat)
+                if task[tp] is None:
+                    task[tp] = ''
+                if task[tp] is True:
+                    task[tp] = 'true'
+                if task[tp] is False:
+                    task[tp] = 'false'
+
         task_list_table_headers = [
-            'jeditaskid', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished',
+            'jeditaskid', 'creationdate', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished',
             'superstatus', 'status', 'age',
             'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
             'errordialog', 'job_failed', 'top_errors',

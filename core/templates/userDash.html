@@ -249,18 +249,18 @@
       "scrollX": true,
       "aaSorting": [[0, 'desc']],
       "columnDefs": [
-          {"type": "num-html", "targets": [0,1,4,5,6,7,10,11,12,13,14,15,17,18] }
+          {"type": "num-html", "targets": [0,2,5,6,7,8,11,12,13,14,15,16,18,19] }
       ],
       "data": $scope.userinfo.tasks.list,
       "buttons": [
         {
           extend: 'colvisGroup',
           text: 'Minimize view',
-          hide: [ 1,2,8,11,12,13,14,15, ],
+          hide: [ 1,2,3,9,12,13,14,15,16, ],
         },
         {
           extend: 'colvisGroup',
-          text: 'Show all metrics',
+          text: 'Show all task metrics',
           show: ':hidden',
         }
       ],
@@ -272,6 +272,19 @@
           render: function(data, type, row, meta) {
             if (data) {
               return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Submission time",
+          sDefaultContent: "-",
+          className: '',
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              return data.replace('T', ' ')
             }
             else {
               return '-'
@@ -377,7 +390,7 @@
           className: 'num',
         },
         {
-          title: "Queue time, hours",
+          title: "Jobs queue time, hours",
           {#data: "job_queuetime",#}
           sDefaultContent: "-",
           className: 'num',
@@ -391,7 +404,7 @@
           },
         },
         {
-          title: "Wall time, hours",
+          title: "Jobs wall time, hours",
           {#data: "job_walltime",#}
           sDefaultContent: "-",
           className: 'num',
@@ -405,7 +418,7 @@
           },
         },
         {
-          title: "Max PSS/core, GB",
+          title: "Jobs PSS/core, GB",
           {#data: "job_maxpss_per_actualcorecount",#}
           sDefaultContent: "-",
           className: 'num',
@@ -490,12 +503,12 @@
         },
       ],
       createdRow: function ( row, data, index ) {
-          $('td', row).eq(8).addClass(data[8] + '_fill');
           $('td', row).eq(9).addClass(data[9] + '_fill');
+          $('td', row).eq(10).addClass(data[10] + '_fill');
         },
       });
 
-      $scope.userinfo.tasksDataTable.columns( [ 1,2,8,11,12,13,14,15, ] ).visible( false );
+      $scope.userinfo.tasksDataTable.columns( [ 1,2,3,9,12,13,14,15,16, ] ).visible( false );
       $scope.userinfo.tasksDataTable.buttons().container().appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
 
     };
