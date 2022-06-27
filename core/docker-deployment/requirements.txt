@@ -130,7 +130,7 @@ pytz==2018.7
 PyYAML==5.3.1
 redis==2.10.6
 regex==2018.8.29
-reportlab==3.5.9
+reportlab==3.5.55
 requests==2.23.0
 requests-oauthlib==1.0.0
 rsa==4.0
