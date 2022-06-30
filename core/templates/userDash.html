@@ -76,44 +76,9 @@
     <a target="_blank" href="https://mattermost.web.cern.ch/adcvcr/channels/adc-bigpanda">BigPanDAmon Mattermost channel</a>
   </h5>
   <p>
-    The new user dashboard focuses on the progress of your tasks and highlighting of possible problems.
-    This page summarizes all the recent user tasks.
-    By default the tasks with a modification date in the last 7 days are selected.
-    You can change the time window by clicking on blue "Change" button in the top subbar.
+    The user dashboard focuses on the progress of user tasks and highlighting of possible problems.
+    Please look at <a href="#doc">Help section</a> at the bottom for more information.
   </p>
-  <p>
-    The <b>"User activity overview"</b> section shows overall metrics, that can give a clue of potential problems.
-    Each metric label has 3 color codes:
-    <span class="label ok">OK</span>, <span class="label warning">Warning</span> and <span class="label alert">Alert</span>.
-    For example, if you see <span class="label warning">Median MaxPSS/core: <b>2.3</b>GB</span> ,
-      most probably your jobs consume a lof of memory that can be a cause of jobs failure.
-  </p>
-  <p>
-    Also the <b>"User activity overview"</b> section has 3 plots:
-    <ul>
-      <li><b>Inputs by status</b> represents the total number of input files for all the tasks (excluding aborted) grouped by 3 states:
-        <span class="done">done</span>, <span class="registered">remaining</span> and <span class="failed">failed</span>.
-      </li>
-      <li><b>Tasks by status</b> shows the number of tasks grouped by detailed JEDI task status.
-        The description of task states can be found below. </li>
-      <li><b>Task age histogram</b> displays the distribution of task age.
-        If task ended, the age is difference between end time and creation time.
-        If task is in active state, the age is the current time - creation time.</li>
-    </ul>
-  </p>
-  <p>
-    The full list of tasks are in the interactive table, where the pagination is enabled by default showing 20 tasks by page.
-    You can use "Search" input to filter the tasks.
-    The jobs metrics are calculated per task as well, you can show/hide them by using 2 buttons:
-      <b>"Show all metrics"</b> and <b>"Minimize view"</b>.
-    The <b>"Top job errors, count [code] message"</b> column shows the top-2 job errors per task,
-      the count is clickable and goes to a classic jobs page.
-    At the end of each error message there is a link to logs of one of the jobs in the category.
-    Sometimes logs of a job can be lost. In that case click on count of errors and then in the opened page try to look at logs of other jobs.
-    The <b>"Task ID"</b> links goes to a task page,
-      the <b>"Jobs failure, %"</b> links goes to error summary page for a task.
-  </p>
-  <p>The old style page is still available via <a href="{{ urlnoview }}view=classic">this link</a>.</p>
   <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
         <span aria-hidden="true">&times;</span>
   </button>
@@ -183,14 +148,22 @@
       }
     };
 
-    $scope.userinfo.uts_plots.plot_data.forEach((item) => {
-      if ($scope.userinfo.page.screen_cat === 'small') {
-        item.options.size = [getWidth() - 40, 300];
-      }
-      else {
-        item.options.size = [getWidth() / $scope.userinfo.uts_plots.plot_data.length - 20, 300];
-      }
-    });
+    $scope.userinfo.uts_plots.calc_width = function () {
+      $scope.userinfo.uts_plots.plot_data.forEach((item) => {
+        if ($scope.userinfo.page.screen_cat === 'small') {
+          item.options.size = [getWidth() - 40, 300];
+        }
+        else {
+          if ('size_mp' in item.options) {
+            item.options.size = [getWidth() * item.options.size_mp - 10, 300]
+          }
+          else {
+            item.options.size = [getWidth() / ($scope.userinfo.uts_plots.plot_data.length + 1) - 10, 300];
+          }
+        }
+      });
+    };
+    $scope.userinfo.uts_plots.calc_width();
 
     $scope.userinfo.uts_plots.build = function () {
       $scope.userinfo.uts_plots.plot_data.forEach((item) => {
@@ -209,6 +182,13 @@
             item.title,
             item.options)
         }
+        else if (item.type === 'bar_stacked') {
+          $scope.userinfo.uts_plots.charts[item.name + "_chart"] = draw_stacked_bar_hist(
+            item.data,
+            item.options,
+            item.name + "_chart",
+            )
+        }
       });
     };
 
@@ -222,6 +202,8 @@
       ).then(function success(res) {
         if (res.data && res.data.msg.length === 0) {
           $scope.userinfo.message = "";
+          $scope.userinfo.uts_plots.plot_data.push(...angular.fromJson(res.data.data.plots));
+          $scope.userinfo.uts_plots.calc_width();
           let ua_metrics = angular.fromJson(res.data.data.metrics);
           if (ua_metrics && ua_metrics.length > 0) {
             ua_metrics.forEach((item) => {
@@ -546,6 +528,13 @@
                     scope.plot.name + "_chart",
                     scope.plot.title,
                     scope.plot.options)
+                }
+                else if (scope.plot.type === 'bar_stacked') {
+                  scope.parent.userinfo.uts_plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(
+                    scope.plot.data,
+                    scope.plot.options,
+                    scope.plot.name + "_chart",
+                    )
                 }
               });
             });
