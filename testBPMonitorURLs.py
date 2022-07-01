@@ -83,6 +83,7 @@ extendedtests = [
     {'url': '/runningprodtasks/?precet=MC', 'isJSON': False},
     {'url': '/runningprodtasks/?preset=DPD', 'isJSON': False},
     {'url': '/runningprodtasks/?preset=DATA', 'isJSON': False},
+    {'url': '/idds/?', 'isJSON': False},
     {'url': '/jobs/?cloud=&jobtype=analysis&hours=3&jobtype=analysis&mismatchedcloudsite=true&display_limit=100&atlasrelease=Atlas-17.7.3',
         'isJSON': False},
     {'url': '/jobs/?cloud=&jobtype=analysis&hours=3&jobtype=analysis&mismatchedcloudsite=true&display_limit=100&atlasrelease=Atlas-17.7.3&atlasrelease=Atlas-17.7.3&atlasrelease=Atlas-17.7.3',

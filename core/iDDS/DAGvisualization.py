@@ -59,6 +59,8 @@ def daggraph(request):
         relation_map = stats[0]['relation_map']
         if len(relation_map) > 0:
             relation_map = relation_map[0]
+            if isinstance(relation_map, list) and len(relation_map) > 0:
+                relation_map = relation_map[0]
             nodes, edges, last_edge = fill_nodes_edges(relation_map)
             for node in nodes:
                 nodes_dag_vis.append(
