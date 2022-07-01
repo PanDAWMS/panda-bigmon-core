@@ -87,7 +87,7 @@ def cleanTaskList(tasks, **kwargs):
             else:
                 task['category'] = 'user analysis'
         else:
-            if 'workinggroup' in task and task['workinggroup'].startswith('GP_'):
+            if 'workinggroup' in task and task['workinggroup'] is not None and task['workinggroup'].startswith('GP_'):
                 task['category'] = 'group production'
             else:
                 task['category'] = 'production'
