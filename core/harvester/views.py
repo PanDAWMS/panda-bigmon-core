@@ -24,7 +24,7 @@ from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, Har
 from core.harvester.utils import get_harverster_workers_for_task
 
 from core.settings.local import dbaccess, defaultDatetimeFormat
-from core.settings.config import DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
+from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
 
 harvesterWorkerStatuses = [
     'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
@@ -283,21 +283,21 @@ def harvestermon(request):
                 limit = request.session['requestParams']['limit']
 
             sqlQueryJobsStates = """
-                SELECT hw.*, cj.jobstatus FROM (
-                    SELECT * from atlas_panda.harvester_rel_jobs_workers 
-                        where harvesterid like '%s'
+                select hw.*, cj.jobstatus from (
+                    select * from atlas_panda.harvester_rel_jobs_workers 
+                        where harvesterid like '{}'
                             and workerid in (
                               select workerid from (
-                                SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
-                                    where harvesterid like '%s' %s %s %s %s %s %s %s
-                                    ORDER by lastupdate DESC
+                                select workerid from {}.harvester_workers
+                                    where harvesterid like '{}' {} {} {} {} {} {} {}
+                                    order by lastupdate desc
                                 )
-                              where rownum <= %s 
+                              where rownum <= {} 
                               )
-                    ) hw , ATLAS_PANDABIGMON.combined_wait_act_def_arch4 cj
-                WHERE hw.pandaid = cj.pandaid 
-                """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
-                               computingelement, limit)
+                    ) hw , {}.combined_wait_act_def_arch4 cj
+                where hw.pandaid = cj.pandaid 
+                """.format(str(instance), DB_SCHEMA_PANDA, str(instance), status, computingsite, workerid, days, hours,
+                           resourcetype, computingelement, limit, DB_SCHEMA)
 
             cur = connection.cursor()
             cur.execute(sqlQueryJobsStates)
