@@ -61,7 +61,7 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
         jobs.extend(Jobsarchived4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
         jobs.extend(Jobsarchived.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
         _logger.info("Got jobs from ADCR: {} sec".format(time.time() - start_time))
-    if task_archive_flag <= 0:
+    if task_archive_flag <= 0 and DEPLOYMENT == 'ORACLE_ATLAS':
         # get list of jobsarchived models
         jobsarchived_models = get_pandajob_models_by_year(jquery['modificationtime__castdate__range'])
         if len(jobsarchived_models) > 0:
