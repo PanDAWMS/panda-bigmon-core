@@ -138,7 +138,6 @@ INSTALLED_APPS_EXTRA = [
     "core.datacarousel",
     "core.errorsscattering",
     "core.filebrowser",
-    # "core.globalpage",
     "core.globalshares",
     "core.grafana",
     "core.harvester",
