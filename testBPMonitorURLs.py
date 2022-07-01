@@ -67,7 +67,8 @@ tests = [
         'isJSON': False},
     {'url': '/fileInfo/?lfn=group.det-muon.10505609.EXT0._000009.HITS.pool.root&scope=group.det-muon',
      'isJSON': False},
-    {'url': '/jobs/?jobtype=groupproduction&display_limit=100&computingsite=AGLT2_LMEM', 'isJSON': False}
+    {'url': '/jobs/?jobtype=groupproduction&display_limit=100&computingsite=AGLT2_LMEM', 'isJSON': False},
+    {'url': '/compare/jobs/?pandaid=5510468377|5510636560', 'isJSON': False}
 ]
 
 extendedtests = [

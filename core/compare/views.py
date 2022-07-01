@@ -152,8 +152,12 @@ def compareJobs(request):
                          'modificationtime', 'cloud', 'computingsite','currentpriority',
                          'jobname', 'processingtype', 'transformation','proddblock','destinationdblock', 'jobsetid', 'batchid','eventservice']
 
-    ###Excluded params because of too long values###
+    # Excluded params because of too long values###
     excludedParams = ['metadata', 'metastruct']
+    params_to_exclude = []
+    for job in jobInfoJSON:
+        params_to_exclude.extend([p for p, v in job['job'].items() if isinstance(v, dict) or isinstance(v, list)])
+    excludedParams.extend(list(set(params_to_exclude)))
 
     jobsComparisonMain = []
     for param in compareParams:
