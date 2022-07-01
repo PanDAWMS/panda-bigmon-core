@@ -141,8 +141,10 @@ def get_pq_clouds():
     """
     pq_clouds = {}
     pq_dict = get_panda_queues()
-    for pq, pq_info in pq_dict.items():
-        pq_clouds[pq_info['siteid']] = pq_info['cloud']
+    if len(pq_dict) > 0:
+        for pq, pq_info in pq_dict.items():
+            if 'siteid' in pq_info and pq_info['siteid'] is not None:
+                pq_clouds[pq_info['siteid']] = pq_info['cloud']
 
     return pq_clouds
 
