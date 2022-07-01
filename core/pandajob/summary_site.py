@@ -47,7 +47,10 @@ def site_summary_dict(sites, VOMODE='atlas'):
         if isProd:
             sumd['category']['production'] += 1
     if VOMODE != 'atlas':
-        del sumd['cloud']
+        try:
+            del sumd['cloud']
+        except:
+            _logger.exception('Failed to remove cloud key from dict')
 
     # convert to ordered lists
     suml = []
