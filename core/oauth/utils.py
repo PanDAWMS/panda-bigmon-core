@@ -8,6 +8,7 @@ from django.http import HttpResponseRedirect
 
 from core.utils import is_json_request
 from core.oauth.models import BPUser
+from django.conf import settings as django_settings
 
 _logger = logging.getLogger('bigpandamon-error')
 
@@ -16,10 +17,10 @@ def login_customrequired(function):
     def wrap(request, *args, **kwargs):
 
         # we check here if it is a crawler:
-        notcachedRemoteAddress = ['188.184.185.129', '188.184.116.46']
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-
-        if x_forwarded_for and x_forwarded_for in notcachedRemoteAddress:
+        if x_forwarded_for is None:
+            x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case of one server config
+        if x_forwarded_for and x_forwarded_for in django_settings.CACHING_CRAWLER_HOSTS:
             return function(request, *args, **kwargs)
 
         if request.user.is_authenticated or is_json_request(request):

@@ -18,6 +18,8 @@ ALLOWED_HOSTS = [
 
     '127.0.0.1', '.localhost'
 ]
+# IPs of CACHING CRAWLERS if any
+CACHING_CRAWLER_HOSTS = []
 
 ### VIRTUALENV
 VIRTUALENV_PATH = '/data/virtualenv37'
