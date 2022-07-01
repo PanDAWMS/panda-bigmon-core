@@ -114,6 +114,7 @@ except ImportError:
 
 #DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
 DEPLOYMENT = 'ORACLE_ATLAS'
+# DEPLOYMENT = 'POSTGRES'
 
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
@@ -130,7 +131,7 @@ elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA_PANDA = 'doma_panda'
     DB_SCHEMA_PANDA_ARCH = 'doma_pandaarch'
     DB_SCHEMA_PANDA_META = 'doma_pandameta'
-    DB_SCHEMA_IDDS = 'DOMA_IDDS'
+    DB_SCHEMA_IDDS = 'doma_idds'
     DATABASES = dbaccess_postgres
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
     IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
