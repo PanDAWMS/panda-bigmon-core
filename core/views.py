@@ -7741,9 +7741,13 @@ def datasetInfo(request):
     dsrec = None
     colnames = []
     columns = []
+    wild_card_str = '(1=1)'
     if 'datasetname' in request.session['requestParams']:
         dataset = request.session['requestParams']['datasetname']
-        query['datasetname'] = request.session['requestParams']['datasetname']
+        if '*' not in dataset:
+            query['datasetname'] = request.session['requestParams']['datasetname']
+        else:
+            wild_card_str += ' AND ' + preprocess_wild_card_string(dataset, 'datasetname', case_sensitivity=True)
     elif 'datasetid' in request.session['requestParams']:
         dataset = request.session['requestParams']['datasetid']
         query['datasetid'] = request.session['requestParams']['datasetid']
@@ -7754,7 +7758,7 @@ def datasetInfo(request):
         query['jeditaskid'] = int(request.session['requestParams']['jeditaskid'])
 
     if dataset:
-        dsets = JediDatasets.objects.filter(**query).values()
+        dsets.extend(JediDatasets.objects.filter(**query).extra(where=[wild_card_str]).values())
         if len(dsets) == 0:
             startdate = timezone.now() - timedelta(hours=30 * 24)
             startdate = startdate.strftime(defaultDatetimeFormat)
@@ -7786,7 +7790,7 @@ def datasetInfo(request):
                     val = dsrec[k]
             else:
                 val = dsrec[k]
-            if dsrec[k] == None:
+            if dsrec[k] is None:
                 val = ''
                 continue
             pair = {'name': k, 'value': val}
@@ -7794,8 +7798,7 @@ def datasetInfo(request):
     del request.session['TFIRST']
     del request.session['TLAST']
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -7812,6 +7815,7 @@ def datasetInfo(request):
     else:
         return HttpResponse(json.dumps(dsrec, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
 def datasetList(request):
     valid, response = initRequest(request)
@@ -7819,18 +7823,26 @@ def datasetList(request):
         return response
     setupView(request, hours=365 * 24, limit=999999999)
     query = {}
-    extrastr = '(1=1)'
+    wild_card_str = '(1=1)'
 
     if 'datasetname' in request.session['requestParams']:
-        query['datasetname__icontains'] = request.session['requestParams']['datasetname'] if ':' not in request.session['requestParams']['datasetname'] else request.session['requestParams']['datasetname'].split(':')[1]
+        if ':' in request.session['requestParams']['datasetname']:
+            request.session['requestParams']['datasetname'] = '*' + request.session['requestParams']['datasetname'].split(':')[1]
+        if '*' in request.session['requestParams']['datasetname']:
+            wild_card_str += ' AND ' + preprocess_wild_card_string(
+                request.session['requestParams']['datasetname'],
+                'datasetname',
+                case_sensitivity=True)
+        else:
+            query['datasetname'] = request.session['requestParams']['datasetname']
     if 'containername' in request.session['requestParams']:
         query['datasetname'] = request.session['requestParams']['containername']
     if 'jeditaskid' in request.session['requestParams']:
         query['jeditaskid'] = int(request.session['requestParams']['jeditaskid'])
 
     dsets = []
-    if len(query) > 0 or len(extrastr) > 5:
-        dsets = JediDatasets.objects.filter(**query).extra(where=[extrastr]).values()
+    if len(query) > 0 or len(wild_card_str) > 5:
+        dsets.extend(JediDatasets.objects.filter(**query).extra(where=[wild_card_str]).values())
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
 
     del request.session['TFIRST']

@@ -29,9 +29,18 @@ def escape_input(str_to_escape):
     return str_to_escape
 
 
-def preprocess_wild_card_string(strToProcess, fieldToLookAt):
+def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
     if len(strToProcess) == 0:
         return '(1=1)'
+
+    # we wrap field values by UPPER() for case insensitiveness but it leads to NOT using the DB indexes
+    # this flag intends removing UPPER() in cases where the query uses just one field and we want to avoid FULL scan of tables
+    prefix = 'UPPER('
+    postfix = ')'
+    if 'case_sensitivity' in kwargs and kwargs['case_sensitivity'] is True:
+        prefix = ''
+        postfix = ''
+
     isNot = False
     if strToProcess.startswith('!'):
         isNot = True
@@ -71,17 +80,17 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt):
                 parameter = parameter.replace('_', '!_')
                 isEscape = True
 
-            extraQueryString += "(UPPER(" + fieldToLookAt + ") "
+            extraQueryString += "({}{}{}".format(prefix, fieldToLookAt, postfix)
             if isNot:
                 extraQueryString += "NOT "
             if leadStar and trailStar:
-                extraQueryString += " LIKE UPPER('%%" + parameter + "%%')"
+                extraQueryString += " LIKE {}'%%{}%%'{}".format(prefix, parameter, postfix)
             elif not leadStar and not trailStar:
-                extraQueryString += " LIKE UPPER('" + parameter + "')"
+                extraQueryString += " LIKE {}'{}'{}".format(prefix, parameter, postfix)
             elif leadStar and not trailStar:
-                extraQueryString += " LIKE UPPER('%%" + parameter + "')"
+                extraQueryString += " LIKE {}'%%{}'{}".format(prefix, parameter, postfix)
             elif not leadStar and trailStar:
-                extraQueryString += " LIKE UPPER('" + parameter + "%%')"
+                extraQueryString += " LIKE {}'{}%%'{}".format(prefix, parameter, postfix)
             if isEscape:
                 extraQueryString += " ESCAPE '!'"
             extraQueryString += ")"
