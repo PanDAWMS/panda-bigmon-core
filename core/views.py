@@ -30,7 +30,6 @@ from django.views.decorators.cache import never_cache
 from django.utils import timezone
 from django.utils.cache import patch_response_headers
 from django.core.cache import cache
-from django.conf import settings as djangosettings
 from django.db import connection
 from django.template.loaders.app_directories import get_app_template_dirs
 from django.template.defaulttags import register
@@ -69,10 +68,7 @@ from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.ruciowrapper import ruciowrapper
 
-from core.settings.local import dbaccess
-from core.settings.local import PRODSYS
-from core.settings.local import GRAFANA
-from core.settings.config import DEPLOYMENT, DB_N_MAX_IN_QUERY, PRMON_LOGS_DIRECTIO_LOCATION
+from django.conf import settings
 
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
@@ -228,7 +224,7 @@ def initRequest(request, callselfmon=True):
     global VOMODE, ENV, hostname
     ENV = {}
     VOMODE = ''
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
         # VOMODE = 'devtest'
 
@@ -309,12 +305,12 @@ def initRequest(request, callselfmon=True):
     #    request.session['debug'] = True
     if 'debug' in request.GET and request.GET['debug'] == 'insider':
         request.session['debug'] = True
-        djangosettings.DEBUG = True
-    elif djangosettings.DEBUG is True:
+        settings.DEBUG = True
+    elif settings.DEBUG is True:
         request.session['debug'] = True
     else:
         request.session['debug'] = False
-        djangosettings.DEBUG = False
+        settings.DEBUG = False
 
     if len(hostname) > 0: request.session['hostname'] = hostname
 
@@ -335,13 +331,12 @@ def initRequest(request, callselfmon=True):
         if len(userrec) > 0:
             request.session['username'] = userrec[0]['name']
 
-    if DEPLOYMENT == 'ORACLE_ATLAS':
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
         request.session['viewParams']['MON_VO'] = 'ATLAS'
     else:
-        VOMODE = DEPLOYMENT
+        VOMODE =settings.DEPLOYMENT
         #request.session['viewParams']['MON_VO'] = DEPLOYMENT
-
 
     # remove xurls from session if it is kept from previous requests
     if 'xurls' in request.session:
@@ -1235,7 +1230,6 @@ def mainPage(request):
     debuginfo = None
     if request.session['debug']:
         debuginfo = "<h2>Debug info</h2>"
-        from django.conf import settings
         for name in dir(settings):
             debuginfo += "%s = %s<br>" % (name, getattr(settings, name))
         debuginfo += "<br>******* Environment<br>"
@@ -1280,7 +1274,7 @@ def helpPage(request):
 
     # find all help templates
     template_files = []
-    for template_dir in (tuple(djangosettings.TEMPLATES[0]['DIRS']) + get_app_template_dirs('templates')):
+    for template_dir in (tuple(settings.TEMPLATES[0]['DIRS']) + get_app_template_dirs('templates')):
         for dir, dirnames, filenames in os.walk(template_dir):
             for filename in filenames:
                 if filename.endswith('Help.html'):
@@ -1512,7 +1506,7 @@ def jobList(request, mode=None, param=None):
     if not eventservice:
         values.extend(['avgvmem', 'maxvmem', 'maxrss'])
 
-    if DEPLOYMENT != "POSTGRES":
+    if settings.DEPLOYMENT != "POSTGRES":
         values.append('nucleus')
         values.append('eventservice')
         values.append('gshare')
@@ -2273,7 +2267,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             produsername = job[k]
 
     # get Harvester info
-    if 'core.harvester' in djangosettings.INSTALLED_APPS:
+    if 'core.harvester' in settings.INSTALLED_APPS:
         from core.harvester.utils import isHarvesterJob
         job['harvesterInfo'] = isHarvesterJob(job['pandaid'])
     if 'harvesterInfo' in job and job['harvesterInfo'] and len(job['harvesterInfo']) > 0:
@@ -2563,7 +2557,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     # if it is ART test, get test name
     art_test = []
-    if 'core.art' in djangosettings.INSTALLED_APPS and DEPLOYMENT == 'ORACLE_ATLAS':
+    if 'core.art' in settings.INSTALLED_APPS and settings.DEPLOYMENT == 'ORACLE_ATLAS':
         try:
             from core.art.modelsART import ARTTests
         except ImportError:
@@ -2586,14 +2580,13 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 f[fp] = ''
 
     prmon_logs = {}
-    if PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed'):
-        prmon_logs['prmon_summary'] = PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name = job.get('computingsite'),
-                                                                          panda_id = pandaid) + \
-                                      '/memory_monitor_summary.json'
-        prmon_logs['prmon_details'] = PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name = job.get('computingsite'),
-                                                                          panda_id = pandaid) + \
-                                      '/memory_monitor_output.txt'
-
+    if settings.PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed'):
+        prmon_logs['prmon_summary'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
+            queue_name=job.get('computingsite'),
+            panda_id=pandaid) + '/memory_monitor_summary.json'
+        prmon_logs['prmon_details'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
+            queue_name=job.get('computingsite'),
+            panda_id=pandaid) + '/memory_monitor_output.txt'
 
     if not is_json_request(request):
         del request.session['TFIRST']
@@ -3793,7 +3786,7 @@ def dashboard(request, view='all'):
         return response
 
     taskdays = 3
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
     else:
         VOMODE = ''
@@ -3994,7 +3987,7 @@ def dashboard(request, view='all'):
         jobsLeft = {}
         rw = {}
 
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+        if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
             for cloud in fullsummary:
                 if cloud['name'] in nRemJobs.keys():
@@ -4589,7 +4582,7 @@ def taskList(request):
 
     if 'jeditaskid__in' in query:
         taskl = query['jeditaskid__in']
-        if len(taskl) > DB_N_MAX_IN_QUERY:
+        if len(taskl) > settings.DB_N_MAX_IN_QUERY:
             transactionKey = insert_to_temp_table(taskl)
             selectTail = """jeditaskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)""" % (tmpTableName, transactionKey)
             extraquery = selectTail if len(extraquery) == 0 else extraquery + ' AND ' + selectTail
@@ -4629,7 +4622,7 @@ def taskList(request):
     # For tasks plots
     setCacheEntry(request, transactionKey, taskl, 60 * 20, isData=True)
 
-    if DEPLOYMENT == 'ORACLE_ATLAS':
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         new_cur = connection.cursor()
         new_cur.execute(
             """
@@ -4803,15 +4796,13 @@ def taskList(request):
             esjobs.append(job['pandaid'])
 
         random.seed()
-
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-        else:
-            tmpTableName = "TMP_IDS1"
+        tmpTableName = get_tmp_table_name()
 
         tk_es_jobs = random.randrange(1000000)
 #        connection.enter_transaction_management()
         new_cur = connection.cursor()
+        if settings.DEPLOYMENT == "POSTGRES":
+            create_temporary_table(new_cur, tmpTableName)
         executionData = []
         for id in esjobs:
             executionData.append((id, tk_es_jobs))
@@ -4990,10 +4981,10 @@ def killtasks(request):
     username = None
     fullname = None
 
-    if 'prodsysHost' in PRODSYS:
-        prodsysHost = PRODSYS['prodsysHost']
-    if 'prodsysToken' in PRODSYS:
-        prodsysToken = PRODSYS['prodsysToken']
+    if 'prodsysHost' in settings.PRODSYS:
+        prodsysHost = settings.PRODSYS['prodsysHost']
+    if 'prodsysToken' in settings.PRODSYS:
+        prodsysToken = settings.PRODSYS['prodsysToken']
 
     if action == 0:
         prodsysUrl = '/prodtask/task_action_ext/finish/'
@@ -5071,7 +5062,7 @@ def getTaskScoutingInfo(tasks, nmax):
     tmpTableName = get_tmp_table_name()
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
-    if DEPLOYMENT == "POSTGRES":
+    if settings.DEPLOYMENT == "POSTGRES":
         create_temporary_table(new_cur, tmpTableName)
     executionData = []
     for id in tasksIdToBeDisplayed:
@@ -5192,13 +5183,10 @@ def getErrorSummaryForEvents(request):
 
     if mode == 'drop':
         eventsErrors = []
-
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-        else:
-            tmpTableName = "TMP_IDS1DEBUG"
-
+        tmpTableName = get_tmp_table_name()
         new_cur = connection.cursor()
+        if settings.DEPLOYMENT == "POSTGRES":
+            create_temporary_table(new_cur, tmpTableName)
         if transactionKey:
             eequery = """
             select error_code,
@@ -5893,7 +5881,7 @@ def taskInfo(request, jeditaskid=0):
 
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
     # get dataset locality
-    if DEPLOYMENT == 'ORACLE_ATLAS':
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         dataset_locality = get_dataset_locality(jeditaskid)
     else:
         dataset_locality = {}
@@ -5908,7 +5896,7 @@ def taskInfo(request, jeditaskid=0):
     # creating a jquery with timewindow
     jquery = copy.deepcopy(query)
     jquery['modificationtime__castdate__range'] = get_task_timewindow(taskrec, format_out='str')
-    if DEPLOYMENT != 'POSTGRES':
+    if settings.DEPLOYMENT != 'POSTGRES':
         hs06sSum = get_hs06s_summary_for_task(jquery)
     else:
         hs06sSum = {}
@@ -5997,7 +5985,7 @@ def taskInfo(request, jeditaskid=0):
             taskrec['currenttotevhs06'] = int(hs06sSum['total']) if 'total' in hs06sSum else None
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
-        if DEPLOYMENT == 'ORACLE_ATLAS':
+        if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
 
     # datetime type -> str in order to avoid encoding errors in template
@@ -7678,7 +7666,7 @@ def workingGroups(request):
 
 
     taskdays = 3
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
     else:
         VOMODE = ''
@@ -7939,7 +7927,7 @@ def fileInfo(request):
         dids = list(set([f['datasetid'] for f in files]))
         dquery = {}
         extra = ' (1=1) '
-        if len(dids) < DB_N_MAX_IN_QUERY:
+        if len(dids) < settings.DB_N_MAX_IN_QUERY:
             dquery['datasetid__in'] = dids
         else:
             random.seed()
@@ -8146,7 +8134,7 @@ def loadFileList(request, datasetid=-1):
     extra_str = '(1=1)'
     files_ft = []
     files_ft_dict = {}
-    if len(pandaids) > DB_N_MAX_IN_QUERY:
+    if len(pandaids) > settings.DB_N_MAX_IN_QUERY:
         tk = insert_to_temp_table(pandaids)
         extra_str = 'pandaid in (select id from {} where transactionkey={} )'.format(get_tmp_table_name(), tk)
     else:
@@ -8622,24 +8610,19 @@ def g4exceptions(request):
 
     if 'amitag' in request.session['requestParams']:
 
-        if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-            tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-        else:
-            tmpTableName = "TMP_IDS1"
+        tmpTableName = get_tmp_table_name()
 
         transactionKey = random.randrange(1000000)
-#        connection.enter_transaction_management()
         new_cur = connection.cursor()
+        if settings.DEPLOYMENT == "POSTGRES":
+            create_temporary_table(new_cur, tmpTableName)
         for job in jobs:
             new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
             tmpTableName, job['pandaid'], transactionKey))  # Backend dependable
- #       connection.commit()
         new_cur.execute(
             "SELECT JOBPARAMETERS, PANDAID FROM ATLAS_PANDA.JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
             tmpTableName, transactionKey))
         mrecs = dictfetchall(new_cur)
-#        connection.commit()
-#        connection.leave_transaction_management()
         jobsToRemove = set()
         for rec in mrecs:
             acceptJob = True
@@ -8798,8 +8781,8 @@ def grafana_image(request):
                 response = HttpResponse(data, content_type='image/jpg')
                 patch_response_headers(response, cache_timeout=10 * 60)
                 return response
-            if 'Authorization' in GRAFANA:
-                grafana_token = GRAFANA['Authorization']
+            if 'Authorization' in settings.GRAFANA:
+                grafana_token = settings.GRAFANA['Authorization']
             import requests
             headers = {"Authorization": grafana_token}
             r = requests.get(url, headers=headers)
