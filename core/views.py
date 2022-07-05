@@ -15,7 +15,6 @@ import base64
 import urllib3
 import hashlib
 
-from io import BytesIO
 from datetime import datetime, timedelta
 from threading import Thread, Lock
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
@@ -8716,93 +8715,6 @@ def initSelfMonitor(request):
     request.session["useragent"] = useragent
 
 
-
-
-from PIL import Image
-import urllib.request
-import io
-
-whitelist = ["triumf.ca", "cern.ch"]
-def image(request):
-    if ('url' in request.GET):
-        param = request.build_absolute_uri()
-        url = param[param.index("=")+1:len(param)]
-        for urlw in whitelist:
-            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
-            urlConfim = re.findall(pattern,url)
-            if (len(urlConfim)>0):
-                break
-        if (len(urlConfim)==0):
-            return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
-        try:
-            data = getCacheEntry(request, "imagewrap")
-            if data is not None:
-                data = base64.b64decode(data)
-                response = HttpResponse(data, content_type='image/jpg')
-                patch_response_headers(response, cache_timeout=10 * 60)
-                return response
-            else:
-                with urllib.request.urlopen(url) as fd:
-                    image_file = io.BytesIO(fd.read())
-                    im = Image.open(image_file)
-                    rgb_im = im.convert('RGB')
-                    response = HttpResponse(content_type='image/jpg')
-                    rgb_im.save(response, "JPEG")
-                    byte_io = BytesIO()
-                    rgb_im.save(byte_io, 'JPEG')
-                    data = base64.b64encode(byte_io.getvalue())
-                    setCacheEntry(request, "imagewrap", data, 60 * 10)
-                    patch_response_headers(response, cache_timeout=10 * 60)
-                    return response
-
-        except Exception as ex:
-            print(ex)
-            return redirect('/static/images/404-not-found-site.gif')
-    else:
-        return redirect('/static/images/error_z0my4n.png')
-
-
-def grafana_image(request):
-    if ('url' in request.GET):
-        param = request.build_absolute_uri()
-        url = param[param.index("=")+1:len(param)]
-        for urlw in whitelist:
-            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
-            urlConfim = re.findall(pattern,url)
-            if (len(urlConfim) > 0):
-                break
-        if (len(urlConfim) == 0):
-            return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
-        try:
-            data = getCacheEntry(request, "grafanaimagewrap")
-
-            if data is not None:
-                data = base64.b64decode(data)
-                response = HttpResponse(data, content_type='image/jpg')
-                patch_response_headers(response, cache_timeout=10 * 60)
-                return response
-            if 'Authorization' in settings.GRAFANA:
-                grafana_token = settings.GRAFANA['Authorization']
-            import requests
-            headers = {"Authorization": grafana_token}
-            r = requests.get(url, headers=headers)
-            r.raise_for_status()
-            with io.BytesIO(r.content) as f:
-                with Image.open(f) as img:
-                    rgb_im = img.convert('RGB')
-                    response = HttpResponse(content_type='image/jpg')
-                    rgb_im.save(response, "JPEG")
-                    byte_io = BytesIO()
-                    rgb_im.save(byte_io, 'JPEG')
-                    data = base64.b64encode(byte_io.getvalue())
-                    setCacheEntry(request, "grafanaimagewrap", data, 60 * 60)
-                    return response
-        except Exception as ex:
-            return redirect('/static/images/404-not-found-site.gif')
-    else:
-        return redirect('/static/images/error_z0my4n.png')
-
-
 def handler500(request):
     response = render_to_response('500.html', {},
                                   context_instance=RequestContext(request))
@@ -8991,6 +8903,7 @@ def getTaskStatusLog(request, jeditaskid=None):
         response = render_to_response('taskStatusLog.html', {'statusLog': statusLog}, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
+
 
 @never_cache
 def getTaskLogs(request, jeditaskid=None):
@@ -9205,6 +9118,8 @@ def get_hc_tests(request):
     data = {'tests': tests}
     response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     return response
+
+
 @csrf_exempt
 def getPayloadLog(request):
     """

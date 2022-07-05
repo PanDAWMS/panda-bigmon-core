@@ -14,4 +14,7 @@ urlpatterns = [
     re_path(r'^grafanaplots', grafana.chartjs, name='grafana_chartjsplots'),
     re_path(r'^staginprogress/', dsProgressView.getStageProfileData, name='staginprogress'),
     re_path(r'^staginprogressplot/', dsProgressView.getDATASetsProgressPlot, name='staginprogressplot'),
+
+    # images
+    re_path('^grafana/img/', grafana.grafana_image, name='grafana_image'),
 ]

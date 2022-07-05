@@ -110,10 +110,6 @@ urlpatterns = [
     re_path(r'^api/support/jobinfouservohrs/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<nhours>\d+)/$', core_coremon_support_views.jobUserOrig, name='supportJobUserVoHrs'),
     re_path(r'^api/support/jobinfouservo/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<ndays>\d+)/$', core_coremon_support_views.jobUserDaysOrig, name='supportJobUserVo'),
 
-    # images
-    re_path('^img/', coremon_views.image, name='img'),
-    re_path('^grafana/', coremon_views.grafana_image, name='grafana'),
-
     # API
     re_path(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
     re_path(r'^api/tasks_plots$', tasksPlots.getJobsData, name='tasksplots'),
