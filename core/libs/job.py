@@ -289,6 +289,7 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
         'attemptnr': {'total': [], 'group_by': {}, 'agg': 'average'},
         'walltime_loss': {'total': [], 'group_by': {}, 'agg': 'sum'},
         'cputime_loss': {'total': [], 'group_by': {}, 'agg': 'sum'},
+        'running_slots': {'total': [], 'group_by': {}, 'agg': 'sum'},
     }
 
     # calc metrics
@@ -321,6 +322,8 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
                 job['walltime_loss'] = job['walltime'] if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
                 job['cputime_loss'] = job['cputime'] if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
 
+                job['running_slots'] = job['actualcorecount'] if 'jobstatus' in job and job['jobstatus'] == 'running' else 0
+
             for metric in metrics_dict:
                 if metric in job and job[metric] is not None:
                     if job[group_by] not in metrics_dict[metric]['group_by']:
@@ -334,6 +337,8 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
                 metrics_dict[metric]['total'] = round(statistics.median(metrics_dict[metric]['total']), 2)
             elif metrics_dict[metric]['agg'] == 'average':
                 metrics_dict[metric]['total'] = round(statistics.mean(metrics_dict[metric]['total']), 2)
+            elif metrics_dict[metric]['agg'] == 'sum':
+                metrics_dict[metric]['total'] = sum(metrics_dict[metric]['total'])
         else:
             metrics_dict[metric]['total'] = -1
         for gbp in metrics_dict[metric]['group_by']:
@@ -342,6 +347,8 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
                     metrics_dict[metric]['group_by'][gbp] = round(statistics.median(metrics_dict[metric]['group_by'][gbp]), 2)
                 elif metrics_dict[metric]['agg'] == 'average':
                     metrics_dict[metric]['group_by'][gbp] = round(statistics.mean(metrics_dict[metric]['group_by'][gbp]), 2)
+                elif metrics_dict[metric]['agg'] == 'sum':
+                    metrics_dict[metric]['group_by'][gbp] = sum(metrics_dict[metric]['group_by'][gbp])
             else:
                 metrics_dict[metric]['group_by'][gbp] = -1
 

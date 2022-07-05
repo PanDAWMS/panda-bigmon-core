@@ -3,7 +3,8 @@
 <div class="card-section">
 
 {% if view and view == 'dash' %}
-  <p>
+    <p>
+    The new user dashboard focuses on the progress of your tasks and highlighting of possible problems.
     This page summarizes all the recent user tasks.
     By default the tasks with a modification date in the last 7 days are selected.
     You can change the time window by clicking on blue "Change" button in the top subbar.
@@ -12,7 +13,7 @@
     The <b>"User activity overview"</b> section shows overall metrics, that can give a clue of potential problems.
     Each metric label has 3 color codes:
     <span class="label ok">OK</span>, <span class="label warning">Warning</span> and <span class="label alert">Alert</span>.
-    For example, if you see <span class="label warning">Average MaxPSS/core: <b>2.3</b>GB</span> ,
+    For example, if you see <span class="label warning">Median MaxPSS/core: <b>2.3</b>GB</span> ,
       most probably your jobs consume a lof of memory that can be a cause of jobs failure.
   </p>
   <p>
@@ -23,9 +24,11 @@
       </li>
       <li><b>Tasks by status</b> shows the number of tasks grouped by detailed JEDI task status.
         The description of task states can be found below. </li>
-      <li><b>Task age histogram</b> displays the distribution of task age.
+      <li><b>Task age histogram</b> displays the distribution of task age grouped by status.
         If task ended, the age is difference between end time and creation time.
         If task is in active state, the age is the current time - creation time.</li>
+      <li><b>Jobs by status</b> shows the number of jobs grouped by status.
+        Each task is divided into several jobs which run on GRID resources. </li>
     </ul>
   </p>
   <p>
@@ -40,12 +43,7 @@
     The <b>"Task ID"</b> links goes to a task page,
       the <b>"Jobs failure, %"</b> links goes to error summary page for a task.
   </p>
-
-  <p>
-    The task status shown in the monitor is in JEDI terms the simplified 'superstatus' the task is in. In ATLAS, these are in sync with DEFT states.
-    JEDI uses internally a more complex set of states, shown on task detail pages as 'Detailed JEDI status' (when it differs from the superstatus);
-    this is the 'status' field in the JEDI task.
-  </p>
+  <p>The old style page is still available via <a href="{{ urlnoview }}view=classic">this link</a>.</p>
 
   <ul>
     {% if show == 'all' or task.superstatus == 'registered' %} <li>Status <b class='registered'>registered</b> indicates the task has been received by JEDI and the task information is inserted to the JEDI_Tasks table.{% endif %}
@@ -81,10 +79,14 @@
   <p>
     This page summarizes all the recent user tasks and jobs.
   </p>
-
   <p>
-  The task list in this page shows tasks with a modification date in the last 7 days.
-  If deeper searches are required, the Tasks -&gt; Analysis -&gt; (select your username) page can be used with &amp;days=N on the URL to set the search depth.
+    The task list in this page shows tasks with a modification date in the last 7 days.
+    If deeper searches are required, the Tasks -&gt; Analysis -&gt; (select your username) page can be used with &amp;days=N on the URL to set the search depth.
+  </p>
+  <p>
+    The task status shown in the monitor is in JEDI terms the simplified 'superstatus' the task is in. In ATLAS, these are in sync with DEFT states.
+    JEDI uses internally a more complex set of states, shown on task detail pages as 'Detailed JEDI status' (when it differs from the superstatus);
+    this is the 'status' field in the JEDI task.
   </p>
 {% endif %}
 

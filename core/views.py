@@ -2886,12 +2886,15 @@ def userInfo(request, user=''):
         return response
     fullname = ''
     login = ''
+    is_prepare_history_links = False
     userQueryTask = None
     userQueryJobs = None
 
     if user == '':
         if 'user' in request.session['requestParams']: user = request.session['requestParams']['user']
         if 'produsername' in request.session['requestParams']: user = request.session['requestParams']['produsername']
+        if request.user.is_authenticated and user == request.user.first_name.replace('\'', '') + ' ' + request.user.last_name:
+            is_prepare_history_links = True
 
         # Here we serve only personal user pages. No user parameter specified
         if user == '':
@@ -2900,6 +2903,7 @@ def userInfo(request, user=''):
                 fullname = request.user.first_name.replace('\'', '') + ' ' + request.user.last_name
                 userQueryTask = Q(username=login) | Q(username__startswith=fullname)
                 userQueryJobs = Q(produsername=login) | Q(produsername__startswith=fullname)
+                is_prepare_history_links = True
 
     if 'days' in request.session['requestParams']:
         days = int(request.session['requestParams']['days'])
@@ -2914,6 +2918,18 @@ def userInfo(request, user=''):
     for param in request.session['requestParams']:
         requestParams[escape_input(param.strip())] = escape_input(request.session['requestParams'][param.strip()].strip())
     request.session['requestParams'] = requestParams
+
+    # getting most relevant links based on visit statistics
+    links = {}
+    if is_prepare_history_links:
+        userids = BPUser.objects.filter(email=request.user.email).values('id')
+        userid = userids[0]['id']
+        fields = {
+            'job': copy.deepcopy(standard_fields),
+            'task': copy.deepcopy(standard_taskfields),
+            'site': copy.deepcopy(standard_sitefields),
+        }
+        links = get_relevant_links(userid, fields)
 
     # Tasks owned by the user
     query = setupView(request, hours=days*24, limit=999999, querytype='task')
@@ -2935,19 +2951,6 @@ def userInfo(request, user=''):
         panda_user_name = fullname if fullname != '' else user.strip()
     userstats = get_panda_user_stats(panda_user_name)
     _logger.info('Got user statistics: {}'.format(time.time() - request.session['req_init_time']))
-
-    # getting most relevant links based on visit statistics
-    links = {}
-    if request.user.is_authenticated and (
-            'user' not in request.session['requestParams'] and 'produsername' not in request.session['requestParams']):
-        userids = BPUser.objects.filter(email=request.user.email).values('id')
-        userid = userids[0]['id']
-        fields = {
-            'job': copy.deepcopy(standard_fields),
-            'task': copy.deepcopy(standard_taskfields),
-            'site': copy.deepcopy(standard_sitefields),
-        }
-        links = get_relevant_links(userid, fields)
 
     # old classic page
     if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'classic':
@@ -2984,7 +2987,6 @@ def userInfo(request, user=''):
             jobs.extend(Jobsactive4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
             jobs.extend(Jobswaiting4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
             jobs.extend(Jobsarchived4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
-
 
             # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
             if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
@@ -3191,7 +3193,6 @@ def userDashApi(request, agg=None):
 
         # jobs summary
         jquery = {
-            'jobstatus__in': ['finished', 'failed', ],
             'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
         }
         err_fields = [
@@ -3212,6 +3213,23 @@ def userDashApi(request, agg=None):
 
         metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
         _logger.info('Calculated jobs metrics: {}'.format(time.time() - request.session['req_init_time']))
+
+        job_state_summary = job_states_count_by_param(jobs, param='category')
+        job_state_summary_total = {}
+        for cat in job_state_summary:
+            for js in cat['job_state_counts']:
+                if js['name'] not in job_state_summary_total:
+                    job_state_summary_total[js['name']] = 0
+                job_state_summary_total[js['name']] += js['count']
+        data['data']['plots'] = [{
+            'name': 'n_jobs_by_status',
+            'type': 'pie',
+            'data': [[js, count] for js, count in job_state_summary_total.items() if count > 0],
+            'title': 'N jobs by status',
+            'options': {'legend_position': 'bottom', 'size_mp': 0.2, 'color_scheme': 'job_states',}
+            },]
+        _logger.info('Got job status summary: {}'.format(time.time() - request.session['req_init_time']))
+
 
         for t in tasks:
             for metric in metrics:
@@ -7723,9 +7741,13 @@ def datasetInfo(request):
     dsrec = None
     colnames = []
     columns = []
+    wild_card_str = '(1=1)'
     if 'datasetname' in request.session['requestParams']:
         dataset = request.session['requestParams']['datasetname']
-        query['datasetname'] = request.session['requestParams']['datasetname']
+        if '*' not in dataset:
+            query['datasetname'] = request.session['requestParams']['datasetname']
+        else:
+            wild_card_str += ' AND ' + preprocess_wild_card_string(dataset, 'datasetname', case_sensitivity=True)
     elif 'datasetid' in request.session['requestParams']:
         dataset = request.session['requestParams']['datasetid']
         query['datasetid'] = request.session['requestParams']['datasetid']
@@ -7736,7 +7758,7 @@ def datasetInfo(request):
         query['jeditaskid'] = int(request.session['requestParams']['jeditaskid'])
 
     if dataset:
-        dsets = JediDatasets.objects.filter(**query).values()
+        dsets.extend(JediDatasets.objects.filter(**query).extra(where=[wild_card_str]).values())
         if len(dsets) == 0:
             startdate = timezone.now() - timedelta(hours=30 * 24)
             startdate = startdate.strftime(defaultDatetimeFormat)
@@ -7768,7 +7790,7 @@ def datasetInfo(request):
                     val = dsrec[k]
             else:
                 val = dsrec[k]
-            if dsrec[k] == None:
+            if dsrec[k] is None:
                 val = ''
                 continue
             pair = {'name': k, 'value': val}
@@ -7776,8 +7798,7 @@ def datasetInfo(request):
     del request.session['TFIRST']
     del request.session['TLAST']
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-        'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -7794,6 +7815,7 @@ def datasetInfo(request):
     else:
         return HttpResponse(json.dumps(dsrec, cls=DateEncoder), content_type='application/json')
 
+
 @login_customrequired
 def datasetList(request):
     valid, response = initRequest(request)
@@ -7801,18 +7823,26 @@ def datasetList(request):
         return response
     setupView(request, hours=365 * 24, limit=999999999)
     query = {}
-    extrastr = '(1=1)'
+    wild_card_str = '(1=1)'
 
     if 'datasetname' in request.session['requestParams']:
-        query['datasetname__icontains'] = request.session['requestParams']['datasetname'] if ':' not in request.session['requestParams']['datasetname'] else request.session['requestParams']['datasetname'].split(':')[1]
+        if ':' in request.session['requestParams']['datasetname']:
+            request.session['requestParams']['datasetname'] = '*' + request.session['requestParams']['datasetname'].split(':')[1]
+        if '*' in request.session['requestParams']['datasetname']:
+            wild_card_str += ' AND ' + preprocess_wild_card_string(
+                request.session['requestParams']['datasetname'],
+                'datasetname',
+                case_sensitivity=True)
+        else:
+            query['datasetname'] = request.session['requestParams']['datasetname']
     if 'containername' in request.session['requestParams']:
         query['datasetname'] = request.session['requestParams']['containername']
     if 'jeditaskid' in request.session['requestParams']:
         query['jeditaskid'] = int(request.session['requestParams']['jeditaskid'])
 
     dsets = []
-    if len(query) > 0 or len(extrastr) > 5:
-        dsets = JediDatasets.objects.filter(**query).extra(where=[extrastr]).values()
+    if len(query) > 0 or len(wild_card_str) > 5:
+        dsets.extend(JediDatasets.objects.filter(**query).extra(where=[wild_card_str]).values())
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
 
     del request.session['TFIRST']
