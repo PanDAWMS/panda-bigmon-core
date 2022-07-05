@@ -17,8 +17,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import connections
 from django.utils import timezone
 from django.db import models
-
-from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH, DB_SCHEMA_PANDA_META
+from django.conf import settings
 
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
@@ -51,7 +50,7 @@ class Cloudconfig(models.Model):
     email = models.CharField(max_length=180, db_column='email', blank=True)
     fairshare = models.CharField(max_length=384, db_column='fairshare', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_META}"."cloudconfig"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."cloudconfig"'
         app_label = 'panda'
 
 
@@ -69,7 +68,7 @@ class Datasets(models.Model):
     transferstatus = models.IntegerField(db_column='transferstatus')
     subtype = models.CharField(max_length=15, db_column='subtype', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."datasets"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."datasets"'
         unique_together = ('vuid', 'modificationdate')
         app_label = 'panda'
 
@@ -99,7 +98,7 @@ class Filestable4(models.Model):
     fileid = models.BigIntegerField(null=True, db_column='fileid', blank=True)
     attemptnr = models.IntegerField(null=True, db_column='attemptnr', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."filestable4"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."filestable4"'
         unique_together = ('row_id', 'modificationtime')
         app_label = 'panda'
 
@@ -131,7 +130,7 @@ class FilestableArch(models.Model):
     attemptnr = models.IntegerField(null=True, db_column='attemptnr', blank=True) 
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_ARCH}"."filestable_arch"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."filestable_arch"'
         unique_together = ('row_id', 'modificationtime')
         app_label = 'panda'
 
@@ -141,7 +140,7 @@ class Incidents(models.Model):
     typekey = models.CharField(max_length=60, db_column='typekey', blank=True)
     description = models.CharField(max_length=600, db_column='description', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_META}"."incidents"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."incidents"'
         app_label = 'panda'
 
 
@@ -175,7 +174,7 @@ class JediDatasetContents(models.Model):
     ramcount = models.IntegerField(null=True, db_column='ramcount', blank=True)
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jedi_dataset_contents"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_dataset_contents"'
         unique_together = ('jeditaskid', 'datasetid', 'fileid')
         app_label = 'jedi'
 
@@ -216,7 +215,7 @@ class JediDatasets(models.Model):
     templateid = models.BigIntegerField(db_column='templateid', blank=True)
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jedi_datasets"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_datasets"'
         unique_together = ('jeditaskid', 'datasetid')
         app_label = 'jedi'
 
@@ -239,7 +238,7 @@ class JediEvents(models.Model):
     error_code = models.IntegerField(db_column='error_code', blank=True)
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jedi_events"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_events"'
         unique_together = ('jeditaskid', 'pandaid', 'fileid', 'job_processid')
         app_label = 'jedi'
 
@@ -251,7 +250,7 @@ class JediDatasetLocality(models.Model):
     timestamp = models.DateTimeField(db_column='timestamp')
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jedi_dataset_locality"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_dataset_locality"'
         unique_together = ('jeditaskid', 'datasetid', 'rse')
         app_label = 'jedi'
 
@@ -263,7 +262,7 @@ class JediJobRetryHistory(models.Model):
     ins_utc_tstamp = models.BigIntegerField(db_column='ins_utc_tstamp', blank=True)
     relationtype = models.CharField(max_length=48, db_column='relationtype')
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jedi_job_retry_history"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_job_retry_history"'
         unique_together = ('jeditaskid', 'oldpandaid', 'newpandaid')
         app_label = 'jedi'
 
@@ -272,7 +271,7 @@ class JediTaskparams(models.Model):
     jeditaskid = models.BigIntegerField(primary_key=True, db_column='jeditaskid')
     taskparams = models.TextField(db_column='taskparams', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jedi_taskparams"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_taskparams"'
         app_label = 'jedi'
 
 
@@ -356,13 +355,13 @@ class JediTasksBase(models.Model):
 
 class JediTasks(JediTasksBase):
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jedi_tasks"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_tasks"'
         app_label = 'jedi'
 
 
 class JediTasksOrdered(JediTasksBase):
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."jedi_tasks_ordered"'
+        db_table = f'"{settings.DB_SCHEMA}"."jedi_tasks_ordered"'
         app_label = 'pandamon'
 
 
@@ -372,7 +371,7 @@ class GetEventsForTask(models.Model):
     totev = models.BigIntegerField(db_column='totev')
 
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."geteventsfortask"'
+        db_table = f'"{settings.DB_SCHEMA}"."geteventsfortask"'
         app_label = 'pandamon'
 
 
@@ -384,7 +383,7 @@ class TasksStatusLog(models.Model):
     attemptnr = models.IntegerField(db_column='attemptnr', blank=True)
     reason = models.CharField(max_length=600, db_column='reason', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."TASKS_STATUSLOG"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."TASKS_STATUSLOG"'
         app_label = 'jedi'
 
 
@@ -421,7 +420,7 @@ class JediWorkQueue(models.Model):
     criteria = models.CharField(max_length=256, db_column='criteria', blank=True) 
     variables = models.CharField(max_length=256, db_column='variables', blank=True) 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jedi_work_queue"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_work_queue"'
         app_label = 'jedi'
 
 
@@ -430,7 +429,7 @@ class Jobparamstable(models.Model):
     modificationtime = models.DateTimeField(db_column='modificationtime')
     jobparameters = models.TextField(db_column='jobparameters', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jobparamstable"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobparamstable"'
         unique_together = ('pandaid', 'modificationtime')
         app_label = 'panda'
 
@@ -440,7 +439,7 @@ class JobparamstableArch(models.Model):
     modificationtime = models.DateTimeField(db_column='modificationtime')
     jobparameters = models.TextField(db_column='jobparameters', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_ARCH}"."jobparamstable_arch"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."jobparamstable_arch"'
         app_label = 'panda'
 
 
@@ -454,7 +453,7 @@ class JobsStatuslog(models.Model):
     modificationhost = models.CharField(max_length=384, db_column='modificationhost', blank=True)
     modiftime_extended = models.DateTimeField(db_column='modiftime_extended')
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."JOBS_STATUSLOG"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."JOBS_STATUSLOG"'
         app_label = 'panda'
 
 
@@ -462,7 +461,7 @@ class Jobsdebug(models.Model):
     pandaid = models.BigIntegerField(primary_key=True, db_column='pandaid')
     stdout = models.CharField(max_length=6144, db_column='stdout', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jobsdebug"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobsdebug"'
         app_label = 'panda'
 
 
@@ -473,7 +472,7 @@ class Logstable(models.Model):
     log3 = models.TextField(db_column='log3') 
     log4 = models.TextField(db_column='log4') 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_META}"."logstable"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."logstable"'
         app_label = 'panda'
 
 
@@ -482,7 +481,7 @@ class Metatable(models.Model):
     modificationtime = models.DateTimeField(db_column='modificationtime')
     metadata = models.TextField(db_column='metadata', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."metatable"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."metatable"'
         unique_together = ('pandaid', 'modificationtime')
         app_label = 'panda'
 
@@ -492,7 +491,7 @@ class MetatableArch(models.Model):
     modificationtime = models.DateTimeField(db_column='modificationtime')
     metadata = models.TextField(db_column='metadata', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_ARCH}"."metatable_arch"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."metatable_arch"'
         app_label = 'panda'
 
 
@@ -503,7 +502,7 @@ class Metrics(models.Model):
     json = models.TextField(db_column='value_json', blank=True)
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."metrics"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."metrics"'
         app_label = 'panda'
         unique_together = ('computingsite', 'gshare')
 
@@ -522,7 +521,7 @@ class Pandalog(models.Model):
     line = models.IntegerField(db_column='line')
     message = models.CharField(max_length=12000, db_column='message', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."pandalog"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."pandalog"'
         app_label = 'panda'
 
 
@@ -532,7 +531,7 @@ class RucioAccounts(models.Model):
     rucio_account = models.CharField(max_length=40, db_column='rucio_account')
     create_time = models.DateTimeField(db_column='create_time')
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."RUCIO_ACCOUNTS"'
+        db_table = f'"{settings.DB_SCHEMA}"."RUCIO_ACCOUNTS"'
         app_label = 'pandamon'
 
 
@@ -553,7 +552,7 @@ class AllRequests(models.Model):
     dbtotalsess = models.IntegerField(db_column='dbtotalsess')
 
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."all_requests_daily"'
+        db_table = f'"{settings.DB_SCHEMA}"."all_requests_daily"'
         app_label = 'pandamon'
 
 
@@ -595,7 +594,7 @@ class Sitedata(models.Model):
     updatejobabs = models.IntegerField(db_column='updatejobabs')
     nojobabs = models.IntegerField(null=True, db_column='nojobabs', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_META}"."sitedata"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."sitedata"'
         unique_together = ('site', 'flag', 'hours')
         app_label = 'panda'
 
@@ -653,7 +652,7 @@ class Users(models.Model):
     vo = models.CharField(max_length=60, db_column='vo', blank=True)
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_META}"."users"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."users"'
         allColumns = COLUMNS['ActiveUsers-all']
         primaryColumns = ['name']
         secondaryColumns = []

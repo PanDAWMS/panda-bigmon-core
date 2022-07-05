@@ -4,7 +4,7 @@ topology.models -- for Schedconfig and other topology-related objects
 """
 
 from django.db import models
-from core.settings.config import DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_META
+from django.conf import settings
 
 
 class Schedconfig(models.Model):
@@ -201,7 +201,7 @@ class Schedconfig(models.Model):
         return fields
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_META}"."schedconfig"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."schedconfig"'
         app_label = 'panda'
 
 
@@ -211,5 +211,5 @@ class SchedconfigJson(models.Model):
     lastupdate = models.DateField(db_column='last_update')
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."schedconfig_json"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."schedconfig_json"'
         app_label = 'panda'

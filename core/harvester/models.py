@@ -1,5 +1,5 @@
 from django.db import models
-from core.settings.config import DB_SCHEMA_PANDA
+from django.conf import settings
 
 
 class HarvesterWorkers(models.Model):
@@ -27,7 +27,7 @@ class HarvesterWorkers(models.Model):
     njobs = models.IntegerField( db_column='njobs', null=False)
     jobtype = models.CharField(max_length=128, db_column='jobtype', null=False, blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."harvester_workers"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_workers"'
 
 
 class HarvesterDialogs(models.Model):
@@ -39,7 +39,7 @@ class HarvesterDialogs(models.Model):
     messagelevel = models.CharField(max_length=10, db_column='messagelevel')
     diagmessage = models.CharField(max_length=500, db_column='diagmessage')
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."harvester_dialogs"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_dialogs"'
 
 
 class HarvesterWorkerStats(models.Model):
@@ -51,7 +51,7 @@ class HarvesterWorkerStats(models.Model):
     nworkers = models.IntegerField(db_column='n_workers', null=False)
     lastupdate = models.DateTimeField(null=True, db_column='lastupdate', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."harvester_worker_stats"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_worker_stats"'
 
 
 class HarvesterRelJobsWorkers(models.Model):
@@ -60,7 +60,7 @@ class HarvesterRelJobsWorkers(models.Model):
     pandaid = models.DecimalField(decimal_places=0, max_digits=11, db_column='pandaid', null=False)
     lastupdate = models.DateTimeField(null=True, db_column='lastupdate', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."harvester_rel_jobs_workers"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_rel_jobs_workers"'
 
 
 class HarvesterSlots(models.Model):
@@ -71,4 +71,4 @@ class HarvesterSlots(models.Model):
     modificationtime = models.DateTimeField(null=True, db_column='modificationtime', blank=True)
     expirationtime = models.DateTimeField(null=True, db_column='expirationtime', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."harvester_slots"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_slots"'

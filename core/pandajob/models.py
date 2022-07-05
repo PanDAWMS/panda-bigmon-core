@@ -9,7 +9,7 @@
 # into your database.
 
 from .columns_config import COLUMNS, ORDER_COLUMNS, COL_TITLES, FILTERS
-from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH, DB_SCHEMA_PANDA_META
+from django.conf import settings
 from django.db import models
 models.options.DEFAULT_NAMES += (
     'allColumns', 'orderColumns', 'primaryColumns', 'secondaryColumns', 'columnTitles', 'filterFields',
@@ -80,7 +80,7 @@ class GetRWWithPrioJedi3DAYS(models.Model):
         return self.__dict__[name]
 
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."getrwwithpriojedi3days"'
+        db_table = f'"{settings.DB_SCHEMA}"."getrwwithpriojedi3days"'
         app_label = 'pandamon'
 
 
@@ -88,7 +88,7 @@ class RemainedEventsPerCloud3dayswind(models.Model):
     cloud = models.CharField(max_length=10, db_column='cloud', blank=True)
     nrem = models.BigIntegerField(db_column='remnormev')
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."remevpcl3dayswind"'
+        db_table = f'"{settings.DB_SCHEMA}"."remevpcl3dayswind"'
         app_label = 'pandamon'
 
 
@@ -108,7 +108,7 @@ class CombinedWaitActDefArch4(models.Model):
     resourcetype = models.CharField(max_length=64, db_column='resource_type')
     eventservice = models.IntegerField(null=True, db_column='eventservice', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."combined_wait_act_def_arch4"'
+        db_table = f'"{settings.DB_SCHEMA}"."combined_wait_act_def_arch4"'
         app_label = 'pandamon'
 
 
@@ -304,25 +304,25 @@ class PandaJob(models.Model):
 
 class Jobsactive4(PandaJob):
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jobsactive4"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobsactive4"'
         app_label = 'panda'
 
 
 class Jobsarchived(PandaJob):
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_ARCH}"."jobsarchived"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."jobsarchived"'
         app_label = 'panda'
 
 
 class Jobsarchived4(PandaJob):
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jobsarchived4"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobsarchived4"'
         app_label = 'panda'
 
 
 class Jobsdefined4(PandaJob):
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jobsdefined4"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobsdefined4"'
         app_label = 'panda'
 
     # __getitem__
@@ -333,7 +333,7 @@ class Jobsdefined4(PandaJob):
 
 class Jobswaiting4(PandaJob):
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."jobswaiting4"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobswaiting4"'
         app_label = 'panda'
 
 

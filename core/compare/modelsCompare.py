@@ -1,6 +1,6 @@
 
 from django.db import models
-from core.settings.config import DB_SCHEMA
+from django.conf import settings
 
 
 class ObjectsComparison(models.Model):
@@ -10,5 +10,5 @@ class ObjectsComparison(models.Model):
     comparisonlist = models.CharField(db_column='comparison_list', max_length=2000)
 
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."OBJECTS_COMPARISON"'
+        db_table = f'"{settings.DB_SCHEMA}"."OBJECTS_COMPARISON"'
         app_label = 'pandamon'

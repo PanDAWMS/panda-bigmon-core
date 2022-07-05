@@ -2,7 +2,7 @@
 iDDS related models
 """
 from django.db import models
-from core.settings.config import DB_SCHEMA_IDDS
+from django.conf import settings
 
 
 class Transforms(models.Model):
@@ -23,7 +23,7 @@ class Transforms(models.Model):
     transform_metadata = models.TextField(db_column='transform_metadata', blank=True)
     
     class Meta:
-        db_table = f'"{DB_SCHEMA_IDDS}"."transforms"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."transforms"'
 
 
 class Collections(models.Model):
@@ -51,7 +51,7 @@ class Collections(models.Model):
     coll_metadata = models.TextField(db_column='coll_metadata', blank=True)
     
     class Meta:
-        db_table = f'"{DB_SCHEMA_IDDS}"."collections"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."collections"'
 
 
 class Contents(models.Model):
@@ -79,7 +79,7 @@ class Contents(models.Model):
     content_metadata = models.TextField(db_column='content_metadata', blank=True)
     
     class Meta:
-        db_table = f'"{DB_SCHEMA_IDDS}"."contents"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."contents"'
 
 
 class Processings(models.Model):
@@ -100,7 +100,7 @@ class Processings(models.Model):
     output_metadata = models.TextField(db_column='output_metadata', blank=True)
     
     class Meta:
-        db_table = f'"{DB_SCHEMA_IDDS}"."processings"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."processings"'
 
 
 class Requests(models.Model):
@@ -124,7 +124,7 @@ class Requests(models.Model):
     processing_metadata = models.TextField(db_column='processing_metadata', blank=True)
     
     class Meta:
-        db_table = f'"{DB_SCHEMA_IDDS}"."requests"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."requests"'
 
 
 class Req2transforms(models.Model):
@@ -132,7 +132,7 @@ class Req2transforms(models.Model):
     transform_id_fk = models.ForeignKey(Transforms, related_name='transform_id_fk', on_delete=models.DO_NOTHING, db_column='transform_id')
     
     class Meta:
-        db_table = f'"{DB_SCHEMA_IDDS}"."req2transforms"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."req2transforms"'
         unique_together = (('request_id_fk', 'transform_id_fk'),)
         managed = False
 
