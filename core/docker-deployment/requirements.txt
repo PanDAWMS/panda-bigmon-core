@@ -88,7 +88,7 @@ kubernetes==11.0.0
 linecache2==1.0.0
 livereload==2.6.3
 lunr==0.5.8
-lxml==4.2.5
+lxml==4.9.1
 Markdown==3.2.2
 MarkupSafe==1.1.1
 matplotlib==3.0.0
