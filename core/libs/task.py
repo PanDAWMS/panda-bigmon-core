@@ -12,7 +12,9 @@ from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
 from core.libs.datetimestrings import parse_datetime
-from core.pandajob.utils import get_pandajob_models_by_year
+from core.libs.elasticsearch import create_esatlas_connection
+from core.libs.job import drop_duplicates
+from core.pandajob.utils import get_pandajob_arch_models_by_year
 from core.filebrowser.ruciowrapper import ruciowrapper
 
 import core.constants as const
@@ -679,22 +681,38 @@ def get_hs06s_summary_for_task(query):
     if 'jeditaskid' in hquery:
 
         hs06sec_sum = []
-        pj_models = get_pandajob_models_by_year(query['modificationtime__castdate__range'])
+        # getting jobs. Can not use the .annotate() as there can be duplicates
+        jobs = []
+        jvalues = ('pandaid', 'jobstatus', 'hs06sec')
+        jobs.extend(Jobsarchived4.objects.filter(**hquery).values(*jvalues))
+        jobs.extend(Jobsarchived.objects.filter(**hquery).values(*jvalues))
+        jobs = drop_duplicates(jobs)
 
-        for pjm in pj_models:
-            try:
-                hs06sec_sum.extend(pjm.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
-            except Exception as ex:
-                _logger.exception('Failed to get hs06sec from {} at ATLARC DB:\n{}'.format(pjm, ex))
+        for job in jobs:
+            hs06sSum['total'] += job['hs06sec'] if job['hs06sec'] is not None else 0
+            if job['jobstatus'] == 'finished':
+                hs06sSum['finished'] += job['hs06sec'] if job['hs06sec'] is not None else 0
+            elif job['jobstatus'] == 'failed':
+                hs06sSum['failed'] += job['hs06sec'] if job['hs06sec'] is not None else 0
+
+
+        # getting data from ATLARC DB
+        pj_models = get_pandajob_arch_models_by_year(query['modificationtime__castdate__range'])
+        if len(pj_models) > 0:
+            for pjm in pj_models:
+                try:
+                    hs06sec_sum.extend(pjm.objects.filter(**hquery).values('jobstatus').annotate(hs06secsum=Sum('hs06sec')))
+                except Exception as ex:
+                    _logger.exception('Failed to get hs06sec from {} at ATLARC DB:\n{}'.format(pjm, ex))
 
         if len(hs06sec_sum) > 0:
             for hs in hs06sec_sum:
+                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
                 if hs['jobstatus'] == 'finished':
                     hs06sSum['finished'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
-                    hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
                 elif hs['jobstatus'] == 'failed':
                     hs06sSum['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
-                    hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+
 
     return hs06sSum
 
