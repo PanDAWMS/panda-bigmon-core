@@ -1,79 +1,141 @@
 
+
 MY_SECRET_KEY = 'FIX_ME'
 
-dbaccess = {
-
-         'default':
-         {
+dbaccess_oracle_atlas = {
+    'default': {
          'ENGINE':'django.db.backends.oracle',
          'OPTIONS': {
                  'threaded': True,
           },
          'NAME': 'FIX_ME',
-#         'HOST': 'FIX_ME',
-#         'PORT': 'FIX_ME',
-#	 'SERVICE_NAME':'FIX_ME',
-#	 'INSTANCE_NAME':'FIX_ME',
-#         'HOST': 'FIX_ME',
+         'HOST': 'FIX_ME',
+         'PORT': 'FIX_ME',
+ 	     'SERVICE_NAME':'FIX_ME',
          'USER': 'FIX_ME',
-#         'PASSWORD': 'FIX_ME',
          'PASSWORD': 'FIX_ME',
          },
 
-         'pbm':
-         {
+    'panda_atlarc': {
          'ENGINE':'FIX_ME',
          'NAME': 'FIX_ME',
          'HOST': 'FIX_ME',
          'USER': 'FIX_ME',
          'PASSWORD': 'FIX_ME',
+    },
+}
+
+dbaccess_postgres = {
+    'default': {
+         'ENGINE':'django.db.backends.postgresql_psycopg2',
+         'OPTIONS': {
+             'options': 'FIX_ME'
          },
-
-         'default_INTR':
-         {
-         'ENGINE':'django.db.backends.oracle',
          'NAME': 'FIX_ME',
+         'HOST': 'FIX_ME',
+         'PORT': 'FIX_ME',
          'USER': 'FIX_ME',
-         'PASSWORD': 'FIX_ME',
+         'PASSWORD': "FIX_ME",
+    },
+}
+
+dbaccess_oracle_doma = {
+    'default': {
+        'ENGINE': 'django.db.backends.oracle',
+        'OPTIONS': {
+            'threaded': True,
+        },
+        'NAME': 'FIX_ME',
+        'USER': 'FIX_ME',
+        'PASSWORD': 'FIX_ME',
+    },
+
+    'doma_idds_gcp': {
+         'ENGINE':'django.db.backends.postgresql_psycopg2',
+         'OPTIONS': {
+             'options': 'FIX_ME'
          },
-
-
-         'deft':
-         {
-         'ENGINE':'django.db.backends.oracle',
          'NAME': 'FIX_ME',
+         'HOST': 'FIX_ME',
+         'PORT': 'FIX_ME',
          'USER': 'FIX_ME',
-         'PASSWORD': 'FIX_ME',
-         },
- 
-          'deft_adcr':
-         {
-         'ENGINE':'django.db.backends.oracle',
-         'NAME': 'FIX_ME',
-         'USER': 'FIX_ME',
-         'PASSWORD': 'FIX_ME',
-         },
+         'PASSWORD': "FIX_ME",
+    },
+}
 
-         'grisli':
-         {
-         'ENGINE':'django.db.backends.oracle',
-         'NAME': 'FIX_ME',
-         'USER': 'FIX_ME',
-         'PASSWORD': 'FIX_ME',
-         }
-       }
+# Rucio
+RUCIO_ACCOUNT = ""
+# path to certificate
+X509_USER_PROXY = ""
+CAPATH = ""
+FILEBROWSER_DIRECTORY = "filebrowser"
+RUCIO_REDIRECT_HOST = "https://rucio-lb-prod.cern.ch"
+RUCIO_AUTH_HOST = "https://rucio-auth-prod.cern.ch"
+RUCIO_SERVER_HOST = "https://rucio-lb-prod.cern.ch"
 
+# related path to media
+MEDIA_URL = '/media/'
+
+# full path to log directory
+LOG_ROOT = ""
+
+# using of time zones
+USE_TZ = False
+
+# ATLAS ProdSys
+PRODSYS = {
+    "prodsysHost": '',
+    "prodsysToken": '',
+    "prodsysUrl": '',
+}
+
+# ElasticSearch where service logs of PanDA/JEDI is stored
+ES = {
+    "esHost":'',
+    "esPort":'',
+    "esUser":'',
+    "esPassword":'',
+}
+
+# Auth token for requesting CERN MONIT Grafana
+GRAFANA = {
+   "Authorization": ""
+}
+
+# OAuth secrets and keys for supported authentification via CERN, Google or GitHub
+SOCIAL_AUTH_CERNOIDC_KEY = ''
+SOCIAL_AUTH_CERNOIDC_SECRET = ''
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = ''
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = ''
+SOCIAL_AUTH_GITHUB_KEY = ''
+SOCIAL_AUTH_GITHUB_SECRET = ''
+
+# email settings for sending reports
+EMAIL_HOST = ""
+EMAIL_PORT = 0
+EMAIL_HOST_USER = ""
+EMAIL_HOST_PASSWORD = ""
+EMAIL_USE_TLS = True
+
+# CERN OpenShift settings needed for spinning mlflow containers
+OC_TOKEN = ""
+OC_ENDPOINT = ""
+OC_NAMESPACE = ""
+
+# AWS
 aws = {
-"AWS_ACCESS_KEY_ATLAS" : "FIX_ME",
-"AWS_SECRET_KEY_ATLAS" : "FIX_ME"
+    "AWS_ACCESS_KEY_ATLAS" : "",
+    "AWS_SECRET_KEY_ATLAS" : ""
 }
 
-CACHES = {
-    "default": {
-    "BACKEND": "redis_cache.RedisCache",
-    #'LOCATION': '/tmp/redis.sock',
-    'LOCATION': 'FIX_ME',
-    }
-}
+# debug mode
+DEBUG = False
 
-RUCIO_ACCOUNT = "FIX_ME"
+if DEBUG is True:
+    from core.settings.config import LOGGING
+    LOGGING['handlers']['console']['level'] = 'DEBUG'
+
+    ENABLE_DEBUG_TOOLBAR = True
+    DEBUG_PROPAGATE_EXCEPTIONS = True
+
+

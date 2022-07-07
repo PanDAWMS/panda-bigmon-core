@@ -7,8 +7,7 @@ from django.db.models import Q, Count, Sum
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers
 from core.pandajob.utils import identify_jobtype
 
-from core.settings.local import defaultDatetimeFormat
-from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA
+from django.conf import settings
 
 
 def isHarvesterJob(pandaid):
@@ -24,8 +23,8 @@ def isHarvesterJob(pandaid):
       b.COMPUTINGELEMENT,
       b.ERRORCODE,
       b.DIAGMESSAGE
-      FROM {DB_SCHEMA_PANDA}.HARVESTER_REL_JOBS_WORKERS a,
-      {DB_SCHEMA_PANDA}.HARVESTER_WORKERS b
+      FROM {settings.DB_SCHEMA_PANDA}.HARVESTER_REL_JOBS_WORKERS a,
+      {settings.DB_SCHEMA_PANDA}.HARVESTER_WORKERS b
       WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {pandaid}
   """
     cur = connection.cursor()
@@ -99,8 +98,8 @@ def get_workers_summary_split(query, **kwargs):
 
     if 'source' in kwargs and kwargs['source'] == 'HarvesterWorkers':
         wquery['submittime__castdate__range'] = [
-            (datetime.utcnow()-timedelta(hours=N_HOURS)).strftime(defaultDatetimeFormat),
-            datetime.utcnow().strftime(defaultDatetimeFormat)
+            (datetime.utcnow()-timedelta(hours=N_HOURS)).strftime(settings.DATETIME_FORMAT),
+            datetime.utcnow().strftime(settings.DATETIME_FORMAT)
         ]
         wquery['status__in'] = ['running', 'submitted']
         # wquery['jobtype__in'] = ['managed', 'user', 'panda']
@@ -110,7 +109,7 @@ def get_workers_summary_split(query, **kwargs):
         worker_summary = HarvesterWorkers.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
     else:
         wquery['jobtype__in'] = ['managed', 'user', 'panda']
-        if DEPLOYMENT == 'ORACLE_DOMA':
+        if settings.DEPLOYMENT == 'ORACLE_DOMA':
             wquery['jobtype__in'].append('ANY')
         w_running = Sum('nworkers', filter=Q(status__exact='running'))
         w_submitted = Sum('nworkers', filter=Q(status__exact='submitted'))

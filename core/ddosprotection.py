@@ -1,17 +1,19 @@
 import logging
-import ipaddress, re
-from core.common.models import AllRequests
-from core.settings.config import DB_SCHEMA, DEPLOYMENT
-from core.utils import is_json_request
-
-from django.utils import timezone
-from datetime import timedelta, datetime
-from django.db.models import Count, Sum
-from django.http import HttpResponse
+import ipaddress
+import re
 import json
 import psutil
-from django.db import connection
+from datetime import timedelta, datetime
 
+from django.utils import timezone
+from django.db.models import Count
+from django.db import connection
+from django.http import HttpResponse
+
+from core.common.models import AllRequests
+from core.utils import is_json_request
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 # We postpone JSON requests is server is overloaded
@@ -93,10 +95,10 @@ class DDOSMiddleware(object):
         # except:
         #     _logger.warning('Failed to get connections number from ATLAS_DBA')
 
-        if DEPLOYMENT == 'POSTGRES':
-            sqlRequest = f"SELECT nextval('{DB_SCHEMA}.\"ALL_REQUESTS_SEQ\"') as my_req_token;"
+        if settings.DEPLOYMENT == 'POSTGRES':
+            sqlRequest = f"SELECT nextval('{settings.DB_SCHEMA}.\"ALL_REQUESTS_SEQ\"') as my_req_token;"
         else:
-            sqlRequest = f"SELECT {DB_SCHEMA}.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
+            sqlRequest = f"SELECT {settings.DB_SCHEMA}.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
 
         cursor.execute(sqlRequest)
         requestToken = cursor.fetchall()

@@ -3,10 +3,10 @@ Created by Tatiana Korchuganova on 18.11.2020
 """
 import logging
 
-from core.settings import defaultDatetimeFormat
-
 from core.libs.exlib import build_stack_histogram
 from core.common.models import Users
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -29,7 +29,7 @@ def get_panda_user_stats(fullname):
                 userstats[field] = '-'
         for timefield in ['cachetime', 'firstjob', 'lastmod', 'latestjob']:
             try:
-                userstats[timefield] = userstats[timefield].strftime(defaultDatetimeFormat)
+                userstats[timefield] = userstats[timefield].strftime(settings.DATETIME_FORMAT)
             except:
                 userstats[timefield] = userstats[timefield]
     else:

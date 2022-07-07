@@ -9,7 +9,7 @@ except ImportError:
     ENABLE_DEBUG_TOOLBAR = False
 
 ADMINS = (
-    ('Sergey Podolsky', 'spadolski@bnl.gov'),
+    ('Tatiana Korchuganova', 'tatiana.korchuganova@cern.ch'),
 )
 MANAGERS = ADMINS
 

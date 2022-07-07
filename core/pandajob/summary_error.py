@@ -6,8 +6,9 @@ import time
 
 from core.libs.error import get_job_error_desc
 from core.libs.task import taskNameDict
+from core.libs.job import get_job_walltime
 
-from core.settings.local import defaultDatetimeFormat
+from django.conf import settings
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -99,7 +100,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
             df['modificationtime'] = pd.to_datetime(df['modificationtime'])
             df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
             errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
-            errHistL[0] = [t.strftime(defaultDatetimeFormat) for t in errHistL[0]]
+            errHistL[0] = [t.strftime(settings.DATETIME_FORMAT) for t in errHistL[0]]
             errHistL[0].insert(0, 'Timestamp')
             errHistL[1].insert(0, 'Number of failed jobs')
     _logger.debug('Built errHist: {}'.format(time.time() - request.session['req_init_time']))

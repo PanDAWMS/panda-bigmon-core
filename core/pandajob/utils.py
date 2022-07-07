@@ -5,7 +5,8 @@ from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarc
 from core.libs.datetimestrings import parse_datetime
 from core.libs.job import is_event_service
 from core.libs.exlib import get_event_status_summary, split_into_intervals
-from core.settings.config import DEPLOYMENT
+
+from django.conf import settings
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -17,7 +18,7 @@ def get_pandajob_models_by_year(timewindow):
     :return:
 
     """
-    if DEPLOYMENT == "ORACLE_ATLAS":
+    if settings.DEPLOYMENT == "ORACLE_ATLAS":
         pjm_year_dict = {
             2014: [Jobsarchived_y2014, ],
             2015: [Jobsarchived_y2015, ],
@@ -56,7 +57,7 @@ def get_pandajob_arch_models_by_year(timewindow):
 
     """
     pjm_year_dict = {}
-    if DEPLOYMENT == "ORACLE_ATLAS":
+    if settings.DEPLOYMENT == "ORACLE_ATLAS":
         # need to update at time of archival procedure made by DBA experts
         pjm_year_dict = {
             2014: [Jobsarchived_y2014, ],
@@ -99,7 +100,7 @@ def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
         'rc_test2': 'analy',
     }
 
-    if DEPLOYMENT == 'ORACLE_DOMA':
+    if settings.DEPLOYMENT == 'ORACLE_DOMA':
         psl_to_jt = {
             'test': 'prod',
             'ANY': 'prod',

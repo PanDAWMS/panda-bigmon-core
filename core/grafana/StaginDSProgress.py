@@ -1,16 +1,18 @@
+from datetime import timedelta
 from requests import post, get
 from json import loads
-from core.settings.local import GRAFANA as token
+import pandas as pd
+
 from django.http import JsonResponse
-from core.libs.exlib import dictfetchall
 from django.db import connection
 from django.utils import timezone
-from datetime import timedelta
-from core.settings import defaultDatetimeFormat
 from django.shortcuts import render_to_response
+
 from core.oauth.utils import login_customrequired
+from core.libs.exlib import dictfetchall
 from core.views import initRequest, setupView
-import pandas as pd
+
+from django.conf import settings
 
 
 def run_query(rules):
@@ -24,7 +26,7 @@ def run_query(rules):
     rulequery = rulequery[:-3]
     paramQuery = """{"filter":[{"query_string":{"analyze_wildcard":true,"query":"data.event_type:rule_progress AND (%s)"}}]}""" % rulequery
     query = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["monit_prod_ddm_enr_transfer*"]}\n{"size":500,"query":{"bool":"""+paramQuery+"""},"sort":{"metadata.timestamp":{"order":"desc","unmapped_type":"boolean"}},"script_fields":{},"docvalue_fields":["metadata.timestamp"]}\n"""
-    headers = token
+    headers = settings.GRAFANA
     headers['Content-Type'] = 'application/json'
     headers['Accept'] = 'application/json'
 
@@ -56,7 +58,7 @@ def __getRucioRuleByTaskID(taskid):
 def __getRucioRulesBySourceSEAndTimeWindow(source, hours):
     new_cur = connection.cursor()
     new_cur.execute(""" SELECT RSE FROM ATLAS_DEFT.T_DATASET_STAGING where SOURCE_RSE='%s' 
-    and (START_TIME>TO_DATE('%s','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)""" % (source, (timezone.now() - timedelta(hours=hours)).strftime(defaultDatetimeFormat)))
+    and (START_TIME>TO_DATE('%s','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)""" % (source, (timezone.now() - timedelta(hours=hours)).strftime(settings.DATETIME_FORMAT)))
 
     """
     SELECT t1.RSE, t2.taskid FROM ATLAS_DEFT.T_DATASET_STAGING t1 LEFT JOIN ATLAS_DEFT.t_production_task t2 ON t2.PRIMARY_INPUT=t1.DATASET

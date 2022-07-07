@@ -6,26 +6,23 @@ import json
 import re
 
 from datetime import datetime, timedelta
+from elasticsearch_dsl import Search
+
 from django.db import connection
 from django.db.models import Count, Sum
 from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
 from core.libs.datetimestrings import parse_datetime
 from core.libs.elasticsearch import create_esatlas_connection
 from core.libs.job import drop_duplicates
 from core.pandajob.utils import get_pandajob_arch_models_by_year
 from core.filebrowser.ruciowrapper import ruciowrapper
+from core.libs.taskflow import executeTF
 
 import core.constants as const
-
-from core.libs.elasticsearch import create_esatlas_connection
-from elasticsearch_dsl import Search
-
-from core.settings.local import defaultDatetimeFormat
-from core.settings.config import DB_N_MAX_IN_QUERY
-
-from core.libs.taskflow import executeTF
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -105,7 +102,7 @@ def cleanTaskList(tasks, **kwargs):
 
         taskl = [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
 
-        if len(taskl) <= DB_N_MAX_IN_QUERY:
+        if len(taskl) <= settings.DB_N_MAX_IN_QUERY:
             dsquery['jeditaskid__in'] = taskl
         else:
             # Backend dependable
@@ -287,8 +284,8 @@ def wg_task_summary(request, fieldname='workinggroup', view='production', taskda
     query = {}
     hours = 24 * taskdays
     startdate = datetime.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = datetime.now().strftime(defaultDatetimeFormat)
+    startdate = startdate.strftime(settings.DATETIME_FORMAT)
+    enddate = datetime.now().strftime(settings.DATETIME_FORMAT)
     query['modificationtime__castdate__range'] = [startdate, enddate]
     if fieldname == 'workinggroup':
         query['workinggroup__isnull'] = False
@@ -490,7 +487,7 @@ def get_datasets_for_tasklist(tasks):
 
     query = {'type__in': ['pseudo_input', 'input', 'output']}
     extra_str = '1=1'
-    if len(tasks) > DB_N_MAX_IN_QUERY:
+    if len(tasks) > settings.DB_N_MAX_IN_QUERY:
         # insert ids to tmp table, backend dependable
         tk = insert_to_temp_table(task_ids)
         extra_str = "JEDITASKID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})".format(get_tmp_table_name(), tk)
@@ -520,8 +517,8 @@ def input_summary_for_task(taskrec, dsets):
     """
     jeditaskid = taskrec['jeditaskid']
     # Getting statuses of inputfiles
-    if datetime.strptime(taskrec['creationdate'], defaultDatetimeFormat) < \
-            datetime.strptime('2018-10-22 10:00:00', defaultDatetimeFormat):
+    if datetime.strptime(taskrec['creationdate'], settings.DATETIME_FORMAT) < \
+            datetime.strptime('2018-10-22 10:00:00', settings.DATETIME_FORMAT):
         ifsquery = """
             select  
             ifs.jeditaskid,
@@ -770,7 +767,7 @@ def get_task_timewindow(task, **kwargs):
         timewindow[1] = datetime.now()
 
     if format_out == 'str':
-        timewindow = [t.strftime(defaultDatetimeFormat) for t in timewindow]
+        timewindow = [t.strftime(settings.DATETIME_FORMAT) for t in timewindow]
 
     return timewindow
 
@@ -909,7 +906,7 @@ def taskNameDict(jobs):
     tasknamedict = {}
     if len(jeditaskidl) > 0:
         tquery = {}
-        if len(jeditaskidl) < DB_N_MAX_IN_QUERY:
+        if len(jeditaskidl) < settings.DB_N_MAX_IN_QUERY:
             tquery['jeditaskid__in'] = jeditaskidl
             extra = "(1=1)"
         else:

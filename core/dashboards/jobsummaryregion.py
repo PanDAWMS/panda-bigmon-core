@@ -11,7 +11,6 @@ from core.pandajob.models import PandaJob
 from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
 from core.libs.exlib import getPilotCounts
-from core.settings.config import DB_SCHEMA_PANDA
 
 import core.constants as const
 
@@ -319,7 +318,7 @@ def get_job_summary_split(query, extra):
         )
         GROUP BY computingsite, prodsourcelabel, transform, resource_type, jobstatus
         order by computingsite, prodsourcelabel, transform, resource_type, jobstatus
-    """.format(query['modificationtime__castdate__range'][0], extra_str, DB_SCHEMA_PANDA)
+    """.format(query['modificationtime__castdate__range'][0], extra_str, settings.DB_SCHEMA_PANDA)
 
     cur = connection.cursor()
     cur.execute(query_raw)

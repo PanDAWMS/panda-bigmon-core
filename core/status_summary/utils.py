@@ -6,9 +6,7 @@ import logging
 import pytz
 from datetime import datetime, timedelta
 
-from django.db.models import Count, Sum
-
-from ..schedresource.models import Schedconfig
+from core.schedresource.models import Schedconfig
 from core.views import statelist as STATELIST
 
 

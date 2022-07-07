@@ -114,7 +114,6 @@ except ImportError:
 
 #DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
 DEPLOYMENT = 'ORACLE_ATLAS'
-# DEPLOYMENT = 'POSTGRES'
 
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
@@ -147,21 +146,29 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     IDDS_HOST_GCP = 'https://aipanda016.cern.ch:443/idds'
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
-DB_N_MAX_IN_QUERY = 100  # number of items in IN (*,*..) query. if more - use tmp table
+
+# set default datetime format for datetime.datetime.strftime()
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+if 'ORACLE' in DEPLOYMENT:
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+elif 'POSTGRES' in DEPLOYMENT:
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+elif 'MYSQL' in DEPLOYMENT:
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%SZ"
+
+# max number of items in IN (*,*..) query, if more - use tmp table.
+DB_N_MAX_IN_QUERY = 100
 
 CACHES = {
     "default": {
-    'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-    'LOCATION': f'"{DB_SCHEMA}"."DJANGOCACHE"',
-    'TIMEOUT': 31536000,
-    'OPTIONS': {
-        'MAX_ENTRIES': 1000000000
-        }
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': f'"{DB_SCHEMA}"."djangocache"',
+        'TIMEOUT': 31536000,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000000000
+            }
     }
 }
-
-if DEPLOYMENT == 'POSTGRES':
-    CACHES['default']['LOCATION'] = f'"{DB_SCHEMA}"."djangocache"'
 
 
 ### URL_PATH_PREFIX for multi-developer apache/wsgi instance
@@ -177,21 +184,21 @@ STATIC_URL = URL_PATH_PREFIX + STATIC_URL_BASE
 
 
 FILTER_UI_ENV = {
-    ### default number of days of shown jobs active in last N days
+    # default number of days of shown jobs active in last N days
     'DAYS': 30,
-    ### default number of days for user activity of shown jobs active in last N days
+    # default number of days for user activity of shown jobs active in last N days
     'USERDAYS': 3,
-    ### max number of days of shown jobs active in last N days
+    # max number of days of shown jobs active in last N days
     'MAXDAYS': 300,
-    ### max number of days for user activity of shown jobs active in last N days
+    # max number of days for user activity of shown jobs active in last N days
     'USERMAXDAYS': 60,
-    ### default number of hours of shown jobs active in last N hours
+    # default number of hours of shown jobs active in last N hours
     'HOURS': 2,
-    ### wildcard for string pattern in filter form
+    # wildcard for string pattern in filter form
     'WILDCARDS': ['*'],
-    ### wildcard for integer interval in filter form
+    # wildcard for integer interval in filter form
     'INTERVALWILDCARDS': [':'],
-    ###
+    #
     'EXPAND_BUTTON': {
         "mDataProp": None,
         "sTitle": "Details",

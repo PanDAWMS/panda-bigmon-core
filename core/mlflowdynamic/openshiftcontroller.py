@@ -1,30 +1,32 @@
-import json, socket, random, string
-from core.settings.local import OC_TOKEN, OC_ENDPOINT, OC_NAMESPACE
+import random, string
 import requests
-from typing import Dict
-from os import path
-from kubernetes import client, config
-from openshift.dynamic import DynamicClient
 import yaml
 import logging
+from typing import Dict
+from os import path
+from kubernetes import client
+from openshift.dynamic import DynamicClient
+
+from django.conf import settings
+
 logger = logging.getLogger('bigpandamon-error')
-from core.settings.base import ML_FLOW_UPSTREAM
 
 
 class occlicalls:
     TIME_OUT_FOR_QUERY = 60 * 5
-    URL_CONFIGMAPS = "https://{endpoint}/api/v1/namespaces/{namespace}/configmaps".format(endpoint=OC_ENDPOINT,
-                                                                                                  namespace=OC_NAMESPACE)
+    URL_CONFIGMAPS = "https://{endpoint}/api/v1/namespaces/{namespace}/configmaps".format(
+        endpoint=settings.OC_ENDPOINT,
+        namespace=settings.OC_NAMESPACE
+    )
     configuration = client.Configuration()
-    configuration.host = "https://"+OC_ENDPOINT
+    configuration.host = "https://" + settings.OC_ENDPOINT
     configuration.debug = True
     configuration.verify_ssl = False
-    configuration.api_key = {"authorization": OC_TOKEN}
+    configuration.api_key = {"authorization": settings.OC_TOKEN}
     configuration.api_key_prefix['authorization'] = 'Bearer'
 
     def __init__(self, taskid):
-        self.INSTANCE = ''.join(random.choices(string.ascii_lowercase +
-                                                string.digits, k=7))
+        self.INSTANCE = ''.join(random.choices(string.ascii_lowercase + string.digits, k=7))
         self.taskid = taskid
         self.ocp_client = DynamicClient(
             client.ApiClient(configuration=self.configuration)
@@ -35,7 +37,7 @@ class occlicalls:
 
     def check_mlflow_accepts_calls(self, name):
         #this check is failing in deployment configuration
-        URL = ML_FLOW_UPSTREAM+name
+        URL = settings.ML_FLOW_UPSTREAM + name
         check = requests.get(URL)
         return True
         #if check.status_code == 200:
@@ -47,7 +49,7 @@ class occlicalls:
     def get_deployment_status(self, name):
         deployments = self.ocp_client.resources.get(api_version='apps.openshift.io/v1', kind='DeploymentConfig')
         try:
-            response = deployments.get(name='bigpanda-mlflow-'+name[:-1], namespace=OC_NAMESPACE)
+            response = deployments.get(name='bigpanda-mlflow-'+name[:-1], namespace=settings.OC_NAMESPACE)
         except:
             return 'failed'
         status = 'failed'
@@ -63,22 +65,22 @@ class occlicalls:
         res = None
         try:
             routes = self.ocp_client.resources.get(api_version='route.openshift.io/v1', kind='Route')
-            res = routes.delete(namespace=OC_NAMESPACE, label_selector='instance=' + name[:-1])
+            res = routes.delete(namespace=settings.OC_NAMESPACE, label_selector='instance=' + name[:-1])
         except Exception as e:
             logger.error(e)
         try:
             service = self.ocp_client.resources.get(api_version='v1', kind='Service')
-            res = service.delete(namespace=OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
+            res = service.delete(namespace=settings.OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
         except Exception as e:
             logger.error(e)
         try:
             deployments = self.ocp_client.resources.get(api_version='apps.openshift.io/v1', kind='DeploymentConfig')
-            res = deployments.delete(namespace=OC_NAMESPACE, label_selector='instance=' + name[:-1])
+            res = deployments.delete(namespace=settings.OC_NAMESPACE, label_selector='instance=' + name[:-1])
         except Exception as e:
             logger.error(e)
         try:
             configmap = self.ocp_client.resources.get(api_version='apps.openshift.io/v1', kind='ConfigMap')
-            res = configmap.delete(namespace=OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
+            res = configmap.delete(namespace=settings.OC_NAMESPACE, name='nginx-redirection-' + name[:-1])
         except Exception as e:
             logger.error(e)
         return res
@@ -93,7 +95,7 @@ class occlicalls:
             dep = yaml.safe_load(f)
             self.patchConfig(dep, self.INSTANCE, str(self.taskid))
             handle = self.ocp_client.resources.get(api_version=api_version, kind=kind)
-            resp = handle.create(body=dep, namespace=OC_NAMESPACE)
+            resp = handle.create(body=dep, namespace=settings.OC_NAMESPACE)
             return resp
 
     def register_config_map(self):
@@ -127,7 +129,7 @@ class occlicalls:
                 "metadata": {
                     "labels": labels,
                     "name": configmap_name,
-                    "namespace": OC_NAMESPACE,
+                    "namespace": settings.OC_NAMESPACE,
                 },
             },
         )

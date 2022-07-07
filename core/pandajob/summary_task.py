@@ -17,8 +17,7 @@ from core.libs.task import taskNameDict, get_task_timewindow, get_task_scouts, c
 from core.pandajob.utils import get_pandajob_models_by_year
 from core.pandajob.models import Jobswaiting4, Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
 
-from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA_ARCH, DEPLOYMENT
-
+from django.conf import settings
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -50,7 +49,7 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
               'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
               'nevents', 'hs06', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
               'jobsetid', 'specialhandling', 'creationtime', 'pilottiming']
-    if DEPLOYMENT == 'ORACLE_ATLAS':
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         values.append('eventservice')
         values.append('hs06sec')
 
@@ -61,7 +60,7 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
         jobs.extend(Jobsarchived4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
         jobs.extend(Jobsarchived.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
         _logger.info("Got jobs from ADCR: {} sec".format(time.time() - start_time))
-    if task_archive_flag <= 0 and DEPLOYMENT == 'ORACLE_ATLAS':
+    if task_archive_flag <= 0 and settings.DEPLOYMENT == 'ORACLE_ATLAS':
         # get list of jobsarchived models
         jobsarchived_models = get_pandajob_models_by_year(jquery['modificationtime__castdate__range'])
         if len(jobsarchived_models) > 0:
@@ -283,7 +282,7 @@ def get_job_state_summary_for_tasklist(tasks):
         )
         )
         group by jeditaskid, jobstatus
-        """.format(tmp_table, DB_SCHEMA=DB_SCHEMA, DB_SCHEMA_PANDA_ARCH=DB_SCHEMA_PANDA_ARCH)
+        """.format(tmp_table, DB_SCHEMA=settings.DB_SCHEMA, DB_SCHEMA_PANDA_ARCH=settings.DB_SCHEMA_PANDA_ARCH)
     cur = connection.cursor()
     cur.execute(jsquery, {'tk': trans_key})
     js_count_bytask = cur.fetchall()

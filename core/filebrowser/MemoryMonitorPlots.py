@@ -15,7 +15,8 @@ from core.oauth.utils import login_customrequired
 from core.views import initRequest
 from core.libs.datetimestrings import parse_datetime
 from core.filebrowser.views import get_job_log_file_path
-from core.settings.config import PRMON_LOGS_DIRECTIO_LOCATION
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 filebrowserURL = "http://bigpanda.cern.ch/filebrowser/" #This is deployment specific because memory monitoring is intended to work in ATLAS
@@ -260,7 +261,7 @@ def getPrMonPlotsData(request, pandaid=-1):
         mmo_path = get_job_log_file_path(pandaid, 'memory_monitor_output.txt')
 
         # check if the file exists
-        if mmo_path is not None and (os.path.exists(mmo_path) or PRMON_LOGS_DIRECTIO_LOCATION):
+        if mmo_path is not None and (os.path.exists(mmo_path) or settings.PRMON_LOGS_DIRECTIO_LOCATION):
             # load the data from file
             raw_data = pd.read_csv(mmo_path, delim_whitespace=True)
             # get memory_monitor_summary.json

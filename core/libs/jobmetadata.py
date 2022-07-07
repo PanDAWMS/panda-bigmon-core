@@ -7,7 +7,8 @@ import logging
 from datetime import datetime
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table
 from core.common.models import Metatable, MetatableArch
-from core.settings.config import DB_N_MAX_IN_QUERY
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -19,7 +20,7 @@ def addJobMetadata(jobs):
     :param jobs: list of dicts containing pandaid
     :return: jobs: expanded by 'metastruct' key
     """
-    _logger.info('adding metadata')
+    _logger.debug('adding metadata')
     useMetaArch = False
     pids = []
     for job in jobs:
@@ -32,10 +33,9 @@ def addJobMetadata(jobs):
 
     mrecs = []
     # Get job metadata
-    if len(jobs) < DB_N_MAX_IN_QUERY:
+    if len(jobs) < settings.DB_N_MAX_IN_QUERY:
         # use IN where clause
-        query = {}
-        query['pandaid__in'] = pids
+        query = {'pandaid__in': pids}
         mrecs.extend(Metatable.objects.filter(**query).values())
         if useMetaArch:
             mrecs.extend(MetatableArch.objects.filter(**query).values())
@@ -63,6 +63,6 @@ def addJobMetadata(jobs):
                 job['metastruct'] = json.loads(mdict[job['pandaid']])
             except Exception as ex:
                 _logger.exception('Failed to extract metadata for pandaid: {} with \n{}'.format(job['pandaid'], ex))
-    _logger.info('added metadata')
+    _logger.debug('added metadata')
 
     return jobs

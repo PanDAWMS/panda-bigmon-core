@@ -17,7 +17,7 @@ import hashlib
 
 from datetime import datetime, timedelta
 from threading import Thread, Lock
-from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, unquote_plus
 from elasticsearch_dsl import Search
 
 from django.http import HttpResponse, JsonResponse
@@ -38,7 +38,6 @@ from core import chainsql
 import core.constants as const
 import core.Customrenderer as Customrenderer
 from core.common.utils import getPrefix, getContextVariables
-from core.settings import defaultDatetimeFormat
 from core.pandajob.SQLLookups import CastDate
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, CombinedWaitActDefArch4, PandaJob
@@ -438,7 +437,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     for paramName, paramVal in request.session['requestParams'].items():
         try:
-            request.session['requestParams'][paramName] = urllib.unquote(paramVal)
+            request.session['requestParams'][paramName] = unquote_plus(paramVal)
         except:
             request.session['requestParams'][paramName] = paramVal
 
@@ -564,25 +563,25 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         startdate = parse_datetime(request.session['requestParams']['date_from'])
     if not startdate:
         startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
-    # startdate = startdate.strftime(defaultDatetimeFormat)
+    # startdate = startdate.strftime(settings.DATETIME_FORMAT)
     enddate = None
 
     endtime__castdate__range = None
     if 'endtimerange' in request.session['requestParams']:
         endtimerange = request.session['requestParams']['endtimerange'].split('|')
-        endtime__castdate__range = [parse_datetime(endtimerange[0]).strftime(defaultDatetimeFormat),
-                                    parse_datetime(endtimerange[1]).strftime(defaultDatetimeFormat)]
+        endtime__castdate__range = [parse_datetime(endtimerange[0]).strftime(settings.DATETIME_FORMAT),
+                                    parse_datetime(endtimerange[1]).strftime(settings.DATETIME_FORMAT)]
 
     if 'date_to' in request.session['requestParams']:
         enddate = parse_datetime(request.session['requestParams']['date_to'])
     if 'earlierthan' in request.session['requestParams']:
         enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthan']))
-    # enddate = enddate.strftime(defaultDatetimeFormat)
+    # enddate = enddate.strftime(settings.DATETIME_FORMAT)
     if 'earlierthandays' in request.session['requestParams']:
         enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthandays']) * 24)
-    # enddate = enddate.strftime(defaultDatetimeFormat)
+    # enddate = enddate.strftime(settings.DATETIME_FORMAT)
     if enddate == None:
-        enddate = timezone.now()  # .strftime(defaultDatetimeFormat)
+        enddate = timezone.now()  # .strftime(settings.DATETIME_FORMAT)
         request.session['noenddate'] = True
     else:
         request.session['noenddate'] = False
@@ -592,7 +591,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     else:
         if not endtime__castdate__range:
             query = {
-                'modificationtime__castdate__range': [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)]}
+                'modificationtime__castdate__range': [startdate.strftime(settings.DATETIME_FORMAT), enddate.strftime(settings.DATETIME_FORMAT)]}
         else:
             query = {
                 'endtime__castdate__range': [endtime__castdate__range[0], endtime__castdate__range[1]]}
@@ -1028,8 +1027,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
         pandaIDs = []
         jobParamQuery = {'modificationtime__castdate__range': [
-            startdate.strftime(defaultDatetimeFormat),
-            enddate.strftime(defaultDatetimeFormat)]}
+            startdate.strftime(settings.DATETIME_FORMAT),
+            enddate.strftime(settings.DATETIME_FORMAT)]}
 
         jobs = Jobparamstable.objects.filter(**jobParamQuery).extra(where=[extraJobParCondition]).values('pandaid')
         for values in jobs:
@@ -1579,8 +1578,8 @@ def jobList(request, mode=None, param=None):
                     JOB_LIMIT = int(request.session['requestParams']['limit'])
 
                 if 'modificationtime__castdate__range' in query and (
-                        (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], defaultDatetimeFormat)).days > 2 or
-                        (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1], defaultDatetimeFormat)).days > 2):
+                        (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0], settings.DATETIME_FORMAT)).days > 2 or
+                        (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1], settings.DATETIME_FORMAT)).days > 2):
                     if 'jeditaskid' in request.session['requestParams'] or (is_json_request(request) and (
                             'fulllist' in request.session['requestParams'] and request.session['requestParams']['fulllist'] == 'true')):
                         del query['modificationtime__castdate__range']
@@ -1814,7 +1813,7 @@ def jobList(request, mode=None, param=None):
         for job in jobsToShow:
             for dtp in datetime_job_param_names:
                 if job[dtp]:
-                    job[dtp] = job[dtp].strftime(defaultDatetimeFormat)
+                    job[dtp] = job[dtp].strftime(settings.DATETIME_FORMAT)
 
         # comparison of objects
         isincomparisonlist = False
@@ -1882,8 +1881,8 @@ def jobList(request, mode=None, param=None):
             'xurlnopref': xurl[5:],
             'droplist': droplist,
             'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
-            'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
-            'tlast': request.session['TLAST'].strftime(defaultDatetimeFormat),
+            'tfirst': request.session['TFIRST'].strftime(settings.DATETIME_FORMAT),
+            'tlast': request.session['TLAST'].strftime(settings.DATETIME_FORMAT),
             'plow': request.session['PLOW'],
             'phigh': request.session['PHIGH'],
             'showwarn': showwarn,
@@ -2252,7 +2251,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     for k in colnames:
         if is_timestamp(k):
             try:
-                val = job[k].strftime(defaultDatetimeFormat)
+                val = job[k].strftime(settings.DATETIME_FORMAT)
             except:
                 val = job[k]
         else:
@@ -2570,11 +2569,11 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     if job:
         for dtp in datetime_job_param_names:
             if job[dtp]:
-                job[dtp] = job[dtp].strftime(defaultDatetimeFormat)
+                job[dtp] = job[dtp].strftime(settings.DATETIME_FORMAT)
     for f in files:
         for fp, fpv in f.items():
             if fp in datetime_file_param_names and fpv is not None:
-                f[fp] = f[fp].strftime(defaultDatetimeFormat)
+                f[fp] = f[fp].strftime(settings.DATETIME_FORMAT)
             if fpv is None:
                 f[fp] = ''
 
@@ -2761,7 +2760,7 @@ def userList(request):
     userstats = {}
     if view == 'database':
         startdate = timezone.now() - timedelta(hours=nhours)
-        startdate = startdate.strftime(defaultDatetimeFormat)
+        startdate = startdate.strftime(settings.DATETIME_FORMAT)
         query = {'lastmod__gte': startdate}
         userdb.extend(Users.objects.filter(**query).values())
         anajobs = 0
@@ -2782,8 +2781,8 @@ def userList(request):
             udict['cpup1'] = round(u['cpup1'] / 3600.) if u['cpup1'] is not None else 0
             udict['cpup7'] = round(u['cpup7'] / 3600.) if u['cpup7'] is not None else 0
             if u['latestjob']:
-                udict['latestjob'] = u['latestjob'].strftime(defaultDatetimeFormat)
-                udict['lastmod'] = u['lastmod'].strftime(defaultDatetimeFormat)
+                udict['latestjob'] = u['latestjob'].strftime(settings.DATETIME_FORMAT)
+                udict['lastmod'] = u['lastmod'].strftime(settings.DATETIME_FORMAT)
             userdbl.append(udict)
 
             if u['njobsa'] is not None:
@@ -2833,7 +2832,7 @@ def userList(request):
         sumd = user_summary_dict(jobs)
         for user in sumd:
             if user['dict']['latest']:
-                user['dict']['latest'] = user['dict']['latest'].strftime(defaultDatetimeFormat)
+                user['dict']['latest'] = user['dict']['latest'].strftime(settings.DATETIME_FORMAT)
         sumparams = ['jobstatus', 'prodsourcelabel', 'specialhandling', 'transformation', 'processingtype',
                      'workinggroup', 'priorityrange']
         if VOMODE == 'atlas':
@@ -2854,8 +2853,8 @@ def userList(request):
             'jobsumd': jobsumd,
             'userdb': userdbl,
             'userstats': userstats,
-            'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
-            'tlast': request.session['TLAST'].strftime(defaultDatetimeFormat),
+            'tfirst': request.session['TFIRST'].strftime(settings.DATETIME_FORMAT),
+            'tlast': request.session['TLAST'].strftime(settings.DATETIME_FORMAT),
             'plow': request.session['PLOW'],
             'phigh': request.session['PHIGH'],
             'built': datetime.now().strftime("%H:%M:%S"),
@@ -3016,8 +3015,8 @@ def userInfo(request, user=''):
                 if job['modificationtime'] < tfirst: tfirst = job['modificationtime']
                 if job['currentpriority'] > phigh: phigh = job['currentpriority']
                 if job['currentpriority'] < plow: plow = job['currentpriority']
-            jobsets[jobset]['tfirst'] = tfirst.strftime(defaultDatetimeFormat)
-            jobsets[jobset]['tlast'] = tlast.strftime(defaultDatetimeFormat)
+            jobsets[jobset]['tfirst'] = tfirst.strftime(settings.DATETIME_FORMAT)
+            jobsets[jobset]['tlast'] = tlast.strftime(settings.DATETIME_FORMAT)
             jobsets[jobset]['plow'] = plow
             jobsets[jobset]['phigh'] = phigh
         jobsetl = []
@@ -3055,7 +3054,7 @@ def userInfo(request, user=''):
             for task in tasks:
                 for tp in task:
                     if tp in timestamp_vars and task[tp] is not None:
-                        task[tp] = task[tp].strftime(defaultDatetimeFormat)
+                        task[tp] = task[tp].strftime(settings.DATETIME_FORMAT)
                     if task[tp] is None:
                         task[tp] = ''
 
@@ -3063,7 +3062,7 @@ def userInfo(request, user=''):
             for job in jobs:
                 for tsv in timestamp_vars:
                     if tsv in job and job[tsv]:
-                        job[tsv] = job[tsv].strftime(defaultDatetimeFormat)
+                        job[tsv] = job[tsv].strftime(settings.DATETIME_FORMAT)
 
             data = {
                 'request': request,
@@ -3080,8 +3079,8 @@ def userInfo(request, user=''):
                 'url_nolimit_jobs': url_nolimit_jobs,
                 'query': query,
                 'userstats': userstats,
-                'tfirst': request.session['TFIRST'].strftime(defaultDatetimeFormat),
-                'tlast': request.session['TLAST'].strftime(defaultDatetimeFormat),
+                'tfirst': request.session['TFIRST'].strftime(settings.DATETIME_FORMAT),
+                'tlast': request.session['TLAST'].strftime(settings.DATETIME_FORMAT),
                 'plow': request.session['PLOW'],
                 'phigh': request.session['PHIGH'],
                 'jobsets': jobsetl[:njobsetmax - 1],
@@ -3254,7 +3253,7 @@ def userDashApi(request, agg=None):
         for task in tasks:
             for tp in task:
                 if tp in timestamp_vars and task[tp] is not None and isinstance(task[tp], datetime):
-                    task[tp] = task[tp].strftime(defaultDatetimeFormat)
+                    task[tp] = task[tp].strftime(settings.DATETIME_FORMAT)
                 if task[tp] is None:
                     task[tp] = ''
                 if task[tp] is True:
@@ -3442,13 +3441,13 @@ def siteInfo(request, site=''):
         siterec = sites[0]
         colnames = siterec.get_all_fields()
         if sites[0].lastmod:
-            sites[0].lastmod = sites[0].lastmod.strftime(defaultDatetimeFormat)
+            sites[0].lastmod = sites[0].lastmod.strftime(settings.DATETIME_FORMAT)
     except IndexError:
         siterec = None
     if len(sites) > 1:
         for queue in sites:
             if queue['lastmod']:
-                queue['lastmod'] = queue['lastmod'].strftime(defaultDatetimeFormat)
+                queue['lastmod'] = queue['lastmod'].strftime(settings.DATETIME_FORMAT)
 
     # get data from new schedconfig_json table
     panda_queue = []
@@ -4231,7 +4230,7 @@ def dashNucleus(request):
             'nucleuses': jsn_satellite_dict,
             'nucleussummary': jsn_nucleus_dict,
             'statelist': copy.deepcopy(statelist),
-            'built': datetime.now().strftime(defaultDatetimeFormat),
+            'built': datetime.now().strftime(settings.DATETIME_FORMAT),
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
@@ -4657,12 +4656,12 @@ def taskList(request):
         for datasetstageitem in datasetstage:
             taskslistfiltered.add(datasetstageitem['TASKID'])
             if datasetstageitem['START_TIME']:
-                datasetstageitem['START_TIME'] = datasetstageitem['START_TIME'].strftime(defaultDatetimeFormat)
+                datasetstageitem['START_TIME'] = datasetstageitem['START_TIME'].strftime(settings.DATETIME_FORMAT)
             else:
                 datasetstageitem['START_TIME'] = ''
 
             if datasetstageitem['END_TIME']:
-                datasetstageitem['END_TIME'] = datasetstageitem['END_TIME'].strftime(defaultDatetimeFormat)
+                datasetstageitem['END_TIME'] = datasetstageitem['END_TIME'].strftime(settings.DATETIME_FORMAT)
             else:
                 datasetstageitem['END_TIME'] = ''
 
@@ -4671,7 +4670,7 @@ def taskList(request):
 
 
             if datasetstageitem['UPDATE_TIME']:
-                datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(defaultDatetimeFormat)
+                datasetstageitem['UPDATE_TIME'] = datasetstageitem['UPDATE_TIME'].strftime(settings.DATETIME_FORMAT)
             else:
                 datasetstageitem['UPDATE_TIME'] = ''
 
@@ -4871,15 +4870,15 @@ def taskList(request):
     tasksToShow = tasks[:nmax]
     for task in tasksToShow:
         if task['creationdate']:
-            task['creationdate'] = task['creationdate'].strftime(defaultDatetimeFormat)
+            task['creationdate'] = task['creationdate'].strftime(settings.DATETIME_FORMAT)
         if task['modificationtime']:
-            task['modificationtime'] = task['modificationtime'].strftime(defaultDatetimeFormat)
+            task['modificationtime'] = task['modificationtime'].strftime(settings.DATETIME_FORMAT)
         if task['starttime']:
-            task['starttime'] = task['starttime'].strftime(defaultDatetimeFormat)
+            task['starttime'] = task['starttime'].strftime(settings.DATETIME_FORMAT)
         if task['statechangetime']:
-            task['statechangetime'] = task['statechangetime'].strftime(defaultDatetimeFormat)
+            task['statechangetime'] = task['statechangetime'].strftime(settings.DATETIME_FORMAT)
         if task['ttcrequested']:
-            task['ttcrequested'] = task['ttcrequested'].strftime(defaultDatetimeFormat)
+            task['ttcrequested'] = task['ttcrequested'].strftime(settings.DATETIME_FORMAT)
 
     error_summary_table = error_codes_analyser.get_errors_table()
     error_summary_table = json.dumps(error_summary_table, cls=DateEncoder)
@@ -5293,8 +5292,8 @@ def getBrokerageLog(request):
     else:
         hours = int(request.session['requestParams']['hours'])
     startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = timezone.now().strftime(defaultDatetimeFormat)
+    startdate = startdate.strftime(settings.DATETIME_FORMAT)
+    enddate = timezone.now().strftime(settings.DATETIME_FORMAT)
     iquery['bintime__range'] = [startdate, enddate]
     records = Pandalog.objects.filter(**iquery).order_by('bintime').reverse()[:request.session['JOB_LIMIT']].values()
     sites = {}
@@ -5353,7 +5352,7 @@ def taskProfile(request, jeditaskid=0):
         task_profile = TaskProgressPlot()
         task_profile_start = task_profile.get_task_start(taskid=jeditaskid)
         if 'starttime' in task_profile_start:
-            request.session['viewParams']['selection'] = ', started at ' + task_profile_start['starttime'].strftime(defaultDatetimeFormat)
+            request.session['viewParams']['selection'] = ', started at ' + task_profile_start['starttime'].strftime(settings.DATETIME_FORMAT)
         else:
             msg = 'A task with provided jeditaskid does not exist'.format(jeditaskid)
             _logger.exception(msg)
@@ -5472,7 +5471,7 @@ def taskProfileData(request, jeditaskid=0):
             for r in rdata:
                 for jtn in job_time_names:
                     task_profile_data_dict['_'.join((jtn, r['jobstatus'], jt))]['data'].append({
-                        't': r[jtn].strftime(defaultDatetimeFormat),
+                        't': r[jtn].strftime(settings.DATETIME_FORMAT),
                         'y': r['indx'] if request_progress_unit == 'jobs' else r['nevents'],
                         'label': r['pandaid'],
                     })
@@ -5653,7 +5652,7 @@ def userProfileData(request):
                 for jtn in job_time_names:
                     if jtn in r and r[jtn] is not None:
                         user_Dataprofile_data_dict['_'.join((jtn, r['jobstatus'], jt))]['data'].append({
-                            't': r[jtn].strftime(defaultDatetimeFormat),
+                            't': r[jtn].strftime(settings.DATETIME_FORMAT),
                             'y': r['indx'],
                             'label': r['pandaid'],
                         })
@@ -5710,8 +5709,8 @@ def taskInfo(request, jeditaskid=0):
             # we need to refresh cached data for ended tasks which we store for 1 month
             if 'built' in data and data['built'] is not None:
                 try:
-                    builtDate = datetime.strptime('2021-'+data['built'], defaultDatetimeFormat)
-                    if builtDate < datetime.strptime('2021-03-22 14:00:00', defaultDatetimeFormat):
+                    builtDate = datetime.strptime('2021-'+data['built'], settings.DATETIME_FORMAT)
+                    if builtDate < datetime.strptime('2021-03-22 14:00:00', settings.DATETIME_FORMAT):
                         doRefresh = True
                 except:
                     doRefresh = True
@@ -5732,7 +5731,7 @@ def taskInfo(request, jeditaskid=0):
                     if len(tasks) > 0:
                         task = tasks[0]
                         if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
-                                task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
+                                task['modificationtime'].strftime(settings.DATETIME_FORMAT) == data['task']['modificationtime']):
                             doRefresh = False
                         else:
                             doRefresh = True
@@ -5822,7 +5821,7 @@ def taskInfo(request, jeditaskid=0):
     for k, val in taskrec.items():
         if is_timestamp(k):
             try:
-                val = taskrec[k].strftime(defaultDatetimeFormat)
+                val = taskrec[k].strftime(settings.DATETIME_FORMAT)
             except:
                 val = str(taskrec[k])
         if val is None:
@@ -5955,7 +5954,7 @@ def taskInfo(request, jeditaskid=0):
         if task_type is not None and idds_info is not None:
             for itn in idds_info:
                 if itn in idds_info and isinstance(idds_info[itn], datetime):
-                    idds_info[itn] = idds_info[itn].strftime(defaultDatetimeFormat)
+                    idds_info[itn] = idds_info[itn].strftime(settings.DATETIME_FORMAT)
             taskrec['idds_info'] = idds_info
 
         if 'ticketsystemtype' in taskrec and taskrec['ticketsystemtype'] == '' and taskparams is not None:
@@ -5993,11 +5992,11 @@ def taskInfo(request, jeditaskid=0):
     if taskrec:
         for dtp in datetime_task_param_names:
             if taskrec[dtp]:
-                taskrec[dtp] = taskrec[dtp].strftime(defaultDatetimeFormat)
+                taskrec[dtp] = taskrec[dtp].strftime(settings.DATETIME_FORMAT)
     for dset in dsets:
         for dsp, dspv in dset.items():
             if dsp in datetime_dataset_param_names and dspv is not None:
-                dset[dsp] = dset[dsp].strftime(defaultDatetimeFormat)
+                dset[dsp] = dset[dsp].strftime(settings.DATETIME_FORMAT)
             if dspv is None:
                 dset[dsp] = ''
 
@@ -6152,9 +6151,9 @@ def taskInfoNew(request, jeditaskid=0):
         if 'built' in data:
             ### TO DO it should be fixed
             try:
-                builtDate = datetime.strptime('2021-'+data['built'], defaultDatetimeFormat)
+                builtDate = datetime.strptime('2021-'+data['built'], settings.DATETIME_FORMAT)
 
-                if builtDate < datetime.strptime('2020-09-28 11:00:00', defaultDatetimeFormat):
+                if builtDate < datetime.strptime('2020-09-28 11:00:00', settings.DATETIME_FORMAT):
                     data = None
                     setCacheEntry(request, "taskInfoNew", json.dumps(data, cls=DateEncoder), 1)
             except:
@@ -6177,7 +6176,7 @@ def taskInfoNew(request, jeditaskid=0):
                 if len(tasks) > 0:
                     task = tasks[0]
                     if (task['status'] == data['task']['status'] and task['superstatus'] == data['task']['superstatus'] and
-                                task['modificationtime'].strftime(defaultDatetimeFormat) == data['task']['modificationtime']):
+                                task['modificationtime'].strftime(settings.DATETIME_FORMAT) == data['task']['modificationtime']):
                         doRefresh = False
                     else:
                         doRefresh = True
@@ -6232,7 +6231,7 @@ def taskInfoNew(request, jeditaskid=0):
     for k, val in taskrec.items():
         if is_timestamp(k):
             try:
-                val = taskrec[k].strftime(defaultDatetimeFormat)
+                val = taskrec[k].strftime(settings.DATETIME_FORMAT)
             except:
                 val = str(taskrec[k])
         if val is None:
@@ -6378,11 +6377,11 @@ def taskInfoNew(request, jeditaskid=0):
     if taskrec:
         for dtp in datetime_task_param_names:
             if taskrec[dtp]:
-                taskrec[dtp] = taskrec[dtp].strftime(defaultDatetimeFormat)
+                taskrec[dtp] = taskrec[dtp].strftime(settings.DATETIME_FORMAT)
     for dset in dsets:
         for dsp, dspv in dset.items():
             if dsp in datetime_dataset_param_names and dspv is not None:
-                dset[dsp] = dset[dsp].strftime(defaultDatetimeFormat)
+                dset[dsp] = dset[dsp].strftime(settings.DATETIME_FORMAT)
             if dspv is None:
                 dset[dsp] = ''
 
@@ -6987,8 +6986,8 @@ def errorSummary(request):
         jobsurl = xurlsubst.replace('/errors/', '/jobs/')
         jobsurlNoSite = xurlsubstNoSite.replace('/errors/', '')
 
-        TFIRST = request.session['TFIRST'].strftime(defaultDatetimeFormat)
-        TLAST = request.session['TLAST'].strftime(defaultDatetimeFormat)
+        TFIRST = request.session['TFIRST'].strftime(settings.DATETIME_FORMAT)
+        TLAST = request.session['TLAST'].strftime(settings.DATETIME_FORMAT)
         del request.session['TFIRST']
         del request.session['TLAST']
 
@@ -7094,8 +7093,8 @@ def incidentList(request):
     iquery = {}
     cloudQuery = Q()
     startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(defaultDatetimeFormat)
-    enddate = timezone.now().strftime(defaultDatetimeFormat)
+    startdate = startdate.strftime(settings.DATETIME_FORMAT)
+    enddate = timezone.now().strftime(settings.DATETIME_FORMAT)
     iquery['at_time__range'] = [startdate, enddate]
     if 'site' in request.session['requestParams']:
         iquery['description__contains'] = 'queue=%s' % request.session['requestParams']['site']
@@ -7150,7 +7149,7 @@ def incidentList(request):
         if 'site' in pars:
             inc['description'] = re.sub('queue=[^\s]+', 'queue=<a href="%ssite=%s">%s</a>' % (
             extensibleURL(request), pars['site'], pars['site']), inc['description'])
-        inc['at_time'] = inc['at_time'].strftime(defaultDatetimeFormat)
+        inc['at_time'] = inc['at_time'].strftime(settings.DATETIME_FORMAT)
 
     ## convert to ordered lists
     suml = []
@@ -7423,11 +7422,11 @@ def pandaLogger(request):
     setupView(request, hours=hours, limit=9999999)
 
     startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(defaultDatetimeFormat)
+    startdate = startdate.strftime(settings.DATETIME_FORMAT)
     if 'startdate' in request.session['requestParams'] and len(request.session['requestParams']['startdate']) > 1:
         startdate = request.session['requestParams']['startdate']
 
-    enddate = timezone.now().strftime(defaultDatetimeFormat)
+    enddate = timezone.now().strftime(settings.DATETIME_FORMAT)
     if 'enddate' in request.session['requestParams'] and len(request.session['requestParams']['startdate']) > 1:
         enddate = request.session['requestParams']['enddate']
 
@@ -7627,13 +7626,13 @@ def ttc(request):
         progressForBar = [100, taskrec['percentage'], taskrec['ttcbasedpercentage']]
 
     if taskrec['ttc']:
-        taskrec['ttc'] = taskrec['ttc'].strftime(defaultDatetimeFormat)
+        taskrec['ttc'] = taskrec['ttc'].strftime(settings.DATETIME_FORMAT)
     if taskrec['creationdate']:
-        taskrec['creationdate'] = taskrec['creationdate'].strftime(defaultDatetimeFormat)
+        taskrec['creationdate'] = taskrec['creationdate'].strftime(settings.DATETIME_FORMAT)
     if taskrec['starttime']:
-        taskrec['starttime'] = taskrec['starttime'].strftime(defaultDatetimeFormat)
+        taskrec['starttime'] = taskrec['starttime'].strftime(settings.DATETIME_FORMAT)
     if taskrec['endtime']:
-        taskrec['endtime'] = taskrec['endtime'].strftime(defaultDatetimeFormat)
+        taskrec['endtime'] = taskrec['endtime'].strftime(settings.DATETIME_FORMAT)
 
     data = {
         'request': request,
@@ -7748,8 +7747,8 @@ def datasetInfo(request):
         dsets.extend(JediDatasets.objects.filter(**query).extra(where=[wild_card_str]).values())
         if len(dsets) == 0:
             startdate = timezone.now() - timedelta(hours=30 * 24)
-            startdate = startdate.strftime(defaultDatetimeFormat)
-            enddate = timezone.now().strftime(defaultDatetimeFormat)
+            startdate = startdate.strftime(settings.DATETIME_FORMAT)
+            enddate = timezone.now().strftime(settings.DATETIME_FORMAT)
             query = {'modificationdate__range': [startdate, enddate]}
             if 'datasetname' in request.session['requestParams']:
                 query['name'] = request.session['requestParams']['datasetname']
@@ -7760,8 +7759,8 @@ def datasetInfo(request):
                 dsets = moredsets
                 for ds in dsets:
                     ds['datasetname'] = ds['name']
-                    ds['creationtime'] = ds['creationdate'].strftime(defaultDatetimeFormat)
-                    ds['modificationtime'] = ds['modificationdate'].strftime(defaultDatetimeFormat)
+                    ds['creationtime'] = ds['creationdate'].strftime(settings.DATETIME_FORMAT)
+                    ds['modificationtime'] = ds['modificationdate'].strftime(settings.DATETIME_FORMAT)
                     ds['nfiles'] = ds['numberfiles']
                     ds['datasetid'] = ds['vuid']
     if len(dsets) > 0:
@@ -7772,7 +7771,7 @@ def datasetInfo(request):
         for k in colnames:
             if is_timestamp(k):
                 try:
-                    val = dsrec[k].strftime(defaultDatetimeFormat)
+                    val = dsrec[k].strftime(settings.DATETIME_FORMAT)
                 except:
                     val = dsrec[k]
             else:
@@ -7845,7 +7844,7 @@ def datasetList(request):
         for ds in dsets:
             for p in ds:
                 if p in timestamp_vars and ds[p] is not None:
-                    ds[p] = ds[p].strftime(defaultDatetimeFormat)
+                    ds[p] = ds[p].strftime(settings.DATETIME_FORMAT)
                 if ds[p] is None:
                     ds[p] = ''
                 if ds[p] is True:
@@ -7959,7 +7958,7 @@ def fileInfo(request):
         for k in colnames:
             if is_timestamp(k):
                 try:
-                    val = frec[k].strftime(defaultDatetimeFormat)
+                    val = frec[k].strftime(settings.DATETIME_FORMAT)
                 except:
                     val = frec[k]
             else:
@@ -7976,14 +7975,14 @@ def fileInfo(request):
             for p in ('maxattempt', 'attemptnr', 'pandaid'):
                 f[p] = f[p] if p in f and f[p] is not None else -1
             if 'creationdate' in f and f['creationdate'] is not None:
-                f['creationdate'] = f['creationdate'].strftime(defaultDatetimeFormat)
+                f['creationdate'] = f['creationdate'].strftime(settings.DATETIME_FORMAT)
 
     if not is_json_request(request):
         del request.session['TFIRST']
         del request.session['TLAST']
 
         if frec and 'creationdate' in frec and frec['creationdate'] is None:
-            frec['creationdate'] = frec['creationdate'].strftime(defaultDatetimeFormat)
+            frec['creationdate'] = frec['creationdate'].strftime(settings.DATETIME_FORMAT)
 
         files_list = []
         plot_data = []
@@ -8166,7 +8165,7 @@ def loadFileList(request, datasetid=-1):
                     ruciolink_base += files_ft_dict[f['fileid']][name_param].split('.')[0]
                 f['ruciolink'] = ruciolink_base + '&name=' + files_ft_dict[f['fileid']][name_param]
         f['creationdatecut'] = f['creationdate'].strftime('%Y-%m-%d')
-        f['creationdate'] = f['creationdate'].strftime(defaultDatetimeFormat)
+        f['creationdate'] = f['creationdate'].strftime(settings.DATETIME_FORMAT)
 
     dump = json.dumps(files, cls=DateEncoder)
     return HttpResponse(dump, content_type='application/json')
@@ -8225,9 +8224,9 @@ def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=s
     if 'statenotupdated' in request.session['requestParams']:
         hoursSinceUpdate = int(request.session['requestParams']['statenotupdated'])
     moddate = timezone.now() - timedelta(hours=hoursSinceUpdate)
-    moddate = moddate.strftime(defaultDatetimeFormat)
+    moddate = moddate.strftime(settings.DATETIME_FORMAT)
     mindate = timezone.now() - timedelta(hours=24 * 30)
-    mindate = mindate.strftime(defaultDatetimeFormat)
+    mindate = mindate.strftime(settings.DATETIME_FORMAT)
     query['statechangetime__lte'] = moddate
     # query['statechangetime__gte'] = mindate
     query['jobstatus'] = state
@@ -8291,9 +8290,9 @@ def taskNotUpdated(request, query, state='submitted', hoursSinceUpdate=36, value
     if 'statenotupdated' in request.session['requestParams']: hoursSinceUpdate = int(
         request.session['requestParams']['statenotupdated'])
     moddate = timezone.now() - timedelta(hours=hoursSinceUpdate)
-    moddate = moddate.strftime(defaultDatetimeFormat)
+    moddate = moddate.strftime(settings.DATETIME_FORMAT)
     mindate = timezone.now() - timedelta(hours=24 * 30)
-    mindate = mindate.strftime(defaultDatetimeFormat)
+    mindate = mindate.strftime(settings.DATETIME_FORMAT)
     query['statechangetime__lte'] = moddate
     # query['statechangetime__gte'] = mindate
     query['status'] = state
@@ -8850,7 +8849,7 @@ def getJobStatusLog(request, pandaid = None):
                 statusLog[c]['duration'] = "---"
 
     for sl in statusLog:
-        sl['modiftime_str'] = sl[mtimeparam].strftime(defaultDatetimeFormat) if sl[mtimeparam] is not None else "---"
+        sl['modiftime_str'] = sl[mtimeparam].strftime(settings.DATETIME_FORMAT) if sl[mtimeparam] is not None else "---"
 
     if is_json_request(request):
         response = JsonResponse(statusLog, safe=False)
@@ -8896,7 +8895,7 @@ def getTaskStatusLog(request, jeditaskid=None):
                 statusLog[c]['duration'] = "---"
 
     for sl in statusLog:
-        sl['modiftime_str'] = sl[mtimeparam].strftime(defaultDatetimeFormat) if sl[mtimeparam] is not None else "---"
+        sl['modiftime_str'] = sl[mtimeparam].strftime(settings.DATETIME_FORMAT) if sl[mtimeparam] is not None else "---"
     if is_json_request(request):
         response = HttpResponse(json.dumps(statusLog, cls=DateEncoder), content_type='application/json')
     else:

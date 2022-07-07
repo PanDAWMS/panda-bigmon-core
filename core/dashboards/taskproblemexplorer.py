@@ -26,7 +26,7 @@ from core.views import initRequest, setupView
 
 from core.common.models import JediTasks, TasksStatusLog
 
-from core.settings import defaultDatetimeFormat
+from django.conf import settings
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -58,8 +58,8 @@ def taskProblemExplorer(request):
         del query['modificationtime__castdate__range']
     query['tasktype'] = 'anal'
     query['creationdate__castdate__range'] = [
-            (datetime.now() - timedelta(days=360)).strftime(defaultDatetimeFormat),
-            datetime.now().strftime(defaultDatetimeFormat)]
+            (datetime.now() - timedelta(days=360)).strftime(settings.DATETIME_FORMAT),
+            datetime.now().strftime(settings.DATETIME_FORMAT)]
     exquery = {
         'status__in': const.TASK_STATES_FINAL + ('paused', ),
         # 'superstatus__in': const.TASK_STATES_FINAL,
@@ -237,7 +237,7 @@ def taskProblemExplorer(request):
         for task in tasks:
             for tp in task:
                 if tp in timestamp_vars and task[tp] is not None:
-                    task[tp] = task[tp].strftime(defaultDatetimeFormat)
+                    task[tp] = task[tp].strftime(settings.DATETIME_FORMAT)
                 if task[tp] is None:
                     task[tp] = ''
 

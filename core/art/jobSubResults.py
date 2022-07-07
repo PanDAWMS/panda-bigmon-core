@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime
 from core.art.modelsART import ARTSubResult, ARTTests
 from django.db import transaction, DatabaseError
-from core.settings import defaultDatetimeFormat
+from django.conf import settings
 import logging
 
 _logger_error = logging.getLogger('bigpandamon-error')
@@ -120,7 +120,7 @@ def lock_nqueuedjobs(cur, nrows):
     :return: lock_time
     """
 
-    lock_time = datetime.now().strftime(defaultDatetimeFormat)
+    lock_time = datetime.now().strftime(settings.DATETIME_FORMAT)
     lquery = """UPDATE atlas_pandabigmon.art_results_queue
                 SET IS_LOCKED = 1,
                     LOCK_TIME = to_date('%s', 'YYYY-MM-DD HH24:MI:SS')

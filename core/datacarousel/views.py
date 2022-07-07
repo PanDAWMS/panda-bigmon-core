@@ -21,8 +21,7 @@ from core.views import initRequest, setupView
 from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report_rse
 from core.datacarousel.utils import retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds
 
-from core.settings.base import DATA_CAROUSEL_MAIL_DELAY_DAYS, DATA_CAROUSEL_MAIL_REPEAT
-from core.settings import defaultDatetimeFormat
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -179,7 +178,7 @@ def getDTCSubmissionHist(request):
             'progress': int(math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
             'source_rse': dsdata['source_rse'],
             'elapsedtime': str(epltime).split('.')[0] if epltime is not None else '---',
-            'start_time': dsdata['start_time'].strftime(defaultDatetimeFormat) if dsdata['start_time'] else '---',
+            'start_time': dsdata['start_time'].strftime(settings.DATETIME_FORMAT) if dsdata['start_time'] else '---',
             'rse': dsdata['rse'],
             'update_time': str(dsdata['update_time']).split('.')[0] if dsdata['update_time'] is not None else '---',
             'update_time_sort': dsdata['update_time_sort'],
@@ -244,7 +243,7 @@ def send_stalled_requests_report(request):
         INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
         INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID 
         where END_TIME is NULL and (t1.STATUS = 'staging') and t1.UPDATE_TIME <= TRUNC(SYSDATE) - {}
-        """.format(DATA_CAROUSEL_MAIL_DELAY_DAYS)
+        """.format(settings.DATA_CAROUSEL_MAIL_DELAY_DAYS)
         cursor = connection.cursor()
         cursor.execute(query)
         rows = dictfetchall(cursor)
@@ -261,7 +260,7 @@ def send_stalled_requests_report(request):
             ds_per_rse[r['SOURCE_RSE']][r['RSE']] = {
                 "SE": r['SOURCE_RSE'],
                 "RR": r['RSE'],
-                "START_TIME": r['START_TIME'].strftime(defaultDatetimeFormat),
+                "START_TIME": r['START_TIME'].strftime(settings.DATETIME_FORMAT),
                 "TOT_FILES": r['TOTAL_FILES'],
                 "STAGED_FILES": r['STAGED_FILES'],
                 "UPDATE_TIME": str(r['UPDATE_TIME']).split('.')[0] if r['UPDATE_TIME'] is not None else '',

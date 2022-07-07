@@ -8,31 +8,31 @@ import logging
 from django.core.cache import cache
 
 from core.schedresource.models import SchedconfigJson
-from core.settings.config import CRIC_API_URL, DEPLOYMENT
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
 
 def get_CRIC_panda_queues():
     """Get PanDA queues config from CRIC and put to cache"""
-    panda_queues_dict = cache.get(f'pandaQueues{DEPLOYMENT}')
+    panda_queues_dict = cache.get(f'pandaQueues{settings.DEPLOYMENT}')
     if not panda_queues_dict:
         panda_queues_dict = {}
-        url = CRIC_API_URL
+        url = settings.CRIC_API_URL
         http = urllib3.PoolManager()
         try:
             r = http.request('GET', url)
             data = json.loads(r.data.decode('utf-8'))
             for pq, params in data.items():
-                if DEPLOYMENT == 'ORACLE_ATLAS':
+                if settings.DEPLOYMENT == 'ORACLE_ATLAS':
                     if 'vo_name' in params and params['vo_name'] == 'atlas':
                         panda_queues_dict[pq] = params
-                if DEPLOYMENT == 'ORACLE_DOMA':
+                if settings.DEPLOYMENT == 'ORACLE_DOMA':
                     if 'vo_name' in params and params['vo_name'] in ['osg', 'atlas']:
                         panda_queues_dict[pq] = params
         except Exception as exc:
             print (exc)
-        cache.set(f'pandaQueues{DEPLOYMENT}', panda_queues_dict, 60*20)
+        cache.set(f'pandaQueues{settings.DEPLOYMENT}', panda_queues_dict, 60*20)
     return panda_queues_dict
 
 
@@ -120,18 +120,6 @@ def get_panda_resource(pq_name):
         return pq_dict[pq_name]
 
     return None
-
-    url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
-    http = urllib3.PoolManager()
-    data = {}
-    try:
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            if (data[cs] and siterec.siteid == data[cs]['siteid']):
-                return data[cs]['panda_resource']
-    except Exception as exc:
-        print(exc)
 
 
 def get_pq_clouds():

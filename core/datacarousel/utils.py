@@ -9,23 +9,22 @@ import time
 import datetime
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import scale
-import urllib.request as urllibr
-from urllib.error import HTTPError
 import cx_Oracle
+import urllib.request as urllibr
+from sklearn.preprocessing import scale
+from urllib.error import HTTPError
 
 from django.core.cache import cache
 from django.utils.six.moves import cPickle as pickle
 from django.db import connection
 
-from core.settings.base import DATA_CAROUSEL_MAIL_REPEAT
-from core.settings.local import dbaccess
-
 from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView
-from core.libs.exlib import dictfetchall
+from core.libs.exlib import dictfetchall, get_tmp_table_name
 from core.schedresource.utils import getCRICSEs
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -133,10 +132,7 @@ def getStagingData(request):
         processingtype = None
 
     data = {}
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
+    tmpTableName = get_tmp_table_name()
 
     new_cur = connection.cursor()
 
@@ -378,11 +374,7 @@ def extractTasksIds(datasets):
 def send_report_rse(rse, data):
     mail_template = "templated_email/dataCarouselStagingAlert.html"
     max_mail_attempts = 10
-    try:
-        from core.settings.base import EMAIL_SUBJECT_PREFIX
-    except:
-        EMAIL_SUBJECT_PREFIX = ''
-    subject = "{} Data Carousel Alert for {}".format(EMAIL_SUBJECT_PREFIX, rse)
+    subject = "{} Data Carousel Alert for {}".format(settings.EMAIL_SUBJECT_PREFIX, rse)
 
     rquery = {'report': 'dc_stalled'}
     recipient_list = list(ReportEmails.objects.filter(**rquery).values('email'))
@@ -404,4 +396,4 @@ def send_report_rse(rse, data):
                     break
 
             if is_sent:
-                cache.set(cache_key, "1", DATA_CAROUSEL_MAIL_REPEAT*24*3600)
+                cache.set(cache_key, "1", settings.DATA_CAROUSEL_MAIL_REPEAT*24*3600)

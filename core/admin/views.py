@@ -1,24 +1,14 @@
-import logging, re, json, subprocess, os, copy
-from datetime import datetime, timedelta
-import time
-import json
-from django.http import HttpResponse
-from django.shortcuts import render_to_response, render, redirect
-from django.template import RequestContext, loader
-from django.db.models import Count
-from django import forms
-from django.views.decorators.csrf import csrf_exempt
+
+from datetime import timedelta
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.utils import timezone
-from django.utils.cache import patch_cache_control, patch_response_headers
-from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from core.settings.config import ENV
-from time import gmtime, strftime
 from core.common.models import Users
 
 from core.views import initRequest
-from core.views import extensibleURL
-from django.http import HttpResponseRedirect
+
+from django.conf import settings
 
 
 def login(request):
@@ -102,9 +92,9 @@ def listReqPlot(request):
         startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
     enddate = None
     if enddate == None:
-        enddate = timezone.now()#.strftime(defaultDatetimeFormat)
+        enddate = timezone.now()#.strftime(settings.DATETIME_FORMAT)
 
-    query = { 'qtime__range' : [startdate.strftime(defaultDatetimeFormat), enddate.strftime(defaultDatetimeFormat)] }
+    query = {'qtime__range': [startdate.strftime(settings.DATETIME_FORMAT), enddate.strftime(settings.DATETIME_FORMAT)]}
 
     values = 'urls', 'qtime','remote','qduration','duration'
     reqs=[]

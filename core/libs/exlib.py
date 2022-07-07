@@ -7,7 +7,7 @@ from datetime import timedelta
 from django.db import connection
 
 from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
-from core.settings.config import DB_SCHEMA, DEPLOYMENT
+from django.conf import settings
 
 
 def drop_duplicates(object_list, **kwargs):
@@ -188,7 +188,7 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
         transactionKey = random.randrange(1000000)
 
     new_cur = connection.cursor()
-    if DEPLOYMENT == "POSTGRES":
+    if settings.DEPLOYMENT == "POSTGRES":
         create_temporary_table(new_cur, tmpTableName)
     executionData = []
     for item in list_of_items:
@@ -263,14 +263,14 @@ def is_timestamp(key):
 
 
 def get_tmp_table_name():
-    tmpTableName = f"{DB_SCHEMA}.TMP_IDS1"
-    if DEPLOYMENT == 'POSTGRES':
+    tmpTableName = f"{settings.DB_SCHEMA}.TMP_IDS1"
+    if settings.DEPLOYMENT == 'POSTGRES':
         tmpTableName = "TMP_IDS1"
     return tmpTableName
 
 
 def get_tmp_table_name_debug():
-    tmpTableName = f"{DB_SCHEMA}.TMP_IDS1DEBUG"
+    tmpTableName = f"{settings.DB_SCHEMA}.TMP_IDS1DEBUG"
     return tmpTableName
 
 

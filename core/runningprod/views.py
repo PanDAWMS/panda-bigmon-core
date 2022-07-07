@@ -10,7 +10,6 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.utils.cache import patch_response_headers
 
-from core.settings import defaultDatetimeFormat
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.task import task_summary_dict
 from core.oauth.utils import login_customrequired
@@ -20,6 +19,8 @@ from core.utils import is_json_request, removeParam
 
 from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots, updateView
 from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
+
+from django.conf import settings
 
 
 @login_customrequired
@@ -93,8 +94,8 @@ def runningProdTasks(request):
         # add time window selection for query from Frozen* model
         days = int(request.session['requestParams']['days'])
         tquery_timelimited['modificationtime__castdate__range'] = [
-            (timezone.now() - timedelta(days=days)).strftime(defaultDatetimeFormat),
-            timezone.now().strftime(defaultDatetimeFormat)
+            (timezone.now() - timedelta(days=days)).strftime(settings.DATETIME_FORMAT),
+            timezone.now().strftime(settings.DATETIME_FORMAT)
         ]
 
         if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension:
@@ -194,7 +195,7 @@ def prodNeventsTrend(request):
     events = ProdNeventsHistory.objects.filter(**equery).values()
 
     timeline = set([ev['timestamp'] for ev in events])
-    timelinestr = [datetime.strftime(ts, defaultDatetimeFormat) for ts in timeline]
+    timelinestr = [datetime.strftime(ts, settings.DATETIME_FORMAT) for ts in timeline]
 
     if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] and request.session['requestParams']['view'] == 'separated':
         view = request.session['requestParams']['view']
@@ -213,7 +214,7 @@ def prodNeventsTrend(request):
                 data[es][ts] = 0
         for ev in events:
             for es in ev_states:
-                data[es][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(es)]
+                data[es][datetime.strftime(ev['timestamp'], settings.DATETIME_FORMAT)] += ev['nevents' + str(es)]
     else:
         processingtypes = set([ev['processingtype'] for ev in events])
         ev_states = ['running', 'waiting']
@@ -233,9 +234,9 @@ def prodNeventsTrend(request):
         for ev in events:
             for l in lines:
                 if ev['processingtype'] in l:
-                    data[l][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(l.split('_')[1])]
+                    data[l][datetime.strftime(ev['timestamp'], settings.DATETIME_FORMAT)] += ev['nevents' + str(l.split('_')[1])]
                 if l.startswith('total'):
-                    data[l][datetime.strftime(ev['timestamp'], defaultDatetimeFormat)] += ev['nevents' + str(l.split('_')[1])]
+                    data[l][datetime.strftime(ev['timestamp'], settings.DATETIME_FORMAT)] += ev['nevents' + str(l.split('_')[1])]
 
     for key, value in data.items():
         newDict = {'state': key, 'values':[]}

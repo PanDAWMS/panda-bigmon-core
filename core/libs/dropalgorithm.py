@@ -5,8 +5,10 @@ import time
 from django.db import connection
 from django.utils import timezone
 from core.libs.job import is_event_service
+from core.libs.exlib import get_tmp_table_name_debug, create_temporary_table
 from core.common.models import JediJobRetryHistory
-from core.settings.local import dbaccess
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -113,14 +115,12 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
     newquery = copy.deepcopy(query)
 
     # insert retried pandaids to tmp table
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1DEBUG"
+    tmpTableName = get_tmp_table_name_debug()
 
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
-
+    if settings.DEPLOYMENT == 'POSTGRES':
+        create_temporary_table(new_cur, tmpTableName)
     jeditaskid = newquery['jeditaskid']
 
     ins_query = """

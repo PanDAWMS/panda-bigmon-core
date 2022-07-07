@@ -2,7 +2,7 @@ from django.db import connection
 
 from core.iDDS.useconstants import SubstitleValue
 from core.libs.exlib import dictfetchall
-from core.settings.config import DB_SCHEMA_IDDS
+from django.conf import settings
 
 
 def generate_requests_summary(requests):
@@ -46,7 +46,7 @@ def getiDDSInfoForTask(jeditaskid):
       left join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at 
                  from {0}.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
     ) tr on (r.request_id=tr.request_id and tr.workload_id={1})
-    """.format(DB_SCHEMA_IDDS, int(jeditaskid)))
+    """.format(settings.DB_SCHEMA_IDDS, int(jeditaskid)))
 
     transformationWithNested = dictfetchall(new_cur)
 

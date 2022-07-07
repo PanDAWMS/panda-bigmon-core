@@ -2,7 +2,6 @@
 
 from django.db import models
 from django.conf import settings
-from core.settings.config import DB_SCHEMA
 
 
 class ReportEmails(models.Model):

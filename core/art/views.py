@@ -31,6 +31,8 @@ from core.pandajob.models import CombinedWaitActDefArch4
 
 from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test
 
+from django.conf import settings
+
 _logger = logging.getLogger('bigpandamon')
 
 @register.filter(takes_context=True)
@@ -1231,10 +1233,12 @@ def sendArtReport(request):
     valid, response = initRequest(request)
     template = 'templated_email/artReportPackage.html'
     try:
-        from core.settings.base import EMAIL_SUBJECT_PREFIX
+        EMAIL_SUBJECT_PREFIX = settings.EMAIL_SUBJECT_PREFIX
     except:
+        _logger.warning('No EMAIL_SUBJECT_PREFIX set in settings, keeping blank')
         EMAIL_SUBJECT_PREFIX = ''
     subject = '{}[ART] GRID ART jobs status report'.format(EMAIL_SUBJECT_PREFIX)
+    errorMessage = ''
     if 'ntag_from' not in request.session['requestParams']:
         valid = False
         errorMessage = 'No ntag provided!'
@@ -1331,8 +1335,9 @@ def sendDevArtReport(request):
     isSent = False
     template = 'templated_email/artDevReport.html'
     try:
-        from core.settings.base import EMAIL_SUBJECT_PREFIX
+        EMAIL_SUBJECT_PREFIX = settings.EMAIL_SUBJECT_PREFIX
     except:
+        _logger.warning('No EMAIL_SUBJECT_PREFIX set in settings, keeping blank')
         EMAIL_SUBJECT_PREFIX = ''
     subject = '{}[ART] Run on specific day tests'.format(EMAIL_SUBJECT_PREFIX)
 

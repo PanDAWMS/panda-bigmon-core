@@ -17,7 +17,8 @@ from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
 from core.common.models import JediTasksOrdered
 from core.schedresource.utils import get_pq_clouds
-from core.settings.config import DEPLOYMENT, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH, DB_SCHEMA_PANDA_META
+
+from django.conf import settings
 
 
 @login_customrequired
@@ -47,16 +48,16 @@ def tasksErrorsScattering(request):
         select sum(failedc) / sum(allc) as fperc, computingsite, jeditaskid, sum(failedc) as failedc from (
 
             select sum(case when jobstatus = 'failed' then 1 else 0 end) as failedc, sum(1) as allc, computingsite, jeditaskid 
-                from {}.jobsarchived4 
-                where jeditaskid in (select id from {} where transactionkey={}) 
+                from {0}.jobsarchived4 
+                where jeditaskid in (select id from {1} where transactionkey={2}) 
                 group by computingsite, jeditaskid
             union
             select sum(case when jobstatus = 'failed' then 1 else 0 end) as failedc, sum(1) as allc, computingsite, jeditaskid 
-                from {}.jobsarchived 
-                where jeditaskid in (select id from {} where transactionkey={}) 
+                from {3}.jobsarchived 
+                where jeditaskid in (select id from {1} where transactionkey={2}) 
                 group by computingsite, jeditaskid
         ) group by computingsite, jeditaskid
-    """.format(DB_SCHEMA_PANDA, tmpTableName, transactionKey, DB_SCHEMA_PANDA_ARCH, tmpTableName, transactionKey)
+    """.format(settings.DB_SCHEMA_PANDA, tmpTableName, transactionKey, settings.DB_SCHEMA_PANDA_ARCH)
 
     new_cur.execute(query)
 
@@ -164,7 +165,7 @@ def errorsScattering(request):
 
     new_cur = connection.cursor()
     tmpTableName = get_tmp_table_name()    
-    if DEPLOYMENT == "POSTGRES":
+    if settings.DEPLOYMENT == "POSTGRES":
         create_temporary_table(new_cur, tmpTableName)
     ins_query = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
     new_cur.executemany(ins_query, executionData)
@@ -180,25 +181,24 @@ def errorsScattering(request):
                    sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc, 
                    sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc, 
                    computingsite, reqid, jeditaskid 
-              from {}.jobsarchived4 where jeditaskid != reqid and jeditaskid in (
-                select id from {} where transactionkey={}) and modificationtime > to_date('{}', 'YYYY-MM-DD HH24:MI:SS') and {}
+              from {0}.jobsarchived4 where jeditaskid != reqid and jeditaskid in (
+                select id from {1} where transactionkey={2}) and modificationtime > to_date('{3}', 'YYYY-MM-DD HH24:MI:SS') and {4}
                     group by computingsite, reqid, jeditaskid
             union
             select sum(case when jobstatus = 'failed' then 1 else 0 end) as failedc, 
                    sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc, 
                    sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc, 
                    computingsite, reqid, jeditaskid 
-              from {}.jobsarchived 
+              from {5}.jobsarchived 
               where jeditaskid != reqid and jeditaskid in (
-                  select id from {} where transactionkey={}) and modificationtime > to_date('{}', 'YYYY-MM-DD HH24:MI:SS') and {}
+                  select id from {1} where transactionkey={2}) and modificationtime > to_date('{3}', 'YYYY-MM-DD HH24:MI:SS') and {4}
                     group by computingsite, reqid, jeditaskid
         ) j,
-        ( select siteid, cloud from {}.schedconfig  
+        ( select siteid, cloud from {6}.schedconfig  
         ) sc
         where j.computingsite = sc.siteid and j.allc > 0    
-    """.format(DB_SCHEMA_PANDA, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition,
-               DB_SCHEMA_PANDA_ARCH, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition,
-               DB_SCHEMA_PANDA_META)
+    """.format(settings.DB_SCHEMA_PANDA, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition,
+               settings.DB_SCHEMA_PANDA_ARCH, settings.DB_SCHEMA_PANDA_META)
 
     new_cur.execute(querystr)
 

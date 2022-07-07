@@ -3,8 +3,9 @@ from django.db import connection, connections
 from core.libs.exlib import dictfetchall
 from core.libs.sqlsyntax import bind_var
 from core.iDDS.useconstants import SubstitleValue
-from core.settings.config import DB_SCHEMA_IDDS
-from core.settings.local import defaultDatetimeFormat
+
+from django.conf import settings
+
 subtitleValue = SubstitleValue()
 
 
@@ -18,7 +19,7 @@ def getTransforms(requestid):
      ) wp on (r.request_id=wp.request_id)
      full outer join {0}.wp2transforms wt on (wp.workprogress_id=wt.workprogress_id)
     where r.request_id=:requestid
-    """.format(DB_SCHEMA_IDDS)
+    """.format(settings.DB_SCHEMA_IDDS)
     cur = connection.cursor()
     cur.execute(sql, sqlpar)
     rows = dictfetchall(cur)
@@ -40,14 +41,14 @@ def getRequests(query_params):
     sql = f"""
     select r.request_id, r.scope, r.name, r.status, tr.transform_id, tr.transform_status, tr.in_status, tr.in_total_files, 
         tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files
-    from {DB_SCHEMA_IDDS}.requests r
+    from {settings.DB_SCHEMA_IDDS}.requests r
      full outer join (
         select t.request_id, t.transform_id, t.status transform_status, in_coll.status in_status, in_coll.total_files in_total_files,
         in_coll.processed_files in_processed_files, out_coll.status out_status, out_coll.total_files out_total_files,
         out_coll.processed_files out_processed_files
-        from {DB_SCHEMA_IDDS}.transforms t
-        full outer join (select coll_id , transform_id, status, total_files, processed_files from {DB_SCHEMA_IDDS}.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
-        full outer join (select coll_id , transform_id, status, total_files, processed_files from {DB_SCHEMA_IDDS}.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
+        from {settings.DB_SCHEMA_IDDS}.transforms t
+        full outer join (select coll_id , transform_id, status, total_files, processed_files from {settings.DB_SCHEMA_IDDS}.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
+        full outer join (select coll_id , transform_id, status, total_files, processed_files from {settings.DB_SCHEMA_IDDS}.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
      ) tr on (r.request_id=tr.request_id)
         where {condition}
     """
@@ -70,7 +71,7 @@ def prepareSQLQueryParameters(request_params, **kwargs):
     dict_for_subst = {key:request_params.get(key) for key in query_fields_for_subst if key in request_params}
     query_params_substituted = subtitleValue.replaceInverseKeys('requests', dict_for_subst)
 
-    sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*90)).strftime(defaultDatetimeFormat)
+    sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*90)).strftime(settings.DATETIME_FORMAT)
     condition += 'and r.created_at > {} '.format(bind_var('starttime', db))
 
     for key in query_params_substituted.keys():
@@ -109,9 +110,10 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     sqlpar, condition = prepareSQLQueryParameters(request_params, db=db)
     sql = f"""
     select r.request_id, r.name as r_name, r.status as r_STATUS, r.created_at as r_created_at, c.total_files, 
-    c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status, r.username from {DB_SCHEMA_IDDS}.requests r left join {DB_SCHEMA_IDDS}.collections c on r.request_id=c.request_id
-    left join {DB_SCHEMA_IDDS}.transforms t on t.transform_id = c.transform_id 
-    left join {DB_SCHEMA_IDDS}.processings p on p.transform_id=t.transform_id
+    c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status, r.username 
+    from {settings.DB_SCHEMA_IDDS}.requests r left join {settings.DB_SCHEMA_IDDS}.collections c on r.request_id=c.request_id
+    left join {settings.DB_SCHEMA_IDDS}.transforms t on t.transform_id = c.transform_id 
+    left join {settings.DB_SCHEMA_IDDS}.processings p on p.transform_id=t.transform_id
     where c.relation_type=0 and {condition} order by r.request_id desc
     """
     cur = connections[connection_name].cursor()
