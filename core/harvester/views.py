@@ -882,7 +882,7 @@ def harvestermon(request):
           DESCRIPTION,
           COMMIT_STAMP,
           to_char(LASTUPDATE, 'dd-mm-yyyy hh24:mi:ss') as LASTUPDATE
-          FROM {DB_SCHEMA_PANDA}.HARVESTER_INSTANCES
+          FROM {settings.DB_SCHEMA_PANDA}.HARVESTER_INSTANCES
         """
         instanceDictionary = []
 
@@ -984,7 +984,7 @@ def workersJSON(request):
             fields = ','.join(generalWorkersFields)
 
             sqlquery = f"""
-            SELECT * FROM (SELECT %s FROM {DB_SCHEMA_PANDA}.HARVESTER_WORKERS
+            SELECT * FROM (SELECT %s FROM {settings.DB_SCHEMA_PANDA}.HARVESTER_WORKERS
             where harvesterid like '%s' %s %s %s %s %s %s %s %s
             order by submittime DESC) WHERE ROWNUM<=%s
             """ % (fields, str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement, display_limit_workers)
