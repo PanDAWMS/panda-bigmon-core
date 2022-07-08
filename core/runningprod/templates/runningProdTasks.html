@@ -21,276 +21,261 @@
 {% endblock %}
 
 {% block body %}
-  <div>
-    {% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
-    {% if requestParams.username %}<br><b>User name:</b> {{ requestParams.username }} {% endif %}
-    {% if requestParams.inputdataset %}<br><b>Input dataset:</b> {{ requestParams.inputdataset }} {% endif %}
-    {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
-    {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
-    {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
-  </div>
+<div>
+  {% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
+  {% if requestParams.username %}<br><b>User name:</b> {{ requestParams.username }} {% endif %}
+  {% if requestParams.inputdataset %}<br><b>Input dataset:</b> {{ requestParams.inputdataset }} {% endif %}
+  {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
+  {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
+  {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
+</div>
 
-  <table class="minimalistic-table">
-    <thead>
-      <tr>
-          <th>Selection Preset</th>
-          <th>Working group</th>
-          <th>Processing type</th>
-          <th>Campaign</th>
-          <th>Status</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-          <td>
-              <select id="presetChoice" onchange="onPresetChoice()">
-                  <option value="MC"
-                      {% if requestParams.preset == 'MC' %} selected="selected" {% endif %}
-                      >MC</option>
-                  <option value="DPD"
-                      {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}
-                      >DPD</option>
-                  <option value="DATA"
-                      {% if requestParams.preset == 'DATA' %} selected="selected" {% endif %}
-                      >DATA</option>
-                  <option value=""
-                      {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC'  and requestParams.preset != 'DATA' %} selected="selected" {% endif %}>All</option>
-              </select>
-          </td>
-          <td>
-              <select id="workinggroup" onchange="onSubElementChoice()">
-                  <option value=""  selected="selected"
-                      {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
-                  >All</option>
-                  <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
-                      {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
-                  <option value="GP_*"
-                      {% if requestParams.preset == 'DPD' and requestParams.workinggroup == 'GP_*' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  >GP_*</option>
+<table class="minimalistic-table">
+  <thead>
+    <tr>
+        <th>Selection Preset</th>
+        <th>Working group</th>
+        <th>Processing type</th>
+        <th>Campaign</th>
+        <th>Status</th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <select id="presetChoice" onchange="onPresetChoice()">
+          <option value="MC" {% if requestParams.preset == 'MC' %} selected="selected" {% endif %}>MC</option>
+          <option value="DPD" {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}>DPD</option>
+          <option value="DATA" {% if requestParams.preset == 'DATA' %} selected="selected" {% endif %}>DATA</option>
+          <option value="" {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC'  and requestParams.preset != 'DATA' %} selected="selected" {% endif %}>All</option>
+        </select>
+      </td>
+      <td>
+        <select id="workinggroup" onchange="onSubElementChoice()">
+          <option value=""  selected="selected" {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}>All</option>
+          <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
+            {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
+          <option value="GP_*"
+            {% if requestParams.preset == 'DPD' and requestParams.workinggroup == 'GP_*' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          >GP_*</option>
 
-                  <option value="AP_REPR"
-                      {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
-                  >AP_REPR</option>
+          <option value="AP_REPR"
+            {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+          >AP_REPR</option>
 
-
-                  {% if requestParams.preset != 'DATA' %}
-                      {% for field in sumd %}
-                          {% if field.field == 'workinggroup' %}
-                              {% for wg in field.list %}
-                                  <option value={{ wg.kname }}
-                                      {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
-                                      {{ wg.kname }} </option>
-                              {% endfor %}
-                          {% endif %}
-                      {% endfor %}
-                  {% endif %}
-              </select>
-          </td>
-          <td>
-              <select id="processingtype" onchange="onSubElementChoice()">
-                  <option value=""  selected="selected"
-                      {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
-                  >All</option>
-                  <option value="evgen|pile|simul|recon"
-                      {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  >evgen|pile|simul|recon</option>
-                  <option value="merge|deriv"
-                      {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  >merge|deriv</option>
-
-                  <option value="reprocessing"
-                      {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
-                  >reprocessing</option>
-
-                  {% if requestParams.preset != 'DATA' %}
-                      {% for ptype in sumd.1.list %}
-                              <option value={{ ptype.kname }}
-                                  {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>
-                                  {{ ptype.kname }} </option>
-                      {% endfor %}
-                  {% endif %}
-              </select>
-          </td>
-          <td>
-              <select id="campaign" onchange="onSubElementChoice()">
-                  <option value=""  selected="selected">All</option>
-                  <option value="MC*"
-                      {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  > like 'MC%'</option>
-                      {% for campaign in sumd.0.list %}
-                          <option value="*{{ campaign.kname }}*"
-                              {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
-                          >{{ campaign.kname }} </option>
-                      {% endfor %}
-
-              </select>
-          </td>
-          <td>
-              <select id="status" onchange="onSubElementChoice()">
-                  <option value=""  selected="selected">All</option>
-                  {% for status in sumd.2.list %}
-                      <option value={{ status.kname }}
-                          {% if status.kname == requestParams.status %} selected="selected" {% endif %}
-                      > {{ status.kname }} </option>
-                  {% endfor %}
-              </select>
-          </td>
-          <td>
-              <label><input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
-                      {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
-          </td>
-          <td>
-              <label><input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
-                      {% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
-          </td>
-          <td>
-              <label><input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
-                      {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
-          </td>
-          <td>
-              <a onclick="go()" class="button primary">Go!</a>
-          </td>
-      </tr>
-    </tbody>
-  </table>
-
-
-  <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
-
-
-  {% if gsum.ntasks > 0 %}
-
-    <table class="unstriped stack minimalistic-table">
-      <thead>
-        <tr>
-            <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>]
-                {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
-                    , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
-                {% endif %}
-            </th>
-            <th> Allocated slots: {{ gsum.aslots | intcomma }} in total</th>
-            <th class="mid"> Task age</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'main' or pgroup == 'main_preset' %}
-                {% for pname in pgdict.keys %}
-                  {% if 'nevents' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
+          {% if requestParams.preset != 'DATA' %}
+            {% for field in sumd %}
+              {% if field.field == 'workinggroup' %}
+                {% for wg in field.list %}
+                  <option value={{ wg.kname }} {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>{{ wg.kname }}</option>
                 {% endfor %}
               {% endif %}
             {% endfor %}
-          </td>
-          <td>
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'main' or pgroup == 'main_preset' %}
-                {% for pname in pgdict.keys %}
-                  {% if 'aslots' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
-                {% endfor %}
+          {% endif %}
+        </select>
+      </td>
+      <td>
+        <select id="processingtype" onchange="onSubElementChoice()">
+          <option value=""  selected="selected"
+              {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+          >All</option>
+          <option value="evgen|pile|simul|recon"
+              {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          >evgen|pile|simul|recon</option>
+          <option value="merge|deriv"
+              {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          >merge|deriv</option>
+
+          <option value="reprocessing"
+              {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+          >reprocessing</option>
+
+          {% if requestParams.preset != 'DATA' %}
+            {% for ptype in sumd.1.list %}
+              <option value={{ ptype.kname }} {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>{{ ptype.kname }}</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+      </td>
+      <td>
+        <select id="campaign" onchange="onSubElementChoice()">
+          <option value=""  selected="selected">All</option>
+          <option value="MC*"
+            {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          > like 'MC%'</option>
+          {% for campaign in sumd.0.list %}
+            <option value="*{{ campaign.kname }}*"
+                {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
+            >{{ campaign.kname }} </option>
+          {% endfor %}
+
+        </select>
+      </td>
+      <td>
+        <select id="status" onchange="onSubElementChoice()">
+          <option value=""  selected="selected">All</option>
+          {% for status in sumd.2.list %}
+            <option value={{ status.kname }}
+                {% if status.kname == requestParams.status %} selected="selected" {% endif %}
+            > {{ status.kname }} </option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>
+        <label><input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
+                  {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
+      </td>
+      <td>
+        <label><input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
+                  {% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
+      </td>
+      <td>
+          <label><input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
+                  {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
+      </td>
+      <td>
+          <a onclick="go()" class="button primary">Go!</a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+<div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
+
+
+{% if gsum.ntasks > 0 %}
+
+<table class="unstriped stack minimalistic-table">
+  <thead>
+    <tr>
+      <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>]
+          {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
+              , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
+          {% endif %}
+      </th>
+      <th> Allocated slots: {{ gsum.aslots | intcomma }} in total</th>
+      <th class="mid"> Task age</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        {% for pgroup, pgdict in plots.items %}
+          {% if pgroup == 'main' or pgroup == 'main_preset' %}
+            {% for pname in pgdict.keys %}
+              {% if 'nevents' in pname %}
+                <div class="c3-chart-block" id="{{ pname }}"></div>
               {% endif %}
             {% endfor %}
-          </td>
-          <td>
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'main' or pgroup == 'main_preset' %}
-                {% for pname in pgdict.keys %}
-                  {% if 'hist' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
-                {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </td>
+      <td>
+        {% for pgroup, pgdict in plots.items %}
+          {% if pgroup == 'main' or pgroup == 'main_preset' %}
+            {% for pname in pgdict.keys %}
+              {% if 'aslots' in pname %}
+                <div class="c3-chart-block" id="{{ pname }}"></div>
               {% endif %}
             {% endfor %}
-          </td>
-        </tr>
-        <tr id="extraplots" style="display: none">
-          <td colspan="3">
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'extra' %}
-                {% for pname in pgdict.keys %}
-                  <div class="c3-chart-block" id="{{ pname }}"></div>
-                {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </td>
+      <td>
+        {% for pgroup, pgdict in plots.items %}
+          {% if pgroup == 'main' or pgroup == 'main_preset' %}
+            {% for pname in pgdict.keys %}
+              {% if 'hist' in pname %}
+                <div class="c3-chart-block" id="{{ pname }}"></div>
               {% endif %}
             {% endfor %}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+    <tr id="extraplots" style="display: none">
+      <td colspan="3">
+        {% for pgroup, pgdict in plots.items %}
+          {% if pgroup == 'extra' %}
+            {% for pname in pgdict.keys %}
+              <div class="c3-chart-block" id="{{ pname }}"></div>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-    <div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
+<div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
 
-    <table id = 'tasklist' class="data-table nowrap">
-        <caption>{{ gsum.ntasks }} tasks listed</caption>
-        <thead>
-        <tr>
-            <th>Campaign</th>
-            <th>Req ID</th>
-            <th>Run</th>
-            <th>Task ID</th>
-            <th>RJobs</th>
-            <th>Status (PS2)</th>
-            <th>Status (JEDI)</th>
-            {% if requestParams.preset != 'DPD' %}
-                <th>Type</th>
-            {% endif %}
-            <th>Evts total</th>
-            <th>Evts done</th>
-            <th>Evts running</th>
-            <th>Evts waiting</th>
-            <th>Evts failed</th>
-            <th>%</th>
-            <th>Priority</th>
-            {% if requestParams.preset == 'DPD' %}
-                <th>pTag</th>
-                <th>Output types</th>
-            {% endif %}
-            {% if requestParams.preset == 'MC' %}
-                <th>Sim</th>
-                <th>aTag</th>
-            {% endif %}
-            {% if requestParams.preset == 'DATA' %}
-                <th>rTag</th>
-            {% endif %}
-            <th>Age</th>
-            <th>Cores</th>
-            {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
-                <th>Working group</th>
-                <th>User</th>
-            {% endif %}
-            <th>CPU Time per Event</th>
-            <th>Global Share</th>
-            <th>ES</th>
-            <th>Jumbo</th>
-            <th>Hashtags</th>
-            <th>Site</th>
-            <th>Container name</th>
-        </tr>
-        </thead>
-    <tbody>
-    </tbody>
-    </table>
-
-  {% else %}
-      <p>No matches to query.</p>
+<table id = 'tasklist' class="data-table nowrap">
+<caption>{{ gsum.ntasks }} tasks listed</caption>
+<thead>
+<tr>
+  <th>Campaign</th>
+  <th>Req ID</th>
+  <th>Run</th>
+  <th>Task ID</th>
+  <th>RJobs</th>
+  <th>Status (PS2)</th>
+  <th>Status (JEDI)</th>
+  {% if requestParams.preset != 'DPD' %}
+    <th>Type</th>
   {% endif %}
+  <th>Evts total</th>
+  <th>Evts done</th>
+  <th>Evts running</th>
+  <th>Evts waiting</th>
+  <th>Evts failed</th>
+  <th>%</th>
+  <th>Priority</th>
+  {% if requestParams.preset == 'DPD' %}
+    <th>pTag</th>
+    <th>Output types</th>
+  {% endif %}
+  {% if requestParams.preset == 'MC' %}
+    <th>Sim</th>
+    <th>aTag</th>
+  {% endif %}
+  {% if requestParams.preset == 'DATA' %}
+      <th>rTag</th>
+  {% endif %}
+  <th>Age</th>
+  <th>Cores</th>
+  {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+    <th>Working group</th>
+    <th>User</th>
+  {% endif %}
+  <th>CPU Time per Event</th>
+  <th>Global Share</th>
+  <th>ES</th>
+  <th>Jumbo</th>
+  <th>Hashtags</th>
+  <th>Site</th>
+  <th>Container name</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
 
 {% endblock %}
 
@@ -840,7 +825,6 @@ $(document).ready(function () {
                   }
               }
           }
-
       ],
       "createdRow": function ( row, data, index ) {
           $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
