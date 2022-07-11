@@ -205,6 +205,15 @@ def job_states_count_by_param(jobs, **kwargs):
     return job_summary_list
 
 
+def job_state_count(jobs):
+    statecount = {}
+    for state in const.JOB_STATES:
+        statecount[state] = 0
+    for job in jobs:
+        statecount[job['jobstatus']] += 1
+    return statecount
+
+
 def get_job_list(query, **kwargs):
 
     MAX_ENTRIES__IN = 100
