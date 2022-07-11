@@ -20,7 +20,7 @@ def getJobsData(request):
     }
     idList = request.GET.get('idtasks', '')
     tasksList = getCacheEntry(request, idList, isData=True)
-    if len(tasksList) == 0:
+    if tasksList is None or len(tasksList) == 0:
         return HttpResponse(data, status=500, content_type='application/json')
     else:
         results = get_jobs_plot_data(tasksList)
