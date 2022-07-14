@@ -10,6 +10,8 @@ from urllib.parse import unquote, urlparse
 
 from core.oauth.models import BPUser, BPUserSettings
 
+from django.conf import settings
+
 
 def get_relevant_links(userid, fields):
 
@@ -17,23 +19,23 @@ def get_relevant_links(userid, fields):
     sqlquerystr = """
         select pagegroup, pagename,visitrank, url
         from (
-            select sum(w) as visitrank, pagegroup, pagename, row_number() over (partition by pagegroup ORDER BY sum(w) desc) as rn, url
+            select sum(w) as visitrank, pagegroup, pagename, row_number() over (partition by pagegroup order by sum(w) desc) as rn, url
             from (
-              select exp(-(SYSdate - cast(time as date))*24/12) as w,
-              SUBSTR(url,
-                    INSTR(url,'/',1,3)+1,
-                    (INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) as pagename,
-              case when SUBSTR(url,INSTR(url,'/',1,3)+1,(INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) in ('task', 'tasks', 'runningprodtasks', 'tasknew') then 'task'
-                 when SUBSTR(url,INSTR(url,'/',1,3)+1,(INSTR(url,'/',1,4)-INSTR(url,'/',1,3)-1)) in ('job', 'jobs', 'errors') then 'job'
+              select exp(-(sysdate - cast(time as date))*24/12) as w,
+              substr(url,
+                    instr(url,'/',1,3)+1,
+                    (instr(url,'/',1,4)-instr(url,'/',1,3)-1)) as pagename,
+              case when substr(url,instr(url,'/',1,3)+1,(instr(url,'/',1,4)-INSTR(url,'/',1,3)-1)) in ('task', 'tasks', 'runningprodtasks', 'tasknew') then 'task'
+                 when substr(url,instr(url,'/',1,3)+1,(instr(url,'/',1,4)-instr(url,'/',1,3)-1)) in ('job', 'jobs', 'errors') then 'job'
                  else 'other' end as pagegroup,
-              case when url like '%%timestamp=%%' then SUBSTR(url,1,INSTR(url,'timestamp=',1,1)-2)
-                   when url like '%%job?pandaid=%%' then REPLACE(url,'job?pandaid=','job/')
-                   when url like '%%task?jeditaskid=%%' then REPLACE(url,'task?jeditaskid=','task/') else url end as url
-              from ATLAS_PANDABIGMON.visits
-              where USERID=%i and url not like '%%/user/%%' and INSTR(url,'/',1,4) != 0
-              order by time DESC)
+              case when url like '%%timestamp=%%' then substr(url,1,instr(url,'timestamp=',1,1)-2)
+                   when url like '%%job?pandaid=%%' then replace(url,'job?pandaid=','job/')
+                   when url like '%%task?jeditaskid=%%' then replace(url,'task?jeditaskid=','task/') else url end as url
+              from {}.visits
+              where userid={} and url not like '%%/user/%%' and instr(url,'/',1,4) != 0
+              order by time desc)
             group by pagegroup,pagename,url)
-        where rn < 10""" % (userid)
+        where rn < 10""".format(settings.DB_SCHEMA, userid)
     cur = connection.cursor()
     cur.execute(sqlquerystr)
     visits = cur.fetchall()

@@ -920,6 +920,15 @@ def taskNameDict(jobs):
     return tasknamedict
 
 
+def get_task_name_by_taskid(taskid):
+    taskname = ''
+    if taskid and taskid != 'None':
+        tasks = JediTasks.objects.filter(jeditaskid=taskid).values('taskname')
+        if len(tasks) > 0:
+            taskname = tasks[0]['taskname']
+    return taskname
+
+
 def get_task_flow_data(jeditaskid):
     """
     Getting data for task data flow diagram
