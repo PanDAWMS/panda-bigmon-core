@@ -63,14 +63,14 @@ RUN chmod -R 777 /var/cache
 RUN rm -rf /etc/httpd/conf.d/*
 RUN chmod 777 /etc/httpd/conf.d
 
-# Tagged pandamon version
+# Tagged pandamon version or branch snapshot
 COPY core /data/bigmon/
 COPY docker/activate_this.py /opt/bigmon/bin/activate_this.py
 COPY docker/start-daemon.sh /usr/local/bin/
 COPY docker/conf.d/*.conf /etc/httpd/conf.d/
 
-RUN ln -fs /data/bigmon/core/settings/local.py /data/bigmon/config/local.py
-RUN ln -fs /data/bigmon/core/settings/config.py /data/bigmon/config/config.py
+RUN ln -fs /data/bigmon/config/local.py /data/bigmon/core/settings/local.py
+RUN ln -fs /data/bigmon/config/config.py /data/bigmon/core/settings/config.py
 
 # allow low port number to non-root
 RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
