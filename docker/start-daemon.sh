@@ -2,7 +2,7 @@
 
 BIGMON_SERVICE=$1
 
-mv /data/bigmon/configmap/*.py /data/bigmon/config/
+ln -fs /data/bigmon/configmap/*.py /data/bigmon/config/
 
 if [ -f /etc/grid-security/hostkey.pem ]; then
     echo "host certificate is already created."
