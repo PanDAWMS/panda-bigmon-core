@@ -68,7 +68,7 @@ RUN ln -fs /data/bigmon/core/settings/local.py /data/bigmon/config/local.py
 RUN ln -fs /data/bigmon/core/settings/config.py /data/bigmon/config/config.py
 
 # allow low port number to non-root
-etcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
+RUN etcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
 
 STOPSIGNAL SIGINT
 
