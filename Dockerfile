@@ -2,7 +2,7 @@ FROM centos:centos7
 MAINTAINER PanDA team
 
 RUN yum -y update; yum clean all
-RUN yum -y install sudo epel-release; yum clean all
+RUN yum -y install sudo epel-release centos-release-scl-rh; yum clean all
 
 RUN curl https://repository.egi.eu/sw/production/cas/1/current/repo-files/EGI-trustanchors.repo \
     -o /etc/yum.repos.d/EGI-trustanchors.repo
