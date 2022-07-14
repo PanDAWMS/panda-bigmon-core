@@ -55,15 +55,6 @@ RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade rucio-clients
 RUN mkdir -p /data/bigmon
 RUN mkdir /data/bigmon/config
 RUN mkdir /data/bigmon/logs
-RUN chmod 777 /data/bigmon/logs
-RUN chmod 777 /data/bigmon/config
-RUN chmod 777 /var/log/httpd
-RUN chmod 777 /etc/grid-security
-RUN chmod 777 /run/httpd
-RUN chmod -R 777 /var/cache
-
-RUN rm -rf /etc/httpd/conf.d/*
-RUN chmod 777 /etc/httpd/conf.d
 
 # copy tagged version or branch snapshot
 COPY core /data/bigmon/core
@@ -75,6 +66,16 @@ RUN mv /data/bigmon/core/settings/config.py /data/bigmon/config/config.py
 RUN ln -fs /data/bigmon/config/local.py /data/bigmon/core/settings/local.py
 RUN ln -fs /data/bigmon/config/config.py /data/bigmon/core/settings/config.py
 RUN ln -fs /data/bigmon/core/settings/config.py /data/bigmon/settings_bigpandamon_twrpm.py
+
+# to work with non-root
+RUN chmod 777 /data/bigmon/logs
+RUN chmod 777 /data/bigmon/config
+RUN chmod 777 /var/log/httpd
+RUN chmod 777 /etc/grid-security
+RUN chmod 777 /run/httpd
+RUN chmod -R 777 /var/cache
+RUN rm -rf /etc/httpd/conf.d/*
+RUN chmod 777 /etc/httpd/conf.d
 
 # allow low port number access to non-root
 RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
