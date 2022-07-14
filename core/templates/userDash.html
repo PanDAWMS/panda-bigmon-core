@@ -261,12 +261,12 @@
           },
         },
         {
-          title: "Jobset",
+          title: "Request ID",
           {#data: "reqid",#}
           sDefaultContent: "-",
           render: function(data, type, row, meta) {
             if (data) {
-              return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+              return '<a href="{{ xurl }}reqid=' + data +'">' + data + '</a>'
             }
             else {
               return '-'
