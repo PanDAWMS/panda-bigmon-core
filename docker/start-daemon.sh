@@ -3,6 +3,7 @@
 BIGMON_SERVICE=$1
 
 ln -fs /data/bigmon/configmap/*.py /data/bigmon/config/
+ln -fs /data/bigmon/configmap/*-httpd.conf /etc/httpd/conf.d/
 
 if [ -f /etc/grid-security/hostkey.pem ]; then
     echo "host certificate is already created."
