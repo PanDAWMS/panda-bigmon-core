@@ -71,6 +71,7 @@ COPY docker/conf.d/*.conf /etc/httpd/conf.d/
 
 RUN ln -fs /data/bigmon/config/local.py /data/bigmon/core/settings/local.py
 RUN ln -fs /data/bigmon/config/config.py /data/bigmon/core/settings/config.py
+RUN ln -fs /data/bigmon/core/settings/config.py /data/bigmon/settings_bigpandamon_twrpm.py
 
 # allow low port number access to non-root
 RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
