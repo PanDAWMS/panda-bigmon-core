@@ -55,23 +55,30 @@ RUN mkdir /data/bigmon/config
 RUN mkdir /data/bigmon/logs
 RUN chmod 777 /data/bigmon/logs
 RUN chmod 777 /data/bigmon/config
+RUN chmod 777 /var/log/httpd
+RUN chmod 777 /etc/grid-security
+RUN chmod 777 /run/httpd
+RUN chmod -R 777 /var/cache
 
 RUN rm -rf /etc/httpd/conf.d/*
 RUN chmod 777 /etc/httpd/conf.d
 
 # Tagged pandamon version
-COPY core /data/bigmon
+COPY core /data/bigmon/
 COPY docker/activate_this.py /opt/bigmon/bin/activate_this.py
 COPY docker/start-daemon.sh /usr/local/bin/
+COPY docker/conf.d/*.conf /etc/httpd/conf.d/
 
 RUN ln -fs /data/bigmon/core/settings/local.py /data/bigmon/config/local.py
 RUN ln -fs /data/bigmon/core/settings/config.py /data/bigmon/config/config.py
 
 # allow low port number to non-root
-RUN etcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
+RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
+
+ENTRYPOINT ["start-daemon.sh"]
+
 
 STOPSIGNAL SIGINT
 
 EXPOSE 443
-
-CMD exec /bin/bash -c "trap : TERM INT; sleep infinity & wait"
+CMD ["all"]
