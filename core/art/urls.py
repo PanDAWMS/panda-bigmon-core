@@ -18,4 +18,7 @@ urlpatterns = [
     re_path(r'^art/registerarttest/$', art_views.registerARTTest),
     re_path(r'^art/sendartreport/$', art_views.sendArtReport),
     re_path(r'^art/senddevartreport/$', art_views.sendDevArtReport),
+
+    re_path(r'^api/art/lastsuccess/$', art_views.art_last_successful_test),
+
     ]

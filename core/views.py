@@ -2379,10 +2379,10 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     if 'core.art' in settings.INSTALLED_APPS and settings.DEPLOYMENT == 'ORACLE_ATLAS':
         try:
             from core.art.modelsART import ARTTests
+            artqueue = {'pandaid': pandaid}
+            art_test.extend(ARTTests.objects.filter(**artqueue).values('pandaid', 'testname'))
         except ImportError:
             _logger.exception('Failed to import ARTTests model')
-        artqueue = {'pandaid': pandaid}
-        art_test.extend(ARTTests.objects.filter(**artqueue).values())
 
     # datetime type -> str in order to avoid encoding errors on template
     datetime_job_param_names = ['creationtime', 'modificationtime', 'starttime', 'statechangetime', 'endtime']
