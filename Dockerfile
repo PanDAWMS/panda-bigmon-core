@@ -69,8 +69,8 @@ COPY docker/activate_this.py /opt/bigmon/bin/activate_this.py
 COPY docker/start-daemon.sh /usr/local/bin/
 COPY docker/conf.d/*.conf /etc/httpd/conf.d/
 
-RUN ln -fs /data/bigmon/config/local.py /data/bigmon/core/settings/local.py
-RUN ln -fs /data/bigmon/config/config.py /data/bigmon/core/settings/config.py
+#RUN ln -fs /data/bigmon/config/local.py /data/bigmon/core/settings/local.py
+#RUN ln -fs /data/bigmon/config/config.py /data/bigmon/core/settings/config.py
 
 # allow low port number to non-root
 RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
