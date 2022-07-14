@@ -55,6 +55,7 @@ RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade rucio-clients
 RUN mkdir -p /data/bigmon
 RUN mkdir /data/bigmon/config
 RUN mkdir /data/bigmon/logs
+RUN rm -rf /etc/httpd/conf.d/*
 
 # copy tagged version or branch snapshot from repository
 COPY core /data/bigmon/core
@@ -77,7 +78,6 @@ RUN chmod 777 /var/log/httpd
 RUN chmod 777 /etc/grid-security
 RUN chmod 777 /run/httpd
 RUN chmod -R 777 /var/cache
-RUN rm -rf /etc/httpd/conf.d/*
 RUN chmod 777 /etc/httpd/conf.d
 
 # to grant low port number access to non-root
