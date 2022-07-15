@@ -87,6 +87,7 @@ RUN chmod 777 /run/httpd
 RUN chmod -R 777 /var/cache
 RUN chmod -R 777 /data/bigmon/config
 RUN chmod -R 777 /etc/httpd/conf.d
+RUN chmod -R 777 /data/bigmon && chmod -R 777 /opt/bigmon
 
 # to grant low port number access to non-root
 RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
