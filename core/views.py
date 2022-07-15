@@ -6390,7 +6390,7 @@ def errorSummary(request):
                 if 'pctfail' in taskstates[taskid]:
                     task['pctfail'] = taskstates[taskid]['pctfail']
         if 'jeditaskid' in request.session['requestParams']:
-            taskname = get_task_name_by_taskid('jeditaskid', request.session['requestParams']['jeditaskid'])
+            taskname = get_task_name_by_taskid(request.session['requestParams']['jeditaskid'])
 
     _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
 
