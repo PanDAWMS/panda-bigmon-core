@@ -73,12 +73,12 @@ RUN ln -fs /data/bigmon/core/settings/config.py /data/bigmon/settings_bigpandamo
 
 # to work with non-root
 RUN chmod 777 /data/bigmon/logs
-RUN chmod 777 /data/bigmon/config
 RUN chmod 777 /var/log/httpd
 RUN chmod 777 /etc/grid-security
 RUN chmod 777 /run/httpd
 RUN chmod -R 777 /var/cache
-RUN chmod 777 /etc/httpd/conf.d
+RUN chmod -R 777 /data/bigmon/config
+RUN chmod -R 777 /etc/httpd/conf.d
 
 # to grant low port number access to non-root
 RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
