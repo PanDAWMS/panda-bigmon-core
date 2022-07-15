@@ -3083,7 +3083,7 @@ def userDashApi(request, agg=None):
                     task[tp] = 'false'
 
         task_list_table_headers = [
-            'jeditaskid', 'creationdate', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished',
+            'jeditaskid', 'reqid', 'creationdate', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished',
             'superstatus', 'status', 'age',
             'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
             'errordialog', 'job_failed', 'top_errors',
