@@ -49,7 +49,7 @@ RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade  futures psycopg2 psyco
 
 RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade django.js django-bower django-cors-headers \
     django-datatables-view django-render-block django-tables2 django-templated-email djangorestframework \
-    django-debug-toolbar django-extensions django-htmlmin django.js django-mathfilters django-redis \
+    django-debug-toolbar django-extensions django-htmlmin django-mathfilters django-redis \
     django-redis-cache social-auth-app-django
 
 RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade rucio-clients 
