@@ -20,6 +20,15 @@ else
     ln -fs /data/bigmon/config/hostkey.pem /etc/grid-security/hostkey.pem
 fi
 
+# setup intermediate certificate
+if [ ! -f /etc/grid-security/chain.pem ]; then
+  if [ -f /opt/bigmon/etc/cert/chain.pem ]; then
+    ln -fs /opt/bigmon/etc/cert/chain.pem /etc/grid-security/chain.pem
+  elif [ -f /etc/grid-security/hostcert.pem ]; then
+    ln -fs /etc/grid-security/hostcert.pem /etc/grid-security/chain.pem
+  fi
+fi
+
 if [ "${BIGMON_SERVICE}" == "all" ]; then
   echo "starting bigmon http service"
   /usr/sbin/httpd
