@@ -33,8 +33,7 @@ RUN usermod -a -G zp atlpan
 RUN python3 -m venv /opt/bigmon
 
 RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade pip
-# use setuptools 58 for use_2to3 in some django packages
-RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade setuptools==58
+RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade setuptools
 
 RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade  futures psycopg2 psycopg2-binary \
    aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
@@ -49,13 +48,14 @@ RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade  futures psycopg2 psyco
    pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
    schedule scikit-learn scipy setuptools six sklearn  social-auth-core soupsieve sqlparse \
    stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
-   urllib3 webencodings websocket-client Werkzeug xlrd zipp \
-   django.js django-bower django-cors-headers \
+   urllib3 webencodings websocket-client Werkzeug xlrd zipp rucio-clients
+
+# downgrade setuptools to 58 for use_2to3 in some django packages
+RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade setuptools==58
+RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade django.js django-bower django-cors-headers \
    django-datatables-view django-render-block django-tables2 django-templated-email djangorestframework \
    django-debug-toolbar django-extensions django-htmlmin django-mathfilters django-redis \
    django-redis-cache social-auth-app-django
-
-RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade rucio-clients 
 
 
 RUN mkdir -p /data/bigmon
@@ -63,7 +63,7 @@ RUN mkdir /data/bigmon/config
 RUN mkdir /data/bigmon/logs
 RUN rm -rf /etc/httpd/conf.d/*
 
-# copy tagged version or branch snapshot from repository
+# copy tagged version or branch/fork snapshot from repository
 COPY core /data/bigmon/core
 COPY docker/activate_this.py /opt/bigmon/bin/activate_this.py
 COPY docker/start-daemon.sh /usr/local/bin/
