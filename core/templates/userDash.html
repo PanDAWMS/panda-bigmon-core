@@ -231,14 +231,14 @@
       "scrollX": true,
       "aaSorting": [[0, 'desc']],
       "columnDefs": [
-          {"type": "num-html", "targets": [0,2,5,6,7,8,11,12,13,14,15,16,18,19] }
+          {"type": "num-html", "targets": [0,1,3,6,7,8,9,12,13,14,15,16,17,19,20] }
       ],
       "data": $scope.userinfo.tasks.list,
       "buttons": [
         {
           extend: 'colvisGroup',
           text: 'Minimize view',
-          hide: [ 1,2,3,9,12,13,14,15,16, ],
+          hide: [ 2,3,4,10,13,14,15,16,17, ],
         },
         {
           extend: 'colvisGroup',
@@ -254,6 +254,19 @@
           render: function(data, type, row, meta) {
             if (data) {
               return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Request ID",
+          {#data: "reqid",#}
+          sDefaultContent: "-",
+          render: function(data, type, row, meta) {
+            if (data) {
+              return '<a href="{{ xurl }}reqid=' + data +'">' + data + '</a>'
             }
             else {
               return '-'
@@ -485,12 +498,12 @@
         },
       ],
       createdRow: function ( row, data, index ) {
-          $('td', row).eq(9).addClass(data[9] + '_fill');
           $('td', row).eq(10).addClass(data[10] + '_fill');
+          $('td', row).eq(11).addClass(data[11] + '_fill');
         },
       });
 
-      $scope.userinfo.tasksDataTable.columns( [ 1,2,3,9,12,13,14,15,16, ] ).visible( false );
+      $scope.userinfo.tasksDataTable.columns( [ 2,3,4,10,13,14,15,16,17, ] ).visible( false );
       $scope.userinfo.tasksDataTable.buttons().container().appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
 
     };
