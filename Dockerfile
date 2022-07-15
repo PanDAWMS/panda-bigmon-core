@@ -36,26 +36,28 @@ RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade pip
 RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade setuptools
 
 RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade  futures psycopg2 psycopg2-binary \
-   aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
-   beautifulsoup4 boto bz2file cachetools certifi cffi chardet click codegen cryptography cx-Oracle cycler \
-   dataclasses datefinder decorator defusedxml Django==2.2 docopt dogpile.cache ecdsa \
-   elasticsearch elasticsearch-dsl enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
-   humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
-   Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
-   olefile openshift packaging pandas paramiko patterns pep8 Pillow pip pluggy prettytable progressbar2 psutil \
-   psycopg2 py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyparsing pytest \
-   python-dateutil python-magic python-openid python-social-auth python-string-utils python-utils python3-openid \
-   pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
-   schedule scikit-learn scipy setuptools six sklearn  social-auth-core soupsieve sqlparse \
-   stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
-   urllib3 webencodings websocket-client Werkzeug xlrd zipp rucio-clients
+    aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
+    beautifulsoup4 boto bz2file cachetools certifi cffi chardet click codegen cryptography cx-Oracle cycler \
+    dataclasses datefinder decorator defusedxml Django==2.2 docopt dogpile.cache ecdsa \
+    elasticsearch elasticsearch-dsl enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
+    humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
+    Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
+    olefile openshift packaging pandas paramiko patterns pep8 Pillow pip pluggy prettytable progressbar2 psutil \
+    psycopg2 py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyparsing pytest \
+    python-dateutil python-magic python-openid python-social-auth python-string-utils python-utils python3-openid \
+    pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
+    schedule scikit-learn scipy six sklearn  social-auth-core soupsieve sqlparse \
+    stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
+    urllib3 webencodings websocket-client Werkzeug xlrd zipp \
+    rucio-clients \
+    django-bower django-cors-headers \
+    django-datatables-view django-render-block django-tables2 django-templated-email djangorestframework \
+    django-debug-toolbar django-extensions django-htmlmin django-mathfilters django-redis \
+    django-redis-cache social-auth-app-django
 
-# downgrade setuptools to 58 for use_2to3 in some django packages
+# downgrade setuptools to 58 for use_2to3
 RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade setuptools==58
-RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade django.js django-bower django-cors-headers \
-   django-datatables-view django-render-block django-tables2 django-templated-email djangorestframework \
-   django-debug-toolbar django-extensions django-htmlmin django-mathfilters django-redis \
-   django-redis-cache social-auth-app-django
+RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade django.js
 
 
 RUN mkdir -p /data/bigmon
