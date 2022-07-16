@@ -142,6 +142,10 @@ elif DEPLOYMENT == 'POSTGRES':
     DATABASES = dbaccess_postgres
     CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json')
     IDDS_HOST = os.environ.get('IDDS_HOST', 'https://iddsserver.cern.ch:443/idds')
+    IDDS_HOST_GCP = os.environ.get('IDDS_HOST_GCP', 'https://aipanda016.cern.ch:443/idds')
+    PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
+                                                  "https://storage.googleapis.com/drp-us-central1-logging"
+                                                  "/logs/{queue_name}/PandaJob_{panda_id}")
 elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA = 'DOMA_PANDABIGMON'
     DB_SCHEMA_PANDA = 'DOMA_PANDA'
