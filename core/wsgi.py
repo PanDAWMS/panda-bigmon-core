@@ -34,7 +34,8 @@ try:
 except:
     try:
         from core.settings.config import VIRTUALENV_PATH
-        from core.settings.config import WSGI_PATH
+        virtualenvPath = VIRTUALENV_PATH
+        path = WSGI_PATH
     except Exception:
         pass
         # _logger.exception("Something went wrong with import of WSGI_PATH from settings.")
