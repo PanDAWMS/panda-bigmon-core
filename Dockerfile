@@ -4,6 +4,10 @@ MAINTAINER PanDA team
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
+ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
+ENV BIGMON_WSGI_PATH /data/bigmon
+
+
 RUN yum -y update && \
     yum -y install epel-release centos-release-scl-rh
 
@@ -30,12 +34,12 @@ RUN adduser atlpan
 RUN groupadd zp
 RUN usermod -a -G zp atlpan
 
-RUN python3 -m venv /opt/bigmon
+RUN python3 -m venv ${BIGMON_VIRTUALENV_PATH}
 
-RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade pip
-RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade setuptools
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade pip
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptools
 
-RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade  futures psycopg2 psycopg2-binary \
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  futures psycopg2 psycopg2-binary \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
     beautifulsoup4 boto bz2file cachetools certifi cffi chardet click codegen cryptography cx-Oracle cycler \
     dataclasses datefinder decorator defusedxml Django==2.2 docopt dogpile.cache ecdsa \
@@ -56,38 +60,35 @@ RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade  futures psycopg2 psyco
     django-redis-cache social-auth-app-django
 
 # downgrade setuptools to 58 for use_2to3
-RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade setuptools==58
-RUN /opt/bigmon/bin/pip install --no-cache-dir --upgrade django.js
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptools==58
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade django.js
 
 
-RUN mkdir -p /data/bigmon
-RUN mkdir /data/bigmon/config
-RUN mkdir /data/bigmon/logs
+RUN mkdir -p ${BIGMON_WSGI_PATH}
+RUN mkdir ${BIGMON_WSGI_PATH}/config
+RUN mkdir ${BIGMON_WSGI_PATH}/logs
 RUN rm -rf /etc/httpd/conf.d/*
 
 # copy tagged version or branch/fork snapshot from repository
-COPY core /data/bigmon/core
-COPY docker/activate_this.py /opt/bigmon/bin/activate_this.py
+COPY core ${BIGMON_WSGI_PATH}/core
+COPY docker/activate_this.py ${BIGMON_VIRTUALENV_PATH}/bin/activate_this.py
 COPY docker/start-daemon.sh /usr/local/bin/
 COPY docker/conf.d/*.conf /etc/httpd/conf.d/
 
 # symlinks to allow late customization
-RUN mv /data/bigmon/core/settings/config.py /data/bigmon/config/config.py
-RUN ln -fs /data/bigmon/config/local.py /data/bigmon/core/settings/local.py
-RUN ln -fs /data/bigmon/config/config.py /data/bigmon/core/settings/config.py
-
-# symlink for import in core/wsgi.py
-RUN ln -fs /data/bigmon/core/settings/config.py /data/bigmon/settings_bigpandamon_twrpm.py
+RUN ln -fs ${BIGMON_WSGI_PATH}/config/local.py ${BIGMON_WSGI_PATH}/core/settings/local.py
 
 # to work with non-root
-RUN chmod 777 /data/bigmon/logs
+RUN chmod 777 ${BIGMON_WSGI_PATH}/logs
 RUN chmod 777 /var/log/httpd
 RUN chmod 777 /etc/grid-security
 RUN chmod 777 /run/httpd
 RUN chmod -R 777 /var/cache
-RUN chmod -R 777 /data/bigmon/config
+RUN chmod -R 777 ${BIGMON_WSGI_PATH}/config
 RUN chmod -R 777 /etc/httpd/conf.d
-RUN chmod -R 777 /data/bigmon && chmod -R 777 /opt/bigmon
+
+# to be removed for prodiction
+RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
 
 # to grant low port number access to non-root
 RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd

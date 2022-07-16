@@ -32,9 +32,13 @@ try:
     virtualenvPath = VIRTUALENV_PATH
     path = WSGI_PATH
 except:
-    pass
-    # _logger.exception("Something went wrong with import of WSGI_PATH from settings.")
-    # _logger.exception("Staying with default path: {}".format(path))
+    try:
+        from core.settings.config import VIRTUALENV_PATH
+        from core.settings.config import WSGI_PATH
+    except Exception:
+        pass
+        # _logger.exception("Something went wrong with import of WSGI_PATH from settings.")
+        # _logger.exception("Staying with default path: {}".format(path))
 
 # Add the site-packages of the chosen virtualenv to work with
 site.addsitedir(virtualenvPath + '/lib/python3.7/site-packages')
