@@ -62,6 +62,7 @@ AUTHENTICATION_BACKENDS = (
     'core.oauth.Cernauth2.CernAuthOIDC',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
+    'core.oauth.indigoiam.IndigoIamOIDC',
     'django.contrib.auth.backends.ModelBackend',
 )
 AUTH_USER_MODEL = 'oauth.BPUser'
