@@ -6,7 +6,7 @@ import logging
 class IndigoIamOIDC(BaseOAuth2):
 
     name = 'indigoiam'
-
+    ID_KEY = 'email'
     ACCESS_TOKEN_METHOD = 'POST'
 
     def authorization_url(self):
