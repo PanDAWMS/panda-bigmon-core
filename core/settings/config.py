@@ -18,14 +18,23 @@ ALLOWED_HOSTS = [
 
     '127.0.0.1', '.localhost'
 ]
+
+if 'BIGMON_HOST' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['BIGMON_HOST'])
+
 # IPs of CACHING CRAWLERS if any
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46']
 
 ### VIRTUALENV
-VIRTUALENV_PATH = '/data/virtualenv37'
+VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/data/virtualenv37')
 
 ### WSGI
-#WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
+if 'BIGMON_WSGI_PATH' in os.environ:
+    WSGI_PATH = os.environ['BIGMON_WSGI_PATH']
+
+### VO
+if 'BIGMON_VO' in os.environ:
+    MON_VO = os.environ['BIGMON_VO']
 
 ### DB_ROUTERS for atlas's prodtask
 DATABASE_ROUTERS = [
@@ -112,8 +121,7 @@ except ImportError:
     dbaccess_oracle_atlas = None
 
 
-#DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
-DEPLOYMENT = 'ORACLE_ATLAS'
+DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
 
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
@@ -132,8 +140,12 @@ elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA_PANDA_META = 'doma_pandameta'
     DB_SCHEMA_IDDS = 'doma_idds'
     DATABASES = dbaccess_postgres
-    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
-    IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
+    CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json')
+    IDDS_HOST = os.environ.get('IDDS_HOST', 'https://iddsserver.cern.ch:443/idds')
+    IDDS_HOST_GCP = os.environ.get('IDDS_HOST_GCP', 'https://aipanda016.cern.ch:443/idds')
+    PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
+                                                  "https://storage.googleapis.com/drp-us-central1-logging"
+                                                  "/logs/{queue_name}/PandaJob_{panda_id}")
 elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA = 'DOMA_PANDABIGMON'
     DB_SCHEMA_PANDA = 'DOMA_PANDA'

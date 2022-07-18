@@ -96,7 +96,7 @@ class DDOSMiddleware(object):
         #     _logger.warning('Failed to get connections number from ATLAS_DBA')
 
         if settings.DEPLOYMENT == 'POSTGRES':
-            sqlRequest = f"SELECT nextval('{settings.DB_SCHEMA}.\"ALL_REQUESTS_SEQ\"') as my_req_token;"
+            sqlRequest = f"SELECT nextval('{settings.DB_SCHEMA}.\"all_requests_seq\"') as my_req_token;"
         else:
             sqlRequest = f"SELECT {settings.DB_SCHEMA}.ALL_REQUESTS_SEQ.NEXTVAL as my_req_token FROM dual;"
 

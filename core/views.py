@@ -329,7 +329,8 @@ def initRequest(request, callselfmon=True):
         request.session['viewParams']['MON_VO'] = 'ATLAS'
     else:
         VOMODE =settings.DEPLOYMENT
-        #request.session['viewParams']['MON_VO'] = DEPLOYMENT
+        if hasattr(settings, 'MON_VO'):
+            request.session['viewParams']['MON_VO'] = settings.MON_VO
 
     # remove xurls from session if it is kept from previous requests
     if 'xurls' in request.session:
