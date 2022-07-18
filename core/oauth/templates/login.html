@@ -19,16 +19,27 @@
 {% endif %}
 
   <div id='buttons' class="button-group-v">
+    {% if auth_providers is None or 'cern' in auth_providers %}
     <a href="{% url 'social:begin' 'cernoidc' %}" class="button social cern" >
         <img width="40" width="40" src="{% static "images/cern-logo.png"%}">
         Log in with CERN (recommended)
     </a>
+    {% endif %}
+    {% if auth_providers is None or 'google' in auth_providers %}
     <a href="{% url 'social:begin' 'google-oauth2' %}" class="button social google-plus">
       <i class="fi-social-google-plus" aria-hidden="true"></i> Log in with Google
     </a>
+    {% endif %}
+    {% if auth_providers is None or 'github' in auth_providers %}
     <a href="{% url 'social:begin' 'github' %}" class="button social github">
     <i class="fi-social-github" aria-hidden="true"></i> Log in with Github
     </a>
+    {% endif %}
+    {% if auth_providers is not None and 'indigoiam' in auth_providers %}
+    <a href="{% url 'social:begin' 'indigoiam' %}" class="button social indigoiam">
+        <i class="fi-ticket" aria-hidden="true"></i> Log in with IAM
+    </a>
+    {% endif %}
   </div>
 
 
