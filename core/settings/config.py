@@ -37,7 +37,7 @@ if 'BIGMON_VO' in os.environ:
     MON_VO = os.environ['BIGMON_VO']
 
 ### Authentication providers
-if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ:
+if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
     BIGMON_AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
 
 ### DB_ROUTERS for atlas's prodtask
