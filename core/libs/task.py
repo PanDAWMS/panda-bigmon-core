@@ -360,7 +360,8 @@ def get_task_scouts(jobs):
 
     for job in jobs:
         for jst in scout_types:
-            if 'jobmetrics' in job and 'scout=' in job['jobmetrics'] and jst in job['jobmetrics'][job['jobmetrics'].index('scout='):]:
+            if 'jobmetrics' in job and job['jobmetrics'] and 'scout=' in job['jobmetrics'] and \
+                    jst in job['jobmetrics'][job['jobmetrics'].index('scout='):]:
                 scouts_dict[jst].append(job['pandaid'])
 
     # remove scout type if no scouts

@@ -25,7 +25,7 @@ def isHarvesterJob(pandaid):
       b.DIAGMESSAGE
       FROM {settings.DB_SCHEMA_PANDA}.HARVESTER_REL_JOBS_WORKERS a,
       {settings.DB_SCHEMA_PANDA}.HARVESTER_WORKERS b
-      WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) where pandaid = {pandaid}
+      WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) tmp_sub where pandaid = {pandaid}
   """
     cur = connection.cursor()
     cur.execute(sqlQuery)

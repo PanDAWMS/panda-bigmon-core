@@ -1,5 +1,6 @@
 from django.db.models import Transform
 from django.db.models import Lookup
+from django.conf import settings
 
 
 class CastDate(Transform):
@@ -9,5 +10,6 @@ class CastDate(Transform):
     def as_sql(self, compiler, connection):
         sql, params = compiler.compile(self.lhs)
         if len(params) > 0:
-            sql = 'CAST(%s AS DATE)' % sql
+            if settings.DEPLOYMENT != "POSTGRES":
+                sql = 'CAST(%s AS DATE)' % sql
         return sql, params
