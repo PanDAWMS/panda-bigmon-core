@@ -2745,13 +2745,13 @@ def userInfo(request, user=''):
         links = get_relevant_links(userid, fields)
 
     # Tasks owned by the user
-    query = setupView(request, hours=days*24, limit=999999, querytype='task')
+    query, extra_query_str, _ = setupView(request, hours=days*24, limit=999999, querytype='task', wildCardExt=True)
 
     if userQueryTask is None:
         query['username__icontains'] = user.strip()
-        tasks = JediTasks.objects.filter(**query).values()
+        tasks = JediTasks.objects.filter(**query).extra(where=[extra_query_str]).values()
     else:
-        tasks = JediTasks.objects.filter(**query).filter(userQueryTask).values()
+        tasks = JediTasks.objects.filter(**query).filter(userQueryTask).extra(where=[extra_query_str]).values()
     _logger.info('Got {} tasks: {}'.format(len(tasks), time.time() - request.session['req_init_time']))
 
     tasks = cleanTaskList(tasks, sortby=sortby, add_datasets_info=True)
