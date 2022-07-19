@@ -2150,7 +2150,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
                 if f['datasetid'] in datasets_dict:
                     f['datasetname'] = datasets_dict[f['datasetid']]
-                    if f['scope'] + ":" in f['datasetname']:
+                    if f['scope'] and f['scope'] + ":" in f['datasetname']:
                         f['ruciodatasetname'] = f['datasetname'].split(":")[1]
                     else:
                         f['ruciodatasetname'] = f['datasetname']
@@ -2159,7 +2159,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                             f['ddmsite'] = panda_queues[job['computingsite']]['gocname']
                         else:
                             f['ddmsite'] = computeSvsAtlasS.get(job['computingsite'], "")
-                if 'dst' in f['destinationdblocktoken']:
+                if f['destinationdblocktoken'] and 'dst' in f['destinationdblocktoken']:
                     parced = f['destinationdblocktoken'].split("_")
                     f['ddmsite'] = parced[0][4:]
                     f['dsttoken'] = parced[1]
@@ -2179,7 +2179,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 if 'creationdate' not in f: f['creationdate'] = f['modificationtime']
                 if 'fileid' not in f: f['fileid'] = f['row_id']
                 if 'datasetname' not in f:
-                    if  f['scope']+":" in f['dataset']:
+                    if f['scope'] and f['scope']+":" in f['dataset']:
                         f['datasetname'] = f['dataset']
                         f['ruciodatasetname'] = f['dataset'].split(":")[1]
                     else:

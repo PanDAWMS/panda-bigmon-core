@@ -1,9 +1,13 @@
 """
 Utils to get schedresources info from dedicated information system (CRIC)
 """
+import os
+
 import urllib3
 import json
 import logging
+import json
+from urllib.parse import urlparse
 
 from django.core.cache import cache
 
@@ -19,7 +23,22 @@ def get_CRIC_panda_queues():
     if not panda_queues_dict:
         panda_queues_dict = {}
         url = settings.CRIC_API_URL
-        http = urllib3.PoolManager()
+        # check http proxy
+        netloc = urlparse(url)
+        proxy = None
+        if 'no_proxy' in os.environ and netloc.hostname in os.environ['no_proxy'].split(','):
+            # no_proxy
+            pass
+        elif netloc.scheme == 'https' and 'https_proxy' in os.environ:
+            # https proxy
+            proxy = os.environ['https']
+        elif netloc.scheme == 'http' and 'http_proxy' in os.environ:
+            # http proxy
+            proxy = os.environ['http']
+        if proxy:
+            http = urllib3.ProxyManager(proxy)
+        else:
+            http = urllib3.PoolManager()
         try:
             r = http.request('GET', url)
             data = json.loads(r.data.decode('utf-8'))
@@ -55,11 +74,14 @@ def get_panda_queues():
         panda_queues_list.extend(SchedconfigJson.objects.values())
         if len(panda_queues_list) > 0:
             for pq in panda_queues_list:
-                try:
-                    panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
-                except:
-                    panda_queues_dict[pq['pandaqueue']] = None
-                    _logger.error("cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
+                if isinstance(pq['data'], dict):
+                    panda_queues_dict[pq['pandaqueue']] = pq['data']
+                else:
+                    try:
+                        panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
+                    except:
+                        panda_queues_dict[pq['pandaqueue']] = None
+                        _logger.error("cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
 
     return panda_queues_dict
 

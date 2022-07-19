@@ -78,6 +78,8 @@ class TasksErrorCodesAnalyser:
             tasks_errors_frame = self.remove_stop_words(tasks_errors_frame)
             tasks_errors_groups = tasks_errors_frame.groupby('processed_errordialog').\
                 agg({'taskid': lambda x: list(x), 'errordialog': 'first'}).reset_index()
+            if tasks_errors_groups.empty:
+                return []
             tasks_errors_groups['count'] = tasks_errors_groups.apply(lambda row: len(row['taskid']), axis=1)
             tasks_errors_groups = tasks_errors_groups.sort_values(by=['count'], ascending=False)
 
