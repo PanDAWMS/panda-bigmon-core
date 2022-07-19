@@ -8,6 +8,7 @@ from django.views.decorators.cache import never_cache
 from django.utils.cache import patch_response_headers
 from django.http import HttpResponse
 from django.utils import timezone
+from django.conf import settings
 
 import core.constants as const
 from core.utils import extensibleURL
@@ -35,9 +36,16 @@ def loginauth2(request):
     if request.user.is_authenticated:
         return redirect(next)
 
+    # auth providers
+    if hasattr(settings, 'AUTH_PROVIDER_LIST') and settings.AUTH_PROVIDER_LIST:
+        auth_providers = settings.AUTH_PROVIDER_LIST
+    else:
+        auth_providers = None
+
     # store the redirect url in the session to be picked up after the auth completed
     request.session['next'] = next
-    response = render_to_response('login.html', {'request': request, }, content_type='text/html')
+    response = render_to_response('login.html', {'request': request, 'auth_providers': auth_providers},
+                                  content_type='text/html')
     response.delete_cookie('sessionid')
     return response
 

@@ -58,3 +58,17 @@
     background-color: #004d85;
     color: #fefefe;
   }
+
+.button-group-v .button.social.indigoiam {
+  background-color: #17a102;
+  padding: 1.2rem;
+}
+  .button-group-v .button.social.indigoiam > i {
+    padding-right: 0.7rem;
+    font-size: 1.7rem;
+    vertical-align: middle;
+  }
+  .button-group-v .button.social.indigoiam:hover, .button-group-v .button.social.indigoiam:focus {
+    background-color: #127502;
+    color: #fefefe;
+  }
