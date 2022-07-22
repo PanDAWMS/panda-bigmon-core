@@ -565,6 +565,29 @@ def round_to_n(x, n):
     return round(x * factor) / factor
 
 
+def round_to_n_digits(x, n=0, method='normal'):
+    """
+    Round float to n decimals.
+    :param x: float number
+    :param n: decimals
+    :param method: str: normal, up or down
+    :return:
+    """
+    if not x:
+        return 0
+
+    factor = (10 ** n)
+
+    if method == 'normal':
+        x = round(x * factor) / factor
+    elif method == 'ceil':
+        x = math.ceil(x * factor) / factor
+    elif method == 'floor':
+        x = math.floor(x * factor) / factor
+
+    return x
+
+
 def getPilotCounts(view):
     """ Getting pilots counts by PQ. """
     query = {
