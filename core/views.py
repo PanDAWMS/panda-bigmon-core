@@ -5677,7 +5677,7 @@ def taskInfo(request, jeditaskid=0):
 
     # get datasets list and containers
     dsets, dsinfo = datasets_for_task(jeditaskid)
-    if taskrec:
+    if taskrec and dsinfo:
         taskrec['dsinfo'] = dsinfo
         taskrec['totev'] = dsinfo['neventsTot']
         taskrec['totevproc'] = dsinfo['neventsUsedTot']

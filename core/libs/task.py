@@ -400,9 +400,6 @@ def calculate_dataset_stats(dsets):
     :return: dsets: list of dicts
     :return: dsinfo: stats
     """
-    if not dsets or len(dsets) == 0:
-        return dsets, None
-
     dsinfo = {
         'nfiles': 0,
         'nfilesfinished': 0,
@@ -414,6 +411,8 @@ def calculate_dataset_stats(dsets):
         'neventsUsedTot': 0,
         'neventsOutput': 0,
     }
+    if not dsets or len(dsets) == 0:
+        return dsets, dsinfo
 
     if len(dsets) > 0:
         for ds in dsets:
