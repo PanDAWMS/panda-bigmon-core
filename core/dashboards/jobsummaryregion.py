@@ -166,9 +166,9 @@ def get_job_summary_region(query, **kwargs):
     # create template structure for grouping by queue
     for pqn, params in panda_queues_dict.items():
         jsr_queues_dict[pqn] = {'pq_params': {}, 'pq_pilots': {},  'summary': {'all': {'all': {}}}}
-        jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type']
-        jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud']
-        jsr_queues_dict[pqn]['pq_params']['status'] = params['status']
+        jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type'] if 'type' in params else '-'
+        jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud'] if 'cloud' in params else '-'
+        jsr_queues_dict[pqn]['pq_params']['status'] = params['status'] if 'status' in params else '-'
         jsr_queues_dict[pqn]['pq_pilots']['count'] = psq_dict[pqn]['count_abs'] if pqn in psq_dict else -1
         jsr_queues_dict[pqn]['pq_pilots']['count_nojob'] = psq_dict[pqn]['count_nojobabs'] if pqn in psq_dict else -1
         for jt in job_types:

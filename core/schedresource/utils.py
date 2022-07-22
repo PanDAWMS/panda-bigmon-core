@@ -173,21 +173,21 @@ def get_basic_info_for_pqs(pq_list):
             if pq in pq_info and pq_info[pq]:
                 pq_info_list.append({
                     'pq_name': pq,
-                    'site': pq_info[pq]['gocname'],
-                    'region': pq_info[pq]['cloud'],
-                    'tier': pq_info[pq]['tier'],
-                    'corepower': pq_info[pq]['corepower'],
-                    'status': pq_info[pq]['status'],
+                    'site': pq_info[pq]['gocname'] if 'gocname' in pq_info[pq] else '-',
+                    'region': pq_info[pq]['cloud'] if 'cloud' in pq_info[pq] else '-',
+                    'tier': pq_info[pq]['tier'] if 'tier' in pq_info[pq] else '-',
+                    'corepower': pq_info[pq]['corepower'] if 'corepower' in pq_info[pq] else 0,
+                    'status': pq_info[pq]['status'] if 'status' in pq_info[pq] else '-',
                 })
     else:
         for pq, pqdata in pq_info.items():
             pq_info_list.append({
                 'pq_name': pq,
-                'site': pq_info[pq]['gocname'],
-                'region': pq_info[pq]['cloud'],
-                'tier': pq_info[pq]['tier'],
-                'corepower': pq_info[pq]['corepower'],
-                'status': pq_info[pq]['status'],
+                'site': pq_info[pq]['gocname'] if 'gocname' in pq_info[pq] else '-',
+                'region': pq_info[pq]['cloud'] if 'cloud' in pq_info[pq] else '-',
+                'tier': pq_info[pq]['tier'] if 'tier' in pq_info[pq] else '-',
+                'corepower': pq_info[pq]['corepower'] if 'corepower' in pq_info[pq] else 0,
+                'status': pq_info[pq]['status'] if 'status' in pq_info[pq] else '-',
             })
 
     return pq_info_list
