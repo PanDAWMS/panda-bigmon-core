@@ -2734,15 +2734,16 @@ def userInfo(request, user=''):
 
     # getting most relevant links based on visit statistics
     links = {}
-    if is_prepare_history_links:
-        userids = BPUser.objects.filter(email=request.user.email).values('id')
-        userid = userids[0]['id']
-        fields = {
-            'job': copy.deepcopy(standard_fields),
-            'task': copy.deepcopy(standard_taskfields),
-            'site': copy.deepcopy(standard_sitefields),
-        }
-        links = get_relevant_links(userid, fields)
+    if 'ORACLE' in settings.DEPLOYMENT:
+        if is_prepare_history_links:
+            userids = BPUser.objects.filter(email=request.user.email).values('id')
+            userid = userids[0]['id']
+            fields = {
+                'job': copy.deepcopy(standard_fields),
+                'task': copy.deepcopy(standard_taskfields),
+                'site': copy.deepcopy(standard_sitefields),
+            }
+            links = get_relevant_links(userid, fields)
 
     # Tasks owned by the user
     query, extra_query_str, _ = setupView(request, hours=days*24, limit=999999, querytype='task', wildCardExt=True)
