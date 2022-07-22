@@ -94,6 +94,7 @@ def cleanTaskList(tasks, **kwargs):
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
         dvalues = ('jeditaskid', 'type', 'masterid', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'nfilesmissing')
+        dvalues = list(set(dvalues) & set([f.name for f in JediDatasets._meta.get_fields()]))
         dsquery = {
             'type__in': ['input', 'pseudo_input'],
             'masterid__isnull': True,
@@ -467,6 +468,7 @@ def datasets_for_task(jeditaskid):
         'storagetoken', 'nevents', 'neventsused', 'neventstobeused', 'nfiles', 'nfilesfinished', 'nfilesfailed',
         'nfilesmissing', 'nfileswaiting'
     )
+    values = list(set(values) & set([f.name for f in JediDatasets._meta.get_fields()]))
     dsets.extend(JediDatasets.objects.filter(**dsquery).values(*values))
 
     dsets, dsinfo = calculate_dataset_stats(dsets)
