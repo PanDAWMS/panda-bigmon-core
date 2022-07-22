@@ -11,6 +11,7 @@
 .online { color:#207f20 }
 .merged { color:#207f20 }
 .broken { color:firebrick }
+.lost { color:firebrick }
 .tobroken { color:firebrick }
 .deleted { color:red }
 .failed { color:red }
@@ -32,6 +33,7 @@
 .finishing { color:#FF9933 }
 .cancelled { color:#e67300 }
 .warning { color:#e67300 }
+.missing { color:#e67300 }
 .timeout { color:#e67300 }
 .discarded { color:#e67300 }
 .approved { color:#47D147 }
@@ -41,8 +43,10 @@
 .submitting { color:#47D147 }
 .scouting { color:#47D147 }
 .scouted { color:#47D147 }
+.picked { color:#47D147 }
 .running { color:#34a934 }
 .merging { color:#34a934 }
+.partial { color:#34a934 }
 .transferring { color:#34a934 }
 .activated { color:#3b8e67 }
 .prepared { color:#3b8e67 }
@@ -72,11 +76,13 @@
   color: #0a0a0a;
 }
 
+.tobroken_fill { color:black;  background-color:#db9591; }
+.broken_fill { color:black;  background-color:#db9591; }
+.lost_fill { color:black;  background-color:#db9591; }
+
 .corrupted_fill { color:black;  background-color:#FF8174 }
 .alarm_fill { color:black;  background-color:#FF8174 }
 .error_fill { color:black;  background-color:#FF8174 }
-.broken_fill { color:black;  background-color:#FF8174; position: static; }
-.tobroken_fill { color:black;  background-color:#FF8174; position: static; }
 .reassign_fill { color:black;  background-color:#FF8174 }
 
 .failed_fill { color:black;  background-color:#FFABA2; position: static; }
@@ -103,6 +109,7 @@
 .transferring_fill { color:black;  background-color:#addf80 }
 .finishing_fill { color:black;  background-color:#addf80; position: static; }
 .merging_fill { color:black;  background-color:#addf80 }
+.partial_fill { color:black;  background-color:#addf80 }
 
 .running_fill { color:black;  background-color:#C7E9A9; position: static; }
 .starting_fill { color:black;  background-color:#C7E9A9; position: static; }
@@ -113,6 +120,7 @@
 .scouting_fill { color:black;  background-color:#DBF1C6; position: static;  }
 .topreprocess_fill { color:black;  background-color:#DBF1C6; position: static; }
 .preprocessing_fill { color:black;  background-color:#DBF1C6; position: static; }
+.picked_fill { color:black;  background-color:#DBF1C6 }
 
 .submitting_fill { color:black;  background-color:#EBF5E2; position: static; }
 .approved_fill { color:black;  background-color:#EBF5E2 }
@@ -135,6 +143,7 @@
 .staging_fill { color:black;  background-color:#f1e8ff }
 
 .warning_fill { color:black;  background-color:#FFCB2F }
+.missing_fill { color:black;  background-color:#FFCB2F }
 
 .discarded_fill { color:black; background-color:#FFD65D }
 .timeout_fill { color:black; background-color:#FFD65D }

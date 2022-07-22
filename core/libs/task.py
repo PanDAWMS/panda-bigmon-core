@@ -13,7 +13,7 @@ from django.db.models import Count, Sum
 from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits
 from core.libs.datetimestrings import parse_datetime
 from core.libs.elasticsearch import create_esatlas_connection
 from core.libs.job import drop_duplicates
@@ -93,7 +93,7 @@ def cleanTaskList(tasks, **kwargs):
 
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
-        dvalues = ('jeditaskid', 'nfiles', 'nfilesfinished', 'nfilesfailed')
+        dvalues = ('jeditaskid', 'type', 'masterid', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'nfilesmissing')
         dsquery = {
             'type__in': ['input', 'pseudo_input'],
             'masterid__isnull': True,
@@ -110,13 +110,13 @@ def cleanTaskList(tasks, **kwargs):
             extra = "JEDITASKID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})".format(get_tmp_table_name(), tk)
 
         dsets = JediDatasets.objects.filter(**dsquery).extra(where=[extra]).values(*dvalues)
-        dsinfo = {}
+        ds_dict = {}
         if len(dsets) > 0:
             for ds in dsets:
                 taskid = ds['jeditaskid']
-                if taskid not in dsinfo:
-                    dsinfo[taskid] = []
-                dsinfo[taskid].append(ds)
+                if taskid not in ds_dict:
+                    ds_dict[taskid] = []
+                ds_dict[taskid].append(ds)
 
         if add_datasets_locality:
             input_dataset_rse = get_dataset_locality(taskl)
@@ -124,31 +124,13 @@ def cleanTaskList(tasks, **kwargs):
         for task in tasks:
             if 'totevrem' not in task:
                 task['totevrem'] = None
-            dstotals = {
-                'nfiles': 0,
-                'nfilesfinished': 0,
-                'nfilesfailed': 0,
-                'pctfinished': 0,
-                'pctfailed': 0,
-            }
-            if task['jeditaskid'] in dsinfo:
-                nfiles = 0
-                nfinished = 0
-                nfailed = 0
-                for ds in dsinfo[task['jeditaskid']]:
-                    if int(ds['nfiles']) > 0:
-                        nfiles += int(ds['nfiles'])
-                        nfinished += int(ds['nfilesfinished'])
-                        nfailed += int(ds['nfilesfailed'])
-                if nfiles > 0:
-                    dstotals['nfiles'] = nfiles
-                    dstotals['nfilesfinished'] = nfinished
-                    dstotals['nfilesfailed'] = nfailed
-                    dstotals['pctfinished'] = round(100. * nfinished / nfiles, 2)
-                    dstotals['pctfailed'] = round(100. * nfailed / nfiles, 2)
 
-            task['dsinfo'] = dstotals
-            task.update(dstotals)
+            dsinfo = {}
+            if task['jeditaskid'] in ds_dict:
+                task_dsets, dsinfo = calculate_dataset_stats(ds_dict[task['jeditaskid']])
+
+            task['dsinfo'] = dsinfo
+            task.update(dsinfo)
 
     if sortby is not None:
         if sortby == 'creationdate-asc':
@@ -411,6 +393,64 @@ def calculate_metrics(jobs, metrics_names):
     return metrics
 
 
+def calculate_dataset_stats(dsets):
+    """
+    Calculate number of files, events and progress pct for list of datasets
+    :return: dsets: list of dicts
+    :return: dsinfo: stats
+    """
+    if not dsets or len(dsets) == 0:
+        return dsets, None
+
+    dsinfo = {
+        'nfiles': 0,
+        'nfilesfinished': 0,
+        'nfilesfailed': 0,
+        'nfilesmissing': 0,
+        'pctfinished': 0.0,
+        'pctfailed': 0,
+        'neventsTot': 0,
+        'neventsUsedTot': 0,
+        'neventsOutput': 0,
+    }
+
+    if len(dsets) > 0:
+        for ds in dsets:
+            if 'datasetname' in ds and len(ds['datasetname']) > 0:
+                if not str(ds['datasetname']).startswith('user'):
+                    scope = str(ds['datasetname']).split('.')[0]
+                else:
+                    scope = '.'.join(str(ds['datasetname']).split('.')[:2])
+                if ':' in scope:
+                    scope = str(scope).split(':')[0]
+                ds['scope'] = scope
+
+            # input primary datasets
+            if 'type' in ds and ds['type'] in ['input', 'pseudo_input'] and 'masterid' in ds and ds['masterid'] is None:
+                if 'nevents' in ds and ds['nevents'] is not None and int(ds['nevents']) > 0:
+                    dsinfo['neventsTot'] += int(ds['nevents'])
+                if 'neventsused' in ds and ds['neventsused'] is not None and int(ds['neventsused']) > 0:
+                    dsinfo['neventsUsedTot'] += int(ds['neventsused'])
+
+                if 'nfiles' in ds and int(ds['nfiles']) > 0:
+                    dsinfo['nfiles'] += int(ds['nfiles'])
+                    dsinfo['nfilesfinished'] += int(ds['nfilesfinished']) if 'nfilesfinished' in ds else 0
+                    dsinfo['nfilesfailed'] += int(ds['nfilesfailed']) if 'nfilesfailed' in ds else 0
+                    # nfilesmissing is not counted in nfiles in the DB
+                    if 'nfilesmissing' in ds and ds['nfilesmissing'] is not None:
+                        dsinfo['nfilesmissing'] += int(ds['nfilesmissing'])
+                    ds['percentfinished'] = round_to_n_digits(100. * int(ds['nfilesfinished']) / int(ds['nfiles']), 1, method='floor')
+
+            elif 'type' in ds and ds['type'] in ('output', ) and 'streamname' in ds and ds['streamname'] is not None and ds['streamname'] == 'OUTPUT0':
+                # OUTPUT0 - the first and the main steam of outputs
+                dsinfo['neventsOutput'] += int(ds['nevents']) if 'nevents' in ds and ds['nevents'] and ds['nevents'] > 0 else 0
+
+        dsinfo['pctfinished'] = round_to_n_digits(100.*dsinfo['nfilesfinished']/dsinfo['nfiles'], 1, method='floor') if dsinfo['nfiles'] > 0 else 0
+        dsinfo['pctfailed'] = round_to_n_digits(100.*dsinfo['nfilesfailed']/dsinfo['nfiles'], 1, method='floor') if dsinfo['nfiles'] > 0 else 0
+
+    return dsets, dsinfo
+
+
 def datasets_for_task(jeditaskid):
     """
     Getting list of datasets corresponding to a task and file state summary
@@ -419,61 +459,18 @@ def datasets_for_task(jeditaskid):
     :return: dsinfo: dict
     """
     dsets = []
-    dsinfo = {
-        'nfiles': 0,
-        'nfilesfinished': 0,
-        'nfilesfailed': 0,
-        'pctfinished': 0.0,
-        'pctfailed': 0,
-        'neventsTot': 0,
-        'neventsUsedTot': 0,
-        'neventsOutput': 0,
-    }
-
     dsquery = {
         'jeditaskid': jeditaskid,
     }
     values = (
         'jeditaskid', 'datasetid', 'datasetname', 'containername', 'type', 'masterid', 'streamname', 'status',
-        'storagetoken', 'nevents', 'neventsused', 'neventstobeused', 'nfiles', 'nfilesfinished', 'nfilesfailed'
+        'storagetoken', 'nevents', 'neventsused', 'neventstobeused', 'nfiles', 'nfilesfinished', 'nfilesfailed',
+        'nfilesmissing', 'nfileswaiting'
     )
     dsets.extend(JediDatasets.objects.filter(**dsquery).values(*values))
 
-    scope = ''
-    newdslist = []
-    if len(dsets) > 0:
-        for ds in dsets:
-            if len(ds['datasetname']) > 0:
-                if not str(ds['datasetname']).startswith('user'):
-                    scope = str(ds['datasetname']).split('.')[0]
-                else:
-                    scope = '.'.join(str(ds['datasetname']).split('.')[:2])
-                if ':' in scope:
-                    scope = str(scope).split(':')[0]
-                ds['scope'] = scope
-            newdslist.append(ds)
-
-            # input primary datasets
-            if ds['type'] in ['input', 'pseudo_input'] and ds['masterid'] is None:
-                if not ds['nevents'] is None and int(ds['nevents']) > 0:
-                    dsinfo['neventsTot'] += int(ds['nevents'])
-                if not ds['neventsused'] is None and int(ds['neventsused']) > 0:
-                    dsinfo['neventsUsedTot'] += int(ds['neventsused'])
-
-                if int(ds['nfiles']) > 0:
-                    ds['percentfinished'] = int(100. * int(ds['nfilesfinished']) / int(ds['nfiles']))
-                    dsinfo['nfiles'] += int(ds['nfiles'])
-                    dsinfo['nfilesfinished'] += int(ds['nfilesfinished'])
-                    dsinfo['nfilesfailed'] += int(ds['nfilesfailed'])
-            elif ds['type'] in ('output', ) and ds['streamname'] is not None and ds['streamname'] == 'OUTPUT0':
-                # OUTPUT0 - the first and the main steam of outputs
-                dsinfo['neventsOutput'] += int(ds['nevents']) if ds['nevents'] and ds['nevents'] > 0 else 0
-
-        dsets = newdslist
-        dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
-
-        dsinfo['pctfinished'] = round(100.*dsinfo['nfilesfinished']/dsinfo['nfiles'], 2) if dsinfo['nfiles'] > 0 else 0
-        dsinfo['pctfailed'] = round(100.*dsinfo['nfilesfailed']/dsinfo['nfiles'], 2) if dsinfo['nfiles'] > 0 else 0
+    dsets, dsinfo = calculate_dataset_stats(dsets)
+    dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
 
     return dsets, dsinfo
 

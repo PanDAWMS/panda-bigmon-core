@@ -5689,7 +5689,9 @@ def taskInfo(request, jeditaskid=0):
             'containername': cin,
             'nfiles': 0,
             'nfilesfinished': 0,
-            'nfilesfailed': 0, 'pct': 0
+            'nfilesfailed': 0,
+            'nfilesmissing': 0,
+            'pct': 0
         } for cin in taskparams['dsForIN'].split(',')]
         # fill the list of input containers with progress info
         for inc in inctrs:
@@ -5698,6 +5700,7 @@ def taskInfo(request, jeditaskid=0):
                     inc['nfiles'] += ds['nfiles'] if ds['nfiles'] else 0
                     inc['nfilesfinished'] += ds['nfilesfinished'] if ds['nfilesfinished'] else 0
                     inc['nfilesfailed'] += ds['nfilesfailed'] if ds['nfilesfailed'] else 0
+                    inc['nfilesmissing'] += ds['nfilesmissing'] if ds['nfilesmissing'] else 0
                     inc['pct'] = math.floor(100.0*inc['nfilesfinished']/inc['nfiles']) if ds['nfiles'] and ds['nfiles'] > 0 else inc['pct']
 
     outctrs.extend(list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
@@ -7282,7 +7285,7 @@ def datasetList(request):
         else:
             query['datasetname'] = request.session['requestParams']['datasetname']
     if 'containername' in request.session['requestParams']:
-        query['datasetname'] = request.session['requestParams']['containername']
+        query['containername'] = request.session['requestParams']['containername']
     if 'jeditaskid' in request.session['requestParams']:
         query['jeditaskid'] = int(request.session['requestParams']['jeditaskid'])
 

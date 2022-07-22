@@ -215,11 +215,10 @@
                         Group User {% if requestParams.tasktype == 'prod' %}     Tracker     Request {% endif %}
                         Errors <br><font color='brown'>Logged status</font></th>
                     <th>Task status<br><a href="{{ nosorturl }}sortby=nfiles">Nfiles</a></th>
-                    <th>Input files <br><a href="{{ nosorturl }}sortby=pctfinished"><span
-                            class='finished'>finish%</span></a> <a href="{{ nosorturl }}sortby=pctfailed"><span
-                            class='failed'>fail%</span></a>
-                        <br> <a href="{{ nosorturl }}sortby=pctfinished"><span class='finished'>Nfinish</span></a>
-                        <a href="{{ nosorturl }}sortby=pctfailed"><span class='failed'>Nfail</span></a>
+                    <th>Input files
+                      <br><a href="{{ nosorturl }}sortby=pctfinished"><span class='finished'>Nfinish&nbsp;%</span></a>
+                      <a href="{{ nosorturl }}sortby=pctfailed"><span class='failed'>Nfail&nbsp;%</span></a>
+                      <span class="lost">Nlost</span>
                     </th>
                     <th>Total/<a href="{{ nosorturl }}sortby=totevrem">Remaining</a> events</th>
                     <th><a href="{{ nosorturl }}sortby=creationdate-asc">Created</a></th>
@@ -262,16 +261,14 @@
                                     <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}
                             </a> {% if task.failedscouting == True %}<br>during scouting{% endif %}
                             {% if task.dsinfo.nfiles > 0 %} <br>{{ task.dsinfo.nfiles }} {% endif %} </td>
-                        <td>{% if task.dsinfo.nfilesfinished > 0 %}
-                            <span class='finished'>{{ task.dsinfo.pctfinished }}%</span>{% endif %}
-                            {% if task.dsinfo.nfilesfailed > 0 %}
-                                <a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">
-                                <span class='failed'> {{ task.dsinfo.pctfailed }}%</span>{% endif %}</a>
-                            <br> {% if task.dsinfo.nfilesfinished > 0 %}
-                                <span class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %}
-                            {% if task.dsinfo.nfilesfailed > 0 %}
-                                <a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}"><span
-                                        class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}
+                        <td>
+                          {% if task.dsinfo.nfilesfinished > 0 %}
+                            <span class='finished'>{{ task.dsinfo.nfilesfinished }}&nbsp;{{ task.dsinfo.pctfinished }}%</span>
+                          {% endif %}
+                          {% if task.dsinfo.nfilesfailed > 0 %}
+                              <br><a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">
+                              <span class='failed'>{{ task.dsinfo.nfilesfailed }}&nbsp;{{ task.dsinfo.pctfailed }}%</span>{% endif %}</a>
+                          {% if task.dsinfo.nfilesmissing > 0 %}<br><span class="lost">{{ task.dsinfo.nfilesmissing }}</span>{% endif %}
                         </td>
                         <td><font size=-1>{% if task.totev > 0 %} {{ task.totev }} /
                             {{ task.totevrem }} {% endif %}</font></td>
@@ -281,7 +278,6 @@
                         <td>{{ task.taskpriority }}</td>
                         <td>{{ task.nucleus }}</td>
                         <td>{{ task.cloud }}</td>
-
                     </tr>
                 {% endfor %}
             </table>

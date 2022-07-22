@@ -60,8 +60,21 @@
             {% endif %}
         {% else %}
           {% if task.dsinfo %}
-            <th class="num">N input events <br><span class='finished'>used</span></th>
-            <th class="num">N output events</th>
+            <th class="num"> N input files
+                <br><span class='finished'>finished</span>
+                {% if task.dsinfo.nfilesfailed > 0 %}
+                  <br><span class='failed'>failed</span>
+                {% endif %}
+                {% if task.dsinfo.nfilesmissing > 0 %}
+                  <br><span class='lost'>lost</span>
+                {% endif %}
+            </th>
+            {% if task.totev > 0 %}
+              <th class="num">N input events <br><span class='finished'>used</span></th>
+            {% endif %}
+            {% if task.totevoutput > 0 %}
+              <th class="num">N output events</th>
+            {% endif %}
             {% if task.transpath == 'ReSim_tf.py' %}
               <th class="num">Resim events:
                 <br> average
@@ -72,10 +85,6 @@
                 <br> <span class="closed">Expected</span>
                 <br> Total<br><span class='done'>done</span>
                 <br> <span class='failed'>failed</span>
-            </th>
-            <th class="num"> N input files
-                <br><span class='finished'>finished</span>
-                <br><span class='failed'>failed</span>
             </th>
           {% endif %}
         {% endif %}
@@ -149,10 +158,23 @@
           {% endif %}
         {% else %}
           {% if task.dsinfo %}
-            <td class="num"> {{ task.totev | intcomma }}
-              <br><span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span>
+            <td class="num"> {{ task.dsinfo.nfiles }}
+              <br><span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
+              {% if task.dsinfo.nfilesfailed > 0 %}
+                <br><span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>
+              {% endif %}
+              {% if task.dsinfo.nfilesmissing > 0 %}
+                <br><span class='lost'>{{ task.dsinfo.nfilesmissing }}</span>
+              {% endif %}
             </td>
-            <td class="num"> {{ task.totevoutput | intcomma }}</td>
+            {% if task.totev > 0 %}
+              <td class="num"> {{ task.totev | intcomma }}
+                <br><span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span>
+              </td>
+            {% endif %}
+            {% if task.totevoutput > 0 %}
+              <td class="num"> {{ task.totevoutput | intcomma }}</td>
+            {% endif %}
             {% if task.transpath == 'ReSim_tf.py' %}
               <td class="num">
                 {% if task.resimeventspernevents_avgpercent %}{{ task.resimeventspernevents_avgpercent | intcomma }}%{% else %}-{% endif %}
@@ -163,12 +185,6 @@
               <br>{{ task.currenttotevhs06 | intcomma }}
               <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
               <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span>
-            </td>
-            <td class="num"> {{ task.dsinfo.nfiles }}
-              <br><span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
-              {% if task.dsinfo.nfilesfailed > 0 %}
-                <br><span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>
-              {% endif %}
             </td>
           {% endif %}
         {% endif %}
@@ -505,8 +521,8 @@
         {% for dsrec in inctrs %}
           <tr>
             <td class="wrap-words"><a href="{% url 'datasetList' %}?containername={% if dsrec.containername %}{{ dsrec.containername }}{% else %}{{ dsrec }}{% endif %}">{% if dsrec.containername %}{{ dsrec.containername }}{% else %}{{ dsrec }}{% endif %}</a></td>
-            <td>{% if dsrec.nfiles %}{{ dsrec.pct }}%</td>
-            <td>{{ dsrec.nfiles }} | <span class="finished">{{ dsrec.nfilesfinished }}</span> | <span class="failed">{{ dsrec.nfilesfailed }}</span> {% endif %}</td>
+            <td>{{ dsrec.pct }}%</td>
+            <td>{{ dsrec.nfiles }}{% if dsrec.nfilesmissing > 0 %} <span class="lost"> +{{ dsrec.nfilesmissing }} lost</span>{% endif %} | <span class="finished">{{ dsrec.nfilesfinished }}</span> | <span class="failed">{{ dsrec.nfilesfailed }}</span> </td>
           </tr>
         {% endfor %}
       {% endif %}
@@ -1159,12 +1175,15 @@ function buildDatasetsTable(data) {
             sDefaultContent: "-",
             className: 'num',
             "render": function(data, type, full, meta) {
+                let str = '';
                 if (data > 0) {
-                    return '<a href = "{% url 'fileList' %}?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '">' + full['nfiles'] + '</a>'
+                    str += '<a href = "{% url 'fileList' %}?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '">' + full['nfiles'] + '</a>';
+                    if (full['nfilesmissing'] > 0) {str += ' <span class="lost">+' + full['nfilesmissing'] + ' lost</span>'; }
                 }
                 else {
-                    return data;
+                    str += data;
                 }
+                return str
             }
         },
         {
