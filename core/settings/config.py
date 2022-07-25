@@ -144,10 +144,12 @@ elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA_PANDA_META = 'doma_pandameta'
     DB_SCHEMA_IDDS = 'doma_idds'
     DATABASES = dbaccess_postgres
-    CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
-    IDDS_HOST = 'https://aipanda015.cern.ch:443/idds'
-    IDDS_HOST_GCP = 'https://aipanda016.cern.ch:443/idds'
-    PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
+    CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json')
+    IDDS_HOST = os.environ.get('IDDS_HOST', 'https://aipanda015.cern.ch:443/idds')
+    IDDS_HOST_GCP = os.environ.get('IDDS_HOST_GCP', 'https://aipanda016.cern.ch:443/idds')
+    PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
+                                                  "https://storage.googleapis.com/drp-us-central1-logging"
+                                                  "/logs/{queue_name}/PandaJob_{panda_id}")
 elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA = 'DOMA_PANDABIGMON'
     DB_SCHEMA_PANDA = 'DOMA_PANDA'
@@ -159,7 +161,6 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     IDDS_HOST = 'https://aipanda015.cern.ch:443/idds'
     IDDS_HOST_GCP = 'https://aipanda016.cern.ch:443/idds'
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
-
 
 # set default datetime format for datetime.datetime.strftime()
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
