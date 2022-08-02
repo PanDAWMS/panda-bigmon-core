@@ -2,7 +2,7 @@
 {% load humanize %}
 {% load static %}
 {% load common_tags %}
-{% block page_title %} PanDA tasks{% endblock %}
+{% block page_title %} {% if requestParams.preset %}{{ requestParams.preset }} production {% else %}Production{% endif %}  tasks{% endblock %}
 {% block subtitle %}Running production task list
 {% endblock %}
 {% block css_page_library %}
@@ -231,7 +231,7 @@
   <th>Req ID</th>
   <th>Run</th>
   <th>Task ID</th>
-  <th>RJobs</th>
+  <th>R Jobs</th>
   <th>Status (PS2)</th>
   <th>Status (JEDI)</th>
   {% if requestParams.preset != 'DPD' %}
@@ -263,11 +263,11 @@
   {% endif %}
   <th>CPU Time per Event</th>
   <th>Global Share</th>
-  <th>ES</th>
-  <th>Jumbo</th>
   <th>Hashtags</th>
   <th>Site</th>
   <th>Container name</th>
+  <th>ES</th>
+  <th>Jumbo</th>
 </tr>
 </thead>
 <tbody></tbody>
@@ -607,7 +607,7 @@ $(document).ready(function () {
               "data": "inputdataset",
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['inputdataset'] + '</a>'
               }
           },
           {
@@ -754,6 +754,44 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var prodsysurl = 'https://prodtask-dev.cern.ch/dkb/#/output_stat/?hashtag=|';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      hashtaglinks += '<a href="' + prodsysurl + hashtaglist[i] + '" target="_blank"><i class="fi-link"></i></a> '
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
+          },
+          {
               "data": "eventservice",
               sDefaultContent: "---",
               "render": function(data, type, full, meta) {
@@ -776,42 +814,6 @@ $(document).ready(function () {
                       return '---';
                   }
               },
-          },
-          {
-              "data": "hashtags",
-              sDefaultContent: "---",
-              "render": function ( data, type, row ) {
-                  if (data.length > 0) {
-                      var xurl = '{{ xurl|safe }}';
-                      var hashtaglist = data.split(',');
-                      var hashtaglinks = '';
-                      for (var i = 0; i < hashtaglist.length; i++) {
-                          if (xurl.indexOf('hashtags') > -1) {
-                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                          else
-                          {
-                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                      }
-                      return hashtaglinks;
-                  }
-                  else {
-                      return '---'
-                  }
-              }
-          },
-          {
-              "data": "site",
-              sDefaultContent: "",
-              "render": function(data, type, full, meta) {
-                  if (data) {
-                      return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-                  }
-                  else {
-                      return '---';
-                  }
-              }
           },
           {
               "data": "container_name",
@@ -868,7 +870,7 @@ $(document).ready(function () {
               "data": "inputdataset",
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['inputdataset'] + '</a>'
               }
           },
           {
@@ -985,6 +987,39 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var prodsysurl = 'https://prodtask-dev.cern.ch/dkb/#/output_stat/?hashtag=|';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      hashtaglinks += '<a href="' + prodsysurl + hashtaglist[i] + '" target="_blank"><i class="fi-link"></i></a> '
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+              }
+          },
+          {
               "data": "eventservice",
               sDefaultContent: "---",
               "render": function(data, type, full, meta) {
@@ -1007,37 +1042,6 @@ $(document).ready(function () {
                       return '---';
                   }
               },
-          },
-          {
-              "data": "hashtags",
-              sDefaultContent: "---",
-              "render": function ( data, type, row ) {
-                  if (data.length > 0) {
-                      var xurl = '{{ xurl|safe }}';
-                      var hashtaglist = data.split(',');
-                      var hashtaglinks = '';
-                      for (var i = 0; i < hashtaglist.length; i++) {
-                          if (xurl.indexOf('hashtags') > -1) {
-                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                          else
-                          {
-                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                      }
-                      return hashtaglinks;
-                  }
-                  else {
-                      return '---'
-                  }
-              }
-          },
-          {
-              "data": "site",
-              sDefaultContent: "",
-              "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-              }
           },
           {
               "data": "container_name",
@@ -1095,7 +1099,7 @@ $(document).ready(function () {
               "data": "inputdataset",
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['inputdataset'] + '</a>'
               }
           },
           {
@@ -1216,6 +1220,39 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var prodsysurl = 'https://prodtask-dev.cern.ch/dkb/#/output_stat/?hashtag=|';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      hashtaglinks += '<a href="' + prodsysurl + hashtaglist[i] + '" target="_blank"><i class="fi-link"></i></a> '
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+              }
+          },
+          {
               "data": "eventservice",
               sDefaultContent: "---",
               "render": function(data, type, full, meta) {
@@ -1238,37 +1275,6 @@ $(document).ready(function () {
                       return '---';
                   }
               },
-          },
-          {
-              "data": "hashtags",
-              sDefaultContent: "---",
-              "render": function ( data, type, row ) {
-                  if (data.length > 0) {
-                      var xurl = '{{ xurl|safe }}';
-                      var hashtaglist = data.split(',');
-                      var hashtaglinks = '';
-                      for (var i = 0; i < hashtaglist.length; i++) {
-                          if (xurl.indexOf('hashtags') > -1) {
-                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                          else
-                          {
-                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                      }
-                      return hashtaglinks;
-                  }
-                  else {
-                      return '---'
-                  }
-              }
-          },
-          {
-              "data": "site",
-              sDefaultContent: "",
-              "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-              }
           },
           {
               "data": "container_name",
@@ -1326,7 +1332,7 @@ $(document).ready(function () {
               "data": "inputdataset",
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['inputdataset'] + '</a>'
               }
           },
           {
@@ -1439,6 +1445,39 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var prodsysurl = 'https://prodtask-dev.cern.ch/dkb/#/output_stat/?hashtag=|';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      hashtaglinks += '<a href="' + prodsysurl + hashtaglist[i] + '" target="_blank"><i class="fi-link"></i></a> '
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+              }
+          },
+          {
               "data": "eventservice",
               sDefaultContent: "---",
               "render": function(data, type, full, meta) {
@@ -1461,37 +1500,6 @@ $(document).ready(function () {
                       return '---';
                   }
               },
-          },
-          {
-              "data": "hashtags",
-              sDefaultContent: "---",
-              "render": function ( data, type, row ) {
-                  if (data.length > 0) {
-                      var xurl = '{{ xurl|safe }}';
-                      var hashtaglist = data.split(',');
-                      var hashtaglinks = '';
-                      for (var i = 0; i < hashtaglist.length; i++) {
-                          if (xurl.indexOf('hashtags') > -1) {
-                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                          else
-                          {
-                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                      }
-                      return hashtaglinks;
-                  }
-                  else {
-                      return '---'
-                  }
-              }
-          },
-          {
-              "data": "site",
-              sDefaultContent: "",
-              "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-              }
           },
           {
               "data": "container_name",
