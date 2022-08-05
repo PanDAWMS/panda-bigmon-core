@@ -328,9 +328,15 @@ def initRequest(request, callselfmon=True):
         VOMODE = 'atlas'
         request.session['viewParams']['MON_VO'] = 'ATLAS'
     else:
-        VOMODE =settings.DEPLOYMENT
+        VOMODE = settings.DEPLOYMENT
+        if '_' in settings.DEPLOYMENT:
+            request.session['viewParams']['MON_VO'] = settings.DEPLOYMENT.split('_')[1]
         if hasattr(settings, 'MON_VO'):
             request.session['viewParams']['MON_VO'] = settings.MON_VO
+
+    # add CRIC URL base to session
+    if settings.CRIC_API_URL:
+        request.session['crichost'] = urlparse(settings.CRIC_API_URL).hostname
 
     # remove xurls from session if it is kept from previous requests
     if 'xurls' in request.session:
@@ -3256,58 +3262,48 @@ def siteInfo(request, site=''):
     valid, response = initRequest(request)
     if not valid:
         return response
+
     if site == '' and 'site' in request.session['requestParams']:
         site = request.session['requestParams']['site']
-    setupView(request)
-    query = {'siteid__iexact': site}
-    sites = Schedconfig.objects.filter(**query)
-    colnames = []
-    try:
-        siterec = sites[0]
-        colnames = siterec.get_all_fields()
-        if sites[0].lastmod:
-            sites[0].lastmod = sites[0].lastmod.strftime(settings.DATETIME_FORMAT)
-    except IndexError:
-        siterec = None
-    if len(sites) > 1:
-        for queue in sites:
-            if queue['lastmod']:
-                queue['lastmod'] = queue['lastmod'].strftime(settings.DATETIME_FORMAT)
 
     # get data from new schedconfig_json table
+    HPC = False
+    njobhours = 12
     panda_queue = []
+    pq_dict = None
     pqquery = {'pandaqueue': site}
     panda_queues = SchedconfigJson.objects.filter(**pqquery).values()
     panda_queue_type = None
     if len(panda_queues) > 0:
-        panda_queue_dict = json.loads(panda_queues[0]['data'])
-        panda_queue_type = panda_queue_dict['type']
-        for par, val in panda_queue_dict.items():
+        pq_dict = json.loads(panda_queues[0]['data'])
+
+    # get PQ params from CRIC if no info in DB
+    if not pq_dict:
+        pq_dict = get_panda_resource(site)
+
+    if pq_dict:
+        panda_queue_type = pq_dict['type']
+        for par, val in pq_dict.items():
             val = ', '.join([str(subpar) + ' = ' + str(subval) for subpar, subval in val.items()]) if isinstance(val, dict) else val
             panda_queue.append({'param': par, 'value': val})
+        panda_queue = sorted(panda_queue, key=lambda x: x['param'])
 
-    panda_queue = sorted(panda_queue, key=lambda x: x['param'])
-
-    HPC = False
-    njobhours = 12
-    try:
-        if siterec.catchall.find('HPC') >= 0:
+        # if HPC increase hours for links
+        if 'catchall' in pq_dict and pq_dict['catchall'] and pq_dict['catchall'].find('HPC') >= 0:
             HPC = True
             njobhours = 48
-    except AttributeError:
-        pass
-    panda_resource = get_panda_resource(siterec)
 
     if not is_json_request(request):
+        # prepare relevant params for top table
         attrs = []
-        if siterec:
-            attrs.append({'name': 'GOC name', 'value': siterec.gocname})
-            if HPC: attrs.append(
-                {'name': 'HPC', 'value': 'This is a High Performance Computing (HPC) supercomputer queue'})
-            if siterec.catchall and siterec.catchall.find('log_to_objectstore') >= 0:
+        if pq_dict:
+            attrs.append({'name': 'GOC name', 'value': pq_dict['gocname'] if 'gocname' in pq_dict else ''})
+            if HPC:
+                attrs.append({'name': 'HPC', 'value': 'This is a High Performance Computing (HPC) supercomputer queue'})
+            if 'catchall' in pq_dict and pq_dict['catchall'].find('log_to_objectstore') >= 0:
                 attrs.append({'name': 'Object store logs', 'value': 'Logging to object store is enabled'})
-            if siterec.objectstore and len(siterec.objectstore) > 0:
-                fields = siterec.objectstore.split('|')
+            if 'objectstore' in pq_dict and pq_dict['objectstore'] and len(pq_dict['objectstore']) > 0:
+                fields = pq_dict['objectstore'].split('|')
                 nfields = len(fields)
                 for nf in range(0, len(fields)):
                     if nf == 0:
@@ -3319,51 +3315,48 @@ def siteInfo(request, site=''):
                             ospath = fields2[1]
                             attrs.append({'name': 'Object store %s path' % ostype, 'value': ospath})
 
-            if siterec.nickname != site:
-                attrs.append({'name': 'Queue (nickname)', 'value': siterec.nickname})
-            if len(sites) > 1:
-                attrs.append({'name': 'Total queues for this site', 'value': len(sites)})
-            attrs.append({'name': 'Status', 'value': siterec.status})
-            if siterec.comment_field and len(siterec.comment_field) > 0:
-                attrs.append({'name': 'Comment', 'value': siterec.comment_field})
-            attrs.append({'name': 'Cloud', 'value': siterec.cloud})
-            if siterec.multicloud and len(siterec.multicloud) > 0:
-                attrs.append({'name': 'Multicloud', 'value': siterec.multicloud})
-            attrs.append({'name': 'Tier', 'value': siterec.tier})
-            attrs.append({'name': 'DDM endpoint', 'value': siterec.ddm})
-            attrs.append({'name': 'Max rss', 'value': "%.1f GB" % (float(siterec.maxrss) / 1000.)})
-            attrs.append({'name': 'Min rss', 'value': "%.1f GB" % (float(siterec.minrss) / 1000.)})
-            if siterec.maxtime > 0:
-                attrs.append({'name': 'Maximum time', 'value': "%.1f hours" % (float(siterec.maxtime) / 3600.)})
-            attrs.append({'name': 'Space', 'value': "%d TB as of %s" % ((float(siterec.space) / 1000.), siterec.tspace.strftime('%m-%d %H:%M'))})
-            attrs.append({'name': 'Last modified', 'value': "%s" % (siterec.lastmod.strftime('%Y-%m-%d %H:%M'))})
+            if 'nickname' in pq_dict and pq_dict['nickname'] != site:
+                attrs.append({'name': 'Queue (nickname)', 'value': pq_dict['nickname']})
+            attrs.append({'name': 'Status', 'value': pq_dict['status'] if 'status' in pq_dict else '-'})
+            if 'comment' in pq_dict and pq_dict['comment'] and len(pq_dict['comment']) > 0:
+                attrs.append({'name': 'Comment', 'value': pq_dict['comment']})
+            if 'type' in pq_dict and pq_dict['type']:
+                attrs.append({'name': 'Type', 'value': pq_dict['type']})
+            if 'cloud' in pq_dict and pq_dict['cloud']:
+                attrs.append({'name': 'Cloud', 'value': pq_dict['cloud']})
+            if 'tier' in pq_dict and pq_dict['tier']:
+                attrs.append({'name': 'Tier', 'value': pq_dict['tier']})
+            if 'corecount' in pq_dict and isinstance(pq_dict['corecount'], int):
+                attrs.append({'name': 'Cores', 'value': pq_dict['corecount']})
+            if 'maxrss' in pq_dict and isinstance(pq_dict['maxrss'], int):
+                attrs.append({'name': 'Max RSS', 'value': "{} GB".format(round(pq_dict['maxrss']/1000., 1))})
+            if 'maxtime' in pq_dict and isinstance(pq_dict['maxtime'], int) and pq_dict['maxtime'] > 0:
+                attrs.append({'name': 'Max time', 'value': "{} hours".format(round(pq_dict['maxtime']/3600.))})
+            if 'maxinputsize' in pq_dict and isinstance(pq_dict['maxinputsize'], int) and pq_dict['maxinputsize'] > 0:
+                attrs.append({'name': 'Max input size', 'value': "{} GB".format(round(pq_dict['maxinputsize']/1000.))})
 
             # get calculated metrics
-            try:
-                metrics = get_pq_metrics(siterec.nickname)
-            except Exception as ex:
-                metrics = {}
-                _logger.exception('Failed to get metrics for {}\n {}'.format(siterec.nickname, ex))
-            if len(metrics) > 0:
-                for pq, m_dict in metrics.items():
-                    for m in m_dict:
-                        colnames.append({'label': m, 'name': m, 'value': m_dict[m]})
+            if 'ATLAS' in settings.DEPLOYMENT:
+                try:
+                    metrics = get_pq_metrics(pq_dict['nickname'])
+                except Exception as ex:
+                    metrics = {}
+                    _logger.exception('Failed to get metrics for {}\n {}'.format(pq_dict['nickname'], ex))
+                if len(metrics) > 0:
+                    for pq, m_dict in metrics.items():
+                        for m in m_dict:
+                            panda_queue.append({'label': m, 'param': m, 'value': m_dict[m]})
 
-        del request.session['TFIRST']
-        del request.session['TLAST']
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
-            'site': siterec,
-            'panda_resource': panda_resource,
-            'queues': sites,
-            'colnames': colnames,
+            'site': pq_dict,
+            'colnames': panda_queue,
             'attrs': attrs,
             'name': site,
             'pq_type': panda_queue_type,
             'njobhours': njobhours,
             'built': datetime.now().strftime("%H:%M:%S"),
-            'pandaqueue': panda_queue,
         }
         data.update(getContextVariables(request))
         response = render_to_response('siteInfo.html', data, content_type='text/html')
