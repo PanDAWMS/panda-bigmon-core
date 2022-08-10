@@ -18,15 +18,13 @@
 .aborted { color:red }
 .aborting { color:red }
 .paused { color:darkgrey }
-.brokeroff { color:darkgrey }
-.test { color:darkgrey }
-.offline { color:darkgrey }
 .skipped { color:darkgrey }
 .notcheckedskipped { color:darkgrey }
 .debug { color:darkgrey }
 .pending { color:#deb900 }
 .waiting { color:#deb900 }
 .sent { color:#deb900 }
+.brokeroff { color:#deb900 }
 .holding { color:#FF9933 }
 .throttled { color:#FF9933 }
 .exhausted { color:#FF9933 }
@@ -56,11 +54,13 @@
 .assigned { color:#099999 }
 .defined { color:#2174bb }
 .registered { color:#2174bb }
+.test { color:#2174bb }
 .staging { color:#934fff }
 .toretry { color:grey }
 .toincexec { color:grey }
 .rerefine { color:grey }
 .queued { color:grey }
+.offline { color:#4a4a4a }
 .closed { color:#4a4a4a}
 .reassign { color:#FF8174 }
 .corrupted { color:red }
@@ -136,6 +136,7 @@
 .defined_fill { color:black;  background-color:#e6f0f6; position: static; }
 .queued_fill { color:black;  background-color:#e6f0f6; position: static; }
 .registered_fill { color:black;  background-color:#e6f0f6; position: static;  }
+.test_fill { color:black; background-color:#e6f0f6 }
 
 .paused_fill { color:black;  background-color:#edeeef; position: static; }
 .passed_fill { color: black; background-color:#edeeef; position: static;}
@@ -150,16 +151,15 @@
 .cancelled_fill { color:black; background-color:#FFD65D }
 
 .holding_fill { color:black; background-color:#FFE38E }
-.throttled_fill { color:black; background-color:#FFE38E; position: static; }
-.exhausted_fill { color:black; background-color:#FFE38E; position: static; }
+.throttled_fill { color:black; background-color:#FFE38E; }
+.exhausted_fill { color:black; background-color:#FFE38E; }
 
-.pending_fill { color:black;  background-color:#FFF5D6; position: static; }
+.pending_fill { color:black;  background-color:#FFF5D6; }
 .waiting_fill { color:black; background-color:#FFF5D6 }
 .sent_fill { color:black; background-color:#FFF5D6 }
+.brokeroff_fill { color:black; background-color:#FFF5D6 }
 
 .closed_fill { color:black; background-color:#bdbdbd }
-.brokeroff_fill { color:black; background-color:#bdbdbd }
-.test_fill { color:black; background-color:#bdbdbd }
 .offline_fill { color:black; background-color:#bdbdbd }
 
 /*States of requests*/

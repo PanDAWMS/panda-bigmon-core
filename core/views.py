@@ -3126,135 +3126,68 @@ def siteList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-
+    if 'sortby' in request.session['requestParams']:
+        sortby = request.session['requestParams']['sortby']
+    else:
+        sortby = 'alpha'
     for param in request.session['requestParams']:
         request.session['requestParams'][param] = escape_input(request.session['requestParams'][param])
-    setupView(request, opmode='notime')
-    query = {}
-    ### Add any extensions to the query determined from the URL
-    if VOMODE == 'core': query['siteid__contains'] = 'CORE'
-    prod = False
-    extraParCondition = '1=1'
+
+    # get full list of queues
+    pqs = get_panda_queues()
+    filter_params = []
+    if pqs:
+        pqs = list(pqs.values())
+        filter_params = list(pqs[0].keys())
+
     for param in request.session['requestParams']:
-        if param == 'category' and request.session['requestParams'][param] == 'multicloud':
-            query['multicloud__isnull'] = False
-        if param == 'category' and request.session['requestParams'][param] == 'analysis':
-            query['siteid__contains'] = 'ANALY'
-        if param == 'category' and request.session['requestParams'][param] == 'test':
-            query['siteid__icontains'] = 'test'
-        if param == 'category' and request.session['requestParams'][param] == 'production':
-            prod = True
-        if param == 'catchall':
-            wildCards = request.session['requestParams'][param].split('|')
-            countCards = len(wildCards)
-            currentCardCount = 1
-            extraParCondition = '('
-            for card in wildCards:
-                extraParCondition += preprocess_wild_card_string(escape_input(card), 'catchall')
-                if (currentCardCount < countCards): extraParCondition += ' OR '
-                currentCardCount += 1
-            extraParCondition += ')'
+        if param in filter_params:
+            pqs = [pq for pq in pqs if pq[param] == request.session['requestParams'][param]]
+        if param == 'copytool':
+            pqs = [pq for pq in pqs if request.session['requestParams'][param] in pq['copytools']]
 
-        for field in Schedconfig._meta.get_fields():
-            if param == field.name and not (param == 'catchall'):
-                query[param] = escape_input(request.session['requestParams'][param])
-
-    siteres = Schedconfig.objects.filter(**query).exclude(cloud='CMS').extra(where=[extraParCondition]).values()
-    mcpres = Schedconfig.objects.filter(status='online').exclude(cloud='CMS').exclude(siteid__icontains='test').values(
-        'siteid', 'multicloud', 'cloud').order_by('siteid')
-    sites = []
-    for site in siteres:
-        if 'category' in request.session['requestParams'] and request.session['requestParams'][
-            'category'] == 'multicloud':
-            if (site['multicloud'] == 'None') or (not re.match('[A-Z]+', site['multicloud'])): continue
-        sites.append(site)
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'maxmemory':
-        sites = sorted(sites, key=lambda x: -x['maxmemory'])
-    elif 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'maxtime':
-        sites = sorted(sites, key=lambda x: -x['maxtime'])
-    elif 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'gocname':
-        sites = sorted(sites, key=lambda x: x['gocname'])
-    else:
-        sites = sorted(sites, key=lambda x: x['siteid'])
-    if prod:
-        newsites = []
-        for site in sites:
-            if site['siteid'].find('ANALY') >= 0:
-                pass
-            elif site['siteid'].lower().find('test') >= 0:
-                pass
-            else:
-                newsites.append(site)
-        sites = newsites
-    for site in sites:
-        if site['maxtime'] and (site['maxtime'] > 0): site['maxtime'] = "%.1f" % (float(site['maxtime']) / 3600.)
-        site['space'] = "%d" % (site['space'] / 1000.)
-
-    if VOMODE == 'atlas' and (
-            len(request.session['requestParams']) == 0 or 'cloud' in request.session['requestParams']):
-        clouds = Cloudconfig.objects.filter().exclude(name='CMS').exclude(name='OSG').values()
-        clouds = sorted(clouds, key=lambda x: x['name'])
-        mcpsites = {}
-        for cloud in clouds:
-            cloud['display'] = True
-            if 'cloud' in request.session['requestParams'] and request.session['requestParams']['cloud'] != cloud[
-                'name']: cloud['display'] = False
-            mcpsites[cloud['name']] = []
-            for site in sites:
-                if site['siteid'] == cloud['tier1']:
-                    cloud['space'] = site['space']
-                    cloud['tspace'] = site['tspace'].strftime("%m-%d %H:%M")
-            for site in mcpres:
-                mcpclouds = site['multicloud'].split(',')
-                if cloud['name'] in mcpclouds or cloud['name'] == site['cloud']:
-                    sited = {}
-                    sited['name'] = site['siteid']
-                    sited['cloud'] = site['cloud']
-                    if site['cloud'] == cloud['name']:
-                        sited['type'] = 'home'
-                    else:
-                        sited['type'] = 'mcp'
-                    mcpsites[cloud['name']].append(sited)
-            cloud['mcpsites'] = ''
-            for s in mcpsites[cloud['name']]:
-                if s['type'] == 'home':
-                    cloud['mcpsites'] += "<b>%s</b>     " % s['name']
-                else:
-                    cloud['mcpsites'] += "%s     " % s['name']
-            if cloud['modtime']:
-                cloud['modtime'] = cloud['modtime'].strftime("%m-%d %H:%M")
-    else:
-        clouds = None
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
     if not is_json_request(request):
-        sumd = site_summary_dict(sites, VOMODE=VOMODE)
-        del request.session['TFIRST']
-        del request.session['TLAST']
+        # attribute summary
+        sumd = site_summary_dict(pqs, vo_mode=VOMODE, sortby=sortby)
+        # prepare data for table
+        for pq in pqs:
+            if 'maxrss' in pq and isinstance(pq['maxrss'], int):
+                pq['maxrss_gb'] = round(pq['maxrss'] / 1000., 1)
+            if 'maxtime' in pq and isinstance(pq['maxtime'], int) and pq['maxtime'] > 0:
+                pq['maxtime_hours'] = round(pq['maxtime'] / 3600.)
+            if 'maxinputsize' in pq and isinstance(pq['maxinputsize'], int) and pq['maxinputsize'] > 0:
+                pq['maxinputsize_gb'] = round(pq['maxinputsize'] / 1000.)
+            if 'copytools' in pq and pq['copytools'] and len(pq['copytools']) > 0:
+                pq['copytool'] = ', '.join(list(pq['copytools'].keys()))
+        pq_params_table = [
+            'cloud', 'gocname', 'tier', 'nickname', 'status', 'type', 'workflow', 'system', 'copytool', 'harvester',
+            'maxrss_gb', 'maxtime_hours', 'maxinputsize_gb', 'comment'
+        ]
+        sites = []
+        for pq in pqs:
+            tmp_dict = {}
+            for param in pq_params_table:
+                tmp_dict[param] = pq[param] if param in pq and pq[param] else '---'
+            sites.append(tmp_dict)
+
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'sites': sites,
-            'clouds': clouds,
             'sumd': sumd,
             'xurl': xurl,
             'nosorturl': nosorturl,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        if 'cloud' in request.session['requestParams']: data['mcpsites'] = mcpsites[
-            request.session['requestParams']['cloud']]
-        # data.update(getContextVariables(request))
-        ##self monitor
         setCacheEntry(request, "siteList", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render_to_response('siteList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        resp = sites
-        return HttpResponse(json.dumps(resp, cls=DateEncoder), content_type='application/json')
+        return HttpResponse(json.dumps(pqs, cls=DateEncoder), content_type='application/json')
 
 
 @login_customrequired

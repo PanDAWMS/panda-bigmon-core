@@ -19,34 +19,27 @@ import core.constants as const
 _logger = logging.getLogger('bigpandamon')
 
 
-def site_summary_dict(sites, VOMODE='atlas'):
+def site_summary_dict(sites, vo_mode='atlas', sortby='alpha'):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
     sumd = {}
-    sumd['category'] = {}
-    sumd['category']['test'] = 0
-    sumd['category']['production'] = 0
-    sumd['category']['analysis'] = 0
-    sumd['category']['multicloud'] = 0
+    sumd['copytool'] = {}
     for site in sites:
         for f in const.SITE_FIELDS_STANDARD:
             if f in site:
                 if f not in sumd:
                     sumd[f] = {}
-                if not site[f] in sumd[f]:
+                if site[f] not in sumd[f]:
                     sumd[f][site[f]] = 0
                 sumd[f][site[f]] += 1
-        isProd = True
-        if site['siteid'].find('ANALY') >= 0:
-            isProd = False
-            sumd['category']['analysis'] += 1
-        if site['siteid'].lower().find('test') >= 0:
-            isProd = False
-            sumd['category']['test'] += 1
-        if site['multicloud'] is not None and site['multicloud'] != 'None' and re.match('[A-Z]+', site['multicloud']):
-            sumd['category']['multicloud'] += 1
-        if isProd:
-            sumd['category']['production'] += 1
-    if VOMODE != 'atlas':
+        if 'copytool' in const.SITE_FIELDS_STANDARD:
+            if 'copytools' in site and site['copytools'] and len(site['copytools']) > 0:
+                copytools = list(site['copytools'].keys())
+                for cp in copytools:
+                    if cp not in sumd['copytool']:
+                        sumd['copytool'][cp] = 0
+                    sumd['copytool'][cp] += 1
+
+    if vo_mode != 'atlas':
         try:
             del sumd['cloud']
         except:
@@ -59,11 +52,13 @@ def site_summary_dict(sites, VOMODE='atlas'):
         itemd['field'] = f
         iteml = []
         kys = sumd[f].keys()
-
-        kys = sorted(kys, key=lambda x: (x is None, x))
-
         for ky in kys:
             iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
+        # sorting
+        if sortby == 'count':
+            iteml = sorted(iteml, key=lambda x: -x['kvalue'])
+        else:
+            iteml = sorted(iteml, key=lambda x: x['kname'])
         itemd['list'] = iteml
         suml.append(itemd)
     suml = sorted(suml, key=lambda x: x['field'])

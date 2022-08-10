@@ -171,19 +171,17 @@ JOB_FIELDS_STANDARD = (
 )
 
 SITE_FIELDS_STANDARD = (
-    'region',
+    'cloud',
     'gocname',
-    'nickname',
     'status',
     'tier',
-    'comment_field',
+    'type',
     'cloud',
-    'allowdirectaccess',
-    'allowfax',
+    'country',
+    'harvester',
     'copytool',
-    'faxredirector',
-    'retry',
-    'timefloor'
+    'system',
+    'workflow',
 )
 
 TASK_FIELDS_STANDARD = (
