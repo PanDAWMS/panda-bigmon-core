@@ -25,7 +25,7 @@ def site_summary_dict(sites, vo_mode='atlas', sortby='alpha'):
     sumd['copytool'] = {}
     for site in sites:
         for f in const.SITE_FIELDS_STANDARD:
-            if f in site:
+            if f in site and site[f] is not None:
                 if f not in sumd:
                     sumd[f] = {}
                 if site[f] not in sumd[f]:
