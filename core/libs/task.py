@@ -128,7 +128,10 @@ def cleanTaskList(tasks, **kwargs):
 
             dsinfo = {}
             if task['jeditaskid'] in ds_dict:
-                task_dsets, dsinfo = calculate_dataset_stats(ds_dict[task['jeditaskid']])
+                task_dsets = ds_dict[task['jeditaskid']]
+            else:
+                task_dsets = []
+            task_dsets, dsinfo = calculate_dataset_stats(task_dsets)
 
             task['dsinfo'] = dsinfo
             task.update(dsinfo)

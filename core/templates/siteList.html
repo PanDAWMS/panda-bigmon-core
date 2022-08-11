@@ -17,12 +17,11 @@
 
 {% block body %}
 
-{% if requestParams.tier %}<br><b>Tier: {{ requestParams.tier }}</b> {% endif %}
-{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.region %}<br><b>Region: {{ requestParams.region }}</b> {% endif %}
-{% if requestParams.siteid %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.siteid %}">{{ requestParams.siteid }}</a> </b> {% endif %}
-{% if requestParams.status %}<br><b>Status: <span class="{{ requestParams.status }}">{{ requestParams.status }}</span></b> {% endif %}
-<p>
+{% if requestParams.tier %}<b>Tier: {{ requestParams.tier }}</b><br> {% endif %}
+{% if requestParams.cloud %}<b>Cloud: {{ requestParams.cloud }}</b><br> {% endif %}
+{% if requestParams.region %}<b>Region: {{ requestParams.region }}</b><br> {% endif %}
+{% if requestParams.siteid %}<b>Site: <a href="{% url 'siteInfo' requestParams.siteid %}">{{ requestParams.siteid }}</a> </b><br> {% endif %}
+{% if requestParams.status %}<b>Status: <span class="{{ requestParams.status }}">{{ requestParams.status }}</span></b><br> {% endif %}
 
 {% if sites %}
 
