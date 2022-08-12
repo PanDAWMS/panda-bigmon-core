@@ -36,9 +36,10 @@ if 'BIGMON_WSGI_PATH' in os.environ:
 if 'BIGMON_VO' in os.environ:
     MON_VO = os.environ['BIGMON_VO']
 
-### Authentication providers
+### Authentication providers, supported: ['cern', 'google', 'github', 'indigoiam']
 if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
     AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
+# AUTH_PROVIDER_LIST = ['cern', 'google', 'github', 'indigoiam']
 
 ### DB_ROUTERS for atlas's prodtask
 DATABASE_ROUTERS = [
@@ -65,7 +66,6 @@ TEMPLATES = [
         'DIRS': [
             join(dirname(core.__file__), 'templates'),
             join(dirname(admin.__file__), 'templates'),
-            join(dirname(core.__file__), 'templates'),
             join(dirname(core.filebrowser.__file__), 'templates'),
             join(dirname(core.pbm.__file__), 'templates'),
         ],
