@@ -39,7 +39,6 @@ if 'BIGMON_VO' in os.environ:
 ### Authentication providers, supported: ['cern', 'google', 'github', 'indigoiam']
 if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
     AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
-# AUTH_PROVIDER_LIST = ['cern', 'google', 'github', 'indigoiam']
 
 ### DB_ROUTERS for atlas's prodtask
 DATABASE_ROUTERS = [

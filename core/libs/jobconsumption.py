@@ -366,7 +366,6 @@ def job_consumption_plots(jobs):
                 del plot_details[pm]
     _logger.info("clean up plots data: {} sec".format(time.time() - start_time))
 
-    _logger.debug("size of plots data: {}".format(getsizeof(plots_data)))
     # prepare stack histogram data
     for pname, pd in plot_details.items():
         if pd['type'] == 'stack_bar':
@@ -376,7 +375,6 @@ def job_consumption_plots(jobs):
             }
 
             for cat, cd in plots_data[pd['type']][pname].items():
-                _logger.debug("size of {} {} data: {}".format(pname, cat, getsizeof(cd)))
                 n_decimals = 0
                 if 'per' in pname:
                     n_decimals = 2
