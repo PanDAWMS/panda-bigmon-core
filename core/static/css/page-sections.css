@@ -623,7 +623,7 @@ a.close-x-sign:hover {
     overflow: visible;
     min-width: 200px;
     max-width: 200px;
-    background-color: #0a0a0a;
+    background-color: #272727;
     color: #fefefe;
     text-align: center;
     font-size: 0.75rem;
@@ -650,7 +650,7 @@ a.close-x-sign:hover {
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #0a0a0a transparent transparent transparent;
+    border-color: #272727 transparent transparent transparent;
 }
 
 .tooltip-upper:hover .tooltip-text {
@@ -669,7 +669,7 @@ a.close-x-sign:hover {
   visibility: hidden;
   min-width: 100px;
   max-width: 400px;
-  background-color: #0a0a0a;
+  background-color: #272727;
   color: #fff;
   text-align: left;
   font-weight: normal;
@@ -699,7 +699,7 @@ a.close-x-sign:hover {
     border: inset 0.3rem;
     border-left-width: 0;
     border-right-style: solid;
-    border-color: transparent #0a0a0a transparent transparent;
+    border-color: transparent #272727 transparent transparent;
     top: 50%;
     bottom: auto;
     left: -0.25rem;

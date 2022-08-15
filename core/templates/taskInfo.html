@@ -65,9 +65,6 @@
                 {% if task.dsinfo.nfilesfailed > 0 %}
                   <br><span class='failed'>failed</span>
                 {% endif %}
-                {% if task.dsinfo.nfilesmissing > 0 %}
-                  <br><span class='lost'>lost</span>
-                {% endif %}
             </th>
             {% if task.totev > 0 %}
               <th class="num">N input events <br><span class='finished'>used</span></th>
@@ -159,12 +156,12 @@
         {% else %}
           {% if task.dsinfo %}
             <td class="num"> {{ task.dsinfo.nfiles }}
+              {% if task.dsinfo.nfilesmissing > 0 %}
+                <span class='lost tooltip-upper'> + {{ task.dsinfo.nfilesmissing }} lost <i class="fi-info"></i><span class="tooltip-text">The files were unavailable at a time of the task running therefore the PanDA did not create jobs for processing them and they are not included to the number of total input files.</span></span>
+              {% endif %}
               <br><span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
               {% if task.dsinfo.nfilesfailed > 0 %}
                 <br><span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>
-              {% endif %}
-              {% if task.dsinfo.nfilesmissing > 0 %}
-                <br><span class='lost'>{{ task.dsinfo.nfilesmissing }}</span>
               {% endif %}
             </td>
             {% if task.totev > 0 %}

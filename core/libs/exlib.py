@@ -394,6 +394,23 @@ def split_into_intervals(input_data, **kwargs):
     return output_data
 
 
+def calc_nbins(length, n_bins_max=50):
+    """
+    Calculate N bins depending on length of data.
+    It is needed as np.histogram(data, bins='auto') uses extreme amount of memory in case of outliers.
+    :param length: length of data to be binned
+    :return: n_bins
+    """
+
+    n_bins = 1
+    if length is not None and isinstance(length, int) and length > 0:
+        n_bins = math.ceil(pow(length, 1/1.75))
+    if n_bins > n_bins_max:
+        n_bins = n_bins_max
+
+    return n_bins
+
+
 def build_stack_histogram(data_raw, **kwargs):
     """
     Prepare stack histogram data and calculate mean and std metrics
@@ -406,9 +423,9 @@ def build_stack_histogram(data_raw, **kwargs):
     if 'n_decimals' in kwargs:
         n_decimals = kwargs['n_decimals']
 
-    N_BINS_MAX = 50
+    n_bins_max = 50
     if 'n_bin_max' in kwargs:
-        N_BINS_MAX = kwargs['n_bin_max']
+        n_bins_max = kwargs['n_bin_max']
     stats = []
     columns = []
 
@@ -419,9 +436,8 @@ def build_stack_histogram(data_raw, **kwargs):
     stats.append(np.average(data_all) if not np.isnan(np.average(data_all)) else 0)
     stats.append(np.std(data_all) if not np.isnan(np.std(data_all)) else 0)
 
-    bins_all, ranges_all = np.histogram(data_all, bins='auto')
-    if len(ranges_all) > N_BINS_MAX + 1:
-        bins_all, ranges_all = np.histogram(data_all, bins=N_BINS_MAX)
+    n_bins = calc_nbins(len(data_all), n_bins_max)
+    bins_all, ranges_all = np.histogram(data_all, bins=n_bins)
     ranges_all = list(np.round(ranges_all, n_decimals))
 
     x_axis_ticks = ['x']

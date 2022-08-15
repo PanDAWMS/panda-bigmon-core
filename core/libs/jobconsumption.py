@@ -1,10 +1,13 @@
 """
 A set of utilities to build jobs resource utilization plots
 """
+
 import time
 import logging
+from sys import getsizeof
 from core.libs.exlib import convert_bytes, build_stack_histogram
 from core.libs.job import get_job_walltime, get_job_queuetime, parse_job_pilottiming
+
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -196,111 +199,6 @@ def job_consumption_plots(jobs):
                     'ylabel': 'N jobs',
                 }
 
-
-    # plot_details = {
-    #     'nevents_sum_finished': {
-    #         'type': 'pie', 'group_by': 'computingsite',
-    #         'title': 'Number of events', 'xlabel': 'N events', 'ylabel': 'N jobs'},
-    #     'nevents_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Number of events', 'xlabel': 'N events', 'ylabel': 'N jobs'},
-    #     'resimevents_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Resim events (finished jobs)', 'xlabel': 'N resim events', 'ylabel': 'N jobs'},
-    #     'maxpss_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Max PSS (finished jobs)', 'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
-    #     'maxpsspercore_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Max PSS/core (finished jobs)', 'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
-    #     'walltime_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Walltime (finished jobs)', 'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
-    #     'walltimeperevent_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Walltime/event (finished jobs)', 'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
-    #     'queuetime_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Time to start (finished jobs)', 'xlabel': 'Time to start, s', 'ylabel': 'N jobs'},
-    #     'hs06s_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'HS06s (finished jobs)', 'xlabel': 'HS06s', 'ylabel': 'N jobs'},
-    #     'cputime_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'CPU time (finished jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-    #     'cputimeperevent_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'CPU time/event (finished jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-    #     'cpuefficiency_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'CPU efficiency (finished jobs)', 'xlabel': 'CPU efficiency, %', 'ylabel': 'N jobs'},
-    #     'dbtime_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'DB time (finished jobs)', 'xlabel': 'DB time, s', 'ylabel': 'N jobs'},
-    #     'dbdata_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'DB data (finished jobs)', 'xlabel': 'DB data, MB', 'ylabel': 'N jobs'},
-    #     'workdirsize_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Workdir size (finished jobs)', 'xlabel': 'Workdir, MB', 'ylabel': 'N jobs'},
-    #     'leak_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Memory leak (finished jobs)', 'xlabel': 'Memory leak, B/s', 'ylabel': 'N jobs'},
-    #     'nprocesses_finished': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'N processes (finished jobs)', 'xlabel': 'N proceeses', 'ylabel': 'N jobs'},
-    #
-    #     'maxpss_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Maximum PSS (failed jobs)', 'xlabel': 'MaxPSS, MB', 'ylabel': 'N jobs'},
-    #     'maxpsspercore_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite', 'title': 'Max PSS/core (failed jobs)',
-    #         'xlabel': 'MaxPSS per core, MB', 'ylabel': 'N jobs'},
-    #     'walltime_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Walltime (failed jobs)', 'xlabel': 'walltime, s', 'ylabel': 'N jobs'},
-    #     'queuetime_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Time to start (failed jobs)', 'xlabel': 'Time to start, s', 'ylabel': 'N jobs'},
-    #     'walltimeperevent_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Walltime/event (failed jobs)', 'xlabel': 'Walltime per event, s', 'ylabel': 'N jobs'},
-    #     'hs06s_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'HS06s (failed jobs)', 'xlabel': 'HS06s', 'ylabel': 'N jobs'},
-    #     'cputime_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'CPU time (failed jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-    #     'cputimeperevent_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'CPU time/event (failed jobs)', 'xlabel': 'CPU time, s', 'ylabel': 'N jobs'},
-    #     'cpuefficiency_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'CPU efficiency (failed jobs)', 'xlabel': 'CPU efficiency, %', 'ylabel': 'N jobs'},
-    #     'dbtime_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'DB time (failed jobs)', 'xlabel': 'DB time, s', 'ylabel': 'N jobs'},
-    #     'dbdata_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'DB data (failed jobs)', 'xlabel': 'DB data, MB', 'ylabel': 'N jobs'},
-    #     'workdirsize_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Workdir size (failed jobs)', 'xlabel': 'Workdir, MB', 'ylabel': 'N jobs'},
-    #     'leak_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'Memory leak (failed jobs)', 'xlabel': 'Memory leak, B/s', 'ylabel': 'N jobs'},
-    #     'nprocesses_failed': {
-    #         'type': 'stack_bar', 'group_by': 'computingsite',
-    #         'title': 'N processes (failed jobs)', 'xlabel': 'N proceeses', 'ylabel': 'N jobs'},
-    #
-    #     'walltime_bycpuunit_finished': {
-    #         'type': 'stack_bar', 'group_by': 'cpuconsumptionunit',
-    #         'title': 'Walltime (finished jobs)', 'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
-    #     'walltime_bycpuunit_failed': {
-    #         'type': 'stack_bar', 'group_by': 'cpuconsumptionunit',
-    #         'title': 'Walltime (failed jobs)', 'xlabel': 'Walltime, s', 'ylabel': 'N jobs'},
-    # }
-
     plots_data = {}
     for pname, pd in plot_details.items():
         if pd['type'] not in plots_data:
@@ -468,6 +366,7 @@ def job_consumption_plots(jobs):
                 del plot_details[pm]
     _logger.info("clean up plots data: {} sec".format(time.time() - start_time))
 
+    _logger.debug("size of plots data: {}".format(getsizeof(plots_data)))
     # prepare stack histogram data
     for pname, pd in plot_details.items():
         if pd['type'] == 'stack_bar':
@@ -477,6 +376,7 @@ def job_consumption_plots(jobs):
             }
 
             for cat, cd in plots_data[pd['type']][pname].items():
+                _logger.debug("size of {} {} data: {}".format(pname, cat, getsizeof(cd)))
                 n_decimals = 0
                 if 'per' in pname:
                     n_decimals = 2
