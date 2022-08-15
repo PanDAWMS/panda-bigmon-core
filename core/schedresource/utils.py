@@ -4,7 +4,6 @@ Utils to get schedresources info from dedicated information system (CRIC)
 import os
 
 import urllib3
-import json
 import logging
 import json
 from urllib.parse import urlparse
@@ -57,7 +56,7 @@ def get_CRIC_panda_queues():
 
 def get_panda_queues():
     """
-    Get PanDA queues info from available sources, priority: CRIC -> SchedconfigJson table -> Schedconfig
+    Get PanDA queues info from available sources, priority: CRIC -> SchedconfigJson table
     :return: dict of PQs
     """
     # try get info from CRIC

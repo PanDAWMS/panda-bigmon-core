@@ -41,7 +41,7 @@ from core.common.utils import getPrefix, getContextVariables
 from core.pandajob.SQLLookups import CastDate
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, CombinedWaitActDefArch4, PandaJob
-from core.schedresource.models import Schedconfig, SchedconfigJson
+from core.schedresource.models import SchedconfigJson
 from core.common.models import Filestable4
 from core.common.models import Datasets
 from core.common.models import FilestableArch
@@ -50,7 +50,6 @@ from core.common.models import Jobparamstable
 from core.common.models import JobsStatuslog
 from core.common.models import Logstable
 from core.common.models import Jobsdebug
-from core.common.models import Cloudconfig
 from core.common.models import Incidents
 from core.common.models import Pandalog
 from core.common.models import JediJobRetryHistory

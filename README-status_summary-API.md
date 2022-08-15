@@ -13,7 +13,7 @@ The API listens to following GET parameters as job properties (from jobs tables)
 * ?jobstatus=XYZ
 * ?jobtype=XYZ
 
-The API listens to following GET parameters as PanDA resource properties (from schedconfig table):
+The API listens to following GET parameters as PanDA resource properties (from the CRIC system):
 * ?corecount=N
 * ?cloud=XYZ
 * ?atlas_site=XYZ
@@ -201,7 +201,7 @@ Multiple PanDA jobtype:
 
 API: ?corecount=N
 -----------
-The 'corecount' parameter is the 'corecount' field of the schedconfig table, it is a property of the PanDA resource. Multiple 'corecount's can be filtered, comma is the delimiter. To filter corecount != N, please use '?corecount=-N'.
+The 'corecount' parameter is the 'corecount' from the CRIC, it is a property of the PanDA resource. Multiple 'corecount's can be filtered, comma is the delimiter. To filter corecount != N, please use '?corecount=-N'.
 
 The webpage presents DB value corecount=NULL as 1. The JSON API presents value DB corecount=NULL as null.
 
@@ -223,7 +223,7 @@ Multiple corecounts:
 
 API: ?cloud=XYZ
 -----------
-The 'cloud' parameter is the 'cloud' field of the schedconfig table, it is a property of the PanDA resource. Multiple 'clouds's can be filtered, comma is the delimiter. To filter cloud != XYZ, please use '?cloud=-XYZ'. You can use wildcard '*', e.g. '?cloud=CE*N'.
+The 'cloud' parameter is the 'cloud' field from the CRIC, it is a property of the PanDA resource. Multiple 'clouds's can be filtered, comma is the delimiter. To filter cloud != XYZ, please use '?cloud=-XYZ'. You can use wildcard '*', e.g. '?cloud=CE*N'.
 
 The API has 3 HTTP return states: 200, 404, 400.
 
@@ -243,7 +243,7 @@ Multiple clouds:
 
 API: ?atlas_site=XYZ
 -----------
-The 'atlas_site' parameter is the 'gstat' field of the schedconfig table, it is a property of the PanDA resource. Multiple 'atlas_site's can be filtered, comma is the delimiter. To filter atlas_site != XYZ, please use '?atlas_site=-XYZ'. You can use wildcard '*', e.g. '?atlas_site=CERN*'.
+The 'atlas_site' parameter is the 'gstat' field from the CRIC, it is a property of the PanDA resource. Multiple 'atlas_site's can be filtered, comma is the delimiter. To filter atlas_site != XYZ, please use '?atlas_site=-XYZ'. You can use wildcard '*', e.g. '?atlas_site=CERN*'.
 
 The API has 3 HTTP return states: 200, 404, 400.
 
@@ -264,7 +264,7 @@ Multiple atlas_sites:
 
 API: ?status=XYZ
 -----------
-The 'status' parameter is the 'status' field of the schedconfig table, it is a property of the PanDA resource. Multiple 'status's can be filtered, comma is the delimiter. To filter status != XYZ, please use '?status=-XYZ'. 
+The 'status' parameter is the 'status' field from the CRIC, it is a property of the PanDA resource. Multiple 'status's can be filtered, comma is the delimiter. To filter status != XYZ, please use '?status=-XYZ'.
 
 The API has 3 HTTP return states: 200, 404, 400.
 

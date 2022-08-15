@@ -46,10 +46,10 @@ def index_data(request):
                 ?jobtype ... PanDA job type: production, analysis or test
             
             * filtering on PanDA schedresource properties
-                ?corecount .. corecount field of the schedconfig table
-                ?cloud .. cloud field of the schedconfig table
-                ?atlas_site .. gstat field of the schedconfig table
-                ?status .. status field of the schedconfig table
+                ?corecount .. corecount fieldfrom the CRIC
+                ?cloud .. cloud field from the CRIC
+                ?atlas_site .. gstat field from the CRIC
+                ?status .. status field from the CRIC
     """
     errors = {}
     warnings = {}
