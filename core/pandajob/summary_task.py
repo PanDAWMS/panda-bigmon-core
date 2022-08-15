@@ -218,7 +218,11 @@ def get_top_memory_consumers(taskrec):
         select j.jeditaskid, j.pandaid, j.computingsite, j.jobmaxpss, j.jobmaxpss_percore, s.maxrss as sitemaxrss, 
             s.maxrss/s.corecount as sitemaxrss_percore, j.jobmaxpss_percore/(s.maxrss/s.corecount) as maxpssratio, 
             row_number() over (partition by jeditaskid order by j.jobmaxpss_percore/(s.maxrss/s.corecount) desc) as jobrank
-        from atlas_pandameta.schedconfig s,
+        from {DB_SCHEMA_PANDA}.schedconfig_json sj,
+            json_table(sj.data,'$' columns(
+                nickname  varchar2(100) path '$.nickname', 
+                maxrss number(10, 0) path '$.maxrss',
+                corecount number(10, 0) path '$.corecount')) s,
         (select pandaid, jeditaskid, computingsite, maxpss/1000 as jobmaxpss, maxpss/1000/actualcorecount as jobmaxpss_percore 
         from ATLAS_PANDA.jobsarchived4 
             where jeditaskid = :jdtsid and maxrss is not null
@@ -230,7 +234,7 @@ def get_top_memory_consumers(taskrec):
         where j.computingsite = s.nickname
     ) 
     where jobrank <= 3
-    """
+    """.format(DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA)
     try:
         cur = connection.cursor()
         cur.execute(tmcquerystr, {'jdtsid': jeditaskidstr})
