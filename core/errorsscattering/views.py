@@ -176,7 +176,7 @@ def errorsScattering(request):
         jcondition = """specialhandling not like '%%sj'"""
 
     querystr = """
-        select j.finishedc, j.reqid, j.failedc, sc.cloud as cloud, j.jeditaskid, j.computingsite from (
+        select j.finishedc, j.reqid, j.failedc, j.jeditaskid, j.computingsite from (
             select sum(case when jobstatus = 'failed' then 1 else 0 end) as failedc, 
                    sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc, 
                    sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc, 
@@ -193,10 +193,8 @@ def errorsScattering(request):
               where jeditaskid != reqid and jeditaskid in (
                   select id from {1} where transactionkey={2}) and modificationtime > to_date('{3}', 'YYYY-MM-DD HH24:MI:SS') and {4}
                     group by computingsite, reqid, jeditaskid
-        ) j,
-        ( select siteid, cloud from {6}.schedconfig  
-        ) sc
-        where j.computingsite = sc.siteid and j.allc > 0    
+        ) j
+        where j.allc > 0    
     """.format(settings.DB_SCHEMA_PANDA, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition,
                settings.DB_SCHEMA_PANDA_ARCH, settings.DB_SCHEMA_PANDA_META)
 
@@ -205,8 +203,15 @@ def errorsScattering(request):
     errorsRaw = dictfetchall(new_cur)
     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
+    # add clouds data
     pq_clouds = get_pq_clouds()
     clouds = sorted(list(set(pq_clouds.values())))
+    for row in errorsRaw:
+        if row['COMPUTINGSITE'] in pq_clouds:
+            row['CLOUD'] = pq_clouds[row['COMPUTINGSITE']]
+        else:
+            row['CLOUD'] = ''
+
     reqerrors = {}
     clouderrors = {}
     successrateIntervals = {'green': [80, 100], 'yellow':[50,79], 'red':[0, 49]}
