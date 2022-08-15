@@ -4,10 +4,10 @@
 
 {% if view and view == 'dash' %}
     <p>
-    The new user dashboard focuses on the progress of your tasks and highlighting of possible problems.
+    The new user dashboard focuses on the progress of your tasks highlighting any possible problems.
     This page summarizes all the recent user tasks.
     By default the tasks with a modification date in the last 7 days are selected.
-    You can change the time window by clicking on blue "Change" button in the top subbar.
+    You can change the time window by clicking on the blue "Change" button in the top subbar.
   </p>
   <p>
     The <b>"User activity overview"</b> section shows overall metrics, that can give a clue of potential problems.
@@ -25,23 +25,23 @@
       <li><b>Tasks by status</b> shows the number of tasks grouped by detailed JEDI task status.
         The description of task states can be found below. </li>
       <li><b>Task age histogram</b> displays the distribution of task age grouped by status.
-        If task ended, the age is difference between end time and creation time.
-        If task is in active state, the age is the current time - creation time.</li>
+        If the task has ended, the age is difference between end time and creation time.
+        If the task is in an active state, the age is the current time - creation time.</li>
       <li><b>Jobs by status</b> shows the number of jobs grouped by status.
         Each task is divided into several jobs which run on GRID resources. </li>
     </ul>
   </p>
   <p>
     The full list of tasks are in the interactive table, where the pagination is enabled by default showing 20 tasks by page.
-    You can use "Search" input to filter the tasks.
+    You can use the "Search" input to filter the tasks.
     The jobs metrics are calculated per task as well, you can show/hide them by using 2 buttons:
       <b>"Show all metrics"</b> and <b>"Minimize view"</b>.
     The <b>"Top job errors, count [code] message"</b> column shows the top-2 job errors per task,
       the count is clickable and goes to a classic jobs page.
-    At the end of each error message there is a link to logs of one of the jobs in the category.
-    Sometimes logs of a job can be lost. In that case click on count of errors and then in the opened page try to look at logs of other jobs.
+    At the end of each error message there is a link to the logs of one of the jobs in the category.
+    Sometimes the logs of a job can be lost. In that case click on count of errors and then in the opened page try to look at the logs of other jobs.
     The <b>"Task ID"</b> links goes to a task page,
-      the <b>"Jobs failure, %"</b> links goes to error summary page for a task.
+      the <b>"Jobs failure, %"</b> links goes to the error summary page for a task.
   </p>
   <p>The old style page is still available via <a href="{{ urlnoview }}view=classic">this link</a>.</p>
 
