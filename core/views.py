@@ -171,8 +171,6 @@ standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcela
                    'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
                    'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
                    'jobsubstatus', 'nucleus','gshare', 'resourcetype']
-standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess',
-                       'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor']
 standard_taskfields = [
     'workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'currentpriority', 'username',
     'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
@@ -1910,28 +1908,6 @@ def descendentjoberrsinfo(request):
     return response
 
 
-def eventsInfo(request, mode=None, param=None):
-    if not 'jeditaskid' in request.GET:
-        data = {}
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-
-    jeditaskid = request.GET['jeditaskid']
-
-    cur = connection.cursor()
-    cur.execute(
-        "select sum(decode(c.startevent,NULL,c.nevents,endevent-startevent+1)) nevents,c.status from atlas_panda.jedi_datasets d,atlas_panda.jedi_dataset_contents c where d.jeditaskid=c.jeditaskid and d.datasetid=c.datasetid and d.jeditaskid=%s and d.type in ('input','pseudo_input') and d.masterid is null group by c.status;" % (
-        jeditaskid))
-    events = cur.fetchall()
-    cur.close()
-    data = {}
-
-    for ev in events:
-        data[ev[1]] = ev[0]
-    data['jeditaskid'] = jeditaskid
-
-    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-
-
 @login_customrequired
 @csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
@@ -2746,7 +2722,7 @@ def userInfo(request, user=''):
             fields = {
                 'job': copy.deepcopy(standard_fields),
                 'task': copy.deepcopy(standard_taskfields),
-                'site': copy.deepcopy(standard_sitefields),
+                'site': copy.deepcopy(const.SITE_FIELDS_STANDARD),
             }
             links = get_relevant_links(userid, fields)
 
