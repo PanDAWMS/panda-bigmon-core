@@ -5,12 +5,13 @@ import logging
 import copy
 
 from django.conf import settings
-from django.db import connection
+from django.db import connection, connections
 
 from core.pandajob.models import PandaJob
 from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
 from core.libs.exlib import getPilotCounts
+from core.libs.sqlsyntax import interval_to_sec
 
 import core.constants as const
 
@@ -269,6 +270,7 @@ def get_job_summary_region(query, **kwargs):
 
 def get_job_summary_split(query, extra):
     """ Query the jobs summary """
+    db = connections['default'].vendor
     fields = {field.attname: field.db_column for field in PandaJob._meta.get_fields()}
     extra_str = extra
     for qn, qvs in query.items():
@@ -289,36 +291,41 @@ def get_job_summary_split(query, extra):
 
     # get jobs groupings, the jobsactive4 table can keep failed analysis jobs for up to 7 days, so splitting the query
     query_raw = """
-        select computingsite, resource_type as resourcetype, prodsourcelabel, transform, jobstatus, 
-            count(pandaid) as count, sum(rcores) as rcores, round(sum(walltime)) as walltime
+        select j.computingsite, j.resource_type as resourcetype, j.prodsourcelabel, j.transform, j.jobstatus, 
+            count(j.pandaid) as count, sum(j.rcores) as rcores, round(sum(j.walltime)) as walltime
         from  (
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
-            case when jobstatus in ('finished', 'failed') then (ja4.endtime-ja4.starttime)*60*60*24 else 0 end as walltime,
+            case when jobstatus in ('finished', 'failed') then {walltime_sec} else 0 end as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from {2}.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and {1}
+        from {db_scheme}.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{date_from}', 'YYYY-MM-DD HH24:MI:SS') and {extra_str}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from {2}.jobsactive4 jav4 where modificationtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and 
-            jobstatus in ('failed', 'finished', 'closed', 'cancelled') and {1}
+        from {db_scheme}.jobsactive4 jav4 where modificationtime > TO_DATE('{date_from}', 'YYYY-MM-DD HH24:MI:SS') and 
+            jobstatus in ('failed', 'finished', 'closed', 'cancelled') and {extra_str}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from {2}.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {1}
+        from {db_scheme}.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {extra_str}
         union
         select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from {2}.jobswaiting4 jw4 where {1}
+        from {db_scheme}.jobswaiting4 jw4 where {extra_str}
         union
         select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from {2}.jobsdefined4 jd4  where {1}
-        )
-        GROUP BY computingsite, prodsourcelabel, transform, resource_type, jobstatus
-        order by computingsite, prodsourcelabel, transform, resource_type, jobstatus
-    """.format(query['modificationtime__castdate__range'][0], extra_str, settings.DB_SCHEMA_PANDA)
+        from {db_scheme}.jobsdefined4 jd4  where {extra_str}
+        ) j
+        GROUP BY j.computingsite, j.prodsourcelabel, j.transform, j.resource_type, j.jobstatus
+        order by j.computingsite, j.prodsourcelabel, j.transform, j.resource_type, j.jobstatus
+    """.format(
+        date_from=query['modificationtime__castdate__range'][0],
+        extra_str=extra_str,
+        db_scheme=settings.DB_SCHEMA_PANDA,
+        walltime_sec=interval_to_sec('endtime-starttime', db=db)
+    )
 
     cur = connection.cursor()
     cur.execute(query_raw)
