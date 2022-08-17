@@ -45,9 +45,12 @@ def get_CRIC_panda_queues():
                 if settings.DEPLOYMENT == 'ORACLE_ATLAS':
                     if 'vo_name' in params and params['vo_name'] == 'atlas':
                         panda_queues_dict[pq] = params
-                if settings.DEPLOYMENT == 'ORACLE_DOMA':
+                elif settings.DEPLOYMENT == 'ORACLE_DOMA':
                     if 'vo_name' in params and params['vo_name'] in ['osg', 'atlas']:
                         panda_queues_dict[pq] = params
+                else:
+                    # add all queues to dict despite VO
+                    panda_queues_dict[pq] = params
         except Exception as exc:
             print (exc)
         cache.set(f'pandaQueues{settings.DEPLOYMENT}', panda_queues_dict, 60*20)
