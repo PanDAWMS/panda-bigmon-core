@@ -328,8 +328,10 @@ def initRequest(request, callselfmon=True):
         VOMODE = settings.DEPLOYMENT
         if '_' in settings.DEPLOYMENT:
             request.session['viewParams']['MON_VO'] = settings.DEPLOYMENT.split('_')[1]
-        if hasattr(settings, 'MON_VO'):
+        elif hasattr(settings, 'MON_VO'):
             request.session['viewParams']['MON_VO'] = settings.MON_VO
+        else:
+            request.session['viewParams']['MON_VO'] = ''
 
     # add CRIC URL base to session
     if settings.CRIC_API_URL:
