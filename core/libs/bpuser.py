@@ -33,8 +33,8 @@ def get_relevant_links(userid, fields):
                    when url like '%%task?jeditaskid=%%' then replace(url,'task?jeditaskid=','task/') else url end as url
               from {}.visits
               where userid={} and url not like '%%/user/%%' and instr(url,'/',1,4) != 0
-              order by time desc)
-            group by pagegroup,pagename,url)
+              order by time desc) foo1
+            group by pagegroup,pagename,url) foo2
         where rn < 10""".format(settings.DB_SCHEMA, userid)
     cur = connection.cursor()
     cur.execute(sqlquerystr)
