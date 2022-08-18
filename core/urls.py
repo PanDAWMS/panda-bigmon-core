@@ -122,9 +122,6 @@ urlpatterns = [
     # robots.txt
     re_path('^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
-    # TO_DELETE
-    re_path(r'^eventsinfo/$', coremon_views.eventsInfo, name='eventsInfo'),
-
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # add apps urls if installed

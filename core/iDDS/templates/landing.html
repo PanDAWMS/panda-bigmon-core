@@ -22,6 +22,7 @@
 
 {% block body %}
 
+{% if iDDSrequests|length > 2 %}
     <div class="card bp-container-simple">
       <div class="card-divider">
         <p>Requests summary:</p>
@@ -160,6 +161,12 @@
         </table>
       </div>
     </div>
+
+{% else %}
+  <div class="card bp-container-simple info">
+    <div class="card-divider"><p>No iDDS requests found.</p></div>
+  </div>
+{% endif %}
 
 {% endblock %}
 

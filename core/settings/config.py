@@ -143,7 +143,7 @@ elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA_PANDA_META = 'doma_pandameta'
     DB_SCHEMA_IDDS = 'doma_idds'
     DATABASES = dbaccess_postgres
-    CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json')
+    CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json')
     IDDS_HOST = os.environ.get('IDDS_HOST', 'https://iddsserver.cern.ch:443/idds')
     IDDS_HOST_GCP = os.environ.get('IDDS_HOST_GCP', 'https://aipanda016.cern.ch:443/idds')
     PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
