@@ -863,16 +863,18 @@ a.close-x-sign:hover {
 
 .accordion.secondary .accordion-content {
   display: none;
-  padding: 0.3rem 0.7rem;
+  padding: 0;
   border: 1px solid #d3deed;
   border-bottom: 0;
   background-color: #fefefe;
-  line-height: 1rem;
   font-size: 0.9rem;
   color: #232323; }
   :last-child > .accordion-content:last-child {
     border-bottom: 1px solid #d3deed; }
 
+.accordion.secondary .accordion-content p {
+  padding: 0 0.7rem;
+}
 
 
 .tiles {
