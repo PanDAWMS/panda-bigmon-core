@@ -1025,11 +1025,11 @@ fieldset.inline {
 }
 
 .bp-container-wrapper {
-  margin: 0 0 0.7rem 0;
-}
-.row.bp-container-wrapper .columns, .row.bp-container-wrapper .column {
-  padding: 0 0.3rem 0 0.3rem;
-}
+  margin: 0 0 0.7rem 0;}
+  .row.bp-container-wrapper .columns, .row.bp-container-wrapper .column {
+    padding: 0 0.3rem 0 0.3rem; }
+  .bp-container-wrapper .bp-button {
+    margin: 0; }
 
 
 .card.bp-container-simple {
