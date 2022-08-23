@@ -3861,9 +3861,10 @@ def dashRegion(request):
         extra_info = {ep: False for ep in extra_info_params}
         if 'extra' in request.session['requestParams'] and 'links' in request.session['requestParams']['extra']:
             extra_info['links'] = True
-        jsr_queues_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_regions_dict, hours=hours, extra=extra_info)
+        jsr_queues_dict, jsr_sites_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict, hours=hours, extra=extra_info)
         data = {
             'regions': jsr_regions_dict,
+            'sites': jsr_sites_dict,
             'queues': jsr_queues_dict,
         }
         dump = json.dumps(data, cls=DateEncoder)
@@ -4059,7 +4060,7 @@ def dashES(request):
         extra_info = {ep: False for ep in extra_info_params}
         if 'extra' in request.session['requestParams'] and 'links' in request.session['requestParams']['extra']:
             extra_info['links'] = True
-        jsr_queues_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_regions_dict, hours=hours, extra=extra_info)
+        jsr_queues_dict, _, jsr_regions_dict = prettify_json_output(jsr_queues_dict, {}, jsr_regions_dict, hours=hours, extra=extra_info)
         data = {
             'regions': jsr_regions_dict,
             'queues': jsr_queues_dict,
