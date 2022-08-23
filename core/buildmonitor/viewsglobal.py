@@ -11,14 +11,7 @@ import json, re, os
 from pprint import pprint
 from collections import defaultdict
 from operator import itemgetter, attrgetter
-
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
+from core.libs.DateEncoder import DateEncoder
 
 
 def globalviewDemo(request):
@@ -195,16 +188,16 @@ ectory/gitwww/GITWebArea/nightlies"
             local_art_res=loares+local_art_res+"</a>"
 
         image_res='N/A'
-        if sim == 'N/A' or eim == 'N/A':
-            image_res='N/A'
-        elif sim == 0 or sim == 1 or sim == 2 or sim == 3 or sim == 4:
-            image_res = di_res.get(str(sim), str(sim))
-            if str(vext) == '1' :
-                image_res= "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_image_build.html' + "\">" + image_res + "</a>"
-            if isinstance(eim, datetime):
-                image_res = image_res+" "+eim.strftime('%d-%b %H:%M').upper()
-        else:
-            image_res = di_res.get(str(sim), str(sim))
+#        if sim == 'N/A' or eim == 'N/A':
+#            image_res='N/A'
+#        elif sim == 0 or sim == 1 or sim == 2 or sim == 3 or sim == 4:
+#            image_res = di_res.get(str(sim), str(sim))
+#            if str(vext) == '1' :
+#                image_res= "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_image_build.html' + "\">" + image_res + "</a>"
+#            if isinstance(eim, datetime):
+#                image_res = image_res+" "+eim.strftime('%d-%b %H:%M').upper()
+#        else:
+#            image_res = di_res.get(str(sim), str(sim))
         list9.append(row[1]);
         list9.append(link_brname);
         list9.append(rname);
@@ -214,7 +207,6 @@ ectory/gitwww/GITWebArea/nightlies"
         list9.append(local_art_res);
         list9.append(val_cache_transf);
         list9.append(tt_cv_clie);
-        list9.append(image_res);
         list9.append(row[39]);
 
         reslt3.append(list9)

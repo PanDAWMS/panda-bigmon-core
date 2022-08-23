@@ -28,6 +28,6 @@ class GrafanaPlots(BaseURLTasksProvider):
         urlsQueue = queue.PriorityQueue(-1)
 
         for plot in self.plots:
-            urlsQueue.put((self.BASIC_PRIORITY, '/grafana/?url='+ plot))
+            urlsQueue.put((self.BASIC_PRIORITY, '/grafana/img/?url='+ plot))
 
         return urlsQueue

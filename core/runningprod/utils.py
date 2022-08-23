@@ -5,13 +5,16 @@ Utils for runningProdTasks module
 
 import numpy as np
 import copy
+import logging
 from datetime import datetime
 from django.db import transaction, DatabaseError
 from core.runningprod.models import ProdNeventsHistory, RunningProdTasksModel
 from core.common.models import JediTasks
 import core.constants as const
 
-from core.views import preprocessWildCardString
+from core.libs.sqlcustom import preprocess_wild_card_string
+
+_logger = logging.getLogger('bigpandamon')
 
 
 def updateView(request, query, exquery, wild_card_str):
@@ -50,6 +53,12 @@ def updateView(request, query, exquery, wild_card_str):
         del query['currentpriority__gte']
         del query['currentpriority__lte']
 
+    if 'runnumber' in request.session['requestParams'] and request.session['requestParams']['runnumber']:
+        try:
+            query['runnumber'] = int(request.session['requestParams']['runnumber'])
+        except:
+            _logger.exception('Provided runnumber is not valid. It should be int')
+
     jedi_tasks_fields = [field.name for field in JediTasks._meta.get_fields() if field.get_internal_type() == 'CharField']
     running_prod_fields = (set([
         field.name for field in RunningProdTasksModel._meta.get_fields() if field.get_internal_type() == 'CharField'
@@ -69,7 +78,7 @@ def updateView(request, query, exquery, wild_card_str):
                         card = card + '*'
                     elif card.endswith('*'):
                         card = '*' + card
-                    wild_card_str += preprocessWildCardString(card, 'hashtags')
+                    wild_card_str += preprocess_wild_card_string(card, 'hashtags')
                     if currentCardCount < countCards:
                         wild_card_str += ' AND '
                     currentCardCount += 1

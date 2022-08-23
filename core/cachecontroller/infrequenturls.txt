@@ -1,2 +1,3 @@
 /report/?campaign=MC16
 /report/?campaign=MC16c
+/api/dc/tails/?json&days=10

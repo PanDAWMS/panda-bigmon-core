@@ -10,23 +10,22 @@ import datetime
 import pickle
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import scale
-import urllib.request as urllibr
-from urllib.error import HTTPError
 import cx_Oracle
+import urllib.request as urllibr
+from sklearn.preprocessing import scale
+from urllib.error import HTTPError
 
 from django.core.cache import cache
 
 from django.db import connection
 
-from core.settings.base import DATA_CAROUSEL_MAIL_REPEAT
-from core.settings.local import dbaccess
-
 from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView
-from core.libs.exlib import dictfetchall
+from core.libs.exlib import dictfetchall, get_tmp_table_name
 from core.schedresource.utils import getCRICSEs
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -134,10 +133,7 @@ def getStagingData(request):
         processingtype = None
 
     data = {}
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1"
-    else:
-        tmpTableName = "TMP_IDS1"
+    tmpTableName = get_tmp_table_name()
 
     new_cur = connection.cursor()
 
@@ -307,7 +303,7 @@ def getCachedProgress(se, taskid):
 
 def setCachedProgress(se, taskid, stagestatus, progress):
     progress = pickle.dumps(progress)
-    timeout = 3600
+    timeout = 3600 * 2
     if stagestatus == 'done':
         timeout = 3600 * 24 * 30 * 6
     cache.set('serialized_staging_progress' + se + "_" + str(taskid), progress, timeout)
@@ -317,21 +313,31 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
     output = {}
     output_table = {}
     basicstat = None
+    _logger.debug('Getting staging progress and identifying outliers for {} RSEs:'.format(len(datasets_dict)))
     for se, datasets in datasets_dict.items():
+        _logger.debug('RSE: {}, {} datasets to analyze'.format(se, len(datasets)))
         basicstat = stageStat.get(se, [])
         for ds in datasets:
-            progress_info = getCachedProgress(se, ds['TASKID'])
+            try:
+                progress_info = getCachedProgress(se, ds['TASKID'])
+            except:
+                progress_info = None
+            # protection against wrong epoch -> datatime transformation stored in cache
+            if progress_info and len(progress_info) > 1 and '1970' in progress_info[1][0]:
+                progress_info = None
             if not progress_info:
                 progress_info = getStaginProgress(str(ds['TASKID']))
                 if progress_info:
                     setCachedProgress(se, ds['TASKID'], ds['STATUS'], progress_info)
-            if progress_info:
+            if progress_info and len(progress_info) > 1 and '1970' not in progress_info[1][0]:
                 progress_info = patch_start_time((ds['START_TIME'], progress_info, ds['TOTAL_FILES']))
                 progress_info = transform_into_eq_intervals(progress_info, str(ds['TASKID']))
                 basicstat.append(progress_info)
                 tasks_to_rucio[ds['TASKID']] = ds['RRULE']
+                _logger.debug('Length of progress data: {}, task {}, RSE {}'.format(len(progress_info), ds['TASKID'], se))
         if basicstat:
             datamerged = pd.concat([s for s in basicstat], axis=1)
+            _logger.debug('Merged data shape: {}'.format(datamerged.shape))
             zscore = datamerged.copy(deep=True)
             zscore = zscore.apply(lambda V: scale(V,axis=0,with_mean=True, with_std=True,copy=False),axis=1)
             zscore_df = pd.DataFrame.from_dict(dict(zip(zscore.index, zscore.values))).T
@@ -345,12 +351,17 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
             report = {}
             report['series'] = [["Time"]+tasksids] + list_of_val
             report['tasksids'] = tasksids
-            report['outliers'] =  outliers.tolist()
+            report['outliers'] = outliers.tolist()
             output[se] = report
             if len(list(filter(lambda x: x, report['outliers']))) > 0:
                 outliers_tasks_rucio = [(tasksids[idx], tasks_to_rucio.get(int(tasksids[idx]), None)) for idx, state in enumerate(report['outliers']) if state]
                 output_table.setdefault(se, []).extend(outliers_tasks_rucio)
-    return {'plotsdata':output, 'tasks_rucio':output_table}
+    # dict -> list of output table
+    output_table_list = []
+    for se, outlier_data in output_table.items():
+        for row in outlier_data:
+            output_table_list.append({'rse': se, 'jeditaskid': row[0], 'rucio_rule': row[1]})
+    return {'plotsdata': output, 'tasks_rucio': output_table_list}
 
 
 def extractTasksIds(datasets):
@@ -364,11 +375,7 @@ def extractTasksIds(datasets):
 def send_report_rse(rse, data):
     mail_template = "templated_email/dataCarouselStagingAlert.html"
     max_mail_attempts = 10
-    try:
-        from core.settings.base import EMAIL_SUBJECT_PREFIX
-    except:
-        EMAIL_SUBJECT_PREFIX = ''
-    subject = "{} Data Carousel Alert for {}".format(EMAIL_SUBJECT_PREFIX, rse)
+    subject = "{} Data Carousel Alert for {}".format(settings.EMAIL_SUBJECT_PREFIX, rse)
 
     rquery = {'report': 'dc_stalled'}
     recipient_list = list(ReportEmails.objects.filter(**rquery).values('email'))
@@ -390,4 +397,4 @@ def send_report_rse(rse, data):
                     break
 
             if is_sent:
-                cache.set(cache_key, "1", DATA_CAROUSEL_MAIL_REPEAT*24*3600)
+                cache.set(cache_key, "1", settings.DATA_CAROUSEL_MAIL_REPEAT*24*3600)

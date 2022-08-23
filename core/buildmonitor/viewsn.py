@@ -10,21 +10,15 @@ from pprint import pprint
 import json, re, os
 from collections import defaultdict
 from operator import itemgetter, attrgetter
+from core.libs.DateEncoder import DateEncoder
 
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
 
 def nviewDemo(request):
     valid, response = initRequest(request)
     if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
-        nname = 'master_Athena_x86_64-centos7-gcc8-opt'
+        nname = 'master_Athena_x86_64-centos7-gcc11-opt'
     if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
         rname = request.session['requestParams']['rel']
     else:
@@ -80,7 +74,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
 #                <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
 #                <th>CVMFS time</th>
 #                <th>Host</th>
-#                <th>Image</th>
+#                <th>CPack</th>
     new_cur.execute(query)
     result = new_cur.fetchall()
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':error_icon,'2':majorwarn_icon,'3':error_icon,'4':minorwarn_icon,'10':clock_icon}
@@ -118,7 +112,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/gitwww/GITWebArea/nightlies"
 #      print("JIDX",jid_sel)
 #
-      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,wala,eim,sim,eext,sext,vext,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
+      query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,wala,ecp,scp,eext,sext,vext,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
       new_cur.execute(query01)
       reslt1 = new_cur.fetchall()
       lenres=len(reslt1)
@@ -135,19 +129,22 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           if str(vext) != 1: s_config = '0'; s_inst = '0'
           if reslt1[0][12] != None: s_config = str(reslt1[0][12])
           if reslt1[0][13] != None: s_inst = str(reslt1[0][13])
+          s_cpack = 'N/A'
+          if reslt1[0][21] != None: s_cpack = str(reslt1[0][21])
           hname=reslt1[0][25]
           if re.search(r'\.',hname):
               hname=(re.split(r'\.',hname))[0]
           area_suffix = reslt1[0][9]
           if area_suffix == None: area_suffix = "";
-          [i_checkout, i_inst, i_config, i_ext] = \
+          [i_checkout, i_inst, i_config, i_ext, i_cpack] = \
               map(lambda x: di_res.get(str(x), str(x)),
-                  [s_checkout, s_inst, s_config, s_ext])
+                  [s_checkout, s_inst, s_config, s_ext, s_cpack])
           if i_checkout == None or i_checkout == "None": i_checkout = radiooff_icon;
           if i_inst == None or i_inst == "None": i_inst = radiooff_icon;
           if i_config == None or i_config == "None": i_config = radiooff_icon;
           if i_ext == None or i_ext == "None": i_ext = radiooff_icon;
-          ii_checkout, ii_config, ii_ext = i_checkout, i_config, i_ext
+          if i_cpack == None or i_cpack == "None": i_cpack = radiooff_icon;
+          ii_checkout, ii_config, ii_ext, ii_cpack = i_checkout, i_config, i_ext, i_cpack
           if str(vext) != '1':
               ii_ext = i_inst
           else:
@@ -157,13 +154,15 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   ii_ext = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_externals_build.html' + "\">" + i_ext + "</a>"
               if ii_config == check_icon or ii_config == error_icon or ii_config == majorwarn_icon or ii_config == minorwarn_icon:
                   ii_config = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_cmake_config.html' + "\">" + i_config + "</a>"
+              if ii_cpack == check_icon or ii_cpack == error_icon or ii_cpack == majorwarn_icon or ii_cpack == minorwarn_icon:
+                  ii_cpack = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_cpack_combined.html' + "\">" + i_cpack + "</a>"
 
           if reslt1[0][2] == 'ABORT' or reslt1[0][2] == 'abort':
-              row_cand = [rname, t_start, ii_checkout, ii_ext, ii_config, 'ABORTED', 'N/A', 'N/A', 'N/A',
-                          'N/A', 'N/A', 'N/A', 'N/A', hname, 'N/A']
+              row_cand = [rname, t_start, ii_checkout, ii_ext, ii_config, 'ABORTED', 'N/A', 'N/A', 'N/A', 'N/A',
+                          'N/A', 'N/A', 'N/A', 'N/A', hname]
               rows_s.append(row_cand)
           else:
-              row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A','N/A',hname,'N/A']
+              row_cand=[rname,t_start,'NO NEW<BR>CODE','N/A','N/A','CANCELLED','N/A','N/A','N/A','N/A','N/A','N/A','N/A','N/A',hname]
               rows_s.append(row_cand)
       else: 
           query1="select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer from cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
@@ -199,10 +198,10 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   if wala == None or wala == '': wala = 'N/A'
                   if wala.isdigit() and sula.isdigit():
                       sula = str(int(sula) - int(wala))
-                  e_im = row01[20]
-                  if e_im == None or e_im == '': e_im='N/A'
-                  s_im=row01[21]
-                  if s_im == None or s_im == '': s_im='N/A'
+                  e_cpack = row01[20]
+                  if e_cpack == None or e_cpack == '': e_cpack='N/A'
+                  s_cpack=row01[21]
+                  if s_cpack == None or s_cpack == '': s_cpack='N/A'
                   s_ext = row01[23]
                   if s_ext == None or s_ext == '': s_ext = 'N/A'
                   vext = row01[24]
@@ -246,6 +245,10 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   if str(vext) != 1: s_config='0'; s_inst='0'
                   if row01[12] != None: s_config=str(row01[12])
                   if row01[13] != None: s_inst=str(row01[13])
+                  e_cpack = row01[20]
+                  if e_cpack == None or e_cpack == '': e_cpack = 'N/A'
+                  s_cpack = row01[21]
+                  if s_cpack == None or s_cpack == '': s_cpack = 'N/A'
                   t_build='N/A'
                   if row01[3] != None: t_build=row01[3].strftime('%Y/%m/%d %H:%M')
                   t_test='N/A'
@@ -263,19 +266,19 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   combo_t=str(nt_er)+' ('+str(nt_pb)+')'
                   if nt_er == 'N/A': combo_t='N/A(N/A)'
 #                  mrlink_a="<a href=\""+mrlink+"\">"+gitbr+"</a>" 
-                  [i_checkout,i_inst,i_config,i_cv_serv,i_cv_clie,i_ext,i_image]=\
-                      map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config,ss_cv_serv,ss_cv_clie,s_ext,s_im])
+                  [i_checkout,i_inst,i_config,i_cv_serv,i_cv_clie,i_ext,i_cpack]=\
+                      map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config,ss_cv_serv,ss_cv_clie,s_ext,s_cpack])
                   if i_checkout == None or i_checkout == "None" : i_checkout=radiooff_icon; 
                   if i_inst == None or i_inst == "None" : i_inst=radiooff_icon;
                   if i_config == None or i_config == "None" : i_config=radiooff_icon;
                   if i_ext == None or i_ext == "None" : i_ext=radiooff_icon;
-                  if i_image == None or i_image == "None": i_image = radiooff_icon;
-                  ii_checkout, ii_config, ii_ext, ii_image = i_checkout, i_config, i_ext, i_image
+                  if i_cpack == None or i_cpack == "None": i_cpack = radiooff_icon;
+                  ii_checkout, ii_config, ii_ext, ii_cpack = i_checkout, i_config, i_ext, i_cpack
                   if str(vext) != '1' :
                       ii_ext = i_inst
-                      if e_im != 'N/A':
-                          if isinstance(e_im, datetime):
-                              ii_image = ii_image + " " + e_im.strftime('%d-%b %H:%M').upper()
+                      if e_cpack != 'N/A':
+                          if isinstance(e_cpack, datetime):
+                              ii_cpack = ii_cpack + " " + e_cpack.strftime('%d-%b %H:%M').upper()
                   else :
                       if ii_checkout == check_icon or ii_checkout == error_icon or ii_checkout == majorwarn_icon or ii_checkout == minorwarn_icon:
                           ii_checkout = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_checkout.html' + "\">" + i_checkout + "</a>"
@@ -283,11 +286,12 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                           ii_ext = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_externals_build.html' + "\">" + i_ext + "</a>"
                       if ii_config == check_icon or ii_config == error_icon or ii_config == majorwarn_icon or ii_config == minorwarn_icon:
                           ii_config = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_cmake_config.html' + "\">" + i_config + "</a>"
-                      if ii_image == check_icon or ii_image == error_icon or ii_image == majorwarn_icon or ii_image == minorwarn_icon:
-                          ii_image = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_image_build.html' + "\">" + i_image + "</a>"
-                          if e_im != 'N/A':
-                              if isinstance(e_im, datetime):
-                                  ii_image = ii_image + " " + e_im.strftime('%d-%b %H:%M').upper()
+                      if ii_cpack == check_icon or ii_cpack == error_icon or ii_cpack == majorwarn_icon or ii_cpack == minorwarn_icon:
+                          ii_cpack = "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_cpack_combined.html' + "\">" + i_cpack + "</a>"
+#                         DO NOT DISPLAY CPack completion time as its accuracy in the db is not guaranteed
+#                          if e_cpack != 'N/A':
+#                              if isinstance(e_cpack, datetime):
+#                                  ii_cpack = ii_cpack + " " + e_cpack.strftime('%d-%b %H:%M').upper()
                   link_to_testsRes=reverse('TestsRes')
                   link_to_compsRes=reverse('CompsRes')
                   i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_t+"</a>"
@@ -317,7 +321,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                       loares="<a href=\""+lartwebarea+"/"+branch+"/"+rname+"/"+pjname+"/"+ar_sel+"/"+pjname+"/art.log.html\">"
                       local_art_res=loares+local_art_res+"</a>"
 
-                  row_cand=[rname,t_start,ii_checkout,ii_ext,ii_config,t_build,i_combo_c,t_test,i_combo_t,local_art_res,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname,ii_image]
+                  row_cand=[rname,t_start,ii_checkout,ii_ext,ii_config,t_build,i_combo_c,ii_cpack,t_test,i_combo_t,local_art_res,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
                   rows_s.append(row_cand)
 
     data={"nightly": nname, "rel": rname, "platform": ar_sel, "project": pjname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}

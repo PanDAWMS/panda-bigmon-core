@@ -125,7 +125,7 @@
                 </li>
                 <li><a href="{% url 'iddsmain' %}">iDDS</a></li>
                 <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
-                <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>
+{#                <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>#}
                 <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
                 <li><a href="{% url 'BuildGlobal' %}">Nightlies and CI</a></li>
             {% else %}
@@ -488,11 +488,10 @@
 <!-- End Main Grid Section -->
 
 <!-- Help section -->
-
+<a name="doc"></a>
 {% block help %}{% endblock %}
 
 <table width=1000 class="hide-for-small">
-<a name="doc"></a>
 
 {% block helptext %}
 

@@ -8,6 +8,7 @@ from core import views as coremon_views
 
 from core.dashboards import campaignprediction as campaignprediction
 from core.dashboards import campaingprogressDKB
+from core.dashboards import taskproblemexplorer
 from core.libs import tasksPlots as tasksPlots
 
 import core.pandajob.views_support as core_coremon_support_views
@@ -68,7 +69,7 @@ urlpatterns = [
     re_path(r'^incidents/$', coremon_views.incidentList, name='incidentList'),
     re_path(r'^logger/$', coremon_views.pandaLogger, name='pandaLogger'),
     re_path(r'^esatlaslogger/$', coremon_views.esatlasPandaLogger, name='esatlasPandaLogger'),
-    re_path(r'^payloadlog/(?P<id>.*)/$', coremon_views.getPayloadLog, name='getpayloadlog'),
+    re_path(r'^payloadlog/$', coremon_views.getPayloadLog, name='getpayloadlog'),
     re_path(r'^datatable/data/jeditaskid', coremon_views.esatlasPandaLoggerJson, name='dataTableJediTaskId'),
 
     re_path(r'^fileInfo/$', coremon_views.fileInfo, name='fileInfoLegacy'),
@@ -98,20 +99,16 @@ urlpatterns = [
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
     re_path(r'^campprog/$', campaingprogressDKB.campaignProgressDash, name='campaignProgressDash'),
 
+    re_path(r'^slowtasks/$', taskproblemexplorer.taskProblemExplorer, name='taskProblemExplorer'),
+
     # auth
     re_path('', include('core.oauth.urls')),
     re_path(r'^csrftoken/$', coremon_views.getCSRFToken, name='getCSRFToken'),
 
     # support views for core
-    re_path(r'^support/$', core_coremon_support_views.maxpandaid, name='supportRoot'),
-    re_path(r'^api/$', core_coremon_support_views.maxpandaid, name='supportRoot'),
-    re_path(r'^support/maxpandaid/$', core_coremon_support_views.maxpandaid, name='supportMaxpandaid'),
-    re_path(r'^support/jobinfouservohrs/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<nhours>\d+)/$', core_coremon_support_views.jobUserOrig, name='supportJobUserVoHrs'),
-    re_path(r'^support/jobinfouservo/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<ndays>\d+)/$', core_coremon_support_views.jobUserDaysOrig, name='supportJobUserVo'),
-
-    # images
-    re_path('^img/', coremon_views.image, name='img'),
-    re_path('^grafana/', coremon_views.grafana_image, name='grafana'),
+    re_path(r'^api/support/maxpandaid/$', core_coremon_support_views.maxpandaid, name='supportMaxpandaid'),
+    re_path(r'^api/support/jobinfouservohrs/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<nhours>\d+)/$', core_coremon_support_views.jobUserOrig, name='supportJobUserVoHrs'),
+    re_path(r'^api/support/jobinfouservo/(?P<vo>[-A-Za-z0-9_.+ @]+)/(?P<ndays>\d+)/$', core_coremon_support_views.jobUserDaysOrig, name='supportJobUserVo'),
 
     # API
     re_path(r'^api/get_sites/', coremon_views.getSites, name='getsites'),
@@ -120,7 +117,6 @@ urlpatterns = [
     re_path(r'^api/user_dash/(?P<agg>.*)/$', coremon_views.userDashApi, name='userdashapi'),
 
     # ????
-    re_path(r'^preprocess/$', coremon_views.preProcess, name='preprocess'),
     re_path(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
 
     # robots.txt

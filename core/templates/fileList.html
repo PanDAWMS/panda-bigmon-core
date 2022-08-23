@@ -18,14 +18,11 @@
 
 {% if nfilestotal > 0 %}
 
-{% if requestParams.datasetname %}<br>Files in dataset <b>{{ requestParams.datasetname }}</b> {% endif %}
-{% if requestParams.datasetid %}<br>Files in dataset ID = <b>{{ requestParams.datasetid }}</b> {% endif %}
+{% if requestParams.datasetname %}Files in dataset <b>{{ requestParams.datasetname }}</b> <br>{% endif %}
+{% if requestParams.datasetid %}Files in dataset ID: <b>{{ requestParams.datasetid }}</b>, name: <b>{{ datasetname }}</b>  <br>{% endif %}
 
-{#<b>{{ files|length }} listed files {% if limitexceeded %} but some files are excluded due to DB retrieval limit. To see more files please add &limit=<i>some number</i> to request{% endif %} </b>#}
-{#{% if nfiles != files|length %} <br> <b>{{ nfiles }} unique files</b> {% endif %}#}
-
-<br>Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
-{% if nfilestotal != nfilesunique %} whereas number of unique files is <b>{{ nfilesunique }}</b> {% endif %}
+Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
+{% if nfilestotal != nfilesunique %}, whereas number of unique file names is <b>{{ nfilesunique }}</b> {% endif %}
 <p>
 {% if nfilestotal > 1000 %}
     <div id="nlistedfiles" style="display: inline; font-weight: bold"> 1000 </div> event chunks listed below. If you want to see more, please input the desire number and press Reload button.
@@ -52,7 +49,7 @@
         <th>File name</th>
         <th>File ID</th>
         <th>Type</th>
-        <th>Size (MB)</th>
+        <th>Size [MB]</th>
         <th>N events</th>
         <th>Task ID</th>
         <th>PanDA ID</th>
@@ -60,11 +57,10 @@
         <th>Processing status</th>
         <th>Attempt</th>
         <th>Max attempts</th>
+        <th>RAM count [MB]</th>
         <th>Created</th>
         <th>Lumi block</th>
         <th>Rucio link</th>
-        <th>Scope</th>
-        <th>GUID</th>
     </tr>
     </thead>
 <tbody>
@@ -187,6 +183,11 @@ function fileListTable(extraparams) {
                 className: 'num',
             },
             {
+                "data": "ramcount",
+                sDefaultContent: "",
+                className: 'num',
+            },
+            {
                 "data": "creationdate",
                 sDefaultContent: "---",
             },
@@ -206,14 +207,6 @@ function fileListTable(extraparams) {
                         return '---'
                     }
                 }
-            },
-            {
-                "data": "scope",
-                sDefaultContent: "",
-            },
-            {
-                "data": "guid",
-                sDefaultContent: "",
             },
 
         ],

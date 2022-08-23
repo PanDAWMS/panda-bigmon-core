@@ -1,13 +1,13 @@
-from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
-import math, random, datetime
+
+import math
+import random
 import numpy as np
 import pandas as pd
+from datetime import timedelta
 from django.db import connection
-from dateutil.parser import parse
-from datetime import datetime
-from core.settings.local import dbaccess
-from core.settings.config import DB_SCHEMA, DEPLOYMENT
-import core.constants as const
+
+from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
+from django.conf import settings
 
 
 def drop_duplicates(object_list, **kwargs):
@@ -37,81 +37,12 @@ def drop_duplicates(object_list, **kwargs):
     return unique_object_list
 
 
-def add_job_category(jobs):
-    """
-    Determine which category job belong to among: build, run or merge and add 'category' param to dict of a job
-    Need 'processingtype', 'eventservice' and 'transformation' params to make a decision
-    :param jobs: list of dicts
-    :return: jobs: list of updated dicts
-    """
-
-    for job in jobs:
-        if 'transformation' in job and 'build' in job['transformation']:
-            job['category'] = 'build'
-        elif 'processingtype' in job and job['processingtype'] == 'pmerge':
-            job['category'] = 'merge'
-        elif 'eventservice' in job and (job['eventservice'] == 2 or job['eventservice'] == 'esmerge'):
-            job['category'] = 'merge'
-        else:
-            job['category'] = 'run'
-
-    return jobs
-
-
-def job_states_count_by_param(jobs, **kwargs):
-    """
-    Counting jobs in different states and group by provided param
-    :param jobs:
-    :param kwargs:
-    :return:
-    """
-    param = 'category'
-    if 'param' in kwargs:
-        param = kwargs['param']
-
-    job_states_count_dict = {}
-    param_values = list(set([job[param] for job in jobs if param in job]))
-
-    if len(param_values) > 0:
-        for pv in param_values:
-            job_states_count_dict[pv] = {}
-            for state in const.JOB_STATES:
-                job_states_count_dict[pv][state] = 0
-
-    for job in jobs:
-        job_states_count_dict[job[param]][job['jobstatus']] += 1
-
-    job_summary_dict = {}
-    for pv, data in job_states_count_dict.items():
-        if pv not in job_summary_dict:
-            job_summary_dict[pv] = []
-
-            for state in const.JOB_STATES:
-                statecount = {
-                    'name': state,
-                    'count': job_states_count_dict[pv][state],
-                }
-                job_summary_dict[pv].append(statecount)
-
-    # dict -> list
-    job_summary_list = []
-    for key, val in job_summary_dict.items():
-        tmp_dict = {
-            'param': param,
-            'value': key,
-            'job_state_counts': val,
-        }
-        job_summary_list.append(tmp_dict)
-
-    return job_summary_list
-
-
-def getDataSetsForATask(taskid, type = None):
+def getDataSetsForATask(taskid, type=None):
     query = {
         'jeditaskid': taskid
     }
     if type:
-        query['type']=type
+        query['type'] = type
     ret = []
     dsets = JediDatasets.objects.filter(**query).values()
     for dset in dsets:
@@ -120,8 +51,6 @@ def getDataSetsForATask(taskid, type = None):
             'type': dset['type']
         })
     return ret
-
-
 
 
 def fileList(jobs):
@@ -136,7 +65,6 @@ def fileList(jobs):
         for job in jobs:
             pandaIDQ.append(job['pandaid'])
         query['pandaid__in'] = pandaIDQ
-        #query['type'] = 'INPUT'
         pandaLFN = {}
         datasetsFromFileTable.extend(
             Filestable4.objects.filter(**query).extra(where=["TYPE like %s"], params=["input"]).values())
@@ -159,8 +87,9 @@ def fileList(jobs):
                 else:
                     if jds['endevent']!=None and jds['startevent']!=None:
                         njob[jds['pandaid']]['nevents'] = int(jds['endevent'])+1-int(jds['startevent'])
-                    else: njob[jds['pandaid']]['nevents'] = int(jds['nevents'])
-                if jds['type']=='input':
+                    else:
+                        njob[jds['pandaid']]['nevents'] = int(jds['nevents'])
+                if jds['type'] == 'input':
                     njob[jds['pandaid']]['ninputs'] = []
                     njob[jds['pandaid']]['ninputs'].append(jds['lfn'])
             else:
@@ -169,41 +98,31 @@ def fileList(jobs):
                 else:
                     if jds['nevents'] != None:
                         njob[jds['pandaid']]['nevents'] += int(jds['nevents'])
-                    else: njob[jds['pandaid']]['nevents'] += 0
-                if jds['type']=='input':
+                    else:
+                        njob[jds['pandaid']]['nevents'] += 0
+                if jds['type'] =='input':
                     njob[jds['pandaid']]['ninputs'].append(jds['lfn'])
         listpandaidsDS = njob.keys()
         listpandaidsF4 = pandaLFN.keys()
         for job in jobs:
             if job['pandaid'] in listpandaidsDS:
-                # job['nevents'] = int(math.fabs(job['nevents']-njob[job['pandaid']]['nevents']))
                 job['nevents'] = njob[job['pandaid']]['nevents']
                 if 'ninputs' in njob[job['pandaid']]:
                     job['ninputs'] = len(njob[job['pandaid']]['ninputs'])
                 else:
-                    job['ninputs'] = 0 #0
+                    job['ninputs'] = 0
                     if job['processingtype'] == 'pmerge':
                         if len(job['jobinfo']) == 0:
                             job['jobinfo'] = 'Pmerge job'
                         else:
                             job['jobinfo'] += 'Pmerge job'
             else:
-                #if isEventService(job):
                 if job['pandaid'] in listpandaidsF4:
                     job['ninputs'] = len(pandaLFN[job['pandaid']])
                 else: job['ninputs'] = 0
             if job['pandaid'] in listpandaidsF4 and 'ninputs' not in job:
                  job['ninputs'] = len(pandaLFN[job['pandaid']])
-            #print str(job['pandaid'])+' '+str(job['ninputs'])
-            #if job['ninputs']==0:
-            #    job['ninputs'] = len(pandaLFN[job['pandaid']])
-                #else: job['ninputs'] = len(pandaLFN[job['pandaid']])
-            # if (job['jobstatus'] == 'finished' and job['nevents'] == 0) or (job['jobstatus'] == 'cancelled' and job['nevents'] == 0):
-            #     job['ninputs'] = 0
-            # if job['jobstatus'] == 'finished' and job['pandaid'] not in listpandaidsDS:
-            #     job['ninputs'] = 0
-            #     job['nevents'] = 0
-            if job['nevents']!= 0 and 'ninputs' not in job and job['pandaid'] in listpandaidsF4:
+            if job['nevents'] != 0 and 'ninputs' not in job and job['pandaid'] in listpandaidsF4:
                 job['ninputs'] = len(pandaLFN[job['pandaid']])
 
     newjobs = jobs
@@ -269,7 +188,7 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
         transactionKey = random.randrange(1000000)
 
     new_cur = connection.cursor()
-    if DEPLOYMENT == "POSTGRES":
+    if settings.DEPLOYMENT == "POSTGRES":
         create_temporary_table(new_cur, tmpTableName)
     executionData = []
     for item in list_of_items:
@@ -343,76 +262,23 @@ def is_timestamp(key):
     return False
 
 
-def parse_datetime(datetime_str):
-    """
-    :param datetime_str: datetime str in any format
-    :return: datetime value
-    """
-    try:
-        datetime_val = parse(datetime_str)
-    except ValueError:
-        datetime_val = datetime.utcfromtimestamp(datetime_str)
-    return datetime_val
-
-
-def get_job_walltime(job):
-    """
-    :param job: dict of job params, starttime and endtime is obligatory;
-                creationdate, statechangetime, and modificationtime are optional
-    :return: walltime in seconds or None if not enough data provided
-    """
-    walltime = None
-
-    if 'endtime' in job and job['endtime'] is not None:
-        endtime = parse_datetime(job['endtime']) if not isinstance(job['endtime'], datetime) else job['endtime']
-    elif 'statechangetime' in job and job['statechangetime'] is not None:
-        endtime = parse_datetime(job['statechangetime']) if not isinstance(job['statechangetime'], datetime) else job['statechangetime']
-    elif 'modificationtime' in job and job['modificationtime'] is not None:
-        endtime = parse_datetime(job['modificationtime']) if not isinstance(job['modificationtime'], datetime) else job['modificationtime']
-    else:
-        endtime = None
-
-    if 'starttime' in job and job['starttime'] is not None:
-        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
-    elif 'creationdate' in job and job['creationdate'] is not None:
-        starttime = parse_datetime(job['creationdate']) if not isinstance(job['creationdate'], datetime) else job['creationdate']
-    else:
-        starttime = 0
-
-    if starttime and endtime:
-        walltime = (endtime-starttime).total_seconds()
-
-    return walltime
-
-
-def is_job_active(jobststus):
-    """
-    Check if jobstatus is one of the active
-    :param jobststus: str
-    :return: True or False
-    """
-    end_status_list = ['finished', 'failed', 'cancelled', 'closed']
-    if jobststus in end_status_list:
-        return False
-
-    return True
-
-
 def get_tmp_table_name():
-    tmpTableName = f"{DB_SCHEMA}.TMP_IDS1"
-    if DEPLOYMENT == 'POSTGRES':
+    tmpTableName = f"{settings.DB_SCHEMA}.TMP_IDS1"
+    if settings.DEPLOYMENT == 'POSTGRES':
         tmpTableName = "TMP_IDS1"
     return tmpTableName
 
+
 def get_tmp_table_name_debug():
-    tmpTableName = f"{DB_SCHEMA}.TMP_IDS1DEBUG"
+    tmpTableName = f"{settings.DB_SCHEMA}.TMP_IDS1DEBUG"
     return tmpTableName
 
+
 def create_temporary_table(cursor, tmpTableName):
-    #Postgres does not keep the temporary table definition across connections, this is why we should recreate them
+    # Postgres does not keep the temporary table definition across connections, this is why we should recreate them
     sql_query = f"""
     CREATE TEMPORARY TABLE if not exists {tmpTableName} 
-   ("id" bigint, "transactionkey" bigint) ON COMMIT PRESERVE ROWS;
+    ("id" bigint, "transactionkey" bigint) ON COMMIT PRESERVE ROWS;
     COMMIT;
     """
     cursor.execute(sql_query)
@@ -428,28 +294,6 @@ def lower_dicts_in_list(input_list):
         out_dict = {lower_string(k): lower_string(v) for k,v in row_dict.items()}
         output_list.append(out_dict)
     return output_list
-
-
-def get_job_queuetime(job):
-    """
-    :param job: dict of job params, starttime and creationtime is obligatory
-    :return: queuetime in seconds or None if not enough data provided
-    """
-    queueutime = None
-
-    if 'starttime' in job and job['starttime'] is not None:
-        starttime = parse_datetime(job['starttime']) if not isinstance(job['starttime'], datetime) else job['starttime']
-    else:
-        starttime = None
-    if 'creationtime' in job and job['creationtime'] is not None:
-        creationtime = parse_datetime(job['creationtime']) if not isinstance(job['creationtime'], datetime) else job['creationtime']
-    else:
-        creationtime = None
-
-    if starttime and creationtime:
-        queueutime = (starttime-creationtime).total_seconds()
-
-    return queueutime
 
 
 def convert_bytes(n_bytes, output_unit='MB'):
@@ -494,6 +338,20 @@ def convert_hs06(input, unit):
     return output
 
 
+def convert_sec(duration_sec):
+    """Convert seconds to dd:hh:mm:ss str"""
+    duration_str = '-'
+    if duration_sec is not None and duration_sec > 0:
+        duration_str = str(timedelta(seconds=duration_sec)).split('.')[0]
+        if 'day' in duration_str:
+            duration_str = duration_str.replace(' day, ', ':')
+            duration_str = duration_str.replace(' days, ', ':')
+        else:
+            duration_str = '0:' + duration_str
+
+    return duration_str
+
+
 def split_into_intervals(input_data, **kwargs):
     """
     Split numeric values list into intervals for sumd
@@ -534,6 +392,70 @@ def split_into_intervals(input_data, **kwargs):
             output_data.append({'kname': str(ranges[i]) + '-' + str(ranges[i + 1]), 'kvalue': bin})
 
     return output_data
+
+
+def calc_nbins(length, n_bins_max=50):
+    """
+    Calculate N bins depending on length of data.
+    It is needed as np.histogram(data, bins='auto') uses extreme amount of memory in case of outliers.
+    :param length: length of data to be binned
+    :return: n_bins
+    """
+
+    n_bins = 1
+    if length is not None and isinstance(length, int) and length > 0:
+        n_bins = math.ceil(pow(length, 1/1.75))
+    if n_bins > n_bins_max:
+        n_bins = n_bins_max
+
+    return n_bins
+
+
+def build_stack_histogram(data_raw, **kwargs):
+    """
+    Prepare stack histogram data and calculate mean and std metrics
+    :param data_raw: dict of lists
+    :param kwargs:
+    :return:
+    """
+
+    n_decimals = 0
+    if 'n_decimals' in kwargs:
+        n_decimals = kwargs['n_decimals']
+
+    n_bins_max = 50
+    if 'n_bin_max' in kwargs:
+        n_bins_max = kwargs['n_bin_max']
+    stats = []
+    columns = []
+
+    data_all = []
+    for site, sd in data_raw.items():
+        data_all.extend(sd)
+
+    stats.append(np.average(data_all) if not np.isnan(np.average(data_all)) else 0)
+    stats.append(np.std(data_all) if not np.isnan(np.std(data_all)) else 0)
+
+    n_bins = calc_nbins(len(data_all), n_bins_max)
+    bins_all, ranges_all = np.histogram(data_all, bins=n_bins)
+    ranges_all = list(np.round(ranges_all, n_decimals))
+
+    x_axis_ticks = ['x']
+    x_axis_ticks.extend(ranges_all[:-1])
+
+    for stack_param, data in data_raw.items():
+        column = [stack_param]
+        column.extend(list(np.histogram(data, ranges_all)[0]))
+        # do not add if all the values are zeros
+        if sum(column[1:]) > 0:
+            columns.append(column)
+
+    # sort by biggest impact
+    columns = sorted(columns, key=lambda x: sum(x[1:]), reverse=True)
+
+    columns.insert(0, x_axis_ticks)
+
+    return stats, columns
 
 
 def build_time_histogram(data):
@@ -604,6 +526,52 @@ def build_time_histogram(data):
     return data
 
 
+def count_occurrences(obj_list, params_to_count, output='dict'):
+    """
+    Count occurrences of each param value for list of dicts
+    :param obj_list:
+    :param params_to_count:
+    :param output: str (list or dict). list - for plots
+    :return: param_counts: dict
+    """
+    param_counts = {}
+
+    for obj in obj_list:
+        for p in params_to_count:
+            if p in obj and obj[p] is not None and obj[p] != '':
+                if p not in param_counts:
+                    param_counts[p] = {}
+                if obj[p] not in param_counts[p]:
+                    param_counts[p][obj[p]] = 0
+                param_counts[p][obj[p]] += 1
+
+    if output == 'list':
+        for p in param_counts:
+            param_counts[p] = [[v, c] for v, c in param_counts[p].items()]
+            param_counts[p] = sorted(param_counts[p], key=lambda x: x[1], reverse=True)
+
+    return param_counts
+
+
+def duration_df(data_raw, id_name='JEDITASKID', timestamp_name='MODIFICATIONTIME'):
+    """
+    Calculates duration of each status by modificationtime delta
+    (in days)
+    """
+    task_states_duration = {}
+    if len(data_raw) > 0:
+        df = pd.DataFrame(data_raw)
+        groups = df.groupby([id_name])
+        for k, v in groups:
+            v.sort_values(by=[timestamp_name], inplace=True)
+            v['START_TS'] = pd.to_datetime(v[timestamp_name])
+            v['END_TS'] = v['START_TS'].shift(-1).fillna(v['START_TS'])
+            v['DURATION'] = (v['END_TS'] - v['START_TS']).dt.total_seconds()/60./60./24.
+            task_states_duration[k] = v.groupby(['status'])['DURATION'].sum().to_dict()
+
+    return task_states_duration
+
+
 def round_to_n(x, n):
     if not x:
         return 0
@@ -611,6 +579,29 @@ def round_to_n(x, n):
     factor = (10 ** power)
 
     return round(x * factor) / factor
+
+
+def round_to_n_digits(x, n=0, method='normal'):
+    """
+    Round float to n decimals.
+    :param x: float number
+    :param n: decimals
+    :param method: str: normal, up or down
+    :return:
+    """
+    if not x:
+        return 0
+
+    factor = (10 ** n)
+
+    if method == 'normal':
+        x = round(x * factor) / factor
+    elif method == 'ceil':
+        x = math.ceil(x * factor) / factor
+    elif method == 'floor':
+        x = math.floor(x * factor) / factor
+
+    return x
 
 
 def getPilotCounts(view):

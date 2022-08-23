@@ -35,6 +35,24 @@ JOB_STATES = (
     'closed'
 )
 
+JOB_STATES_SITE = (
+    'defined',
+    'waiting',
+    'assigned',
+    'throttled',
+    'activated',
+    'sent',
+    'starting',
+    'running',
+    'holding',
+    'merging',
+    'transferring',
+    'finished',
+    'failed',
+    'cancelled',
+    'closed'
+)
+
 JOB_STATES_FINAL = (
     'finished',
     'failed',
@@ -62,6 +80,31 @@ EVENT_STATES = (
     'fatal',
     'merged',
     'corrupted',
+)
+
+TASK_STATES = (
+    'registered',
+    'defined',
+    'assigning',
+    'ready',
+    'pending',
+    'scouting',
+    'scouted',
+    'running',
+    'prepared',
+    'done',
+    'failed',
+    'finished',
+    'aborting',
+    'aborted',
+    'finishing',
+    'topreprocess',
+    'preprocessing',
+    'tobroken',
+    'broken',
+    'toretry',
+    'toincexec',
+    'rerefine'
 )
 
 TASK_STATES_FINAL = (
@@ -102,4 +145,69 @@ JOB_ERROR_CATEGORIES = (
     {'name': 'transformation', 'error': 'transexitcode', 'diag': None, 'title': 'Trf exit code'},
 )
 
+JOB_FIELDS_STANDARD = (
+    'processingtype',
+    'computingsite',
+    'jobstatus',
+    'prodsourcelabel',
+    'produsername',
+    'jeditaskid',
+    'workinggroup',
+    'transformation',
+    'cloud',
+    'homepackage',
+    'inputfileproject',
+    'inputfiletype',
+    'attemptnr',
+    'specialhandling',
+    'priorityrange',
+    'reqid',
+    'minramcount',
+    'eventservice',
+    'jobsubstatus',
+    'nucleus',
+    'gshare',
+    'resourcetype'
+)
 
+SITE_FIELDS_STANDARD = (
+    'cloud',
+    'gocname',
+    'status',
+    'tier',
+    'type',
+    'cloud',
+    'country',
+    'harvester',
+    'copytool',
+    'system',
+    'workflow',
+)
+
+TASK_FIELDS_STANDARD = (
+    'workqueue_id',
+    'tasktype',
+    'superstatus',
+    'status',
+    'corecount',
+    'taskpriority',
+    'currentpriority',
+    'username',
+    'transuses',
+    'transpath',
+    'workinggroup',
+    'processingtype',
+    'cloud',
+    'campaign',
+    'project',
+    'stream',
+    'tag',
+    'reqid',
+    'ramcount',
+    'nucleus',
+    'eventservice',
+    'gshare',
+    'container_name',
+    'attemptnr',
+    'site'
+)

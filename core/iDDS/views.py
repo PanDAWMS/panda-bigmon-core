@@ -4,14 +4,15 @@ from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 from django.template.defaulttags import register
-from django.db.models import Q, F
+from django.db.models import Q
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, DateEncoder
-from core.iDDS.models import Transforms, Collections, Requests, Req2transforms, Processings, Contents
+from core.views import initRequest
+from core.iDDS.models import Transforms, Collections, Processings, Contents
 from core.iDDS.useconstants import SubstitleValue
 from core.iDDS.rawsqlquery import getRequests, getTransforms
 from core.iDDS.algorithms import generate_requests_summary, parse_request, getiDDSInfoForTask
 from core.libs.exlib import lower_dicts_in_list
+from core.libs.DateEncoder import DateEncoder
 from django.core.cache import cache
 
 

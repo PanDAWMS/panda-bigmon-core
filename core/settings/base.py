@@ -9,7 +9,7 @@ except ImportError:
     ENABLE_DEBUG_TOOLBAR = False
 
 ADMINS = (
-    ('Sergey Podolsky', 'spadolski@bnl.gov'),
+    ('Tatiana Korchuganova', 'tatiana.korchuganova@cern.ch'),
 )
 MANAGERS = ADMINS
 
@@ -60,6 +60,7 @@ AUTHENTICATION_BACKENDS = (
     'core.oauth.Cernauth2.CernAuthOIDC',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
+    'core.oauth.indigoiam.IndigoIamOIDC',
 )
 AUTH_USER_MODEL = 'oauth.BPUser'
 
@@ -134,7 +135,6 @@ INSTALLED_APPS_EXTRA = [
     "core.datacarousel",
     "core.errorsscattering",
     "core.filebrowser",
-    # "core.globalpage",
     "core.globalshares",
     "core.grafana",
     "core.harvester",

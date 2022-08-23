@@ -70,42 +70,14 @@
 {% endif %}
 
 <div class="callout info" data-closable>
-  <h5>This is the new user dashboard page! Send your feedback to: <a href="mailto:atlas-adc-pandamon-support@cern.ch">atlas-adc-pandamon-support@cern.ch</a></h5>
+  <h5>This is the new user dashboard page! In case of problems or improvement wishes drop an email to:
+    <a href="mailto:atlas-adc-pandamon-support@cern.ch">atlas-adc-pandamon-support@cern.ch</a>
+    or write to the
+    <a target="_blank" href="https://mattermost.web.cern.ch/adcvcr/channels/adc-bigpanda">BigPanDAmon Mattermost channel</a>
+  </h5>
   <p>
-    The new user dashboard focuses on the progress of your tasks and highlighting of possible problems.
-    This page summarizes all the recent user tasks.
-    By default the tasks with a modification date in the last 7 days are selected.
-    You can change the time window by clicking on blue "Change" button in the top subbar.
-  </p>
-  <p>
-    The <b>"User activity overview"</b> section shows overall metrics, that can give a clue of potential problems.
-    Each metric label has 3 color codes:
-    <span class="label ok">OK</span>, <span class="label warning">Warning</span> and <span class="label alert">Alert</span>.
-    For example, if you see <span class="label warning">Median MaxPSS/core: <b>2.3</b>GB</span> ,
-      most probably your jobs consume a lof of memory that can be a cause of jobs failure.
-  </p>
-  <p>
-    Also the <b>"User activity overview"</b> section has 3 plots:
-    <ul>
-      <li><b>Inputs by status</b> represents the total number of input files for all the tasks (excluding aborted) grouped by 3 states:
-        <span class="done">done</span>, <span class="registered">remaining</span> and <span class="failed">failed</span>.
-      </li>
-      <li><b>Tasks by status</b> shows the number of tasks grouped by detailed JEDI task status.
-        The description of task states can be found below. </li>
-      <li><b>Task age histogram</b> displays the distribution of task age.
-        If task ended, the age is difference between end time and creation time.
-        If task is in active state, the age is the current time - creation time.</li>
-    </ul>
-  </p>
-  <p>
-    The full list of tasks are in the table. It is based on a popular DataTable plugin,
-      so the pagination is enabled by default showing 20 tasks by page. You can use "Search" input to filter the tasks.
-    The jobs metrics are calculated per task as well, you can show/hide them by using 2 buttons:
-      <b>"Show all metrics"</b> and <b>"Minimize view"</b>.
-    The <b>"Top job errors, count [code] message"</b> column shows the top-3 job errors per task,
-      the count is clickable and goes to a classic jobs page.
-    The <b>"Task ID"</b> links goes to a task page,
-      the  <b>"Jobs failure, %"</b> links goes to error summary page for a task.
+    The user dashboard focuses on the progress of user tasks highlighting any possible problems.
+    Please look at the <a href="#doc">Help section</a> at the bottom for more information.
   </p>
   <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
         <span aria-hidden="true">&times;</span>
@@ -129,7 +101,7 @@
   <div class="card-divider"><p>{{ ntasks }} tasks:</p></div>
   <div class="card-section">
     <p ng-bind-html="userinfo.message"></p>
-    <table class="data-table" id="taskstable">
+    <table class="data-table hover" id="taskstable">
         <thead></thead>
         <tbody></tbody>
         <tfoot></tfoot>
@@ -176,14 +148,22 @@
       }
     };
 
-    $scope.userinfo.uts_plots.plot_data.forEach((item) => {
-      if ($scope.userinfo.page.screen_cat === 'small') {
-        item.options.size = [getWidth() - 40, 300];
-      }
-      else {
-        item.options.size = [getWidth() / $scope.userinfo.uts_plots.plot_data.length - 20, 300];
-      }
-    });
+    $scope.userinfo.uts_plots.calc_width = function () {
+      $scope.userinfo.uts_plots.plot_data.forEach((item) => {
+        if ($scope.userinfo.page.screen_cat === 'small') {
+          item.options.size = [getWidth() - 40, 300];
+        }
+        else {
+          if ('size_mp' in item.options) {
+            item.options.size = [getWidth() * item.options.size_mp - 10, 300]
+          }
+          else {
+            item.options.size = [getWidth() / ($scope.userinfo.uts_plots.plot_data.length + 1) - 10, 300];
+          }
+        }
+      });
+    };
+    $scope.userinfo.uts_plots.calc_width();
 
     $scope.userinfo.uts_plots.build = function () {
       $scope.userinfo.uts_plots.plot_data.forEach((item) => {
@@ -202,6 +182,13 @@
             item.title,
             item.options)
         }
+        else if (item.type === 'bar_stacked') {
+          $scope.userinfo.uts_plots.charts[item.name + "_chart"] = draw_stacked_bar_hist(
+            item.data,
+            item.options,
+            item.name + "_chart",
+            )
+        }
       });
     };
 
@@ -215,6 +202,8 @@
       ).then(function success(res) {
         if (res.data && res.data.msg.length === 0) {
           $scope.userinfo.message = "";
+          $scope.userinfo.uts_plots.plot_data.push(...angular.fromJson(res.data.data.plots));
+          $scope.userinfo.uts_plots.calc_width();
           let ua_metrics = angular.fromJson(res.data.data.metrics);
           if (ua_metrics && ua_metrics.length > 0) {
             ua_metrics.forEach((item) => {
@@ -242,18 +231,18 @@
       "scrollX": true,
       "aaSorting": [[0, 'desc']],
       "columnDefs": [
-          {"type": "num-html", "targets": [0,1,4,5,7,10,11,12,13,14,15,17,18] }
+          {"type": "num-html", "targets": [0,1,3,6,7,8,9,12,13,14,15,16,17,19,20] }
       ],
       "data": $scope.userinfo.tasks.list,
       "buttons": [
         {
           extend: 'colvisGroup',
           text: 'Minimize view',
-          hide: [ 5,11,12,13,14,15, ],
+          hide: [ 2,3,4,10,13,14,15,16,17, ],
         },
         {
           extend: 'colvisGroup',
-          text: 'Show all metrics',
+          text: 'Show all task metrics',
           show: ':hidden',
         }
       ],
@@ -265,6 +254,32 @@
           render: function(data, type, row, meta) {
             if (data) {
               return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Request ID",
+          {#data: "reqid",#}
+          sDefaultContent: "-",
+          render: function(data, type, row, meta) {
+            if (data) {
+              return '<a href="{{ xurl }}reqid=' + data +'">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Submission time",
+          sDefaultContent: "-",
+          className: '',
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              return data.replace('T', ' ')
             }
             else {
               return '-'
@@ -321,16 +336,16 @@
           title: "N files done",
           {#data: "nfilesfinished",#}
           sDefaultContent: "-",
-          className: 'num',
+          className: 'num done',
         },
         {
           title: "N files failed",
           {#data: "nfilesfailed",#}
           sDefaultContent: "-",
-          className: 'num',
+          className: 'num alarm',
         },
         {
-          title: "Progress, %",
+          title: "%",
           {#data: "pctfinished",#}
           sDefaultContent: "-",
           className: 'num',
@@ -342,7 +357,7 @@
           className: 'state',
           render: function(data, type, row, meta) {
             if (data) {
-              return '<a href="{{ xurl }}superstatus=' + data + '">' + data + '</a>'
+              return '<a class="bp_tooltip task_' + data + ' href="{{ xurl }}superstatus=' + data + '">' + data + '</a>'
             }
             else {
               return '-'
@@ -356,7 +371,7 @@
           className: 'state',
           render: function(data, type, row, meta) {
             if (data) {
-              return '<a href="{{ xurl }}status=' + data + '">' + data + '</a>'
+              return '<a class="bp_tooltip task_' + data + ' href="{{ xurl }}status=' + data + '">' + data + '</a>'
             }
             else {
               return '-'
@@ -370,7 +385,7 @@
           className: 'num',
         },
         {
-          title: "Queue time, hours",
+          title: "Jobs queue time, hours",
           {#data: "job_queuetime",#}
           sDefaultContent: "-",
           className: 'num',
@@ -384,7 +399,7 @@
           },
         },
         {
-          title: "Wall time, hours",
+          title: "Jobs wall time, hours",
           {#data: "job_walltime",#}
           sDefaultContent: "-",
           className: 'num',
@@ -398,7 +413,7 @@
           },
         },
         {
-          title: "Max PSS/core, GB",
+          title: "Jobs PSS/core, GB",
           {#data: "job_maxpss_per_actualcorecount",#}
           sDefaultContent: "-",
           className: 'num',
@@ -468,7 +483,7 @@
           },
         },
         {
-          title: 'Top job errors, count [code] "sample message"',
+          title: 'Top job errors, count [component:code] "sample message" [log example]',
           {#data: "top_errors",#}
           sDefaultContent: "-",
           className: 'alert',
@@ -483,12 +498,12 @@
         },
       ],
       createdRow: function ( row, data, index ) {
-          $('td', row).eq(8).addClass(data[8] + '_fill');
-          $('td', row).eq(9).addClass(data[9] + '_fill');
+          $('td', row).eq(10).addClass(data[10] + '_fill');
+          $('td', row).eq(11).addClass(data[11] + '_fill');
         },
       });
 
-      $scope.userinfo.tasksDataTable.columns( [ 5,11,12,13,14,15 ] ).visible( false );
+      $scope.userinfo.tasksDataTable.columns( [ 2,3,4,10,13,14,15,16,17, ] ).visible( false );
       $scope.userinfo.tasksDataTable.buttons().container().appendTo( '#taskstable_wrapper .small-6.columns:eq(0)' );
 
     };
@@ -526,6 +541,13 @@
                     scope.plot.name + "_chart",
                     scope.plot.title,
                     scope.plot.options)
+                }
+                else if (scope.plot.type === 'bar_stacked') {
+                  scope.parent.userinfo.uts_plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(
+                    scope.plot.data,
+                    scope.plot.options,
+                    scope.plot.name + "_chart",
+                    )
                 }
               });
             });

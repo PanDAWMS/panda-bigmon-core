@@ -1,131 +1,138 @@
-from __future__ import unicode_literals
-
-from django.contrib.auth.models import AbstractUser
+"""
+iDDS related models
+"""
 from django.db import models
+from django.conf import settings
 
 
 class Transforms(models.Model):
-    transform_id = models.BigIntegerField(primary_key=True, db_column='TRANSFORM_ID')
-    transform_type = models.SmallIntegerField(db_column='TRANSFORM_TYPE')
-    transform_tag = models.CharField(null=True, max_length=20, db_column='TRANSFORM_TAG')
-    priority = models.IntegerField(null=True, db_column='PRIORITY')
-    safe2get_output_from_input = models.BigIntegerField(null=True, db_column='SAFE2GET_OUTPUT_FROM_INPUT')
-    status = models.SmallIntegerField(db_column='STATUS')
-    substatus = models.SmallIntegerField(null=True, db_column='SUBSTATUS')
-    locking = models.SmallIntegerField(null=True, db_column='LOCKING')
-    retries = models.IntegerField(null=True, db_column='RETRIES')
-    created_at = models.DateTimeField(db_column='CREATED_AT')
-    updated_at = models.DateTimeField(db_column='UPDATED_AT')
-    started_at = models.DateTimeField(null=True,db_column='STARTED_AT')
-    finished_at = models.DateTimeField(null=True,db_column='FINISHED_AT')
-    expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
-    transform_metadata = models.TextField(db_column='TRANSFORM_METADATA', blank=True)
+    transform_id = models.BigIntegerField(primary_key=True, db_column='transform_id')
+    transform_type = models.SmallIntegerField(db_column='transform_type')
+    transform_tag = models.CharField(null=True, max_length=20, db_column='transform_tag')
+    priority = models.IntegerField(null=True, db_column='priority')
+    safe2get_output_from_input = models.BigIntegerField(null=True, db_column='safe2get_output_from_input')
+    status = models.SmallIntegerField(db_column='status')
+    substatus = models.SmallIntegerField(null=True, db_column='substatus')
+    locking = models.SmallIntegerField(null=True, db_column='locking')
+    retries = models.IntegerField(null=True, db_column='retries')
+    created_at = models.DateTimeField(db_column='created_at')
+    updated_at = models.DateTimeField(db_column='updated_at')
+    started_at = models.DateTimeField(null=True,db_column='started_at')
+    finished_at = models.DateTimeField(null=True,db_column='finished_at')
+    expired_at = models.DateTimeField(null=True, db_column='expired_at')
+    transform_metadata = models.TextField(db_column='transform_metadata', blank=True)
+    
     class Meta:
-        db_table = u'"ATLAS_IDDS"."TRANSFORMS"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."transforms"'
 
 
 class Collections(models.Model):
-    coll_id = models.BigIntegerField(primary_key=True, db_column='COLL_ID')
-    coll_type = models.SmallIntegerField(null=True, db_column='COLL_TYPE')
-    transform_id = models.ForeignKey(Transforms, related_name='transform_id_transforms_fk', on_delete=models.DO_NOTHING, db_column='TRANSFORM_ID')
-    relation_type = models.SmallIntegerField(null=True, db_column='RELATION_TYPE')
-    scope = models.CharField(max_length=25, db_column='SCOPE')
-    name = models.CharField(max_length=255, db_column='NAME')
-    bytes = models.BigIntegerField(null=True, db_column='BYTES')
-    status = models.SmallIntegerField(null=True, db_column='STATUS')
-    substatus = models.SmallIntegerField(null=True, db_column='SUBSTATUS')
-    locking = models.SmallIntegerField(null=True, db_column='LOCKING')
-    total_files = models.BigIntegerField(null=True, db_column='TOTAL_FILES')
-    storage_id = models.IntegerField(null=True, db_column='STORAGE_ID')
-    new_files = models.IntegerField(null=True, db_column='NEW_FILES')
-    processed_files = models.IntegerField(null=True, db_column='PROCESSED_FILES')
-    processing_files = models.IntegerField(null=True, db_column='PROCESSING_FILES')
-    processing_id = models.BigIntegerField(null=True, db_column='PROCESSING_ID')
-    retries = models.IntegerField(null=True, db_column='RETRIES')
-    created_at = models.DateTimeField(db_column='CREATED_AT')
-    updated_at = models.DateTimeField(db_column='UPDATED_AT')
-    accessed_at = models.DateTimeField(null=True, db_column='ACCESSED_AT')
-    expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
-    coll_metadata = models.TextField(db_column='COLL_METADATA', blank=True)
+    coll_id = models.BigIntegerField(primary_key=True, db_column='coll_id')
+    coll_type = models.SmallIntegerField(null=True, db_column='coll_type')
+    transform_id = models.ForeignKey(Transforms, related_name='transform_id_transforms_fk', on_delete=models.DO_NOTHING, db_column='transform_id')
+    relation_type = models.SmallIntegerField(null=True, db_column='relation_type')
+    scope = models.CharField(max_length=25, db_column='scope')
+    name = models.CharField(max_length=255, db_column='name')
+    bytes = models.BigIntegerField(null=True, db_column='bytes')
+    status = models.SmallIntegerField(null=True, db_column='status')
+    substatus = models.SmallIntegerField(null=True, db_column='substatus')
+    locking = models.SmallIntegerField(null=True, db_column='locking')
+    total_files = models.BigIntegerField(null=True, db_column='total_files')
+    storage_id = models.IntegerField(null=True, db_column='storage_id')
+    new_files = models.IntegerField(null=True, db_column='new_files')
+    processed_files = models.IntegerField(null=True, db_column='processed_files')
+    processing_files = models.IntegerField(null=True, db_column='processing_files')
+    processing_id = models.BigIntegerField(null=True, db_column='processing_id')
+    retries = models.IntegerField(null=True, db_column='retries')
+    created_at = models.DateTimeField(db_column='created_at')
+    updated_at = models.DateTimeField(db_column='updated_at')
+    accessed_at = models.DateTimeField(null=True, db_column='accessed_at')
+    expired_at = models.DateTimeField(null=True, db_column='expired_at')
+    coll_metadata = models.TextField(db_column='coll_metadata', blank=True)
+    
     class Meta:
-        db_table = u'"ATLAS_IDDS"."COLLECTIONS"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."collections"'
 
 
 class Contents(models.Model):
-    content_id = models.BigIntegerField(primary_key=True, db_column='CONTENT_ID')
-    coll_id = models.BigIntegerField(db_column='COLL_ID')
-    scope = models.CharField(max_length=25, db_column='SCOPE')
-    name = models.CharField(max_length=255, db_column='NAME')
-    min_id = models.IntegerField(db_column='MIN_ID')
-    max_id = models.IntegerField(db_column='MAX_ID')
-    type = models.SmallIntegerField(db_column='TYPE')
-    status = models.SmallIntegerField(null=True, db_column='STATUS')
-    substatus = models.SmallIntegerField(null=True, db_column='SUBSTATUS')
-    locking = models.SmallIntegerField(null=True, db_column='LOCKING')
-    bytes = models.BigIntegerField(null=True, db_column='BYTES')
-    md5 = models.CharField(max_length=32, db_column='MD5')
-    adler32 = models.CharField(max_length=8, db_column='ADLER32')
-    processing_id = models.BigIntegerField(null=True, db_column='PROCESSING_ID')
-    storage_id = models.IntegerField(null=True, db_column='STORAGE_ID')
-    retries = models.IntegerField(null=True, db_column='RETRIES')
-    path = models.CharField(max_length=4000, db_column='PATH')
-    created_at = models.DateTimeField(db_column='CREATED_AT')
-    updated_at = models.DateTimeField(db_column='UPDATED_AT')
-    accessed_at = models.DateTimeField(null=True, db_column='ACCESSED_AT')
-    expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
+    content_id = models.BigIntegerField(primary_key=True, db_column='content_id')
+    coll_id = models.BigIntegerField(db_column='coll_id')
+    scope = models.CharField(max_length=25, db_column='scope')
+    name = models.CharField(max_length=255, db_column='name')
+    min_id = models.IntegerField(db_column='min_id')
+    max_id = models.IntegerField(db_column='max_id')
+    type = models.SmallIntegerField(db_column='type')
+    status = models.SmallIntegerField(null=True, db_column='status')
+    substatus = models.SmallIntegerField(null=True, db_column='substatus')
+    locking = models.SmallIntegerField(null=True, db_column='locking')
+    bytes = models.BigIntegerField(null=True, db_column='bytes')
+    md5 = models.CharField(max_length=32, db_column='md5')
+    adler32 = models.CharField(max_length=8, db_column='adler32')
+    processing_id = models.BigIntegerField(null=True, db_column='processing_id')
+    storage_id = models.IntegerField(null=True, db_column='storage_id')
+    retries = models.IntegerField(null=True, db_column='retries')
+    path = models.CharField(max_length=4000, db_column='path')
+    created_at = models.DateTimeField(db_column='created_at')
+    updated_at = models.DateTimeField(db_column='updated_at')
+    accessed_at = models.DateTimeField(null=True, db_column='accessed_at')
+    expired_at = models.DateTimeField(null=True, db_column='expired_at')
     content_metadata = models.TextField(db_column='content_metadata', blank=True)
+    
     class Meta:
-        db_table = u'"ATLAS_IDDS"."CONTENTS"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."contents"'
 
 
 class Processings(models.Model):
-    processing_id = models.BigIntegerField(primary_key=True, db_column='PROCESSING_ID')
-    transform_id = models.BigIntegerField(null=True,db_column='TRANSFORM_ID')
-    status = models.SmallIntegerField(null=True, db_column='STATUS')
-    substatus = models.SmallIntegerField(null=True, db_column='SUBSTATUS')
-    submitter = models.CharField(max_length=20, db_column='SUBMITTER')
-    submitted_id = models.BigIntegerField(null=True,db_column='SUBMITTED_ID')
-    granularity = models.BigIntegerField(null=True,db_column='GRANULARITY')
-    granularity_type = models.SmallIntegerField(null=True, db_column='GRANULARITY_TYPE')
-    created_at = models.DateTimeField(db_column='CREATED_AT')
-    updated_at = models.DateTimeField(db_column='UPDATED_AT')
-    submitted_at = models.DateTimeField(db_column='SUBMITTED_AT')
-    finished_at = models.DateTimeField(db_column='FINISHED_AT')
-    expired_at = models.DateTimeField(db_column='EXPIRED_AT')
-    processing_metadata = models.TextField(db_column='PROCESSING_METADATA', blank=True)
-    output_metadata = models.TextField(db_column='OUTPUT_METADATA', blank=True)
+    processing_id = models.BigIntegerField(primary_key=True, db_column='processing_id')
+    transform_id = models.BigIntegerField(null=True,db_column='transform_id')
+    status = models.SmallIntegerField(null=True, db_column='status')
+    substatus = models.SmallIntegerField(null=True, db_column='substatus')
+    submitter = models.CharField(max_length=20, db_column='submitter')
+    submitted_id = models.BigIntegerField(null=True,db_column='submitted_id')
+    granularity = models.BigIntegerField(null=True,db_column='granularity')
+    granularity_type = models.SmallIntegerField(null=True, db_column='granularity_type')
+    created_at = models.DateTimeField(db_column='created_at')
+    updated_at = models.DateTimeField(db_column='updated_at')
+    submitted_at = models.DateTimeField(db_column='submitted_at')
+    finished_at = models.DateTimeField(db_column='finished_at')
+    expired_at = models.DateTimeField(db_column='expired_at')
+    processing_metadata = models.TextField(db_column='processing_metadata', blank=True)
+    output_metadata = models.TextField(db_column='output_metadata', blank=True)
+    
     class Meta:
-        db_table = u'"ATLAS_IDDS"."PROCESSINGS"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."processings"'
 
 
 class Requests(models.Model):
-    request_id = models.BigIntegerField(primary_key=True, db_column='REQUEST_ID')
-    scope = models.CharField(null=True, max_length=25, db_column='SCOPE')
-    name = models.CharField(null=True, max_length=255, db_column='NAME')
-    requester = models.CharField(null=True, max_length=20, db_column='REQUESTER')
-    request_type = models.SmallIntegerField(db_column='REQUEST_TYPE')
-    transform_tag = models.CharField(null=True, max_length=10, db_column='TRANSFORM_TAG')
-    workload_id = models.BigIntegerField(null=True, db_column='WORKLOAD_ID')
-    priority = models.IntegerField(null=True, db_column='PRIORITY')
-    status = models.SmallIntegerField(db_column='STATUS')
-    substatus = models.SmallIntegerField(null=True, db_column='SUBSTATUS')
-    locking = models.SmallIntegerField(null=True, db_column='LOCKING')
-    created_at = models.DateTimeField(db_column='CREATED_AT')
-    updated_at = models.DateTimeField(db_column='UPDATED_AT')
-    accessed_at = models.DateTimeField(null=True, db_column='ACCESSED_AT')
-    expired_at = models.DateTimeField(null=True, db_column='EXPIRED_AT')
-    errors = models.CharField(null=True, max_length=1024, db_column='ERRORS')
-    request_metadata = models.TextField(db_column='REQUEST_METADATA', blank=True)
-    processing_metadata = models.TextField(db_column='PROCESSING_METADATA', blank=True)
+    request_id = models.BigIntegerField(primary_key=True, db_column='request_id')
+    scope = models.CharField(null=True, max_length=25, db_column='scope')
+    name = models.CharField(null=True, max_length=255, db_column='name')
+    requester = models.CharField(null=True, max_length=20, db_column='requester')
+    request_type = models.SmallIntegerField(db_column='request_type')
+    transform_tag = models.CharField(null=True, max_length=10, db_column='transform_tag')
+    workload_id = models.BigIntegerField(null=True, db_column='workload_id')
+    priority = models.IntegerField(null=True, db_column='priority')
+    status = models.SmallIntegerField(db_column='status')
+    substatus = models.SmallIntegerField(null=True, db_column='substatus')
+    locking = models.SmallIntegerField(null=True, db_column='locking')
+    created_at = models.DateTimeField(db_column='created_at')
+    updated_at = models.DateTimeField(db_column='updated_at')
+    accessed_at = models.DateTimeField(null=True, db_column='accessed_at')
+    expired_at = models.DateTimeField(null=True, db_column='expired_at')
+    errors = models.CharField(null=True, max_length=1024, db_column='errors')
+    request_metadata = models.TextField(db_column='request_metadata', blank=True)
+    processing_metadata = models.TextField(db_column='processing_metadata', blank=True)
+    
     class Meta:
-        db_table = u'"ATLAS_IDDS"."REQUESTS"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."requests"'
 
 
 class Req2transforms(models.Model):
-    request_id_fk = models.ForeignKey(Requests, related_name='request_id_fk', on_delete=models.DO_NOTHING, db_column='REQUEST_ID')
-    transform_id_fk = models.ForeignKey(Transforms, related_name='transform_id_fk', on_delete=models.DO_NOTHING, db_column='TRANSFORM_ID')
+    request_id_fk = models.ForeignKey(Requests, related_name='request_id_fk', on_delete=models.DO_NOTHING, db_column='request_id')
+    transform_id_fk = models.ForeignKey(Transforms, related_name='transform_id_fk', on_delete=models.DO_NOTHING, db_column='transform_id')
+    
     class Meta:
-        db_table = u'"ATLAS_IDDS"."REQ2TRANSFORMS"'
+        db_table = f'"{settings.DB_SCHEMA_IDDS}"."req2transforms"'
         unique_together = (('request_id_fk', 'transform_id_fk'),)
         managed = False
 

@@ -1,13 +1,17 @@
+import tarfile, os
+import tempfile
+
 from idds.client.client import Client
 from core.views import initRequest
-from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
-import tempfile
+from django.http import JsonResponse, HttpResponse
+
 from os.path import basename
-from core.settings import IDDS_HOST
 from core.filebrowser import ruciowrapper
 from core.libs.exlib import getDataSetsForATask
-c = Client(IDDS_HOST)
-import tarfile, os
+
+from django.conf import settings
+
+c = Client(settings.IDDS_HOST)
 
 
 def downloadlog(request):
@@ -23,17 +27,20 @@ def downloadlog(request):
     else:
         return JsonResponse({'error': 'no workloadid provided'}, safe=False)
 
+
 def get_hpo_metrics_ds(taskid):
     datasets = getDataSetsForATask(taskid, type='output')
     # we assume here only one output dataset
     if (len(datasets) > 0):
         return datasets[0]['datasetname']
 
+
 def archive_metric_files(basedir):
     with tarfile.open(basedir +'/'+ 'download.tar.gz', 'w') as archive:
         for i in os.listdir(basedir):
             if 'metric' in i:
                 archive.add(basedir+'/'+i, arcname=i)
+
 
 def downloadhpometrics(request):
     initRequest(request)

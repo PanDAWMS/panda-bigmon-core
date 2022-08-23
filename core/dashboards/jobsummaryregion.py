@@ -11,7 +11,6 @@ from core.pandajob.models import PandaJob
 from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
 from core.libs.exlib import getPilotCounts
-from core.settings.config import DB_SCHEMA_PANDA
 
 import core.constants as const
 
@@ -167,9 +166,9 @@ def get_job_summary_region(query, **kwargs):
     # create template structure for grouping by queue
     for pqn, params in panda_queues_dict.items():
         jsr_queues_dict[pqn] = {'pq_params': {}, 'pq_pilots': {},  'summary': {'all': {'all': {}}}}
-        jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type']
-        jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud']
-        jsr_queues_dict[pqn]['pq_params']['status'] = params['status']
+        jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type'] if 'type' in params else '-'
+        jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud'] if 'cloud' in params else '-'
+        jsr_queues_dict[pqn]['pq_params']['status'] = params['status'] if 'status' in params else '-'
         jsr_queues_dict[pqn]['pq_pilots']['count'] = psq_dict[pqn]['count_abs'] if pqn in psq_dict else -1
         jsr_queues_dict[pqn]['pq_pilots']['count_nojob'] = psq_dict[pqn]['count_nojobabs'] if pqn in psq_dict else -1
         for jt in job_types:
@@ -319,7 +318,7 @@ def get_job_summary_split(query, extra):
         )
         GROUP BY computingsite, prodsourcelabel, transform, resource_type, jobstatus
         order by computingsite, prodsourcelabel, transform, resource_type, jobstatus
-    """.format(query['modificationtime__castdate__range'][0], extra_str, DB_SCHEMA_PANDA)
+    """.format(query['modificationtime__castdate__range'][0], extra_str, settings.DB_SCHEMA_PANDA)
 
     cur = connection.cursor()
     cur.execute(query_raw)

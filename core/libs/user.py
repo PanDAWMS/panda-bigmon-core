@@ -1,11 +1,14 @@
 """
 Created by Tatiana Korchuganova on 18.11.2020
 """
+import logging
 
-from core.settings import defaultDatetimeFormat
-
-from core.libs.task import build_stack_histogram
+from core.libs.exlib import build_stack_histogram
 from core.common.models import Users
+
+from django.conf import settings
+
+_logger = logging.getLogger('bigpandamon')
 
 
 def get_panda_user_stats(fullname):
@@ -26,7 +29,7 @@ def get_panda_user_stats(fullname):
                 userstats[field] = '-'
         for timefield in ['cachetime', 'firstjob', 'lastmod', 'latestjob']:
             try:
-                userstats[timefield] = userstats[timefield].strftime(defaultDatetimeFormat)
+                userstats[timefield] = userstats[timefield].strftime(settings.DATETIME_FORMAT)
             except:
                 userstats[timefield] = userstats[timefield]
     else:
@@ -42,19 +45,23 @@ def prepare_user_dash_plots(tasks, **kwargs):
             'type': 'pie',
             'data': {'done': 0, 'failed': 0, 'remaining': 0},
             'title': 'Input files by status',
-            'options': {'legend_position': 'bottom'}
+            'options': {'legend_position': 'bottom', 'size_mp': 0.2,}
         },
         'ntasks_by_status': {
             'type': 'pie',
             'data': {},
             'title': 'N tasks by status',
-            'options': {'legend_position': 'bottom'}
+            'options': {'legend_position': 'bottom', 'size_mp': 0.2,}
         },
         'age_hist': {
-            'type': 'bar',
-            'data': {},
-            'title': 'Task age histogram',
-            'options': {'labels': ['Task age, days', 'Number of tasks']}
+            'type': 'bar_stacked',
+            'options': {
+                'labels': ['Task age, days', 'Number of tasks'],
+                'title': 'Task age histogram, days',
+                'size_mp': 0.4,
+                'color_scheme': 'task_states',
+            },
+            'data': {'columns': [], 'stats': [], 'data_raw': {} },
         },
     }
 
@@ -74,15 +81,19 @@ def prepare_user_dash_plots(tasks, **kwargs):
         plots_dict['ntasks_by_status']['data'][task['status']] += 1
 
         if task['age'] > 0:
-            if task['username'] not in plots_dict['age_hist']['data']:
-                plots_dict['age_hist']['data'][task['username']] = []
-            plots_dict['age_hist']['data'][task['username']].append((task['age']))
+            if task['status'] not in plots_dict['age_hist']['data']['data_raw']:
+                plots_dict['age_hist']['data']['data_raw'][task['status']] = []
+            plots_dict['age_hist']['data']['data_raw'][task['status']].append((task['age']))
 
     for plot, pdict in plots_dict.items():
-        if pdict['type'] == 'bar':
-            stats, columns = build_stack_histogram(plots_dict['age_hist']['data'], n_decimals=1)
-            plots_dict[plot]['data'] = columns
-            plots_dict[plot]['options']['stats'] = stats
+        if pdict['type'] == 'bar_stacked':
+            stats, columns = build_stack_histogram(plots_dict['age_hist']['data']['data_raw'], n_decimals=1, n_bin_max=50)
+            plots_dict[plot]['data']['columns'] = columns
+            plots_dict[plot]['data']['stats'] = stats
+            try:
+                del plots_dict['age_hist']['data']['data_raw']
+            except:
+                _logger.exception('Failed to remove raw data for bar chart')
 
     # dict -> list
     for plot, pdict in plots_dict.items():
@@ -125,14 +136,19 @@ def humanize_metrics(metrics):
             'class': [],
         },
         'efficiency': {
-            'title': ' Median jobs efficiency',
+            'title': 'Median jobs efficiency',
             'unit': '%',
             'class': [],
         },
         'attemptnr': {
-            'title': ' Average number of job attempts',
+            'title': 'Average number of job attempts',
             'unit': '',
             'class': [],
+        },
+        'running_slots': {
+            'title': 'Number of currently allocated slots',
+            'unit': '',
+            'class': ['neutral',],
         },
         'cpua7': {
             'title': 'Personal CPU hours for last 7 days',

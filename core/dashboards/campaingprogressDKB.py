@@ -13,6 +13,14 @@ from core.oauth.utils import login_customrequired
 import urllib3
 import json
 
+from django.shortcuts import render_to_response
+
+from core.views import initRequest
+from core.libs.sqlcustom import escape_input
+from core.oauth.utils import login_customrequired
+
+from django.conf import settings
+
 taskFinalStates = ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']
 stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge', 'Rec TAG', 'Atlfast', 'Atlf Merge']
 
@@ -22,18 +30,19 @@ stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Mer
 #     initRequest(request)
 #     return JsonResponse('', safe=False)
 
+
 @login_customrequired
 def campaignProgressDash(request):
     initRequest(request)
     if 'hashtag' in request.GET:
-        hashtag = escapeInput(request.GET['hashtag'])
+        hashtag = escape_input(request.GET['hashtag'])
     else:
         hashtag = 'newfastcalosimntuponly'
 
     http = urllib3.PoolManager()
     data = {}
     try:
-        r = http.request('GET', DKB_CAMPAIGN_URL, fields = {'htag':hashtag, 'pretty':'True'})
+        r = http.request('GET', settings.DKB_CAMPAIGN_URL, fields = {'htag':hashtag, 'pretty':'True'})
         data = json.loads(r.data.decode('utf-8'))['data']
     except Exception as exc:
         print (exc)

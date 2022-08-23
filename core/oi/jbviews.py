@@ -5,16 +5,15 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, DateEncoder
+from core.views import initRequest
+from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.libs.exlib import parse_datetime
+from core.libs.datetimestrings import parse_datetime
 
 from core.oi.utils import round_time
-from django import template
-from django.http import HttpResponseRedirect
 import matplotlib
 
-from core.views import removeParam
+from core.utils import removeParam
 
 from django.template.defaulttags import register
 

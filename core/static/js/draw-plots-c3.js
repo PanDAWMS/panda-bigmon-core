@@ -26,6 +26,25 @@ var task_state_colors =  {
     'prepared': '#4a4a4a',
 };
 
+var job_state_colors =  {
+    'finished': '#165616',
+    'merging': '#207f20',
+    'running': '#47D147',
+    'starting': '#addf80',
+    'transferring': '#DBF1C6',
+    'pending': '#c7c7c7',
+    'defined': '#2174bb',
+    'assigning': '#099999',
+    'activated': '#3b8e67',
+    'cancelled': '#e67300',
+    'throttled': '#FF9933',
+    'holding': '#deb900',
+    'sent': '#FFD65D',
+    'waiting': '#808080',
+    'closed': '#4a4a4a',
+    'failed': '#ff0000',
+    'broken': '#b22222',
+};
 
 // Replace the confusing G (for Giga) with  the more recognizable B (for Billion) in default SI prefixes.
 function hFormat(num) {
@@ -48,7 +67,8 @@ function getScreenCategory(width) {
   let breakpoints = {
     small: [0, 640],
     medium: [640, 1280],
-    large: [1280, 99999],
+    large: [1280, 1920],
+    xlarge: [1920, 99999]
   };
   for (const item in breakpoints) {
     if (width >= breakpoints[item][0] && width < breakpoints[item][1]) {
@@ -92,6 +112,9 @@ function draw_donut(data, divid, title, ext={}) {
     }
     else if (ext.colors !== null && typeof ext.colors === 'object') {
         colors = ext.colors;
+    }
+    else if ('color_scheme' in ext && ext.color_scheme === 'job_states') {
+        colors = job_state_colors;
     }
     else if (title.indexOf('status') > -1) {
         colors =  {
@@ -479,6 +502,14 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
         "#7458df","#e8875c","#b36eee","#5bdd61","#c39438","#d4c926","#dd74b6","#cf4482","#9e6c28","#86cd6f","#af511c",
         "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
         "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
+    var colors_data = {};
+    if ('color_scheme' in details && details.color_scheme === 'task_states') {colors_data=task_state_colors;}
+
+    var ylabel = 'Number of jobs';
+    var xlabel = '';
+    if ('labels' in details) {xlabel = details.labels[0]; ylabel = details.labels[1];}
+    if (details.xlabel) {xlabel = details.xlabel}
+
 
     let statistics = [{type: "\u03BC", val:formatStats(rawdata['stats'][0])}];
 	  statistics.push({type:"\u03C3", val:formatStats(rawdata['stats'][1])});
@@ -512,13 +543,16 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
     let width = getPlotWidth();
     let height = 300 + legend_height;
 
+    if (details.size) {width = details.size[0]}
+
     let options = {
         bindto: '#' + divToShow,
         data: {
             x: data[0][0],
             columns: data,
             type: 'bar',
-            groups: [keys]
+            groups: [keys],
+            colors: colors_data,
         },
         color: {
             pattern: colors,
@@ -538,7 +572,7 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
                     format: function (d) {return formatXAxis(d);},
                 },
                 label: {
-                    text: details.xlabel,
+                    text: xlabel,
                     position: 'outer-right'
                 }
             },
@@ -547,7 +581,7 @@ function draw_stacked_bar_hist(rawdata, details, divToShow)  {
                     format: function (d) { return d; }
                 },
                 label: {
-                  text: 'Number of jobs',
+                  text: ylabel,
                   position: 'outer-middle'
                 }
             }

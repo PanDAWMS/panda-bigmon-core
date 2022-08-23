@@ -1,44 +1,62 @@
 """
 Utils to get schedresources info from dedicated information system (CRIC)
 """
+import os
+
 import urllib3
-import json
 import logging
+import json
+from urllib.parse import urlparse
 
 from django.core.cache import cache
 
 from core.schedresource.models import SchedconfigJson
-from core.settings.config import CRIC_API_URL, DEPLOYMENT
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
 
 def get_CRIC_panda_queues():
     """Get PanDA queues config from CRIC and put to cache"""
-    panda_queues_dict = cache.get(f'pandaQueues{DEPLOYMENT}')
+    panda_queues_dict = cache.get(f'pandaQueues{settings.DEPLOYMENT}')
     if not panda_queues_dict:
         panda_queues_dict = {}
-        url = CRIC_API_URL
-        http = urllib3.PoolManager()
+        url = settings.CRIC_API_URL
+        # check http proxy
+        netloc = urlparse(url)
+        proxy = None
+        if 'no_proxy' in os.environ and netloc.hostname in os.environ['no_proxy'].split(','):
+            # no_proxy
+            pass
+        elif netloc.scheme == 'https' and 'https_proxy' in os.environ:
+            # https proxy
+            proxy = os.environ['https']
+        elif netloc.scheme == 'http' and 'http_proxy' in os.environ:
+            # http proxy
+            proxy = os.environ['http']
+        if proxy:
+            http = urllib3.ProxyManager(proxy)
+        else:
+            http = urllib3.PoolManager()
         try:
             r = http.request('GET', url)
             data = json.loads(r.data.decode('utf-8'))
             for pq, params in data.items():
-                if DEPLOYMENT == 'ORACLE_ATLAS':
+                if settings.DEPLOYMENT == 'ORACLE_ATLAS':
                     if 'vo_name' in params and params['vo_name'] == 'atlas':
                         panda_queues_dict[pq] = params
-                if DEPLOYMENT == 'ORACLE_DOMA':
+                if settings.DEPLOYMENT == 'ORACLE_DOMA':
                     if 'vo_name' in params and params['vo_name'] in ['osg', 'atlas']:
                         panda_queues_dict[pq] = params
         except Exception as exc:
             print (exc)
-        cache.set(f'pandaQueues{DEPLOYMENT}', panda_queues_dict, 60*20)
+        cache.set(f'pandaQueues{settings.DEPLOYMENT}', panda_queues_dict, 60*20)
     return panda_queues_dict
 
 
 def get_panda_queues():
     """
-    Get PanDA queues info from available sources, priority: CRIC -> SchedconfigJson table -> Schedconfig
+    Get PanDA queues info from available sources, priority: CRIC -> SchedconfigJson table
     :return: dict of PQs
     """
     # try get info from CRIC
@@ -55,11 +73,14 @@ def get_panda_queues():
         panda_queues_list.extend(SchedconfigJson.objects.values())
         if len(panda_queues_list) > 0:
             for pq in panda_queues_list:
-                try:
-                    panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
-                except:
-                    panda_queues_dict[pq['pandaqueue']] = None
-                    _logger.error("cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
+                if isinstance(pq['data'], dict):
+                    panda_queues_dict[pq['pandaqueue']] = pq['data']
+                else:
+                    try:
+                        panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
+                    except:
+                        panda_queues_dict[pq['pandaqueue']] = None
+                        _logger.error("cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
 
     return panda_queues_dict
 
@@ -121,17 +142,20 @@ def get_panda_resource(pq_name):
 
     return None
 
-    url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
-    http = urllib3.PoolManager()
-    data = {}
-    try:
-        r = http.request('GET', url)
-        data = json.loads(r.data.decode('utf-8'))
-        for cs in data.keys():
-            if (data[cs] and siterec.siteid == data[cs]['siteid']):
-                return data[cs]['panda_resource']
-    except Exception as exc:
-        print(exc)
+
+def get_pq_clouds():
+    """
+    Return dict of PQ:cloud
+    :return: pq_clouds: dict
+    """
+    pq_clouds = {}
+    pq_dict = get_panda_queues()
+    if len(pq_dict) > 0:
+        for pq, pq_info in pq_dict.items():
+            if 'siteid' in pq_info and pq_info['siteid'] is not None:
+                pq_clouds[pq_info['siteid']] = pq_info['cloud']
+
+    return pq_clouds
 
 
 def get_basic_info_for_pqs(pq_list):
@@ -148,27 +172,28 @@ def get_basic_info_for_pqs(pq_list):
             if pq in pq_info and pq_info[pq]:
                 pq_info_list.append({
                     'pq_name': pq,
-                    'site': pq_info[pq]['gocname'],
-                    'region': pq_info[pq]['cloud'],
-                    'tier': pq_info[pq]['tier'],
-                    'corepower': pq_info[pq]['corepower'],
-                    'status': pq_info[pq]['status'],
+                    'site': pq_info[pq]['gocname'] if 'gocname' in pq_info[pq] else '-',
+                    'region': pq_info[pq]['cloud'] if 'cloud' in pq_info[pq] else '-',
+                    'tier': pq_info[pq]['tier'] if 'tier' in pq_info[pq] else '-',
+                    'corepower': pq_info[pq]['corepower'] if 'corepower' in pq_info[pq] else 0,
+                    'status': pq_info[pq]['status'] if 'status' in pq_info[pq] else '-',
                 })
     else:
         for pq, pqdata in pq_info.items():
             pq_info_list.append({
                 'pq_name': pq,
-                'site': pq_info[pq]['gocname'],
-                'region': pq_info[pq]['cloud'],
-                'tier': pq_info[pq]['tier'],
-                'corepower': pq_info[pq]['corepower'],
-                'status': pq_info[pq]['status'],
+                'site': pq_info[pq]['gocname'] if 'gocname' in pq_info[pq] else '-',
+                'region': pq_info[pq]['cloud'] if 'cloud' in pq_info[pq] else '-',
+                'tier': pq_info[pq]['tier'] if 'tier' in pq_info[pq] else '-',
+                'corepower': pq_info[pq]['corepower'] if 'corepower' in pq_info[pq] else 0,
+                'status': pq_info[pq]['status'] if 'status' in pq_info[pq] else '-',
             })
 
     return pq_info_list
 
 
-def get_object_stores():
+def get_object_stores(**kwargs):
+
     object_stores_dict = cache.get('objectStores')
     if not object_stores_dict:
         object_stores_dict = {}
@@ -203,6 +228,30 @@ def get_object_stores():
         cache.set('objectStores', object_stores_dict, 3600)
 
     return object_stores_dict
+
+
+def get_pq_object_store_path():
+    """
+
+    :return:
+    """
+    pq_object_store_paths = {}
+    pq_dict = get_panda_queues()
+    for pq, pq_info in pq_dict.items():
+        if pq_info['catchall'] is not None and 'objectstore' in pq_info and (
+                pq_info['catchall'].find('log_to_objectstore') >= 0 or pq_info['objectstore'] != ''):
+            try:
+                fpath = getFilePathForObjectStore(pq_info['objectstore'], filetype="logs")
+                # dirty hack
+                fpath = fpath.replace('root://atlas-objectstore.cern.ch/atlas/logs',
+                                      'https://atlas-objectstore.cern.ch:1094/atlas/logs')
+                if fpath != "" and fpath.startswith('http'):
+                    pq_object_store_paths[pq_info['siteid']] = fpath
+            except:
+                pass
+
+    return pq_object_store_paths
+
 
 def getCRICSEs():
     SEs = cache.get('CRIC_SEs')
@@ -257,3 +306,44 @@ def getCRICSites():
         cache.set('computevsAtlasCE', computevsAtlasCE, 3600)
 
     return sitesUcore, sitesHarvester, sitesType, computevsAtlasCE
+
+
+def getFilePathForObjectStore(objectstore, filetype="logs"):
+    """ Return a proper file path in the object store """
+
+    # For single object stores
+    # root://atlas-objectstore.cern.ch/|eventservice^/atlas/eventservice|logs^/atlas/logs
+    # For multiple object stores
+    # eventservice^root://atlas-objectstore.cern.ch//atlas/eventservice|logs^root://atlas-objectstore.bnl.gov//atlas/logs
+
+    basepath = ""
+
+    # Which form of the schedconfig.objectstore field do we currently have?
+    if objectstore != "":
+        _objectstore = objectstore.split("|")
+        if "^" in _objectstore[0]:
+            for obj in _objectstore:
+                if obj[:len(filetype)] == filetype:
+                    basepath = obj.split("^")[1]
+                    break
+        else:
+            _objectstore = objectstore.split("|")
+            url = _objectstore[0]
+            for obj in _objectstore:
+                if obj[:len(filetype)] == filetype:
+                    basepath = obj.split("^")[1]
+                    break
+            if basepath != "":
+                if url.endswith('/') and basepath.startswith('/'):
+                    basepath = url + basepath[1:]
+                else:
+                    basepath = url + basepath
+
+        if basepath == "":
+            _logger.warning("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
+            filetype, objectstore))
+
+    else:
+        _logger.info("Object store not defined in queuedata")
+
+    return basepath

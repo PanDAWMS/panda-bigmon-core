@@ -47,17 +47,16 @@
 <br/><br/>
 <table id="dataset">
 <thead>
-    {% include "status_summary/header-status_summary.html" %}
+    {% include "per_computingsite_header.html" %}
 </thead>
 <tbody>
 {% for item in data %}
 {% if forloop.counter|divisibleby:"10" %}
-    {% include "status_summary/header-status_summary.html" %}
+    {% include "per_computingsite_header.html" %}
 {% endif %}
 <tr>
 <td>{{item.cloud}}</td>
 <td>{{item.atlas_site}}</td>
-<td>{{item.mcp_cloud}}</td>
 <td><a href="/jobs/?display_limit=100&amp;computingsite={{item.computingsite}}">{{item.computingsite}}</a></td>
 <td>{{item.corecount|default_if_none:"1"}}</td>
 <td>{{item.status}} / {{item.comment|default_if_none:"&mdash;"}}</td>
@@ -80,7 +79,7 @@
 {% endfor %}
 </tbody>
 <tfoot>
-    {% include "status_summary/header-status_summary.html" %}
+    {% include "per_computingsite_header.html" %}
 </tfoot>
 </table>
 	<div><span style="color: navy; font-weight: bold;">

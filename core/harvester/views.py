@@ -10,18 +10,19 @@ from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 
-from django.utils.cache import patch_cache_control, patch_response_headers
-from django.utils import timezone
+from django.utils.cache import patch_response_headers
 
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import is_timestamp
+from core.libs.sqlcustom import escape_input
+from core.libs.DateEncoder import DateEncoder
+from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, escapeInput, DateEncoder, extensibleURL, DateTimeEncoder
-from core.harvester.models import HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
+from core.views import initRequest, setupView, extensibleURL
+from core.harvester.models import HarvesterWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
 from core.harvester.utils import get_harverster_workers_for_task
 
-from core.settings.local import dbaccess, defaultDatetimeFormat
-from core.settings.config import DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH
+from django.conf import settings
 
 harvesterWorkerStatuses = [
     'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
@@ -129,7 +130,7 @@ def harvesterWorkerInfo(request):
     workerinfo = {}
 
     if 'harvesterid' in request.session['requestParams']:
-        harvesterid = escapeInput(request.session['requestParams']['harvesterid'])
+        harvesterid = escape_input(request.session['requestParams']['harvesterid'])
     if 'workerid' in request.session['requestParams']:
         workerid = int(request.session['requestParams']['workerid'])
 
@@ -168,7 +169,7 @@ def harvesterWorkerInfo(request):
             for k, v in workerinfo.items():
                 if is_timestamp(k):
                     try:
-                        val = v.strftime(defaultDatetimeFormat)
+                        val = v.strftime(settings.DATETIME_FORMAT)
                         workerinfo[k] = val
                     except:
                         pass
@@ -280,21 +281,21 @@ def harvestermon(request):
                 limit = request.session['requestParams']['limit']
 
             sqlQueryJobsStates = """
-                SELECT hw.*, cj.jobstatus FROM (
-                    SELECT * from atlas_panda.harvester_rel_jobs_workers 
-                        where harvesterid like '%s'
+                select hw.*, cj.jobstatus from (
+                    select * from atlas_panda.harvester_rel_jobs_workers 
+                        where harvesterid like '{}'
                             and workerid in (
                               select workerid from (
-                                SELECT workerid FROM ATLAS_PANDA.HARVESTER_WORKERS
-                                    where harvesterid like '%s' %s %s %s %s %s %s %s
-                                    ORDER by lastupdate DESC
+                                select workerid from {}.harvester_workers
+                                    where harvesterid like '{}' {} {} {} {} {} {} {}
+                                    order by lastupdate desc
                                 )
-                              where rownum <= %s 
+                              where rownum <= {} 
                               )
-                    ) hw , ATLAS_PANDABIGMON.combined_wait_act_def_arch4 cj
-                WHERE hw.pandaid = cj.pandaid 
-                """ % (str(instance), str(instance), status, computingsite, workerid, days, hours, resourcetype,
-                               computingelement, limit)
+                    ) hw , {}.combined_wait_act_def_arch4 cj
+                where hw.pandaid = cj.pandaid 
+                """.format(str(instance), settings.DB_SCHEMA_PANDA, str(instance), status, computingsite, workerid, days, hours,
+                           resourcetype, computingelement, limit, settings.DB_SCHEMA)
 
             cur = connection.cursor()
             cur.execute(sqlQueryJobsStates)
@@ -390,7 +391,7 @@ def harvestermon(request):
             FROM
             {2}.harvester_instances ii INNER JOIN 
             {2}.harvester_workers ww on ww.harvesterid = ii.harvester_id {0} and ii.harvester_id like '{1}'
-        """.format(hours, str(instance), DB_SCHEMA_PANDA)
+        """.format(hours, str(instance), settings.DB_SCHEMA_PANDA)
 
         cur = connection.cursor()
         cur.execute(sqlQuery)
@@ -418,7 +419,7 @@ def harvestermon(request):
             {1}.harvester_workers ww on ww.harvesterid = ii.harvester_id and ww.submittime = (select max(submittime) 
         from {1}.harvester_workers 
         where harvesterid like '{0}') and ii.harvester_id like '{0}'
-            """.format(str(instance), DB_SCHEMA_PANDA)
+            """.format(str(instance), settings.DB_SCHEMA_PANDA)
 
             cur = connection.cursor()
             cur.execute(sqlQuery)
@@ -444,7 +445,7 @@ def harvestermon(request):
         SELECT * FROM {DB_SCHEMA_PANDA}.HARVESTER_WORKERS 
         where harvesterid = '{0}' {1} {2} {3} {4} {5} {6} {7}"""\
             .format(str(instance), status, computingsite, workerid, lastupdateCache,
-                    days, hours, resourcetype, computingelement, DB_SCHEMA_PANDA=DB_SCHEMA_PANDA)
+                    days, hours, resourcetype, computingelement, DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA)
 
         harvester_dicts = query_to_dicts(harvesterWorkersQuery)
 
@@ -881,7 +882,7 @@ def harvestermon(request):
           DESCRIPTION,
           COMMIT_STAMP,
           to_char(LASTUPDATE, 'dd-mm-yyyy hh24:mi:ss') as LASTUPDATE
-          FROM {DB_SCHEMA_PANDA}.HARVESTER_INSTANCES
+          FROM {settings.DB_SCHEMA_PANDA}.HARVESTER_INSTANCES
         """
         instanceDictionary = []
 
@@ -983,7 +984,7 @@ def workersJSON(request):
             fields = ','.join(generalWorkersFields)
 
             sqlquery = f"""
-            SELECT * FROM (SELECT %s FROM {DB_SCHEMA_PANDA}.HARVESTER_WORKERS
+            SELECT * FROM (SELECT %s FROM {settings.DB_SCHEMA_PANDA}.HARVESTER_WORKERS
             where harvesterid like '%s' %s %s %s %s %s %s %s %s
             order by submittime DESC) WHERE ROWNUM<=%s
             """ % (fields, str(instance), status, computingsite, workerid, lastupdateCache, days, hours, resourcetype, computingelement, display_limit_workers)
@@ -1105,29 +1106,6 @@ def harvesterslots(request):
     }
     return render(request, 'harvesterslots.html', data, content_type='text/html')
 
-def getWorkersList(sqlWorkersList):
-
-    cur = connection.cursor()
-
-    random.seed()
-
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1DEBUG"
-
-    transactionKey = random.randrange(1000000)
-
-    sqlQuery = """
-            INSERT INTO {0} 
-            (ID,TRANSACTIONKEY,INS_TIME) 
-            select workerid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from ({3})                   
-            """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"), sqlWorkersList)
-    cur.execute(sqlQuery)
-
-    sqlQuery = """SELECT ID FROM ATLAS_PANDABIGMON.TMP_IDS1DEBUG WHERE TRANSACTIONKEY={0}""".format(transactionKey)
-
-    return transactionKey, sqlQuery
 
 def getWorkersByJobID(pandaid, instance=''):
 
@@ -1144,8 +1122,8 @@ def getWorkersByJobID(pandaid, instance=''):
        instancequery = """ AND harvesterid like '%s' """ %(instance)
 
     sqlQuery = """
-    select harvesterid, workerid, pandaid from atlas_panda.Harvester_Rel_Jobs_Workers %s %s
-    """ % (pandaid, instancequery)
+    select harvesterid, workerid, pandaid from {}.harvester_rel_jobs_workers {} {}
+    """.format(settings.DB_SCHEMA_PANDA, pandaid, instancequery)
 
     cur = connection.cursor()
     cur.execute(sqlQuery)
@@ -1281,8 +1259,8 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED.PANDAID {3})  
     """
 
-    sqlQuery = sqlQuery.format(qinstance, qworkerid, ', '.join(values), qjobstatus, DB_SCHEMA_PANDA=DB_SCHEMA_PANDA,
-                               DB_SCHEMA_PANDA_ARCH=DB_SCHEMA_PANDA_ARCH)
+    sqlQuery = sqlQuery.format(qinstance, qworkerid, ', '.join(values), qjobstatus, DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA,
+                               DB_SCHEMA_PANDA_ARCH=settings.DB_SCHEMA_PANDA_ARCH)
 
     cur = connection.cursor()
     cur.execute(sqlQuery)
@@ -1368,9 +1346,7 @@ def getCeHarvesterJobs(request, computingelment, fields=''):
     AND jw.lastupdate >  CAST (sys_extract_utc(SYSTIMESTAMP) - interval {1} as DATE)
     AND w.computingelement like '%{0}%') PIDACTIVE 
     WHERE PIDACTIVE.pid=ATLAS_PANDAARCH.JOBSARCHIVED.PANDAID)  
-    """
-
-    sqlQuery = sqlQuery.format(computingelment, lastupdated_time, ', '.join(values))
+    """.format(computingelment, lastupdated_time, ', '.join(values))
 
     cur = connection.cursor()
     cur.execute(sqlQuery)

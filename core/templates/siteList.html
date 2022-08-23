@@ -1,71 +1,37 @@
 {% extends "_base_core.html" %}
 {% load static %}
 
-{% block page_title %} {{ viewParams.MON_VO }} PanDA sites{% endblock %}
+{% block page_title %}{{ viewParams.MON_VO }} PanDA sites{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block subtitle %}PanDA sites{{viewParams.selection|safe }}
-{% if vo %}     for VO {{ vo }}
-{% endif %}
+{% block subtitle %}PanDA sites{{ viewParams.selection|safe }}{% if vo %} for VO {{ vo }}{% endif %}
 {% endblock %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static "js/jquery.shorten.1.0.js" %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+
 {% block body %}
 
-{% if requestParams.tier %}<br><b>Tier: {{ requestParams.tier }}</b> {% endif %}
-{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.region %}<br><b>Region: {{ requestParams.region }}</b> {% endif %}
-{% if requestParams.siteid %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.siteid %}">{{ requestParams.siteid }}</a>      <a href="{% url 'siteInfo' requestParams.siteid %}">Show site information page</a></b> {% endif %}
-{% if requestParams.category %}<br><b>Category: {{ requestParams.category }}</b> {% endif %}
-{% if requestParams.status %}<br><b>Status: <span class="{{ requestParams.status }}">{{ requestParams.status }}</span></b> {% endif %}
-<p>
-
-{% if clouds %}
-
-<div class='section'>Jump to <a href="#siteatt">site attribute summary</a>, <a href="#sites">site list</a></div>
-
-<table>
-<tr class='tablesection'><th colspan=20> Clouds
-<font size=-1>TLo, THi are transfer timeouts for low and high priority jobs</font> </th></tr>
-<tr class='tablesection'>
-<th>Cloud</th>
-<th>Tier 1</th>
-<th>Status</th>
-<th>Comment</th>
-<th>TLo/Hi<br>days</th>
-<th>Storage endpoints</th>
-<th>Free space<br>TB</th>
-<th>Space updated</th>
-</tr>
-{% for cloud in clouds %}
-{% if cloud.display %}
-<tr><th rowspan=2><a href="{% url 'siteList' %}?cloud={{ cloud.name }}">{{ cloud.name }}</a></th>
-<td><font size=-1><a href="{% url 'siteList' %}?siteid={{ cloud.tier1 }}">{{ cloud.tier1 }}</a></font></td>
-<td class="{{ cloud.status }}">{{ cloud.status }}</td>
-<td><font size=-1>{{ cloud.comment_field }}<br>{{ cloud.modtime }} {{ cloud.moduser }}</font></td>
-<td>{{ cloud.transtimelo }}/{{ cloud.transtimehi }}</td>
-<td width=300><font size=-1>{{ cloud.tier1se }}</font></td>
-<td>{{ cloud.space }}</td>
-<td> {{ cloud.tspace }}</td>
-</tr>
-<tr><td colspan=7> <font size=-2><b>MCP sites (home cloud sites in bold):</b> {{ cloud.mcpsites|safe }}</font></td></tr>
-{% endif %}
-{% endfor %}
-</table>
-{% endif %}
+{% if requestParams.tier %}<b>Tier: {{ requestParams.tier }}</b><br> {% endif %}
+{% if requestParams.cloud %}<b>Cloud: {{ requestParams.cloud }}</b><br> {% endif %}
+{% if requestParams.region %}<b>Region: {{ requestParams.region }}</b><br> {% endif %}
+{% if requestParams.siteid %}<b>Site: <a href="{% url 'siteInfo' requestParams.siteid %}">{{ requestParams.siteid }}</a> </b><br> {% endif %}
+{% if requestParams.status %}<b>Status: <span class="{{ requestParams.status }}">{{ requestParams.status }}</span></b><br> {% endif %}
 
 {% if sites %}
 
-<script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
-<script type="text/javascript">
-	$(document).ready(function() {
-	    $(".comment").shorten();
-	});
-</script>
 <table>
 <tr class='tablesection' id="siteatt"><th colspan=20> Site attribute summary </th></tr>
 {% for fdict in sumd %}
 <tr><th> {{ fdict.field }} ({{ fdict.list|length }})</th><td><div class="comment more">
 {% for item in fdict.list %}
 {% if item.kname != '' %}
-<span {% if fdict.field == 'status' %}  class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
+<span {% if fdict.field == 'status' %} class='{{item.kname}}' {% endif %}> {{ item.kname }} </span>
 <a href="{{xurl}}{{fdict.field}}={{item.kname}}">({{ item.kvalue }})</a>
 {% endif %}
 {% endfor %}
@@ -73,56 +39,169 @@
 {% endfor %}
 </table>
 
-<table>
-<tr class='tablesection' id="sites"><th colspan=20> Sites (PanDA resources)     {% if mcpsites %} (<a href="#mcpsites">MCP sites are below</a>) {% endif %}</th></tr>
-<tr class='tablesection'>
-	<th><a href="{{nosorturl}}#sites">PanDA resource</a><br> Queue name (where different)</th>
-	<th><a href="{{nosorturl}}sortby=gocname#sites">GOC site name</a></th>
-{% if viewParams.MON_VO == 'ATLAS' %}
-	<th>Cloud</th>
-{% else %}
-	<th>Region</th>
-{% endif %}
-	<th>Status</th>
-	<th>Tier</th>
-	<th><a href="{{nosorturl}}sortby=maxmemory#sites">Max mem</a><br>(MB)</th>
-	<th><a href="{{nosorturl}}sortby=maxtime#sites">Max time</a><br>(hr)</th>
-	<th>Comment</th>
-</tr>
-    {% for site in sites %}
-	<tr>
-		<td><a href="{% url 'siteInfo' site.siteid %}">{{ site.siteid }}</a> {% if site.nickname != site.siteid %}  <br> {{ site.nickname }} {% endif %} </td>
-		<td> <a href="{{xurl}}gocname={{site.gocname}}">{{ site.gocname }}</a></td>
-{% if viewParams.MON_VO == 'ATLAS' %}
-		<td> {{ site.cloud }}</td>
-{% else %}
-		<td> {{ site.region }}</td>
-{% endif %}
-		<td class='{{site.status}}'>{{ site.status }}</td>
-		<td> {{ site.tier }}</td>
-		<td> {% if site.maxmemory > 0 %} {{ site.maxmemory }} {% endif %}</td>
-		<td> {% if site.maxtime > 0 %} {{ site.maxtime }} {% endif %}</td>
-		<td> {{ site.comment_field }} </td>
-	</tr>
-    {% endfor %}
-</table>
-
-{% if mcpsites %}
-
-<div class='section'><a name="mcpsites"></a>Multicloud production sites in this cloud</div>
-
-<table>
-<tr><th>Site ({{ requestParams.cloud }} home cloud sites in bold)</th><th>Home cloud</th></tr>
-{% for site in mcpsites %}
-<tr><td><a href="{% url 'siteInfo' site.name %}">{% if site.type == 'home' %}<b>{{ site.name }}</b> {% else %} {{ site.name }} {% endif %}</a></td><td>{% if site.type == 'home' %} <b>{{ site.cloud }}</b> {% else %} {{ site.cloud }} {% endif %}</td></tr>
-{% endfor %}
-</table>
-
-{% endif %}
+<div class="card bp-container-simple secondary">
+  <div class="card-divider"><p>{{ sites|length }} PanDA queues</p></div>
+  <div class="card-section">
+    <table class="data-table left-aligned nowrap hover" id="sitestable">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
 
 {% else %}
     <p>No matches to query.</p>
 {% endif %}
+{% endblock %}
+
+
+{% block js_body_page %}
+<script type="text/javascript">
+$(document).ready(function () {
+  $(".comment").shorten({showChars: 500, minHideChars: 250});
+
+  let sites = {{ sites|safe }};
+  buildDatasetsTable(sites);
+});
+
+function buildDatasetsTable(data) {
+  $('#sitestable').dataTable({
+    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+    "pageLength": -1,
+    "paging": true,
+    "scrollX": true,
+    "aaSorting": [[3,'asc']],
+    "columnDefs": [
+        {"type": "num-html", "targets": [9,10,11] }
+    ],
+    "data": data,
+    "aoColumns": [
+        {
+            data: "cloud",
+            title: "Cloud",
+            sDefaultContent: "-",
+            render: function(data, type, row, meta) {
+              if (data && data !== '---') {
+                return '<a href="{{ xurl }}cloud=' + data + '">' + data + '</a>'
+              }
+              else {return data}
+            }
+        },
+        {
+            data: "gocname",
+            title: "GOC site name",
+            sDefaultContent: "---",
+            render: function(data, type, row, meta) {
+              if (data && data !== '---') {
+                return '<a href="{{ xurl }}gocname=' + data + '">' + data + '</a>'
+              }
+              else {return data}
+            }
+        },
+        {
+            data: "tier",
+            title: "Tier",
+            sDefaultContent: "-",
+            render: function(data, type, row, meta) {
+              if (data && data !== '---') {
+                return '<a href="{{ xurl }}tier=' + data + '">' + data + '</a>'
+              }
+              else {return data}
+            }
+        },
+        {
+            data: "nickname",
+            title: "Queue name",
+            sDefaultContent: "---",
+            render: function(data, type, row, meta) {
+                return '<a href="{% url 'siteInfo' %}' + data + '/">' + data + '</a>'
+            }
+        },
+        {
+            data: "status",
+            title: "Status",
+            sDefaultContent: "-",
+            className: 'state',
+        },
+        {
+            data: "type",
+            title: "Type",
+            sDefaultContent: "---",
+            render: function(data, type, row, meta) {
+              if (data && data !== '---') {
+                return '<a href="{{ xurl }}type=' + data + '">' + data + '</a>'
+              }
+              else {return data}
+            }
+        },
+        {
+            data: "workflow",
+            title: "Workflow",
+            sDefaultContent: "---",
+            render: function(data, type, row, meta) {
+              if (data && data !== '---') {
+                return '<a href="{{ xurl }}workflow=' + data + '">' + data + '</a>'
+              }
+              else {return data}
+            }
+        },
+        {
+            data: "system",
+            title: "System",
+            sDefaultContent: "---",
+            render: function(data, type, row, meta) {
+              if (data && data !== '---') {
+                return '<a href="{{ xurl }}system=' + data + '">' + data + '</a>'
+              }
+              else {return data}
+            }
+        },
+        {
+            data: "copytool",
+            title: "Copytools",
+            sDefaultContent: "---",
+        },
+        {
+            data: "harvester",
+            title: "Associated Harvester",
+            sDefaultContent: "---",
+            render: function(data, type, row, meta) {
+              if (data && data !== '---') {
+                return '<a href="{{ xurl }}harvester=' + data + '">' + data + '</a>'
+              }
+              else {return data}
+            }
+        },
+        {
+            data: "maxrss_gb",
+            title: "Max RSS [GB]",
+            sDefaultContent: "-",
+            className: 'num',
+        },
+        {
+            data: "maxtime_hours",
+            title: "Max time [hours]",
+            sDefaultContent: "-",
+            className: 'num',
+        },
+        {
+            data: "maxinputsize_gb",
+            title: "Max input size [GB]",
+            sDefaultContent: "-",
+            className: 'num',
+        },
+        {
+            data: "comment",
+            title: "Last comment",
+            sDefaultContent: "-",
+        },
+    ],
+    "createdRow": function ( row, data, index ) {
+        $('td', row).eq(4).addClass(data['status'] + '_fill');
+    }
+  })
+}
+</script>
 {% endblock %}
 
 

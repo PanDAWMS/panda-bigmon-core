@@ -19,11 +19,26 @@ ALLOWED_HOSTS = [
     '127.0.0.1', '.localhost'
 ]
 
+if 'BIGMON_HOST' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['BIGMON_HOST'])
+
+# IPs of CACHING CRAWLERS if any
+CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46']
+
 ### VIRTUALENV
-VIRTUALENV_PATH = '/data/virtualenv37'
+VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/data/wenaus/virtualenv/twrpm')
 
 ### WSGI
-#WSGI_PATH = VIRTUALENV_PATH + '/pythonpath'
+if 'BIGMON_WSGI_PATH' in os.environ:
+    WSGI_PATH = os.environ['BIGMON_WSGI_PATH']
+
+### VO
+if 'BIGMON_VO' in os.environ:
+    MON_VO = os.environ['BIGMON_VO']
+
+### Authentication providers, supported: ['cern', 'google', 'github', 'indigoiam']
+if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
+    AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
 
 ### DB_ROUTERS for atlas's prodtask
 DATABASE_ROUTERS = [
@@ -105,8 +120,8 @@ try:
 except ImportError:
     dbaccess_oracle_atlas = None
 
-#DEPLOYMENT = os.getenv('DEPLOYMENT_BACKEND', 'ORACLE_ATLAS')
-DEPLOYMENT = 'ORACLE_ATLAS'
+
+DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
 
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
@@ -123,10 +138,14 @@ elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA_PANDA = 'doma_panda'
     DB_SCHEMA_PANDA_ARCH = 'doma_pandaarch'
     DB_SCHEMA_PANDA_META = 'doma_pandameta'
-    DB_SCHEMA_IDDS = 'DOMA_IDDS'
+    DB_SCHEMA_IDDS = 'doma_idds'
     DATABASES = dbaccess_postgres
-    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
-    IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
+    CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json')
+    IDDS_HOST = os.environ.get('IDDS_HOST', 'https://iddsserver.cern.ch:443/idds')
+    IDDS_HOST_GCP = os.environ.get('IDDS_HOST_GCP', 'https://aipanda016.cern.ch:443/idds')
+    PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
+                                                  "https://storage.googleapis.com/drp-us-central1-logging"
+                                                  "/logs/{queue_name}/PandaJob_{panda_id}")
 elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA = 'DOMA_PANDABIGMON'
     DB_SCHEMA_PANDA = 'DOMA_PANDA'
@@ -140,21 +159,29 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
-DB_N_MAX_IN_QUERY = 100  # number of items in IN (*,*..) query. if more - use tmp table
+
+# set default datetime format for datetime.datetime.strftime()
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+if 'ORACLE' in DEPLOYMENT:
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+elif 'POSTGRES' in DEPLOYMENT:
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+elif 'MYSQL' in DEPLOYMENT:
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%SZ"
+
+# max number of items in IN (*,*..) query, if more - use tmp table.
+DB_N_MAX_IN_QUERY = 100
 
 CACHES = {
     "default": {
-    'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-    'LOCATION': f'"{DB_SCHEMA}"."DJANGOCACHE"',
-    'TIMEOUT': 31536000,
-    'OPTIONS': {
-        'MAX_ENTRIES': 1000000000
-        }
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': f'"{DB_SCHEMA}"."djangocache"',
+        'TIMEOUT': 31536000,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000000000
+            }
     }
 }
-
-if DEPLOYMENT == 'POSTGRES':
-    CACHES['default']['LOCATION'] = f'"{DB_SCHEMA}"."djangocache"'
 
 
 ### URL_PATH_PREFIX for multi-developer apache/wsgi instance
@@ -170,21 +197,21 @@ STATIC_URL = URL_PATH_PREFIX + STATIC_URL_BASE
 
 
 FILTER_UI_ENV = {
-    ### default number of days of shown jobs active in last N days
+    # default number of days of shown jobs active in last N days
     'DAYS': 30,
-    ### default number of days for user activity of shown jobs active in last N days
+    # default number of days for user activity of shown jobs active in last N days
     'USERDAYS': 3,
-    ### max number of days of shown jobs active in last N days
+    # max number of days of shown jobs active in last N days
     'MAXDAYS': 300,
-    ### max number of days for user activity of shown jobs active in last N days
+    # max number of days for user activity of shown jobs active in last N days
     'USERMAXDAYS': 60,
-    ### default number of hours of shown jobs active in last N hours
+    # default number of hours of shown jobs active in last N hours
     'HOURS': 2,
-    ### wildcard for string pattern in filter form
+    # wildcard for string pattern in filter form
     'WILDCARDS': ['*'],
-    ### wildcard for integer interval in filter form
+    # wildcard for integer interval in filter form
     'INTERVALWILDCARDS': [':'],
-    ###
+    #
     'EXPAND_BUTTON': {
         "mDataProp": None,
         "sTitle": "Details",

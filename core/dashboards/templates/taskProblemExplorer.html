@@ -1,0 +1,369 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load common_tags %}
+{% load static %}
+
+{% block page_title %} Slow Tasks Explorer {% endblock %}
+{#{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} Task Problem Explorer</a>{% endblock %}#}
+{% block subtitle %}Slow Tasks Explorer {% if viewParams.selection %}{{ viewParams.selection }}{% endif %}{% endblock %}
+
+
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <!-- Load c3.css -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <!-- Load d3.js and c3.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
+{% endblock %}
+
+
+{% block body %}
+{% if tasks|length > 0 %}
+<div id="scope" data-ng-controller="TaskProblemsController" class="ng-cloak">
+  <div class="card bp-container-simple secondary" id="plots">
+    <div class="card-divider"><p>Summary</p></div>
+    <div class="card-section">
+      <div class="c3-chart-block" ng-repeat="plot in taskproblem.plots.plot_data" plot-directive plot="plot" parent="$parent"></div>
+    </div>
+  </div>
+
+  <div class="card bp-container-simple secondary" id="container_tasks">
+  <div class="card-divider"><p>{{ tasks|length }} tasks:</p></div>
+  <div class="card-section">
+    <table class="data-table" id="taskstable">
+        <thead></thead>
+        <tbody></tbody>
+        <tfoot><tr>
+        {% for col in tasks.0 %}<th></th>{% endfor %}
+        </tr></tfoot>
+    </table>
+  </div>
+  </div>
+
+  {% if error_summary_table and error_summary_table|length > 0 %}
+    <div class="card bp-container-simple secondary" id="container_est">
+    <div class="card-divider"><p>Reasons why tasks went to throttled or exhausted:</p></div>
+    <div class="card-section">
+      <table class="data-table left-aligned" id="error_summary_table">
+          <thead></thead>
+          <tbody></tbody>
+      </table>
+    </div>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
+
+{% endblock %}
+
+{% block js_body_page %}
+<script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+
+<script>
+var plot_data = {{ plots|safe }};
+var tasks = {{ tasks|safe }};
+var task_errors = {{ error_summary_table|safe }};
+  app.controller('TaskProblemsController', function($scope, $http, $sce) {
+    $scope.taskproblem = {
+      page: {
+        width: getWidth(),
+        screen_cat: getScreenCategory(getWidth()),
+      },
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      tasks: {
+        list: tasks,
+        is_loaded: true,
+      },
+      errors: {
+        list: task_errors,
+      },
+      plots: {
+        plot_data: [],
+        charts: {}
+      }
+    };
+
+    Object.keys(plot_data).forEach((key) => {
+      $scope.taskproblem.plots.plot_data.push(plot_data[key]);
+    })
+    $scope.taskproblem.plots.plot_data.forEach((item) => {
+      if ($scope.taskproblem.page.screen_cat === 'small') {
+        item.options.size = [getWidth() - 40, 300];
+      }
+      else {
+        if (item.options.size_mp) {item.options.size = [getWidth() * item.options.size_mp  - 40, 300];}
+        else {item.options.size = [getWidth() - 40, 300];}
+      }
+    });
+
+    $scope.taskproblem.buildErrorsTable = function () {
+      $('#error_summary_table').DataTable({
+        data: $scope.taskproblem.errors.list,
+        aoColumns: [
+          {
+            title: 'Message',
+            data: 'processed_errordialog',
+            render: function (data, type, full, meta) {
+              return data.replace(/\_/g, '_<wbr>');
+            },
+          },
+          {
+            title: 'Count',
+            data: 'count',
+            render: function (data, type, full, meta) {
+              return '<a target="_blanc" href="{% url 'taskList' %}?' + full['link'] + '">' + full['count'] + '</a>';
+            },},
+        ],
+        order: [[ 1, "desc" ]],
+        scrollX: true,
+        lengthMenu: [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+        iDisplayLength: 10,
+      });
+    }
+
+    $scope.taskproblem.buildTasksTable = function () {
+      $scope.taskproblem.tasksDataTable = $('#taskstable').DataTable({
+      "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+      "iDisplayLength": 20,
+      "paging": true,
+      "scrollX": true,
+      "aaSorting": [[4, 'desc']],
+      "columnDefs": [
+          {"type": "num-html", "targets": [0,3,4,8,9,10,11,12,13,14 ] }
+      ],
+      "data": $scope.taskproblem.tasks.list,
+      "aoColumns": [
+        {
+          title: "Task ID",
+          sDefaultContent: "-",
+          render: function(data, type, row, meta) {
+            if (data) {
+              return '<a href="{% url 'taskInfo' %}' + data + '/">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Category",
+          sDefaultContent: "-",
+          className: 'nowrap',
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              return '<a href="{{ xurl }}category=' + data + '">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Owner",
+          sDefaultContent: "-",
+          className: 'nowrap',
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              return '<a href="{{ xurl }}owner=' + data + '">' + data + '</a>'
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Attempt",
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "Age, days",
+          {#data: "age",#}
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "Status (PS2)",
+          sDefaultContent: "-",
+          className: 'state',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return data
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Status (JEDI)",
+          sDefaultContent: "-",
+          className: 'state',
+          render: function(data, type, row, meta) {
+            if (data) {
+              return data
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Transient states",
+          sDefaultContent: "-",
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              switch ($scope.taskproblem.page.screen_cat) {
+                case 'small':
+                  return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');
+                case 'medium':
+                  return data.replace(/\./g, '.<wbr>');
+                case 'large':
+                  return data.replace(/\./g, '.<wbr>');
+                case 'xlarge':
+                  return data;
+                default:
+                  return data.replace(/\./g, '.<wbr>');
+              }
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+        {
+          title: "Queueing, hours",
+          sDefaultContent: "-",
+          className: 'num',
+          render: $.fn.dataTable.render.number( ',', '.', 2),
+        },
+        {
+          title: "Running, hours",
+          sDefaultContent: "-",
+          className: 'num',
+          render: $.fn.dataTable.render.number( ',', '.', 2),
+        },
+        {
+          title: "Problematic, hours",
+          sDefaultContent: "-",
+          className: 'num',
+          render: $.fn.dataTable.render.number( ',', '.', 2),
+        },
+        {
+          title: "N files total",
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "N files done",
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "N files failed",
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "Progress, %",
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "Task logged status",
+          sDefaultContent: "-",
+          className: 'alert',
+          render: function(data, type, row, meta) {
+            if (data && data.length > 0) {
+              return data.replace(/\_/g, '_<wbr>');
+            }
+            else {
+              return '-'
+            }
+          },
+        },
+
+      ],
+      initComplete: function () {
+        this.api().columns([1,2,5,6]).every(function () {
+          var column = this;
+          var select = $('<select><option value="">All</option></select>')
+              .appendTo($(column.footer()).empty())
+              .on('change', function () {
+                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                  column
+                    .search(val ? '^' + val + '$' : '', true, false)
+                    .draw();
+              });
+          column.data().unique().sort().each(function (d, j) {
+              select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+        this.api().columns.adjust().draw();
+      },
+      createdRow: function ( row, data, index ) {
+          $('td', row).eq(5).addClass(data[5] + '_fill');
+          $('td', row).eq(6).addClass(data[6] + '_fill');
+        },
+  })
+  }
+
+    $scope.taskproblem.buildErrorsTable();
+    $scope.taskproblem.buildTasksTable();
+
+  })
+  .directive('plotDirective', function ($timeout) {
+      var template = '<div id="{$plot.name$}_chart"></div>';
+      return {
+          template: template,
+          scope: {
+              plot: '=',
+              parent: '=',
+          },
+          link: function (scope, element, attrs) {
+            $timeout(() => {
+              element.ready(() => {
+                if (scope.plot.type === 'pie') {
+                  scope.parent.taskproblem.plots.charts[scope.plot.name + "_chart"] = draw_donut(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.title,
+                    scope.plot.options)
+                }
+                else if (scope.plot.type === 'bar') {
+                  scope.parent.taskproblem.plots.charts[scope.plot.name + "_chart"] = draw_bar(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.title,
+                    scope.plot.options)
+                }
+                else if (scope.plot.type === 'bar_hist') {
+                  scope.parent.taskproblem.plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(
+                    scope.plot.data,
+                    scope.plot.options,
+                    scope.plot.name + "_chart",
+                    )
+                }
+                else if (scope.plot.type === 'bar_time') {
+                  scope.parent.taskproblem.plots.charts[scope.plot.name + "_chart"] = draw_bar_timeseries(
+                    scope.plot.data,
+                    scope.plot.name + "_chart",
+                    scope.plot.options)
+                }
+              });
+            });
+          }
+      };
+  });
+
+</script>
+{% endblock %}
+

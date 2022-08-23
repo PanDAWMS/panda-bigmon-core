@@ -9,7 +9,6 @@ from core.filebrowser import views as filebrowser_views
 
 urlpatterns = [
     re_path(r'^filebrowser/$', filebrowser_views.index, name='filebrowser'),
-    re_path(r'^filebrowser/api/$', filebrowser_views.api_single_pandaid, name='filebrowser-api-single-pandaid'),
     re_path(r'^filebrowser/delete/$', filebrowser_views.delete_files, name='filebrowser-delete'),
 
     # prmon plots

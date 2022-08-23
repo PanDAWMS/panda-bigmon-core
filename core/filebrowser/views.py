@@ -8,16 +8,15 @@ import json
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template import RequestContext
-from django.template.loader import get_template
 from django.conf import settings
-from .utils import get_rucio_file, get_rucio_pfns_from_guids, fetch_file, get_filebrowser_vo, \
-    remove_folder, get_fullpath_filebrowser_directory, list_file_directory
+from .utils import get_rucio_file, get_filebrowser_vo, remove_folder, get_fullpath_filebrowser_directory, \
+    list_file_directory
 
-from core.settings.config import PRMON_LOGS_DIRECTIO_LOCATION
 from core.oauth.utils import login_customrequired
 from core.common.models import Filestable4, FilestableArch
-from core.views import DateTimeEncoder, initSelfMonitor
+from core.views import initSelfMonitor, initRequest
 from core.libs.job import get_job_list
+from core.libs.DateTimeEncoder import DateTimeEncoder
 from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
@@ -34,106 +33,134 @@ def index(request):
         :type request: django.http.HttpRequest
         
     """
-
-    try:
-        initSelfMonitor(request)
-    except:
-        _logger.exception('Failed to init self monitor')
+    valid, response = initRequest(request)
+    # try:
+    #     initSelfMonitor(request)
+    # except:
+    #     _logger.exception('Failed to init self monitor')
 
     errors = {}
+    scope = None
+    lfn = None
+    guid = None
+    sizemb = -1
+    MAX_FILE_SIZE_MB = 1000
 
     _logger.debug("index started - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
-    ### check that all expected parameters are in URL
-    # 'site' is not mandatory anymore, so removing it from the list
-    expectedFields = ['guid', 'scope', 'lfn']
-    for expectedField in expectedFields:
+    # check if pandaid in URL - > get guid, scope and lfn needed to get job log tarball
+    # check that pandaid in URL and it is valid
+    pandaid = None
+    if 'pandaid' in request.session['requestParams'] and request.session['requestParams']['pandaid'] is not None:
         try:
-            request.GET[expectedField]
-        except:
-            msg = 'Missing expected GET parameter %s. ' % expectedField
-            _logger.error(msg)
-            if 'missingparameter' not in errors.keys():
-                errors['missingparameter'] = ''
-            errors['missingparameter'] += msg
+            pandaid = int(request.session['requestParams']['pandaid'])
+        except ValueError:
+            _logger.error('Provided pandaid is not numerical!')
+    else:
+        _logger.warning('No valid pandaid provided')
 
-    ### if all expected GET parameters are present, execute file lookup
-    pfns = []
-    scope = ''
-    lfn = ''
-    guid = ''
-    site = ''
-    pattern_string='^[a-zA-Z0-9.\-_]+$'
-    pattern_site = '^[a-zA-Z0-9.,\-_\/]+$'
-    pattern_guid='^(\{){0,1}[0-9a-zA-Z]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\}){0,1}$'
-    try:
-        guid = request.GET['guid']
-        if re.match(pattern_guid, guid) is None:
-            guid = None
-            if 'improperformat' not in errors.keys():
-                errors['improperformat'] = ''
-            errors['improperformat'] += 'guid: %s ' % (request.GET['guid'])
-    except:
-        pass
-    try:
-        site = request.GET['site']
-        if re.match(pattern_site, site) is None:
-            site = None
-            if 'improperformat' not in errors.keys():
-                errors['improperformat'] = ''
-            errors['improperformat'] += 'site: %s ' % (request.GET['site'])
-    except:
-        pass
-    try:
-        lfn = request.GET['lfn']
-        if re.match(pattern_string, lfn) is None:
-            lfn = None
-            if 'improperformat' not in errors.keys():
-                errors['improperformat'] = ''
-            errors['improperformat'] += 'lfn: %s ' % (request.GET['lfn'])
-    except:
-        pass
-    try:
-        scope = request.GET['scope']
-        if re.match(pattern_string, scope) is None:
-            scope = None
-            if 'improperformat' not in errors.keys():
-                errors['improperformat'] = ''
-            errors['improperformat'] += 'scope: %s ' % (request.GET['scope'])
-    except:
-        pass
+    if pandaid is not None:
+        query = {
+            'type': 'log',
+            'pandaid': pandaid,
+        }
+        file_values = ('pandaid', 'guid','scope', 'lfn', 'status', 'fsize')
+        file_properties = {}
+        log_files = []
+        log_files.extend(Filestable4.objects.filter(**query).values(*file_values))
+        if len(file_properties) == 0:
+            log_files.extend(FilestableArch.objects.filter(**query).values(*file_values))
+
+        if len(log_files) == 0:
+            _logger.warning('No log file found for the provided pandaid={}'.format(pandaid))
+        elif len(log_files) > 0:
+            file_properties = log_files[0]
+            try:
+                guid = file_properties['guid']
+            except:
+                pass
+            try:
+                lfn = file_properties['lfn']
+            except:
+                pass
+            try:
+                scope = file_properties['scope']
+            except:
+                pass
+            try:
+                sizemb = round(int(file_properties['fsize'])/1000/1000)
+            except:
+                sizemb = 0
+
+    else:
+        # check that all expected parameters are in URL
+        # 'site' is not mandatory anymore, so removing it from the list
+        expectedFields = ['guid', 'scope', 'lfn']
+        for expectedField in expectedFields:
+            try:
+                request.GET[expectedField]
+            except:
+                msg = 'Missing expected GET parameter %s. ' % expectedField
+                _logger.error(msg)
+                if 'missingparameter' not in errors.keys():
+                    errors['missingparameter'] = ''
+                errors['missingparameter'] += msg
+
+        # if all expected GET parameters are present, execute file lookup
+        pattern_string='^[a-zA-Z0-9.\-_]+$'
+        pattern_guid='^(\{){0,1}[0-9a-zA-Z]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\}){0,1}$'
+        try:
+            guid = request.GET['guid']
+            if re.match(pattern_guid, guid) is None:
+                guid = None
+                if 'improperformat' not in errors.keys():
+                    errors['improperformat'] = ''
+                errors['improperformat'] += 'guid: %s ' % (request.GET['guid'])
+        except:
+            pass
+        try:
+            lfn = request.GET['lfn']
+            if re.match(pattern_string, lfn) is None:
+                lfn = None
+                if 'improperformat' not in errors.keys():
+                    errors['improperformat'] = ''
+                errors['improperformat'] += 'lfn: %s ' % (request.GET['lfn'])
+        except:
+            pass
+        try:
+            scope = request.GET['scope']
+            if re.match(pattern_string, scope) is None:
+                scope = None
+                if 'improperformat' not in errors.keys():
+                    errors['improperformat'] = ''
+                errors['improperformat'] += 'scope: %s ' % (request.GET['scope'])
+        except:
+            pass
 
     # check if size of logfile is too big return to user error message with rucio cli command to download it locally
-    max_sizemb = 1000
-    sizemb = -1
-    fsize = []
-    try:
-        fileid = int(request.GET['fileid'])
-    except:
-        fileid = -1
-    lquery = {'type': 'log'}
-    if lfn and len(lfn) > 0:
-        lquery['lfn'] = lfn
-        fsize.extend(Filestable4.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
-        if len(fsize) == 0:
-            fsize.extend(FilestableArch.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
-        if len(fsize) > 0:
-            try:
-                if fileid > 0:
-                    sizemb = round(int([f['fsize'] for f in fsize if f['fileid'] == fileid][0])/1000/1000)
-                else:
-                    sizemb = round(int([f['fsize'] for f in fsize][0])/1000/1000)
-            except:
-                _logger.warning("ERROR!!! Failed to calculate log tarball size in MB")
+    if sizemb < 0:
+        log_files = []
+        try:
+            fileid = int(request.GET['fileid'])
+        except:
+            fileid = -1
+        lquery = {'type': 'log'}
+        if lfn and len(lfn) > 0:
+            lquery['lfn'] = lfn
+            log_files.extend(Filestable4.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
+            if len(log_files) == 0:
+                log_files.extend(FilestableArch.objects.filter(**lquery).values('fsize', 'fileid', 'status'))
+            if len(log_files) > 0:
+                try:
+                    if fileid > 0:
+                        sizemb = round(int([f['fsize'] for f in log_files if f['fileid'] == fileid][0])/1000/1000)
+                    else:
+                        sizemb = round(int([f['fsize'] for f in log_files][0])/1000/1000)
+                except:
+                    _logger.warning("ERROR!!! Failed to calculate log tarball size in MB")
 
-    _logger.debug("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
-
-    ### download the file
-    files = []
-    dirprefix = ''
-    tardir = ''
-    if sizemb > max_sizemb:
-        _logger.warning('Size of the requested log is {} MB which is more than limit {} MB'.format(sizemb, max_sizemb))
+    if sizemb > MAX_FILE_SIZE_MB:
+        _logger.warning('Size of the requested log is {} MB which is more than limit {} MB'.format(sizemb, MAX_FILE_SIZE_MB))
         errormessage = """The size of requested log is too big ({}MB). 
                             Please try to download it locally using Rucio CLI by the next command: 
                             rucio download {}:{}""".format(sizemb, scope, lfn)
@@ -141,6 +168,14 @@ def index(request):
             'errormessage': errormessage
         }
         return render(request, 'errorPage.html', data, content_type='text/html')
+
+    _logger.debug("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
+
+    ### download the file
+    files = []
+    dirprefix = ''
+    tardir = ''
+
     if not (guid is None or lfn is None or scope is None):
         files, errtxt, dirprefix, tardir = get_rucio_file(scope,lfn, guid, 100)
     else:
@@ -157,8 +192,7 @@ def index(request):
         }
         return render(request, 'errorPage.html', data, content_type='text/html')
     if not len(files):
-        msg = 'Something went wrong while the log file downloading. [guid=%s, site=%s, scope=%s, lfn=%s] \n' % \
-              (guid, site, scope, lfn)
+        msg = 'Something went wrong while the log file downloading. [guid={}, scope={}, lfn={}] \n'.format(guid, scope, lfn)
         _logger.warning(msg)
         errors['download'] = msg
     if len(errtxt):
@@ -172,25 +206,18 @@ def index(request):
     if type(files) is list and len(files) > 0:
         for file in files:
             totalLogSize += file['size'] if 'size' in file and file['size'] > 0 else 0
-
-    # from B to MB
-    if totalLogSize > 0:
+        # from B to MB
         totalLogSize = round(totalLogSize*1.0/1024/1024, 2)
-
-    ### return the file page
-
 
     ### set request response data
     data = {
         'request': request,
         'errors': errors,
-        'pfns': pfns,
         'files': files,
         'dirprefix': dirprefix,
         'tardir': tardir,
         'scope': scope,
         'lfn': lfn,
-        'site': site,
         'guid': guid,
         'MEDIA_URL': settings.MEDIA_URL,
         'viewParams' : {'MON_VO': str(get_filebrowser_vo()).upper()},
@@ -204,7 +231,7 @@ def index(request):
         status = 200
         # return 500 if most probably there were issue   
         if 'download' in errors and errors['download'] and len(errors['download']) > 0:
-            if len(fsize) > 0 and 'status' in fsize[0] and fsize[0]['status'] != 'failed' and sizemb <= 0:
+            if len(files) > 0 and 'status' in files[0] and files[0]['status'] != 'failed' and sizemb <= 0:
                 status = 500
         return render(request, 'filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
     else:
@@ -212,140 +239,6 @@ def index(request):
         _logger.debug("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
         return resp
 
-
-
-def api_single_pandaid(request):
-    """
-        api_single_pandaid -- return log file URL for a single PanDA job
-        
-        :param request: Django's HTTP request 
-        :type request: django.http.HttpRequest
-        
-    """
-    errors = {}
-
-    ### check that all expected parameters are in URL
-#    expectedFields = ['guid', 'site', 'scope', 'lfn']
-    expectedFields = ['pandaid']
-    for expectedField in expectedFields:
-        try:
-            if len(request.GET[expectedField]) < 1:
-                msg = 'Missing expected GET parameter %s. ' % expectedField
-                if 'missingparameter' not in errors.keys():
-                    errors['missingparameter'] = ''
-                errors['missingparameter'] += msg
-        except:
-            msg = 'Missing expected GET parameter %s. ' % expectedField
-            _logger.error(msg)
-            if 'missingparameter' not in errors.keys():
-                errors['missingparameter'] = ''
-            errors['missingparameter'] += msg
-
-    ### if all expected GET parameters are present, execute file lookup
-    pfns = []
-    scope = ''
-    lfn = ''
-    guid = ''
-    site = ''
-    pandaid = None
-    status = ''
-    query = {}
-    query['type'] = 'log'
-    try:
-        pandaid = int(request.GET['pandaid'])
-    except:
-        pass
-    query['pandaid'] = pandaid
-    file_properties = []
-    try:
-        file_properties = Filestable4.objects.filter(**query).values('pandaid', 'guid', \
-                                'scope', 'lfn', 'destinationse', 'status')
-    except:
-        pass
-
-    if len(file_properties):
-        file_properties = file_properties[0]
-        try:
-            guid = file_properties['guid']
-        except:
-            pass
-        try:
-            site = file_properties['destinationse']
-        except:
-            pass
-        try:
-            lfn = file_properties['lfn']
-        except:
-            pass
-        try:
-            scope = file_properties['scope']
-        except:
-            pass
-        try:
-            status = file_properties['status']
-        except:
-            pass
-
-        if 'missingparameter' not in errors.keys():
-            pfns, errtxt = get_rucio_pfns_from_guids(guids=[guid], site=[site], \
-                        lfns=[lfn], scopes=[scope])
-            if len(errtxt):
-                if 'lookup' not in errors:
-                    errors['lookup'] = ''
-                errors['lookup'] += errtxt
-    
-        ### download the file
-        files = []
-        dirprefix = ''
-        tardir = ''
-        if len(pfns):
-            pfn = pfns[0]
-            files, errtxt, dirprefix, tardir = fetch_file(pfn, guid, unpack=False, listfiles=False)
-            if not len(pfns):
-                msg = 'File download failed. [pfn=%s guid=%s, site=%s, scope=%s, lfn=%s]' % \
-                    (pfn, guid, site, scope, lfn)
-                _logger.warning(msg)
-                errors['download'] = msg
-            if len(errtxt):
-                if 'download' in errors:
-                    errors['download'] += errtxt
-    else: # file not found in DB
-        if 'lookup' not in errors:
-            errors['lookup'] = ''
-        errors['lookup'] += 'Log file for this job has not been found. '
-    ### return the file page
-
-    url = None
-    data = { \
-        'pandaid': pandaid, \
-        'url': url, \
-        'errors': errors, \
-        'pfns': pfns, \
-        'scope': scope, \
-        'lfn': lfn, \
-        'site': site, \
-        'guid': guid, \
-        'status': status, \
-        'timestamp': datetime.utcnow().isoformat() \
-    }
-    if not len(errors):
-        url = 'http://' + hostname + \
-                    settings.MEDIA_URL + dirprefix + '/' + lfn
-        data['url'] = url
-        ### set request response data
-        return render(request, 'filebrowser/filebrowser_api_single_pandaid.html', {'data': data}, RequestContext(request))
-    elif 'pandaid' not in request.GET.keys() or pandaid == None:
-        t = get_template('filebrowser/filebrowser_api_single_pandaid.html')
-        context = RequestContext(request, {'data':data})
-        return HttpResponse(t.render(context), status=400)
-    elif not len(file_properties):
-        t = get_template('filebrowser/filebrowser_api_single_pandaid.html')
-        context = RequestContext(request, {'data':data})
-        return HttpResponse(t.render(context), status=404)
-    else:
-        t = get_template('filebrowser/filebrowser_api_single_pandaid.html')
-        context = RequestContext(request, {'data':data})
-        return HttpResponse(t.render(context), status=400)
 
 
 def get_job_log_file_path(pandaid, filename=''):
@@ -357,11 +250,11 @@ def get_job_log_file_path(pandaid, filename=''):
     :return: file_path: str
     """
 
-    if PRMON_LOGS_DIRECTIO_LOCATION and filename in ('memory_monitor_summary.json','memory_monitor_output.txt'):
+    if settings.PRMON_LOGS_DIRECTIO_LOCATION and filename in ('memory_monitor_summary.json','memory_monitor_output.txt'):
         joblist = get_job_list(query={"pandaid":pandaid})
         if joblist and len(joblist) > 0:
             computingsite = joblist[0].get('computingsite')
-        return PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name = computingsite, panda_id = pandaid) + '/' + filename
+        return settings.PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name = computingsite, panda_id = pandaid) + '/' + filename
 
     file_path = None
     files = []

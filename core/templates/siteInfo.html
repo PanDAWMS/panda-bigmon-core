@@ -1,160 +1,83 @@
 {% extends "_base_core.html" %}
+{% load static %}
 
-{% block page_title %} {{ viewParams.MON_VO }} PanDA {% if viewParams.MON_VO == 'ATLAS' %}
- resource {% else %} site {% endif %} {{ site.siteid }} {% endblock %}
+{% block page_title %}{{ viewParams.MON_VO }} PanDA queue {{ site.siteid }}{% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block subtitle %}PanDA {% if viewParams.MON_VO == 'ATLAS' %}
- resource {% else %} site {% endif %} {{ site.siteid }}{% endblock %}
+{% block subtitle %}PanDA queue {{ site.siteid }}{% endblock %}
+
+{% block js_head_page_library %}
+    <script src="{% static "js/jquery.shorten.1.0.js" %}"></script>
+{% endblock %}
 
 {% block body %}
 
 {% if site %}
 
-<table>
-<tr class='tablesection'><th colspan=20> {{ site.siteid }} information </th></tr>
-{% for att in attrs %}
-<tr><th>
-{{ att.name }}
-</th><td>
-<span {% if att.name == 'Status' %} class='{{att.value}}' {% endif %}>
-{% if att.name == 'GOC name' %} <a href="{% url 'siteList' %}?gocname={{ att.value }}">{{ att.value }}</a>
-{% else %}
-{% if att.name == 'Queue (nickname)' %} <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{ att.value }}/full/">{{ att.value }}</a>
-{% else %}
-{% if att.value != 'None' %} {{ att.value }} {% endif %}
-{% endif %}
-{% endif %}
-</span>
-</td></tr>
-{% endfor %}
-</table>
-
-{% if queues|length > 1 %}
-
-<table>
-<tr class='tablesection'><th colspan=20> All queues for {{ site.siteid }} </th></tr>
-<tr class='tablesection'>
-<th> Queue </th>
-<th> Status </th>
-<th> Last modified </th>
-<th> Comment </th>
-</tr>
-
-{% for queue in queues %}
+<table class="fresh-table unstriped">
+<thead>
+<tr><th colspan={{ attrs|length }}>{{ site.siteid }} information</th></tr>
+</thead>
+<tbody>
 <tr>
-<td> <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{ queue.nickname }}/full/">{{ queue.nickname }}</a></td><td> <span class='{{ queue.status }}'>{{ queue.status }}</span> </td>
-<td> {{ queue.lastmod }} </td> <td> {{ queue.comment_field }} </td>
+{% for att in attrs %}
+  <th>{{ att.name }}</th>
+{% endfor %}
 </tr>
-{% endfor %}
-</table>
-{% endif %}
-
-
-<table><tr>
-<th class='tablesection'> View: </th>
-<td>
-<a href="{% url 'wnInfo' site.siteid %}?hours={{ njobhours }}">worker nodes</a>
-</td>
-<td>
-<a href="{% url 'jobList' %}?computingsite={{site.siteid}}&hours={{njobhours}}&display_limit=100">jobs</a>, <a href="{% url 'errorSummary' %}?computingsite={{site.siteid}}">job errors</a>
-</td>
-<td>
-<a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d,mode:quick,to:now))&_a=(columns:!(fields.type,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'(fields.type:%22atlasanaljobbroker%22%20OR%20fields.type:%22atlasprodjobbroker%22)%20AND%20site:%22{{site.siteid}}%22'),sort:!('@timestamp',desc))">brokerage actions</a>
-</td>
-<td>
-<a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(description:'Job%20brokerage',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),query:(language:lucene,query:'site.keyword:%20%2F{{ site.siteid }}%5C%2F.*%2F%20OR%20site.keyword:%20%22{{ site.siteid }}%22'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)">brokerage actions (dashboard)</a>
-</td>
-{% if site.nickname %}
-<td>
-<a href="http://apfmon.lancs.ac.uk/q/{{site.nickname}}">pilots</a>
-</td>
-{% endif %}
-
-{% if viewParams.MON_VO == 'ATLAS' %}
-<td>
-<a href="http://dashb-atlas-ssb.cern.ch/dashboard/request.py/sitehistory?site={{site.gocname}}#currentView=Shifter+view">Site status board</a>
-</td>
-
-<td>
-<a href="https://atlas-cric.cern.ch/atlas/pandaqueuestatushistory/list/?pandaqueue={{ site.nickname }}" target="_blank">Blacklisting history</a>
-</td>
-
-<td>
-<a href="https://atlas-logbook.cern.ch/elog/ATLAS+Computer+Operations+Logbook/?mode=full&reverse=0&reverse=1&npp=20&Subject={{site.gocname}}">elogs</a>
-</td>
-
-<td>
-DDM 
-<a href="http://dashb-atlas-ddm.cern.ch/ddm2/#src.cloud=(%22{{site.cloud}}%22)&src.site=(%22{{site.gocname}}%22)&grouping.src=(cloud,site,token)">source</a>
-
-<a href="http://dashb-atlas-ddm.cern.ch/ddm2/#dst.cloud=(%22{{site.cloud}}%22)&dst.site=(%22{{site.gocname}}%22)&grouping.dst=(cloud,site,token)">destination</a>
-</td><td>
-DDM (Grafana)
-<a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?panelId=42&fullscreen&orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Analysis%20Input&var-activity=Data%20Brokering&var-activity=Data%20Consolidation&var-activity=Data%20Rebalancing&var-activity=Express&var-activity=Functional%20Test&var-activity=Production%20Input&var-activity=Production%20Output&var-activity=Recovery&var-activity=Staging&var-activity=T0%20Export&var-activity=T0%20Tape&var-activity=User%20Subscriptions&var-activity=default&var-src_cloud={{site.cloud}}&var-src_site={{site.gocname}}&var-src_country=All&var-src_endpoint=All&var-columns=src_endpoint&var-dst_cloud=All&var-dst_site=All&var-dst_country=All&var-dst_endpoint=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw">source</a>
-<a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?panelId=42&fullscreen&orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Analysis%20Input&var-activity=Data%20Brokering&var-activity=Data%20Consolidation&var-activity=Data%20Rebalancing&var-activity=Express&var-activity=Functional%20Test&var-activity=Production%20Input&var-activity=Production%20Output&var-activity=Recovery&var-activity=Staging&var-activity=T0%20Export&var-activity=T0%20Tape&var-activity=User%20Subscriptions&var-activity=default&var-src_cloud=All&var-src_site=All&var-src_country=All&var-src_endpoint=All&var-columns=src_cloud&var-dst_cloud={{site.cloud}}&var-dst_site={{site.gocname}}&var-dst_country=All&var-dst_endpoint=All&var-rows=dst_endpoint&var-measurement=ddm_transfer&var-retention_policy=raw">destination</a>
-</td>
-
-<td> 
-<a href=" https://atlas-install.roma1.infn.it/atlas_install/list.php?resource={{panda_resource}}">SW install status</a>
-</td>
-
-<td>
-    {% if site.nickname and site.nickname != '' %}
-    <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{site.nickname}}/full/">CRIC link</a>
-    {% else %}
-    <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{site.siteid}}/full/">CRIC link</a>
+<tr>
+{% for att in attrs %}
+  <td>
+    {% if att.name == 'Status' %} <span class='{{att.value}}'>{{ att.value }}</span>
+    {% elif att.name == 'GOC name' %} <a href="{% url 'siteList' %}?gocname={{ att.value }}">{{ att.value }}</a>
+    {% elif att.name == 'Queue (nickname)' %} <a href="https://atlas-cric.cern.ch/atlas/pandaqueue/detail/{{ att.value }}/full/">{{ att.value }}</a>
+    {% else %} {{ att.value }}
     {% endif %}
-</td>
-
-
-{% endif %}
-
-</tr></table>
-
-{#{% if incidents %}#}
-{##}
-{#<table>#}
-{#<tr class='tablesection'><th colspan=20> Incidents over the last month </th></tr>#}
-{#{% for inc in incidents %}#}
-{#<tr><td> {{ inc.at_time }} </td>#}
-{#<td> <font size=-1>{{ inc.description|safe }}</font> </td>#}
-{#{% endfor %}#}
-{#</table>#}
-{##}
-{#{% else %}#}
-{##}
-{#<p>#}
-{#This site has no logged incidents over the last month.#}
-{#</p>#}
-{##}
-{#{% endif %}#}
-
-{% if pandaqueue %}
-
-<table>
-<tr class='tablesection'><th colspan=20> {{ site.siteid }} parameters from CRIC configuration file</th></tr>
-{% for item in pandaqueue %}
-<tr><th>{{ item.param }} </th><td> {% if item.value != 'None' %} {{ item.value }} {% endif %}</td></tr>
+  </td>
 {% endfor %}
+</tr>
+</tbody>
 </table>
 
+<a class="bp-button" href="{% url 'wnInfo' site.siteid %}?hours={{ njobhours }}">Worker nodes</a>
+<a class="bp-button" href="{% url 'jobList' %}?computingsite={{site.siteid}}&hours={{njobhours}}&display_limit=100">Jobs</a>
+<a class="bp-button" href="{% url 'errorSummary' %}?computingsite={{site.siteid}}">Errors</a>
+<a class="bp-button" href="{% url 'harvesters' %}?computingsite={{site.siteid}}">Harvester workers</a>
+<a class="bp-button-with-logo" target="_blank" href="https://{{ request.session.crichost }}/atlas/pandaqueue/detail/{{ site.nickname }}/full/"><div class="img-box"><img src="{% static 'images/cric-logo.png' %}"></div><span class="text">PQ description</span></a>
+{% if viewParams.MON_VO == 'ATLAS' %}
+<a class="bp-button" target="_blank" href="http://apfmon.lancs.ac.uk/q/{{ site.nickname }}">APF, pilots</a>
+<a class="bp-button-with-logo" target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'006980c0-857a-11ea-9233-1dd73e396ea6',key:computingsite.keyword,negate:!f,params:(query:{{ site.siteid }}),type:phrase),query:(match_phrase:(computingsite.keyword:{{ site.siteid }})))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),query:(language:lucene,query:''),timeRestore:!t,title:'Harvester%20particular%20computingsite',viewMode:view)"><div class="img-box"><img src="{% static 'images/kibana-logo.png' %}"></div><span class="text">Harvester dash</span></a>
+<a class="bp-button-with-logo" target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(description:'Job%20brokerage',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),query:(language:lucene,query:'site.keyword:%20%2F{{ site.siteid }}%5C%2F.*%2F%20OR%20site.keyword:%20%22{{ site.siteid }}%22'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="img-box"><img src="{% static 'images/kibana-logo.png' %}"></div><span class="text">Brokerage actions</span></a>
+<a class="bp-button-with-logo" target="_blank" href="https://atlas-cric.cern.ch/atlas/pandaqueuestatushistory/list/?pandaqueue={{ site.nickname }}"><div class="img-box"><img src="{% static 'images/cric-logo.png' %}"></div><span class="text">Blacklisting history</span></a>
+<a class="bp-button-with-logo" target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?panelId=42&fullscreen&orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Analysis%20Input&var-activity=Data%20Brokering&var-activity=Data%20Consolidation&var-activity=Data%20Rebalancing&var-activity=Express&var-activity=Functional%20Test&var-activity=Production%20Input&var-activity=Production%20Output&var-activity=Recovery&var-activity=Staging&var-activity=T0%20Export&var-activity=T0%20Tape&var-activity=User%20Subscriptions&var-activity=default&var-src_cloud={{site.cloud}}&var-src_site={{site.gocname}}&var-src_country=All&var-src_endpoint=All&var-columns=src_endpoint&var-dst_cloud=All&var-dst_site=All&var-dst_country=All&var-dst_endpoint=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw"><div class="img-box"><img src="{% static 'images/grafana.png' %}"></div><span class="text">DDM dash, {{ site.siteid }} as source</span></a>
+<a class="bp-button-with-logo" target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?panelId=42&fullscreen&orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Analysis%20Input&var-activity=Data%20Brokering&var-activity=Data%20Consolidation&var-activity=Data%20Rebalancing&var-activity=Express&var-activity=Functional%20Test&var-activity=Production%20Input&var-activity=Production%20Output&var-activity=Recovery&var-activity=Staging&var-activity=T0%20Export&var-activity=T0%20Tape&var-activity=User%20Subscriptions&var-activity=default&var-src_cloud=All&var-src_site=All&var-src_country=All&var-src_endpoint=All&var-columns=src_cloud&var-dst_cloud={{site.cloud}}&var-dst_site={{site.gocname}}&var-dst_country=All&var-dst_endpoint=All&var-rows=dst_endpoint&var-measurement=ddm_transfer&var-retention_policy=raw"><div class="img-box"><img src="{% static 'images/grafana.png' %}"></div><span class="text">DDM dash, {{ site.siteid }} as destination</span></a>
 {% endif %}
+<p></p>
 
-<table>
-<tr class='tablesection'><th colspan=20> {{ site.siteid }} parameters </th></tr>
+{% if colnames %}
+
+<table class="fresh-table">
+<thead><tr><th colspan=2>{{ site.siteid }} parameters</th></tr></thead>
 {% for col in colnames %}
-<tr><th>{{ col.name }} </th><td> {% if col.value != 'None' %} {{ col.value }} {% endif %}</td></tr>
+  <tr><th>{{ col.param }}</th><td><div class="comment more"> {% if not col.value is None and not col.value == '' %} {{ col.value }} {% else %} --- {% endif %}</div></td></tr>
 {% endfor %}
 </table>
+
+{% endif %}
 
 {% else %}
 
-No site specified.
+No PanDA queue found for specified name.
 
 {% endif %}
 
 {% endblock %}
 
+{% block js_body_page %}
+<script type="text/javascript">
+$(document).ready(function () {
+  $(".comment").shorten({showChars: 500, minHideChars: 250});
+});
+</script>
+{% endblock %}
 
 {% block help %}
 {% include "siteInfoHelp.html" %}

@@ -13,8 +13,9 @@ from django.db import connection
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
+from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, extensibleURL, DateEncoder
+from core.views import initRequest, setupView, extensibleURL
 from core.schedresource.utils import get_pq_fairshare_policy, get_pq_resource_types
 import json
 
@@ -801,13 +802,15 @@ def fairsharePolicy(request):
 
 
 def coreTypes(request):
+
     EXECUTING = 'executing'
     QUEUED = 'queued'
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
+
     sqlRequest = """
     SELECT corecount, jobstatus_grouped, SUM(HS)  FROM (SELECT 
-   jj.ts,
+    jj.ts,
     jj.gshare,
     jj.computingsite,
     (CASE WHEN jj.jobstatus IN('activated') THEN 'queued' WHEN jj.jobstatus IN('sent', 'running') THEN 'executing' ELSE 'ignore' END) as jobstatus_grouped, 
@@ -817,17 +820,23 @@ def coreTypes(request):
     jj.vo,
     jj.workqueue_id,
     jj.resource_type,
-   (CASE WHEN gg.corecount =1 THEN 'SCORE' WHEN gg.corecount>1 and gg.catchall not like 'unifiedPandaQueue'  THEN 'MCORE' WHEN gg.catchall like 'unifiedPandaQueue' THEN 'UCORE' ELSE 'SCORE' END) as corecount,
-    gg.fairsharepolicy,
-    gg.CATCHALL
+    json_value(gg.DATA, '$.corecount') as gocname,
+    json_value(gg.DATA, '$.status') as agis_pq_status,
+   (CASE WHEN json_value(gg.DATA, '$.corecount') = 1 THEN 'SCORE' WHEN  json_value(gg.DATA, '$.corecount') > 1 and  json_value(gg.DATA, '$.catchall') not like 'unifiedPandaQueue' 
+   THEN 'MCORE' WHEN json_value(gg.DATA, '$.catchall') like 'unifiedPandaQueue' 
+   THEN 'UCORE' ELSE 'SCORE' END) as corecount,
+    json_value(gg.DATA, '$.fairsharepolicy') as fairsharepolicy,
+    json_value(gg.DATA, '$.catchall') as catchall
     FROM
     atlas_panda.jobs_share_stats jj,
-    atlas_pandameta.schedconfig gg
-    where jj.COMPUTINGSITE =gg.siteid) GROUP BY corecount, jobstatus_grouped order by corecount
+    atlas_panda.schedconfig_json gg
+    where jj.COMPUTINGSITE = gg.PANDA_QUEUE) GROUP BY corecount, jobstatus_grouped order by corecount
     """
+
     cur = connection.cursor()
     cur.execute(sqlRequest)
     # get the hs distribution data into a dictionary structure
+
     hs_distribution_raw = cur.fetchall()
     hs_distribution_dict = {}
     hs_queued_total = 0
@@ -836,6 +845,7 @@ def coreTypes(request):
     total_hs = 0
     newresourecurcetype = ''
     resourcecnt = 0
+
     for hs_entry in hs_distribution_raw:
         corecount, status_group, hs = hs_entry
         hs_distribution_dict.setdefault(corecount, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0, IGNORE:0})
@@ -852,11 +862,13 @@ def coreTypes(request):
         else:
             hs_ignore_total += hs
             hs_distribution_dict[corecount][status_group] += hs
+
     ignore = 0
     pled = 0
     executing = 0
     queued = 0
     total_hs =0
+
     for hs_entry in hs_distribution_dict.keys():
         sum_hs = 0
         pled += hs_distribution_dict[hs_entry]['pledged']
@@ -871,6 +883,7 @@ def coreTypes(request):
         hs_distribution_dict[hs_entry]['total_hs'] = sum_hs
 
     hs_distribution_list = []
+
     for hs_entry in hs_distribution_dict.keys():
        # hs_distribution_dict[hs_entry]['pledged_percent'] = pled * 100 / hs_distribution_dict[hs_entry]['pledged']
         hs_distribution_dict[hs_entry]['ignore_percent'] =  (hs_distribution_dict[hs_entry]['ignore']/ignore)* 100
@@ -886,5 +899,6 @@ def coreTypes(request):
                                      'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
                                      'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
                                      })
+
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 

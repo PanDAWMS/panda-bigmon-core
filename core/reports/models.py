@@ -1,7 +1,7 @@
 
 
 from django.db import models
-from core.settings.config import DB_SCHEMA
+from django.conf import settings
 
 
 class ReportEmails(models.Model):
@@ -11,5 +11,5 @@ class ReportEmails(models.Model):
     email = models.CharField(max_length=256, db_column='EMAIL', null=False)
 
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."REPORT_EMAIL"'
+        db_table = f'"{settings.DB_SCHEMA}"."REPORT_EMAIL"'
         

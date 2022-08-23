@@ -5,8 +5,10 @@ import time
 from django.db import connection
 from django.utils import timezone
 from core.libs.job import is_event_service
+from core.libs.exlib import get_tmp_table_name_debug, create_temporary_table
 from core.common.models import JediJobRetryHistory
-from core.settings.local import dbaccess
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -27,11 +29,10 @@ def drop_job_retries(jobs, jeditaskid, **kwards):
     start_time = time.time()
 
     is_return_dropped_jobs = False
-    if 'is_return_dropped_jobs' in kwards:
+    if 'is_return_dropped_jobs' in kwards and kwards['is_return_dropped_jobs'] is True:
         is_return_dropped_jobs = True
 
     drop_list = []
-    droppedIDs = set()
     drop_merge_list = set()
 
     # get job retry history for a task
@@ -47,8 +48,15 @@ def drop_job_retries(jobs, jeditaskid, **kwards):
                                                                                     (time.time() - start_time)))
 
     hashRetries = {}
+    # old run job -> new run job (relaton_type=retry) and run job -> merge job (relation_type=merge)
+    hashMergeRelation = {}
     for retry in retries:
         hashRetries[retry['oldpandaid']] = retry
+        if retry['relationtype'] == 'merge':
+            # adding to dict all the run jobs for which merge job was created
+            if retry['newpandaid'] not in hashMergeRelation:
+                hashMergeRelation[retry['newpandaid']] = []
+            hashMergeRelation[retry['newpandaid']].append(retry['oldpandaid'])
 
     newjobs = []
     for job in jobs:
@@ -62,6 +70,10 @@ def drop_job_retries(jobs, jeditaskid, **kwards):
             else:
                 if job['jobsetid'] in hashRetries and hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry':
                     dropJob = 1
+            if job['processingtype'] == 'pmerge' and pandaid in hashMergeRelation:
+                for oldrunpandaid in hashMergeRelation[pandaid]:
+                    if oldrunpandaid in hashRetries and hashRetries[oldrunpandaid]['relationtype'] == 'retry':
+                        dropJob = 1
         else:
 
             if job['pandaid'] in hashRetries and job['jobstatus'] not in ('finished', 'merging'):
@@ -78,21 +90,14 @@ def drop_job_retries(jobs, jeditaskid, **kwards):
                 if job['jobstatus'] == 'closed' and job['jobsubstatus'] in ('es_unused', 'es_inaction',):
                     dropJob = 1
 
-        if dropJob == 0 and not is_return_dropped_jobs:
-            #     and not (
-            #     'processingtype' in request.session['requestParams'] and request.session['requestParams'][
-            # 'processingtype'] == 'pmerge')
-
-            if job['processingtype'] != 'pmerge':
-                newjobs.append(job)
-            else:
-                drop_merge_list.add(pandaid)
-        elif dropJob == 0:
+        if dropJob == 0:
             newjobs.append(job)
         else:
-            if pandaid not in droppedIDs:
-                droppedIDs.add(pandaid)
-                drop_list.append({'pandaid': pandaid, 'newpandaid': dropJob})
+            if is_return_dropped_jobs:
+                if job['processingtype'] != 'pmerge':
+                    drop_list.append({'pandaid': pandaid, 'newpandaid': dropJob})
+                elif job['processingtype'] == 'pmerge':
+                    drop_merge_list.add(pandaid)
 
     _logger.debug('{} jobs dropped: {} sec'.format(len(jobs) - len(newjobs), time.time() - start_time))
     drop_list = sorted(drop_list, key=lambda x: -x['pandaid'])
@@ -110,14 +115,12 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
     newquery = copy.deepcopy(query)
 
     # insert retried pandaids to tmp table
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1DEBUG"
+    tmpTableName = get_tmp_table_name_debug()
 
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
-
+    if settings.DEPLOYMENT == 'POSTGRES':
+        create_temporary_table(new_cur, tmpTableName)
     jeditaskid = newquery['jeditaskid']
 
     ins_query = """

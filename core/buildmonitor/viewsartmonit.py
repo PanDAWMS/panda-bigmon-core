@@ -12,15 +12,8 @@ from pprint import pprint
 import requests
 import json, re, sys, datetime
 from django.views.decorators.cache import never_cache
+from core.libs.DateEncoder import DateEncoder
 
-
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
 
 
 @never_cache

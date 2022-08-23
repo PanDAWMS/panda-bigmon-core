@@ -5,26 +5,20 @@
 """
 
 import json
-import urllib3
 import multiprocessing
+from datetime import datetime
 
-from datetime import datetime, timedelta
-
-from django.utils import timezone
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.db import connection, transaction, DatabaseError
 
-from django.utils.cache import patch_cache_control, patch_response_headers
+from django.utils.cache import patch_response_headers
 
 from core.oauth.utils import login_customrequired
-from core.settings import STATIC_URL, FILTER_UI_ENV, defaultDatetimeFormat
-from core.libs.cache import getCacheEntry, setCacheEntry, preparePlotData
-from core.views import initRequest, setupView, escapeInput, DateEncoder, \
-    extensibleURL, DateTimeEncoder, removeParam, taskSummaryDict, preprocessWildCardString
+from core.libs.cache import getCacheEntry
+from core.libs.DateEncoder import DateEncoder
+from core.views import initRequest, extensibleURL
 
-from core.pandajob.models import Jobsactive4, Jobsarchived4, Jobswaiting4, Jobsdefined4, Jobsarchived
-from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison, job_info_getter
 
@@ -159,8 +153,12 @@ def compareJobs(request):
                          'modificationtime', 'cloud', 'computingsite','currentpriority',
                          'jobname', 'processingtype', 'transformation','proddblock','destinationdblock', 'jobsetid', 'batchid','eventservice']
 
-    ###Excluded params because of too long values###
+    # Excluded params because of too long values###
     excludedParams = ['metadata', 'metastruct']
+    params_to_exclude = []
+    for job in jobInfoJSON:
+        params_to_exclude.extend([p for p, v in job['job'].items() if isinstance(v, dict) or isinstance(v, list)])
+    excludedParams.extend(list(set(params_to_exclude)))
 
     jobsComparisonMain = []
     for param in compareParams:

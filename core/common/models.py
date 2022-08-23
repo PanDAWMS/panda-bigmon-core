@@ -17,8 +17,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import connections
 from django.utils import timezone
 from django.db import models
-
-from core.settings.config import DB_SCHEMA, DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH, DB_SCHEMA_PANDA_META
+from django.conf import settings
 
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
@@ -26,179 +25,156 @@ models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
 
 
 class Cloudconfig(models.Model):
-    name = models.CharField(max_length=60, primary_key=True, db_column='NAME')
-    description = models.CharField(max_length=150, db_column='DESCRIPTION')
-    tier1 = models.CharField(max_length=60, db_column='TIER1')
-    tier1se = models.CharField(max_length=1200, db_column='TIER1SE')
-    relocation = models.CharField(max_length=30, db_column='RELOCATION', blank=True)
-    weight = models.IntegerField(db_column='WEIGHT')
-    server = models.CharField(max_length=300, db_column='SERVER')
-    status = models.CharField(max_length=60, db_column='STATUS')
-    transtimelo = models.IntegerField(db_column='TRANSTIMELO')
-    transtimehi = models.IntegerField(db_column='TRANSTIMEHI')
-    waittime = models.IntegerField(db_column='WAITTIME')
-    comment_field = models.CharField(max_length=600, db_column='COMMENT_', blank=True)  # Field renamed because it was a Python reserved word.
-    space = models.IntegerField(db_column='SPACE')
-    moduser = models.CharField(max_length=90, db_column='MODUSER', blank=True)
-    modtime = models.DateTimeField(db_column='MODTIME')
-    validation = models.CharField(max_length=60, db_column='VALIDATION', blank=True)
-    mcshare = models.IntegerField(db_column='MCSHARE')
-    countries = models.CharField(max_length=240, db_column='COUNTRIES', blank=True)
-    fasttrack = models.CharField(max_length=60, db_column='FASTTRACK', blank=True)
-    nprestage = models.BigIntegerField(db_column='NPRESTAGE')
-    pilotowners = models.CharField(max_length=900, db_column='PILOTOWNERS', blank=True)
-    dn = models.CharField(max_length=300, db_column='DN', blank=True)
-    email = models.CharField(max_length=180, db_column='EMAIL', blank=True)
-    fairshare = models.CharField(max_length=384, db_column='FAIRSHARE', blank=True)
+    name = models.CharField(max_length=60, primary_key=True, db_column='name')
+    description = models.CharField(max_length=150, db_column='description')
+    tier1 = models.CharField(max_length=60, db_column='tier1')
+    tier1se = models.CharField(max_length=1200, db_column='tier1se')
+    relocation = models.CharField(max_length=30, db_column='relocation', blank=True)
+    weight = models.IntegerField(db_column='weight')
+    server = models.CharField(max_length=300, db_column='server')
+    status = models.CharField(max_length=60, db_column='status')
+    transtimelo = models.IntegerField(db_column='transtimelo')
+    transtimehi = models.IntegerField(db_column='transtimehi')
+    waittime = models.IntegerField(db_column='waittime')
+    comment_field = models.CharField(max_length=600, db_column='comment_', blank=True)  # Field renamed because it was a Python reserved word.
+    space = models.IntegerField(db_column='space')
+    moduser = models.CharField(max_length=90, db_column='moduser', blank=True)
+    modtime = models.DateTimeField(db_column='modtime')
+    validation = models.CharField(max_length=60, db_column='validation', blank=True)
+    mcshare = models.IntegerField(db_column='mcshare')
+    countries = models.CharField(max_length=240, db_column='countries', blank=True)
+    fasttrack = models.CharField(max_length=60, db_column='fasttrack', blank=True)
+    nprestage = models.BigIntegerField(db_column='nprestage')
+    pilotowners = models.CharField(max_length=900, db_column='pilotowners', blank=True)
+    dn = models.CharField(max_length=300, db_column='dn', blank=True)
+    email = models.CharField(max_length=180, db_column='email', blank=True)
+    fairshare = models.CharField(max_length=384, db_column='fairshare', blank=True)
     class Meta:
-        db_table = u'cloudconfig'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."cloudconfig"'
         app_label = 'panda'
 
 
-class Cloudtasks(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='ID')
-    taskname = models.CharField(max_length=384, db_column='TASKNAME', blank=True)
-    taskid = models.IntegerField(null=True, db_column='TASKID', blank=True)
-    cloud = models.CharField(max_length=60, db_column='CLOUD', blank=True)
-    status = models.CharField(max_length=60, db_column='STATUS', blank=True)
-    tmod = models.DateTimeField(db_column='TMOD')
-    tenter = models.DateTimeField(db_column='TENTER')
-    class Meta:
-        db_table = u'cloudtasks'
-
-
 class Datasets(models.Model):
-    vuid = models.CharField(max_length=120, db_column='VUID', primary_key=True)
-    name = models.CharField(max_length=765, db_column='NAME')
-    version = models.CharField(max_length=30, db_column='VERSION', blank=True)
-    type = models.CharField(max_length=60, db_column='TYPE')
-    status = models.CharField(max_length=30, db_column='STATUS', blank=True)
-    numberfiles = models.IntegerField(null=True, db_column='NUMBERFILES', blank=True)
-    currentfiles = models.IntegerField(null=True, db_column='CURRENTFILES', blank=True)
-    creationdate = models.DateTimeField(null=True, db_column='CREATIONDATE', blank=True)
-    modificationdate = models.DateTimeField(db_column='MODIFICATIONDATE')
-    moverid = models.BigIntegerField(db_column='MOVERID')
-    transferstatus = models.IntegerField(db_column='TRANSFERSTATUS')
-    subtype = models.CharField(max_length=15, db_column='SUBTYPE', blank=True)
+    vuid = models.CharField(max_length=120, db_column='vuid', primary_key=True)
+    name = models.CharField(max_length=765, db_column='name')
+    version = models.CharField(max_length=30, db_column='version', blank=True)
+    type = models.CharField(max_length=60, db_column='type')
+    status = models.CharField(max_length=30, db_column='status', blank=True)
+    numberfiles = models.IntegerField(null=True, db_column='numberfiles', blank=True)
+    currentfiles = models.IntegerField(null=True, db_column='currentfiles', blank=True)
+    creationdate = models.DateTimeField(null=True, db_column='creationdate', blank=True)
+    modificationdate = models.DateTimeField(db_column='modificationdate')
+    moverid = models.BigIntegerField(db_column='moverid')
+    transferstatus = models.IntegerField(db_column='transferstatus')
+    subtype = models.CharField(max_length=15, db_column='subtype', blank=True)
     class Meta:
-        db_table = u'datasets'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."datasets"'
         unique_together = ('vuid', 'modificationdate')
         app_label = 'panda'
 
 
 class Filestable4(models.Model):
-    row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
-    pandaid = models.BigIntegerField(db_column='PANDAID')
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    guid = models.CharField(max_length=192, db_column='GUID', blank=True)
-    lfn = models.CharField(max_length=768, db_column='LFN', blank=True)
-    type = models.CharField(max_length=60, db_column='TYPE', blank=True)
-    dataset = models.CharField(max_length=765, db_column='DATASET', blank=True)
-    status = models.CharField(max_length=192, db_column='STATUS', blank=True)
-    proddblock = models.CharField(max_length=765, db_column='PRODDBLOCK', blank=True)
-    proddblocktoken = models.CharField(max_length=750, db_column='PRODDBLOCKTOKEN', blank=True)
-    dispatchdblock = models.CharField(max_length=765, db_column='DISPATCHDBLOCK', blank=True)
-    dispatchdblocktoken = models.CharField(max_length=750, db_column='DISPATCHDBLOCKTOKEN', blank=True)
-    destinationdblock = models.CharField(max_length=765, db_column='DESTINATIONDBLOCK', blank=True)
-    destinationdblocktoken = models.CharField(max_length=750, db_column='DESTINATIONDBLOCKTOKEN', blank=True)
-    destinationse = models.CharField(max_length=750, db_column='DESTINATIONSE', blank=True)
-    fsize = models.BigIntegerField(db_column='FSIZE')
-    md5sum = models.CharField(max_length=108, db_column='MD5SUM', blank=True)
-    checksum = models.CharField(max_length=108, db_column='CHECKSUM', blank=True)
-    scope = models.CharField(max_length=90, db_column='SCOPE', blank=True)
-    jeditaskid = models.BigIntegerField(null=True, db_column='JEDITASKID', blank=True)
-    datasetid = models.BigIntegerField(null=True, db_column='DATASETID', blank=True)
-    fileid = models.BigIntegerField(null=True, db_column='FILEID', blank=True)
-    attemptnr = models.IntegerField(null=True, db_column='ATTEMPTNR', blank=True)
+    row_id = models.BigIntegerField(db_column='row_id', primary_key=True)
+    pandaid = models.BigIntegerField(db_column='pandaid')
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    guid = models.CharField(max_length=192, db_column='guid', blank=True)
+    lfn = models.CharField(max_length=768, db_column='lfn', blank=True)
+    type = models.CharField(max_length=60, db_column='type', blank=True)
+    dataset = models.CharField(max_length=765, db_column='dataset', blank=True)
+    status = models.CharField(max_length=192, db_column='status', blank=True)
+    proddblock = models.CharField(max_length=765, db_column='proddblock', blank=True)
+    proddblocktoken = models.CharField(max_length=750, db_column='proddblocktoken', blank=True)
+    dispatchdblock = models.CharField(max_length=765, db_column='dispatchdblock', blank=True)
+    dispatchdblocktoken = models.CharField(max_length=750, db_column='dispatchdblocktoken', blank=True)
+    destinationdblock = models.CharField(max_length=765, db_column='destinationdblock', blank=True)
+    destinationdblocktoken = models.CharField(max_length=750, db_column='destinationdblocktoken', blank=True)
+    destinationse = models.CharField(max_length=750, db_column='destinationse', blank=True)
+    fsize = models.BigIntegerField(db_column='fsize')
+    md5sum = models.CharField(max_length=108, db_column='md5sum', blank=True)
+    checksum = models.CharField(max_length=108, db_column='checksum', blank=True)
+    scope = models.CharField(max_length=90, db_column='scope', blank=True)
+    jeditaskid = models.BigIntegerField(null=True, db_column='jeditaskid', blank=True)
+    datasetid = models.BigIntegerField(null=True, db_column='datasetid', blank=True)
+    fileid = models.BigIntegerField(null=True, db_column='fileid', blank=True)
+    attemptnr = models.IntegerField(null=True, db_column='attemptnr', blank=True)
     class Meta:
-        db_table = u'filestable4'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."filestable4"'
         unique_together = ('row_id', 'modificationtime')
         app_label = 'panda'
 
 
 class FilestableArch(models.Model):
-    row_id = models.BigIntegerField(db_column='ROW_ID', primary_key=True)
-    pandaid = models.BigIntegerField(db_column='PANDAID') 
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    creationtime = models.DateTimeField(db_column='CREATIONTIME')
-    guid = models.CharField(max_length=64, db_column='GUID', blank=True) 
-    lfn = models.CharField(max_length=256, db_column='LFN', blank=True) 
-    type = models.CharField(max_length=20, db_column='TYPE', blank=True) 
-    dataset = models.CharField(max_length=255, db_column='DATASET', blank=True) 
-    status = models.CharField(max_length=64, db_column='STATUS', blank=True) 
-    proddblock = models.CharField(max_length=255, db_column='PRODDBLOCK', blank=True) 
-    proddblocktoken = models.CharField(max_length=250, db_column='PRODDBLOCKTOKEN', blank=True) 
-    dispatchdblock = models.CharField(max_length=265, db_column='DISPATCHDBLOCK', blank=True) 
-    dispatchdblocktoken = models.CharField(max_length=250, db_column='DISPATCHDBLOCKTOKEN', blank=True) 
-    destinationdblock = models.CharField(max_length=265, db_column='DESTINATIONDBLOCK', blank=True) 
-    destinationdblocktoken = models.CharField(max_length=250, db_column='DESTINATIONDBLOCKTOKEN', blank=True) 
-    destinationse = models.CharField(max_length=250, db_column='DESTINATIONSE', blank=True) 
-    fsize = models.BigIntegerField(db_column='FSIZE') 
-    md5sum = models.CharField(max_length=40, db_column='MD5SUM', blank=True) 
-    checksum = models.CharField(max_length=40, db_column='CHECKSUM', blank=True) 
-    scope = models.CharField(max_length=30, db_column='SCOPE', blank=True) 
-    jeditaskid = models.BigIntegerField(null=True, db_column='JEDITASKID', blank=True) 
-    datasetid = models.BigIntegerField(null=True, db_column='DATASETID', blank=True) 
-    fileid = models.BigIntegerField(null=True, db_column='FILEID', blank=True) 
-    attemptnr = models.IntegerField(null=True, db_column='ATTEMPTNR', blank=True) 
+    row_id = models.BigIntegerField(db_column='row_id', primary_key=True)
+    pandaid = models.BigIntegerField(db_column='pandaid')
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    creationtime = models.DateTimeField(db_column='creationtime')
+    guid = models.CharField(max_length=64, db_column='guid', blank=True)
+    lfn = models.CharField(max_length=256, db_column='lfn', blank=True)
+    type = models.CharField(max_length=20, db_column='type', blank=True)
+    dataset = models.CharField(max_length=255, db_column='dataset', blank=True)
+    status = models.CharField(max_length=64, db_column='status', blank=True)
+    proddblock = models.CharField(max_length=255, db_column='proddblock', blank=True)
+    proddblocktoken = models.CharField(max_length=250, db_column='proddblocktoken', blank=True)
+    dispatchdblock = models.CharField(max_length=265, db_column='dispatchdblock', blank=True)
+    dispatchdblocktoken = models.CharField(max_length=250, db_column='dispatchdblocktoken', blank=True)
+    destinationdblock = models.CharField(max_length=265, db_column='destinationdblock', blank=True)
+    destinationdblocktoken = models.CharField(max_length=250, db_column='destinationdblocktoken', blank=True)
+    destinationse = models.CharField(max_length=250, db_column='destinationse', blank=True)
+    fsize = models.BigIntegerField(db_column='fsize')
+    md5sum = models.CharField(max_length=40, db_column='md5sum', blank=True)
+    checksum = models.CharField(max_length=40, db_column='checksum', blank=True)
+    scope = models.CharField(max_length=30, db_column='scope', blank=True)
+    jeditaskid = models.BigIntegerField(null=True, db_column='jeditaskid', blank=True)
+    datasetid = models.BigIntegerField(null=True, db_column='datasetid', blank=True)
+    fileid = models.BigIntegerField(null=True, db_column='fileid', blank=True)
+    attemptnr = models.IntegerField(null=True, db_column='attemptnr', blank=True)
 
     class Meta:
-        db_table = u'filestable_arch'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."filestable_arch"'
         unique_together = ('row_id', 'modificationtime')
         app_label = 'panda'
 
 
-class History(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='ID')
-    entrytime = models.DateTimeField(db_column='ENTRYTIME')
-    starttime = models.DateTimeField(db_column='STARTTIME')
-    endtime = models.DateTimeField(db_column='ENDTIME')
-    cpu = models.BigIntegerField(null=True, db_column='CPU', blank=True)
-    cpuxp = models.BigIntegerField(null=True, db_column='CPUXP', blank=True)
-    space = models.IntegerField(null=True, db_column='SPACE', blank=True)
-    class Meta:
-        db_table = u'history'
-
-
 class Incidents(models.Model):
-    at_time = models.DateTimeField(primary_key=True, db_column='AT_TIME')
-    typekey = models.CharField(max_length=60, db_column='TYPEKEY', blank=True)
-    description = models.CharField(max_length=600, db_column='DESCRIPTION', blank=True)
+    at_time = models.DateTimeField(primary_key=True, db_column='at_time')
+    typekey = models.CharField(max_length=60, db_column='typekey', blank=True)
+    description = models.CharField(max_length=600, db_column='description', blank=True)
     class Meta:
-        db_table = u'incidents'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."incidents"'
         app_label = 'panda'
 
 
 class JediDatasetContents(models.Model):
-    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    datasetid = models.BigIntegerField(db_column='DATASETID')
-    fileid = models.BigIntegerField(db_column='FILEID')
-    creationdate = models.DateTimeField(db_column='CREATIONDATE')
-    lastattempttime = models.DateTimeField(null=True, db_column='LASTATTEMPTTIME', blank=True)
-    lfn = models.CharField(max_length=768, db_column='LFN')
-    guid = models.CharField(max_length=192, db_column='GUID', blank=True)
-    type = models.CharField(max_length=60, db_column='TYPE')
-    status = models.CharField(max_length=192, db_column='STATUS')
-    fsize = models.BigIntegerField(null=True, db_column='FSIZE', blank=True)
-    checksum = models.CharField(max_length=108, db_column='CHECKSUM', blank=True)
-    scope = models.CharField(max_length=90, db_column='SCOPE', blank=True)
-    attemptnr = models.IntegerField(null=True, db_column='ATTEMPTNR', blank=True)
-    maxattempt = models.IntegerField(null=True, db_column='MAXATTEMPT', blank=True)
-    nevents = models.IntegerField(null=True, db_column='NEVENTS', blank=True)
-    keeptrack = models.IntegerField(null=True, db_column='KEEPTRACK', blank=True)
-    startevent = models.IntegerField(null=True, db_column='STARTEVENT', blank=True)
-    endevent = models.IntegerField(null=True, db_column='ENDEVENT', blank=True)
-    firstevent = models.IntegerField(null=True, db_column='FIRSTEVENT', blank=True)
-    boundaryid = models.BigIntegerField(null=True, db_column='BOUNDARYID', blank=True)
-    pandaid = models.BigIntegerField(db_column='PANDAID', blank=True)
-    jobsetid = models.BigIntegerField(db_column='JOBSETID', blank=True)
-    maxfailure = models.IntegerField(null=True, db_column='MAXFAILURE', blank=True)
-    failedattempt = models.IntegerField(null=True, db_column='FAILEDATTEMPT', blank=True)
-    lumiblocknr = models.IntegerField(null=True, db_column='LUMIBLOCKNR', blank=True)
-    procstatus = models.CharField(max_length=192, db_column='PROC_STATUS')
+    jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
+    datasetid = models.BigIntegerField(db_column='datasetid')
+    fileid = models.BigIntegerField(db_column='fileid')
+    creationdate = models.DateTimeField(db_column='creationdate')
+    lastattempttime = models.DateTimeField(null=True, db_column='lastattempttime', blank=True)
+    lfn = models.CharField(max_length=768, db_column='lfn')
+    guid = models.CharField(max_length=192, db_column='guid', blank=True)
+    type = models.CharField(max_length=60, db_column='type')
+    status = models.CharField(max_length=192, db_column='status')
+    fsize = models.BigIntegerField(null=True, db_column='fsize', blank=True)
+    checksum = models.CharField(max_length=108, db_column='checksum', blank=True)
+    scope = models.CharField(max_length=90, db_column='scope', blank=True)
+    attemptnr = models.IntegerField(null=True, db_column='attemptnr', blank=True)
+    maxattempt = models.IntegerField(null=True, db_column='maxattempt', blank=True)
+    nevents = models.IntegerField(null=True, db_column='nevents', blank=True)
+    keeptrack = models.IntegerField(null=True, db_column='keeptrack', blank=True)
+    startevent = models.IntegerField(null=True, db_column='startevent', blank=True)
+    endevent = models.IntegerField(null=True, db_column='endevent', blank=True)
+    firstevent = models.IntegerField(null=True, db_column='firstevent', blank=True)
+    boundaryid = models.BigIntegerField(null=True, db_column='boundaryid', blank=True)
+    pandaid = models.BigIntegerField(db_column='pandaid', blank=True)
+    jobsetid = models.BigIntegerField(db_column='jobsetid', blank=True)
+    maxfailure = models.IntegerField(null=True, db_column='maxfailure', blank=True)
+    failedattempt = models.IntegerField(null=True, db_column='failedattempt', blank=True)
+    lumiblocknr = models.IntegerField(null=True, db_column='lumiblocknr', blank=True)
+    procstatus = models.CharField(max_length=192, db_column='proc_status')
+    ramcount = models.IntegerField(null=True, db_column='ramcount', blank=True)
 
     class Meta:
-        db_table = u'jedi_dataset_contents'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_dataset_contents"'
         unique_together = ('jeditaskid', 'datasetid', 'fileid')
         app_label = 'jedi'
 
@@ -208,72 +184,77 @@ class JediDatasets(models.Model):
     datasetid = models.BigIntegerField(db_column='datasetid')
     datasetname = models.CharField(max_length=765, db_column='datasetname')
     type = models.CharField(max_length=60, db_column='type')
-    creationtime = models.DateTimeField(db_column='CREATIONTIME')
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    vo = models.CharField(max_length=48, db_column='VO', blank=True)
-    cloud = models.CharField(max_length=30, db_column='CLOUD', blank=True)
-    site = models.CharField(max_length=180, db_column='SITE', blank=True)
+    creationtime = models.DateTimeField(db_column='creationtime')
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    vo = models.CharField(max_length=48, db_column='vo', blank=True)
+    cloud = models.CharField(max_length=30, db_column='cloud', blank=True)
+    site = models.CharField(max_length=180, db_column='site', blank=True)
     masterid = models.BigIntegerField(null=True, db_column='masterid', blank=True)
-    provenanceid = models.BigIntegerField(null=True, db_column='PROVENANCEID', blank=True)
+    provenanceid = models.BigIntegerField(null=True, db_column='provenanceid', blank=True)
     containername = models.CharField(max_length=396, db_column='containername', blank=True)
     status = models.CharField(max_length=60, db_column='status', blank=True)
-    state = models.CharField(max_length=60, db_column='STATE', blank=True)
-    statechecktime = models.DateTimeField(null=True, db_column='STATECHECKTIME', blank=True)
-    statecheckexpiration = models.DateTimeField(null=True, db_column='STATECHECKEXPIRATION', blank=True)
-    frozentime = models.DateTimeField(null=True, db_column='FROZENTIME', blank=True)
+    state = models.CharField(max_length=60, db_column='state', blank=True)
+    statechecktime = models.DateTimeField(null=True, db_column='statechecktime', blank=True)
+    statecheckexpiration = models.DateTimeField(null=True, db_column='statecheckexpiration', blank=True)
+    frozentime = models.DateTimeField(null=True, db_column='frozentime', blank=True)
     nfiles = models.IntegerField(null=True, db_column='nfiles', blank=True)
-    nfilestobeused = models.IntegerField(null=True, db_column='NFILESTOBEUSED', blank=True)
-    nfilesused = models.IntegerField(null=True, db_column='NFILESUSED', blank=True)
+    nfilestobeused = models.IntegerField(null=True, db_column='nfilestobeused', blank=True)
+    nfilesused = models.IntegerField(null=True, db_column='nfilesused', blank=True)
     nevents = models.BigIntegerField(null=True, db_column='nevents', blank=True)
     neventstobeused = models.BigIntegerField(null=True, db_column='neventstobeused', blank=True)
     neventsused = models.BigIntegerField(null=True, db_column='neventsused', blank=True)
-    lockedby = models.CharField(max_length=120, db_column='LOCKEDBY', blank=True)
-    lockedtime = models.DateTimeField(null=True, db_column='LOCKEDTIME', blank=True)
+    lockedby = models.CharField(max_length=120, db_column='lockedby', blank=True)
+    lockedtime = models.DateTimeField(null=True, db_column='lockedtime', blank=True)
     nfilesfinished = models.IntegerField(null=True, db_column='nfilesfinished', blank=True)
     nfilesfailed = models.IntegerField(null=True, db_column='nfilesfailed', blank=True)
-    attributes = models.CharField(max_length=300, db_column='ATTRIBUTES', blank=True)
+    attributes = models.CharField(max_length=300, db_column='attributes', blank=True)
     streamname = models.CharField(max_length=60, db_column='streamname', blank=True)
     storagetoken = models.CharField(max_length=180, db_column='storagetoken', blank=True)
-    destination = models.CharField(max_length=180, db_column='DESTINATION', blank=True)
-    nfilesonhold = models.IntegerField(null=True, db_column='NFILESONHOLD', blank=True)
-    templateid = models.BigIntegerField(db_column='TEMPLATEID', blank=True)
+    destination = models.CharField(max_length=180, db_column='destination', blank=True)
+    nfilesonhold = models.IntegerField(null=True, db_column='nfilesonhold', blank=True)
+    templateid = models.BigIntegerField(db_column='templateid', blank=True)
+
+    if 'ORACLE' in settings.DEPLOYMENT:
+        nfileswaiting = models.IntegerField(null=True, db_column='nfileswaiting', blank=True)
+        nfilesmissing = models.IntegerField(null=True, db_column='nfilesmissing', blank=True)
+
     class Meta:
-        db_table = u'jedi_datasets'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_datasets"'
         unique_together = ('jeditaskid', 'datasetid')
         app_label = 'jedi'
 
 
 class JediEvents(models.Model):
-    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    pandaid = models.BigIntegerField(db_column='PANDAID')
-    fileid = models.BigIntegerField(db_column='FILEID')
-    job_processid = models.IntegerField(db_column='JOB_PROCESSID')
-    def_min_eventid = models.IntegerField(null=True, db_column='DEF_MIN_EVENTID', blank=True)
-    def_max_eventid = models.IntegerField(null=True, db_column='DEF_MAX_EVENTID', blank=True)
-    processed_upto_eventid = models.IntegerField(null=True, db_column='PROCESSED_UPTO_EVENTID', blank=True)
-    datasetid = models.BigIntegerField(db_column='DATASETID', blank=True)
-    status = models.IntegerField(db_column='STATUS', blank=True)
-    attemptnr = models.IntegerField(db_column='ATTEMPTNR', blank=True)
-    eventoffset = models.IntegerField(db_column='EVENT_OFFSET', blank=True)
-    isjumbo = models.IntegerField(db_column='IS_JUMBO', blank=True)
-    objstore_id = models.IntegerField(db_column='OBJSTORE_ID', blank=True)
-    file_not_deleted = models.CharField(max_length=48, db_column='FILE_NOT_DELETED')
-    error_code = models.IntegerField(db_column='ERROR_CODE', blank=True)
+    jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
+    pandaid = models.BigIntegerField(db_column='pandaid')
+    fileid = models.BigIntegerField(db_column='fileid')
+    job_processid = models.IntegerField(db_column='job_processid')
+    def_min_eventid = models.IntegerField(null=True, db_column='def_min_eventid', blank=True)
+    def_max_eventid = models.IntegerField(null=True, db_column='def_max_eventid', blank=True)
+    processed_upto_eventid = models.IntegerField(null=True, db_column='processed_upto_eventid', blank=True)
+    datasetid = models.BigIntegerField(db_column='datasetid', blank=True)
+    status = models.IntegerField(db_column='status', blank=True)
+    attemptnr = models.IntegerField(db_column='attemptnr', blank=True)
+    eventoffset = models.IntegerField(db_column='event_offset', blank=True)
+    isjumbo = models.IntegerField(db_column='is_jumbo', blank=True)
+    objstore_id = models.IntegerField(db_column='objstore_id', blank=True)
+    file_not_deleted = models.CharField(max_length=48, db_column='file_not_deleted')
+    error_code = models.IntegerField(db_column='error_code', blank=True)
 
     class Meta:
-        db_table = u'jedi_events'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_events"'
         unique_together = ('jeditaskid', 'pandaid', 'fileid', 'job_processid')
         app_label = 'jedi'
 
 
 class JediDatasetLocality(models.Model):
-    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    datasetid = models.BigIntegerField(db_column='DATASETID')
-    rse = models.CharField(max_length=1000, db_column='RSE', blank=True)
-    timestamp = models.DateTimeField(db_column='TIMESTAMP')
+    jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
+    datasetid = models.BigIntegerField(db_column='datasetid')
+    rse = models.CharField(max_length=1000, db_column='rse', blank=True)
+    timestamp = models.DateTimeField(db_column='timestamp')
 
     class Meta:
-        db_table = u'"ATLAS_PANDA"."jedi_dataset_locality"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_dataset_locality"'
         unique_together = ('jeditaskid', 'datasetid', 'rse')
         app_label = 'jedi'
 
@@ -285,7 +266,7 @@ class JediJobRetryHistory(models.Model):
     ins_utc_tstamp = models.BigIntegerField(db_column='ins_utc_tstamp', blank=True)
     relationtype = models.CharField(max_length=48, db_column='relationtype')
     class Meta:
-        db_table = u'jedi_job_retry_history'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_job_retry_history"'
         unique_together = ('jeditaskid', 'oldpandaid', 'newpandaid')
         app_label = 'jedi'
 
@@ -294,7 +275,7 @@ class JediTaskparams(models.Model):
     jeditaskid = models.BigIntegerField(primary_key=True, db_column='jeditaskid')
     taskparams = models.TextField(db_column='taskparams', blank=True)
     class Meta:
-        db_table = u'jedi_taskparams'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_taskparams"'
         app_label = 'jedi'
 
 
@@ -375,15 +356,16 @@ class JediTasksBase(models.Model):
     class Meta:
         abstract = True
 
+
 class JediTasks(JediTasksBase):
     class Meta:
-        db_table = u'jedi_tasks'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_tasks"'
         app_label = 'jedi'
 
 
 class JediTasksOrdered(JediTasksBase):
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."jedi_tasks_ordered"'
+        db_table = f'"{settings.DB_SCHEMA}"."jedi_tasks_ordered"'
         app_label = 'pandamon'
 
 
@@ -391,20 +373,21 @@ class GetEventsForTask(models.Model):
     jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
     totevrem = models.BigIntegerField(db_column='totevrem')
     totev = models.BigIntegerField(db_column='totev')
+
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."geteventsfortask"'
+        db_table = f'"{settings.DB_SCHEMA}"."geteventsfortask"'
         app_label = 'pandamon'
 
 
 class TasksStatusLog(models.Model):
-    jeditaskid = models.BigIntegerField(db_column='JEDITASKID', primary_key=True)
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True)
-    status = models.CharField(max_length=64, db_column='STATUS', blank=True)
-    attemptnr = models.IntegerField(db_column='ATTEMPTNR', blank=True)
-    reason = models.CharField(max_length=600, db_column='REASON', blank=True)
+    jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    modificationhost = models.CharField(max_length=384, db_column='modificationhost', blank=True)
+    status = models.CharField(max_length=64, db_column='status', blank=True)
+    attemptnr = models.IntegerField(db_column='attemptnr', blank=True)
+    reason = models.CharField(max_length=600, db_column='reason', blank=True)
     class Meta:
-        db_table = u'"ATLAS_PANDA"."TASKS_STATUSLOG"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."TASKS_STATUSLOG"'
         app_label = 'jedi'
 
 
@@ -427,127 +410,92 @@ class TasksStatusLog(models.Model):
 #    class Meta:
 #        db_table = u'"ATLAS_PANDABIGMON"."AUTHTOKEN_TOKEN"'
 
+
 class JediWorkQueue(models.Model):
-    queue_id = models.IntegerField(primary_key=True, db_column='QUEUE_ID')
-    queue_name = models.CharField(max_length=16, db_column='QUEUE_NAME') 
-    queue_type = models.CharField(max_length=16, db_column='QUEUE_TYPE') 
-    vo = models.CharField(max_length=16, db_column='VO') 
-    status = models.CharField(max_length=64, db_column='STATUS', blank=True) 
-    partitionid = models.IntegerField(null=True, db_column='PARTITIONID', blank=True)
-    stretchable = models.IntegerField(null=True, db_column='STRETCHABLE', blank=True)
-    queue_share = models.IntegerField(null=True, db_column='QUEUE_SHARE', blank=True)
-    queue_order = models.IntegerField(null=True, db_column='QUEUE_ORDER', blank=True)
-    criteria = models.CharField(max_length=256, db_column='CRITERIA', blank=True) 
-    variables = models.CharField(max_length=256, db_column='VARIABLES', blank=True) 
+    queue_id = models.IntegerField(primary_key=True, db_column='queue_id')
+    queue_name = models.CharField(max_length=16, db_column='queue_name')
+    queue_type = models.CharField(max_length=16, db_column='queue_type')
+    vo = models.CharField(max_length=16, db_column='vo')
+    status = models.CharField(max_length=64, db_column='status', blank=True)
+    partitionid = models.IntegerField(null=True, db_column='partitionid', blank=True)
+    stretchable = models.IntegerField(null=True, db_column='stretchable', blank=True)
+    queue_share = models.IntegerField(null=True, db_column='queue_share', blank=True)
+    queue_order = models.IntegerField(null=True, db_column='queue_order', blank=True)
+    criteria = models.CharField(max_length=256, db_column='criteria', blank=True)
+    variables = models.CharField(max_length=256, db_column='variables', blank=True)
     class Meta:
-        db_table = u'jedi_work_queue'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_work_queue"'
         app_label = 'jedi'
 
 
-class Jobclass(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='ID')
-    name = models.CharField(max_length=90, db_column='NAME')
-    description = models.CharField(max_length=90, db_column='DESCRIPTION')
-    rights = models.CharField(max_length=90, db_column='RIGHTS', blank=True)
-    priority = models.IntegerField(null=True, db_column='PRIORITY', blank=True)
-    quota1 = models.BigIntegerField(null=True, db_column='QUOTA1', blank=True)
-    quota7 = models.BigIntegerField(null=True, db_column='QUOTA7', blank=True)
-    quota30 = models.BigIntegerField(null=True, db_column='QUOTA30', blank=True)
-    class Meta:
-        db_table = u'jobclass'
-
 class Jobparamstable(models.Model):
-    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    jobparameters = models.TextField(db_column='JOBPARAMETERS', blank=True)
+    pandaid = models.BigIntegerField(db_column='pandaid', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    jobparameters = models.TextField(db_column='jobparameters', blank=True)
     class Meta:
-        db_table = u'jobparamstable'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobparamstable"'
         unique_together = ('pandaid', 'modificationtime')
         app_label = 'panda'
 
 
 class JobparamstableArch(models.Model):
-    pandaid = models.BigIntegerField(db_column='PANDAID')
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    jobparameters = models.TextField(db_column='JOBPARAMETERS', blank=True)
+    pandaid = models.BigIntegerField(db_column='pandaid')
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    jobparameters = models.TextField(db_column='jobparameters', blank=True)
     class Meta:
-        db_table = u'jobparamstable_arch'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."jobparamstable_arch"'
         app_label = 'panda'
 
 
 class JobsStatuslog(models.Model):
-    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS')
-    prodsourcelabel = models.CharField(max_length=60, db_column='PRODSOURCELABEL', blank=True)
-    cloud = models.CharField(max_length=150, db_column='CLOUD', blank=True)
-    computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True)
-    modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True)
-    modiftime_extended = models.DateTimeField(db_column='MODIFTIME_EXTENDED')
+    pandaid = models.BigIntegerField(db_column='pandaid', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    jobstatus = models.CharField(max_length=45, db_column='jobstatus')
+    prodsourcelabel = models.CharField(max_length=60, db_column='prodsourcelabel', blank=True)
+    cloud = models.CharField(max_length=150, db_column='cloud', blank=True)
+    computingsite = models.CharField(max_length=384, db_column='computingsite', blank=True)
+    modificationhost = models.CharField(max_length=384, db_column='modificationhost', blank=True)
+    modiftime_extended = models.DateTimeField(db_column='modiftime_extended')
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."JOBS_STATUSLOG"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."JOBS_STATUSLOG"'
         app_label = 'panda'
 
 
-class Jobsarchived4WnlistStats(models.Model):
-    modificationtime = models.DateTimeField(primary_key=True, db_column='MODIFICATIONTIME')
-    computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True)
-    modificationhost = models.CharField(max_length=384, db_column='MODIFICATIONHOST', blank=True)
-    jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS')
-    transexitcode = models.CharField(max_length=384, db_column='TRANSEXITCODE', blank=True)
-    prodsourcelabel = models.CharField(max_length=60, db_column='PRODSOURCELABEL', blank=True)
-    num_of_jobs = models.IntegerField(null=True, db_column='NUM_OF_JOBS', blank=True)
-    max_modificationtime = models.DateTimeField(null=True, db_column='MAX_MODIFICATIONTIME', blank=True)
-    cur_date = models.DateTimeField(null=True, db_column='CUR_DATE', blank=True)
-    class Meta:
-        db_table = u'jobsarchived4_wnlist_stats'
-
-
 class Jobsdebug(models.Model):
-    pandaid = models.BigIntegerField(primary_key=True, db_column='PANDAID')
-    stdout = models.CharField(max_length=6144, db_column='STDOUT', blank=True)
+    pandaid = models.BigIntegerField(primary_key=True, db_column='pandaid')
+    stdout = models.CharField(max_length=6144, db_column='stdout', blank=True)
     class Meta:
-        db_table = u'jobsdebug'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobsdebug"'
         app_label = 'panda'
 
 
 class Logstable(models.Model):
-    pandaid = models.IntegerField(primary_key=True, db_column='PANDAID') 
-    log1 = models.TextField(db_column='LOG1') 
-    log2 = models.TextField(db_column='LOG2') 
-    log3 = models.TextField(db_column='LOG3') 
-    log4 = models.TextField(db_column='LOG4') 
+    pandaid = models.IntegerField(primary_key=True, db_column='pandaid')
+    log1 = models.TextField(db_column='log1')
+    log2 = models.TextField(db_column='log2')
+    log3 = models.TextField(db_column='log3')
+    log4 = models.TextField(db_column='log4')
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_META}"."logstable"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."logstable"'
         app_label = 'panda'
 
 
-class Members(models.Model):
-    uname = models.CharField(max_length=90, db_column='UNAME', primary_key=True)
-    gname = models.CharField(max_length=90, db_column='GNAME')
-    rights = models.CharField(max_length=90, db_column='RIGHTS', blank=True)
-    since = models.DateTimeField(db_column='SINCE')
-    class Meta:
-        db_table = u'members'
-        unique_together = ('uname', 'gname')
-
-
 class Metatable(models.Model):
-    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    metadata = models.TextField(db_column='METADATA', blank=True)
+    pandaid = models.BigIntegerField(db_column='pandaid', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    metadata = models.TextField(db_column='metadata', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."metatable"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."metatable"'
         unique_together = ('pandaid', 'modificationtime')
         app_label = 'panda'
 
 
 class MetatableArch(models.Model):
-    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    modificationtime = models.DateTimeField(db_column='MODIFICATIONTIME')
-    metadata = models.TextField(db_column='METADATA', blank=True)
+    pandaid = models.BigIntegerField(db_column='pandaid', primary_key=True)
+    modificationtime = models.DateTimeField(db_column='modificationtime')
+    metadata = models.TextField(db_column='metadata', blank=True)
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA_ARCH}"."metatable_arch"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."metatable_arch"'
         app_label = 'panda'
 
 
@@ -558,79 +506,36 @@ class Metrics(models.Model):
     json = models.TextField(db_column='value_json', blank=True)
 
     class Meta:
-        db_table = f'"{DB_SCHEMA_PANDA}"."metrics"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."metrics"'
         app_label = 'panda'
         unique_together = ('computingsite', 'gshare')
 
 
-class MvJobsactive4Stats(models.Model):
-    id = models.BigIntegerField(primary_key=True, db_column='ID')
-    cur_date = models.DateTimeField(db_column='CUR_DATE')
-    cloud = models.CharField(max_length=150, db_column='CLOUD', blank=True)
-    computingsite = models.CharField(max_length=384, db_column='COMPUTINGSITE', blank=True)
-    countrygroup = models.CharField(max_length=60, db_column='COUNTRYGROUP', blank=True)
-    workinggroup = models.CharField(max_length=60, db_column='WORKINGGROUP', blank=True)
-    relocationflag = models.IntegerField(null=True, db_column='RELOCATIONFLAG', blank=True)
-    jobstatus = models.CharField(max_length=45, db_column='JOBSTATUS')
-    processingtype = models.CharField(max_length=192, db_column='PROCESSINGTYPE', blank=True)
-    prodsourcelabel = models.CharField(max_length=60, db_column='PRODSOURCELABEL', blank=True)
-    currentpriority = models.IntegerField(null=True, db_column='CURRENTPRIORITY', blank=True)
-    num_of_jobs = models.IntegerField(null=True, db_column='NUM_OF_JOBS', blank=True)
-    vo = models.CharField(max_length=48, db_column='VO', blank=True)
-    workqueue_id = models.IntegerField(null=True, db_column='WORKQUEUE_ID', blank=True)
-    class Meta:
-        db_table = u'mv_jobsactive4_stats'
-
-class OldSubcounter(models.Model):
-    subid = models.BigIntegerField(primary_key=True, db_column='SUBID')
-    class Meta:
-        db_table = u'old_subcounter'
-
-class Pandaconfig(models.Model):
-    name = models.CharField(max_length=180, primary_key=True, db_column='NAME')
-    controller = models.CharField(max_length=60, db_column='CONTROLLER')
-    pathena = models.CharField(max_length=60, db_column='PATHENA', blank=True)
-    class Meta:
-        db_table = u'pandaconfig'
-
-class PandaidsDeleted(models.Model):
-    pandaid = models.BigIntegerField(primary_key=True, db_column='PANDAID')
-    tstamp_datadel = models.DateTimeField(null=True, db_column='TSTAMP_DATADEL', blank=True)
-    class Meta:
-        db_table = u'pandaids_deleted'
-
-class PandaidsModiftime(models.Model):
-    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
-    modiftime = models.DateTimeField(db_column='MODIFTIME')
-    class Meta:
-        db_table = u'pandaids_modiftime'
-        unique_together = ('pandaid', 'modiftime')
-
 class Pandalog(models.Model):
-    bintime = models.DateTimeField(db_column='BINTIME', primary_key=True)
-    name = models.CharField(max_length=90, db_column='NAME', blank=True)
-    module = models.CharField(max_length=90, db_column='MODULE', blank=True)
-    loguser = models.CharField(max_length=240, db_column='LOGUSER', blank=True)
-    type = models.CharField(max_length=60, db_column='TYPE', blank=True)
-    pid = models.BigIntegerField(db_column='PID')
-    loglevel = models.IntegerField(db_column='LOGLEVEL')
-    levelname = models.CharField(max_length=90, db_column='LEVELNAME', blank=True)
-    time = models.CharField(max_length=90, db_column='TIME', blank=True)
-    filename = models.CharField(max_length=300, db_column='FILENAME', blank=True)
-    line = models.IntegerField(db_column='LINE')
-    message = models.CharField(max_length=12000, db_column='MESSAGE', blank=True)
+    bintime = models.DateTimeField(db_column='bintime', primary_key=True)
+    name = models.CharField(max_length=90, db_column='name', blank=True)
+    module = models.CharField(max_length=90, db_column='module', blank=True)
+    loguser = models.CharField(max_length=240, db_column='loguser', blank=True)
+    type = models.CharField(max_length=60, db_column='type', blank=True)
+    pid = models.BigIntegerField(db_column='pid')
+    loglevel = models.IntegerField(db_column='loglevel')
+    levelname = models.CharField(max_length=90, db_column='levelname', blank=True)
+    time = models.CharField(max_length=90, db_column='time', blank=True)
+    filename = models.CharField(max_length=300, db_column='filename', blank=True)
+    line = models.IntegerField(db_column='line')
+    message = models.CharField(max_length=12000, db_column='message', blank=True)
     class Meta:
-        db_table = u'pandalog'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."pandalog"'
         app_label = 'panda'
 
 
 class RucioAccounts(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='ID')
-    certificatedn = models.CharField(max_length=40, db_column='CERTIFICATEDN')
-    rucio_account = models.CharField(max_length=40, db_column='RUCIO_ACCOUNT')
-    create_time = models.DateTimeField(db_column='CREATE_TIME')
+    id = models.IntegerField(primary_key=True, db_column='id')
+    certificatedn = models.CharField(max_length=40, db_column='certificatedn')
+    rucio_account = models.CharField(max_length=40, db_column='rucio_account')
+    create_time = models.DateTimeField(db_column='create_time')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."RUCIO_ACCOUNTS"'
+        db_table = f'"{settings.DB_SCHEMA}"."RUCIO_ACCOUNTS"'
         app_label = 'pandamon'
 
 
@@ -649,142 +554,118 @@ class AllRequests(models.Model):
     mem = models.FloatField(db_column='mem')
     dbactivesess = models.IntegerField(db_column='dbactivesess')
     dbtotalsess = models.IntegerField(db_column='dbtotalsess')
+
     class Meta:
-        db_table = f'"{DB_SCHEMA}"."all_requests_daily"'
+        db_table = f'"{settings.DB_SCHEMA}"."all_requests_daily"'
         app_label = 'pandamon'
 
 
 class Sitedata(models.Model):
-    site = models.CharField(max_length=90, db_column='SITE', primary_key=True)
-    flag = models.CharField(max_length=60, db_column='FLAG')
-    hours = models.IntegerField(db_column='HOURS')
-    nwn = models.IntegerField(null=True, db_column='NWN', blank=True)
-    memmin = models.IntegerField(null=True, db_column='MEMMIN', blank=True)
-    memmax = models.IntegerField(null=True, db_column='MEMMAX', blank=True)
-    si2000min = models.IntegerField(null=True, db_column='SI2000MIN', blank=True)
-    si2000max = models.IntegerField(null=True, db_column='SI2000MAX', blank=True)
-    os = models.CharField(max_length=90, db_column='OS', blank=True)
-    space = models.CharField(max_length=90, db_column='SPACE', blank=True)
-    minjobs = models.IntegerField(null=True, db_column='MINJOBS', blank=True)
-    maxjobs = models.IntegerField(null=True, db_column='MAXJOBS', blank=True)
-    laststart = models.DateTimeField(null=True, db_column='LASTSTART', blank=True)
-    lastend = models.DateTimeField(null=True, db_column='LASTEND', blank=True)
-    lastfail = models.DateTimeField(null=True, db_column='LASTFAIL', blank=True)
-    lastpilot = models.DateTimeField(null=True, db_column='LASTPILOT', blank=True)
-    lastpid = models.IntegerField(null=True, db_column='LASTPID', blank=True)
-    nstart = models.IntegerField(db_column='NSTART')
-    finished = models.IntegerField(db_column='FINISHED')
-    failed = models.IntegerField(db_column='FAILED')
-    defined = models.IntegerField(db_column='DEFINED')
-    assigned = models.IntegerField(db_column='ASSIGNED')
-    waiting = models.IntegerField(db_column='WAITING')
-    activated = models.IntegerField(db_column='ACTIVATED')
-    holding = models.IntegerField(db_column='HOLDING')
-    running = models.IntegerField(db_column='RUNNING')
-    transferring = models.IntegerField(db_column='TRANSFERRING')
-    getjob = models.IntegerField(db_column='GETJOB')
-    updatejob = models.IntegerField(db_column='UPDATEJOB')
-    nojob = models.IntegerField(null=True, db_column='NOJOB', blank=True)
-    lastmod = models.DateTimeField(db_column='LASTMOD')
-    ncpu = models.IntegerField(null=True, db_column='NCPU', blank=True)
-    nslot = models.IntegerField(null=True, db_column='NSLOT', blank=True)
-    getjobabs = models.IntegerField(db_column='GETJOBABS')
-    updatejobabs = models.IntegerField(db_column='UPDATEJOBABS')
-    nojobabs = models.IntegerField(null=True, db_column='NOJOBABS', blank=True)
+    site = models.CharField(max_length=90, db_column='site', primary_key=True)
+    flag = models.CharField(max_length=60, db_column='flag')
+    hours = models.IntegerField(db_column='hours')
+    nwn = models.IntegerField(null=True, db_column='nwn', blank=True)
+    memmin = models.IntegerField(null=True, db_column='memmin', blank=True)
+    memmax = models.IntegerField(null=True, db_column='memmax', blank=True)
+    si2000min = models.IntegerField(null=True, db_column='si2000min', blank=True)
+    si2000max = models.IntegerField(null=True, db_column='si2000max', blank=True)
+    os = models.CharField(max_length=90, db_column='os', blank=True)
+    space = models.CharField(max_length=90, db_column='space', blank=True)
+    minjobs = models.IntegerField(null=True, db_column='minjobs', blank=True)
+    maxjobs = models.IntegerField(null=True, db_column='maxjobs', blank=True)
+    laststart = models.DateTimeField(null=True, db_column='laststart', blank=True)
+    lastend = models.DateTimeField(null=True, db_column='lastend', blank=True)
+    lastfail = models.DateTimeField(null=True, db_column='lastfail', blank=True)
+    lastpilot = models.DateTimeField(null=True, db_column='lastpilot', blank=True)
+    lastpid = models.IntegerField(null=True, db_column='lastpid', blank=True)
+    nstart = models.IntegerField(db_column='nstart')
+    finished = models.IntegerField(db_column='finished')
+    failed = models.IntegerField(db_column='failed')
+    defined = models.IntegerField(db_column='defined')
+    assigned = models.IntegerField(db_column='assigned')
+    waiting = models.IntegerField(db_column='waiting')
+    activated = models.IntegerField(db_column='activated')
+    holding = models.IntegerField(db_column='holding')
+    running = models.IntegerField(db_column='running')
+    transferring = models.IntegerField(db_column='transferring')
+    getjob = models.IntegerField(db_column='getjob')
+    updatejob = models.IntegerField(db_column='updatejob')
+    nojob = models.IntegerField(null=True, db_column='nojob', blank=True)
+    lastmod = models.DateTimeField(db_column='lastmod')
+    ncpu = models.IntegerField(null=True, db_column='ncpu', blank=True)
+    nslot = models.IntegerField(null=True, db_column='nslot', blank=True)
+    getjobabs = models.IntegerField(db_column='getjobabs')
+    updatejobabs = models.IntegerField(db_column='updatejobabs')
+    nojobabs = models.IntegerField(null=True, db_column='nojobabs', blank=True)
     class Meta:
-        db_table = u'sitedata'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."sitedata"'
         unique_together = ('site', 'flag', 'hours')
         app_label = 'panda'
 
 
-class Sysconfig(models.Model):
-    name = models.CharField(max_length=180, db_column='NAME', primary_key=True)
-    system = models.CharField(max_length=60, db_column='SYSTEM')
-    config = models.CharField(max_length=12000, db_column='CONFIG', blank=True)
-    class Meta:
-        db_table = u'sysconfig'
-        unique_together = ('name', 'system')
-
-
 class Users(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='ID')
-    name = models.CharField(max_length=180, db_column='NAME')
-    dn = models.CharField(max_length=450, db_column='DN', blank=True)
-    email = models.CharField(max_length=180, db_column='EMAIL', blank=True)
-    url = models.CharField(max_length=300, db_column='URL', blank=True)
-    location = models.CharField(max_length=180, db_column='LOCATION', blank=True)
-    classa = models.CharField(max_length=90, db_column='CLASSA', blank=True)
-    classp = models.CharField(max_length=90, db_column='CLASSP', blank=True)
-    classxp = models.CharField(max_length=90, db_column='CLASSXP', blank=True)
-    sitepref = models.CharField(max_length=180, db_column='SITEPREF', blank=True)
-    gridpref = models.CharField(max_length=60, db_column='GRIDPREF', blank=True)
-    queuepref = models.CharField(max_length=180, db_column='QUEUEPREF', blank=True)
-    scriptcache = models.CharField(max_length=300, db_column='SCRIPTCACHE', blank=True)
-    types = models.CharField(max_length=180, db_column='TYPES', blank=True)
-    sites = models.CharField(max_length=750, db_column='SITES', blank=True)
-    njobsa = models.IntegerField(null=True, db_column='NJOBSA', blank=True)
-    njobsp = models.IntegerField(null=True, db_column='NJOBSP', blank=True)
-    njobs1 = models.IntegerField(null=True, db_column='NJOBS1', blank=True)
-    njobs7 = models.IntegerField(null=True, db_column='NJOBS7', blank=True)
-    njobs30 = models.IntegerField(null=True, db_column='NJOBS30', blank=True)
-    cpua1 = models.BigIntegerField(null=True, db_column='CPUA1', blank=True)
-    cpua7 = models.BigIntegerField(null=True, db_column='CPUA7', blank=True)
-    cpua30 = models.BigIntegerField(null=True, db_column='CPUA30', blank=True)
-    cpup1 = models.BigIntegerField(null=True, db_column='CPUP1', blank=True)
-    cpup7 = models.BigIntegerField(null=True, db_column='CPUP7', blank=True)
-    cpup30 = models.BigIntegerField(null=True, db_column='CPUP30', blank=True)
-    cpuxp1 = models.BigIntegerField(null=True, db_column='CPUXP1', blank=True)
-    cpuxp7 = models.BigIntegerField(null=True, db_column='CPUXP7', blank=True)
-    cpuxp30 = models.BigIntegerField(null=True, db_column='CPUXP30', blank=True)
-    quotaa1 = models.BigIntegerField(null=True, db_column='QUOTAA1', blank=True)
-    quotaa7 = models.BigIntegerField(null=True, db_column='QUOTAA7', blank=True)
-    quotaa30 = models.BigIntegerField(null=True, db_column='QUOTAA30', blank=True)
-    quotap1 = models.BigIntegerField(null=True, db_column='QUOTAP1', blank=True)
-    quotap7 = models.BigIntegerField(null=True, db_column='QUOTAP7', blank=True)
-    quotap30 = models.BigIntegerField(null=True, db_column='QUOTAP30', blank=True)
-    quotaxp1 = models.BigIntegerField(null=True, db_column='QUOTAXP1', blank=True)
-    quotaxp7 = models.BigIntegerField(null=True, db_column='QUOTAXP7', blank=True)
-    quotaxp30 = models.BigIntegerField(null=True, db_column='QUOTAXP30', blank=True)
-    space1 = models.IntegerField(null=True, db_column='SPACE1', blank=True)
-    space7 = models.IntegerField(null=True, db_column='SPACE7', blank=True)
-    space30 = models.IntegerField(null=True, db_column='SPACE30', blank=True)
-    lastmod = models.DateTimeField(db_column='LASTMOD')
-    firstjob = models.DateTimeField(db_column='FIRSTJOB')
-    latestjob = models.DateTimeField(db_column='LATESTJOB')
-    pagecache = models.TextField(db_column='PAGECACHE', blank=True)
-    cachetime = models.DateTimeField(db_column='CACHETIME')
-    ncurrent = models.IntegerField(db_column='NCURRENT')
-    jobid = models.IntegerField(db_column='JOBID')
-    status = models.CharField(max_length=60, db_column='STATUS', blank=True)
-    vo = models.CharField(max_length=60, db_column='VO', blank=True)
+    id = models.IntegerField(primary_key=True, db_column='id')
+    name = models.CharField(max_length=180, db_column='name')
+    dn = models.CharField(max_length=450, db_column='dn', blank=True)
+    email = models.CharField(max_length=180, db_column='email', blank=True)
+    url = models.CharField(max_length=300, db_column='url', blank=True)
+    location = models.CharField(max_length=180, db_column='location', blank=True)
+    classa = models.CharField(max_length=90, db_column='classa', blank=True)
+    classp = models.CharField(max_length=90, db_column='classp', blank=True)
+    classxp = models.CharField(max_length=90, db_column='classxp', blank=True)
+    sitepref = models.CharField(max_length=180, db_column='sitepref', blank=True)
+    gridpref = models.CharField(max_length=60, db_column='gridpref', blank=True)
+    queuepref = models.CharField(max_length=180, db_column='queuepref', blank=True)
+    scriptcache = models.CharField(max_length=300, db_column='scriptcache', blank=True)
+    types = models.CharField(max_length=180, db_column='types', blank=True)
+    sites = models.CharField(max_length=750, db_column='sites', blank=True)
+    njobsa = models.IntegerField(null=True, db_column='njobsa', blank=True)
+    njobsp = models.IntegerField(null=True, db_column='njobsp', blank=True)
+    njobs1 = models.IntegerField(null=True, db_column='njobs1', blank=True)
+    njobs7 = models.IntegerField(null=True, db_column='njobs7', blank=True)
+    njobs30 = models.IntegerField(null=True, db_column='njobs30', blank=True)
+    cpua1 = models.BigIntegerField(null=True, db_column='cpua1', blank=True)
+    cpua7 = models.BigIntegerField(null=True, db_column='cpua7', blank=True)
+    cpua30 = models.BigIntegerField(null=True, db_column='cpua30', blank=True)
+    cpup1 = models.BigIntegerField(null=True, db_column='cpup1', blank=True)
+    cpup7 = models.BigIntegerField(null=True, db_column='cpup7', blank=True)
+    cpup30 = models.BigIntegerField(null=True, db_column='cpup30', blank=True)
+    cpuxp1 = models.BigIntegerField(null=True, db_column='cpuxp1', blank=True)
+    cpuxp7 = models.BigIntegerField(null=True, db_column='cpuxp7', blank=True)
+    cpuxp30 = models.BigIntegerField(null=True, db_column='cpuxp30', blank=True)
+    quotaa1 = models.BigIntegerField(null=True, db_column='quotaa1', blank=True)
+    quotaa7 = models.BigIntegerField(null=True, db_column='quotaa7', blank=True)
+    quotaa30 = models.BigIntegerField(null=True, db_column='quotaa30', blank=True)
+    quotap1 = models.BigIntegerField(null=True, db_column='quotap1', blank=True)
+    quotap7 = models.BigIntegerField(null=True, db_column='quotap7', blank=True)
+    quotap30 = models.BigIntegerField(null=True, db_column='quotap30', blank=True)
+    quotaxp1 = models.BigIntegerField(null=True, db_column='quotaxp1', blank=True)
+    quotaxp7 = models.BigIntegerField(null=True, db_column='quotaxp7', blank=True)
+    quotaxp30 = models.BigIntegerField(null=True, db_column='quotaxp30', blank=True)
+    space1 = models.IntegerField(null=True, db_column='space1', blank=True)
+    space7 = models.IntegerField(null=True, db_column='space7', blank=True)
+    space30 = models.IntegerField(null=True, db_column='space30', blank=True)
+    lastmod = models.DateTimeField(db_column='lastmod')
+    firstjob = models.DateTimeField(db_column='firstjob')
+    latestjob = models.DateTimeField(db_column='latestjob')
+    pagecache = models.TextField(db_column='pagecache', blank=True)
+    cachetime = models.DateTimeField(db_column='cachetime')
+    ncurrent = models.IntegerField(db_column='ncurrent')
+    jobid = models.IntegerField(db_column='jobid')
+    status = models.CharField(max_length=60, db_column='status', blank=True)
+    vo = models.CharField(max_length=60, db_column='vo', blank=True)
 
     class Meta:
-        db_table = u'users'
-##FIXME: reenable this after proper dbproxies are introduced!###        db_table = u'"ATLAS_PANDAMETA"."USERS"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."users"'
         allColumns = COLUMNS['ActiveUsers-all']
-        primaryColumns = [ 'name']
+        primaryColumns = ['name']
         secondaryColumns = []
         orderColumns = ORDER_COLUMNS['ActiveUsers-all']
         columnTitles = COL_TITLES['ActiveUsers-all']
         filterFields = FILTERS['ActiveUsers-all']
 
-
     def __str__(self):
         return 'User: ' + str(self.name) + '[' + str(self.status) + ']'
-
-
-class Userstats(models.Model):
-    name = models.CharField(max_length=180, db_column='NAME', primary_key=True)
-    label = models.CharField(max_length=60, db_column='LABEL', blank=True)
-    yr = models.IntegerField(db_column='YR')
-    mo = models.IntegerField(db_column='MO')
-    jobs = models.BigIntegerField(null=True, db_column='JOBS', blank=True)
-    idlo = models.BigIntegerField(null=True, db_column='IDLO', blank=True)
-    idhi = models.BigIntegerField(null=True, db_column='IDHI', blank=True)
-    info = models.CharField(max_length=300, db_column='INFO', blank=True)
-    class Meta:
-        db_table = u'userstats'
-        unique_together = ('name', 'yr', 'mo')
 
 
 def prefetch_id(db, seq_name, table_name=None, id_field_name=None):
@@ -820,12 +701,12 @@ def prefetch_id(db, seq_name, table_name=None, id_field_name=None):
 
 
 class TProject(models.Model):
-    project = models.CharField(max_length=60, db_column='PROJECT', primary_key=True)
-    begin_time = models.DecimalField(decimal_places=0, max_digits=10, db_column='BEGIN_TIME')
-    end_time = models.DecimalField(decimal_places=0, max_digits=10, db_column='END_TIME')
-    status = models.CharField(max_length=8, db_column='STATUS')
-    status = models.CharField(max_length=500, db_column='DESCRIPTION')
-    time_stamp = models.DecimalField(decimal_places=0, max_digits=10, db_column='TIMESTAMP')
+    project = models.CharField(max_length=60, db_column='project', primary_key=True)
+    begin_time = models.DecimalField(decimal_places=0, max_digits=10, db_column='begin_time')
+    end_time = models.DecimalField(decimal_places=0, max_digits=10, db_column='end_time')
+    status = models.CharField(max_length=8, db_column='status')
+    status = models.CharField(max_length=500, db_column='description')
+    time_stamp = models.DecimalField(decimal_places=0, max_digits=10, db_column='timestamp')
 
     def save(self):
         raise Exception
@@ -873,20 +754,20 @@ class TRequest(models.Model):
     REQUEST_TYPE = [(x,x) for x in ['MC','GROUP','REPROCESSING','ANALYSIS','HLT']]
     PROVENANCE_TYPE = [(x,x) for x in ['AP','GP','XP']]
 
-    reqid = models.DecimalField(decimal_places=0, max_digits=12, db_column='PR_ID', primary_key=True)
-    manager = models.CharField(max_length=32, db_column='MANAGER', null=False, blank=True)
-    description = models.CharField(max_length=256, db_column='DESCRIPTION', null=True, blank=True)
-    ref_link = models.CharField(max_length=256, db_column='REFERENCE_LINK', null=True, blank=True)
-    cstatus = models.CharField(max_length=32, db_column='STATUS', null=False, blank=True)
-    provenance = models.CharField(max_length=32, db_column='PROVENANCE', null=False, blank=True,choices=PROVENANCE_TYPE)
-    request_type = models.CharField(max_length=32, db_column='REQUEST_TYPE',choices=REQUEST_TYPE, null=False, blank=True)
-    campaign = models.CharField(max_length=32, db_column='CAMPAIGN', null=False, blank=True)
-    subcampaign = models.CharField(max_length=32, db_column='SUB_CAMPAIGN', null=False, blank=True)
-    phys_group = models.CharField(max_length=20, db_column='PHYS_GROUP', null=False, choices=PHYS_GROUPS, blank=True)
-    energy_gev = models.DecimalField(decimal_places=0, max_digits=8, db_column='ENERGY_GEV', null=False, blank=True)
-    project = models.ForeignKey(TProject,db_column='PROJECT', null=True, blank=False, on_delete=models.DO_NOTHING)
-    is_error = models.BooleanField(db_column='EXCEPTION', null=True, blank=False)
-    jira_reference = models.CharField(max_length=50, db_column='REFERENCE', null=True, blank=True)
+    reqid = models.DecimalField(decimal_places=0, max_digits=12, db_column='pr_id', primary_key=True)
+    manager = models.CharField(max_length=32, db_column='manager', null=False, blank=True)
+    description = models.CharField(max_length=256, db_column='description', null=True, blank=True)
+    ref_link = models.CharField(max_length=256, db_column='reference_link', null=True, blank=True)
+    cstatus = models.CharField(max_length=32, db_column='status', null=False, blank=True)
+    provenance = models.CharField(max_length=32, db_column='provenance', null=False, blank=True,choices=PROVENANCE_TYPE)
+    request_type = models.CharField(max_length=32, db_column='request_type',choices=REQUEST_TYPE, null=False, blank=True)
+    campaign = models.CharField(max_length=32, db_column='campaign', null=False, blank=True)
+    subcampaign = models.CharField(max_length=32, db_column='sub_campaign', null=False, blank=True)
+    phys_group = models.CharField(max_length=20, db_column='phys_group', null=False, choices=PHYS_GROUPS, blank=True)
+    energy_gev = models.DecimalField(decimal_places=0, max_digits=8, db_column='energy_gev', null=False, blank=True)
+    project = models.ForeignKey(TProject,db_column='project', null=True, blank=False, on_delete=models.DO_NOTHING)
+    is_error = models.BooleanField(db_column='exception', null=True, blank=False)
+    jira_reference = models.CharField(max_length=50, db_column='reference', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.reqid:
@@ -905,12 +786,12 @@ class RequestStatus(models.Model):
                     ('Unknown', 'Unknown'),
                     ('Approved', 'Approved'),
                     )
-    id =  models.DecimalField(decimal_places=0, max_digits=12, db_column='REQ_S_ID', primary_key=True)
-    request = models.ForeignKey(TRequest, db_column='PR_ID', on_delete=models.DO_NOTHING)
-    comment = models.CharField(max_length=256, db_column='COMMENT', null=True)
-    owner = models.CharField(max_length=32, db_column='OWNER', null=False)
-    status = models.CharField(max_length=32, db_column='STATUS', choices=STATUS_TYPES, null=False)
-    timestamp = models.DateTimeField(db_column='TIMESTAMP', null=False)
+    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='req_s_id', primary_key=True)
+    request = models.ForeignKey(TRequest, db_column='pr_id', on_delete=models.DO_NOTHING)
+    comment = models.CharField(max_length=256, db_column='comment', null=True)
+    owner = models.CharField(max_length=32, db_column='owner', null=False)
+    status = models.CharField(max_length=32, db_column='status', choices=STATUS_TYPES, null=False)
+    timestamp = models.DateTimeField(db_column='timestamp', null=False)
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -926,19 +807,19 @@ class RequestStatus(models.Model):
         db_table = u'T_PRODMANAGER_REQUEST_STATUS'
 
 class StepTemplate(models.Model):
-    id =  models.DecimalField(decimal_places=0, max_digits=12,  db_column='STEP_T_ID', primary_key=True)
-    step = models.CharField(max_length=12, db_column='STEP_NAME', null=False)
-    def_time = models.DateTimeField(db_column='DEF_TIME', null=False)
-    status = models.CharField(max_length=12, db_column='STATUS', null=False)
-    ctag = models.CharField(max_length=12, db_column='CTAG', null=False)
-    priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='PRIORITY', null=False)
-    cpu_per_event = models.DecimalField(decimal_places=0, max_digits=7, db_column='CPU_PER_EVENT', null=True)
-    output_formats = models.CharField(max_length=250, db_column='OUTPUT_FORMATS', null=True)
-    memory = models.DecimalField(decimal_places=0, max_digits=5, db_column='MEMORY', null=True)
-    trf_name = models.CharField(max_length=128, db_column='TRF_NAME', null=True)
-    lparams = models.CharField(max_length=2000, db_column='LPARAMS', null=True)
-    vparams = models.CharField(max_length=4000, db_column='VPARAMS', null=True)
-    swrelease = models.CharField(max_length=80, db_column='SWRELEASE', null=True)
+    id =  models.DecimalField(decimal_places=0, max_digits=12,  db_column='step_t_id', primary_key=True)
+    step = models.CharField(max_length=12, db_column='step_name', null=False)
+    def_time = models.DateTimeField(db_column='def_time', null=False)
+    status = models.CharField(max_length=12, db_column='status', null=False)
+    ctag = models.CharField(max_length=12, db_column='ctag', null=False)
+    priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='priority', null=False)
+    cpu_per_event = models.DecimalField(decimal_places=0, max_digits=7, db_column='cpu_per_event', null=True)
+    output_formats = models.CharField(max_length=250, db_column='output_formats', null=True)
+    memory = models.DecimalField(decimal_places=0, max_digits=5, db_column='memory', null=True)
+    trf_name = models.CharField(max_length=128, db_column='trf_name', null=True)
+    lparams = models.CharField(max_length=2000, db_column='lparams', null=True)
+    vparams = models.CharField(max_length=4000, db_column='vparams', null=True)
+    swrelease = models.CharField(max_length=80, db_column='swrelease', null=True)
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -949,53 +830,21 @@ class StepTemplate(models.Model):
         #db_table = u'T_STEP_TEMPLATE'
         db_table = u'T_STEP_TEMPLATE'
 
-class Ttrfconfig(models.Model):
-    tag = models.CharField(max_length=1, db_column='TAG', default='-')
-    cid = models.DecimalField(decimal_places=0, max_digits=5, db_column='CID', primary_key=True, default=0)
-    trf = models.CharField(max_length=80, db_column='TRF', null=True, default='transformation')
-    lparams = models.CharField(max_length=1024, db_column='LPARAMS', null=True, default='parameter list')
-    vparams = models.CharField(max_length=4000, db_column='VPARAMS', null=True, default='')
-    trfv = models.CharField(max_length=40, db_column='TRFV', null=True)
-    status = models.CharField(max_length=12, db_column='STATUS', null=True)
-    ami_flag = models.DecimalField(decimal_places=0, max_digits=10, db_column='AMI_FLAG', null=True)
-    createdby = models.CharField(max_length=60, db_column='CREATEDBY', null=True)
-    input = models.CharField(max_length=20, db_column='INPUT', null=True)
-    step = models.CharField(max_length=12, db_column='STEP', null=True)
-    formats = models.CharField(max_length=256, db_column='FORMATS', null=True)
-    cache = models.CharField(max_length=32, db_column='CACHE', null=True)
-    cpu_per_event = models.DecimalField(decimal_places=0, max_digits=5, db_column='CPU_PER_EVENT', null=True, default=1)
-    memory = models.DecimalField(decimal_places=0, max_digits=5, db_column='MEMORY', default=1000)
-    priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='PRIORITY', default=100)
-    events_per_job = models.DecimalField(decimal_places=0, max_digits=10, db_column='EVENTS_PER_JOB', default=1000)
 
-    class Meta:
-        app_label = 'grisli'
-        db_table = u'T_TRF_CONFIG'
-
-
-class TDataFormatAmi(models.Model):
-    format = models.CharField(max_length=32, db_column='FORMAT', primary_key=True)
-    description = models.CharField(max_length=256, db_column='DESCRIPTION')
-    status = models.CharField(max_length=8, db_column='STATUS')
-    last_modified = models.DateTimeField(db_column='LASTMODIFIED')
-
-    class Meta:
-        app_label = 'grisli'
-        db_table = u'T_DATA_FORMAT_AMI'
 
 
 class ProductionDataset(models.Model):
-    name = models.CharField(max_length=150, db_column='NAME', primary_key=True)
-    #task = models.ForeignKey(ProducitonTask,db_column='TASK_ID')
-    task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASKID', null=True)
-    #parent_task = models.ForeignKey(ProducitonTask,db_column='TASK_ID')
-    parent_task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='PARENT_TID', null=True)
-    rid = models.DecimalField(decimal_places=0, max_digits=12, db_column='PR_ID', null=True)
-    phys_group = models.CharField(max_length=20, db_column='PHYS_GROUP', null=True)
-    events = models.DecimalField(decimal_places=0, max_digits=7, db_column='EVENTS', null=True)
-    files = models.DecimalField(decimal_places=0, max_digits=7, db_column='FILES', null=False)
-    status = models.CharField(max_length=12, db_column='STATUS', null=True)
-    timestamp = models.DateTimeField(db_column='TIMESTAMP', null=False)
+    name = models.CharField(max_length=150, db_column='name', primary_key=True)
+    #task = models.ForeignKey(ProducitonTask,db_column='task_id')
+    task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='taskid', null=True)
+    #parent_task = models.ForeignKey(ProducitonTask,db_column='task_id')
+    parent_task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='parent_tid', null=True)
+    rid = models.DecimalField(decimal_places=0, max_digits=12, db_column='pr_id', null=True)
+    phys_group = models.CharField(max_length=20, db_column='phys_group', null=True)
+    events = models.DecimalField(decimal_places=0, max_digits=7, db_column='events', null=True)
+    files = models.DecimalField(decimal_places=0, max_digits=7, db_column='files', null=False)
+    status = models.CharField(max_length=12, db_column='status', null=True)
+    timestamp = models.DateTimeField(db_column='timestamp', null=False)
     campaign = models.CharField(max_length=32, db_column='campaign', null=False, blank=True)
 
     class Meta:
@@ -1004,11 +853,11 @@ class ProductionDataset(models.Model):
 
 
 class ProductionContainer(models.Model):
-    name = models.CharField(max_length=150, db_column='NAME', primary_key=True)
-    parent_task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='PARENT_TID', null=True)
-    rid = models.DecimalField(decimal_places=0, max_digits=12, db_column='PR_ID', null=True)
-    phys_group = models.CharField(max_length=20, db_column='PHYS_GROUP', null=True)
-    status = models.CharField(max_length=12, db_column='STATUS', null=True)
+    name = models.CharField(max_length=150, db_column='name', primary_key=True)
+    parent_task_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='parent_tid', null=True)
+    rid = models.DecimalField(decimal_places=0, max_digits=12, db_column='pr_id', null=True)
+    phys_group = models.CharField(max_length=20, db_column='phys_group', null=True)
+    status = models.CharField(max_length=12, db_column='status', null=True)
 
     class Meta:
         #db_table = u'T_PRODUCTION_DATASET'
@@ -1016,18 +865,18 @@ class ProductionContainer(models.Model):
 
 
 class InputRequestList(models.Model):
-    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='IND_ID', primary_key=True)
-    dataset = models.ForeignKey(ProductionDataset, db_column='INPUTDATASET',null=True, on_delete=models.DO_NOTHING)
-    request = models.ForeignKey(TRequest, db_column='PR_ID', on_delete=models.DO_NOTHING)
-    slice = models.DecimalField(decimal_places=0, max_digits=12, db_column='SLICE', null=False)
-    brief = models.CharField(max_length=150, db_column='BRIEF')
-    phys_comment = models.CharField(max_length=256, db_column='PHYSCOMMENT')
-    comment = models.CharField(max_length=512, db_column='SLICECOMMENT')
-    input_data = models.CharField(max_length=150, db_column='INPUTDATA')
-    project_mode = models.CharField(max_length=256, db_column='PROJECT_MODE')
-    priority = models.DecimalField(decimal_places=0, max_digits=12, db_column='PRIORITY')
-    input_events = models.DecimalField(decimal_places=0, max_digits=12, db_column='INPUT_EVENTS')
-    is_hide = models.BooleanField(db_column='HIDED', null=True, blank=False)
+    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='ind_id', primary_key=True)
+    dataset = models.ForeignKey(ProductionDataset, db_column='inputdataset',null=True, on_delete=models.DO_NOTHING)
+    request = models.ForeignKey(TRequest, db_column='pr_id', on_delete=models.DO_NOTHING)
+    slice = models.DecimalField(decimal_places=0, max_digits=12, db_column='slice', null=False)
+    brief = models.CharField(max_length=150, db_column='brief')
+    phys_comment = models.CharField(max_length=256, db_column='physcomment')
+    comment = models.CharField(max_length=512, db_column='slicecomment')
+    input_data = models.CharField(max_length=150, db_column='inputdata')
+    project_mode = models.CharField(max_length=256, db_column='project_mode')
+    priority = models.DecimalField(decimal_places=0, max_digits=12, db_column='priority')
+    input_events = models.DecimalField(decimal_places=0, max_digits=12, db_column='input_events')
+    is_hide = models.BooleanField(db_column='hided', null=True, blank=False)
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -1052,19 +901,19 @@ class StepExecution(models.Model):
              'Atlf TAG']
     STEPS_STATUS = ['NotChecked','NotCheckedSkipped','Skipped','Approved']
     STEPS_APPROVED_STATUS = ['Skipped','Approved']
-    id =  models.DecimalField(decimal_places=0, max_digits=12, db_column='STEP_ID', primary_key=True)
-    request = models.ForeignKey(TRequest, db_column='PR_ID', on_delete=models.DO_NOTHING)
-    step_template = models.ForeignKey(StepTemplate, db_column='STEP_T_ID', on_delete=models.DO_NOTHING)
-    status = models.CharField(max_length=12, db_column='STATUS', null=False)
-    slice = models.ForeignKey(InputRequestList, db_column='IND_ID', null=False, on_delete=models.DO_NOTHING)
-    priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='PRIORITY', null=False)
-    step_def_time = models.DateTimeField(db_column='STEP_DEF_TIME', null=False)
-    step_appr_time = models.DateTimeField(db_column='STEP_APPR_TIME', null=True)
-    step_exe_time = models.DateTimeField(db_column='STEP_EXE_TIME', null=True)
-    step_done_time = models.DateTimeField(db_column='STEP_DONE_TIME', null=True)
-    input_events = models.DecimalField(decimal_places=0, max_digits=10, db_column='INPUT_EVENTS', null=True)
-    task_config = models.CharField(max_length=2000, db_column='TASK_CONFIG')
-    step_parent = models.ForeignKey('self', db_column='STEP_PARENT_ID', on_delete=models.DO_NOTHING)
+    id =  models.DecimalField(decimal_places=0, max_digits=12, db_column='step_id', primary_key=True)
+    request = models.ForeignKey(TRequest, db_column='pr_id', on_delete=models.DO_NOTHING)
+    step_template = models.ForeignKey(StepTemplate, db_column='step_t_id', on_delete=models.DO_NOTHING)
+    status = models.CharField(max_length=12, db_column='status', null=False)
+    slice = models.ForeignKey(InputRequestList, db_column='ind_id', null=False, on_delete=models.DO_NOTHING)
+    priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='priority', null=False)
+    step_def_time = models.DateTimeField(db_column='step_def_time', null=False)
+    step_appr_time = models.DateTimeField(db_column='step_appr_time', null=True)
+    step_exe_time = models.DateTimeField(db_column='step_exe_time', null=True)
+    step_done_time = models.DateTimeField(db_column='step_done_time', null=True)
+    input_events = models.DecimalField(decimal_places=0, max_digits=10, db_column='input_events', null=True)
+    task_config = models.CharField(max_length=2000, db_column='task_config')
+    step_parent = models.ForeignKey('self', db_column='step_parent_id', on_delete=models.DO_NOTHING)
 
     def set_task_config(self, update_dict):
         if not self.task_config:
@@ -1096,8 +945,8 @@ class StepExecution(models.Model):
 
 
 class TTask(models.Model):
-    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASKID', primary_key=True)
-    _jedi_task_parameters = models.TextField(db_column='JEDI_TASK_PARAMETERS')
+    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='taskid', primary_key=True)
+    _jedi_task_parameters = models.TextField(db_column='jedi_task_parameters')
 
     @property
     def jedi_task_parameters(self):
@@ -1139,37 +988,37 @@ class TTask(models.Model):
 
 
 class ProductionTask(models.Model):
-    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='TASKID', primary_key=True)
-    step = models.ForeignKey(StepExecution, db_column='STEP_ID', on_delete=models.DO_NOTHING)
-    request = models.ForeignKey(TRequest, db_column='PR_ID', on_delete=models.DO_NOTHING)
-    parent_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='PARENT_TID', null=False)
-    chain_tid = models.DecimalField(decimal_places=0, max_digits=12, db_column='CHAIN_TID', null=False)
-    name = models.CharField(max_length=130, db_column='TASKNAME', null=True)
-    project = models.CharField(max_length=60, db_column='PROJECT', null=True)
-    username = models.CharField(max_length=128, db_column='USERNAME', null=True)
-    dsn = models.CharField(max_length=12, db_column='DSN', null=True)
-    phys_short = models.CharField(max_length=80, db_column='PHYS_SHORT', null=True)
-    simulation_type = models.CharField(max_length=20, db_column='SIMULATION_TYPE', null=True)
-    phys_group = models.CharField(max_length=20, db_column='PHYS_GROUP', null=True)
-    provenance = models.CharField(max_length=12, db_column='PROVENANCE', null=True)
-    status = models.CharField(max_length=12, db_column='STATUS', null=True)
-    total_events = models.DecimalField(decimal_places=0, max_digits=10, db_column='TOTAL_EVENTS', null=True)
-    total_req_jobs = models.DecimalField(decimal_places=0, max_digits=10, db_column='TOTAL_REQ_JOBS', null=True)
-    total_done_jobs = models.DecimalField(decimal_places=0, max_digits=10, db_column='TOTAL_DONE_JOBS', null=True)
-    submit_time = models.DateTimeField(db_column='SUBMIT_TIME', null=False)
-    start_time = models.DateTimeField(db_column='START_TIME', null=True)
-    timestamp = models.DateTimeField(db_column='TIMESTAMP', null=True)
-    pptimestamp = models.DateTimeField(db_column='PPTIMESTAMP', null=True)
-    postproduction = models.CharField(max_length=128, db_column='POSTPRODUCTION', null=True)
-    priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='PRIORITY', null=True)
-    current_priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='CURRENT_PRIORITY', null=True)
-    update_time = models.DateTimeField(db_column='UPDATE_TIME', null=True)
-    update_owner = models.CharField(max_length=24, db_column='UPDATE_OWNER', null=True)
-    comments = models.CharField(max_length=256, db_column='COMMENTS', null=True)
-    inputdataset = models.CharField(max_length=150, db_column='INPUTDATASET', null=True)
-    physics_tag = models.CharField(max_length=20, db_column='PHYSICS_TAG', null=True)
-    reference = models.CharField(max_length=150, db_column='REFERENCE', null=False)
-    campaign = models.CharField(max_length=32, db_column='CAMPAIGN', null=False, blank=True)
+    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='taskid', primary_key=True)
+    step = models.ForeignKey(StepExecution, db_column='step_id', on_delete=models.DO_NOTHING)
+    request = models.ForeignKey(TRequest, db_column='pr_id', on_delete=models.DO_NOTHING)
+    parent_id = models.DecimalField(decimal_places=0, max_digits=12, db_column='parent_tid', null=False)
+    chain_tid = models.DecimalField(decimal_places=0, max_digits=12, db_column='chain_tid', null=False)
+    name = models.CharField(max_length=130, db_column='taskname', null=True)
+    project = models.CharField(max_length=60, db_column='project', null=True)
+    username = models.CharField(max_length=128, db_column='username', null=True)
+    dsn = models.CharField(max_length=12, db_column='dsn', null=True)
+    phys_short = models.CharField(max_length=80, db_column='phys_short', null=True)
+    simulation_type = models.CharField(max_length=20, db_column='simulation_type', null=True)
+    phys_group = models.CharField(max_length=20, db_column='phys_group', null=True)
+    provenance = models.CharField(max_length=12, db_column='provenance', null=True)
+    status = models.CharField(max_length=12, db_column='status', null=True)
+    total_events = models.DecimalField(decimal_places=0, max_digits=10, db_column='total_events', null=True)
+    total_req_jobs = models.DecimalField(decimal_places=0, max_digits=10, db_column='total_req_jobs', null=True)
+    total_done_jobs = models.DecimalField(decimal_places=0, max_digits=10, db_column='total_done_jobs', null=True)
+    submit_time = models.DateTimeField(db_column='submit_time', null=False)
+    start_time = models.DateTimeField(db_column='start_time', null=True)
+    timestamp = models.DateTimeField(db_column='timestamp', null=True)
+    pptimestamp = models.DateTimeField(db_column='pptimestamp', null=True)
+    postproduction = models.CharField(max_length=128, db_column='postproduction', null=True)
+    priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='priority', null=True)
+    current_priority = models.DecimalField(decimal_places=0, max_digits=5, db_column='current_priority', null=True)
+    update_time = models.DateTimeField(db_column='update_time', null=True)
+    update_owner = models.CharField(max_length=24, db_column='update_owner', null=True)
+    comments = models.CharField(max_length=256, db_column='comments', null=True)
+    inputdataset = models.CharField(max_length=150, db_column='inputdataset', null=True)
+    physics_tag = models.CharField(max_length=20, db_column='physics_tag', null=True)
+    reference = models.CharField(max_length=150, db_column='reference', null=False)
+    campaign = models.CharField(max_length=32, db_column='campaign', null=False, blank=True)
 
     def save(self):
         raise NotImplementedError
@@ -1207,10 +1056,10 @@ class MCPattern(models.Model):
              'Atlf Merge',
              'Atlf TAG']
     STATUS = [(x,x) for x in ['IN USE','Obsolete']]
-    id =  models.DecimalField(decimal_places=0, max_digits=12, db_column='MCP_ID', primary_key=True)
-    pattern_name =  models.CharField(max_length=150, db_column='PATTERN_NAME', unique=True)
-    pattern_dict = models.CharField(max_length=2000, db_column='PATTERN_DICT')
-    pattern_status = models.CharField(max_length=20, db_column='PATTERN_STATUS', choices=STATUS)
+    id =  models.DecimalField(decimal_places=0, max_digits=12, db_column='mcp_id', primary_key=True)
+    pattern_name =  models.CharField(max_length=150, db_column='pattern_name', unique=True)
+    pattern_dict = models.CharField(max_length=2000, db_column='pattern_dict')
+    pattern_status = models.CharField(max_length=20, db_column='pattern_status', choices=STATUS)
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -1233,9 +1082,9 @@ class MCPriority(models.Model):
              'Atlfast',
              'Atlf Merge',
              'Atlf TAG']
-    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='MCPRIOR_ID', primary_key=True)
-    priority_key = models.DecimalField(decimal_places=0, max_digits=12, db_column='PRIORITY_KEY', unique=True)
-    priority_dict = models.CharField(max_length=2000, db_column='PRIORITY_DICT')
+    id = models.DecimalField(decimal_places=0, max_digits=12, db_column='mcprior_id', primary_key=True)
+    priority_key = models.DecimalField(decimal_places=0, max_digits=12, db_column='priority_key', unique=True)
+    priority_dict = models.CharField(max_length=2000, db_column='priority_dict')
 
     def save(self, *args, **kwargs):
         if self.priority_key == -1:

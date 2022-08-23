@@ -2,7 +2,7 @@
 {% load humanize %}
 {% load static %}
 {% load common_tags %}
-{% block page_title %} PanDA tasks{% endblock %}
+{% block page_title %} {% if requestParams.preset %}{{ requestParams.preset }} production {% else %}Production{% endif %}  tasks{% endblock %}
 {% block subtitle %}Running production task list
 {% endblock %}
 {% block css_page_library %}
@@ -21,276 +21,261 @@
 {% endblock %}
 
 {% block body %}
-  <div>
-    {% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
-    {% if requestParams.username %}<br><b>User name:</b> {{ requestParams.username }} {% endif %}
-    {% if requestParams.inputdataset %}<br><b>Input dataset:</b> {{ requestParams.inputdataset }} {% endif %}
-    {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
-    {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
-    {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
-  </div>
+<div>
+  {% if requestParams.corecount %}<br><b>Core count:</b> {{ requestParams.corecount }} {% endif %}
+  {% if requestParams.username %}<br><b>User name:</b> {{ requestParams.username }} {% endif %}
+  {% if requestParams.inputdataset %}<br><b>Input dataset:</b> {{ requestParams.inputdataset }} {% endif %}
+  {% if requestParams.reqid %}<br><b>Request ID:</b> {{ requestParams.reqid }} {% endif %}
+  {% if requestParams.ptag %}<br><b>pTag:</b> {{ requestParams.ptag }} {% endif %}
+  {% if requestParams.site %}<br><b>Site:</b> {{ requestParams.site }} {% endif %}
+</div>
 
-  <table class="minimalistic-table">
-    <thead>
-      <tr>
-          <th>Selection Preset</th>
-          <th>Working group</th>
-          <th>Processing type</th>
-          <th>Campaign</th>
-          <th>Status</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-          <td>
-              <select id="presetChoice" onchange="onPresetChoice()">
-                  <option value="MC"
-                      {% if requestParams.preset == 'MC' %} selected="selected" {% endif %}
-                      >MC</option>
-                  <option value="DPD"
-                      {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}
-                      >DPD</option>
-                  <option value="DATA"
-                      {% if requestParams.preset == 'DATA' %} selected="selected" {% endif %}
-                      >DATA</option>
-                  <option value=""
-                      {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC'  and requestParams.preset != 'DATA' %} selected="selected" {% endif %}>All</option>
-              </select>
-          </td>
-          <td>
-              <select id="workinggroup" onchange="onSubElementChoice()">
-                  <option value=""  selected="selected"
-                      {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
-                  >All</option>
-                  <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
-                      {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
-                  <option value="GP_*"
-                      {% if requestParams.preset == 'DPD' and requestParams.workinggroup == 'GP_*' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  >GP_*</option>
+<table class="minimalistic-table">
+  <thead>
+    <tr>
+        <th>Selection Preset</th>
+        <th>Working group</th>
+        <th>Processing type</th>
+        <th>Campaign</th>
+        <th>Status</th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <select id="presetChoice" onchange="onPresetChoice()">
+          <option value="MC" {% if requestParams.preset == 'MC' %} selected="selected" {% endif %}>MC</option>
+          <option value="DPD" {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}>DPD</option>
+          <option value="DATA" {% if requestParams.preset == 'DATA' %} selected="selected" {% endif %}>DATA</option>
+          <option value="" {% if requestParams.preset != 'DPD' and requestParams.preset != 'MC'  and requestParams.preset != 'DATA' %} selected="selected" {% endif %}>All</option>
+        </select>
+      </td>
+      <td>
+        <select id="workinggroup" onchange="onSubElementChoice()">
+          <option value=""  selected="selected" {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}>All</option>
+          <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
+            {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
+          <option value="GP_*"
+            {% if requestParams.preset == 'DPD' and requestParams.workinggroup == 'GP_*' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          >GP_*</option>
 
-                  <option value="AP_REPR"
-                      {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
-                  >AP_REPR</option>
+          <option value="AP_REPR"
+            {% if requestParams.preset == 'DATA' or requestParams.workinggroup == 'AP_REPR' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+          >AP_REPR</option>
 
-
-                  {% if requestParams.preset != 'DATA' %}
-                      {% for field in sumd %}
-                          {% if field.field == 'workinggroup' %}
-                              {% for wg in field.list %}
-                                  <option value={{ wg.kname }}
-                                      {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>
-                                      {{ wg.kname }} </option>
-                              {% endfor %}
-                          {% endif %}
-                      {% endfor %}
-                  {% endif %}
-              </select>
-          </td>
-          <td>
-              <select id="processingtype" onchange="onSubElementChoice()">
-                  <option value=""  selected="selected"
-                      {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
-                  >All</option>
-                  <option value="evgen|pile|simul|recon"
-                      {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  >evgen|pile|simul|recon</option>
-                  <option value="merge|deriv"
-                      {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  >merge|deriv</option>
-
-                  <option value="reprocessing"
-                      {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
-                  >reprocessing</option>
-
-                  {% if requestParams.preset != 'DATA' %}
-                      {% for ptype in sumd.1.list %}
-                              <option value={{ ptype.kname }}
-                                  {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>
-                                  {{ ptype.kname }} </option>
-                      {% endfor %}
-                  {% endif %}
-              </select>
-          </td>
-          <td>
-              <select id="campaign" onchange="onSubElementChoice()">
-                  <option value=""  selected="selected">All</option>
-                  <option value="MC*"
-                      {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
-                      {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
-                  > like 'MC%'</option>
-                      {% for campaign in sumd.0.list %}
-                          <option value="*{{ campaign.kname }}*"
-                              {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
-                          >{{ campaign.kname }} </option>
-                      {% endfor %}
-
-              </select>
-          </td>
-          <td>
-              <select id="status" onchange="onSubElementChoice()">
-                  <option value=""  selected="selected">All</option>
-                  {% for status in sumd.2.list %}
-                      <option value={{ status.kname }}
-                          {% if status.kname == requestParams.status %} selected="selected" {% endif %}
-                      > {{ status.kname }} </option>
-                  {% endfor %}
-              </select>
-          </td>
-          <td>
-              <label><input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
-                      {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
-          </td>
-          <td>
-              <label><input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
-                      {% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
-          </td>
-          <td>
-              <label><input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
-                      {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
-          </td>
-          <td>
-              <a onclick="go()" class="button primary">Go!</a>
-          </td>
-      </tr>
-    </tbody>
-  </table>
-
-
-  <div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
-
-
-  {% if gsum.ntasks > 0 %}
-
-    <table class="unstriped stack minimalistic-table">
-      <thead>
-        <tr>
-            <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>]
-                {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
-                    , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
-                {% endif %}
-            </th>
-            <th> Allocated slots: {{ gsum.aslots | intcomma }} in total</th>
-            <th class="mid"> Task age</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'main' or pgroup == 'main_preset' %}
-                {% for pname in pgdict.keys %}
-                  {% if 'nevents' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
+          {% if requestParams.preset != 'DATA' %}
+            {% for field in sumd %}
+              {% if field.field == 'workinggroup' %}
+                {% for wg in field.list %}
+                  <option value={{ wg.kname }} {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>{{ wg.kname }}</option>
                 {% endfor %}
               {% endif %}
             {% endfor %}
-          </td>
-          <td>
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'main' or pgroup == 'main_preset' %}
-                {% for pname in pgdict.keys %}
-                  {% if 'aslots' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
-                {% endfor %}
+          {% endif %}
+        </select>
+      </td>
+      <td>
+        <select id="processingtype" onchange="onSubElementChoice()">
+          <option value=""  selected="selected"
+              {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
+          >All</option>
+          <option value="evgen|pile|simul|recon"
+              {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          >evgen|pile|simul|recon</option>
+          <option value="merge|deriv"
+              {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          >merge|deriv</option>
+
+          <option value="reprocessing"
+              {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
+          >reprocessing</option>
+
+          {% if requestParams.preset != 'DATA' %}
+            {% for ptype in sumd.1.list %}
+              <option value={{ ptype.kname }} {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>{{ ptype.kname }}</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+      </td>
+      <td>
+        <select id="campaign" onchange="onSubElementChoice()">
+          <option value=""  selected="selected">All</option>
+          <option value="MC*"
+            {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
+          > like 'MC%'</option>
+          {% for campaign in sumd.0.list %}
+            <option value="*{{ campaign.kname }}*"
+                {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
+            >{{ campaign.kname }} </option>
+          {% endfor %}
+
+        </select>
+      </td>
+      <td>
+        <select id="status" onchange="onSubElementChoice()">
+          <option value=""  selected="selected">All</option>
+          {% for status in sumd.2.list %}
+            <option value={{ status.kname }}
+                {% if status.kname == requestParams.status %} selected="selected" {% endif %}
+            > {{ status.kname }} </option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>
+        <label><input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
+                  {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
+      </td>
+      <td>
+        <label><input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
+                  {% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
+      </td>
+      <td>
+          <label><input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
+                  {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
+      </td>
+      <td>
+          <a onclick="go()" class="button primary">Go!</a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+<div id="warning" style="display:none"> <span class="warning" style="font-size: 24px">Data is out of date since you changed selection. Press GO! button to apply changes. </span></div>
+
+
+{% if gsum.ntasks > 0 %}
+
+<table class="unstriped stack minimalistic-table">
+  <thead>
+    <tr>
+      <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>]
+          {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
+              , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
+          {% endif %}
+      </th>
+      <th> Allocated slots: {{ gsum.aslots | intcomma }} in total</th>
+      <th class="mid"> Task age</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        {% for pgroup, pgdict in plots.items %}
+          {% if pgroup == 'main' or pgroup == 'main_preset' %}
+            {% for pname in pgdict.keys %}
+              {% if 'nevents' in pname %}
+                <div class="c3-chart-block" id="{{ pname }}"></div>
               {% endif %}
             {% endfor %}
-          </td>
-          <td>
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'main' or pgroup == 'main_preset' %}
-                {% for pname in pgdict.keys %}
-                  {% if 'hist' in pname %}
-                    <div class="c3-chart-block" id="{{ pname }}"></div>
-                  {% endif %}
-                {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </td>
+      <td>
+        {% for pgroup, pgdict in plots.items %}
+          {% if pgroup == 'main' or pgroup == 'main_preset' %}
+            {% for pname in pgdict.keys %}
+              {% if 'aslots' in pname %}
+                <div class="c3-chart-block" id="{{ pname }}"></div>
               {% endif %}
             {% endfor %}
-          </td>
-        </tr>
-        <tr id="extraplots" style="display: none">
-          <td colspan="3">
-            {% for pgroup, pgdict in plots.items %}
-              {% if pgroup == 'extra' %}
-                {% for pname in pgdict.keys %}
-                  <div class="c3-chart-block" id="{{ pname }}"></div>
-                {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </td>
+      <td>
+        {% for pgroup, pgdict in plots.items %}
+          {% if pgroup == 'main' or pgroup == 'main_preset' %}
+            {% for pname in pgdict.keys %}
+              {% if 'hist' in pname %}
+                <div class="c3-chart-block" id="{{ pname }}"></div>
               {% endif %}
             {% endfor %}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+    <tr id="extraplots" style="display: none">
+      <td colspan="3">
+        {% for pgroup, pgdict in plots.items %}
+          {% if pgroup == 'extra' %}
+            {% for pname in pgdict.keys %}
+              <div class="c3-chart-block" id="{{ pname }}"></div>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-    <div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
+<div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
 
-    <table id = 'tasklist' class="data-table nowrap">
-        <caption>{{ gsum.ntasks }} tasks listed</caption>
-        <thead>
-        <tr>
-            <th>Campaign</th>
-            <th>Req ID</th>
-            <th>Run</th>
-            <th>Task ID</th>
-            <th>RJobs</th>
-            <th>Status (PS2)</th>
-            <th>Status (JEDI)</th>
-            {% if requestParams.preset != 'DPD' %}
-                <th>Type</th>
-            {% endif %}
-            <th>Evts total</th>
-            <th>Evts done</th>
-            <th>Evts running</th>
-            <th>Evts waiting</th>
-            <th>Evts failed</th>
-            <th>%</th>
-            <th>Priority</th>
-            {% if requestParams.preset == 'DPD' %}
-                <th>pTag</th>
-                <th>Output types</th>
-            {% endif %}
-            {% if requestParams.preset == 'MC' %}
-                <th>Sim</th>
-                <th>aTag</th>
-            {% endif %}
-            {% if requestParams.preset == 'DATA' %}
-                <th>rTag</th>
-            {% endif %}
-            <th>Age</th>
-            <th>Cores</th>
-            {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
-                <th>Working group</th>
-                <th>User</th>
-            {% endif %}
-            <th>CPU Time per Event</th>
-            <th>Global Share</th>
-            <th>ES</th>
-            <th>Jumbo</th>
-            <th>Hastags</th>
-            <th>Site</th>
-            <th>Container name</th>
-        </tr>
-        </thead>
-    <tbody>
-    </tbody>
-    </table>
-
-  {% else %}
-      <p>No matches to query.</p>
+<table id = 'tasklist' class="data-table nowrap">
+<caption>{{ gsum.ntasks }} tasks listed</caption>
+<thead>
+<tr>
+  <th>Campaign</th>
+  <th>Req ID</th>
+  <th>Run</th>
+  <th>Task ID</th>
+  <th>R Jobs</th>
+  <th>Status (PS2)</th>
+  <th>Status (JEDI)</th>
+  {% if requestParams.preset != 'DPD' %}
+    <th>Type</th>
   {% endif %}
+  <th>Evts total</th>
+  <th>Evts done</th>
+  <th>Evts running</th>
+  <th>Evts waiting</th>
+  <th>Evts failed</th>
+  <th>%</th>
+  <th>Priority</th>
+  {% if requestParams.preset == 'DPD' %}
+    <th>pTag</th>
+    <th>Output types</th>
+  {% endif %}
+  {% if requestParams.preset == 'MC' %}
+    <th>Sim</th>
+    <th>aTag</th>
+  {% endif %}
+  {% if requestParams.preset == 'DATA' %}
+      <th>rTag</th>
+  {% endif %}
+  <th>Age</th>
+  <th>Cores</th>
+  {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
+    <th>Working group</th>
+    <th>User</th>
+  {% endif %}
+  <th>CPU Time per Event</th>
+  <th>Global Share</th>
+  <th>Hashtags</th>
+  <th>Site</th>
+  <th>Container name</th>
+  <th>ES</th>
+  <th>Jumbo</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
 
 {% endblock %}
 
@@ -379,8 +364,11 @@ $(document).ready(function () {
   else if (preset === 'DPD') {
       taskListDPDTable();
   }
-  else {
+  else if (preset === 'DATA') {
       taskListDataTable();
+  }
+  else {
+      taskListTable();
   }
 });
 
@@ -619,7 +607,7 @@ $(document).ready(function () {
               "data": "inputdataset",
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['inputdataset'] + '</a>'
               }
           },
           {
@@ -766,6 +754,44 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var prodsysurl = 'https://prodtask-dev.cern.ch/dkb/#/output_stat/?hashtag=|';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      hashtaglinks += '<a href="' + prodsysurl + hashtaglist[i] + '" target="_blank"><i class="fi-link"></i></a> '
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
+          },
+          {
               "data": "eventservice",
               sDefaultContent: "---",
               "render": function(data, type, full, meta) {
@@ -790,42 +816,6 @@ $(document).ready(function () {
               },
           },
           {
-              "data": "hashtags",
-              sDefaultContent: "---",
-              "render": function ( data, type, row ) {
-                  if (data.length > 0) {
-                      var xurl = '{{ xurl|safe }}';
-                      var hashtaglist = data.split(',');
-                      var hashtaglinks = '';
-                      for (var i = 0; i < hashtaglist.length; i++) {
-                          if (xurl.indexOf('hashtags') > -1) {
-                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                          else
-                          {
-                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                      }
-                      return hashtaglinks;
-                  }
-                  else {
-                      return '---'
-                  }
-              }
-          },
-          {
-              "data": "site",
-              sDefaultContent: "",
-              "render": function(data, type, full, meta) {
-                  if (data) {
-                      return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-                  }
-                  else {
-                      return '---';
-                  }
-              }
-          },
-          {
               "data": "container_name",
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
@@ -837,7 +827,6 @@ $(document).ready(function () {
                   }
               }
           }
-
       ],
       "createdRow": function ( row, data, index ) {
           $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
@@ -881,7 +870,7 @@ $(document).ready(function () {
               "data": "inputdataset",
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['inputdataset'] + '</a>'
               }
           },
           {
@@ -998,6 +987,39 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var prodsysurl = 'https://prodtask-dev.cern.ch/dkb/#/output_stat/?hashtag=|';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      hashtaglinks += '<a href="' + prodsysurl + hashtaglist[i] + '" target="_blank"><i class="fi-link"></i></a> '
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+              }
+          },
+          {
               "data": "eventservice",
               sDefaultContent: "---",
               "render": function(data, type, full, meta) {
@@ -1020,37 +1042,6 @@ $(document).ready(function () {
                       return '---';
                   }
               },
-          },
-          {
-              "data": "hashtags",
-              sDefaultContent: "---",
-              "render": function ( data, type, row ) {
-                  if (data.length > 0) {
-                      var xurl = '{{ xurl|safe }}';
-                      var hashtaglist = data.split(',');
-                      var hashtaglinks = '';
-                      for (var i = 0; i < hashtaglist.length; i++) {
-                          if (xurl.indexOf('hashtags') > -1) {
-                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                          else
-                          {
-                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
-                          }
-                      }
-                      return hashtaglinks;
-                  }
-                  else {
-                      return '---'
-                  }
-              }
-          },
-          {
-              "data": "site",
-              sDefaultContent: "",
-              "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
-              }
           },
           {
               "data": "container_name",
@@ -1108,7 +1099,7 @@ $(document).ready(function () {
               "data": "inputdataset",
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
-                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['runnumber'] + '</a>'
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['inputdataset'] + '</a>'
               }
           },
           {
@@ -1229,6 +1220,39 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "hashtags",
+              sDefaultContent: "---",
+              "render": function ( data, type, row ) {
+                  if (data.length > 0) {
+                      var xurl = '{{ xurl|safe }}';
+                      var prodsysurl = 'https://prodtask-dev.cern.ch/dkb/#/output_stat/?hashtag=|';
+                      var hashtaglist = data.split(',');
+                      var hashtaglinks = '';
+                      for (var i = 0; i < hashtaglist.length; i++) {
+                          if (xurl.indexOf('hashtags') > -1) {
+                              hashtaglinks += '<a href = "{{ nohashtagurl }}hashtags={{ requestParams.hashtags }},' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                          else
+                          {
+                              hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
+                          }
+                      hashtaglinks += '<a href="' + prodsysurl + hashtaglist[i] + '" target="_blank"><i class="fi-link"></i></a> '
+                      }
+                      return hashtaglinks;
+                  }
+                  else {
+                      return '---'
+                  }
+              }
+          },
+          {
+              "data": "site",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
+              }
+          },
+          {
               "data": "eventservice",
               sDefaultContent: "---",
               "render": function(data, type, full, meta) {
@@ -1253,11 +1277,180 @@ $(document).ready(function () {
               },
           },
           {
+              "data": "container_name",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}container_name=' + full['container_name'] + '">' + full['container_name'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              }
+          }
+
+      ],
+      "createdRow": function ( row, data, index ) {
+          $('td', row).eq(5).addClass(data['superstatus'] + '_fill');
+          $('td', row).eq(6).addClass(data['status'] + '_fill');
+      }
+    })
+  }
+
+  function taskListTable() {
+    $('#tasklist').dataTable({
+      //"bRetrieve": true,
+      "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+      "paging": true,
+      "scrollX": true,
+      "aaSorting": [[15,'desc']],
+      "columnDefs": [
+          {"type": "num-html", "targets": [1,2,3,4,8,9,10,11,12,13,14,16,17] }
+      ],
+
+      "ajax": {
+          "processing": true,
+          "url": "{% url 'runningProdTasks' %}?tk={{ transKey }}&dt",
+          "dataSrc" : ''},
+      "aoColumns": [
+          {
+              "data": "cutcampaign",
+              sDefaultContent: "---",
+              "render": function(data, type, row, meta) {
+                  return '<a href = "{{ xurl }}campaign=' + row['campaign'] + '">'+row['cutcampaign']+'</a>'
+               }
+          },
+          {
+              "data": "reqid",
+              sDefaultContent: "",
+              "render": function ( data, type, full, meta ) {
+                  let slice = (full['sliceid'] && full['sliceid'] > 0) ? '#inputList' + full['sliceid'] : '' ;
+                  return '<a href = "{{ xurl }}reqid=' + full['reqid'] + '">' + full['reqid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/' + full['reqid'] + '/' + slice + '" target="_blank"><i class="fi-link"></i></a>'
+              }
+          },
+          {
+              "data": "inputdataset",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}runnumber=' + full['runnumber'] + '">' + full['inputdataset'] + '</a>'
+              }
+          },
+          {
+              "data": "jeditaskid",
+              sDefaultContent: "",
+              "render": function ( data, type, full, meta ) {
+                  return '<a href = "{% url 'taskInfo' %}' + full['jeditaskid'] + '/">' + full['jeditaskid'] + '</a> <a href="https://prodtask-dev.cern.ch/prodtask/task/' + full['jeditaskid'] + '/" target="_blank"><i class="fi-link"></i></a>'
+              }
+          },
+          {
+              "data": "rjobs",
+              sDefaultContent: "",
+              className: 'num',
+              "render": function(data, type, full, meta) {
+                  if (data > 0) {
+                      return '<a href = "{% url 'jobList' %}?jobstatus=running&jeditaskid=' + full['jeditaskid'] + '">' + full['rjobs'] + '</a>'
+                  }
+                  else {
+                      return data;
+                  }
+              }
+          },
+          {
+              "data": "superstatus",
+              sDefaultContent: "",
+              className: "state",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}superstatus=' + full['superstatus'] + '">' + full['superstatus'] + '</a>'
+              }
+          },
+          {
+              "data": "status",
+              sDefaultContent: "",
+              className: "state",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}status=' + full['status'] + '">' + full['status'] + '</a>'
+              }
+          },
+          {
+              "data": "processingtype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}processingtype=' + full['processingtype'] + '">' + full['processingtype'] + '</a>'
+              }
+          },
+          {
+              "data": "nevents",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsdone",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsrunning",
+              sDefaultContent: "0",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventswaiting",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "neventsfailed",
+              sDefaultContent: "",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "percentage",
+              sDefaultContent: "",
+              className: 'num'
+          },
+          {
+              "data": "priority",
+              sDefaultContent: "",
+              className: 'num'
+          },
+          {
+              "data": "age",
+              sDefaultContent: "",
+              className: 'num',
+          },
+          {
+              "data": "corecount",
+              sDefaultContent: "",
+              className: 'num',
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}corecount=' + full['corecount'] + '">' + full['corecount'] + '</a>'
+              }
+          },
+          {
+              "data": "cputime",
+              sDefaultContent: "---",
+              className: 'num',
+              render: $.fn.dataTable.render.number( ',', '.')
+          },
+          {
+              "data": "gshare",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  return '<a href = "{{ xurl }}gshare=' + full['gshare'] + '">' + full['gshare'] + '</a>'
+              }
+          },
+          {
               "data": "hashtags",
               sDefaultContent: "---",
               "render": function ( data, type, row ) {
                   if (data.length > 0) {
                       var xurl = '{{ xurl|safe }}';
+                      var prodsysurl = 'https://prodtask-dev.cern.ch/dkb/#/output_stat/?hashtag=|';
                       var hashtaglist = data.split(',');
                       var hashtaglinks = '';
                       for (var i = 0; i < hashtaglist.length; i++) {
@@ -1268,6 +1461,7 @@ $(document).ready(function () {
                           {
                               hashtaglinks += '<a href = "{{ xurl }}hashtags=' + hashtaglist[i] + '">' + hashtaglist[i] + '</a> '
                           }
+                      hashtaglinks += '<a href="' + prodsysurl + hashtaglist[i] + '" target="_blank"><i class="fi-link"></i></a> '
                       }
                       return hashtaglinks;
                   }
@@ -1282,6 +1476,30 @@ $(document).ready(function () {
               "render": function(data, type, full, meta) {
                   return '<a href = "{{ xurl }}site=' + full['site'] + '">' + full['site'] + '</a>'
               }
+          },
+          {
+              "data": "eventservice",
+              sDefaultContent: "---",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}eventservice=' + full['eventservice'] + '">' + full['eventservice'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
+          },
+          {
+              "data": "jumbo",
+              sDefaultContent: "---",
+              "render": function(data, type, full, meta) {
+                  if (data) {
+                      return '<a href = "{{ xurl }}jumbo=' + full['jumbo'] + '">' + full['jumbo'] + '</a>'
+                  }
+                  else {
+                      return '---';
+                  }
+              },
           },
           {
               "data": "container_name",

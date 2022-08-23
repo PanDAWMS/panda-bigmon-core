@@ -20,6 +20,19 @@ vertical-align: top;
 width:10em;
 }
 
+/* always show scrollbars */
+::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, .5);
+  box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+}
+
+
 body {
   position: relative;
   height: 100vh;
@@ -213,6 +226,23 @@ div.normal {
     color: white;
 }
 
+a.bp-button {
+  vertical-align: middle;
+  display: inline-block;
+  min-width: 100px;
+  font-size: 0.875rem;
+  text-align: center;
+  text-decoration: none;
+  background-color: #5e789a;
+  color: #fefefe;
+  padding: 0.875rem;
+  margin: 0.5rem 0.5rem 0.5rem 0;
+  line-height: 1;
+}
+  a.bp-button:hover {
+    background-color: #272727;
+  }
+
 
 .bp-button.kill {
   display: inline-block;
@@ -230,6 +260,59 @@ div.normal {
     background-color: #272727;
     color: #fefefe;
 }
+
+a.bp-button-with-logo {
+  vertical-align: middle;
+  font-size: 0;
+  min-width: 100px;
+  margin: 0 0.25rem 0 0;
+  padding: 0;
+  height: 2.5rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+a.bp-button-with-logo > .img-box {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 0.875rem;
+  min-width: 30px;
+  height: 2.5rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0 0.25rem 0;
+  background-color: #fefefe;
+  border-color: #5e789a;
+  border-style: solid;
+  border-width: 1px 0 1px 1px;
+}
+a.bp-button-with-logo > .img-box > img {
+  height: 1.4rem;
+}
+
+a.bp-button-with-logo > .text {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 0.875rem;
+  min-width: 30px;
+  height: 2.5rem;
+  color: #fefefe;
+  margin: 0.25rem 0 0.25rem 0;
+  padding: 0.75rem;
+  background-color: #5e789a;
+  border-color: #5e789a;
+  border-style: solid;
+  border-width: 1px 1px 1px 0;
+}
+
+a.bp-button-with-logo:hover > .img-box {
+  border-color: #272727;
+}
+
+a.bp-button-with-logo:hover > .text {
+  border-color: #272727;
+  background-color: #272727;
+}
+
 
 
 .bp-dropdown-button {
@@ -540,7 +623,7 @@ a.close-x-sign:hover {
     overflow: visible;
     min-width: 200px;
     max-width: 200px;
-    background-color: #0a0a0a;
+    background-color: #272727;
     color: #fefefe;
     text-align: center;
     font-size: 0.75rem;
@@ -567,7 +650,7 @@ a.close-x-sign:hover {
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #0a0a0a transparent transparent transparent;
+    border-color: #272727 transparent transparent transparent;
 }
 
 .tooltip-upper:hover .tooltip-text {
@@ -586,7 +669,7 @@ a.close-x-sign:hover {
   visibility: hidden;
   min-width: 100px;
   max-width: 400px;
-  background-color: #0a0a0a;
+  background-color: #272727;
   color: #fff;
   text-align: left;
   font-weight: normal;
@@ -616,7 +699,7 @@ a.close-x-sign:hover {
     border: inset 0.3rem;
     border-left-width: 0;
     border-right-style: solid;
-    border-color: transparent #0a0a0a transparent transparent;
+    border-color: transparent #272727 transparent transparent;
     top: 50%;
     bottom: auto;
     left: -0.25rem;
@@ -919,7 +1002,7 @@ fieldset.inline {
   }
   .card.bp-container-simple > .card-section.scrollable {
     width: 100%;
-    height: 500px;
+    max-height: 500px;
     overflow-y: scroll;
   }
   .card.bp-container-simple .card-section > p {
@@ -1238,3 +1321,113 @@ footer {
     border-left: 1px solid #5e789a;
     border-bottom: 1px solid #5e789a;
   }
+
+
+
+/* ---------------------------------------------------------- */
+/* Multi select drop-down with checkboxes   */
+/* https://github.com/icyz/zurb-foundation6-multiselect/blob/master/src/zmultiselect.less   */
+/* ---------------------------------------------------------- */
+.zselect {
+  margin: 0 0 1rem 0;
+  padding: 0.5rem 24px 0.32rem 0.5rem;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: #fefefe url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' width='32' height='24' viewBox='0 0 32 24'><polygon points='0,0 32,0 16,24' style='fill: rgb%28138, 138, 138%29'></polygon></svg>") no-repeat;
+  background-origin: content-box;
+  background-position: right -1rem center;
+
+  background-size: 9px 6px;
+  border: 1px solid #cccccc;
+
+  font-size: 0.77778rem;
+  font-family: inherit;
+  font-weight: normal;
+
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor:default;
+}
+
+.zselect ul {
+  position: absolute;
+  background-color: #fefefe;
+  border: 1px solid #cccccc;
+  border-top: none;
+  padding: 0;
+  margin: 5px 0 0 -0.55rem;
+  z-index: 10;
+  list-style-type: none;
+  display: none;
+
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.zselect span.zmshead {
+  font-size: 1rem;
+
+}
+
+.zselect ul li {
+  display: table;
+  width: 100%;
+  padding: 4px 0.70rem 0px 0.70rem;
+  font-size: 0.9rem;
+}
+
+.zselect ul li span {
+
+}
+
+.zselect ul li.disabled {
+  color: #808080;
+}
+
+.zselect ul li:hover {
+  background-color: #b8cae1;
+  color: #fff;
+}
+
+.zselect ul li.zmsfilter,
+.zselect ul li.zmsfilter:hover,
+.zselect ul li.filterResult,
+.zselect ul li.filterResult:hover,
+.zselect ul li.optgroup,
+.zselect ul li.optgroup:hover {
+  background-color: transparent;
+  color: #000;
+
+}
+
+.zselect ul li.zmsfilter input {
+  margin-bottom: 0.3rem;
+}
+
+.zselect ul li input[type='checkbox'] {
+  padding: 0;
+  margin: 0;
+  display: table-cell;
+  margin-right: 4px;
+}
+
+.zselect ul li.filterResult {
+  font-size: 0.8em;
+}
+
+.zselect ul li.optgroup {
+  font-weight: bold;
+  cursor: pointer !important;
+}
+
+.zselect ul li.selectall,
+.zselect ul li.deselectall{
+  cursor: pointer!important;
+}

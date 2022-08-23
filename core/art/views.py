@@ -7,22 +7,23 @@ import re
 import time
 import multiprocessing
 from datetime import datetime, timedelta
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
 from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F
 
 from core.oauth.utils import login_customrequired
-from core.utils import is_json_request, complete_request
-from core.views import initRequest, extensibleURL, removeParam
-from core.views import DateEncoder
+from core.utils import is_json_request, complete_request, removeParam
+from core.views import initRequest, extensibleURL
+from core.libs.DateEncoder import DateEncoder
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
-from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
+from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result, analize_test_subresults
 from core.common.models import Filestable4, FilestableArch
 from core.reports.models import ReportEmails
 from core.libs.error import get_job_errors
@@ -30,6 +31,8 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 from core.pandajob.models import CombinedWaitActDefArch4
 
 from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test
+
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -629,6 +632,52 @@ def artJobs(request):
         return response
 
 
+@never_cache
+def art_last_successful_test(request):
+    """
+    Find the last successful ART test
+    :param request:
+    :return:
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    data = {'errors': []}
+    query = {}
+    expected_params = ['package', 'branch', 'testname']
+    for p in expected_params:
+        if p in request.session['requestParams']:
+            if p == 'branch':
+                query.update(dict(zip(['nightly_release_short', 'project', 'platform'],
+                                 request.session['requestParams'][p].split('/'))))
+            else:
+                query[p] = request.session['requestParams'][p]
+        else:
+            data['errors'].append('Missed expected parameter: {}'.format(p))
+    if len(data['errors']) > 0:
+        return HttpResponse(data, status=400, content_type='application/json')
+
+    last_success_test = {}
+    tests = []
+    tests.extend(ARTTests.objects.filter(**query).values('pandaid', 'nightly_tag', 'subresult__subresult').order_by('-pandaid'))
+
+    for t in tests:
+        subresults_dict_tmp = json.loads(t['subresult__subresult'])
+        if 'result' in subresults_dict_tmp and len(subresults_dict_tmp['result']) > 0:
+            if analize_test_subresults(subresults_dict_tmp['result']) < 1:
+                last_success_test[t['pandaid']] = t['nightly_tag']
+        elif 'exit_code' in subresults_dict_tmp and subresults_dict_tmp['exit_code'] == 0:
+            last_success_test[t['pandaid']] = t['nightly_tag']
+
+        if len(last_success_test) > 0:
+            break
+
+
+    data['test'] = last_success_test
+    return JsonResponse(data)
+
+
 @login_customrequired
 def artStability(request):
     """
@@ -994,10 +1043,31 @@ def loadSubResults(request):
                 except:
                     pass
 
+            # Getting ART tests params to provide a destination path for logs copying
+            aquery = {'pandaid__in': [id['pandaid'] for id in ids]}
+            values = ('pandaid', 'nightly_tag', 'package', 'nightly_release_short', 'project', 'platform', 'testname')
+            art_test = list(ARTTests.objects.filter(**aquery).values(*values))
+            art_test_dst = {}
+            for t in art_test:
+                if t['package'] in ('Tier0ChainTests', 'TrfTestsART'):
+                    art_test_dst[t['pandaid']] = '/'.join([
+                        t['nightly_tag'][:10],
+                        t['package'],
+                        t['nightly_release_short'],
+                        t['project'],
+                        t['platform'],
+                        t['testname'],
+                    ])
+
             # Forming url params to single str for request to filebrowser
             url_params = []
             if len(file_properties):
-                url_params = [('&guid=' + filei['guid'] + '&lfn=' + filei['lfn'] + '&scope=' + filei['scope'] + '&fileid=' + str(filei['fileid']) + '&pandaid=' + str(filei['pandaid'])) for filei in file_properties]
+                for filei in file_properties:
+                    url_params_file = 'guid={}&lfn={}&scope={}&fileid={}&pandaid={}'.format(
+                        filei['guid'], filei['lfn'], filei['scope'], str(filei['fileid']), str(filei['pandaid']))
+                    if filei['pandaid'] in art_test_dst:
+                        url_params_file += '&dst={}'.format(art_test_dst[filei['pandaid']])
+                    url_params.append(url_params_file)
 
             # Loading subresults in parallel and collecting to list of dictionaries
             pool = multiprocessing.Pool(processes=N_ROWS)
@@ -1211,10 +1281,12 @@ def sendArtReport(request):
     valid, response = initRequest(request)
     template = 'templated_email/artReportPackage.html'
     try:
-        from core.settings.base import EMAIL_SUBJECT_PREFIX
+        EMAIL_SUBJECT_PREFIX = settings.EMAIL_SUBJECT_PREFIX
     except:
+        _logger.warning('No EMAIL_SUBJECT_PREFIX set in settings, keeping blank')
         EMAIL_SUBJECT_PREFIX = ''
     subject = '{}[ART] GRID ART jobs status report'.format(EMAIL_SUBJECT_PREFIX)
+    errorMessage = ''
     if 'ntag_from' not in request.session['requestParams']:
         valid = False
         errorMessage = 'No ntag provided!'
@@ -1311,8 +1383,9 @@ def sendDevArtReport(request):
     isSent = False
     template = 'templated_email/artDevReport.html'
     try:
-        from core.settings.base import EMAIL_SUBJECT_PREFIX
+        EMAIL_SUBJECT_PREFIX = settings.EMAIL_SUBJECT_PREFIX
     except:
+        _logger.warning('No EMAIL_SUBJECT_PREFIX set in settings, keeping blank')
         EMAIL_SUBJECT_PREFIX = ''
     subject = '{}[ART] Run on specific day tests'.format(EMAIL_SUBJECT_PREFIX)
 

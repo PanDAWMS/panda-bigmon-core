@@ -1,61 +1,16 @@
 
-
+import os
+import shutil
 import urllib3, json, math
 import numpy as np
 from datetime import datetime
-from core.art.modelsART import ARTSubResult
+from core.art.modelsART import ARTSubResult, ARTTests
 from django.db import transaction, DatabaseError
-from core.settings import defaultDatetimeFormat
+from django.conf import settings
 import logging
 
 _logger_error = logging.getLogger('bigpandamon-error')
 _logger = logging.getLogger('bigpandamon')
-
-def getJobReport(guid, lfn, scope):
-    filebrowserURL = "http://bigpanda.cern.ch/filebrowser/"  # This is deployment specific because memory monitoring is intended to work in ATLAS
-    jobSubResult = []
-    http = urllib3.PoolManager()
-    resp = http.request('GET', filebrowserURL, fields={'guid': guid, 'lfn': lfn, 'scope': scope, 'json': 1})
-    if resp and len(resp.data) > 0:
-        try:
-            data = json.loads(resp.data)
-            HOSTNAME = data['HOSTNAME']
-            tardir = data['tardir']
-            MEDIA_URL = data['MEDIA_URL']
-            dirprefix = data['dirprefix']
-            files = data['files']
-            files = [f for f in files if 'jobReport.json' in f['name']]
-        except:
-            return -2
-    else:
-        return -2
-
-    urlBase = "http://" + HOSTNAME + "/" + MEDIA_URL + dirprefix + "/" + tardir
-
-    for f in files:
-        url = urlBase + "/" + f['name']
-        response = http.request('GET', url)
-        data = json.loads(response.data)
-
-    return data
-
-
-def getARTjobSubResults(data):
-    jobSubResult = {}
-
-    if isinstance(data, dict) and 'art' in data:
-        jobSubResult = data['art']
-
-    # protection of json format change from list to list of dicts
-    if 'result' in jobSubResult and isinstance(jobSubResult['result'], list):
-        resultlist = []
-        for r in jobSubResult['result']:
-            if not isinstance(r, dict):
-                resultlist.append({'name': '', 'result': r})
-            else:
-                resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
-        jobSubResult['result'] = resultlist
-    return jobSubResult
 
 
 def subresults_getter(url_params_str):
@@ -63,19 +18,29 @@ def subresults_getter(url_params_str):
     A function for getting ART jobs sub results in multithreading mode
     :return: dictionary with sub-results
     """
-    base_url = "http://bigpanda.cern.ch/"
-    fb_path = "filebrowser/?json=1"
+    base_url = "http://bigpanda.cern.ch"
+    fb_url = base_url + "/filebrowser/"
     subresults_dict = {}
 
-    pandaidstr = url_params_str.split('=')[-1]
+    url_params_dict = {pair.split('=')[0]: pair.split('=')[1] for pair in url_params_str.split('&')}
+    url_params_dict['json'] = 1
+
+    dst_postfix = None
+    if 'dst' in url_params_dict:
+        dst_postfix = url_params_dict['dst'] + '/'
+        try:
+            del url_params_dict['dst']
+        except:
+            _logger.exception('Failed to remove dst from url params dict')
+
     try:
-        pandaid = int(pandaidstr)
+        pandaid = int(url_params_dict['pandaid'])
     except:
         _logger.exception('Exception was caught while transforming pandaid from str to int.')
         raise
 
     http = urllib3.PoolManager()
-    resp = http.request('GET', base_url + fb_path + url_params_str, timeout=300)
+    resp = http.request('GET', fb_url, fields=url_params_dict, timeout=300)
     if resp and resp.status == 200 and len(resp.data) > 0:
         try:
             data = json.loads(resp.data)
@@ -100,6 +65,12 @@ def subresults_getter(url_params_str):
             url = media_path + "/" + f['name']
             response = http.request('GET', url)
             data = json.loads(response.data)
+
+        # copy logs for further analysis by ISP tool
+        try:
+            copy_payload_log_for_analysis(dirprefix + "/" + tardir, dst_postfix)
+        except:
+            _logger.exception('Copying of payload logs failed')
     else:
         _logger.error('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
         return {pandaid: subresults_dict}
@@ -144,12 +115,12 @@ def save_subresults(subResultsDict):
 
 def lock_nqueuedjobs(cur, nrows):
     """
-    Function to lock first N rows for futher processing
+    Function to lock first N rows for further processing
     :param nrows:
     :return: lock_time
     """
 
-    lock_time = datetime.now().strftime(defaultDatetimeFormat)
+    lock_time = datetime.now().strftime(settings.DATETIME_FORMAT)
     lquery = """UPDATE atlas_pandabigmon.art_results_queue
                 SET IS_LOCKED = 1,
                     LOCK_TIME = to_date('%s', 'YYYY-MM-DD HH24:MI:SS')
@@ -290,3 +261,32 @@ def analize_test_subresults(subresults):
             finalstate = 3
 
     return finalstate
+
+
+def copy_payload_log_for_analysis(src_postfix, dst_postfix):
+    """
+    Copy payload logs for further analysis
+    :return:
+    """
+    if dst_postfix is None:
+        return False
+
+    src = '/cephfs/atlpan/' + src_postfix + '/'
+    dst = '/cephfs/atlpan/pandajoblogs/{}/'.format(dst_postfix)
+
+    if not os.path.exists(dst):
+        try:
+            os.makedirs(dst)
+        except Exception as e:
+            _logger.error('Failed to create dst path dirs {}:\n{}'.format(dst, e))
+
+    logs_to_collect = [f for f in os.listdir(src) if f in ('payload.stdout', 'pilotlog.txt', 'artReport.json') or (
+                f.startswith("log.") and '.tgz' not in f)]
+    for file in logs_to_collect:
+        try:
+            shutil.copy(src + file, dst + file)
+            _logger.debug('Copying log file {}'.format(src + file))
+        except Exception as e:
+            _logger.error('Failed to copy log file {}:\n{}'.format(src + file, e))
+
+    return True

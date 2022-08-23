@@ -10,110 +10,15 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.db import connection
 from django.utils.cache import patch_response_headers
-from core.libs.cache import getCacheEntry, setCacheEntry
-from core.libs.exlib import dictfetchall
+from core.libs.cache import getCacheEntry, setCacheEntry, setCacheData
+from core.libs.exlib import dictfetchall, get_tmp_table_name, create_temporary_table
+from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
-from core.views import initRequest, setupView, DateEncoder, setCacheData
+from core.views import initRequest, setupView
 from core.common.models import JediTasksOrdered
-from core.schedresource.models import Schedconfig
-from core.settings.local import dbaccess
+from core.schedresource.utils import get_pq_clouds
 
-
-@login_customrequired
-def tasksErrorsScattering(request):
-    initRequest(request)
-    limit = 100000
-    hours = 4
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
-    query['tasktype'] = 'prod'
-    query['superstatus__in'] = ['submitting', 'running']
-    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid")
-
-    random.seed()
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1"
-
-    transactionKey = random.randrange(1000000)
-    executionData = []
-    for id in tasks:
-        executionData.append((id['jeditaskid'], transactionKey))
-
-    new_cur = connection.cursor()
-    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
-    new_cur.executemany(query, executionData)
-    connection.commit()
-
-    query = """
-
-        SELECT SUM(FAILEDC) / SUM(ALLC) as FPERC, COMPUTINGSITE, JEDITASKID, SUM(FAILEDC) as FAILEDC from (
-
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID 
-                FROM ATLAS_PANDA.JOBSARCHIVED4 
-                WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) 
-                group by COMPUTINGSITE, JEDITASKID
-            UNION
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, SUM(1) as ALLC, COMPUTINGSITE, JEDITASKID 
-                FROM ATLAS_PANDAARCH.JOBSARCHIVED 
-                WHERE JEDITASKID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) 
-                group by COMPUTINGSITE, JEDITASKID
-        ) group by COMPUTINGSITE, JEDITASKID
-    """ % (tmpTableName, transactionKey, tmpTableName, transactionKey)
-
-    new_cur.execute(query)
-
-    errorsRaw = dictfetchall(new_cur)
-    new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
-
-    computingSites = []
-    taskserrors = {}
-
-
-    # we fill here the dict
-    for errorEntry in errorsRaw:
-        jeditaskid = errorEntry['JEDITASKID']
-        if jeditaskid not in taskserrors:
-            taskentry = {}
-            taskserrors[jeditaskid] = taskentry
-        labelForLink = (str(int(errorEntry['FPERC'] * 100)) + "%" + " ("+str(int(errorEntry['FAILEDC']))+")") if errorEntry['FPERC'] else " "
-        taskserrors[jeditaskid][errorEntry['COMPUTINGSITE']] = labelForLink
-
-    tasksToDel = []
-
-    #make cleanup of full none erroneous tasks
-    for jeditaskid,taskentry  in taskserrors.items():
-        notNone = False
-        for sitename, siteval in taskentry.items():
-            if siteval != " ":
-                notNone = True
-        if not notNone:
-            tasksToDel.append(jeditaskid)
-
-    for taskToDel in tasksToDel:
-        del taskserrors[taskToDel]
-
-    for jeditaskid,taskentry in taskserrors.items():
-        for sitename, siteval in taskentry.items():
-            computingSites.append(sitename)
-
-    computingSites = set(computingSites)
-
-    for jeditaskid,taskentry  in taskserrors.items():
-        for computingSite in computingSites:
-            if not computingSite in taskentry:
-                taskentry[computingSite] = ' '
-
-
-    data = {
-        'request': request,
-        'computingSites': computingSites,
-        'taskserrors':taskserrors,
-    }
-
-    response = render(request, 'tasksscatteringmatrix.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
+from django.conf import settings
 
 
 @login_customrequired
@@ -151,17 +56,12 @@ def errorsScattering(request):
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
     # exclude paused tasks
-    wildCardExtension += ' AND STATUS != \'paused\''
+    wildCardExtension += ' and status != \'paused\''
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid")
 
     # print ('tasks found %i') % len(tasks)
 
     random.seed()
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1"
-
     taskListByReq = {}
     transactionKey = random.randrange(1000000)
     executionData = []
@@ -173,51 +73,54 @@ def errorsScattering(request):
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
     new_cur = connection.cursor()
-    ins_query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    tmpTableName = get_tmp_table_name()
+    if settings.DEPLOYMENT == "POSTGRES":
+        create_temporary_table(new_cur, tmpTableName)
+    ins_query = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
     new_cur.executemany(ins_query, executionData)
     connection.commit()
 
     jcondition = '(1=1)'
     if isExcludeScouts:
-        jcondition = """specialhandling NOT LIKE '%%sj'"""
+        jcondition = """specialhandling not like '%%sj'"""
 
     querystr = """
-        SELECT j.FINISHEDC, j.REQID, j.FAILEDC, sc.cloud as CLOUD, j.jeditaskid, j.COMPUTINGSITE from (
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
-                   SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
-                   SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC, 
-                   COMPUTINGSITE, REQID, JEDITASKID 
-              FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID != REQID AND JEDITASKID in (
-                SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS') AND %s
-                    group by COMPUTINGSITE, REQID, JEDITASKID
-            UNION
-            SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
-                   SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
-                   SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC, 
-                   COMPUTINGSITE, REQID, JEDITASKID 
-              FROM ATLAS_PANDAARCH.JOBSARCHIVED 
-              WHERE JEDITASKID != REQID AND JEDITASKID in (
-                  SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS') AND %s
-                    group by COMPUTINGSITE, REQID, JEDITASKID
-        ) j,
-        ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
-        ) sc
-        where j.computingsite = sc.siteid and j.ALLC > 0    
-    """ % (tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition)
+        select j.finishedc, j.reqid, j.failedc, j.jeditaskid, j.computingsite from (
+            select sum(case when jobstatus = 'failed' then 1 else 0 end) as failedc, 
+                   sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc, 
+                   sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc, 
+                   computingsite, reqid, jeditaskid 
+              from {0}.jobsarchived4 where jeditaskid != reqid and jeditaskid in (
+                select id from {1} where transactionkey={2}) and modificationtime > to_date('{3}', 'YYYY-MM-DD HH24:MI:SS') and {4}
+                    group by computingsite, reqid, jeditaskid
+            union
+            select sum(case when jobstatus = 'failed' then 1 else 0 end) as failedc, 
+                   sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc, 
+                   sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc, 
+                   computingsite, reqid, jeditaskid 
+              from {5}.jobsarchived 
+              where jeditaskid != reqid and jeditaskid in (
+                  select id from {1} where transactionkey={2}) and modificationtime > to_date('{3}', 'YYYY-MM-DD HH24:MI:SS') and {4}
+                    group by computingsite, reqid, jeditaskid
+        ) j
+        where j.allc > 0    
+    """.format(settings.DB_SCHEMA_PANDA, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition,
+               settings.DB_SCHEMA_PANDA_ARCH, settings.DB_SCHEMA_PANDA_META)
 
     new_cur.execute(querystr)
 
     errorsRaw = dictfetchall(new_cur)
     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
 
-    homeCloud = {}
-    sflist = ('siteid', 'site', 'status', 'cloud', 'tier', 'comment_field', 'objectstore', 'catchall', 'corepower')
-    sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
-    for site in sites:
-        homeCloud[site['siteid']] = site['cloud']
+    # add clouds data
+    pq_clouds = get_pq_clouds()
+    clouds = sorted(list(set(pq_clouds.values())))
+    for row in errorsRaw:
+        if row['COMPUTINGSITE'] in pq_clouds:
+            row['CLOUD'] = pq_clouds[row['COMPUTINGSITE']]
+        else:
+            row['CLOUD'] = ''
 
-    clouds = []
-    clouds = sorted(list(set(homeCloud.values())))
     reqerrors = {}
     clouderrors = {}
     successrateIntervals = {'green': [80, 100], 'yellow':[50,79], 'red':[0, 49]}
@@ -368,16 +271,13 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
     grouping = []
 
-    homeCloud = {}
     cloudsDict ={}
-    sflist = ('siteid', 'site', 'status', 'cloud', 'tier', 'comment_field', 'objectstore', 'catchall', 'corepower')
-    sites = Schedconfig.objects.filter().exclude(cloud='CMS').values(*sflist)
-    for site in sites:
-        homeCloud[site['siteid']] = site['cloud']
-
-        if site['cloud'] not in cloudsDict:
-            cloudsDict[site['cloud']] = []
-        cloudsDict[site['cloud']].append(site['siteid'])
+    pq_clouds = get_pq_clouds()
+    clouds = sorted(list(set(pq_clouds.values())))
+    for pq, cloud_name in pq_clouds.items():
+        if cloud_name not in cloudsDict:
+            cloudsDict[cloud_name] = []
+        cloudsDict[cloud_name].append(pq)
 
     sitesDictForOrdering = {}
     i = 0
@@ -386,7 +286,6 @@ def errorsScatteringDetailed(request, cloud, reqid):
             sitesDictForOrdering[sitename] = i
             i += 1
 
-    clouds = sorted(list(set(homeCloud.values())))
     condition = '(1=1)'
     if cloud == '' or len(cloud)==0:
         return HttpResponse("No cloud supplied", content_type='text/html')
@@ -434,19 +333,19 @@ def errorsScatteringDetailed(request, cloud, reqid):
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
     # exclude paused tasks
-    wildCardExtension += ' AND STATUS != \'paused\''
+    wildCardExtension += ' and status != \'paused\''
     if reqid != 'ALL':
         query['reqid'] = reqid
         request.session['requestParams']['reqid'] = reqid
     if cloud != 'ALL':
         request.session['requestParams']['region'] = cloud
         cloudstr = ''
-        for sn, cn in homeCloud.items():
+        for sn, cn in pq_clouds.items():
             if cn == cloud:
                 cloudstr += "\'%s\'," % (str(sn))
         if cloudstr.endswith(','):
             cloudstr = cloudstr[:-1]
-        condition = "COMPUTINGSITE in ( %s )" % (str(cloudstr))
+        condition = "computingsite in ( %s )" % (str(cloudstr))
 
 
     tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid")
@@ -454,11 +353,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
     print ('tasks found %i' % (len(tasks)))
 
     random.seed()
-    if dbaccess['default']['ENGINE'].find('oracle') >= 0:
-        tmpTableName = "ATLAS_PANDABIGMON.TMP_IDS1DEBUG"
-    else:
-        tmpTableName = "TMP_IDS1"
-
+    tmpTableName = get_tmp_table_name()
 
     taskListByReq = {}
     transactionKey = random.randrange(1000000)
@@ -471,7 +366,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
     new_cur = connection.cursor()
-    insquery = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    insquery = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
     new_cur.executemany(insquery, executionData)
     connection.commit()
 
@@ -480,36 +375,41 @@ def errorsScatteringDetailed(request, cloud, reqid):
         jcondition = """specialhandling NOT LIKE '%%sj'"""
 
     querystr = """
-            SELECT SUM(FINISHEDC) as FINISHEDC, 
-                   SUM(FAILEDC) as FAILEDC,
-                   SUM(ALLC) as ALLC,  
-                   REQID, JEDITASKID, COMPUTINGSITE, sc.cloud as CLOUD from (
-                        SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
-                               SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC, 
-                               SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC,  
-                               COMPUTINGSITE, REQID, JEDITASKID 
-                        FROM ATLAS_PANDA.JOBSARCHIVED4 WHERE JEDITASKID in (
-                            SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS') AND %s
-                                group by COMPUTINGSITE, JEDITASKID, REQID
-                        UNION
-                        SELECT SUM(case when JOBSTATUS = 'failed' then 1 else 0 end) as FAILEDC, 
-                               SUM(case when JOBSTATUS = 'finished' then 1 else 0 end) as FINISHEDC,  
-                               SUM(case when JOBSTATUS in ('finished', 'failed') then 1 else 0 end) as ALLC,
-                               COMPUTINGSITE, REQID, JEDITASKID 
-                        FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID in (
-                              SELECT ID FROM %s WHERE TRANSACTIONKEY=%i) AND modificationtime > TO_DATE('%s', 'YYYY-MM-DD HH24:MI:SS') AND %s
-                                group by COMPUTINGSITE, JEDITASKID, REQID
-            ) j,
-            ( select siteid, cloud from ATLAS_PANDAMETA.SCHEDCONFIG  
-            ) sc
-            where j.computingsite = sc.siteid AND j.ALLC > 0  AND %s
-            group by jeditaskid, COMPUTINGSITE, REQID, cloud
-    """ % (tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition, condition)
+            select sum(finishedc) as finishedc, 
+                   sum(failedc) as failedc,
+                   sum(allc) as allc,  
+                   reqid, jeditaskid, computingsite from (
+                        select sum(case when jobstatus = 'failed' then 1 else 0 end) as failedc, 
+                               sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc, 
+                               sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc,  
+                               computingsite, reqid, jeditaskid 
+                        from atlas_panda.jobsarchived4 where jeditaskid in (
+                            select id from {0} where transactionkey={1}) and modificationtime > to_date('{2}', 'YYYY-MM-DD HH24:MI:SS') and {3}
+                                group by computingsite, jeditaskid, reqid
+                        union
+                        select sum(case when jobstatus = 'failed' then 1 else 0 end) as failedc, 
+                               sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc,  
+                               sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc,
+                               computingsite, reqid, jeditaskid 
+                        from atlas_pandaarch.jobsarchived where jeditaskid in (
+                              select id from {0} where transactionkey={1}) and modificationtime > to_date('{2}', 'YYYY-MM-DD HH24:MI:SS') and {3}
+                                group by computingsite, jeditaskid, reqid
+            ) j
+            where j.allc > 0  and {4}
+            group by jeditaskid, computingsite, reqid
+    """.format(tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition, condition)
 
     new_cur.execute(querystr)
 
     errorsRaw = dictfetchall(new_cur)
     # new_cur.execute("DELETE FROM %s WHERE TRANSACTIONKEY=%i" % (tmpTableName, transactionKey))
+
+    # add clouds data
+    for row in errorsRaw:
+        if row['COMPUTINGSITE'] in pq_clouds:
+            row['CLOUD'] = pq_clouds[row['COMPUTINGSITE']]
+        else:
+            row['CLOUD'] = ''
 
     computingSites = []
     tasksErrorsList = []
@@ -552,8 +452,6 @@ def errorsScatteringDetailed(request, cloud, reqid):
         for jeditaskid, taskEntry in taskserrors.items():
             taskserrors[jeditaskid]['totalstats']['percent'] = int(math.ceil(
                 taskEntry['totalstats']['finishedc']*100./taskEntry['totalstats']['allc'])) if taskEntry['totalstats']['allc'] > 0 else 0
-
-
 
         tasksToDel = []
 

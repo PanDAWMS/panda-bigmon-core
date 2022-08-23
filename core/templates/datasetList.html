@@ -106,7 +106,9 @@ function datasetListTable(data) {
             className: 'num',
             "render": function(data, type, full, meta) {
                 if (data > 0) {
-                    return '<a href = "{% url 'fileList' %}?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '">' + full['nfiles'] + '</a>'
+                    let str = '<a href = "{% url 'fileList' %}?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '">' + full['nfiles'] + '</a>';
+                    if (full['nfilesmissing'] > 0) {str += ' <span class="lost">(+' + full['nfilesmissing'] + ' lost)</span>'; }
+                    return str;
                 }
                 else {
                     return data;
@@ -162,10 +164,8 @@ function datasetListTable(data) {
             "data": "type",
             sDefaultContent: "-",
             "render": function(data, type, row, meta) {
-                var links = '<a href="https://rucio-ui.cern.ch/did?name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
-                return links;
+                return '<a href="https://rucio-ui.cern.ch/did?name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
             }
-
         },
 
     ],

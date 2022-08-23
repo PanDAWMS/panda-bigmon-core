@@ -2,6 +2,7 @@
     core.utils
 """
 import logging
+import re
 _logger = logging.getLogger('bigpandamon')
 
 
@@ -45,6 +46,23 @@ def extensibleURL(request, xurl=''):
     return xurl
 
 
+def removeParam(urlquery, parname, mode='complete'):
+    """Remove a parameter from current query"""
+    urlquery = urlquery.replace('&&', '&')
+    urlquery = urlquery.replace('?&', '?')
+    pstr = '.*({}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
+    pat = re.compile(pstr)
+    mat = pat.match(urlquery)
+    if mat:
+        pstr = mat.group(1)
+        urlquery = urlquery.replace(pstr, '')
+        urlquery = urlquery.replace('&&', '&')
+        urlquery = urlquery.replace('?&', '?')
+        if mode != 'extensible' and (urlquery.endswith('?') or urlquery.endswith('&')):
+            urlquery = urlquery[:len(urlquery) - 1]
+    return urlquery
+
+
 def complete_request(request, **kwargs):
     """
     Remove temporary params from session to avoid ORA-22835
@@ -54,7 +72,7 @@ def complete_request(request, **kwargs):
     """
     _logger.info("Len of session dict at the end: {}".format(len(str(request.session._session))))
 
-    keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls']
+    keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls', 'TFIRST', 'TLAST', 'PLOW', 'PHIGH']
     if 'extra_keys' in kwargs:
         keys_to_remove.extend(kwargs['extra_keys'])
 

@@ -1,4 +1,4 @@
-from core.settings.local import GRAFANA
+from django.conf import settings
 
 class Headers(object):
     def __init__(self, grafana_user = '', grafana_remember = '', grafana_sess = ''):
@@ -7,10 +7,11 @@ class Headers(object):
         self.grafana_sess = grafana_sess
 
     def get_headers_api(self):
-        if 'Authorization' in GRAFANA:
-            grafana_token = GRAFANA['Authorization']
-        headers = { "Accept": "application/json",
-                    "Content-Type": "application/json",
-                   "Authorization": grafana_token
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
         }
+        if 'Authorization' in settings.GRAFANA:
+            headers['Authorization'] = settings.GRAFANA['Authorization']
+
         return headers

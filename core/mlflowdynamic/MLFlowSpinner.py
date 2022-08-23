@@ -7,10 +7,11 @@ from django.utils.cache import patch_response_headers
 from core.mlflowdynamic.models import MLFlowContainers
 from core.mlflowdynamic.openshiftcontroller import occlicalls
 from datetime import datetime
-from core.settings.base import ML_FLOW_UPSTREAM
+
+from django.conf import settings
 
 class MLFlowProxyView(ProxyView):
-    upstream = ML_FLOW_UPSTREAM
+    upstream = settings.ML_FLOW_UPSTREAM
 
     def patch_path(self, path, taskid, instance_url):
         return path.replace(str(taskid) + "/", instance_url, 1)
@@ -33,7 +34,7 @@ class MLFlowProxyView(ProxyView):
         dbentry.status = "spinning"
         dbentry.save()
 
-        #Todo: make threaded
+        # Todo: make threaded
         #   job_thread = threading.Thread(target=job_func)
         #   job_thread.daemon = True
         #   job_thread.start()

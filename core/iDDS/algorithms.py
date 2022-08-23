@@ -2,6 +2,8 @@ from django.db import connection
 
 from core.iDDS.useconstants import SubstitleValue
 from core.libs.exlib import dictfetchall
+from django.conf import settings
+
 
 def generate_requests_summary(requests):
     fields_to_aggregate = ['status']
@@ -11,6 +13,7 @@ def generate_requests_summary(requests):
             agg_dict[request[field]] = agg_dict.get(request[field], 0) + 1
     return agg_dict
 
+
 def parse_request(request):
     retdict = {}
     status = request.session['requestParams'].get('reqstatus', None)
@@ -19,24 +22,31 @@ def parse_request(request):
         retdict['reqstatus'] = status
     return retdict
 
+
 def getiDDSInfoForTask(jeditaskid):
     subtitleValue = SubstitleValue()
 
     transformationWithNested = None
 
     new_cur = connection.cursor()
-    new_cur.execute(
-        """
-     select r.request_id, r.scope, r.name, r.request_type, r.transform_tag, r.workload_id, r.status, r.created_at request_created_at, r.updated_at request_updated_at, tr.transform_id, tr.transform_status, tr.in_status, tr.in_total_files, tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files, tr.out_created_at, tr.out_updated_at
-         from ATLAS_IDDS.requests r
-          join (
-             select t.request_id, t.transform_id, t.workload_id, t.status transform_status, in_coll.status in_status, in_coll.total_files in_total_files, in_coll.processed_files in_processed_files,
-             out_coll.status out_status, out_coll.total_files out_total_files, out_coll.processed_files out_processed_files, out_coll.created_at out_created_at, out_coll.updated_at out_updated_at
-             from ATLAS_IDDS.transforms t
-             left join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at from ATLAS_IDDS.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
-             left join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at from ATLAS_IDDS.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
-          ) tr on (r.request_id=tr.request_id and tr.workload_id={0})
-            """.format(int(jeditaskid)))
+    new_cur.execute("""
+    select r.request_id, r.scope, r.name, r.request_type, r.transform_tag, r.workload_id, r.status, 
+        r.created_at request_created_at, r.updated_at request_updated_at, tr.transform_id, tr.transform_status, 
+        tr.in_status, tr.in_total_files, tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files, 
+        tr.out_created_at, tr.out_updated_at
+    from {0}.requests r
+    join (
+      select t.request_id, t.transform_id, t.workload_id, t.status transform_status, in_coll.status in_status, 
+        in_coll.total_files in_total_files, in_coll.processed_files in_processed_files,
+        out_coll.status out_status, out_coll.total_files out_total_files, out_coll.processed_files out_processed_files, 
+        out_coll.created_at out_created_at, out_coll.updated_at out_updated_at
+      from {0}.transforms t
+      left join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at 
+                 from {0}.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
+      left join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at 
+                 from {0}.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
+    ) tr on (r.request_id=tr.request_id and tr.workload_id={1})
+    """.format(settings.DB_SCHEMA_IDDS, int(jeditaskid)))
 
     transformationWithNested = dictfetchall(new_cur)
 
@@ -58,6 +68,7 @@ def getiDDSInfoForTask(jeditaskid):
         else:
             transformationWithNested['pctprocessed'] = 0
     return transformationWithNested
+
 
 def checkIfIddsTask(taskinfo):
     if taskinfo['splitrule']:
