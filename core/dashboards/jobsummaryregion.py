@@ -18,7 +18,7 @@ import core.constants as const
 _logger = logging.getLogger('bigpandamon')
 
 
-def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
+def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict, **kwargs):
     """
     Convert dict of region job summary to list
     :param jsr_queues_dict: dict of region job summary
@@ -29,6 +29,7 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
     if 'split_by' in kwargs and kwargs['split_by']:
         split_by = kwargs['split_by']
     jsr_queues_list = []
+    jsr_sites_list = []
     jsr_regions_list = []
     for pq, params in jsr_queues_dict.items():
         for jt, resourcetypes in params['summary'].items():
@@ -66,6 +67,37 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
                     if jt == 'all' and rt != 'all':
                         jsr_queues_list.append(row)
 
+    for site, jobtypes in jsr_sites_dict.items():
+        for jt, resourcetypes in jobtypes.items():
+            for rt, summary in resourcetypes.items():
+                row = list()
+                row.append(site)
+                row.append(jt)
+                row.append(rt)
+                row.append(summary['nwsubmitted'])
+                row.append(summary['nwrunning'])
+                row.append(summary['rcores'])
+                row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
+                if summary['failed'] + summary['finished'] > 0:
+                    row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
+                else:
+                    row.append(0)
+                for js in const.JOB_STATES:
+                    row.append(summary[js])
+
+                if split_by is None:
+                    if jt == 'all' and rt == 'all':
+                        jsr_sites_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' in split_by:
+                    if jt != 'all' and rt != 'all':
+                        jsr_sites_list.append(row)
+                elif 'jobtype' in split_by and 'resourcetype' not in split_by:
+                    if jt != 'all' and rt == 'all':
+                        jsr_sites_list.append(row)
+                elif 'jobtype' not in split_by and 'resourcetype' in split_by:
+                    if jt == 'all' and rt != 'all':
+                        jsr_sites_list.append(row)
+
     for reg, jobtypes in jsr_regions_dict.items():
         for jt, resourcetypes in jobtypes.items():
             for rt, summary in resourcetypes.items():
@@ -96,7 +128,7 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict, **kwargs):
                 elif 'jobtype' not in split_by and 'resourcetype' in split_by:
                     if jt == 'all' and rt != 'all':
                         jsr_regions_list.append(row)
-    return jsr_queues_list, jsr_regions_list
+    return jsr_queues_list, jsr_sites_list, jsr_regions_list
 
 
 def get_job_summary_region(query, **kwargs):
@@ -105,6 +137,7 @@ def get_job_summary_region(query, **kwargs):
     :return: dict of groupings
     """
     jsr_queues_dict = {}
+    jsr_sites_dict = {}
     jsr_regions_dict = {}
 
     job_types = ['analy', 'prod']
@@ -115,8 +148,6 @@ def get_job_summary_region(query, **kwargs):
 
     # get PQ info
     panda_queues_dict = get_panda_queues()
-
-    regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
 
     if 'extra' in kwargs and len(kwargs['extra']) > 1:
         extra = kwargs['extra']
@@ -154,10 +185,13 @@ def get_job_summary_region(query, **kwargs):
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['type'] != query['queuetype']])
     if 'queuegocname' in query:
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['gocname'] != query['queuegocname']])
-        regions_list = list(set(regions_list).intersection([params['cloud'] for pqn, params in panda_queues_dict.items() if params['gocname'] == query['queuegocname']]))
+        # regions_list = list(set(regions_list).intersection([params['cloud'] for pqn, params in panda_queues_dict.items() if params['gocname'] == query['queuegocname']]))
     if len(pq_to_remove) > 0:
         for pqr in list(set(pq_to_remove)):
             del panda_queues_dict[pqr]
+
+    sites_list = list(set([params['gocname'] for pq, params in panda_queues_dict.items()]))
+    regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
 
     # get PanDA getJob, updateJob request counts
     psq_dict = {}
@@ -169,6 +203,7 @@ def get_job_summary_region(query, **kwargs):
         jsr_queues_dict[pqn] = {'pq_params': {}, 'pq_pilots': {},  'summary': {'all': {'all': {}}}}
         jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type'] if 'type' in params else '-'
         jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud'] if 'cloud' in params else '-'
+        jsr_queues_dict[pqn]['pq_params']['gocname'] = params['gocname'] if 'gocname' in params else '-'
         jsr_queues_dict[pqn]['pq_params']['status'] = params['status'] if 'status' in params else '-'
         jsr_queues_dict[pqn]['pq_pilots']['count'] = psq_dict[pqn]['count_abs'] if pqn in psq_dict else -1
         jsr_queues_dict[pqn]['pq_pilots']['count_nojob'] = psq_dict[pqn]['count_nojobabs'] if pqn in psq_dict else -1
@@ -214,6 +249,29 @@ def get_job_summary_region(query, **kwargs):
                     jsr_regions_dict[r]['all'][rt][em] = 0
                     jsr_regions_dict[r]['all']['all'][em] = 0
 
+    # create template structure for grouping by site
+    for s in sites_list:
+        jsr_sites_dict[s] = {}
+        for jt in job_types:
+            jsr_sites_dict[s][jt] = {}
+            jsr_sites_dict[s]['all'] = {}
+            for rt in resource_types:
+                jsr_sites_dict[s][jt][rt] = {}
+                jsr_sites_dict[s][jt]['all'] = {}
+                jsr_sites_dict[s]['all'][rt] = {}
+                jsr_sites_dict[s]['all']['all'] = {}
+                for js in const.JOB_STATES:
+                    jsr_sites_dict[s][jt][rt][js] = 0
+                    jsr_sites_dict[s][jt]['all'][js] = 0
+                    jsr_sites_dict[s]['all'][rt][js] = 0
+                    jsr_sites_dict[s]['all']['all'][js] = 0
+
+                for em in extra_metrics:
+                    jsr_sites_dict[s][jt][rt][em] = 0
+                    jsr_sites_dict[s][jt]['all'][em] = 0
+                    jsr_sites_dict[s]['all'][rt][em] = 0
+                    jsr_sites_dict[s]['all']['all'][em] = 0
+
     # get job info
     jsq = get_job_summary_split(query, extra=extra)
 
@@ -234,6 +292,11 @@ def get_job_summary_region(query, **kwargs):
             jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
             jsr_queues_dict[row['computingsite']]['summary']['all']['all'][row['jobstatus']] += int(row['count'])
 
+            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']][row['resourcetype']][row['jobstatus']] += int(row['count'])
+            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
+            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
+            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all']['all'][row['jobstatus']] += int(row['count'])
+
             jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
@@ -245,6 +308,11 @@ def get_job_summary_region(query, **kwargs):
                 jsr_queues_dict[row['computingsite']]['summary']['all'][row['resourcetype']]['rcores'] += int(row['rcores'])
                 jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all']['rcores'] += int(row['rcores'])
                 jsr_queues_dict[row['computingsite']]['summary']['all']['all']['rcores'] += int(row['rcores'])
+
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']][row['resourcetype']]['rcores'] += int(row['rcores'])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all'][row['resourcetype']]['rcores'] += int(row['rcores'])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']]['all']['rcores'] += int(row['rcores'])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all']['all']['rcores'] += int(row['rcores'])
 
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']][row['resourcetype']]['rcores'] += int(row['rcores'])
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']]['rcores'] += int(row['rcores'])
@@ -260,12 +328,17 @@ def get_job_summary_region(query, **kwargs):
                 jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all'][wm] += int(row[wm])
                 jsr_queues_dict[row['computingsite']]['summary']['all']['all'][wm] += int(row[wm])
 
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']][row['resourcetype']][wm] += int(row[wm])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all'][row['resourcetype']][wm] += int(row[wm])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']]['all'][wm] += int(row[wm])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all']['all'][wm] += int(row[wm])
+
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']][row['resourcetype']][wm] += int(row[wm])
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']][wm] += int(row[wm])
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']]['all'][wm] += int(row[wm])
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all']['all'][wm] += int(row[wm])
 
-    return jsr_queues_dict, jsr_regions_dict
+    return jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
 
 
 def get_job_summary_split(query, extra):
@@ -276,9 +349,12 @@ def get_job_summary_split(query, extra):
     for qn, qvs in query.items():
         if '__in' in qn and qn.replace('__in', '') in fields:
             extra_str += " and (" + fields[qn.replace('__in', '')] + " in ("
-            for qv in qvs:
-                extra_str += "'" + str(qv) + "',"
-            extra_str = extra_str[:-1]
+            if len(qvs) > 0:
+                for qv in qvs:
+                    extra_str += "'" + str(qv) + "',"
+                extra_str = extra_str[:-1]
+            else:
+                extra_str += "''"
             extra_str += "))"
         elif '__icontains' in qn or '__contains' in qn and qn.replace('__icontains', '').replace('__contains', '') in fields:
             extra_str += " and (" + fields[qn.replace('__icontains', '').replace('__contains', '')] + " LIKE '%%" + qvs + "%%')"
@@ -339,7 +415,7 @@ def get_job_summary_split(query, extra):
     return summary
 
 
-def prettify_json_output(jsr_queues_dict, jsr_regions_dict, **kwargs):
+def prettify_json_output(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict, **kwargs):
     """
     Remove queues|regions with 0 jobs, add links to jobs page if requested
     :param jsr_queues_dict:
@@ -347,6 +423,7 @@ def prettify_json_output(jsr_queues_dict, jsr_regions_dict, **kwargs):
     :return:
     """
     region_summary = {}
+    site_summary = {}
     queue_summary = {}
 
     is_add_link = False
@@ -383,6 +460,29 @@ def prettify_json_output(jsr_queues_dict, jsr_regions_dict, **kwargs):
                                 temp_dict['job_link'] += '&resourcetype=' + rt
                         region_summary[rn][jt][rt].append(temp_dict)
 
+    for rn, rdict in jsr_sites_dict.items():
+        for jt, jtdict in rdict.items():
+            for rt, rtdict in jtdict.items():
+                if sum([rtdict[js] for js in const.JOB_STATES if js in rtdict]) > 0:
+                    if rn not in site_summary:
+                        site_summary[rn] = {}
+                    if jt not in site_summary[rn]:
+                        site_summary[rn][jt] = {}
+                    if rt not in site_summary[rn][jt]:
+                        site_summary[rn][jt][rt] = []
+                    for js in const.JOB_STATES:
+                        temp_dict = {
+                            'jobstatus': js,
+                            'count': rtdict[js]
+                        }
+                        if is_add_link:
+                            temp_dict['job_link'] = base_url + jobs_path + '&region=' + rn + '&jobstatus=' + js
+                            if jt != 'all':
+                                temp_dict['job_link'] += '&jobtype=' + jt
+                            if rt != 'all':
+                                temp_dict['job_link'] += '&resourcetype=' + rt
+                        site_summary[rn][jt][rt].append(temp_dict)
+
     for qn, qdict in jsr_queues_dict.items():
         for jt, jtdict in qdict['summary'].items():
             for rt, rtdict in jtdict.items():
@@ -407,7 +507,7 @@ def prettify_json_output(jsr_queues_dict, jsr_regions_dict, **kwargs):
                                 temp_dict['job_link'] += '&resourcetype=' + rt
                         queue_summary[qn]['job_summary'][jt][rt].append(temp_dict)
 
-    return queue_summary, region_summary
+    return queue_summary, site_summary, region_summary
 
 
 def is_jobtype_match_queue(jobtype, pq_dict):

@@ -847,6 +847,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 elif jobtype == 'test' or jobtype.find('test') >= 0:
                     query['produsername'] = 'gangarbt'
 
+            if param == 'site':
+                pqs = get_panda_queues()
+                query['computingsite__in'] = [info['nickname'] for pq, info in pqs.items() if info['gocname'] == request.session['requestParams'][param]]
+
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
                     if request.session['requestParams'][param] == 'Not specified':
@@ -3844,12 +3848,13 @@ def dashRegion(request):
         jquery['queuegocname'] = request.session['requestParams']['site']
 
     # get job summary data
-    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery,
-                                                               extra=extra_str,
-                                                               region=region, 
-                                                               jobtype=jobtype,
-                                                               resourcetype=resourcetype,
-                                                               split_by=split_by)
+    jsr_queues_dict, jsr_sites_dict, jsr_regions_dict = get_job_summary_region(
+        jquery,
+        extra=extra_str,
+        region=region,
+        jobtype=jobtype,
+        resourcetype=resourcetype,
+        split_by=split_by)
 
     if is_json_request(request):
         extra_info_params = ['links', ]
@@ -3865,8 +3870,11 @@ def dashRegion(request):
         return HttpResponse(dump, content_type='application/json')
     else:
         # transform dict to list and filter out rows depending on split by request param
-        jsr_queues_list, jsr_regions_list = prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict,
-                                                                       split_by=split_by)
+        jsr_queues_list, jsr_sites_list, jsr_regions_list = prepare_job_summary_region(
+            jsr_queues_dict,
+            jsr_sites_dict,
+            jsr_regions_dict,
+            split_by=split_by)
 
         # prepare lists of unique values for drop down menus
         select_params_dict = {}
@@ -3910,6 +3918,7 @@ def dashRegion(request):
             'selectParams': select_params_dict,
             'jobstates': statelist,
             'regions': jsr_regions_list,
+            'sites': jsr_sites_list,
             'queues': jsr_queues_list,
             'show': 'all',
         }
