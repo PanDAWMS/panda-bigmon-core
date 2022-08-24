@@ -1,20 +1,6 @@
-from django.shortcuts import render
-from core.settings import DKB_CAMPAIGN_URL
-from django.db import connection
-from core.views import initRequest, escapeInput
-from django.views.decorators.cache import never_cache
-import core.libs.CampaignPredictionHelper as cph
-from django.core.cache import cache
-import operator
-from django.http import JsonResponse
-import numpy as np
-import humanize
-from core.oauth.utils import login_customrequired
 import urllib3
 import json
-
-from django.shortcuts import render_to_response
-
+from django.shortcuts import render
 from core.views import initRequest
 from core.libs.sqlcustom import escape_input
 from core.oauth.utils import login_customrequired

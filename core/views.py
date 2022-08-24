@@ -2971,7 +2971,7 @@ def userInfo(request, user=''):
                 'metrics': metrics_total,
                 'userstats': userstats,
             }
-            response = render_to_response('userDash.html', data, content_type='text/html')
+            response = render(request, 'userDash.html', data, content_type='text/html')
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
