@@ -1,5 +1,5 @@
 import json
-
+import logging
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
@@ -15,6 +15,7 @@ from core.libs.exlib import lower_dicts_in_list
 from core.libs.DateEncoder import DateEncoder
 from django.core.cache import cache
 
+_logger = logging.getLogger('bigpandamon')
 
 CACHE_TIMEOUT = 20
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -33,10 +34,14 @@ def main(request):
     query_params = parse_request(request)
 
     iDDSrequests = cache.get('iDDSrequests')
-    iDDSrequests = None
     if not iDDSrequests:
-        iDDSrequests = getRequests(query_params)
-        cache.set("iDDSrequests", iDDSrequests, 10 * 60)
+        try:
+            iDDSrequests = getRequests(query_params)
+            cache.set("iDDSrequests", iDDSrequests, 10 * 60)
+        except Exception as e:
+            iDDSrequests = []
+            _logger.exception('Failed to load iDDS requests from DB: \n{}'.format(e))
+
     iDDSrequests = lower_dicts_in_list(iDDSrequests)
     subtitleValue.replace('requests', iDDSrequests)
     requests_summary = generate_requests_summary(iDDSrequests)
@@ -45,7 +50,7 @@ def main(request):
         'requests_summary':requests_summary,
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-        'iDDSrequests':json.dumps(iDDSrequests, cls=DateEncoder),
+        'iDDSrequests': json.dumps(iDDSrequests, cls=DateEncoder),
     }
     response = render(request, 'landing.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)

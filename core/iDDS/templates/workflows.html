@@ -22,6 +22,7 @@
 
 {% block body %}
 
+{% if iDDSrequests|length > 2 %}
     <table>
     <tr class='tablesection'><th colspan=20><a name="tasks"></a> Workflows attribute summary</th></tr>
     {% for attribute, occurences in iDDSsummary.items %}
@@ -59,6 +60,11 @@
         </table>
       </div>
     </div>
+{% else %}
+  <div class="card bp-container-simple info">
+    <div class="card-divider"><p>No iDDS requests found.</p></div>
+  </div>
+{% endif %}
 {% endblock %}
 
 {% block js_body_page %}

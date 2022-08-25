@@ -95,9 +95,12 @@
 </div>
 </div>
 
-<div class="card bp-container-simple secondary" id="container_rs" style="display: none; font-size: 0.875rem">
-<div class="card-divider"><p>Region summary:</p></div>
+<div id="summarytables" ng-app="JobSummaryRegionTablesApp" ng-controller="JobSummaryRegionTablesController">
+<div class="card bp-container-simple secondary" id="container_rs" >
+<div class="card-divider"><p>Region summary</p></div>
 <div class="card-section">
+<p ng-bind-html="summary.region.message"></p>
+<div class="ng-hide" ng-hide="summary.region.is_hidden">
 <table id='regionsummary' class="data-table nowrap hover">
   <thead>
   <tr>
@@ -116,6 +119,7 @@
   </thead>
   <tbody>
   </tbody>
+  {% if regions|length > 10 %}
   <tfoot>
   <tr>
       <th class="text">Region</th>
@@ -131,13 +135,65 @@
       {% endfor %}
   </tr>
   </tfoot>
+  {% endif %}
 </table>
 </div>
 </div>
+</div>
 
-<div class="card bp-container-simple secondary" id="container_qs" style="display: none; font-size: 0.875rem">
+
+<ul class="accordion secondary" data-accordion data-allow-all-closed="true">
+<li class="accordion-item" data-accordion-item>
+  <a href="#sitesummary" ng-click="summary.toggleSiteTable()" class="accordion-title">Site summary</a>
+  <div class="accordion-content" data-tab-content>
+    <p ng-bind-html="summary.site.message"></p>
+    <div class="ng-hide" ng-hide="summary.site.is_hidden">
+    <table id='sitesummary' class="data-table nowrap hover">
+      <thead>
+      <tr>
+          <th class="text">Site</th>
+          <th class="text">Job type</th>
+          <th class="text">Resource type</th>
+          <th class="num">N submitted workers</th>
+          <th class="num">N running workers</th>
+          <th class="num">N running slots</th>
+          <th class="num">N jobs total</th>
+          <th class="num">% failure</th>
+          {% for js in jobstates %}
+              <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+          {% endfor %}
+      </tr>
+      </thead>
+      <tbody>
+      </tbody>
+      {% if sites|length > 10 %}
+      <tfoot>
+      <tr>
+          <th class="text">Site</th>
+          <th class="text">Job type</th>
+          <th class="text">Resource type</th>
+          <th class="num">N submitted workers</th>
+          <th class="num">N running workers</th>
+          <th class="num">N running slots</th>
+          <th class="num">N jobs total</th>
+          <th class="num">% failure</th>
+          {% for js in jobstates %}
+              <th class="vertical fixed_dash"><div class="rotate70">{{ js }}</div></th>
+          {% endfor %}
+      </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+    </div>
+  </div>
+</li>
+</ul>
+
+<div class="card bp-container-simple secondary" id="container_qs">
 <div class="card-divider"><p>Queue summary:</p></div>
 <div class="card-section">
+<p ng-bind-html="summary.queue.message"></p>
+<div class="ng-hide" ng-hide="summary.queue.is_hidden">
 <table id='queuesummary' class="data-table nowrap hover">
   <thead>
   <tr>
@@ -184,7 +240,8 @@
 </table>
 </div>
 </div>
-
+</div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -192,6 +249,10 @@
 
 var select_params = {{ selectParams | safe }};
 var request_params = {{ requestParams | safe }};
+var regionsummary = {{ regions|safe }};
+var sitesummary = {{ sites|safe }};
+var queuesummary = {{ queues|safe }};
+var vo = '{{ viewParams.MON_VO | safe }}';
 var err_threshold = 15;
 
 app.controller('JobSummaryRegionController', ['$scope', function($scope) {
@@ -291,16 +352,69 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     }
 }]);
 
-$(document).ready(function () {
-    var regionsummary = {{ regions|safe }};
-    var regionsTable = buildRegionSummary(regionsummary, 'regionsummary');
-    $('#container_rs').css( 'display', 'block' );
-    regionsTable.columns.adjust().draw();
-    var queuesummary = {{ queues|safe }};
-    var queuesTable = buildQueueSummary(queuesummary, 'queuesummary');
-    $('#container_qs').css( 'display', 'block' );
-    queuesTable.columns.adjust().draw();
-});
+app.controller('JobSummaryRegionTablesController', ['$scope', '$sce', '$timeout', function($scope, $sce, $timeout) {
+  $scope.summary = {
+    region: {
+      data: regionsummary,
+      is_hidden: true,
+      message: '',
+      table: undefined,
+    },
+    site: {
+      data: sitesummary,
+      is_hidden: true,
+      message: '',
+      table: undefined,
+    },
+    queue: {
+      data: queuesummary,
+      is_hidden: true,
+      message: '',
+      table: undefined,
+    },
+  };
+
+  $scope.summary.buildTables = function () {
+
+    if ($scope.summary.region.data.length > 0) {
+      $scope.summary.region.table = buildRegionSummary($scope.summary.region.data, 'regionsummary');
+      $scope.summary.region.is_hidden = false;
+      $timeout(function(){$('#regionsummary').DataTable().columns.adjust().draw();}, 1);
+    }
+    else {
+      $scope.summary.region.message = $sce.trustAsHtml('No jobs were found :( ');
+    }
+    if ($scope.summary.queue.data.length > 0) {
+      $scope.summary.queue.table = buildQueueSummary($scope.summary.queue.data, 'queuesummary');
+      $scope.summary.queue.is_hidden = false;
+      $timeout(function(){$('#queuesummary').DataTable().columns.adjust().draw();}, 1);
+    }
+    else {
+      $scope.summary.queue.message = $sce.trustAsHtml('No jobs were found :( ');
+    }
+  };
+
+  $scope.summary.toggleSiteTable = function () {
+    if ($scope.summary.site.table === undefined) {
+      if ($scope.summary.site.data.length > 0) {
+        $scope.summary.site.table = buildSiteSummary($scope.summary.site.data, 'sitesummary');
+        $scope.summary.site.is_hidden = false;
+        $timeout(function(){$('#sitesummary').DataTable().columns.adjust().draw();}, 1);
+      }
+      else {
+        $scope.summary.site.message = $sce.trustAsHtml('No jobs were found :( ');
+      }
+    }
+    else {
+      $('#sitesummary').DataTable().clear().destroy();
+      $scope.summary.site.table = undefined;
+      $scope.summary.site.is_hidden = true;
+    }
+  };
+
+  $scope.summary.buildTables();
+
+}]);
 
 function buildRegionSummary(data, divid) {
     var regionsTable = $('#' + divid).DataTable({
@@ -597,6 +711,300 @@ function buildRegionSummary(data, divid) {
     return regionsTable
 }
 
+function buildSiteSummary(data, divid) {
+    var sitesTable = $('#' + divid).DataTable({
+        "iDisplayLength": 10,
+        "lengthChange": true,
+        "paging": true,
+        "aaSorting": [[0,'asc']],
+        "scrollX": true,
+        "autoWidth": true,
+        "data": data,
+        "buttons": [
+          {
+            extend: 'colvisGroup',
+            text: 'Minimize view',
+            hide: [ 3,4,8,9,10,12,14,15,17,22,23 ],
+          },
+          {
+            extend: 'colvisGroup',
+            text: 'Show details',
+            show: ':hidden',
+          }
+        ],
+        "aoColumns": [
+          {
+            sDefaultContent: "---",
+            className: "text",
+            "render": function(data, type, row, meta) {
+                return '<a href = "{{ xurl }}site=' + row[0] + '">'+row[0]+'</a>'
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "text",
+            "render": function(data, type, row, meta) {
+                return '<a href = "{{ xurl }}jobtype=' + row[1] + '">'+row[1]+'</a>'
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "text",
+            "render": function(data, type, row, meta) {
+                return '<a href = "{{ xurl }}resourcetype=' + row[2] + '">'+row[2]+'</a>'
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
+            render: $.fn.dataTable.render.number( ',', '.'),
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
+            render: $.fn.dataTable.render.number( ',', '.'),
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
+            render: $.fn.dataTable.render.number( ',', '.'),
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '">'+row[6]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "num",
+            "render": function(data, type, row, meta) {
+              if (data && data > 0) {
+                let url_link = '<a target="_blank"';
+                (data > err_threshold) ? url_link += ' class="alert" ': url_link += ' ';
+                url_link += 'href = "{% url 'errorSummary' %}?hours=' + '{{ hours }}' + '&jobstatus=failed';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '">'+row[7]+'</a>';
+                return url_link
+              }
+              else {
+                return data
+              }
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.0 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.0 }}' + '">'+row[8]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.1 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.1 }}' + '">'+row[9]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.2 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.2 }}' + '">'+row[10]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.3 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.3 }}' + '">'+row[11]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.4 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.4 }}' + '">'+row[12]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.5 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.5 }}' + '">'+row[13]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.6 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.6 }}' + '">'+row[14]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.7 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.7 }}' + '">'+row[15]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.8 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.8 }}' + '">'+row[16]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.9 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.9 }}' + '">'+row[17]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.10 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.10 }}' + '">'+row[18]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.11 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.11 }}' + '">'+row[19]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.12 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.12 }}' + '">'+row[20]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.13 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.13 }}' + '">'+row[21]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.14 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.14 }}' + '">'+row[22]+'</a>';
+                return url_link
+            }
+          },
+          {
+            sDefaultContent: "---",
+            className: "{{ jobstates.15 }}_fill num",
+            "render": function(data, type, row, meta) {
+                let url_link = '<a target="_blank" href = "{% url 'jobList' %}?hours=' + '{{ hours }}';
+                (row[0] === 'all') ? url_link += '': url_link += '&site=' + row[0];
+                (row[1] === 'all') ? url_link += '': url_link += '&jobtype=' + row[1];
+                (row[2] === 'all') ? url_link += '': url_link += '&resourcetype=' + row[2];
+                url_link += '&jobstatus=' + '{{ jobstates.15 }}' + '">'+row[23]+'</a>';
+                return url_link
+            }
+          },
+        ],
+        "createdRow": function (row, data, index) {
+          if (data[7] > err_threshold) {
+            $('td', row).eq(7).addClass('bold');
+          }
+        },
+    });
+    sitesTable.columns( [3,4,8,9,10,12,14,15,17,22,23] ).visible( false );
+    sitesTable.buttons().container()
+        .appendTo( '#sitesummary_wrapper .small-6.columns:eq(0)' );
+    return sitesTable
+}
+
 function buildQueueSummary(data, divid) {
   let lengthMenu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]];
   let iDisplayLength = 20;
@@ -633,10 +1041,12 @@ function buildQueueSummary(data, divid) {
         className: "text icons3",
         "render": function(data, type, row, meta) {
             let link = '<a href = "{% url 'siteInfo' %}' + row[0] + '/">'+row[0]+'</a>';
-            link += ' <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite=' + row[0] + '&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-right"><img src="/static/images/grafana.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Jobs accounting (MONIT Grafana)</span></div></a>\n';
-            link += ' <a onclick=\'PopUpGrafana("' + row[0] + '", "' + row[4] +  '", "' + row[5] +  '", "jmonit")\'><div class="tooltip-right"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Jobs monitoring (rendered Grafana plot)</span></div></a>\n';
-            link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(description:\'Job%20brokerage\',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),query:(language:lucene,query:\'site.keyword:%20%2F' + row[0] +'%5C%2F.*%2F%20OR%20site.keyword:%20%22' + row[0] +'%22\'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-right"><img src="/static/images/kibana-logo.png" width=14 height=14 border=0><span class="tooltip-text">Brokerage actions (Kibana)</span></div></a>\n';
-            link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'006980c0-857a-11ea-9233-1dd73e396ea6\',key:computingsite.keyword,negate:!f,params:(query:' + row[0] + '),type:phrase),query:(match_phrase:(computingsite.keyword:' + row[0] + ')))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),query:(language:lucene,query:\'\'),timeRestore:!t,title:\'Harvester%20particular%20computingsite\',viewMode:view)" ><div class="tooltip-right"><img src="/static/images/kibana-logo-black.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Harvester particular computingsite dashboard (Kibana)</span> </div></a>';
+            if (vo === 'ATLAS') {
+              link += ' <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=GRID&var-resources=cloud&var-resources=hpc&var-tier=All&var-cloud=All&var-site=All&var-computingsite=' + row[0] + '&var-nucleus=All&var-cores=All&var-eventservice=All&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-right"><img src="/static/images/grafana.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Jobs accounting (MONIT Grafana)</span></div></a>\n';
+              link += ' <a onclick=\'PopUpGrafana("' + row[0] + '", "' + row[4] + '", "' + row[5] + '", "jmonit")\'><div class="tooltip-right"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Jobs monitoring (rendered Grafana plot)</span></div></a>\n';
+              link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(description:\'Job%20brokerage\',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),query:(language:lucene,query:\'site.keyword:%20%2F' + row[0] + '%5C%2F.*%2F%20OR%20site.keyword:%20%22' + row[0] + '%22\'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-right"><img src="/static/images/kibana-logo.png" width=14 height=14 border=0><span class="tooltip-text">Brokerage actions (Kibana)</span></div></a>\n';
+              link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'006980c0-857a-11ea-9233-1dd73e396ea6\',key:computingsite.keyword,negate:!f,params:(query:' + row[0] + '),type:phrase),query:(match_phrase:(computingsite.keyword:' + row[0] + ')))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),query:(language:lucene,query:\'\'),timeRestore:!t,title:\'Harvester%20particular%20computingsite\',viewMode:view)" ><div class="tooltip-right"><img src="/static/images/kibana-logo-black.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Harvester particular computingsite dashboard (Kibana)</span> </div></a>';
+            }
             return link
         }
       },
@@ -655,7 +1065,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "text",
         render: function(data, type, row, meta) {
-            return '<a href="https://atlas-cric.cern.ch/atlas/pandaqueuestatushistory/list/?pandaqueue=' + row[0] + '" target="_blank"><div class="tooltip-right"><span class="' + row[3] + '">' + row[3] + '</span><span class="tooltip-text">Blacklisting history (CRIC)</span></div></a>'
+            return '<a href="https://' + '{{ request.session.crichost }}' + '/atlas/pandaqueuestatushistory/list/?pandaqueue=' + row[0] + '" target="_blank"><div class="tooltip-right"><span class="' + row[3] + '">' + row[3] + '</span><span class="tooltip-text">Blacklisting history (CRIC)</span></div></a>'
         }
 
       },

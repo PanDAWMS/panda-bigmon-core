@@ -171,8 +171,6 @@ standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcela
                    'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
                    'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
                    'jobsubstatus', 'nucleus','gshare', 'resourcetype']
-standard_sitefields = ['region', 'gocname', 'nickname', 'status', 'tier', 'comment_field', 'cloud', 'allowdirectaccess',
-                       'allowfax', 'copytool', 'faxredirector', 'retry', 'timefloor']
 standard_taskfields = [
     'workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'currentpriority', 'username',
     'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
@@ -330,8 +328,10 @@ def initRequest(request, callselfmon=True):
         VOMODE = settings.DEPLOYMENT
         if '_' in settings.DEPLOYMENT:
             request.session['viewParams']['MON_VO'] = settings.DEPLOYMENT.split('_')[1]
-        if hasattr(settings, 'MON_VO'):
+        elif hasattr(settings, 'MON_VO'):
             request.session['viewParams']['MON_VO'] = settings.MON_VO
+        else:
+            request.session['viewParams']['MON_VO'] = ''
 
     # add CRIC URL base to session
     if settings.CRIC_API_URL:
@@ -846,6 +846,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     query['eventservice'] = 2
                 elif jobtype == 'test' or jobtype.find('test') >= 0:
                     query['produsername'] = 'gangarbt'
+
+            if param == 'site':
+                pqs = get_panda_queues()
+                query['computingsite__in'] = [info['nickname'] for pq, info in pqs.items() if info['gocname'] == request.session['requestParams'][param]]
 
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -1910,28 +1914,6 @@ def descendentjoberrsinfo(request):
     return response
 
 
-def eventsInfo(request, mode=None, param=None):
-    if not 'jeditaskid' in request.GET:
-        data = {}
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-
-    jeditaskid = request.GET['jeditaskid']
-
-    cur = connection.cursor()
-    cur.execute(
-        "select sum(decode(c.startevent,NULL,c.nevents,endevent-startevent+1)) nevents,c.status from atlas_panda.jedi_datasets d,atlas_panda.jedi_dataset_contents c where d.jeditaskid=c.jeditaskid and d.datasetid=c.datasetid and d.jeditaskid=%s and d.type in ('input','pseudo_input') and d.masterid is null group by c.status;" % (
-        jeditaskid))
-    events = cur.fetchall()
-    cur.close()
-    data = {}
-
-    for ev in events:
-        data[ev[1]] = ev[0]
-    data['jeditaskid'] = jeditaskid
-
-    return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-
-
 @login_customrequired
 @csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
@@ -2746,7 +2728,7 @@ def userInfo(request, user=''):
             fields = {
                 'job': copy.deepcopy(standard_fields),
                 'task': copy.deepcopy(standard_taskfields),
-                'site': copy.deepcopy(standard_sitefields),
+                'site': copy.deepcopy(const.SITE_FIELDS_STANDARD),
             }
             links = get_relevant_links(userid, fields)
 
@@ -3866,29 +3848,34 @@ def dashRegion(request):
         jquery['queuegocname'] = request.session['requestParams']['site']
 
     # get job summary data
-    jsr_queues_dict, jsr_regions_dict = get_job_summary_region(jquery,
-                                                               extra=extra_str,
-                                                               region=region, 
-                                                               jobtype=jobtype,
-                                                               resourcetype=resourcetype,
-                                                               split_by=split_by)
+    jsr_queues_dict, jsr_sites_dict, jsr_regions_dict = get_job_summary_region(
+        jquery,
+        extra=extra_str,
+        region=region,
+        jobtype=jobtype,
+        resourcetype=resourcetype,
+        split_by=split_by)
 
     if is_json_request(request):
         extra_info_params = ['links', ]
         extra_info = {ep: False for ep in extra_info_params}
         if 'extra' in request.session['requestParams'] and 'links' in request.session['requestParams']['extra']:
             extra_info['links'] = True
-        jsr_queues_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_regions_dict, hours=hours, extra=extra_info)
+        jsr_queues_dict, jsr_sites_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict, hours=hours, extra=extra_info)
         data = {
             'regions': jsr_regions_dict,
+            'sites': jsr_sites_dict,
             'queues': jsr_queues_dict,
         }
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
         # transform dict to list and filter out rows depending on split by request param
-        jsr_queues_list, jsr_regions_list = prepare_job_summary_region(jsr_queues_dict, jsr_regions_dict,
-                                                                       split_by=split_by)
+        jsr_queues_list, jsr_sites_list, jsr_regions_list = prepare_job_summary_region(
+            jsr_queues_dict,
+            jsr_sites_dict,
+            jsr_regions_dict,
+            split_by=split_by)
 
         # prepare lists of unique values for drop down menus
         select_params_dict = {}
@@ -3932,6 +3919,7 @@ def dashRegion(request):
             'selectParams': select_params_dict,
             'jobstates': statelist,
             'regions': jsr_regions_list,
+            'sites': jsr_sites_list,
             'queues': jsr_queues_list,
             'show': 'all',
         }
@@ -4072,7 +4060,7 @@ def dashES(request):
         extra_info = {ep: False for ep in extra_info_params}
         if 'extra' in request.session['requestParams'] and 'links' in request.session['requestParams']['extra']:
             extra_info['links'] = True
-        jsr_queues_dict, jsr_regions_dict = prettify_json_output(jsr_queues_dict, jsr_regions_dict, hours=hours, extra=extra_info)
+        jsr_queues_dict, _, jsr_regions_dict = prettify_json_output(jsr_queues_dict, {}, jsr_regions_dict, hours=hours, extra=extra_info)
         data = {
             'regions': jsr_regions_dict,
             'queues': jsr_queues_dict,

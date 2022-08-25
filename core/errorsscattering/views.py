@@ -118,8 +118,6 @@ def errorsScattering(request):
     for row in errorsRaw:
         if row['COMPUTINGSITE'] in pq_clouds:
             row['CLOUD'] = pq_clouds[row['COMPUTINGSITE']]
-        else:
-            row['CLOUD'] = ''
 
     reqerrors = {}
     clouderrors = {}
@@ -127,52 +125,53 @@ def errorsScattering(request):
 
     # we fill here the dict
     for errorEntry in errorsRaw:
-        rid = errorEntry['REQID']
-        if rid not in reqerrors:
-            reqentry = {}
-            reqerrors[rid] = reqentry
-            reqerrors[rid]['reqid'] = rid
-            reqerrors[rid]['totalstats'] = {}
-            reqerrors[rid]['totalstats']['percent'] = 0
-            reqerrors[rid]['totalstats']['minpercent'] = 100
-            reqerrors[rid]['totalstats']['finishedc'] = 0
-            reqerrors[rid]['totalstats']['failedc'] = 0
-            reqerrors[rid]['totalstats']['allc'] = 0
-            reqerrors[rid]['totalstats']['greenc'] = 0
-            reqerrors[rid]['totalstats']['yellowc'] = 0
-            reqerrors[rid]['totalstats']['redc'] = 0
-            reqerrors[rid]['tasks'] = {}
-            for cloudname in clouds:
-                reqerrors[rid][cloudname] = {}
-                reqerrors[rid][cloudname]['percent'] = 0
-                reqerrors[rid][cloudname]['finishedc'] = 0
-                reqerrors[rid][cloudname]['failedc'] = 0
-                reqerrors[rid][cloudname]['allc'] = 0
-        if errorEntry['JEDITASKID'] not in reqerrors[rid]['tasks']:
-            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']] = {}
-            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['finishedc'] = 0
-            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['allc'] = 0
-        reqerrors[rid][errorEntry['CLOUD']]['finishedc'] += errorEntry['FINISHEDC']
-        reqerrors[rid][errorEntry['CLOUD']]['failedc'] += errorEntry['FAILEDC']
-        reqerrors[rid][errorEntry['CLOUD']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+        if 'CLOUD' in errorEntry:
+            rid = errorEntry['REQID']
+            if rid not in reqerrors:
+                reqentry = {}
+                reqerrors[rid] = reqentry
+                reqerrors[rid]['reqid'] = rid
+                reqerrors[rid]['totalstats'] = {}
+                reqerrors[rid]['totalstats']['percent'] = 0
+                reqerrors[rid]['totalstats']['minpercent'] = 100
+                reqerrors[rid]['totalstats']['finishedc'] = 0
+                reqerrors[rid]['totalstats']['failedc'] = 0
+                reqerrors[rid]['totalstats']['allc'] = 0
+                reqerrors[rid]['totalstats']['greenc'] = 0
+                reqerrors[rid]['totalstats']['yellowc'] = 0
+                reqerrors[rid]['totalstats']['redc'] = 0
+                reqerrors[rid]['tasks'] = {}
+                for cloudname in clouds:
+                    reqerrors[rid][cloudname] = {}
+                    reqerrors[rid][cloudname]['percent'] = 0
+                    reqerrors[rid][cloudname]['finishedc'] = 0
+                    reqerrors[rid][cloudname]['failedc'] = 0
+                    reqerrors[rid][cloudname]['allc'] = 0
+            if errorEntry['JEDITASKID'] not in reqerrors[rid]['tasks']:
+                reqerrors[rid]['tasks'][errorEntry['JEDITASKID']] = {}
+                reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['finishedc'] = 0
+                reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['allc'] = 0
+            reqerrors[rid][errorEntry['CLOUD']]['finishedc'] += errorEntry['FINISHEDC']
+            reqerrors[rid][errorEntry['CLOUD']]['failedc'] += errorEntry['FAILEDC']
+            reqerrors[rid][errorEntry['CLOUD']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
 
-        reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['finishedc'] += errorEntry['FINISHEDC']
-        reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
+            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['finishedc'] += errorEntry['FINISHEDC']
+            reqerrors[rid]['tasks'][errorEntry['JEDITASKID']]['allc'] += errorEntry['FINISHEDC'] + errorEntry['FAILEDC']
 
-        reqerrors[rid]['totalstats']['finishedc'] += reqerrors[rid][errorEntry['CLOUD']]['finishedc']
-        reqerrors[rid]['totalstats']['failedc'] += reqerrors[rid][errorEntry['CLOUD']]['failedc']
-        reqerrors[rid]['totalstats']['allc'] += reqerrors[rid][errorEntry['CLOUD']]['allc']
+            reqerrors[rid]['totalstats']['finishedc'] += reqerrors[rid][errorEntry['CLOUD']]['finishedc']
+            reqerrors[rid]['totalstats']['failedc'] += reqerrors[rid][errorEntry['CLOUD']]['failedc']
+            reqerrors[rid]['totalstats']['allc'] += reqerrors[rid][errorEntry['CLOUD']]['allc']
 
-        if errorEntry['CLOUD'] not in clouderrors:
-            clouderrors[errorEntry['CLOUD']] = {}
-        if errorEntry['COMPUTINGSITE'] not in clouderrors[errorEntry['CLOUD']]:
-            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']] = {}
-            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['finishedc'] = 0
-            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['failedc'] = 0
-            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['allc'] = 0
-        clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['finishedc'] += errorEntry['FINISHEDC']
-        clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['failedc'] += errorEntry['FAILEDC']
-        clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['allc'] += (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])
+            if errorEntry['CLOUD'] not in clouderrors:
+                clouderrors[errorEntry['CLOUD']] = {}
+            if errorEntry['COMPUTINGSITE'] not in clouderrors[errorEntry['CLOUD']]:
+                clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']] = {}
+                clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['finishedc'] = 0
+                clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['failedc'] = 0
+                clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['allc'] = 0
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['finishedc'] += errorEntry['FINISHEDC']
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['failedc'] += errorEntry['FAILEDC']
+            clouderrors[errorEntry['CLOUD']][errorEntry['COMPUTINGSITE']]['allc'] += (errorEntry['FINISHEDC'] + errorEntry['FAILEDC'])
 
     for rid, reqentry in reqerrors.items():
         reqerrors[rid]['totalstats']['percent'] = int(math.ceil(reqerrors[rid]['totalstats']['finishedc']*100./reqerrors[rid]['totalstats']['allc'])) if reqerrors[rid]['totalstats']['allc'] > 0 else 0
