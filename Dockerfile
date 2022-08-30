@@ -90,8 +90,6 @@ RUN chmod -R 777 /etc/httpd/conf.d
 # to be removed for prodiction
 RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
 
-# to grant low port number access to non-root
-RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
 
 ENTRYPOINT ["start-daemon.sh"]
 
