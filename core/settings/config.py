@@ -26,7 +26,7 @@ if 'BIGMON_HOST' in os.environ:
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46']
 
 ### VIRTUALENV
-VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/data/virtualenv37')
+VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/data/wenaus/virtualenv/twrpm')
 
 ### WSGI
 if 'BIGMON_WSGI_PATH' in os.environ:
