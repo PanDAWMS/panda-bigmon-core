@@ -8,9 +8,10 @@ class IndigoIamOIDC(BaseOAuth2):
     name = 'indigoiam'
     ID_KEY = 'email'
     ACCESS_TOKEN_METHOD = 'POST'
-    
+    REFRESH_TOKEN_METHOD = 'POST'
+
     EXTRA_DATA = [
-        ('refresh_token', 'refresh_token', True),
+        ('id_token', 'id_token', True),
         ('expires_in', 'expires_in'),
         ('token_type', 'token_type', True),
         ('scope', 'scope'),
