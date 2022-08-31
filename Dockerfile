@@ -75,10 +75,15 @@ COPY docker/activate_this.py ${BIGMON_VIRTUALENV_PATH}/bin/activate_this.py
 COPY docker/start-daemon.sh /usr/local/bin/
 COPY docker/conf.d/*.conf /etc/httpd/conf.d/
 
+
 # symlinks to allow late customization
 RUN ln -fs ${BIGMON_WSGI_PATH}/config/local.py ${BIGMON_WSGI_PATH}/core/settings/local.py
 
 # to work with non-root
+RUN grep -v Listen /etc/httpd/conf/httpd.conf > /etc/httpd/conf/tmp; \
+    echo Listen 8080 > /etc/httpd/conf/httpd.conf; \
+    cat /etc/httpd/conf/tmp >> /etc/httpd/conf/httpd.conf; \
+    rm /etc/httpd/conf/tmp
 RUN chmod 777 ${BIGMON_WSGI_PATH}/logs
 RUN chmod 777 /var/log/httpd
 RUN chmod 777 /etc/grid-security
@@ -90,13 +95,10 @@ RUN chmod -R 777 /etc/httpd/conf.d
 # to be removed for prodiction
 RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
 
-# to grant low port number access to non-root
-RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/sbin/httpd
-
 ENTRYPOINT ["start-daemon.sh"]
 
 
 STOPSIGNAL SIGINT
 
-EXPOSE 443
+EXPOSE 8443 8080
 CMD ["all"]
