@@ -97,5 +97,5 @@ ENTRYPOINT ["start-daemon.sh"]
 
 STOPSIGNAL SIGINT
 
-EXPOSE 443
+EXPOSE 8443
 CMD ["all"]
