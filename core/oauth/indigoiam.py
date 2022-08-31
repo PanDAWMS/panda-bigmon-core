@@ -30,7 +30,6 @@ class IndigoIamOIDC(BaseOAuth2):
             'first_name': response.get('given_name', ''),
             'last_name': response.get('family_name', ''),
             'name': response.get('name', ''),
-            'groups': response.get('groups', []),
         }
     def user_data(self, access_token, *args, **kwargs):
         return self.get_json(urljoin(self.setting('BASEPATH'), 'userinfo'),
