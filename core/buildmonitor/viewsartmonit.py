@@ -1,16 +1,9 @@
-from django.shortcuts import render, redirect
-# from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render
 from core.views import initRequest
-from django.db import connection, transaction
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.db import connection
 from django.core.cache import cache
-from collections import defaultdict
-from operator import itemgetter, attrgetter
-from pprint import pprint
 import requests
-import json, re, sys, datetime
+import json, re, datetime
 from django.views.decorators.cache import never_cache
 from core.libs.DateEncoder import DateEncoder
 
@@ -137,4 +130,3 @@ def artmonitviewDemo(request):
     data = {'viewParams': request.session['viewParams'], 'resltART': json.dumps(list2view, cls=DateEncoder)}
 
     return render(request, 'artmonitviewDemo.html', data, content_type='text/html')
-#    return render_to_response('globalviewDemo.html', data, content_type='text/html')

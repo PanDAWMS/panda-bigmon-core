@@ -44,7 +44,7 @@ def taskProblemExplorer(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('taskProblemExplorer.html', data, content_type='text/html')
+        response = render(request, 'taskProblemExplorer.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
