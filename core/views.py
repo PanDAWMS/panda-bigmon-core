@@ -8318,21 +8318,22 @@ def getSites(request):
     :param request:
     :return:
     """
-    if request.is_ajax():
+    if request.headers.get('x-requested-with') and 'XMLHttpRequest' in request.headers.get('x-requested-with'):
         try:
             q = request.GET.get('term', '')
             pq_dict = get_panda_queues()
             results = []
             for pq_name in pq_dict:
-                if q in pq_name.lower():
+                if q.lower() in pq_name.lower():
                     results.append(pq_name)
             data = json.dumps(results)
         except:
             data = 'fail'
+            HttpResponse(data, 'application/json', status=204)
     else:
         data = 'fail'
-    mimetype = 'application/json'
-    return HttpResponse(data, mimetype)
+        HttpResponse(data, 'application/json', status=406)
+    return HttpResponse(data, 'application/json')
 
 
 @never_cache
