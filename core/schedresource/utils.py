@@ -18,7 +18,7 @@ _logger = logging.getLogger('bigpandamon')
 
 def get_CRIC_panda_queues():
     """Get PanDA queues config from CRIC and put to cache"""
-    panda_queues_dict = cache.get(f'pandaQueues{settings.DEPLOYMENT}')
+    panda_queues_dict = cache.get(f'pandaQueues{settings.DEPLOYMENT}', None)
     if not panda_queues_dict:
         panda_queues_dict = {}
         url = settings.CRIC_API_URL
