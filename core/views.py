@@ -3954,14 +3954,13 @@ def dashNucleus(request):
     query, extra, nhours = setupView(request, hours=hours, limit=999999, wildCardExt=True)
 
     # get summary data
+    is_add_hs06s = True if settings.DEPLOYMENT == 'ORACLE_ATLAS' else False
     jsn_nucleus_dict, jsn_satellite_dict = get_job_summary_nucleus(
         query,
         extra=extra,
         job_states_order=copy.deepcopy(statelist),
-        hs06s=True
+        hs06s=is_add_hs06s
     )
-
-    get_world_hs06_summary(query, extra=extra)
 
     if is_json_request(request):
         data = {
