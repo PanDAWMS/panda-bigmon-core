@@ -293,7 +293,7 @@ def patch_start_time(dbrow):
 
 
 def getCachedProgress(se, taskid):
-    serialized_progress = cache.get('serialized_staging_progress' + se + "_" + str(taskid))
+    serialized_progress = cache.get('serialized_staging_progress' + se + "_" + str(taskid), None)
     if serialized_progress:
         return pickle.loads(serialized_progress)
     else:

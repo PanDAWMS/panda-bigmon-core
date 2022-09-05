@@ -25,7 +25,7 @@ def get_job_error_desc():
     :return:
     """
 
-    error_desc_dict = cache.get('errorCodes')
+    error_desc_dict = cache.get('errorCodes', None)
     # error_desc_dict = None
     if not error_desc_dict:
         codes = ErrorCodes()

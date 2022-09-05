@@ -33,7 +33,7 @@ def main(request):
     initRequest(request)
     query_params = parse_request(request)
 
-    iDDSrequests = cache.get('iDDSrequests')
+    iDDSrequests = cache.get('iDDSrequests', None)
     if not iDDSrequests:
         try:
             iDDSrequests = getRequests(query_params)

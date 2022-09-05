@@ -382,7 +382,7 @@ def checkUcoreSite(site, usites):
 
 def updateCacheWithListOfMismatchedCloudSites(mismatchedSites):
     try:
-        listOfCloudSitesMismatched = cache.get('mismatched-cloud-sites-list')
+        listOfCloudSitesMismatched = cache.get('mismatched-cloud-sites-list', None)
     except:
         listOfCloudSitesMismatched = None
     if (listOfCloudSitesMismatched is None) or (len(listOfCloudSitesMismatched) == 0):
