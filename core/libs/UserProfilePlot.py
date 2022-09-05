@@ -2,7 +2,8 @@
 from core.pandajob.models import Jobsarchived4, Jobsarchived, Jobsactive4, Jobsdefined4, Jobswaiting4
 from core.libs.exlib import drop_duplicates
 from core.libs.job import add_job_category
-import core.constants as const
+from django.conf import settings
+
 import logging
 _logger = logging.getLogger('bigpandamon')
 
@@ -35,7 +36,8 @@ class UserProfilePlot:
             query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
             del query['modificationtime__castdate__range']
         # add jeditaskid to where clause
-        extra_srt = " jeditaskid in (select jeditaskid from atlas_panda.jedi_tasks where upper(username) like '%%{}%%' and modificationtime > TO_DATE('{}', 'YYYY-MM-DD HH24:MI:SS'))".format(
+        extra_srt = " jeditaskid in (select jeditaskid from {}.jedi_tasks where upper(username) like '%%{}%%' and modificationtime > TO_DATE('{}', 'YYYY-MM-DD HH24:MI:SS'))".format(
+            settings.DB_SCHEMA_PANDA,
             self.username.upper(),
             query['creationtime__gte']
         )
