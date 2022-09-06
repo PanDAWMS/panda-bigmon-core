@@ -47,7 +47,7 @@ def get_pandaserver_attr(request):
             return response
 
     header = {}
-    header['Authorization'] = 'Bearer {0}'.format(access_token)
+    header['Authorization'] = 'Bearer {0}'.format(id_token)
     header['Origin'] = organisation
 
     resp = post('https://pandaserver.cern.ch/server/panda/getAttr', headers=header, data={})
