@@ -667,7 +667,7 @@ a.close-x-sign:hover {
 
 .tooltip-right .tooltip-text {
   visibility: hidden;
-  min-width: 100px;
+  min-width: 200px;
   max-width: 400px;
   background-color: #272727;
   color: #fff;
