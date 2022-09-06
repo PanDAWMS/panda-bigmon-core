@@ -35,7 +35,7 @@
     <i class="fi-social-github" aria-hidden="true"></i> Log in with Github
     </a>
     {% endif %}
-    {% if auth_providers is not None and 'indigoiam' in auth_providers %}
+    {% if auth_providers is None or 'indigoiam' in auth_providers %}
     <a href="{% url 'social:begin' 'indigoiam' %}" class="button social indigoiam">
         <i class="fi-ticket" aria-hidden="true"></i> Log in with IAM
     </a>

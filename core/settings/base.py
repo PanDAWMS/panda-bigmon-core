@@ -148,7 +148,8 @@ INSTALLED_APPS_EXTRA = [
     "core.oi",
     "core.pbm",
     "core.reports",
-    "core.runningprod"
+    "core.runningprod",
+    "core.panda_client"
 ]
 
 if len(INSTALLED_APPS_EXTRA) > 0:
