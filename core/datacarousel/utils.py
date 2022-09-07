@@ -380,7 +380,7 @@ def send_report_rse(rse, data):
     recipient_list = list(ReportEmails.objects.filter(**rquery).values('email'))
     recipient_list = list(set([r['email'] for r in recipient_list]))
 
-    cache_key = "mail_sent_flag_{RSE}_{RECIPIENT}".format(RSE=rse, RECIPIENT=','.join(recipient_list))
+    cache_key = "mail_sent_flag_{RSE}".format(RSE=rse)
     if not cache.get(cache_key, False):
         is_sent = False
         i = 0
