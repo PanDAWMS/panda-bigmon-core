@@ -95,7 +95,7 @@ from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
-from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
+from core.libs.sqlcustom import escape_input, preprocess_wild_card_string, filter_dict_by_wildcards
 from core.libs.datetimestrings import datetime_handler, parse_datetime
 from core.libs.jobconsumers import reconstruct_job_consumers
 from core.libs.DateEncoder import DateEncoder
@@ -645,7 +645,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 query['jobsetid__gte'] = plo
                 query['jobsetid__lte'] = phi
         elif param == 'user' or param == 'username' or param == 'produsername':
-            if querytype == 'job':
+            if querytype == 'job' and not is_wildcards(request.session['requestParams'][param]):
                 query['produsername__icontains'] = request.session['requestParams'][param].strip()
         elif param in ('project',) and querytype == 'task':
             val = request.session['requestParams'][param]
@@ -849,7 +849,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
             if param == 'site':
                 pqs = get_panda_queues()
-                query['computingsite__in'] = [info['nickname'] for pq, info in pqs.items() if info['gocname'] == request.session['requestParams'][param]]
+                pqs = filter_dict_by_wildcards(pqs, 'gocname', request.session['requestParams'][param])
+                if 'computingsite__in' in query:
+                    query['computingsite__in'] = list(set(query['computingsite__in']).intersection(set([pq for pq in pqs.keys()])))
+                else:
+                    query['computingsite__in'] = [pq for pq in pqs.keys()]
 
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -864,6 +868,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['%s__range' % param] = (int(leftlimit) * 1000, int(rightlimit) * 1000 - 1)
                         else:
                             query[param] = int(request.session['requestParams'][param])
+                    elif param == 'computingsite':
+                        if is_wildcards(request.session['requestParams'][param]):
+                            pqs = get_panda_queues()
+                            pqs = filter_dict_by_wildcards(pqs, 'nickname', request.session['requestParams'][param])
+                            if 'computingsite__in' in query:
+                                query['computingsite__in'] = list(set(query['computingsite__in']).intersection(set([pq for pq in pqs.keys()])))
+                            else:
+                                query['computingsite__in'] = [pq for pq in pqs.keys()]
+                        else:
+                            query[param] = request.session['requestParams'][param]
                     elif param == 'specialhandling' and not '*' in request.session['requestParams'][param]:
                         query['specialhandling__contains'] = request.session['requestParams'][param]
                     elif param == 'prodsourcelabel':
@@ -963,13 +977,12 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query[param] = request.session['requestParams'][param]
 
     if 'region' in request.session['requestParams']:
-        region = request.session['requestParams']['region']
-        pq_clouds = get_pq_clouds()
-        siteListForRegion = []
-        for sn, rn in pq_clouds.items():
-            if rn == region:
-                siteListForRegion.append(str(sn))
-        query['computingsite__in'] = siteListForRegion
+        pqs = get_panda_queues()
+        pqs = filter_dict_by_wildcards(pqs, 'cloud', request.session['requestParams']['region'])
+        if 'computingsite__in' in query:
+            query['computingsite__in'] = list(set(query['computingsite__in']).intersection(set([pq for pq in pqs.keys()])))
+        else:
+            query['computingsite__in'] = [pq for pq in pqs.keys()]
 
     if opmode in ['analysis', 'production'] and querytype == 'job':
         if opmode.startswith('analy'):
@@ -986,16 +999,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString = ''
 
     # wild cards handling
+    wildSearchFieldsToProcess = set()
     wildSearchFields = (set(wildSearchFields) & set(list(request.session['requestParams'].keys())))
     # filter out fields that already in query dict
-    wildSearchFields1 = set()
     for currenfField in wildSearchFields:
         if not (currenfField.lower() == 'transformation'):
             if not ((currenfField.lower() == 'cloud') & (
             any(card.lower() == 'all' for card in request.session['requestParams'][currenfField].split('|')))):
                 if not any(currenfField in key for key, value in query.items()) and currenfField not in extraQueryFields:
-                    wildSearchFields1.add(currenfField)
-    wildSearchFields = wildSearchFields1
+                    wildSearchFieldsToProcess.add(currenfField)
+    wildSearchFields = wildSearchFieldsToProcess
 
     for i_field, field_name in enumerate(wildSearchFields, start=1):
         extraQueryString += '('
@@ -1545,9 +1558,9 @@ def jobList(request, mode=None, param=None):
     if 'taskid' in request.session['requestParams'] and '|' not in request.session['requestParams']['taskid']:
         taskname = get_task_name_by_taskid(request.session['requestParams']['taskid'])
 
-    if 'produsername' in request.session['requestParams']:
+    if 'produsername' in request.session['requestParams'] and not is_wildcards(request.session['requestParams']['produsername']):
         user = request.session['requestParams']['produsername']
-    elif 'user' in request.session['requestParams']:
+    elif 'user' in request.session['requestParams'] and not is_wildcards(request.session['requestParams']['user']):
         user = request.session['requestParams']['user']
     else:
         user = None

@@ -36,7 +36,7 @@
 {% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
 {% if requestParams.jobstatus %}<br><b>Job status: <span class={{requestParams.jobstatus}}>{{ requestParams.jobstatus }}</span></b> {% endif %}
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a></b> {% endif %}
+{% if requestParams.computingsite %}<br><b>Site:</b> {% if '*' not in requestParams.computingsite and '|' not in requestParams.computingsite %} <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a> <a href="{% url 'siteInfo' requestParams.computingsite %}">Show site information page</a> {% else %}{{ requestParams.computingsite }}{% endif %}{% endif %}
 {% if user %}<br><b>User: <a href="{% url 'userInfo' user %}?display_limit=100">{{ user }}</a> <a href="{% url 'userInfo' user %}?display_limit=100"> Show user page</a></b> {% endif %}
 {% if requestParams.jeditaskid and requestParams.jeditaskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}      {{ taskname }}</a> </b> {% endif %}
 {% if requestParams.taskid and requestParams.taskid != 'None' %}<br><b>Task: <a href="{% url 'taskInfo' requestParams.taskid  %}">{{ requestParams.taskid }}      {{ taskname }}</a></b> {% endif %}

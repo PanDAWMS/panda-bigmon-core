@@ -190,6 +190,11 @@ def get_job_summary_region(query, **kwargs):
         for pqr in list(set(pq_to_remove)):
             del panda_queues_dict[pqr]
 
+    if 'computingsite' in query:
+        panda_queues_dict = {pqn:params for pqn, params in panda_queues_dict.items() if pqn == query['computingsite']}
+    elif 'computingsite__in' in query:
+        panda_queues_dict = {pqn:params for pqn, params in panda_queues_dict.items() if pqn in query['computingsite__in']}
+
     sites_list = list(set([params['gocname'] for pq, params in panda_queues_dict.items()]))
     regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
 
