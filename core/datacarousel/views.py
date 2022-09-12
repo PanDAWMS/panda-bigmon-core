@@ -242,7 +242,8 @@ def send_stalled_requests_report(request):
         INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
         INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
         INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID 
-        where END_TIME is NULL and (t1.STATUS = 'staging') and t1.UPDATE_TIME <= TRUNC(SYSDATE) - {}
+        where END_TIME is NULL and (t1.STATUS = 'staging') and t1.UPDATE_TIME <= TRUNC(SYSDATE) - {} 
+            and t4.status not in ('cancelled','failed','broken','aborted','finished','done')
         """.format(settings.DATA_CAROUSEL_MAIL_DELAY_DAYS)
         cursor = connection.cursor()
         cursor.execute(query)
