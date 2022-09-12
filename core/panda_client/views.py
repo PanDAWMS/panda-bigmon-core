@@ -1,55 +1,99 @@
-import json
-import time
-
+import os, sys
 from requests import get, post
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 
 from core.oauth.utils import login_customrequired
-from core.libs.DateEncoder import DateEncoder
+from core.panda_client.utils import get_auth_indigoiam
+from core.views import initRequest
+
+baseURL = 'https://pandaserver.cern.ch/server/panda'
+@login_customrequired
+@never_cache
+def get_pandaserver_atter(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    auth = get_auth_indigoiam(request)
+
+    if auth is not None and ('Authorization' in auth and 'Origin' in auth):
+        data = {}
+        url = baseURL + '/getAtter'
+        resp = post(url, headers=auth, data=data)
+        resp = resp.text
+    else:
+        resp = auth['detail']
+
+    return HttpResponse(resp, content_type='application/json')
+
+# kill task
+@login_customrequired
+@never_cache
+def killTask(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    """Kill a task
+
+        request parameters:
+           jediTaskID: jediTaskID of the task to be killed
+    """
+    auth = get_auth_indigoiam(request)
+
+    if auth is not None and ('Authorization' in auth and 'Origin' in auth):
+        if 'jeditaskid' in request:
+            data = {'jediTaskID': request['jeditaskid']}
+            data['properErrorCode'] = True
+
+            url = baseURL + '/killTask'
+
+            try:
+                resp = post(url, headers=auth, data=data)
+            except Exception as ex:
+                resp = "ERROR killTasl: %s %s" % (ex, resp.status_code)
+        else:
+            resp = 'jeditaskid is not defined'
+    else:
+        resp = auth['detail']
+
+    return HttpResponse(resp, content_type='application/json')
 
 @login_customrequired
 @never_cache
-def get_pandaserver_attr(request):
+def finishTask(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+    """Finish a task
 
-    id_token = None
-    token_type = None
-    access_token = None
+       request parameters:
+           jediTaskID: jediTaskID of the task to be finished
+           soft: If True, new jobs are not generated and the task is
+                 finihsed once all remaining jobs are done.
+                 If False, all remaining jobs are killed and then the
+                 task is finished
+    """
+    auth = get_auth_indigoiam(request)
 
-    username = None
-    fullname = None
-    organisation = 'atlas'
-
-    auth_provider = None
-
-    user = request.user
-    resp = {}
-
-    if user.is_authenticated and user.social_auth is not None:
-
-        auth_provider = (request.user.social_auth.get()).provider
-        social = request.user.social_auth.get(provider=auth_provider)
-
-        if (auth_provider == 'indigoiam'):
-            if (social.extra_data['auth_time'] + social.extra_data['expires_in'] - 10) <= int(time.time()):
-                resp = {"detail": "id token is expired"}
-                dump = json.dumps(resp, cls=DateEncoder)
-                response = HttpResponse(dump, content_type='application/json')
-                return response
+    if auth is not None and ('Authorization' in auth and 'Origin' in auth):
+        if 'jeditaskid' in request:
+            data = {'jediTaskID': request['jeditaskid']}
+            data['properErrorCode'] = True
+            if 'soft' in request:
+                data['soft'] = True
             else:
-                token_type = social.extra_data['token_type']
-                access_token = social.extra_data['access_token']
-                id_token = social.extra_data['id_token']
+                data['soft'] = False
+            url = baseURL + '/finishTask'
+
+            try:
+                resp = post(url, headers=auth, data=data)
+            except Exception as ex:
+                resp = "ERROR finishTask: %s %s" % (ex, resp.status_code)
         else:
-            resp = {"detail": "[P]lease log in via indigoiam"}
-            dump = json.dumps(resp, cls=DateEncoder)
-            response = HttpResponse(dump, content_type='application/json')
-            return response
+            resp = 'jeditaskid is not defined'
+    else:
+        resp = auth['detail']
 
-    header = {}
-    header['Authorization'] = 'Bearer {0}'.format(id_token)
-    header['Origin'] = organisation
-
-    resp = post('https://pandaserver.cern.ch/server/panda/getAttr', headers=header, data={})
-
-    return HttpResponse(resp.text, content_type='application/json')
+    return HttpResponse(resp, content_type='application/json')
