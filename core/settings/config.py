@@ -2,7 +2,7 @@ import os
 from os.path import dirname, join
 
 import core
-from core import filebrowser, pbm, admin
+from core import filebrowser, admin
 from core.settings.local import MY_SECRET_KEY, LOG_ROOT
 
 ALLOWED_HOSTS = [
@@ -43,7 +43,6 @@ if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDE
 ### DB_ROUTERS for atlas's prodtask
 DATABASE_ROUTERS = [
     'core.dbrouter.ProdMonDBRouter',
-    'core.pbm.dbrouter.PandaBrokerageMonDBRouter',
 ]
 
 # name spaces of DB tables per application
@@ -66,7 +65,6 @@ TEMPLATES = [
             join(dirname(core.__file__), 'templates'),
             join(dirname(admin.__file__), 'templates'),
             join(dirname(core.filebrowser.__file__), 'templates'),
-            join(dirname(core.pbm.__file__), 'templates'),
         ],
         'OPTIONS': {
             'context_processors': [
@@ -306,14 +304,6 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
-        'logfile-pbm': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': LOG_ROOT + "/logfile.pbm",
-            'maxBytes': LOG_SIZE,
-            'backupCount': 2,
-            'formatter': 'verbose',
-        },
         'logfile-template': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
@@ -382,10 +372,6 @@ LOGGING = {
         },
         'bigpandamon-filebrowser':{
             'handlers': ['logfile-filebrowser', 'logfile-error'],
-            'level': 'DEBUG',
-        },
-        'bigpandamon-pbm':{
-            'handlers': ['logfile-pbm'],
             'level': 'DEBUG',
         },
         'social': {

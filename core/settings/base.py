@@ -146,7 +146,6 @@ INSTALLED_APPS_EXTRA = [
     "core.mlflowdynamic",
     "core.monitor",
     "core.oi",
-    "core.pbm",
     "core.reports",
     "core.runningprod",
     "core.panda_client"
