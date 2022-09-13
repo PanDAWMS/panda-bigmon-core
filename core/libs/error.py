@@ -25,8 +25,12 @@ def get_job_error_desc():
     :return:
     """
 
-    error_desc_dict = cache.get('errorCodes')
-    # error_desc_dict = None
+    try:
+        error_desc_dict = cache.get('errorCodes', None)
+    except Exception as e:
+        _logger.warning('Can not get error codes from cache: \n{} \nLoading directly instead...'.format(e))
+        error_desc_dict = None
+
     if not error_desc_dict:
         codes = ErrorCodes()
         _, error_desc_dict, _ = codes.getErrorCodes()

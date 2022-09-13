@@ -294,7 +294,7 @@ def patch_start_time(dbrow):
 
 
 def getCachedProgress(se, taskid):
-    serialized_progress = cache.get('serialized_staging_progress' + se + "_" + str(taskid))
+    serialized_progress = cache.get('serialized_staging_progress' + se + "_" + str(taskid), None)
     if serialized_progress:
         return pickle.loads(serialized_progress)
     else:
@@ -377,24 +377,23 @@ def send_report_rse(rse, data):
     max_mail_attempts = 10
     subject = "{} Data Carousel Alert for {}".format(settings.EMAIL_SUBJECT_PREFIX, rse)
 
-    rquery = {'report': 'dc_stalled'}
+    rquery = {'report': 'dc_stalled', 'type__in': [rse, 'all']}
     recipient_list = list(ReportEmails.objects.filter(**rquery).values('email'))
+    recipient_list = list(set([r['email'] for r in recipient_list]))
 
-    for recipient in recipient_list:
-        cache_key = "mail_sent_flag_{RSE}_{RECIPIENT}".format(RSE=rse, RECIPIENT=recipient['email'])
-        if not cache.get(cache_key, False):
-            is_sent = False
-            i = 0
-            while not is_sent:
-                i += 1
-                if i > 1:
-                    time.sleep(10)
-                is_sent = send_mail_bp(mail_template, subject, data, recipient['email'], send_html=True)
-                _logger.debug("Email to {} attempted to send with result {}".format(recipient, is_sent))
+    cache_key = "mail_sent_flag_{RSE}".format(RSE=rse)
+    if not cache.get(cache_key, False):
+        is_sent = False
+        i = 0
+        while not is_sent:
+            i += 1
+            if i > 1:
                 # put 10 seconds delay to bypass the message rate limit of smtp server
                 time.sleep(10)
-                if i >= max_mail_attempts:
-                    break
+            is_sent = send_mail_bp(mail_template, subject, data, recipient_list, send_html=True)
+            _logger.debug("Email to {} attempted to send with result {}".format(','.join(recipient_list), is_sent))
+            if i >= max_mail_attempts:
+                break
 
-            if is_sent:
-                cache.set(cache_key, "1", settings.DATA_CAROUSEL_MAIL_REPEAT*24*3600)
+        if is_sent:
+            cache.set(cache_key, "1", settings.DATA_CAROUSEL_MAIL_REPEAT*24*3600)

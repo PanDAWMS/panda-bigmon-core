@@ -28,6 +28,13 @@ def send_mail_bp(template, subject, summary, recipient, send_html=False):
     # ----
     isSuccess = True
     nmails = 0
+    if isinstance(recipient, str):
+        recipients = [recipient]
+    elif isinstance(recipient, list) or isinstance(recipient, tuple):
+        recipients = recipient
+    else:
+        recipients = []
+
     html_message = loader.render_to_string(
         template,
         {
@@ -43,7 +50,7 @@ def send_mail_bp(template, subject, summary, recipient, send_html=False):
                 html_message=html_message,
                 message=textify(html_message),
                 from_email='atlas.pandamon@cern.ch',
-                recipient_list=[recipient],
+                recipient_list=recipients,
                 fail_silently=False,
             )
         else:
@@ -51,7 +58,7 @@ def send_mail_bp(template, subject, summary, recipient, send_html=False):
                 subject=subject,
                 message=textify(html_message),
                 from_email='atlas.pandamon@cern.ch',
-                recipient_list=[recipient],
+                recipient_list=recipients,
                 fail_silently=False,
             )
 

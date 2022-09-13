@@ -8,9 +8,7 @@
     {% endif %}
 {% endblock %}
 {% block subtitle_params %}
-    {% if tasksTotalCount != None %}<b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?
-        {% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{ display_limit }}{% endif %}&limit={{ tasksTotalCount }}">{{ tasksTotalCount }}</a></b>
-    {% endif %}
+  {% if tasksTotalCount != None %}<b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{ display_limit }}{% endif %}&limit={{ tasksTotalCount }}">{{ tasksTotalCount }}</a></b>{% endif %}
 {% endblock %}
 
 {% block css_page_library %}
@@ -216,10 +214,10 @@
                         Errors <br><font color='brown'>Logged status</font></th>
                     <th>Task status<br><a href="{{ nosorturl }}sortby=nfiles">Nfiles</a></th>
                     <th>Input files
+                      <br><span class="lost tooltip-right">Nlost <i class="fi-info"></i><span class="tooltip-text">The files were unavailable at a time of the task running therefore the PanDA did not create jobs for processing them and they are not included to the number of total input files.</span></span>
                       <br><a href="{{ nosorturl }}sortby=pctfinished"><span class='finished'>Nfinish&nbsp;%</span></a>
                       <a href="{{ nosorturl }}sortby=pctfailed"><span class='failed'>Nfail&nbsp;%</span></a>
-                      <span class="lost">Nlost</span>
-                    </th>
+                      </th>
                     <th>Total/<a href="{{ nosorturl }}sortby=totevrem">Remaining</a> events</th>
                     <th><a href="{{ nosorturl }}sortby=creationdate-asc">Created</a></th>
                     <th><a href="{{ nosorturl }}sortby=time-descending">Modified</a></th>
@@ -260,15 +258,15 @@
                                     <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %}
                                     <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}
                             </a> {% if task.failedscouting == True %}<br>during scouting{% endif %}
-                            {% if task.dsinfo.nfiles > 0 %} <br>{{ task.dsinfo.nfiles }} {% endif %} </td>
+                            {% if task.dsinfo.nfiles >= 0 %} <br>{{ task.dsinfo.nfiles }} {% endif %} </td>
                         <td>
+                          {% if task.dsinfo.nfilesmissing > 0 %}<span class="lost">+{{ task.dsinfo.nfilesmissing }} lost</span>{% endif %}
                           {% if task.dsinfo.nfilesfinished > 0 %}
                             <span class='finished'>{{ task.dsinfo.nfilesfinished }}&nbsp;{{ task.dsinfo.pctfinished }}%</span>
                           {% endif %}
                           {% if task.dsinfo.nfilesfailed > 0 %}
                               <br><a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">
                               <span class='failed'>{{ task.dsinfo.nfilesfailed }}&nbsp;{{ task.dsinfo.pctfailed }}%</span>{% endif %}</a>
-                          {% if task.dsinfo.nfilesmissing > 0 %}<br><span class="lost">{{ task.dsinfo.nfilesmissing }}</span>{% endif %}
                         </td>
                         <td><font size=-1>{% if task.totev > 0 %} {{ task.totev }} /
                             {{ task.totevrem }} {% endif %}</font></td>

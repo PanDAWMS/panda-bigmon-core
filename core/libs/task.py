@@ -439,10 +439,11 @@ def calculate_dataset_stats(dsets):
                     dsinfo['nfiles'] += int(ds['nfiles'])
                     dsinfo['nfilesfinished'] += int(ds['nfilesfinished']) if 'nfilesfinished' in ds else 0
                     dsinfo['nfilesfailed'] += int(ds['nfilesfailed']) if 'nfilesfailed' in ds else 0
-                    # nfilesmissing is not counted in nfiles in the DB
-                    if 'nfilesmissing' in ds and ds['nfilesmissing'] is not None:
-                        dsinfo['nfilesmissing'] += int(ds['nfilesmissing'])
                     ds['percentfinished'] = round_to_n_digits(100. * int(ds['nfilesfinished']) / int(ds['nfiles']), 1, method='floor')
+
+                # nfilesmissing is not counted in nfiles in the DB
+                if 'nfilesmissing' in ds and ds['nfilesmissing'] is not None:
+                    dsinfo['nfilesmissing'] += int(ds['nfilesmissing'])
 
             elif 'type' in ds and ds['type'] in ('output', ) and 'streamname' in ds and ds['streamname'] is not None and ds['streamname'] == 'OUTPUT0':
                 # OUTPUT0 - the first and the main steam of outputs

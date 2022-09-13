@@ -103,3 +103,75 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
     extraQueryString = extraQueryString.replace("%20", " ") if not '%%20' in extraQueryString else extraQueryString
 
     return extraQueryString
+
+
+def filter_dict_by_wildcards(data_dict, param, value):
+    """
+    Filtering dict by supported in the system wildcards: '*' '|', '!', ','
+    :param data_dict: dict with val as a another dict
+    :param param: str
+    :param value: str value with wildcards
+    :return: dict
+    """
+
+    # firstly divide str by OR condition
+    if ',' in value or '|' in value:
+        value = value.replace('|', ',')
+        values_or = value.split(',')
+    else:
+        values_or = [value]
+
+    # go through each of OR and filter the full copy of input data dict separately
+    data_dicts_or = []
+    for val_or in values_or:
+        data_dict_tmp = {k: v[param] for k,v in data_dict.items()}
+        is_negative = False
+        if val_or.startswith('!'):
+            is_negative = True
+            val_or = val_or[1:]
+        if '*' in val_or:
+            sub_vals = val_or.split('*')
+            if not val_or.startswith('*'):
+                if is_negative:
+                    data_dict_tmp = {k: v for k, v in data_dict_tmp.items() if not v.startswith(sub_vals[0])}
+                else:
+                    data_dict_tmp = {k: v for k,v in data_dict_tmp.items() if v.startswith(sub_vals[0])}
+            if not val_or.endswith('*'):
+                if is_negative:
+                    data_dict_tmp = {k: v for k,v in data_dict_tmp.items() if not v.endswith(sub_vals[-1])}
+                else:
+                    data_dict_tmp = {k: v for k,v in data_dict_tmp.items() if v.endswith(sub_vals[-1])}
+            if len(sub_vals) > 2:
+                for val_and in sub_vals[1:-1]:
+                    if is_negative:
+                        data_dict_tmp = {k: v for k, v in data_dict_tmp.items() if val_and not in v}
+                    else:
+                        data_dict_tmp = {k: v for k, v in data_dict_tmp.items() if val_and in v}
+        else:
+            if is_negative:
+                data_dict_tmp = {k: v for k, v in data_dict_tmp.items() if val_or == v}
+            else:
+                data_dict_tmp = {k: v for k, v in data_dict_tmp.items() if val_or == v}
+
+        data_dicts_or.append(data_dict_tmp)
+
+    # merge OR results of filtering
+    keys_filtered = []
+    for ddo in data_dicts_or:
+        keys_filtered.extend(ddo.keys())
+    keys_filtered = list(set(keys_filtered))
+
+    # collecting final result of filtering
+    data_dict_filtered = {k:v for k,v in data_dict.items() if k in keys_filtered}
+
+    return data_dict_filtered
+
+
+
+
+
+
+
+
+
+

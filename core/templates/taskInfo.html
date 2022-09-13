@@ -1175,11 +1175,11 @@ function buildDatasetsTable(data) {
                 let str = '';
                 if (data > 0) {
                     str += '<a href = "{% url 'fileList' %}?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '">' + full['nfiles'] + '</a>';
-                    if (full['nfilesmissing'] > 0) {str += ' <span class="lost">+' + full['nfilesmissing'] + ' lost</span>'; }
                 }
                 else {
                     str += data;
                 }
+                if (full['nfilesmissing'] > 0) {str += ' <span class="lost">+' + full['nfilesmissing'] + ' lost</span>'; }
                 return str
             }
         },

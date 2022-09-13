@@ -18,7 +18,7 @@ _logger = logging.getLogger('bigpandamon')
 
 def get_CRIC_panda_queues():
     """Get PanDA queues config from CRIC and put to cache"""
-    panda_queues_dict = cache.get(f'pandaQueues{settings.DEPLOYMENT}')
+    panda_queues_dict = cache.get(f'pandaQueues{settings.DEPLOYMENT}', None)
     if not panda_queues_dict:
         panda_queues_dict = {}
         url = settings.CRIC_API_URL
@@ -197,7 +197,7 @@ def get_basic_info_for_pqs(pq_list):
 
 def get_object_stores(**kwargs):
 
-    object_stores_dict = cache.get('objectStores')
+    object_stores_dict = cache.get('objectStores', None)
     if not object_stores_dict:
         object_stores_dict = {}
         url = "https://atlas-cric.cern.ch/api/atlas/ddmendpoint/query/?json&type=OS_"
@@ -257,7 +257,7 @@ def get_pq_object_store_path():
 
 
 def getCRICSEs():
-    SEs = cache.get('CRIC_SEs')
+    SEs = cache.get('CRIC_SEs', None)
     if not SEs:
         url = "https://atlas-cric.cern.ch/api/atlas/ddmendpoint/query/?json"
         http = urllib3.PoolManager()
@@ -276,10 +276,10 @@ def getCRICSEs():
 
 
 def getCRICSites():
-    sitesUcore = cache.get('sitesUcore')
-    sitesHarvester = cache.get('sitesHarvester')
-    sitesType = cache.get('sitesType')
-    computevsAtlasCE = cache.get('computevsAtlasCE')
+    sitesUcore = cache.get('sitesUcore', None)
+    sitesHarvester = cache.get('sitesHarvester', None)
+    sitesType = cache.get('sitesType', None)
+    computevsAtlasCE = cache.get('computevsAtlasCE', None)
 
     if not (sitesUcore and sitesHarvester and computevsAtlasCE and sitesType):
         sitesUcore, sitesHarvester = [], []
