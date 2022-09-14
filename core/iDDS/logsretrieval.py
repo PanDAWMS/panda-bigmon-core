@@ -1,6 +1,6 @@
 import tarfile, os
 import tempfile
-
+import logging
 from idds.client.client import Client
 from core.views import initRequest
 from django.http import JsonResponse, HttpResponse
@@ -11,19 +11,24 @@ from core.libs.exlib import getDataSetsForATask
 
 from django.conf import settings
 
-c = Client(settings.IDDS_HOST)
+_logger = logging.getLogger('bigpandamon')
 
 
 def downloadlog(request):
+    logfile = None
     initRequest(request)
     if 'workloadid' in request.session['requestParams']:
         workloadid = int(request.session['requestParams']['workloadid'])
         with tempfile.TemporaryDirectory() as dirpath:
-            logfile = c.download_logs(workload_id=workloadid, request_id=None, dest_dir=dirpath)
+            try:
+                c = Client(host=settings.IDDS_HOST)
+                logfile = c.download_logs(workload_id=workloadid, request_id=None, dest_dir=dirpath)
+            except Exception as e:
+                _logger.exception('Failed to download logs with iDDS client: {}'.format(e))
+
             if logfile:
                 return getfile(logfile)
             return JsonResponse({'error': 'no log file supplied by idds module'}, safe=False)
-
     else:
         return JsonResponse({'error': 'no workloadid provided'}, safe=False)
 
