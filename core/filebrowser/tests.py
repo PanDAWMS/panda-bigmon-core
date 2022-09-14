@@ -1,8 +1,5 @@
-#import commands
-import datetime
 import os
 
-#from django.utils import timezone
 from django.conf import settings
 import unittest2
 from django.test.client import Client
@@ -14,10 +11,8 @@ get_capath, get_rucio_redirect_host, get_rucio_rest_api_auth_host, \
 get_rucio_rest_api_server_host, get_rucio_oauth_token, \
 get_rucio_metalink_file, get_surls_from_rucio_metalink_file, \
 get_rucio_pfns_from_guids_with_rucio_metalink_file, fetch_file, \
-get_rucio_redirect_url, get_location_from_rucio_redirect_output, \
-get_rucio_redirect_response, get_rucio_pfns_from_guids_with_rucio_redirect, \
-get_rucio_pfns_from_guids_with_dq2client, \
-get_filebrowser_hostname
+get_rucio_redirect_url, \
+get_rucio_redirect_response, get_rucio_pfns_from_guids_with_rucio_redirect
 
 
 
@@ -26,7 +21,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
         # Every test needs a client.
         self.client = Client()
 
-    @unittest2.skip('skipping on purpose')
+    # @unittest2.skip('skipping on purpose')
     def test_settings_vo(self):
         """
             test_settings_vo
@@ -39,21 +34,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
         self.assertEqual(vo, getattr(settings, "FILEBROWSER_VO", "atlas"))
 
 
-    @unittest2.skip('skipping on purpose')
-    def test_settings_hostname(self):
-        """
-            test_settings_hostname
-            
-            Test that FILEBROWSER_HOSTNAME is defined in settings, 
-            and that its value is retrieved correctly in get_filebrowser_hostname
-            
-        """
-        hostname = get_filebrowser_hostname()
-        self.assertEqual(hostname, getattr(settings, "FILEBROWSER_HOSTNAME", \
-                                           commands.getoutput('hostname')))
-
-
-    @unittest2.skip('skipping on purpose')
+    # @unittest2.skip('skipping on purpose')
     def test_settings_filebrowser_directory(self):
         """
             test_settings_filebrowser_directory
@@ -105,9 +86,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
             and that its value is retrieved correctly in get_capath
         """
         capath = get_capath()
-        self.assertEqual(capath, \
-                    getattr(settings, "CAPATH", \
-                            "/etc/grid-security/certificates"))
+        self.assertEqual(capath, getattr(settings, "CAPATH", "/etc/grid-security/certificates"))
 
 
     # @unittest2.skip('skipping on purpose')
@@ -119,8 +98,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
             and that its value is retrieved correctly in get_rucio_account
         """
         rucio_account = get_rucio_account()
-        self.assertEqual(rucio_account, \
-                    getattr(settings, "RUCIO_ACCOUNT", "atlpan"))
+        self.assertEqual(rucio_account, getattr(settings, "RUCIO_ACCOUNT", "atlpan"))
 
 
     @unittest2.skip('skipping on purpose')
@@ -135,19 +113,13 @@ class SimpleFileBrowserTest(unittest2.TestCase):
         """
         ### redirect host
         host_redirect = get_rucio_redirect_host()
-        self.assertEqual(host_redirect, \
-                    getattr(settings, "RUCIO_REDIRECT_HOST", \
-                            "https://rucio-lb-prod.cern.ch"))
+        self.assertEqual(host_redirect, getattr(settings, "RUCIO_REDIRECT_HOST", "https://rucio-lb-prod.cern.ch"))
         ### auth host
         host_auth = get_rucio_rest_api_auth_host()
-        self.assertEqual(host_auth, \
-                    getattr(settings, "RUCIO_AUTH_HOST", \
-                            "https://voatlasrucio-auth-prod.cern.ch"))
+        self.assertEqual(host_auth, getattr(settings, "RUCIO_AUTH_HOST", "https://voatlasrucio-auth-prod.cern.ch"))
         ### server host
         host_server = get_rucio_rest_api_server_host()
-        self.assertEqual(host_server, \
-                    getattr(settings, "RUCIO_SERVER_HOST", \
-                            "https://voatlasrucio-server-prod.cern.ch"))
+        self.assertEqual(host_server, getattr(settings, "RUCIO_SERVER_HOST", "https://voatlasrucio-server-prod.cern.ch"))
 
     @unittest2.skip('skipping on purpose')
     def test_download_with_rucio_metalink_file(self, \
