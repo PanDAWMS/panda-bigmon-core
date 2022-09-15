@@ -10,7 +10,7 @@ from core.views import initRequest
 baseURL = 'https://pandaserver.cern.ch/server/panda'
 @login_customrequired
 @never_cache
-def get_pandaserver_atter(request):
+def get_pandaserver_attr(request):
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -31,20 +31,22 @@ def get_pandaserver_atter(request):
 @login_customrequired
 @never_cache
 def killTask(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
     """Kill a task
 
         request parameters:
            jediTaskID: jediTaskID of the task to be killed
     """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
     auth = get_auth_indigoiam(request)
 
     if auth is not None and ('Authorization' in auth and 'Origin' in auth):
-        if 'jeditaskid' in request:
-            data = {'jediTaskID': request['jeditaskid']}
+        if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid'] is not None:
+            data = {}
+
+            data['jediTaskID'] = request.session['requestParams']['jeditaskid']
             data['properErrorCode'] = True
 
             url = baseURL + '/killTask'
@@ -63,9 +65,6 @@ def killTask(request):
 @login_customrequired
 @never_cache
 def finishTask(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
     """Finish a task
 
        request parameters:
@@ -75,16 +74,25 @@ def finishTask(request):
                  If False, all remaining jobs are killed and then the
                  task is finished
     """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
     auth = get_auth_indigoiam(request)
 
     if auth is not None and ('Authorization' in auth and 'Origin' in auth):
-        if 'jeditaskid' in request:
-            data = {'jediTaskID': request['jeditaskid']}
+        if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid'] is not None:
+
+            data = {}
+            data['jediTaskID'] = request.session['requestParams']['jeditaskid']
+
             data['properErrorCode'] = True
-            if 'soft' in request:
+
+            if 'soft' in request.session['requestParams'] and bool(request.session['requestParams']['soft']) == True:
                 data['soft'] = True
             else:
                 data['soft'] = False
+
             url = baseURL + '/finishTask'
 
             try:
@@ -96,4 +104,44 @@ def finishTask(request):
     else:
         resp = auth['detail']
 
+    return HttpResponse(resp, content_type='application/json')
+
+@login_customrequired
+@never_cache
+def setNumSlots(request):
+    """Finish a task
+
+       request parameters:
+        pandaQueueName: string
+        numSlots: int
+        gshare: string
+        resourceType: string
+        validPeriod: int (number of days)
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    auth = get_auth_indigoiam(request)
+
+    if auth is not None and ('Authorization' in auth and 'Origin' in auth):
+        data = {}
+        if 'pandaqueuename' in request.session['requestParams'] and request.session['requestParams']['pandaqueuename'] is not None:
+            data['pandaQueueName'] = request.session['requestParams']['pandaqueuename']
+        if 'gshare' in request.session['requestParams'] and request.session['requestParams']['gshare'] is not None:
+            data['gshare'] = request.session['requestParams']['gshare']
+        if 'resourcetype' in request.session['requestParams'] and request.session['requestParams']['resourcetype'] is not None:
+            data['resourceType'] = request.session['requestParams']['resourcetype']
+        if 'numslots' in request.session['requestParams'] and request.session['requestParams']['numslots'] is not None:
+            data['numSlots'] = request.session['requestParams']['numslots']
+        if 'validperiod' in request.session['requestParams'] and request.session['requestParams']['validperiod'] is not None:
+            data['validPeriod'] = request.session['requestParams']['validperiod']
+        url = baseURL + '/setNumSlotsForWP'
+        certpath = "/etc/pki/tls/certs/ca-bundle.trust.crt"
+        try:
+            resp = post(url, headers=auth, verify=certpath , data=data)
+        except Exception as ex:
+            resp = "ERROR setNumSlots: %s %s" % (ex, resp.status_code)
+    else:
+        resp = auth['detail']
     return HttpResponse(resp, content_type='application/json')
