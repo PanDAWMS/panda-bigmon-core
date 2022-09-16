@@ -1,3 +1,4 @@
+import json
 import os, sys
 from requests import get, post
 from django.http import HttpResponse
@@ -123,7 +124,7 @@ def setNumSlots(request):
         return response
 
     auth = get_auth_indigoiam(request)
-
+    details = {}
     if auth is not None and ('Authorization' in auth and 'Origin' in auth):
         data = {}
         if 'pandaqueuename' in request.session['requestParams'] and request.session['requestParams']['pandaqueuename'] is not None:
@@ -137,11 +138,17 @@ def setNumSlots(request):
         if 'validperiod' in request.session['requestParams'] and request.session['requestParams']['validperiod'] is not None:
             data['validPeriod'] = request.session['requestParams']['validperiod']
         url = baseURL + '/setNumSlotsForWP'
-        certpath = "/etc/pki/tls/certs/ca-bundle.trust.crt"
         try:
-            resp = post(url, headers=auth, verify=certpath , data=data)
+            resp = post(url, headers=auth, data=data)
+            details['code'] = resp.status_code
+            details['text'] = resp.text
+            details['auth_details'] = auth
+            details['data'] = data
         except Exception as ex:
             resp = "ERROR setNumSlots: %s %s" % (ex, resp.status_code)
+            details['message'] = resp
     else:
         resp = auth['detail']
-    return HttpResponse(resp, content_type='application/json')
+        details['message'] = resp
+
+    return HttpResponse(json.dumps(details), content_type='application/json')
