@@ -313,8 +313,13 @@
   {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
       {% if not task.status in finalstatelist %}
           <div style="float: right">
+          {% if 'indigoiam' in authtype %}
+              <a onclick="javascript:killtasks_token({{ task.jeditaskid }}, 'finishtask');" class='bp-button kill'>Finish (PanDA client)</a>
+              <a onclick="javascript:killtasks_token({{ task.jeditaskid }}, 'killtask');" class='bp-button kill'>Abort (PanDA client)</a>
+          {% else %}
               <a onclick="killtasks({{ task.jeditaskid }}, 0);" class='bp-button kill'>Finish</a>
               <a onclick="killtasks({{ task.jeditaskid }}, 1);" class='bp-button kill'>Abort</a>
+          {% endif %}
           </div>
       {% endif %}
   {% endwith %}
@@ -1134,6 +1139,28 @@ function killtasks(taskID, action) {
     }
 }
 
+function killtasks_token(taskID, action) {
+    var message = '';
+    if (action === 0)
+        message = 'Are you sure you want to FINISH this task?'
+    else
+        message = 'Are you sure you want to ABORT this task?'
+    if (confirm(message)) {
+        $.ajax({
+            url: {% url 'panda_client' %},
+            data: {task: taskID, action: action},
+            async: false,
+            type: "POST",
+            success: function(msg){
+               alert(msg);
+              }
+        })
+    } else {
+        // Do nothing!
+    }
+}
+
+
 function buildDatasetsTable(data) {
 
   $('#datasetstable').dataTable({
@@ -1175,11 +1202,11 @@ function buildDatasetsTable(data) {
                 let str = '';
                 if (data > 0) {
                     str += '<a href = "{% url 'fileList' %}?jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '">' + full['nfiles'] + '</a>';
+                    if (full['nfilesmissing'] > 0) {str += ' <span class="lost">+' + full['nfilesmissing'] + ' lost</span>'; }
                 }
                 else {
                     str += data;
                 }
-                if (full['nfilesmissing'] > 0) {str += ' <span class="lost">+' + full['nfilesmissing'] + ' lost</span>'; }
                 return str
             }
         },

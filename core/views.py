@@ -71,7 +71,7 @@ from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
-from core.oauth.utils import login_customrequired
+from core.oauth.utils import login_customrequired, get_auth_provider
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
@@ -95,7 +95,7 @@ from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
-from core.libs.sqlcustom import escape_input, preprocess_wild_card_string, filter_dict_by_wildcards
+from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
 from core.libs.datetimestrings import datetime_handler, parse_datetime
 from core.libs.jobconsumers import reconstruct_job_consumers
 from core.libs.DateEncoder import DateEncoder
@@ -645,7 +645,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 query['jobsetid__gte'] = plo
                 query['jobsetid__lte'] = phi
         elif param == 'user' or param == 'username' or param == 'produsername':
-            if querytype == 'job' and not is_wildcards(request.session['requestParams'][param]):
+            if querytype == 'job':
                 query['produsername__icontains'] = request.session['requestParams'][param].strip()
         elif param in ('project',) and querytype == 'task':
             val = request.session['requestParams'][param]
@@ -849,11 +849,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
             if param == 'site':
                 pqs = get_panda_queues()
-                pqs = filter_dict_by_wildcards(pqs, 'gocname', request.session['requestParams'][param])
-                if 'computingsite__in' in query:
-                    query['computingsite__in'] = list(set(query['computingsite__in']).intersection(set([pq for pq in pqs.keys()])))
-                else:
-                    query['computingsite__in'] = [pq for pq in pqs.keys()]
+                query['computingsite__in'] = [info['nickname'] for pq, info in pqs.items() if info['gocname'] == request.session['requestParams'][param]]
 
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -868,16 +864,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['%s__range' % param] = (int(leftlimit) * 1000, int(rightlimit) * 1000 - 1)
                         else:
                             query[param] = int(request.session['requestParams'][param])
-                    elif param == 'computingsite':
-                        if is_wildcards(request.session['requestParams'][param]):
-                            pqs = get_panda_queues()
-                            pqs = filter_dict_by_wildcards(pqs, 'nickname', request.session['requestParams'][param])
-                            if 'computingsite__in' in query:
-                                query['computingsite__in'] = list(set(query['computingsite__in']).intersection(set([pq for pq in pqs.keys()])))
-                            else:
-                                query['computingsite__in'] = [pq for pq in pqs.keys()]
-                        else:
-                            query[param] = request.session['requestParams'][param]
                     elif param == 'specialhandling' and not '*' in request.session['requestParams'][param]:
                         query['specialhandling__contains'] = request.session['requestParams'][param]
                     elif param == 'prodsourcelabel':
@@ -977,12 +963,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query[param] = request.session['requestParams'][param]
 
     if 'region' in request.session['requestParams']:
-        pqs = get_panda_queues()
-        pqs = filter_dict_by_wildcards(pqs, 'cloud', request.session['requestParams']['region'])
-        if 'computingsite__in' in query:
-            query['computingsite__in'] = list(set(query['computingsite__in']).intersection(set([pq for pq in pqs.keys()])))
-        else:
-            query['computingsite__in'] = [pq for pq in pqs.keys()]
+        region = request.session['requestParams']['region']
+        pq_clouds = get_pq_clouds()
+        siteListForRegion = []
+        for sn, rn in pq_clouds.items():
+            if rn == region:
+                siteListForRegion.append(str(sn))
+        query['computingsite__in'] = siteListForRegion
 
     if opmode in ['analysis', 'production'] and querytype == 'job':
         if opmode.startswith('analy'):
@@ -999,16 +986,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString = ''
 
     # wild cards handling
-    wildSearchFieldsToProcess = set()
     wildSearchFields = (set(wildSearchFields) & set(list(request.session['requestParams'].keys())))
     # filter out fields that already in query dict
+    wildSearchFields1 = set()
     for currenfField in wildSearchFields:
         if not (currenfField.lower() == 'transformation'):
             if not ((currenfField.lower() == 'cloud') & (
             any(card.lower() == 'all' for card in request.session['requestParams'][currenfField].split('|')))):
                 if not any(currenfField in key for key, value in query.items()) and currenfField not in extraQueryFields:
-                    wildSearchFieldsToProcess.add(currenfField)
-    wildSearchFields = wildSearchFieldsToProcess
+                    wildSearchFields1.add(currenfField)
+    wildSearchFields = wildSearchFields1
 
     for i_field, field_name in enumerate(wildSearchFields, start=1):
         extraQueryString += '('
@@ -1558,9 +1545,9 @@ def jobList(request, mode=None, param=None):
     if 'taskid' in request.session['requestParams'] and '|' not in request.session['requestParams']['taskid']:
         taskname = get_task_name_by_taskid(request.session['requestParams']['taskid'])
 
-    if 'produsername' in request.session['requestParams'] and not is_wildcards(request.session['requestParams']['produsername']):
+    if 'produsername' in request.session['requestParams']:
         user = request.session['requestParams']['produsername']
-    elif 'user' in request.session['requestParams'] and not is_wildcards(request.session['requestParams']['user']):
+    elif 'user' in request.session['requestParams']:
         user = request.session['requestParams']['user']
     else:
         user = None
@@ -4801,6 +4788,91 @@ def killtasks(request):
     response = HttpResponse(dump, content_type='application/json')
     return response
 
+@never_cache
+def killtasks_token(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    from requests import get, post
+
+    taskid = -1
+    action = -1
+
+    if 'task' in request.session['requestParams']:
+        taskid = int(request.session['requestParams']['task'])
+    if 'action' in request.session['requestParams']:
+        action = int(request.session['requestParams']['action'])
+
+    id_token = None
+    token_type = None
+    access_token = None
+
+    username = None
+    fullname = None
+    organisation = 'atlas'
+
+    auth_provider = None
+
+    user = request.user
+
+    if user.is_authenticated and user.social_auth is not None:
+
+        auth_provider = (request.user.social_auth.get()).provider
+        social = request.user.social_auth.get(provider=auth_provider)
+
+        if (auth_provider == 'indigoiam'):
+            if (social.extra_data['auth_time'] + social.extra_data['expires_in'] - 10) <= int(time.time()):
+                resp = {"detail": "id token is expired"}
+                dump = json.dumps(resp, cls=DateEncoder)
+                response = HttpResponse(dump, content_type='application/json')
+                return response
+            else:
+                token_type = social.extra_data['token_type']
+                access_token = social.extra_data['access_token']
+                id_token = social.extra_data['id_token']
+
+                os.environ['PANDA_AUTH_ID_TOKEN'] = id_token
+                os.environ['PANDA_AUTH'] = 'oidc'
+                os.environ['PANDA_AUTH_VO'] = organisation
+        else:
+            return None
+
+    resp = get('https://atlas-auth.web.cern.ch/api/tokens/access', data={"grant_type": "access_token"},
+                    headers={'Authorization': '%s %s' % (token_type, access_token)})
+
+    header = {}
+    header['Authorization'] = 'Bearer {0}'.format(id_token)
+    header['Origin'] = 'atlas'
+    resp1 = post('https://pandaserver.cern.ch/server/panda/getAttr', headers=header)
+
+    if resp.ok:
+        user_tokens = json.loads(resp.text)
+        #
+        # from pandaclient import Client
+        # c=Client()
+
+        print('completed')
+        # c = Client()
+        # c.show_tasks()
+        # from core.panda_client.utils import kill_task, show_tasks
+        # show_tasks()
+
+    resp = None
+
+    if resp and len(resp.data) > 0:
+        try:
+            pass
+        except:
+            pass
+    else:
+        pass
+
+    dump = json.dumps(resp, cls=DateEncoder)
+    response = HttpResponse(dump, content_type='application/json')
+    return response
+
+
 
 def getTaskScoutingInfo(tasks, nmax):
     taskslToBeDisplayed = tasks[:nmax]
@@ -5448,6 +5520,8 @@ def taskInfo(request, jeditaskid=0):
 
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
+    ### Get the current AUTH type
+    auth = get_auth_provider(request)
 
     # temporarily turn off caching
     # data = None
@@ -5465,6 +5539,9 @@ def taskInfo(request, jeditaskid=0):
                         doRefresh = True
                 except:
                     doRefresh = True
+
+            if 'authtype' in data and data['authtype'] != auth:
+                doRefresh = True
 
             # We still want to refresh tasks if request came from central crawler and task not in the frozen state
             if (('REMOTE_ADDR' in request.META) and (request.META['REMOTE_ADDR'] in settings.CACHING_CRAWLER_HOSTS) and
@@ -5803,6 +5880,7 @@ def taskInfo(request, jeditaskid=0):
             'eventservice': eventservice,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             'warning': warning,
+            'authtype': auth
         }
         data.update(getContextVariables(request))
 
