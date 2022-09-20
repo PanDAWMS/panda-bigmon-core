@@ -81,3 +81,12 @@ def deny_rights(request, rtype):
 
 
     return True
+
+def get_auth_provider(request):
+    user = request.user
+
+    if user.is_authenticated and user.social_auth is not None:
+        auth_provider = (request.user.social_auth.get()).provider
+    else:
+        auth_provider = None
+    return auth_provider
