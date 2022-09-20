@@ -1,7 +1,7 @@
 import os
 
 from django.conf import settings
-import unittest2
+import unittest
 from django.test.client import Client
 
 from .tests_data import TESTS_DATA
@@ -16,7 +16,7 @@ get_rucio_redirect_response, get_rucio_pfns_from_guids_with_rucio_redirect
 
 
 
-class SimpleFileBrowserTest(unittest2.TestCase):
+class SimpleFileBrowserTest(unittest.TestCase):
     def setUp(self):
         # Every test needs a client.
         self.client = Client()
@@ -46,7 +46,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
         self.assertEqual(dir, getattr(settings, "FILEBROWSER_DIRECTORY", "filebrowser"))
 
 
-    @unittest2.skip('skipping on purpose')
+    @unittest.skip('skipping on purpose')
     def test_settings_fullpath_filebrowser_directory(self):
         """
             test_settings_fullpath_filebrowser_directory
@@ -63,7 +63,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
         self.assertEqual(os.path.isdir(full_dir), True)
 
 
-    @unittest2.skip('skipping on purpose')
+    @unittest.skip('skipping on purpose')
     def test_settings_x509_proxy(self):
         """
             test_settings_x509_proxy
@@ -77,7 +77,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                             "/data/atlpan/x509up_u25606"))
 
 
-    @unittest2.skip('skipping on purpose')
+    @unittest.skip('skipping on purpose')
     def test_settings_capath(self):
         """
             test_settings_capath
@@ -101,7 +101,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
         self.assertEqual(rucio_account, getattr(settings, "RUCIO_ACCOUNT", "atlpan"))
 
 
-    @unittest2.skip('skipping on purpose')
+    @unittest.skip('skipping on purpose')
     def test_settings_rucio_hosts(self):
         """
             test_settings_rucio_hosts
@@ -121,7 +121,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
         host_server = get_rucio_rest_api_server_host()
         self.assertEqual(host_server, getattr(settings, "RUCIO_SERVER_HOST", "https://voatlasrucio-server-prod.cern.ch"))
 
-    @unittest2.skip('skipping on purpose')
+    @unittest.skip('skipping on purpose')
     def test_download_with_rucio_metalink_file(self, \
                 test_file_config='test_file_exists', \
                 eval_len_metalink=True, eval_len_surls=True, \
@@ -181,7 +181,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                 self.assertEqual(os.path.exists(f_path), fpath_exists)
                 self.assertEqual(os.path.getsize(f_path), f_size)
 
-    @unittest2.skip('skipping on purpose')
+    @unittest.skip('skipping on purpose')
     def test_download_with_rucio_redirect(self, \
                 test_file_config='test_file_exists', \
                 eval_len_redirectURL=True, eval_len_surls=True, \
@@ -241,7 +241,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                 self.assertEqual(os.path.exists(f_path), fpath_exists)
                 self.assertEqual(os.path.getsize(f_path), f_size)
 
-    @unittest2.skip('skipping on purpose')
+    @unittest.skip('skipping on purpose')
     def test_download_with_rucio_metalink_file_forcefailure(self, \
                 test_file_config='test_file_failure', \
                 eval_len_metalink=False, eval_len_surls=False, \
@@ -258,7 +258,7 @@ class SimpleFileBrowserTest(unittest2.TestCase):
                 dirpath_exists, dirpath_listing, \
                 fpath_exists)
 
-    @unittest2.skip('skipping on purpose')
+    @unittest.skip('skipping on purpose')
     def test_download_with_rucio_redirect_forcefailure(self, \
                 test_file_config='test_file_failure', \
                 eval_len_redirectURL=True, eval_len_surls=False, \
