@@ -359,6 +359,9 @@ LOGGING = {
             'propagate': True,
             'level':'DEBUG',
         },
+        'django.utils.autoreload': {
+            'level': 'INFO',
+        },
         'bigpandamon': {
             'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error', 'console'],
             'level': 'DEBUG',
