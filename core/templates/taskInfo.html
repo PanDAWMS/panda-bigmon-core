@@ -1141,7 +1141,7 @@ function killtasks(taskID, action) {
 
 function killtasks_token(taskID, action) {
     var message = '';
-    if (action === 0)
+    if (action == 'finishtask' )
         message = 'Are you sure you want to FINISH this task?'
     else
         message = 'Are you sure you want to ABORT this task?'

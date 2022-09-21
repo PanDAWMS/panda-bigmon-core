@@ -86,7 +86,13 @@ def get_auth_provider(request):
     user = request.user
 
     if user.is_authenticated and user.social_auth is not None:
-        auth_provider = (request.user.social_auth.get()).provider
+        try:
+            auth_provider = (request.user.social_auth.get()).provider
+        except Exception as ex:
+            l_auth_providers = request.user.social_auth.get()
+            _logger.exception('{0}. User: {1} has the following providers: {2}'.
+                               format(ex, user, ', '.join(l_auth_providers)))
+            auth_provider = None
     else:
         auth_provider = None
     return auth_provider
