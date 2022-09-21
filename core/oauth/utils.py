@@ -89,9 +89,8 @@ def get_auth_provider(request):
         try:
             auth_provider = (request.user.social_auth.get()).provider
         except Exception as ex:
-            l_auth_providers = request.user.social_auth.get()
-            _logger.exception('{0}. User: {1} has the following providers: {2}'.
-                               format(ex, user, ', '.join(l_auth_providers)))
+            _logger.exception('{0}. User: {1}'.
+                               format(ex, user))
             auth_provider = None
     else:
         auth_provider = None
