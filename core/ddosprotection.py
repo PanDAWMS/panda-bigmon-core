@@ -58,8 +58,12 @@ class DDOSMiddleware(object):
             x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case one server config
         if x_forwarded_for is not None:
             try:
-                x_forwarded_for = re.findall(r'[0-9]+(?:\.[0-9]+){3}', x_forwarded_for)[0]
-                ip = ipaddress.ip_address(x_forwarded_for)
+                ips_found = re.findall(
+                    r'((?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{1,4})|((?:[0-9]{1,3}\.){3}[0-9])',
+                    x_forwarded_for
+                )
+                ip = [i for i in ips_found[0] if i][0]  # filter out empty values
+                ip = ipaddress.ip_address(ip)
             except:
                 _logger.warning('Provided HTTP_X_FORWARDED_FOR={} is not a correct IP address.'.format(x_forwarded_for))
                 return HttpResponse(
