@@ -1,33 +1,12 @@
-import json
-import os, sys
-from requests import get, post
+
 from django.http import HttpResponse
-from django.views.decorators.cache import never_cache
+
 from django.views.decorators.csrf import csrf_exempt
 
-from core.oauth.utils import login_customrequired
 from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task
 from core.views import initRequest
 
-baseURL = 'https://pandaserver.cern.ch/server/panda'
-@login_customrequired
-@never_cache
-def get_pandaserver_attr(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
 
-    auth = get_auth_indigoiam(request)
-
-    if auth is not None and ('Authorization' in auth and 'Origin' in auth):
-        data = {}
-        url = baseURL + '/getAtter'
-        resp = post(url, headers=auth, data=data)
-        resp = resp.text
-    else:
-        resp = auth['detail']
-
-    return HttpResponse(resp, content_type='application/json')
 @csrf_exempt
 def client(request):
     valid, response = initRequest(request)

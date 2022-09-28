@@ -2700,7 +2700,8 @@ def userInfo(request, user=''):
         if user == '':
             if request.user.is_authenticated:
                 login = user = request.user.username
-                fullname = request.user.first_name.replace('\'', '') + ' ' + request.user.last_name
+                fullname = str(request.user.first_name.replace('\'', '')).capitalize() + ' ' \
+                           + str(request.user.last_name).capitalize()
                 userQueryTask = Q(username=login) | Q(username__startswith=fullname)
                 userQueryJobs = Q(produsername=login) | Q(produsername__startswith=fullname)
                 is_prepare_history_links = True
