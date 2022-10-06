@@ -307,6 +307,9 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
 
             job['failed'] = 100 if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
             job['attemptnr'] = job['attemptnr'] + 1
+            # protection if cpuconsumptiontime is decimal in non Oracle DBs
+            if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
+                job['cpuconsumptiontime'] = float(job['cpuconsumptiontime'])
 
             if job['category'] == 'run':
                 if 'maxpss' in job and job['maxpss'] and isinstance(job['maxpss'], int) and (
@@ -318,12 +321,11 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
                 job['walltime'] = get_job_walltime(job)
                 job['queuetime'] = get_job_queuetime(job)
 
-                if job['walltime'] and 'cpuconsumptiontime' in job and (
-                        isinstance(job['cpuconsumptiontime'], int) and job['cpuconsumptiontime'] > 0) and (
+                if job['walltime'] and 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None and (
                         'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
                     job['efficiency'] = round(1.0*job['cpuconsumptiontime']/job['walltime']/job['actualcorecount'], 2)
 
-                job['cputime'] = round(job['cpuconsumptiontime'] / 60. / 60., 2) if 'cpuconsumptiontime' in job and isinstance(job['cpuconsumptiontime'], int) else 0
+                job['cputime'] = round(job['cpuconsumptiontime'] / 60. / 60., 2) if 'cpuconsumptiontime' in job else 0
 
                 job['walltime'] = round(job['walltime'] / 60. / 60., 2) if job['walltime'] is not None else 0
                 job['queuetime'] = round(job['queuetime'] / 60. / 60., 2) if job['queuetime'] is not None else 0
@@ -496,6 +498,8 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
                 'actualcorecount' in job and isinstance(job['actualcorecount'], int) and job['actualcorecount'] > 0):
             job['maxpssgbpercore'] = round(job['maxpss']/1024./1024./job['actualcorecount'], 2)
 
+        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
+            job['cpuconsumptiontime'] = float(job['cpuconsumptiontime'])
         if ('cpuconsumptiontime' in job and job['cpuconsumptiontime'] and job['cpuconsumptiontime'] > 0) and (
                 'actualcorecount' in job and job['actualcorecount'] is not None and job['actualcorecount'] > 0) and (
                     'durationsec' in job and job['durationsec'] is not None and job['durationsec'] > 0):

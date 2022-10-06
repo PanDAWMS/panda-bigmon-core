@@ -8567,7 +8567,7 @@ def get_hc_tests(request):
         if wallclocktime is not None:
             test['wallclocktime'] = wallclocktime
             if wallclocktime > 0:
-                test['cpuefficiency'] = round(job['cpuconsumptiontime']/test['wallclocktime'], 3)
+                test['cpuefficiency'] = round(float(job['cpuconsumptiontime'])/test['wallclocktime'], 3)
             else:
                 test['cpuefficiency'] = 0
         else:
