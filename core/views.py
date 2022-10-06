@@ -2126,7 +2126,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     typeFiles[f['type']] = 1
                 if f['type'] == 'output':
                     noutput += 1
-                    if len(jobs[0]['jobmetrics']) > 0:
+                    if 'jobmetrics' in jobs[0] and jobs[0]['jobmetrics'] is not None and len(jobs[0]['jobmetrics']) > 0:
                         for s in jobs[0]['jobmetrics'].split(' '):
                             if 'logBucketID' in s:
                                 logBucketID = int(s.split('=')[1])
