@@ -2126,7 +2126,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                     typeFiles[f['type']] = 1
                 if f['type'] == 'output':
                     noutput += 1
-                    if len(jobs[0]['jobmetrics']) > 0:
+                    if 'jobmetrics' in jobs[0] and jobs[0]['jobmetrics'] is not None and len(jobs[0]['jobmetrics']) > 0:
                         for s in jobs[0]['jobmetrics'].split(' '):
                             if 'logBucketID' in s:
                                 logBucketID = int(s.split('=')[1])
@@ -2700,7 +2700,8 @@ def userInfo(request, user=''):
         if user == '':
             if request.user.is_authenticated:
                 login = user = request.user.username
-                fullname = request.user.first_name.replace('\'', '') + ' ' + request.user.last_name
+                fullname = str(request.user.first_name.replace('\'', '')).title() + ' ' \
+                           + str(request.user.last_name).title()
                 userQueryTask = Q(username=login) | Q(username__startswith=fullname)
                 userQueryJobs = Q(produsername=login) | Q(produsername__startswith=fullname)
                 is_prepare_history_links = True
@@ -8566,7 +8567,7 @@ def get_hc_tests(request):
         if wallclocktime is not None:
             test['wallclocktime'] = wallclocktime
             if wallclocktime > 0:
-                test['cpuefficiency'] = round(job['cpuconsumptiontime']/test['wallclocktime'], 3)
+                test['cpuefficiency'] = round(float(job['cpuconsumptiontime'])/test['wallclocktime'], 3)
             else:
                 test['cpuefficiency'] = 0
         else:
