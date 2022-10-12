@@ -225,7 +225,9 @@ def job_consumption_plots(jobs):
             job['duration'] = get_job_walltime(job)
         if 'queuetime' not in job:
             job['queuetime'] = get_job_queuetime(job)
-
+        # protection if cpuconsumptiontime is decimal in non Oracle DBs
+        if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
+            job['cpuconsumptiontime'] = float(job['cpuconsumptiontime'])
         if 'pilottiming' in job:
             job.update(parse_job_pilottiming(job['pilottiming']))
 

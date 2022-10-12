@@ -1,7 +1,16 @@
 import time
 from requests import post
 from core.oauth.utils import get_auth_provider
-baseURL = 'https://pandaserver.cern.ch/server/panda'
+from django.conf import settings
+
+def _get_full_url(command):
+    if hasattr(settings, 'PANDA_SERVER_URL') and settings.PANDA_SERVER_URL:
+        fullUrl = settings.PANDA_SERVER_URL + '/{0}'.format(command)
+        return fullUrl
+    else:
+        raise Exception("PANDA_SERVER_URL attribute does not exist in settings")
+
+
 def get_auth_indigoiam(request):
     header = {}
     organisation = 'atlas'
@@ -38,7 +47,7 @@ def kill_task(auth, jeditaskid):
         data['jediTaskID'] = jeditaskid
         data['properErrorCode'] = True
 
-        url = baseURL + '/killTask'
+        url = _get_full_url('killTask')
 
         try:
             resp = post(url, headers=auth, data=data)
@@ -69,8 +78,7 @@ def finish_task(auth, jeditaskid, soft=True):
         data['properErrorCode'] = True
         data['soft'] = soft
 
-
-        url = baseURL + '/finishTask'
+        url = _get_full_url('finishTask')
 
         try:
             resp = post(url, headers=auth, data=data)
