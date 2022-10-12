@@ -238,20 +238,20 @@ LOGGING = {
     },
     'handlers': {
         'null': {
-            'level':'DEBUG',
-            'class':'logging.NullHandler',
+            'level': 'DEBUG',
+            'class': 'logging.NullHandler',
         },
         'logfile-django': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.django",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
         },
         'logfile-bigpandamon': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.bigpandamon",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
@@ -273,33 +273,17 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
-        'logfile-viewdatatables': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': LOG_ROOT + "/logfile.viewdatatables",
-            'maxBytes': LOG_SIZE,
-            'backupCount': 2,
-            'formatter': 'verbose',
-        },
         'logfile-rest': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.rest",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
         },
-        'logfile-api_reprocessing': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': LOG_ROOT + "/logfile.api_reprocessing",
-            'maxBytes': LOG_SIZE,
-            'backupCount': 2,
-            'formatter': 'verbose',
-        },
         'logfile-filebrowser': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.filebrowser",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
@@ -324,7 +308,7 @@ LOGGING = {
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
-            'class':'logging.StreamHandler',
+            'class': 'logging.StreamHandler',
         },
         'console': {
             'level': 'INFO',
@@ -349,15 +333,10 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
-        'django_datatables_view': {
-            'handlers':['logfile-viewdatatables'],
-            'propagate': True,
-            'level':'DEBUG',
-        },
         'rest_framework': {
-            'handlers':['logfile-rest'],
+            'handlers': ['logfile-rest'],
             'propagate': True,
-            'level':'DEBUG',
+            'level': 'DEBUG',
         },
         'django.utils.autoreload': {
             'level': 'INFO',
@@ -370,11 +349,7 @@ LOGGING = {
             'handlers': ['logfile-error'],
             'level': 'ERROR',
         },
-        'api_reprocessing':{
-            'handlers': ['logfile-api_reprocessing'],
-            'level': 'DEBUG',
-        },
-        'bigpandamon-filebrowser':{
+        'bigpandamon-filebrowser': {
             'handlers': ['logfile-filebrowser', 'logfile-error'],
             'level': 'DEBUG',
         },
