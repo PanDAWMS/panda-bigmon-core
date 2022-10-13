@@ -22,7 +22,7 @@ sys.path.append(baseSettingsPath)
 
 #virtualenvPath = '/data/virtualenv/django1.6.1__python2.6.6__jedimon'
 #virtualenvPath = '/data/virtualenv/django1.6.1__python2.6.6__atlas'
-virtualenvPath = '/data/wenaus/virtualenv/twrpm'
+virtualenvPath = '/opt/prod'
 path = virtualenvPath + '/pythonpath'
 try:
 #    from settings_bigpandamon_jedimon import VIRTUALENV_PATH
@@ -42,7 +42,7 @@ except:
         # _logger.exception("Staying with default path: {}".format(path))
 
 # Add the site-packages of the chosen virtualenv to work with
-site.addsitedir(virtualenvPath + '/lib/python3.7/site-packages')
+site.addsitedir(virtualenvPath + '/lib/python3.10/site-packages')
 
 # Add the app's directory to the PYTHONPATH
 sys.path.append(path)
