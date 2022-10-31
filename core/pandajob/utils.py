@@ -101,10 +101,10 @@ def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
     }
 
     if settings.DEPLOYMENT == 'ORACLE_DOMA':
-        psl_to_jt = {
+        psl_to_jt.update({
             'test': 'prod',
             'ANY': 'prod',
-        }
+        })
 
     trsfrm_to_jt = {
         'run': 'analy',
@@ -117,7 +117,9 @@ def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
             row['jobtype'] = psl_to_jt[row[field_name]]
             if 'transform' in row and row['transform'] in trsfrm_to_jt and row[field_name] in ('rc_alrb', 'rc_test2'):
                 row['jobtype'] = trsfrm_to_jt[row['transform']]
-            new_list_of_dict.append(row)
+        else:
+            row['jobtype'] = 'prod'
+        new_list_of_dict.append(row)
 
     return new_list_of_dict
 
