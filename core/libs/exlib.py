@@ -436,12 +436,18 @@ def build_stack_histogram(data_raw, **kwargs):
     stats.append(np.average(data_all) if not np.isnan(np.average(data_all)) else 0)
     stats.append(np.std(data_all) if not np.isnan(np.std(data_all)) else 0)
 
-    n_bins = calc_nbins(len(data_all), n_bins_max)
+    if stats[1] == 0:
+        n_bins = 1
+    else:
+        n_bins = calc_nbins(len(data_all), n_bins_max)
     bins_all, ranges_all = np.histogram(data_all, bins=n_bins)
-    ranges_all = list(np.round(ranges_all, n_decimals))
 
+    # calc x-axis ticks, get average from each range
     x_axis_ticks = ['x']
-    x_axis_ticks.extend(ranges_all[:-1])
+    ranges_all_avg = np.convolve(ranges_all, np.ones(2), 'valid') / 2
+    x_axis_ticks.extend(list(np.round(ranges_all_avg, n_decimals)))
+
+    ranges_all = list(ranges_all)
 
     for stack_param, data in data_raw.items():
         column = [stack_param]
@@ -452,7 +458,6 @@ def build_stack_histogram(data_raw, **kwargs):
 
     # sort by biggest impact
     columns = sorted(columns, key=lambda x: sum(x[1:]), reverse=True)
-
     columns.insert(0, x_axis_ticks)
 
     return stats, columns

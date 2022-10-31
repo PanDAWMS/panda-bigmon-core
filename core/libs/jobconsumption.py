@@ -377,7 +377,7 @@ def job_consumption_plots(jobs):
             }
 
             for cat, cd in plots_data[pd['type']][pname].items():
-                n_decimals = 0
+                n_decimals = 1
                 if 'per' in pname:
                     n_decimals = 2
                 stats, columns = build_stack_histogram(cd, n_decimals=n_decimals)
