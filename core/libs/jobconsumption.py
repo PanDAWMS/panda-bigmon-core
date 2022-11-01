@@ -74,7 +74,7 @@ def job_consumption_plots(jobs):
             'xlabel': 'Walltime, s',
         },
         'hs06s': {
-            'per': ['', ],
+            'per': ['', 'perevent'],
             'jobstatus': ['finished', 'failed'],
             'type': 'stack_bar',
             'group_by': 'computingsite',
@@ -254,6 +254,11 @@ def job_consumption_plots(jobs):
 
         if 'hs06sec' in job and job['hs06sec']:
             plots_data['stack_bar']['hs06s' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['hs06sec'])
+
+            if 'nevents' in job and job['nevents'] is not None and job['nevents'] > 0:
+                plots_data['stack_bar']['hs06sperevent' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                    job['hs06sec'] / (job['nevents'] * 1.0)
+                )
 
         if 'queuetime' in job and job['queuetime']:
             plots_data['stack_bar']['queuetime' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(job['queuetime'])
