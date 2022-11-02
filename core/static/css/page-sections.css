@@ -53,19 +53,25 @@ a:hover, a:visited, a:active
   color: #0a47ff;
 }
 
-a.button, a.button.primary {
+a.button, a.button.primary, button.button, button.button.primary {
   color: #fefefe;
   background-color: #5e789a;
 }
-a.button:hover, a.button:focus, a.button.primary:hover, a.button.primary:focus {
+a.button:hover, a.button:focus, a.button.primary:hover, a.button.primary:focus,
+button.button:hover, button.button.primary:hover, button.button:focus, button.button.primary:focus {
   color: #fefefe;
   background-color: #222222;
 }
 
-a.disabled {
+a.disabled, a[disabled] button.button.disabled, button.button[disabled] {
   cursor: not-allowed;
   pointer-events: auto;
+  opacity: 0.25;
+  background-color: #5e789a;
 }
+  .button.disabled:hover, .button.disabled:focus, .button[disabled]:hover, .button[disabled]:focus {
+    background-color: #5e789a;
+    color: #fefefe; }
 
 select {
     -moz-appearance: none;
@@ -982,6 +988,21 @@ li.list-item > label {
   .form-container select > option {
     font-weight: normal;
   }
+  .form-container input::placeholder {
+    color: #acacac;
+    opacity: 1;
+    font-size: 0.875rem;
+  }
+  .form-container p {
+    font-size: 0.875rem;
+  }
+
+  .form-container.slim label, .form-container.slim p {
+    margin: 0.7rem 0 0 0;
+  }
+  .form-container.slim input, .form-container.slim select, .form-container.slim div.input-group {
+    margin: 0;
+  }
 
 fieldset.inline {
   margin: 0.3rem 0.7rem;
@@ -1003,6 +1024,20 @@ fieldset.inline {
   fieldset.inline label input {
     margin-bottom: 0.3rem;
   }
+
+/* Angular Forms validation */
+.form-validation input.ng-invalid-maxlength , .form-validation .input-error, .form-validation .ng-touched.ng-invalid {
+  border:2px solid #cc4b37;
+}
+
+.form-error-message {
+  background-color: #f9eae7;
+  color: #b22222;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin: 0;
+  padding: 0.3rem;
+}
 
 
 

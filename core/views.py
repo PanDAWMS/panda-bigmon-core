@@ -349,11 +349,20 @@ def initRequest(request, callselfmon=True):
 
     allowedemptyparams = ('json', 'snap', 'dt', 'dialogs', 'pandaids', 'workersstats', 'keephtml')
     if request.method == 'POST':
-        for p in request.POST:
-            if p in ('csrfmiddlewaretoken',): continue
-            pval = request.POST[p]
-            pval = pval.replace('+', ' ')
-            request.session['requestParams'][p.lower()] = pval
+        if len(request.POST) > 0:
+            for p in request.POST:
+                if p in ('csrfmiddlewaretoken',): continue
+                pval = request.POST[p]
+                pval = pval.replace('+', ' ')
+                request.session['requestParams'][p.lower()] = pval
+        else:
+            try:
+                post_params = json.loads(request.body)
+            except Exception as ex:
+                post_params = None
+                _logger.exception('Failed to decode params in body of POST request')
+            if isinstance(post_params, dict) and 'params' in post_params and isinstance(post_params['params'], dict):
+                request.session['requestParams'].update(post_params['params'])
     else:
         for p in request.GET:
             pval = request.GET[p]
@@ -382,6 +391,10 @@ def initRequest(request, callselfmon=True):
                     requestVal = request.GET[p]
                     if '|' in requestVal:
                         values = requestVal.split('|')
+                        for value in values:
+                            i = int(value)
+                    elif ',' in requestVal:
+                        values = requestVal.split(',')
                         for value in values:
                             i = int(value)
                     elif requestVal == 'Not specified':
