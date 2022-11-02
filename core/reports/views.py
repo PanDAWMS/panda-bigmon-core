@@ -43,7 +43,8 @@ def reports(request):
             'obstasks': {
                 'value': 'obstasks', 'name': 'Obsoleted tasks',
                 'params': {
-                    'delivery_options': ['page', ]
+                    'delivery_options': ['page', ],
+                    'get_redirect': [],
                 }
             },
             'lsat': {
