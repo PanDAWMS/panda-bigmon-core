@@ -94,7 +94,7 @@ from core.libs.error import errorInfo, getErrorDescription, get_job_error_desc
 from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
-from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog
+from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog, get_split_rule_info
 from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
 from core.libs.datetimestrings import datetime_handler, parse_datetime
 from core.libs.jobconsumers import reconstruct_job_consumers
@@ -1233,7 +1233,9 @@ def jobList(request, mode=None, param=None):
     noarchjobs = False
     if 'noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1':
         noarchjobs = True
+
     warning = {}
+
     extraquery_files = ' '
 
     if 'fileid' in request.session['requestParams'] or 'ecstate' in request.session['requestParams']:
@@ -5601,6 +5603,7 @@ def taskInfo(request, jeditaskid=0):
     setupView(request, hours=365 * 24, limit=999999999, querytype='task')
     tasks = []
     warning = {}
+    info = {}
 
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
@@ -5832,7 +5835,14 @@ def taskInfo(request, jeditaskid=0):
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
 
-    # datetime type -> str in order to avoid encoding errors in template
+        connection = create_esatlas_connection()
+        split_rule = get_split_rule_info(connection, jeditaskid)
+        if len(split_rule) > 0:
+            info['split_rule'] = {}
+            info['split_rule']['messages'] = split_rule
+
+
+            # datetime type -> str in order to avoid encoding errors in template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
     datetime_dataset_param_names = ['statechecktime', 'creationtime', 'modificationtime']
     if taskrec:
@@ -5895,6 +5905,7 @@ def taskInfo(request, jeditaskid=0):
             'eventservice': eventservice,
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             'warning': warning,
+            'info': info,
             'authtype': auth
         }
         data.update(getContextVariables(request))

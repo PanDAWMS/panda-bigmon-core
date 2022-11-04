@@ -422,8 +422,16 @@
         </button>
       </div>
   {% endif %}
-
-
+    {% if info.split_rule %}<p></p>
+      <div class="callout secondary" data-closable>
+        <h5>The split rule(s) has been changed for this task: </h5>
+        <ul>
+         {% for message in  info.split_rule.messages %}
+             <li style="font-size: smaller">{{message}}</li>
+         {% endfor %}
+        </ul>
+        </div>
+    {% endif %}
     <div id="taskflow" ng-app="taskInfoAppSL" ng-controller="taskflowController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="taskflow.is_hidden">
     <div class="card-divider"><p>Task Flow Diagram</p></div>

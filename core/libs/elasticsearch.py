@@ -57,7 +57,7 @@ def create_esatlas_connection(verify_certs=True, timeout=2000, max_retries=10, r
     return None
 
 
-def get_payloadlog(id, connection, start=0, length=50, mode='pandaid', sort='asc', search_string=''):
+def get_payloadlog(id, es_conn, start=0, length=50, mode='pandaid', sort='asc', search_string=''):
     """
     Get pilot logs from ATLAS ElasticSearch storage
     """
@@ -67,7 +67,7 @@ def get_payloadlog(id, connection, start=0, length=50, mode='pandaid', sort='asc
     total = 0
     flag_running_job = True
     end = start + length
-    s = Search(using=connection, index='atlas_pilotlogs*')
+    s = Search(using=es_conn, index='atlas_pilotlogs*')
 
     s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID",
                   "Harvester_WorkerID", "Harvester_ID"])
@@ -175,3 +175,24 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
         _logger.info(result['message'])
 
     return result
+
+def get_split_rule_info(es_conn, jeditaskid):
+    """
+    Get split rule entries from ATLAS Elastic
+    :param es_conn: connection to the ATLAS Elastic
+    :param jeditaskid: unique task ID
+    :return: split rule messagees
+    """
+    split_rules = []
+    s = Search(using=es_conn, index='atlas_jedilogs*')
+    s = s.source(['@timestamp', 'message'])
+    s = s.filter('term', jediTaskID='{0}'.format(jeditaskid))
+    q = Q("match", message='change_split_rule')
+    s = s.query(q)
+    response = s.scan()
+    for hit in response:
+        values = hit.to_dict().values()
+        str_values = [str(x) for x in values]
+        split_rules.append('\t'.join(str_values))
+
+    return split_rules
