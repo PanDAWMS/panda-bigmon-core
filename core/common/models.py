@@ -387,7 +387,7 @@ class TasksStatusLog(models.Model):
     attemptnr = models.IntegerField(db_column='attemptnr', blank=True)
     reason = models.CharField(max_length=600, db_column='reason', blank=True)
     class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA}"."TASKS_STATUSLOG"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."tasks_statuslog"'
         app_label = 'jedi'
 
 
@@ -457,7 +457,7 @@ class JobsStatuslog(models.Model):
     modificationhost = models.CharField(max_length=384, db_column='modificationhost', blank=True)
     modiftime_extended = models.DateTimeField(db_column='modiftime_extended')
     class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA}"."JOBS_STATUSLOG"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobs_statuslog"'
         app_label = 'panda'
 
 
@@ -535,7 +535,7 @@ class RucioAccounts(models.Model):
     rucio_account = models.CharField(max_length=40, db_column='rucio_account')
     create_time = models.DateTimeField(db_column='create_time')
     class Meta:
-        db_table = f'"{settings.DB_SCHEMA}"."RUCIO_ACCOUNTS"'
+        db_table = f'"{settings.DB_SCHEMA}"."rucio_accounts"'
         app_label = 'pandamon'
 
 
