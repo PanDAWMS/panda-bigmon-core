@@ -549,7 +549,7 @@ class AllRequests(models.Model):
     referrer = models.CharField(max_length=4000, db_column='referrer')
     useragent = models.CharField(max_length=250, db_column='useragent')
     is_rejected = models.IntegerField(db_column='is_rejected')
-    urlview = models.CharField(max_length=40, db_column='urlview')
+    urlview = models.CharField(max_length=300, db_column='urlview')
     load = models.FloatField(db_column='load')
     mem = models.FloatField(db_column='mem')
     dbactivesess = models.IntegerField(db_column='dbactivesess')
