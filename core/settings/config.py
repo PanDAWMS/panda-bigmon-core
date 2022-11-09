@@ -6,17 +6,18 @@ from core import filebrowser, admin
 from core.settings.local import MY_SECRET_KEY, LOG_ROOT
 
 ALLOWED_HOSTS = [
-    ### cern.ch
+    # cern.ch
     '.cern.ch',  # Allow domain and subdomains
     '.cern.ch.',  # Also allow FQDN and subdomains
-    ### bigpanda.cern.ch
+    # bigpanda.cern.ch
     'bigpanda.cern.ch',  # Allow domain and subdomains
     'bigpanda.cern.ch.',  # Also allow FQDN and subdomains
-    ### pandawms.org
-    '.pandawms.org',  # Allow domain and subdomains
-    '.pandawms.org.',  # Also allow FQDN and subdomains
-
-    '127.0.0.1', '.localhost'
+    # @SLAC for Rubin
+    '.slac.stanford.edu',
+    '.slac.stanford.edu.',
+    # local
+    '127.0.0.1',
+    '.localhost'
 ]
 
 if 'BIGMON_HOST' in os.environ:
