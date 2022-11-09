@@ -531,7 +531,7 @@ class Pandalog(models.Model):
 
 class RucioAccounts(models.Model):
     id = models.IntegerField(primary_key=True, db_column='id')
-    certificatedn = models.CharField(max_length=40, db_column='certificatedn')
+    certificatedn = models.CharField(max_length=250, db_column='certificatedn')
     rucio_account = models.CharField(max_length=40, db_column='rucio_account')
     create_time = models.DateTimeField(db_column='create_time')
     class Meta:
@@ -541,8 +541,8 @@ class RucioAccounts(models.Model):
 
 class AllRequests(models.Model):
     id = models.IntegerField(primary_key=True, db_column='id')
-    server = models.CharField(max_length=40, db_column='server')
-    remote = models.CharField(max_length=40, db_column='remote')
+    server = models.CharField(max_length=100, db_column='server')
+    remote = models.CharField(max_length=100, db_column='remote')
     qtime = models.DateTimeField(db_column='qtime')
     rtime = models.DateTimeField(db_column='rtime')
     url = models.CharField(max_length=2500, db_column='url')
