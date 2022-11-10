@@ -12,9 +12,6 @@ ALLOWED_HOSTS = [
     # bigpanda.cern.ch
     'bigpanda.cern.ch',  # Allow domain and subdomains
     'bigpanda.cern.ch.',  # Also allow FQDN and subdomains
-    # @SLAC for Rubin
-    '.slac.stanford.edu',
-    '.slac.stanford.edu.',
     # local
     '127.0.0.1',
     '.localhost'
