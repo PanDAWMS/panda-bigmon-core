@@ -13,6 +13,7 @@ import cx_Oracle
 import urllib.request as urllibr
 from sklearn.preprocessing import scale
 from urllib.error import HTTPError
+from elasticsearch_dsl import Search
 
 from django.core.cache import cache
 from django.utils.six.moves import cPickle as pickle
@@ -22,7 +23,9 @@ from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView
 from core.libs.exlib import dictfetchall, get_tmp_table_name
+from core.libs.elasticsearch import create_es_connection
 from core.schedresource.utils import getCRICSEs
+from core.filebrowser.ruciowrapper import ruciowrapper
 
 from django.conf import settings
 
@@ -371,13 +374,18 @@ def extractTasksIds(datasets):
     return tasksIDs
 
 
-def send_report_rse(rse, data):
+def send_report_rse(rse, data, experts_only=True):
     mail_template = "templated_email/dataCarouselStagingAlert.html"
     max_mail_attempts = 10
-    subject = "{} Data Carousel Alert for {}".format(settings.EMAIL_SUBJECT_PREFIX, rse)
+    subject = "{} Data Carousel Alert for {} {}".format(
+        settings.EMAIL_SUBJECT_PREFIX,
+        rse,
+        '(likely *not* tape related problem)' if experts_only else '')
 
-    rquery = {'report': 'dc_stalled', 'type__in': [rse, 'all']}
-    recipient_list = list(ReportEmails.objects.filter(**rquery).values('email'))
+    rquery = {'report': 'dc_stalled', 'type__in': ['all', ]}
+    if not experts_only:
+        rquery['type__in'].append(rse)
+    recipient_list = list(ReportEmails.objects.filter(**rquery).values('email', 'type'))
     recipient_list = list(set([r['email'] for r in recipient_list]))
 
     cache_key = "mail_sent_flag_{RSE}".format(RSE=rse)
@@ -396,3 +404,39 @@ def send_report_rse(rse, data):
 
         if is_sent:
             cache.set(cache_key, "1", settings.DATA_CAROUSEL_MAIL_REPEAT*24*3600)
+
+
+def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
+    """
+    Check if a cause of a stalled rule is tape or disk
+    Got logic from ProdSys2 https://github.com/PanDAWMS/panda-bigmon-atlas/blob/main-py3/atlas/prestage/views.py
+    :param rule_id:
+    :param rse:
+    :return: bool: if any of files stuck due to tape problem
+    :return: list: list of stuck files
+    """
+    stuck_days = 10
+    rucio = ruciowrapper()
+    # Get list of files which are not yet staged
+    stuck_files = [file_lock['name'] for file_lock in rucio.client.list_replica_locks(rule_id) if file_lock['state'] != 'OK']
+    # Check rucio claims it's Tape problem:
+    rule_info = rucio.client.get_replication_rule(rule_id)
+    if rule_info.get('error') and ('[TAPE SOURCE]' in rule_info.get('error')):
+        return True, stuck_files
+    # Check in ES that files have failed attempts from tape. Limit to 1000 files, should be enough
+    es_conn = create_es_connection(instance='es-monit', verify_certs=False, timeout=10000)
+    start_time = rule_info.get('created_at', None)
+    days_since_start = (datetime.datetime.now() - start_time).days if start_time else settings.DATA_CAROUSEL_MAIL_REPEAT
+    sources = list(getCRICSEs().get(rse, []))
+    s = Search(using=es_conn, index='monit_prod_ddm_enr_*').\
+        query("terms", data__name=stuck_files[:1000]).\
+        query("range", **{
+                "metadata.timestamp": {
+                    "gte": f"now-{days_since_start}d/d",
+                    "lt": "now/d"
+                }}).\
+        query("match", data__event_type='transfer-failed').\
+        query('terms', data__src_endpoint=sources)
+    if s.count() > 0:
+        return True, stuck_files
+    return False, stuck_files

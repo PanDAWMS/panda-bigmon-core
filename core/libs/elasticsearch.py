@@ -14,36 +14,40 @@ from django.conf import settings
 _logger = logging.getLogger('bigpandamon')
 
 
-def get_es_credentials():
+def get_es_credentials(instance='es-atlas'):
     """
     Getting credentials from settings
+    :param instance: str, es-atlas or es-monit
     :return:
     """
     es_host = None
     es_user = None
     es_password = None
-    if 'esHost' in settings.ES:
-        es_host = settings.ES['esHost'][0:8] + '1' + settings.ES['esHost'][8:]
-    if 'esUser' in settings.ES:
-        es_user = settings.ES['esUser']
-    if 'esPassword' in settings.ES:
-        es_password = settings.ES['esPassword']
+    if instance == 'es-atlas' and hasattr(settings, 'ES'):
+        es_host = settings.ES.get('esHost', None)
+        es_host = es_host[0:8] + '1' + es_host[8:] + '/es' if es_host else None
+        es_user = settings.ES.get('esUser', None)
+        es_password = settings.ES.get('esPassword', None)
+    elif instance == 'es-monit' and hasattr(settings, 'ES_MONIT'):
+        es_host = settings.ES_MONIT.get('esHost', None)
+        es_host += ':' + settings.ES_MONIT.get('esPort', '')
+        es_user = settings.ES_MONIT.get('esUser', None)
+        es_password = settings.ES_MONIT.get('esPassword', None)
 
     if any(i is None for i in (es_host, es_user, es_password)):
-        raise Exception('ES cluster credentials do not found in settings')
+        raise Exception('ES cluster credentials was not found in settings')
     else:
         return es_host, es_user, es_password
 
 
-def create_esatlas_connection(verify_certs=True, timeout=2000, max_retries=10, retry_on_timeout=True):
+def create_es_connection(verify_certs=True, timeout=2000, max_retries=10, retry_on_timeout=True, instance='es-atlas'):
     """
     Create a connection to ElasticSearch cluster
     """
-
-    es_host, es_user, es_password = get_es_credentials()
+    es_host, es_user, es_password = get_es_credentials(instance)
     try:
         connection = Elasticsearch(
-            ['https://{0}/es'.format(es_host)],
+            ['https://{0}'.format(es_host)],
             http_auth=(es_user, es_password),
             verify_certs=verify_certs,
             timeout=timeout,

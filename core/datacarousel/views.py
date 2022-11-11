@@ -18,8 +18,8 @@ from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
-from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report_rse
-from core.datacarousel.utils import retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds
+from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report_rse, \
+    retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds, staging_rule_verification
 
 from django.conf import settings
 
@@ -265,18 +265,46 @@ def send_stalled_requests_report(request):
                 "TOT_FILES": r['TOTAL_FILES'],
                 "STAGED_FILES": r['STAGED_FILES'],
                 "UPDATE_TIME": str(r['UPDATE_TIME']).split('.')[0] if r['UPDATE_TIME'] is not None else '',
-                "TASKS": []
+                "TASKS": [],
+                "IS_TAPE_PROBLEM": False,
+                "STUCK_FILES": [],
             }
         if r['TASKID'] not in ds_per_rse[r['SOURCE_RSE']][r['RSE']]['TASKS']:
             ds_per_rse[r['SOURCE_RSE']][r['RSE']]['TASKS'].append(r['TASKID'])
 
-    # dict -> list of rules
+    # check if a tape is a reason of stalled staging
     for source_rse, rucio_rules in ds_per_rse.items():
-        ds_per_rse[source_rse] = [rucio_rules[rule] for rule in rucio_rules]
+        for rule in rucio_rules:
+            rucio_rules[rule]["IS_TAPE_PROBLEM"], rucio_rules[rule]["STUCK_FILES"] = staging_rule_verification(rule, source_rse)
 
-    for rse, data in ds_per_rse.items():
+    # dict -> list of rules & send
+    for rse, rucio_rules in ds_per_rse.items():
         _logger.debug("DataCarouselMails processes this RSE: {}".format(rse))
-        send_report_rse(rse, data)
+        # divide into 2 categories, one sent only to DC&DDM experts, the other is for site admins
+        data_email_categories = {
+            'experts_only': [rule for r_uid, rule in rucio_rules.items() if rule['IS_TAPE_PROBLEM'] is False],
+            'site_admins': [rule for r_uid, rule in rucio_rules.items() if rule['IS_TAPE_PROBLEM'] is True]
+        }
+        if len(data_email_categories['experts_only']) > 0:
+            send_report_rse(
+                rse,
+                {
+                    'rse': rse,
+                    'name': 'Rules stuck due to issues most probably not related to Tape',
+                    'rules': data_email_categories['experts_only'],
+                },
+                experts_only=True
+            )
+        if len(data_email_categories['site_admins']) > 0:
+            send_report_rse(
+                rse,
+                {
+                    'rse': rse,
+                    'name': 'Rules stuck with failures suspicious to be related to staging from Tape',
+                    'rules': data_email_categories['site_admins'],
+                },
+                experts_only=False
+            )
 
     return JsonResponse({'sent': len(rows)})
 

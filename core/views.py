@@ -94,7 +94,7 @@ from core.libs.error import errorInfo, getErrorDescription, get_job_error_desc
 from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
-from core.libs.elasticsearch import create_esatlas_connection, get_payloadlog, get_split_rule_info
+from core.libs.elasticsearch import create_es_connection, get_payloadlog, get_split_rule_info
 from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
 from core.libs.datetimestrings import datetime_handler, parse_datetime
 from core.libs.jobconsumers import reconstruct_job_consumers
@@ -5835,7 +5835,7 @@ def taskInfo(request, jeditaskid=0):
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
 
-        connection = create_esatlas_connection()
+        connection = create_es_connection()
         split_rule = get_split_rule_info(connection, jeditaskid)
         if len(split_rule) > 0:
             info['split_rule'] = {}
@@ -6704,7 +6704,7 @@ def esatlasPandaLoggerJson(request):
     if not valid:
         return response
 
-    connection = create_esatlas_connection()
+    connection = create_es_connection()
 
     s = Search(using=connection, index='atlas_jedilogs-*')
 
@@ -6739,7 +6739,7 @@ def esatlasPandaLogger(request):
     if not valid:
         return response
 
-    connection = create_esatlas_connection()
+    connection = create_es_connection()
 
     today = time.strftime("%Y.%m.%d")
 
@@ -8630,7 +8630,7 @@ def getPayloadLog(request):
     """
     valid, response = initRequest(request)
 
-    connection = create_esatlas_connection()
+    connection = create_es_connection()
 
     if not valid: return response
 

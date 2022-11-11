@@ -15,7 +15,7 @@ from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsde
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits
 from core.libs.datetimestrings import parse_datetime
-from core.libs.elasticsearch import create_esatlas_connection
+from core.libs.elasticsearch import create_es_connection
 from core.libs.job import drop_duplicates
 from core.pandajob.utils import get_pandajob_arch_models_by_year
 from core.filebrowser.ruciowrapper import ruciowrapper
@@ -850,7 +850,7 @@ def get_logs_by_taskid(jeditaskid):
 
     tasks_logs = []
 
-    connection = create_esatlas_connection()
+    connection = create_es_connection()
 
     s = Search(using=connection, index='atlas_jedilogs-*')
 
