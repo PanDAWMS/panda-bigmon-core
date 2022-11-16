@@ -277,7 +277,9 @@
       <div class="dropdown-items">
           <a href="#taskflow" onclick="toggletaskflow() ">Show taskflow</a>
           <a href="#statuslog" onclick="toggleStatusLog() ">Show task status log</a>
+          {% if viewParams.MON_VO == 'ATLAS' %}
           <a href="#tasklogs" onclick="toggleTaskLogs() ">Show task logs from ElasticSearch</a>
+          {% endif %}
           <a href="#jobparams">Jump to job parameters</a>
           {% if jobscoutids|length > 0 %}
               <a href="#scouts">Jump to scout jobs</a>
@@ -457,7 +459,7 @@
     </div>
     </div>
   </div>
-
+   {% if viewParams.MON_VO == 'ATLAS' %}
   <div id="tasklogs" ng-app="taskInfoAppSL" ng-controller="TaskLogsController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="task_logs.is_hidden">
     <div class="card-divider"><p>Task logs for {{ jeditaskid|safe }} from <a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'jediTaskID:{{ jeditaskid|safe }}'),sort:!('@timestamp',desc))" target="_blank">es-atlas</a></p></div>
@@ -469,7 +471,7 @@
     </div>
   </div>
   </div>
-
+    {% endif %}
   <div id="plots" data-ng-controller="jobConsumptionPlotsController">
   <div class="card bp-container-simple secondary ng-hide" ng-hide="taskinfo.jc_plots.selection.is_hidden">
     <div class="card-divider"><p>Job consumption plots:</p></div>

@@ -314,7 +314,8 @@
                 <ul>
                     <li><a href="#tabs-1" class="ui-tabs-anchor">General info [DEV]</a></li>
                 </ul>
-                <div id="tabs-1">
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                    <div id="tabs-1">
                     {% if instance == 0 %}
                         <a style="color: #0a47ff" href="https://es-atlas.cern.ch/kibana/app/kibana#/dashboard/069f92c0-843e-11e8-be57-2be8d64792c0?_g=(refreshInterval:('5%20seconds':'object:418',display:'5%20seconds',pause:!f,section:1,value:5000),time:(from:now-24h,mode:quick,to:now))&_a=(description:'',
 filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'09f5a610-6810-11e9-a744-833d910adbcf',key:computingsite.keyword,negate:!f,params:(query:{{ computingsite|safe }},type:phrase),
@@ -363,6 +364,7 @@ query:(language:lucene,query:''),timeRestore:!f,title:'Harvester%20main%20dashbo
                                 height="1000" width="100%"></iframe>
                     {% endif %}
                 </div>
+                {% endif %}
             </div>
         </div>
     {% endif %}

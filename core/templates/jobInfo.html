@@ -250,6 +250,7 @@
               </script>
             {% endif %}
             <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">Pilot records</a>
+            {% if viewParams.MON_VO == 'ATLAS' %}
             <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))">Action logger (Kibana)</a>
             <script>
                 logLinksArray[logLinksArray.length] ="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}"
@@ -262,11 +263,8 @@
                 }
             </script>
             <a href="#" onclick="return openAllLogs();">Open all logs</a>
+            {% endif %}
         {% endif %}
-
-
-
-
     </div>
 </div>
 <div class="bp-dropdown-button">

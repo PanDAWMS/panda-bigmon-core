@@ -6701,8 +6701,11 @@ def incidentList(request):
 def esatlasPandaLoggerJson(request):
     valid, response = initRequest(request)
 
-    if not valid:
+    if not valid or settings:
         return response
+
+    if settings.DEPLOYMENT != 'ORACLE_ATLAS':
+        return HttpResponse('It does not exist for non ATLAS BipPanDA monintoring system', content_type='text/html')
 
     connection = create_es_connection()
 
@@ -6736,8 +6739,12 @@ def esatlasPandaLoggerJson(request):
 
 def esatlasPandaLogger(request):
     valid, response = initRequest(request)
+
     if not valid:
         return response
+
+    if settings.DEPLOYMENT != 'ORACLE_ATLAS':
+        return HttpResponse('It does not exist for non ATLAS BipPanDA monintoring system', content_type='text/html')
 
     connection = create_es_connection()
 
