@@ -37,6 +37,17 @@ dbaccess_postgres = {
          'USER': 'FIX_ME',
          'PASSWORD': "FIX_ME",
     },
+    'idds': {
+         'ENGINE':'django.db.backends.postgresql_psycopg2',
+         'OPTIONS': {
+             'options': 'FIX_ME'
+         },
+         'NAME': 'FIX_ME',
+         'HOST': 'FIX_ME',
+         'PORT': 'FIX_ME',
+         'USER': 'FIX_ME',
+         'PASSWORD': "FIX_ME",
+    },
 }
 
 dbaccess_oracle_doma = {
@@ -48,18 +59,6 @@ dbaccess_oracle_doma = {
         'NAME': 'FIX_ME',
         'USER': 'FIX_ME',
         'PASSWORD': 'FIX_ME',
-    },
-
-    'doma_idds_gcp': {
-         'ENGINE':'django.db.backends.postgresql_psycopg2',
-         'OPTIONS': {
-             'options': 'FIX_ME'
-         },
-         'NAME': 'FIX_ME',
-         'HOST': 'FIX_ME',
-         'PORT': 'FIX_ME',
-         'USER': 'FIX_ME',
-         'PASSWORD': "FIX_ME",
     },
 }
 

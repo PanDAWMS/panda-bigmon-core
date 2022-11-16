@@ -80,10 +80,8 @@ def wfprogress(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    kwargs = {}
-    if request.path and '_gcp' in request.path:
-        kwargs['idds_instance'] = 'gcp'
 
+    kwargs = {}
     try:
         iDDSrequests = get_workflow_progress_data(request.session['requestParams'], **kwargs)
     except Exception as e:
@@ -97,7 +95,7 @@ def wfprogress(request):
     data = {
         'iDDSrequests': iDDSrequests,
         'iDDSsummary': iDDSsummary,
-        'iDDSinstance': 'gcp' if 'idds_instance' in kwargs and kwargs['idds_instance'] == 'gcp' else 'default',
+        'iDDSinstance': 'default',
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }

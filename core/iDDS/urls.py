@@ -24,8 +24,3 @@ if settings.DEPLOYMENT == 'ORACLE_ATLAS':
     from core.iDDS import logsretrieval
     urlpatterns.append(re_path(r'^idds/downloadlog/$', logsretrieval.downloadlog, name='downloadlog'))
     urlpatterns.append(re_path(r'^idds/downloadhpometrics/$', logsretrieval.downloadhpometrics, name='downloadlog'))
-
-if settings.DEPLOYMENT == 'ORACLE_DOMA':
-    urlpatterns.append(re_path(r'^idds/wfprogress_gcp/$', idds_progress.wfprogress, name='workflowprogressitems_gcp'),)
-    urlpatterns.append(re_path(r'^idds/daggraph_gcp/$', DAGvisualization.daggraph, name='daggraph_gcp'),)
-

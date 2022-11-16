@@ -96,13 +96,13 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     """
     Getting workflow progress in iDDS requests
     :param request_params:
-    :param kwargs: idds_instance - for special a clone of iDDS app that uses separate DB instance
+    :param kwargs: dict
     :return:
     """
 
     connection_name = 'default'
-    if 'idds_instance' in kwargs and kwargs['idds_instance'] == 'gcp':
-        connection_name = 'doma_idds_gcp'
+    if 'idds' in settings.DATABASES:
+        connection_name = 'idds'
     db = connections[connection_name].vendor
     style = 'default'
     if db == 'postgresql':
@@ -117,8 +117,6 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     where c.relation_type=0 and {condition} order by r.request_id desc
     """
     cur = connections[connection_name].cursor()
-    # cur = connection.cursor()
-    # cur.execute('select count(request_id) from doma_idds.requests')
     cur.execute(sql, sqlpar)
     rows = dictfetchall(cur, style=style)
     cur.close()
