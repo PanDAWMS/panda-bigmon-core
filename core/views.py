@@ -5835,11 +5835,11 @@ def taskInfo(request, jeditaskid=0):
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
 
-        connection = create_es_connection()
-        split_rule = get_split_rule_info(connection, jeditaskid)
-        if len(split_rule) > 0:
-            info['split_rule'] = {}
-            info['split_rule']['messages'] = split_rule
+            connection = create_es_connection()
+            split_rule = get_split_rule_info(connection, jeditaskid)
+            if len(split_rule) > 0:
+                info['split_rule'] = {}
+                info['split_rule']['messages'] = split_rule
 
 
             # datetime type -> str in order to avoid encoding errors in template
