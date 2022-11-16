@@ -10,5 +10,5 @@ class ObjectsComparison(models.Model):
     comparisonlist = models.CharField(db_column='comparison_list', max_length=2000)
 
     class Meta:
-        db_table = f'"{settings.DB_SCHEMA}"."OBJECTS_COMPARISON"'
+        db_table = f'"{settings.DB_SCHEMA}"."objects_comparison"'
         app_label = 'pandamon'

@@ -408,22 +408,32 @@
   {% endif %}
 
   {% if warning.memoryleaksuspicion %}
-      <p></p>
-      <div class="callout warning" data-closable>
-        <h5>Warning! {{ warning.memoryleaksuspicion.message }}</h5>
-        <p>At least one of jobs in this task consumed more max PSS/core than it is limited by a computing site. Please check the next top memory consumed jobs and their memory and IO usage plots: </p>
-        <ul>
-        {% for job in warning.memoryleaksuspicion.jobs %}
-          <li style="font-size: smaller"> <a class="blacklink bold hover" href="{% url 'jobInfo' job.pandaid %}">{{ job.pandaid }}</a> job consumed {{ job.jobmaxpss_percore }} MB per core out of {{ job.sitemaxrss_percore }} MB per core limited by <a class="blacklink bold hover" href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a>, see <a class="blacklink bold hover" target="_blank" href="{% url 'prMonPlots' job.pandaid %}">plots</a>
-        {% endfor %}
-        </ul>
-        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-              <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
+    <p></p>
+    <div class="callout warning" data-closable>
+      <h5>Warning! {{ warning.memoryleaksuspicion.message }}</h5>
+      <p>At least one of jobs in this task consumed more max PSS/core than it is limited by a computing site. Please check the next top memory consumed jobs and their memory and IO usage plots: </p>
+      <ul>
+      {% for job in warning.memoryleaksuspicion.jobs %}
+        <li style="font-size: smaller"> <a class="blacklink bold hover" href="{% url 'jobInfo' job.pandaid %}">{{ job.pandaid }}</a> job consumed {{ job.jobmaxpss_percore }} MB per core out of {{ job.sitemaxrss_percore }} MB per core limited by <a class="blacklink bold hover" href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a>, see <a class="blacklink bold hover" target="_blank" href="{% url 'prMonPlots' job.pandaid %}">plots</a>
+      {% endfor %}
+      </ul>
+      <p>You may want to use a <a class="blacklink bold hover" href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/UsingValgrind">Valgrind</a> tool to identify and investigate memory leaks in your code.
+      Also you can debug jobs locally: click on one of PanDA IDs in the list above, then "Go to" &rarr; "Script to re-create job for offline debugging"</p>
+      <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+            <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
   {% endif %}
-
-
+    {% if info.split_rule %}<p></p>
+      <div class="callout secondary" data-closable>
+        <h5>The split rule(s) has been changed for this task: </h5>
+        <ul>
+         {% for message in  info.split_rule.messages %}
+             <li style="font-size: smaller">{{message}}</li>
+         {% endfor %}
+        </ul>
+        </div>
+    {% endif %}
     <div id="taskflow" ng-app="taskInfoAppSL" ng-controller="taskflowController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="taskflow.is_hidden">
     <div class="card-divider"><p>Task Flow Diagram</p></div>

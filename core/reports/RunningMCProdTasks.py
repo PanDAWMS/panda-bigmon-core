@@ -1,5 +1,5 @@
 import operator
-import core.reports.ReportsDataSource
+from core.reports import ReportsDataSource
 import time
 from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.pagesizes import letter
@@ -30,7 +30,7 @@ class RunningMCProdTasks:
         totTasksRegistered = 0
         totTasksRunning = 0
         aveEvThrHours = 0
-        estimProcTimeForQEv = 0 #
+        estimProcTimeForQEv = 0
         topNSitesWorstPerf = {}
         avWallPerEv = 0
         avWallPerEvH = 0

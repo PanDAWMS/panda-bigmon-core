@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Report</title>
+<style>
+body {
+  font-family: "Lucida Console", Courier, monospace;
+  font-size: 0.8em;
+}
+ul {
+  padding-left: 20px;
+  margin: 0 0 0 20px;
+}
+h4 {
+  margin: 20px 0 0 0;
+}
+</style>
+</head>
+<body>
+<h2>Report for {% for item in summary %}{{ item.jeditaskid }}{% if not forloop.last %},{% endif %}{% endfor %} task(s),
+  generated at {{ built }}</h2>
+
+{% for item in summary %}
+<h3>The results of large-scale {{ item.configuration__release_project }} test using {{ item.configuration__input_scope }} and branch {{ item.configuration__release_branch }} </h3>
+<p>Task <a href="{% url 'taskInfo' item.jeditaskid %}">{{ item.jeditaskid }}</a></p>
+  Nightly {{ item.configuration__release_nightly_tag }}
+
+<h4>Configuration:</h4>
+<ul>
+  <li>{{ item.configuration__release_project }}, {{ item.configuration__release_branch }}, {{ item.configuration__release_nightly_tag }}, {{ item.configuration__release_platform }}</li>
+  <li>Input: {{ item.configuration__input_datasetname }}, {{ item.configuration__input_nevents }} events, {{ item.configuration__input_nfiles }} files, mu=???</li>
+  <li>Conditions tag: {{ item.configuration__conditions_tag }}</li>
+  <li>doHLTMon=???</li>
+  <li>Outputs: {% for f in item.configuration__output_formats %}{{ f }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+</ul>
+<h4>Jobs Info:</h4>
+<ul>
+  <li>attempts: {% for k, v in item.jobs__attempts.items %} {{ k }} ({{ v }}){% endfor %}</li>
+  <li>sites: {% for k, v in item.jobs__computingsites.items %} {{ k }} ({{ v }}){% endfor %}</li>
+  <li>{{ item.jobs__nfilesperjob_average|floatformat }} files/job in average</li>
+  <li>status (including retries): {% for k, v in item.jobs__status_all.items %} {{ k }} ({{ v }}){% endfor %}</li>
+  <li>status (retries dropped): {% for k, v in item.jobs__status_retries_excl.items %} {{ k }} ({{ v }}){% endfor %}</li>
+  <li>options: ??? (e.g.--respectLB --maxCpuCount 43200)</li>
+</ul>
+<h4>All failures: <a href="{% url 'errorSummary' %}?jeditaskid={{ item.jeditaskid }}&mode=nodrop">{{ item.jeditaskid }}</a></h4>
+{% if item.errors__athena|length > 0 %}
+  {% for k, v in item.errors__athena.items %}exe:{{ k }} ({{ v }}){% endfor %}
+{% else %}
+  no athena failures.
+{% endif %}
+
+<h4>Monitoring plots:</h4>
+<ul>
+<li>Max PSS/core: {{ item.jobsconsumption__maxpsspercore_avg|floatformat }} &#177; {{ item.jobsconsumption__maxpsspercore_std|floatformat }} Mb</li>
+<li>Walltime/event: {{ item.jobsconsumption__walltimeperevent_avg|floatformat }} &#177; {{ item.jobsconsumption__walltimeperevent_std|floatformat }}s</li>
+<li>CPUtime/event: {{ item.jobsconsumption__cputimeperevent_avg|floatformat }} &#177; {{ item.jobsconsumption__cputimeperevent_std|floatformat }}s</li>
+</ul>
+
+{% endfor %}
+
+</body>
+</html>

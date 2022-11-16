@@ -1,76 +1,285 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
 {% load static %}
 
+{% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}Report wizard{% endblock %}
 
-<html>
-	<head>
-		<title>Reports wizard</title>
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static "js/datatables/Buttons-1.2.4/css/buttons.foundation.min.css" %}">
+<style>
+[ng\:cloak], [ng-cloak], .ng-cloak {
+    display: none;
+}
+</style>
 
-		<link rel="stylesheet" type="text/css" href="{% static "/css/jquery-ui-1.10.3.custom.min.css"%}" />
-		<link rel="stylesheet" type="text/css" href="{% static "/css/wizardstyles.css"%}" />
-
-
-       	<script type="text/javascript" src="{% static "/js/jquery-1.9.1.min.js"%}"></script>
-       	<script type="text/javascript" src="{% static "/js/jquery-ui-1.10.3.custom.min.js"%}"></script>
-       	<script type="text/javascript" src="{% static "/js/jquery-ui-1.10.3.custom.min.js"%}"></script>
-		<script type="text/javascript" src="{% static "/js/jquery.wizard.js"%}"></script>
-
-		<!-- Demo -->
-		<script type="text/javascript">
-			jQuery(function($) {
-				// Example 1: Basic wizard with validation
-				$( "#example-3" ).wizard({
-					transitions: {
-						report: function( state, action ) {
-						    var t = document.getElementById("reportType");
-                            var reportType = t.options[t.selectedIndex].value;
-                            if ( !reportType ) {
-								alert( "Please select a value to continue." );
-							}
-							return reportType;
-						}
-					}
-				}).wizard( "form" ).submit(function( event ) {
-					//event.preventDefault();
-                    var t = document.getElementById("reportType");
-                    var reportType = t.options[t.selectedIndex].value;
-
-					//alert( "Form submitted! " + reportType );
-					});
-			});
-		</script>
-	</head>
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/dataTables.buttons.min.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.foundation.min.js' %}"></script>
+  <script src="{% static 'js/datatables/Buttons-1.2.4/js/buttons.colVis.min.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
 
 
-<body>
-            <div id="example-3">
-				<h2>Reports Wizard</h2>
+{% block body %}
 
-				<form name="example-3">
+<div data-ng-app="reportWizard">
+<div data-ng-controller="reportWizardController" ng-cloak id="reportWizardContainer">
+<div class="callout alert" ng-show="is_error">
+  <h5>{$ message $}</h5>
+</div>
+<form name="reportSetupForm" class="form-validation" role="form" novalidate ng-hide="is_error">{% csrf_token %}
+  <div class="row form-container slim">
+  <div class="xlarge-2 large-4 medium-6 small-12 column">
+    <label>Report type:
+      <select id="report_type__select" name="report_type" ng-model="form_params.report_type" ng-options="v.value as v.name for (k, v) in available_report_types" ng-change="reset_options()" required></select>
+    </label>
+  <div class="" ng-switch on="form_params.report_type">
+    <div class="" ng-switch-default></div>
+    <div class="" ng-switch-when="campaign">
+      <label>Campaign:
+        <select name="campaign" ng-model="form_params.campaign" ng-options="v.value as v.name for v in available_campaign_reports" ng-required="form_params.report_type==='campaign'" ng-class="{'input-error': reportSetupForm.campaign.$touched && reportSetupForm.campaign.$error.required}"></select>
+      </label>
+      <label ng-show="form_params.campaign">Delivery method:
+        <select name="delivery" ng-model="form_params.delivery" ng-options="v.value as v.name for v in available_delivery_types" ng-required="form_params.report_type==='campaign'&& form_params.campaign!==''"  ng-class="{'input-error': reportSetupForm.delivery.$touched && reportSetupForm.delivery.$error.required}"></select>
+      </label>
+    </div>
 
-					<div class="step" data-state="report">
-						<p>Select report to create</p>
-                        <select name="reportType" size="5" id="reportType">
-                          <option value="rep0">Simple campaign report, req. in (11034,11048,11049,11050,11051,11052,11198,11197,11222,11359)</option>
-                        </select>
-                    </div>
+    <div class="" ng-switch-when="obstasks"></div>
 
-					<div class="submit step" id="rep0">
-                        <p>Select delivery</p>
-                        <label for="deliveryDownload"><input type="radio" name="delivery" value="Download" id="deliveryDownload" />Download</label>
-                        <label for="deliveryEmail"><input disabled="disabled" type="radio" name="delivery" value="Email" id="deliveryEmail" />Email</label>
-                        <input type="hidden" name="step" value="1">
-                    </div>
+    <div class="" ng-switch-when="lsat">
+      <label>Task ID(s):
+        <input type="text" name="jeditaskid" jeditaskid-validation placeholder="Enter taskid or list of jeditaskids separated by comma" ng-model="form_params.jeditaskid" ng-required="form_params.report_type==='lsat'" ng-maxlength="250" ng-class="{'input-error': reportSetupForm.jeditaskid.$touched && reportSetupForm.jeditaskid.$error.required}" >
+      </label>
+      <div class="form-error-message" ng-show="reportSetupForm.jeditaskid.$error.jeditaskidValidation">
+        Incorrect format, it must be an integer number or list of integers separated by comma with no spaces.</div>
+      <label ng-show="form_params.jeditaskid && reportSetupForm.jeditaskid.$valid">Delivery method:
+        <select ng-model="form_params.delivery" ng-options="v.value as v.name for v in available_delivery_types" ng-required="form_params.report_type==='lsat'&& form_params.jeditaskid!==''" ng-class="{'input-error': reportSetupForm.delivery.$touched && reportSetupForm.delivery.$error.required}"></select>
+      </label>
+    </div>
 
+    <p ng-show="form_params.delivery==='email'">Email: <b>{$ form_params.email $}</b></p>
 
-					<div class="navigation">
-						<ul class="clearfix">
-							<button type="button" name="backward" class="backward">Backward</button>
-							<button type="button" name="forward" class="forward">Forward</button>
-                            <button type="submit" name="process" class="submit">Submit</button>
-						</ul>
-					</div>
-				</form>
-			</div>
-	</body>
-</html>
+    <div ng-show="form_params.delivery==='email' ">
+      <label>CC:</label>
+      <div ng-repeat="cc in form_params.cc_email_list">
+        <div class="input-group">
+          <input type="email" class="input-group-field form-control" value="{$ cc.email $}" disabled>
+          <div class="input-group-button">
+            <button class="button alert" ng-click="remove_cc_email(cc.id)">x</button>
+          </div>
+        </div>
+      </div>
+      <div class="input-group">
+        <input type="email" class="input-group-field form-control" id="delivery-cc-email" name="cc_email" ng-maxlength="100" ng-model="form_params.cc_email" ng-class="{'input-error': reportSetupForm.cc_email.$touched && reportSetupForm.cc_email.$invalid }">
+        <div class="input-group-button">
+          <button class="button" ng-disabled="form_params.cc_email===''" ng-click="add_cc_email()">Add</button>
+        </div>
+      </div>
+      <div class="form-error-message" ng-show="reportSetupForm.cc_email.$error.email">Incorrect email format.</div>
+      <div class="form-error-message" ng-show="reportSetupForm.cc_email.$error.maxlength">Max character length reached.</div>
+    </div>
+  </div>
+  <p><button class="button" ng-disabled="!(reportSetupForm.$valid)" ng-click="submit()">Go</button></p>
+
+  <div class="" ng-switch on="result.status">
+      <div class="" ng-switch-default>
+        <p ng-bind-html="loading_placeholder"></p>
+      </div>
+      <div ng-switch-when="success">
+        <div class="callout success">
+          {$ result.message $}
+        </div>
+      </div>
+      <div ng-switch-when="error" >
+        <div class="callout alert">
+          {$ result.message $}
+        </div>
+      </div>
+    </div>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var available_report_types = {{ available_reports|safe }};
+var user_email = '{{ request.user.email|safe }}';
+app.
+controller('reportWizardController', ['$scope', '$http', '$window', '$sce', function($scope, $http, $window, $sce) {
+  $scope.delivery_options_names = {
+    page: 'Proceed to report page',
+    email: 'Send report to email',
+    json: 'Get data as JSON',
+    export: 'Upload data to ElasticSearch',
+  }
+  $scope.init = function () {
+
+    $scope.is_error = false;
+    $scope.message = '';
+
+    $scope.loading_placeholder = '';
+
+    $scope.result = {
+      status: '',
+      message: '',
+    };
+
+    // set default values
+    $scope.form_params = {
+      report_type: '',
+      campaign: '',
+      jeditaskid: '',
+      delivery: 'page',
+      email: user_email,
+      cc_email: '',
+      cc_email_list: [],
+    };
+    $scope.cc_i = 0;
+    $scope.available_report_types = {default: {name:'Not selected', value: '', params: {}}};
+    $scope.available_campaign_reports = [{name: 'Not selected', value: ''}];
+    $scope.available_delivery_types = [];
+    // fill with data
+    if (Object.keys(available_report_types).length === 0) {
+      $scope.is_error = true;
+      $scope.message = 'No reports available for this instance of BigPanDAmon';
+    }
+    else {
+      $scope.available_report_types = {...$scope.available_report_types, ...available_report_types};
+      if ('campaign' in $scope.available_report_types) {
+        $scope.available_report_types.campaign.params.values.forEach((item) => {
+          $scope.available_campaign_reports.push({name: item, value: item});
+        });
+      }
+    }
+  }
+
+  $scope.reset_entire_form = function() {
+    //
+    $scope.init()
+  }
+
+  $scope.reset_options = function() {
+    $scope.available_delivery_types = []
+    if ($scope.form_params.report_type) {
+      $scope.available_report_types[$scope.form_params.report_type].params.delivery_options.forEach((item) => {
+        $scope.available_delivery_types.push({name: $scope.delivery_options_names[item], value: item})
+      })
+    }
+    $scope.form_params.jeditaskid = '';
+    $scope.form_params.campaign = '';
+    $scope.form_params.delivery = 'page';
+    $scope.result = {
+      status: '',
+      message: '',
+    };
+  }
+
+  // CC email list functions
+  $scope.add_cc_email = function () {
+    // getting entered CC email from form
+    let email = {
+      email: $scope.form_params.cc_email,
+      id: $scope.cc_i
+    };
+    // add to the list
+    $scope.form_params.cc_email_list.push(email);
+    // clear CC email input in form
+    $scope.form_params.cc_email = '';
+    // reserve an index for the next one
+    $scope.cc_i++;
+  };
+
+  $scope.remove_cc_email = function (id) {
+    for (var i = 0; i < $scope.form_params.cc_email_list.length; i++) {
+      if ($scope.form_params.cc_email_list[i].id === id) {
+        $scope.form_params.cc_email_list.splice(i, 1);
+        break;
+      }
+    }
+  };
+
+  $scope.submit = function () {
+    $scope.result = {
+      status: '',
+      message: '',
+    };
+    var base_url = "/report/";
+    if ($scope.reportSetupForm.$valid ) {
+      if ($scope.form_params.delivery === 'page' || $scope.form_params.delivery === 'json') {
+        // redirect to a page
+        let get_params = ['report_type', 'delivery', ...$scope.available_report_types[$scope.form_params.report_type].params.get_redirect];
+        if ($scope.form_params.delivery === 'json') {$scope.form_params.json = 1; get_params.push('json')}
+        $window.location.href = base_url + '?' + Object.keys($scope.form_params).filter(key => get_params.includes(key)).map(key => {return `${key}=${encodeURIComponent($scope.form_params[key])}`;}).join('&');
+      }
+      else if ($scope.form_params.delivery === 'email' || $scope.form_params.delivery === 'export') {
+        $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Doing the thing... '),
+        $http({
+          method: 'POST',
+          url: base_url,
+          data: {params: $scope.form_params},
+        }).then(function successCallback(response) {
+          $scope.loading_placeholder = ''
+          if (response
+            && response.data
+            && response.data.status
+            && response.data.status === 'success') {
+            $scope.result= response.data;
+          } else {
+            if (response
+              && response.data
+              && response.data.status
+              && response.data.status === 'error') {
+              $scope.result= response.data;
+            }
+          }
+        }, function errorCallback(response) {
+          $scope.loading_placeholder = '';
+          $scope.result.status = "error";
+          $scope.result.message = "Something went wrong";
+        });
+      }
+    }
+  };
+
+  $scope.init();
+
+}]);
+
+app.directive('jeditaskidValidation', function (){
+return {
+  require: 'ngModel',
+  restrict: 'A',
+  link: function(scope, elem, attr, ngModel) {
+    ngModel.$validators.jeditaskidValidation = function(modelValue, viewValue){
+
+      var jeditaskid = modelValue || viewValue;
+      if (ngModel.$isEmpty(jeditaskid)){
+        return true;
+      }
+      // check if jeditaskids has an int or list of int
+      let ids = jeditaskid.split(',')
+      if (!ids.every(i => !(isNaN(Number(i))))) {
+        return false;
+      }
+
+      return true;
+    };
+  }
+};
+});
+
+</script>
+{% endblock %}
+
 
