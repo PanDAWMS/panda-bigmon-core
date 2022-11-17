@@ -13,6 +13,8 @@ if 'idds' in settings.DATABASES:
 
 class Transforms(models.Model):
     transform_id = models.BigIntegerField(primary_key=True, db_column='transform_id')
+    request_id = models.BigIntegerField(null=True, db_column='request_id')
+    workload_id = models.BigIntegerField(null=True, db_column='workload_id')
     transform_type = models.SmallIntegerField(db_column='transform_type')
     transform_tag = models.CharField(null=True, max_length=20, db_column='transform_tag')
     priority = models.IntegerField(null=True, db_column='priority')
@@ -136,17 +138,3 @@ class Requests(models.Model):
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_IDDS}"."requests"'
         app_label = app_label_idds
-
-
-class Req2transforms(models.Model):
-    request_id_fk = models.ForeignKey(Requests, related_name='request_id_fk', on_delete=models.DO_NOTHING, db_column='request_id')
-    transform_id_fk = models.ForeignKey(Transforms, related_name='transform_id_fk', on_delete=models.DO_NOTHING, db_column='transform_id')
-    
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_IDDS}"."req2transforms"'
-        app_label = app_label_idds
-        unique_together = (('request_id_fk', 'transform_id_fk'),)
-        managed = False
-
-
-

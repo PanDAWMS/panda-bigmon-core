@@ -95,7 +95,6 @@ def wfprogress(request):
     data = {
         'iDDSrequests': iDDSrequests,
         'iDDSsummary': iDDSsummary,
-        'iDDSinstance': 'default',
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }

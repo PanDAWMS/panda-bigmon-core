@@ -558,7 +558,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         #    viewParams['selection'] += "hours=%s" % LAST_N_HOURS_MAX
         # else:
         #    viewParams['selection'] += "days=%s" % int(LAST_N_HOURS_MAX/24)
-        if request.session['JOB_LIMIT'] < 100000 and request.session['JOB_LIMIT'] > 0:
+        if querytype == 'job' and request.session['JOB_LIMIT'] < 100000 and request.session['JOB_LIMIT'] > 0:
             request.session['viewParams']['selection'] += " <b>limit=</b>%s" % request.session['JOB_LIMIT']
     else:
         request.session['viewParams']['selection'] = ""
