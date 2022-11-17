@@ -124,7 +124,7 @@ except ImportError:
     dbaccess_oracle_atlas = None
 
 
-DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_DOMA')
+DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
 
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
