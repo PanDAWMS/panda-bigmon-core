@@ -7,13 +7,16 @@ from django.template.defaulttags import register
 from django.db.models import Q
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
+from core.utils import is_json_request
 from core.iDDS.models import Transforms, Collections, Processings, Contents
 from core.iDDS.useconstants import SubstitleValue
 from core.iDDS.rawsqlquery import getRequests
 from core.iDDS.algorithms import generate_requests_summary, parse_request, getiDDSInfoForTask
+from core.iDDS.workflowprogress import get_workflow_progress_data, prepare_requests_summary
 from core.libs.exlib import lower_dicts_in_list
 from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import getCacheEntry, setCacheEntry
+
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -168,3 +171,31 @@ def getiDDSInfoForTaskRequest(request):
         jeditaskid = request.session['requestParams']['jeditaskid']
         transformationWithNested = getiDDSInfoForTask(jeditaskid)
     return JsonResponse({'data': transformationWithNested}, encoder=DateEncoder, safe=False)
+
+
+@login_customrequired
+def wfprogress(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    kwargs = {}
+    try:
+        iDDSrequests = get_workflow_progress_data(request.session['requestParams'], **kwargs)
+    except Exception as e:
+        iDDSrequests = []
+        _logger.exception('Failed to load iDDS requests from DB: \n{}'.format(e))
+
+    iDDSsummary = prepare_requests_summary(iDDSrequests)
+    if is_json_request(request):
+        return JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)
+
+    data = {
+        'iDDSrequests': iDDSrequests,
+        'iDDSsummary': iDDSsummary,
+        'request': request,
+        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+    }
+    response = render_to_response('workflows.html', data, content_type='text/html')
+    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response

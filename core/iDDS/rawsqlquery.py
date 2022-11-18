@@ -1,12 +1,15 @@
+import logging
 from datetime import datetime, timedelta
-from django.db import connection, connections
+from django.db import connections
 from core.libs.exlib import dictfetchall
 from core.libs.sqlsyntax import bind_var
 from core.iDDS.useconstants import SubstitleValue
+from core.iDDS.algorithms import get_connection_name
 
 from django.conf import settings
 
 subtitleValue = SubstitleValue()
+_logger = logging.getLogger('bigpandamon')
 
 
 def getRequests(query_params, condition='(1=1)'):
@@ -33,8 +36,8 @@ def getRequests(query_params, condition='(1=1)'):
     ) tr on (r.request_id=tr.request_id)
     where {condition}
     """
-
-    cur = connection.cursor()
+    connection_name = get_connection_name()
+    cur = connections[connection_name].cursor()
     cur.execute(sql, sqlpar)
     rows = dictfetchall(cur)
     cur.close()
@@ -81,9 +84,7 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     :return:
     """
 
-    connection_name = 'default'
-    if 'idds' in settings.DATABASES:
-        connection_name = 'idds'
+    connection_name = get_connection_name()
     db = connections[connection_name].vendor
     style = 'default'
     if db == 'postgresql':
@@ -99,6 +100,10 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     where c.relation_type=0 and {condition} order by r.request_id desc
     """
     cur = connections[connection_name].cursor()
+    _logger.info('!!! Using connection named: {}, vendor: {}, host: {}, port: {}, user: {} \n Query: {}'.format(
+        connection_name, db, connections[connection_name].settings_dict['HOST'],
+        connections[connection_name].settings_dict['PORT'], connections[connection_name].settings_dict['USER'], sql
+    ))
     cur.execute(sql, sqlpar)
     rows = dictfetchall(cur, style=style)
     cur.close()

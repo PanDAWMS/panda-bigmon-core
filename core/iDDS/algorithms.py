@@ -79,3 +79,14 @@ def checkIfIddsTask(taskinfo):
         if taskinfo['tasktype'] == "prod":
             return 'idds'
     return None
+
+
+def get_connection_name():
+    """
+    Deciding which connection to use for raw SQL queries
+    :return: connection_name: str
+    """
+    connection_name = 'default'
+    if 'idds' in settings.DATABASES:
+        connection_name = 'idds'
+    return connection_name
