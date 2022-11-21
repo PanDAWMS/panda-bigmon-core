@@ -172,7 +172,7 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
         result['status'] = 'error'
         result['message'] = f"{response}: {response.text}"
         _logger.error(result['message'])
-        raise ConnectionError(result['msg'])
+        raise ConnectionError(result['message'])
     else:
         result['status'] = 'success'
         result['message'] = "Successfully pushed data to the ES cluster"
