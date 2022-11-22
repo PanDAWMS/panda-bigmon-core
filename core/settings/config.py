@@ -313,16 +313,16 @@ LOGGING = {
         'django': {
             'handlers': ['logfile-django', 'logfile-error'],
             'propagate': True,
-            'level': LOG_SIZE,
+            'level': LOG_LEVEL,
         },
         'django.template': {
             'handlers': ['logfile-template'],
-            'level': LOG_SIZE,
+            'level': LOG_LEVEL,
             'propagate': False,
         },
         'bigpandamon': {
             'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error', 'console'],
-            'level': LOG_SIZE,
+            'level': LOG_LEVEL,
         },
         'bigpandamon-error': {
             'handlers': ['logfile-error'],
@@ -330,11 +330,11 @@ LOGGING = {
         },
         'bigpandamon-filebrowser': {
             'handlers': ['logfile-filebrowser', 'logfile-error'],
-            'level': LOG_SIZE,
+            'level': LOG_LEVEL,
         },
         'social': {
             'handlers': ['logfile-error', 'social'],
-            'level': LOG_SIZE,
+            'level': LOG_LEVEL,
             'propagate': True,
         },
     },
