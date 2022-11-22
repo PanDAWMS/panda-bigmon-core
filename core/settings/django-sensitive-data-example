@@ -134,9 +134,6 @@ aws = {
 DEBUG = False
 
 if DEBUG is True:
-    from core.settings.config import LOGGING
-    LOGGING['handlers']['console']['level'] = 'DEBUG'
-
     ENABLE_DEBUG_TOOLBAR = True
     DEBUG_PROPAGATE_EXCEPTIONS = True
 

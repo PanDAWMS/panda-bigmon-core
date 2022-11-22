@@ -23,26 +23,25 @@ if 'BIGMON_HOST' in os.environ:
 # IPs of CACHING CRAWLERS if any
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46']
 
-### VIRTUALENV
+# VIRTUALENV
 VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/data/wenaus/virtualenv/twrpm')
 
-### WSGI
+# WSGI
 if 'BIGMON_WSGI_PATH' in os.environ:
     WSGI_PATH = os.environ['BIGMON_WSGI_PATH']
 
-### VO
+# VO
 if 'BIGMON_VO' in os.environ:
     MON_VO = os.environ['BIGMON_VO']
 
-### Authentication providers, supported: ['cern', 'google', 'github', 'indigoiam']
+# Authentication providers, supported: ['cern', 'google', 'github', 'indigoiam']
 if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
     AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
 
-### PanDA server URL
-
+# PanDA server URL
 PANDA_SERVER_URL = os.environ.get('PANDA_SERVER_URL', 'https://pandaserver.cern.ch/server/panda')
 
-### DB_ROUTERS for atlas's prodtask
+# DB_ROUTERS for atlas's prodtask
 DATABASE_ROUTERS = [
     'core.dbrouter.ProdMonDBRouter',
 ]
@@ -101,15 +100,12 @@ STATICFILES_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     join(BASE_DIR, 'static'),
-#    join(dirname(core.__file__), 'static'),
 )
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = MY_SECRET_KEY
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-
-
 try:
     from core.settings.local import dbaccess_postgres
 except ImportError:
@@ -121,8 +117,7 @@ except ImportError:
 try:
     from core.settings.local import dbaccess_oracle_doma
 except ImportError:
-    dbaccess_oracle_atlas = None
-
+    dbaccess_oracle_doma = None
 
 DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
 
@@ -183,18 +178,11 @@ CACHES = {
     }
 }
 
-
-### URL_PATH_PREFIX for multi-developer apache/wsgi instance
-### on EC2: URL_PATH_PREFIX = '/bigpandamon' or URL_PATH_PREFIX = '/developersprefix'
-#URL_PATH_PREFIX = '/core'
-#URL_PATH_PREFIX = '/twrpmcore'
-#URL_PATH_PREFIX = '/core'
+# URL_PATH_PREFIX for multi-developer apache/wsgi instance
 URL_PATH_PREFIX = ''
-### on localhost:8000: URL_PATH_PREFIX = '/.'
-#URL_PATH_PREFIX = ''
+
 MEDIA_URL = URL_PATH_PREFIX + MEDIA_URL_BASE
 STATIC_URL = URL_PATH_PREFIX + STATIC_URL_BASE
-
 
 FILTER_UI_ENV = {
     # default number of days of shown jobs active in last N days
@@ -222,8 +210,16 @@ FILTER_UI_ENV = {
         },
 }
 
+# logging settings. The min level by default is INFO, if debugging it is lowered to DEBUG
+LOG_LEVEL = os.environ.get('BIGMON_LOG_LEVEL', 'INFO')
+try:
+    from core.settings.local import DEBUG
+except ImportError:
+    DEBUG = False
+if DEBUG is True:
+    LOG_LEVEL = 'DEBUG'
 
-LOG_SIZE = 1000000000
+LOG_SIZE = 100000000
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -237,20 +233,20 @@ LOGGING = {
     },
     'handlers': {
         'null': {
-            'level':'DEBUG',
-            'class':'logging.NullHandler',
+            'level': LOG_LEVEL,
+            'class': 'logging.NullHandler',
         },
         'logfile-django': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': LOG_LEVEL,
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.django",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
         },
         'logfile-bigpandamon': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': LOG_LEVEL,
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.bigpandamon",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
@@ -272,40 +268,16 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
-        'logfile-viewdatatables': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': LOG_ROOT + "/logfile.viewdatatables",
-            'maxBytes': LOG_SIZE,
-            'backupCount': 2,
-            'formatter': 'verbose',
-        },
-        'logfile-rest': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': LOG_ROOT + "/logfile.rest",
-            'maxBytes': LOG_SIZE,
-            'backupCount': 2,
-            'formatter': 'verbose',
-        },
-        'logfile-api_reprocessing': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': LOG_ROOT + "/logfile.api_reprocessing",
-            'maxBytes': LOG_SIZE,
-            'backupCount': 2,
-            'formatter': 'verbose',
-        },
         'logfile-filebrowser': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
+            'level': LOG_LEVEL,
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.filebrowser",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
         },
         'logfile-template': {
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.template",
             'maxBytes': LOG_SIZE,
@@ -313,7 +285,7 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'social': {
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.social",
             'maxBytes': LOG_SIZE,
@@ -323,10 +295,10 @@ LOGGING = {
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
-            'class':'logging.StreamHandler',
+            'class': 'logging.StreamHandler',
         },
         'console': {
-            'level': 'INFO',
+            'level': LOG_LEVEL,
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'full'
@@ -335,48 +307,34 @@ LOGGING = {
     'loggers': {
         'django.request': {
             'handlers': ['mail_admins', 'logfile-django'],
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
             'propagate': True,
         },
         'django': {
             'handlers': ['logfile-django', 'logfile-error'],
             'propagate': True,
-            'level': 'DEBUG',
+            'level': LOG_SIZE,
         },
         'django.template': {
             'handlers': ['logfile-template'],
-            'level': 'DEBUG',
+            'level': LOG_SIZE,
             'propagate': False,
-        },
-        'django_datatables_view': {
-            'handlers':['logfile-viewdatatables'],
-            'propagate': True,
-            'level':'DEBUG',
-        },
-        'rest_framework': {
-            'handlers':['logfile-rest'],
-            'propagate': True,
-            'level':'DEBUG',
         },
         'bigpandamon': {
             'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error', 'console'],
-            'level': 'DEBUG',
+            'level': LOG_SIZE,
         },
         'bigpandamon-error': {
             'handlers': ['logfile-error'],
             'level': 'ERROR',
         },
-        'api_reprocessing':{
-            'handlers': ['logfile-api_reprocessing'],
-            'level': 'DEBUG',
-        },
-        'bigpandamon-filebrowser':{
+        'bigpandamon-filebrowser': {
             'handlers': ['logfile-filebrowser', 'logfile-error'],
-            'level': 'DEBUG',
+            'level': LOG_SIZE,
         },
         'social': {
             'handlers': ['logfile-error', 'social'],
-            'level': 'DEBUG',
+            'level': LOG_SIZE,
             'propagate': True,
         },
     },
@@ -393,10 +351,10 @@ LOGGING = {
         },
     },
     'logfile': {
-        'level': 'DEBUG',
+        'level': LOG_LEVEL,
         'class': 'logging.handlers.RotatingFileHandler',
         'filename': LOG_ROOT + "/logfile",
-        'maxBytes': 10000000,
+        'maxBytes': LOG_SIZE,
         'backupCount': 5,
         'formatter': 'verbose',
     },
