@@ -862,7 +862,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
             if param == 'site':
                 pqs = get_panda_queues()
-                query['computingsite__in'] = [info['nickname'] for pq, info in pqs.items() if info['gocname'] == request.session['requestParams'][param]]
+                query['computingsite__in'] = [info['nickname'] for pq, info in pqs.items() if info['atlas_site'] == request.session['requestParams'][param]]
 
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -3861,7 +3861,7 @@ def dashRegion(request):
     if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
         jquery['queuestatus'] = request.session['requestParams']['queuestatus']
     if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] != 'all':
-        jquery['queuegocname'] = request.session['requestParams']['site']
+        jquery['queuesite'] = request.session['requestParams']['site']
 
     # get job summary data
     jsr_queues_dict, jsr_sites_dict, jsr_regions_dict = get_job_summary_region(
