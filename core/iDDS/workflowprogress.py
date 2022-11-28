@@ -1,14 +1,7 @@
 import logging
-from django.shortcuts import render
-from django.utils.cache import patch_response_headers
-from django.http import JsonResponse
-
-from core.views import initRequest, login_customrequired
-from core.utils import is_json_request
 from core.iDDS.useconstants import SubstitleValue
 from core.iDDS.rawsqlquery import getWorkFlowProgressItemized
 from core.libs.exlib import lower_dicts_in_list
-from core.libs.DateEncoder import DateEncoder
 import pandas as pd
 
 _logger = logging.getLogger('bigpandamon')
@@ -71,38 +64,8 @@ def get_workflow_progress_data(request_params, **kwargs):
         workflow['TOTAL_FILES'] += workflow_group[7]
         workflow['REMAINING_FILES'] = workflow['TOTAL_FILES'] - workflow['PROCESSED_FILES']
     workflows = lower_dicts_in_list(list(workflows.values()))
-    #return JsonResponse(workflows, encoder=DateEncoder, safe=False)
     return workflows
 
 
-@login_customrequired
-def wfprogress(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-    kwargs = {}
-    if request.path and '_gcp' in request.path:
-        kwargs['idds_instance'] = 'gcp'
-
-    try:
-        iDDSrequests = get_workflow_progress_data(request.session['requestParams'], **kwargs)
-    except Exception as e:
-        iDDSrequests = []
-        _logger.exception('Failed to load iDDS requests from DB: \n{}'.format(e))
-
-    iDDSsummary = prepare_requests_summary(iDDSrequests)
-    if is_json_request(request):
-        return JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)
-
-    data = {
-        'iDDSrequests': iDDSrequests,
-        'iDDSsummary': iDDSsummary,
-        'iDDSinstance': 'gcp' if 'idds_instance' in kwargs and kwargs['idds_instance'] == 'gcp' else 'default',
-        'request': request,
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-    }
-    response = render(request, 'workflows.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
 
 

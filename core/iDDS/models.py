@@ -4,9 +4,17 @@ iDDS related models
 from django.db import models
 from django.conf import settings
 
+# for postgres-based installations the iDDS has separate DB, but with Oracle it is just in a separate schema in PanDA DB
+# that is why we tip dbrouter which connection to use depending on deployment via app_label
+app_label_idds = 'panda'
+if 'idds' in settings.DATABASES:
+    app_label_idds = 'idds'
+
 
 class Transforms(models.Model):
     transform_id = models.BigIntegerField(primary_key=True, db_column='transform_id')
+    request_id = models.BigIntegerField(null=True, db_column='request_id')
+    workload_id = models.BigIntegerField(null=True, db_column='workload_id')
     transform_type = models.SmallIntegerField(db_column='transform_type')
     transform_tag = models.CharField(null=True, max_length=20, db_column='transform_tag')
     priority = models.IntegerField(null=True, db_column='priority')
@@ -24,6 +32,7 @@ class Transforms(models.Model):
     
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_IDDS}"."transforms"'
+        app_label = app_label_idds
 
 
 class Collections(models.Model):
@@ -52,6 +61,7 @@ class Collections(models.Model):
     
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_IDDS}"."collections"'
+        app_label = app_label_idds
 
 
 class Contents(models.Model):
@@ -80,6 +90,7 @@ class Contents(models.Model):
     
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_IDDS}"."contents"'
+        app_label = app_label_idds
 
 
 class Processings(models.Model):
@@ -101,6 +112,7 @@ class Processings(models.Model):
     
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_IDDS}"."processings"'
+        app_label = app_label_idds
 
 
 class Requests(models.Model):
@@ -125,16 +137,4 @@ class Requests(models.Model):
     
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_IDDS}"."requests"'
-
-
-class Req2transforms(models.Model):
-    request_id_fk = models.ForeignKey(Requests, related_name='request_id_fk', on_delete=models.DO_NOTHING, db_column='request_id')
-    transform_id_fk = models.ForeignKey(Transforms, related_name='transform_id_fk', on_delete=models.DO_NOTHING, db_column='transform_id')
-    
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_IDDS}"."req2transforms"'
-        unique_together = (('request_id_fk', 'transform_id_fk'),)
-        managed = False
-
-
-
+        app_label = app_label_idds

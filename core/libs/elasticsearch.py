@@ -159,6 +159,8 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
 
     # send data via POST request
     es_host, es_user, es_password = get_es_credentials()
+    if '/' in es_host:
+        es_host = es_host.split('/')[0]
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(
         f"https://{es_host}:443/es/_bulk",
@@ -172,13 +174,14 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
         result['status'] = 'error'
         result['message'] = f"{response}: {response.text}"
         _logger.error(result['message'])
-        raise ConnectionError(result['msg'])
+        raise ConnectionError(result['message'])
     else:
         result['status'] = 'success'
         result['message'] = "Successfully pushed data to the ES cluster"
         _logger.info(result['message'])
 
     return result
+
 
 def get_split_rule_info(es_conn, jeditaskid):
     """

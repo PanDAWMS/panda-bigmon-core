@@ -164,8 +164,11 @@ if DEBUG and ENABLE_DEBUG_TOOLBAR:
         'debug_toolbar',
     )
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    INTERNAL_IPS = ('127.0.0.1', '192.168.0.1', '188.184.69.142')
-    DEBUG_TOOLBAR_CONFIG = {'INTERCEPT_REDIRECTS': False, }
+    INTERNAL_IPS = ('127.0.0.1', '192.168.0.1', )
+    DEBUG_TOOLBAR_CONFIG = {
+        'INTERCEPT_REDIRECTS': False,
+        'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+    }
     DEBUG_TOOLBAR_PANELS = (
         'debug_toolbar.panels.versions.VersionsPanel',
         # Throwing AttributeError: 'module' object has no attribute 'getrusage'

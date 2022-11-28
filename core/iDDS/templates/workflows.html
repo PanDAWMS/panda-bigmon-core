@@ -30,7 +30,7 @@
     <div class="comment more">
     {% for property, count  in occurences.items %}
     <span {% if attribute == 'status' %} class='{{property}} item' {% else %} class="item" {% endif %}> {{ property }} </span>
-        <a href="{% if iDDSinstance == 'default' %}{% url 'workflowprogressitems' %}{% else %}idds/wfprogress_gcp/{% endif %}?{{attribute}}={{property}}">({{ count }})</a>
+        <a href="{% url 'workflowprogressitems' %}?{{attribute}}={{property}}">({{ count }})</a>
     {% endfor %}
     </div></td></tr>
     {% endfor %}
@@ -71,7 +71,6 @@
 
 <script type="text/javascript">
 var iDDSrequests=JSON.parse(JSON.stringify({{ iDDSrequests | safe }}));
-const iDDSinstance = '{{ iDDSinstance|safe }}';
 
 function preprocData(dataIn){
    var dataOut = [];
@@ -94,8 +93,7 @@ var requests_table = $('#requests_table').DataTable({
         { data: "r_status", title: "workflow status" },
         { data: "request_id", title: "graph",
             render: function(data, type, row, meta) {
-                let url_base = iDDSinstance === 'default' ? '{% url "daggraph" %}' : 'idds/daggraph_gcp/';
-                return '<a target=blank href = "' + url_base +'?requestid='+row['request_id']+'">'+'plot'+'</a>';
+                return '<a target=blank href = "' + '{% url "daggraph" %}' +'?requestid='+row['request_id']+'">'+'plot'+'</a>';
             }
         },
         { data: "r_name", title: "workflow name",

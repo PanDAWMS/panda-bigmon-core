@@ -166,7 +166,7 @@
                      target="_blank">Prod Task view (to manage task)</a>
                   <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
               {% endif %}    {% endif %}
-
+          {% if viewParams.MON_VO == 'ATLAS' %}
           <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Task
               brokerage </a>
 
@@ -177,7 +177,7 @@
               logger</a>
           <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!(logName,fields.type,logLevel,message),index:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('@timestamp',desc))">Retrial
               Module logger</a>
-
+        {% endif %}
           <a href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}">Error summary</a>
           {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
               <a href="{% url 'taskInfo' task.parent_tid %}">Parent task {{ task.parent_tid }}</a>
@@ -462,7 +462,7 @@
     </div>
   </div>
   </div>
-
+    {% if viewParams.MON_VO == 'ATLAS' %}
   <div id="tasklogs" ng-app="taskInfoAppSL" ng-controller="TaskLogsController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="task_logs.is_hidden">
     <div class="card-divider"><p>Task logs for {{ jeditaskid|safe }} from <a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'jediTaskID:{{ jeditaskid|safe }}'),sort:!('@timestamp',desc))" target="_blank">es-atlas</a></p></div>
@@ -474,7 +474,7 @@
     </div>
   </div>
   </div>
-
+{% endif %}
   {% if inctrs %}
       <table class="fresh-table">
           <tr>

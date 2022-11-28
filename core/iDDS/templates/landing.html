@@ -51,7 +51,7 @@
       </div>
       <div class="card-section">
         <table id="requests_table" class="display data-table" >
-         <thead>
+         <thead><tr>
              <th>Request ID</th>
              <th>Scope</th>
              <th>Name</th>
@@ -63,7 +63,7 @@
              <th>Out status</th>
              <th>Out total files</th>
              <th>Out processed files</th>
-         </thead>
+         </tr></thead>
          <tbody></tbody>
         </table>
       </div>
@@ -90,7 +90,6 @@
             <th>started_at</th>
             <th>finished_at</th>
             <th>expired_at</th>
-            <th>transform_metadata</th>
          </tr></thead>
          <tbody></tbody>
         </table>
@@ -298,7 +297,6 @@ var transform_table = $('#transform_table').DataTable({
         { data: "started_at", title: "started_at" },
         { data: "finished_at", title: "finished_at" },
         { data: "expired_at", title: "expired_at" },
-        { data: "transform_metadata", title: "transform_metadata" },
     ],
     "processing": true,
     language: {

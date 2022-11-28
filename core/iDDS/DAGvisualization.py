@@ -17,11 +17,6 @@ SELECTION_CRITERIA = '/monitor_request_relation'
 def query_idds_server(request_id, **kwargs):
     response = []
     idds_server_host = settings.IDDS_HOST
-    if 'idds_instance' in kwargs and kwargs['idds_instance'] == 'gcp':
-        try:
-            idds_server_host = settings.IDDS_HOST_GCP
-        except:
-            _logger.exception('Failed to import IDDS_HOST_GCP')
     url = f"{idds_server_host}{SELECTION_CRITERIA}/{request_id}/null"
     try:
         response = urllib.request.urlopen(url).read()
@@ -51,8 +46,6 @@ def daggraph(request):
         return response
     requestid = int(request.session['requestParams']['requestid'])
     kwargs = {}
-    if request.path and '_gcp' in request.path:
-        kwargs['idds_instance'] = 'gcp'
     stats = query_idds_server(requestid, **kwargs)
     nodes_dag_vis = []
     edges_dag_vis = []

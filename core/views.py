@@ -558,7 +558,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         #    viewParams['selection'] += "hours=%s" % LAST_N_HOURS_MAX
         # else:
         #    viewParams['selection'] += "days=%s" % int(LAST_N_HOURS_MAX/24)
-        if request.session['JOB_LIMIT'] < 100000 and request.session['JOB_LIMIT'] > 0:
+        if querytype == 'job' and request.session['JOB_LIMIT'] < 100000 and request.session['JOB_LIMIT'] > 0:
             request.session['viewParams']['selection'] += " <b>limit=</b>%s" % request.session['JOB_LIMIT']
     else:
         request.session['viewParams']['selection'] = ""
@@ -5834,11 +5834,11 @@ def taskInfo(request, jeditaskid=0):
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
 
-        connection = create_es_connection()
-        split_rule = get_split_rule_info(connection, jeditaskid)
-        if len(split_rule) > 0:
-            info['split_rule'] = {}
-            info['split_rule']['messages'] = split_rule
+            connection = create_es_connection()
+            split_rule = get_split_rule_info(connection, jeditaskid)
+            if len(split_rule) > 0:
+                info['split_rule'] = {}
+                info['split_rule']['messages'] = split_rule
 
 
             # datetime type -> str in order to avoid encoding errors in template
@@ -6700,8 +6700,11 @@ def incidentList(request):
 def esatlasPandaLoggerJson(request):
     valid, response = initRequest(request)
 
-    if not valid:
+    if not valid or settings:
         return response
+
+    if settings.DEPLOYMENT != 'ORACLE_ATLAS':
+        return HttpResponse('It does not exist for non ATLAS BipPanDA monintoring system', content_type='text/html')
 
     connection = create_es_connection()
 
@@ -6735,8 +6738,12 @@ def esatlasPandaLoggerJson(request):
 
 def esatlasPandaLogger(request):
     valid, response = initRequest(request)
+
     if not valid:
         return response
+
+    if settings.DEPLOYMENT != 'ORACLE_ATLAS':
+        return HttpResponse('It does not exist for non ATLAS BipPanDA monintoring system', content_type='text/html')
 
     connection = create_es_connection()
 
