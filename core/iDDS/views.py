@@ -60,16 +60,18 @@ def main(request):
     iDDSrequests = lower_dicts_in_list(iDDSrequests)
     subtitleValue.replace('requests', iDDSrequests)
     requests_summary = generate_requests_summary(iDDSrequests)
-
-    data = {
-        'requests_summary': requests_summary,
-        'request': request,
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-        'iDDSrequests': json.dumps(iDDSrequests, cls=DateEncoder),
-    }
-    setCacheEntry(request, "iDDSrequests", json.dumps(data, cls=DateEncoder), 60 * 10)
-    response = render(request, 'landing.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    if is_json_request(request):
+        response = JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)
+    else:
+        data = {
+            'requests_summary': requests_summary,
+            'request': request,
+            'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+            'iDDSrequests': json.dumps(iDDSrequests, cls=DateEncoder),
+        }
+        setCacheEntry(request, "iDDSrequests", json.dumps(data, cls=DateEncoder), 60 * 10)
+        response = render(request, 'landing.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
 
     return response
 

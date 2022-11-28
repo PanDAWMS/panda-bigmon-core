@@ -5,8 +5,8 @@ import time
 from django.test import Client
 from core.oauth.models import BPUser
 
-class BPCoreTest(unittest.TestCase):
 
+class BPCoreTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # query the BP to get a ids of objects to test views of single objects like /job/<pandaid>/, /task/<taskid>/ etc
@@ -22,7 +22,7 @@ class BPCoreTest(unittest.TestCase):
         }
         # get last finished job
         client = Client()
-        response = client.get('/jobs/?json=true&datasets=true&limit=1&jobstatus=finished&days=100')
+        response = client.get('/jobs/?json&datasets=true&limit=1&jobstatus=finished&days=7&sortby=time-descending')
         data = json.loads(response.content)
         if data is not None and 'jobs' in data and len(data['jobs']) > 0:
             cls.test_data['pandaid'] = data['jobs'][0]['pandaid']
@@ -36,7 +36,6 @@ class BPCoreTest(unittest.TestCase):
                 cls.test_data['datasetid'] = data['jobs'][0]['datasets'][0]['datasetid']
                 cls.test_data['datasetname'] = data['jobs'][0]['datasets'][0]['datasetname']
 
-
     def setUp(self):
         # Every test needs a client
         self.client = Client()
@@ -49,20 +48,20 @@ class BPCoreTest(unittest.TestCase):
         # per test time
         self.start_time = time.time()
 
-
     def tearDown(self):
         print('{}: {}s'.format(self.id(), (time.time() - self.start_time)))
 
-
+    # main page
     def test_main(self):
         response = self.client.get('/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
 
+    # help page
     def test_help(self):
         response = self.client.get('/help/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
 
-
+    # jobs and everything related/available for on demand loading
     def test_jobs(self):
         response = self.client.get('/jobs/?limit=10&' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
@@ -109,7 +108,7 @@ class BPCoreTest(unittest.TestCase):
         response = self.client.get('/jobstatuslog/' + str(self.test_data['pandaid']) + '/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
 
-
+    # tasks and everything related/available for on demand loading
     def test_tasks(self):
         response = self.client.get('/tasks/?limit=10&' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
@@ -138,7 +137,10 @@ class BPCoreTest(unittest.TestCase):
 
     def test_task_getjobsummaryfortask(self):
         self.assertIsInstance(self.test_data['jeditaskid'], int)
-        response = self.client.get('/getjobsummaryfortask/' + str(self.test_data['jeditaskid']) + '/?infotype=jobsummary&' + self.timestamp_str)
+        response = self.client.get('/getjobsummaryfortask/{}/?infotype=jobsummary&{}'.format(
+            str(self.test_data['jeditaskid']),
+            self.timestamp_str
+        ))
         self.assertEqual(response.status_code, 200)
 
     def test_task_taskstatuslog(self):
@@ -161,7 +163,7 @@ class BPCoreTest(unittest.TestCase):
         response = self.client.get('/taskflow/' + str(self.test_data['jeditaskid']) + '/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
 
-
+    # sites
     def test_sites(self):
         response = self.client.get('/sites/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
@@ -176,7 +178,7 @@ class BPCoreTest(unittest.TestCase):
         response = self.client.post('/api/get_sites/?' + self.timestamp_str, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
-
+    # worker nodes
     def test_wns(self):
         response = self.client.get('/wns/' + str(self.test_data['computingsite']) + '/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
@@ -184,10 +186,14 @@ class BPCoreTest(unittest.TestCase):
     def test_wn(self):
         if self.test_data['wn'] is None or not isinstance(self.test_data['wn'], str) or len(self.test_data['wn']) < 1:
             self.skipTest('skipping as there is no modificationhost for the selected job')
-        response = self.client.get('/wn/' + str(self.test_data['computingsite']) + '/' + self.test_data['wn'] + '/?' + self.timestamp_str)
+        response = self.client.get('/wn/{}/{}/?{}'.format(
+            str(self.test_data['computingsite']),
+            self.test_data['wn'],
+            self.timestamp_str
+        ))
         self.assertEqual(response.status_code, 200)
 
-
+    # users
     def test_users(self):
         response = self.client.get('/users/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
@@ -205,17 +211,19 @@ class BPCoreTest(unittest.TestCase):
         for k in expected_keys:
             self.assertIn(k, data.keys())
 
-
+    # user jobs profile
     def test_user_profile(self):
         response = self.client.get('/userProfile/' + str(self.test_data['produsername']) + '/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
 
     def test_api_user_profile(self):
-        response = self.client.get('/userProfileData/?username=' + str(self.test_data['produsername']) + '&' + self.timestamp_str)
+        response = self.client.get('/userProfileData/?username={}&{}'.format(
+            str(self.test_data['produsername']),
+            self.timestamp_str
+        ))
         self.assertEqual(response.status_code, 200)
 
-
-
+    # errors
     def test_errors(self):
         response = self.client.get('/errors/?limit=10&' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
@@ -223,7 +231,10 @@ class BPCoreTest(unittest.TestCase):
     def test_api_errors_fields_specified(self):
         # expecting particular structure of the response data
         expected_keys = ('jobSummary', 'errsByCount', 'errsBySite', 'errsByUser', 'errsByTask')
-        response = self.client.get('/errors/?json=1&limit=10&fields=' + ','.join(expected_keys) + '&' + self.timestamp_str)
+        response = self.client.get('/errors/?json=1&limit=10&fields={}&{}'.format(
+            ','.join(expected_keys),
+            self.timestamp_str
+        ))
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         for k in expected_keys:
@@ -236,7 +247,7 @@ class BPCoreTest(unittest.TestCase):
         data = json.loads(response.content)
         self.assertIsInstance(data, list)
 
-
+    # files
     def test_files(self):
         self.assertIsInstance(self.test_data['datasetid'], int)
         response = self.client.get('/files/?datasetid=' + str(self.test_data['datasetid']) + '&' + self.timestamp_str)
@@ -252,13 +263,20 @@ class BPCoreTest(unittest.TestCase):
 
     def test_file(self):
         self.assertIsInstance(self.test_data['lfn'], str)
-        response = self.client.get('/file/?pandaid=' + str(self.test_data['pandaid']) +  '&lfn=' + str(self.test_data['lfn']) + '&' + self.timestamp_str)
+        response = self.client.get('/file/?pandaid={}&lfn={}&{}'.format(
+            str(self.test_data['pandaid']),
+            str(self.test_data['lfn']),
+            self.timestamp_str
+        ))
         self.assertEqual(response.status_code, 200)
 
-
+    # datasets
     def test_datasets(self):
         self.assertIsInstance(self.test_data['jeditaskid'], int)
-        response = self.client.get('/datasets/?jeditaskid=' + str(self.test_data['jeditaskid']) + '&' + self.timestamp_str)
+        response = self.client.get('/datasets/?jeditaskid={}&{}'.format(
+            str(self.test_data['jeditaskid']),
+            self.timestamp_str
+        ))
         # it's OK if the status code is 302 as if a task has only one dataset the BP redirects it to single dataset page
         self.assertIn(response.status_code, (200, 302))
 
@@ -267,7 +285,7 @@ class BPCoreTest(unittest.TestCase):
         response = self.client.get('/dataset/?datasetid=' + str(self.test_data['datasetid']) + '&' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
 
-
+    # region/nucleus dash
     def test_dash_region(self):
         response = self.client.get('/dash/region/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
@@ -280,7 +298,6 @@ class BPCoreTest(unittest.TestCase):
         expected_keys = ('regions', 'sites', 'queues')
         for k in expected_keys:
             self.assertIn(k, data.keys())
-
 
     def test_dash_nucleus(self):
         response = self.client.get('/dash/world/?' + self.timestamp_str)
@@ -308,7 +325,7 @@ class BPCoreTest(unittest.TestCase):
         for k in expected_keys:
             self.assertIn(k, data.keys())
 
-
+    # jedi work queues
     def test_work_queues(self):
         response = self.client.get('/workQueues/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
