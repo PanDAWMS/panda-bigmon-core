@@ -504,8 +504,6 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
                 'actualcorecount' in job and job['actualcorecount'] is not None and job['actualcorecount'] > 0) and (
                     'durationsec' in job and job['durationsec'] is not None and job['durationsec'] > 0):
             job['cpuefficiency'] = round(100.0 * job['cpuconsumptiontime'] / job['durationsec'] / job['actualcorecount'], 2)
-            # protection against cpu efficiency more than 100
-            job['cpuefficiency'] = 100 if job['cpuefficiency'] > 100 else job['cpuefficiency']
 
     jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
 
