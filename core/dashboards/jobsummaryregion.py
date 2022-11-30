@@ -183,9 +183,8 @@ def get_job_summary_region(query, **kwargs):
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['status'] != query['queuestatus']])
     if 'queuetype' in query:
         pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['type'] != query['queuetype']])
-    if 'queuegocname' in query:
-        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['gocname'] != query['queuegocname']])
-        # regions_list = list(set(regions_list).intersection([params['cloud'] for pqn, params in panda_queues_dict.items() if params['gocname'] == query['queuegocname']]))
+    if 'queuesite' in query:
+        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['atlas_site'] != query['queuesite']])
     if len(pq_to_remove) > 0:
         for pqr in list(set(pq_to_remove)):
             del panda_queues_dict[pqr]
@@ -195,8 +194,8 @@ def get_job_summary_region(query, **kwargs):
     elif 'computingsite__in' in query:
         panda_queues_dict = {pqn:params for pqn, params in panda_queues_dict.items() if pqn in query['computingsite__in']}
 
-    sites_list = list(set([params['gocname'] for pq, params in panda_queues_dict.items()]))
-    regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items()]))
+    sites_list = list(set([params['atlas_site'] for pq, params in panda_queues_dict.items() if 'atlas_site' in params]))
+    regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items() if 'cloud' in params]))
 
     # get PanDA getJob, updateJob request counts
     psq_dict = {}
@@ -208,7 +207,7 @@ def get_job_summary_region(query, **kwargs):
         jsr_queues_dict[pqn] = {'pq_params': {}, 'pq_pilots': {},  'summary': {'all': {'all': {}}}}
         jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type'] if 'type' in params else '-'
         jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud'] if 'cloud' in params else '-'
-        jsr_queues_dict[pqn]['pq_params']['gocname'] = params['gocname'] if 'gocname' in params else '-'
+        jsr_queues_dict[pqn]['pq_params']['atlas_site'] = params['atlas_site'] if 'atlas_site' in params else '-'
         jsr_queues_dict[pqn]['pq_params']['status'] = params['status'] if 'status' in params else '-'
         jsr_queues_dict[pqn]['pq_pilots']['count'] = psq_dict[pqn]['count_abs'] if pqn in psq_dict else -1
         jsr_queues_dict[pqn]['pq_pilots']['count_nojob'] = psq_dict[pqn]['count_nojobabs'] if pqn in psq_dict else -1
@@ -297,10 +296,10 @@ def get_job_summary_region(query, **kwargs):
             jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
             jsr_queues_dict[row['computingsite']]['summary']['all']['all'][row['jobstatus']] += int(row['count'])
 
-            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']][row['resourcetype']][row['jobstatus']] += int(row['count'])
-            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
-            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
-            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all']['all'][row['jobstatus']] += int(row['count'])
+            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']][row['jobtype']][row['resourcetype']][row['jobstatus']] += int(row['count'])
+            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']]['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
+            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']][row['jobtype']]['all'][row['jobstatus']] += int(row['count'])
+            jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']]['all']['all'][row['jobstatus']] += int(row['count'])
 
             jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']][row['resourcetype']][row['jobstatus']] += int(row['count'])
             jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']][row['jobstatus']] += int(row['count'])
@@ -314,10 +313,10 @@ def get_job_summary_region(query, **kwargs):
                 jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all']['rcores'] += int(row['rcores'])
                 jsr_queues_dict[row['computingsite']]['summary']['all']['all']['rcores'] += int(row['rcores'])
 
-                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']][row['resourcetype']]['rcores'] += int(row['rcores'])
-                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all'][row['resourcetype']]['rcores'] += int(row['rcores'])
-                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']]['all']['rcores'] += int(row['rcores'])
-                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all']['all']['rcores'] += int(row['rcores'])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']][row['jobtype']][row['resourcetype']]['rcores'] += int(row['rcores'])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']]['all'][row['resourcetype']]['rcores'] += int(row['rcores'])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']][row['jobtype']]['all']['rcores'] += int(row['rcores'])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']]['all']['all']['rcores'] += int(row['rcores'])
 
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']][row['resourcetype']]['rcores'] += int(row['rcores'])
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']]['rcores'] += int(row['rcores'])
@@ -333,10 +332,10 @@ def get_job_summary_region(query, **kwargs):
                 jsr_queues_dict[row['computingsite']]['summary'][row['jobtype']]['all'][wm] += int(row[wm])
                 jsr_queues_dict[row['computingsite']]['summary']['all']['all'][wm] += int(row[wm])
 
-                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']][row['resourcetype']][wm] += int(row[wm])
-                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all'][row['resourcetype']][wm] += int(row[wm])
-                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']][row['jobtype']]['all'][wm] += int(row[wm])
-                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['gocname']]['all']['all'][wm] += int(row[wm])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']][row['jobtype']][row['resourcetype']][wm] += int(row[wm])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']]['all'][row['resourcetype']][wm] += int(row[wm])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']][row['jobtype']]['all'][wm] += int(row[wm])
+                jsr_sites_dict[jsr_queues_dict[row['computingsite']]['pq_params']['atlas_site']]['all']['all'][wm] += int(row[wm])
 
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']][row['jobtype']][row['resourcetype']][wm] += int(row[wm])
                 jsr_regions_dict[jsr_queues_dict[row['computingsite']]['pq_params']['region']]['all'][row['resourcetype']][wm] += int(row[wm])

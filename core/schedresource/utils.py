@@ -175,7 +175,7 @@ def get_basic_info_for_pqs(pq_list):
             if pq in pq_info and pq_info[pq]:
                 pq_info_list.append({
                     'pq_name': pq,
-                    'site': pq_info[pq]['gocname'] if 'gocname' in pq_info[pq] else '-',
+                    'site': pq_info[pq]['atlas_site'] if 'atlas_site' in pq_info[pq] else '-',
                     'region': pq_info[pq]['cloud'] if 'cloud' in pq_info[pq] else '-',
                     'tier': pq_info[pq]['tier'] if 'tier' in pq_info[pq] else '-',
                     'corepower': pq_info[pq]['corepower'] if 'corepower' in pq_info[pq] else 0,
@@ -185,7 +185,7 @@ def get_basic_info_for_pqs(pq_list):
         for pq, pqdata in pq_info.items():
             pq_info_list.append({
                 'pq_name': pq,
-                'site': pq_info[pq]['gocname'] if 'gocname' in pq_info[pq] else '-',
+                'site': pq_info[pq]['atlas_site'] if 'atlas_site' in pq_info[pq] else '-',
                 'region': pq_info[pq]['cloud'] if 'cloud' in pq_info[pq] else '-',
                 'tier': pq_info[pq]['tier'] if 'tier' in pq_info[pq] else '-',
                 'corepower': pq_info[pq]['corepower'] if 'corepower' in pq_info[pq] else 0,
