@@ -197,6 +197,12 @@ def getStagingData(request):
             else:
                 dataset['update_time_sort'] = None
 
+            datasetname = dataset.get('dataset')
+            if ':' in datasetname:
+                dataset['scope'] = datasetname.split(':')[0]
+            else:
+                dataset['scope'] = datasetname.split('.')[0]
+
             data[dataset['taskid']] = dataset
     return data
 

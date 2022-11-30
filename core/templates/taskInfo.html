@@ -496,15 +496,19 @@
     </thead>
     <tbody>
       <tr>
-           <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid }}"><i class="fi-graph-trend"></i></a></th>
-           <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
+       <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid }}"><i class="fi-graph-trend"></i></a></th>
+       <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
       </tr>
-      <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">
-          <th ng-if="key!='step_action_id'">{$ key $}</th>
-          <td ng-if="key=='dataset'"><a href="https://rucio-ui.cern.ch/did?name={$ value $}">{$ value $}</a></td>
-          <td ng-if="key=='status'"><a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a></td>
-          <td ng-if="key=='rse'"><a href="https://rucio-ui.cern.ch/rule?rule_id={$ value $}">{$ value $}</a></td>
-          <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
+      <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO!='ATLAS' ">
+        <th ng-if="key!='step_action_id'">{$ key $}</th>
+        <td ng-if="key!='step_action_id'">{$ value $}</td>
+      </tr>
+      <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO=='ATLAS' ">
+        <th ng-if="key!='step_action_id'">{$ key $}</th>
+        <td ng-if="key=='dataset'"><a href="https://rucio-ui.cern.ch/did?name={$ json['scope'] $}:{$ value $}">{$ value $}</a></td>
+        <td ng-if="key=='status'"><a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a></td>
+        <td ng-if="key=='rse'"><a href="https://rucio-ui.cern.ch/rule?rule_id={$ value $}">{$ value $}</a></td>
+        <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
       </tr>
     </tbody>
   </table>
@@ -660,6 +664,7 @@
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script>
 var MON_VO = '{{ viewParams.MON_VO|safe }}';
+var jeditaskid = {{ jeditaskid | safe }};
 google.charts.load('current', {'packages':['sankey']});
 
     app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
@@ -689,34 +694,33 @@ google.charts.load('current', {'packages':['sankey']});
         $scope.loading = true;
         $rootScope.$on('idds_info', function(event, data) {
             $scope.iddsjson = data;
-            console.log(data);
             $scope.loading = false;
         });
     });
     app.controller('StagingDSController', function ($scope, $http) {
-        $scope.json = "";
-        $scope.getStagingDS = function () {
-
-            $http({
-                    url: '/api/dc/staginginfofortask/',
-                    method: "GET",
-                    params: {'jeditaskid':{{ jeditaskid|safe }}}
-                }
-            ).then(function (res) {
-                $scope.json = angular.fromJson(res.data);
-                if  ({{ jeditaskid|safe }} in $scope.json) {
-                    var displaydiv = document.getElementById('dsStageDiv');
-                    displaydiv.style.display = "";
-                    $scope.json = $scope.json[{{ jeditaskid|safe }}];
-                }
-            });
-        };
-        var init = function () {
-            $scope.getStagingDS();
-        };
-        if (MON_VO === 'ATLAS') {
-          init();
-        }
+      $scope.json = "";
+      $scope.MON_VO = MON_VO;
+      $scope.getStagingDS = function () {
+        $http({
+            url: '/api/dc/staginginfofortask/',
+            method: "GET",
+            params: {'jeditaskid':jeditaskid}
+          }
+        ).then(function (res) {
+          $scope.json = angular.fromJson(res.data);
+          if (jeditaskid in $scope.json) {
+            var displaydiv = document.getElementById('dsStageDiv');
+            displaydiv.style.display = "";
+            $scope.json = $scope.json[jeditaskid];
+          }
+        });
+      };
+      var init = function () {
+          $scope.getStagingDS();
+      };
+      if (MON_VO === 'ATLAS') {
+        init();
+      }
     });
 
     var jc_plot_data = {{ plotsDict|safe }};
