@@ -61,7 +61,8 @@ class SQLAggregatorCampaign(BaseTasksProvider):
         """
 
         self.logger.debug("SQLAggregatorCampaign starting filling pandas df")
-        campaign_df = pd.read_sql(query, con=connection)
+        rows = cursor.execute(query)
+        campaign_df = pd.DataFrame(rows)
         index = pd.date_range(start=campaign_df.START_TIME.min(), end=campaign_df.ENDTIME.max())
         stepsname = campaign_df.STEP_NAME.unique().tolist()
         new_df = pd.DataFrame(index=index, columns=stepsname)
@@ -161,14 +162,13 @@ class SQLAggregatorCampaign(BaseTasksProvider):
         while (self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS):
             threading.sleep(TIMEOUT_WHEN_DB_LOADED)
         connection = self.pool.acquire()
-
+        cursor = connection.cursor()
         # we get recently alive campaigns
         campaigns = cph.getActiveCampaigns(connection)
 
         for campaign in campaigns:
             query = ""
             try:
-                cursor = connection.cursor()
                 cursor.execute("alter session set NLS_DATE_FORMAT = 'mm-dd-yyyy HH24:mi:ss'")
                 cursor.execute("alter session set NLS_TIMESTAMP_FORMAT = 'mm-dd-yyyy HH24:mi:ss'")
                 if campaign["subcampaign"]:
@@ -187,8 +187,9 @@ class SQLAggregatorCampaign(BaseTasksProvider):
                 self.logger.error(e)
                 return -1
 
-            #We retrieve data from the DB
-            campaign_df = pd.read_sql(query, con=connection)
+            # We retrieve data from the DB
+            rows = cursor.execute(query)
+            campaign_df = pd.DataFrame(rows)
             campaign_df['START_TIME'] = pd.to_datetime(campaign_df['START_TIME'], format="%m-%d-%Y %H:%M:%S")
             campaign_df['ENDTIME'] = pd.to_datetime(campaign_df['ENDTIME'], format="%m-%d-%Y %H:%M:%S")
             campaign_df['DONEEV'] = campaign_df['TOTEV'] - campaign_df['TOTEVREM']
@@ -244,5 +245,6 @@ class SQLAggregatorCampaign(BaseTasksProvider):
 
         self.logger.info("SQLAggregatorCampaign finished")
         cursor.close()
+        self.pool.release(connection)
         return 0
 

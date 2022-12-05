@@ -8,6 +8,7 @@ import json
 from settingscron import TIME_OUT_FOR_QUERY
 import cx_Oracle
 
+
 class DataCarouselPrestageCollector(BaseTasksProvider):
     BASE_STAGE_INFO_URL = 'https://bigpanda.cern.ch/staginprogress/?jeditaskid='
     lock = threading.RLock()
@@ -48,10 +49,11 @@ class DataCarouselPrestageCollector(BaseTasksProvider):
         SELECT TASKID FROM atlas_pandabigmon.DATACAR_ST_PROGRESS_ARCH where PROGRESS_RETRIEVED is NULL order by START_TIME desc
         """
         connection = self.pool.acquire()
-        frame = pd.read_sql(query, con=connection)
+        cursor = connection.cursor()
+        rows = cursor.execute(query)
+        frame = pd.DataFrame(rows)
         self.pool.release(connection)
         return frame
-
 
     def retrieveStagingProfile(self, items):
         for index, row in items.iterrows():

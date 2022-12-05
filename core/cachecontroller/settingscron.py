@@ -8,7 +8,7 @@ TIMEOUT_WHEN_DB_LOADED = 5
 URL_WITH_BIG_TASKS = '/tasks/?site=ORNL_Titan_MCORE&status=running&json'
 URL_WITH_ES_TASKS = '/tasks/?eventservice=eventservice&json'
 HARVESTER_LIST_URL = '/harvesters/?json'
-LOG_PATH = "/data/wenaus/bigpandamon_virtualhosts/twrpm/logs/cachecontroller.log"
+LOG_PATH = "/tmp/cachecontroller.log"
 PANDA_LOGGER_PATH = "/cephfs/atlpan/filebrowser"
 MAX_LOG_AGE_DAYS = 3
 PANDA_LOGGER_PATH_ANALYTICS = "/cephfs/atlpan/pandajoblogs"
