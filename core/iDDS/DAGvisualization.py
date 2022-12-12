@@ -51,28 +51,34 @@ def daggraph(request):
     edges_dag_vis = []
     if len(stats) > 0:
         relation_map = stats[0]['relation_map']
-        if len(relation_map) > 0:
-            relation_map = relation_map[0]
+        is_node_found = False
+        while not is_node_found:
             if isinstance(relation_map, list) and len(relation_map) > 0:
                 relation_map = relation_map[0]
-            nodes, edges, last_edge = fill_nodes_edges(relation_map)
-            for node in nodes:
-                nodes_dag_vis.append(
-                    {'group': 'nodes',
-                     'data': {'id': str(node),
-                              }
-                     }
-                )
+            elif isinstance(relation_map, dict) and 'work' not in relation_map:
+                relation_map = relation_map[list(relation_map.keys())[0]]
+            if isinstance(relation_map, dict) and 'work' in relation_map:
+                is_node_found = True
 
-            for edge in edges:
-                edges_dag_vis.append({
-                  'group': 'edges',
-                  'data': {
-                    'id': str(edge['start']) + '_to_' + str(edge['finish']),
-                    'target': str(edge['finish']),
-                    'source': str(edge['start'])
+        nodes, edges, last_edge = fill_nodes_edges(relation_map)
+        for node in nodes:
+            nodes_dag_vis.append({
+                'group': 'nodes',
+                'data': {
+                    'id': str(node),
                     }
-                })
+                }
+            )
+
+        for edge in edges:
+            edges_dag_vis.append({
+              'group': 'edges',
+              'data': {
+                'id': str(edge['start']) + '_to_' + str(edge['finish']),
+                'target': str(edge['finish']),
+                'source': str(edge['start'])
+                }
+            })
 
     DAG = []
     DAG.extend(nodes_dag_vis)
