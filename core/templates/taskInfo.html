@@ -221,7 +221,8 @@
     </div>
   {% endif %}
 
-  <div class="bp-container-wrapper">
+  <div class="row bp-container-wrapper">
+  <div class="columns small-7 medium-8 large-9">
   <div class="bp-dropdown-button">
       <button class="dropdown">Task extra info</button>
       <div class="dropdown-items">
@@ -311,10 +312,11 @@
          <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_a_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Memory and walltime usage (Kibana)</span></a>
       </div>
   </div>
-
+  </div>
+  <div class="columns small-5 medium-4 large-3 align-right">
   {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
       {% if not task.status in finalstatelist %}
-          <div style="float: right">
+
           {% if 'indigoiam' in authtype %}
               <a onclick="javascript:killtasks_token({{ task.jeditaskid }}, 'finishtask');" class='bp-button kill'>Finish (PanDA client)</a>
               <a onclick="javascript:killtasks_token({{ task.jeditaskid }}, 'killtask');" class='bp-button kill'>Abort (PanDA client)</a>
@@ -322,9 +324,10 @@
               <a onclick="killtasks({{ task.jeditaskid }}, 0);" class='bp-button kill'>Finish</a>
               <a onclick="killtasks({{ task.jeditaskid }}, 1);" class='bp-button kill'>Abort</a>
           {% endif %}
-          </div>
+
       {% endif %}
   {% endwith %}
+  </div>
   </div>
 
   {% if warning.dropmode %}

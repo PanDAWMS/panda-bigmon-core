@@ -324,7 +324,7 @@ a.bp-button-with-logo:hover > .text {
 .bp-dropdown-button {
     position: relative;
     display: inline-block;
-    margin: 0 0.3rem 0 0;
+    margin: 0 0.3rem 0.1rem 0;
 }
   .bp-dropdown-button > button.dropdown {
     background-color: rgba(53,86,129, 0.8);
@@ -1062,9 +1062,13 @@ fieldset.inline {
 .bp-container-wrapper {
   margin: 0 0 0.7rem 0;}
   .row.bp-container-wrapper .columns, .row.bp-container-wrapper .column {
-    padding: 0 0.3rem 0 0.3rem; }
+    padding: 0 0.3rem 0 0; }
+    .row.bp-container-wrapper .columns:last-child, .row.bp-container-wrapper .column:last-child {
+      padding: 0 0 0 0.3rem;}
+    .row.bp-container-wrapper .columns.align-right, .row.bp-container-wrapper .column.align-right {
+      text-align: right;}
   .bp-container-wrapper .bp-button {
-    margin: 0; }
+    margin: 0 0 0.1rem 0; }
 
 
 .card.bp-container-simple {
