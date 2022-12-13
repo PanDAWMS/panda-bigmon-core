@@ -53,7 +53,7 @@ def prepareSQLQueryParameters(request_params, **kwargs):
     request_params = {key: value for key, value in request_params.items() if key in ['requestid', 'username', 'status']}
     # statuses are numbers in DB, need to translate using constants classes from iDDS
     query_fields_for_subst = ['status']
-    dict_for_subst = {key: request_params.get(key).capitalize() for key in query_fields_for_subst if key in request_params}
+    dict_for_subst = {key: request_params.get(key) for key in query_fields_for_subst if key in request_params}
     query_params_substituted = subtitleValue.replaceInverseKeys('requests', dict_for_subst)
 
     sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*90)).strftime(settings.DATETIME_FORMAT)
