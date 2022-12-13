@@ -184,3 +184,13 @@
 .input_transferring { color: #62AC21; }
 .input_finished { color: #248F24; }
 .input_failed { color: red; }
+
+
+/* States of iDDS requests */
+.transforming { color:#34a934 }
+.subfinished { color:#deb900 }
+.suspended { color:#4a4a4a }
+
+.transforming_fill { color:black;  background-color:#C7E9A9; position: static; }
+.subfinished_fill { color:black;  background-color:#FFF5D6; }
+.suspended_fill { color:black; background-color:#bdbdbd }

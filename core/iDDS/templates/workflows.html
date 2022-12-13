@@ -18,6 +18,7 @@
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <script src="{% static "js/jquery.shorten.1.0.js" %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -29,7 +30,7 @@
     <tr><th> {{ attribute }} ({{ occurences|length }}) </th><td>
     <div class="comment more">
     {% for property, count  in occurences.items %}
-    <span {% if attribute == 'status' %} class='{{property}} item' {% else %} class="item" {% endif %}> {{ property }} </span>
+    <span {% if attribute == 'status' %} class='{{ property|lower }} item' {% else %} class="item" {% endif %}> {{ property }} </span>
         <a href="{% url 'workflowprogressitems' %}?{{attribute}}={{property}}">({{ count }})</a>
     {% endfor %}
     </div></td></tr>
@@ -102,7 +103,7 @@ var requests_table = $('#requests_table').DataTable({
             }
         },
         { data: "created_at", title: "created on (UTC)" },
-        { data: "total_tasks", title: "total tasks" },
+        { data: "total_tasks", title: "total tasks", className: "num"},
         { data: "tasks_links", title: "tasks",
            render: function(data, type, row, meta) {
             retVal = ''
@@ -126,25 +127,25 @@ var requests_table = $('#requests_table').DataTable({
            }
         },
 
-        { data: "remaining_files", title: "remaining_files" },
-        { data: "processed_files", title: "released_files" },
-        { data: "total_files", title: "total_files" },
+        { data: "remaining_files", title: "remaining files", className: "num" },
+        { data: "processed_files", title: "released files", className: "num" },
+        { data: "total_files", title: "total files", className: "num" },
     ],
     data: preprocData(iDDSrequests),
     selectable: true,
     select: {
         style: 'single'
     },
-
+    createdRow: function ( row, data, index ) {
+        $('td', row).eq(2).addClass(data['r_status'].toLowerCase() + '_fill');
+    }
 });
 
 
-(function ($) {
-    $.fn.goTo = function () {
-        $('html, body').animate({scrollTop: $(this).offset().top + 'px'}, 'fast');
-        return this;
-    }
-})(jQuery);
+$(document).ready(function () {
+  $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
+})
+
 
 </script>
 
