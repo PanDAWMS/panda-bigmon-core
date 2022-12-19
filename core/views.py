@@ -3286,6 +3286,9 @@ def siteInfo(request, site=''):
             'name': site,
             'pq_type': panda_queue_type,
             'njobhours': njobhours,
+            'hc_link_dates': [
+                (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+                datetime.now().strftime("%Y-%m-%d")],
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
