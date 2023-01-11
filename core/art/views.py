@@ -145,14 +145,14 @@ def artOverview(request):
     
     # quering data from dedicated SQL function
     query_raw = """
-        SELECT package, branch, ntag, status, result, pandaid, testname, attemptmark
+        SELECT package, branch, ntag, nightly_tag, status, result, pandaid, testname, attemptmark
         FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur = connection.cursor()
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
     cur.close()
-    artJobs = ['package', 'branch', 'ntag', 'jobstatus', 'result', 'pandaid', 'testname', 'attemptmark']
+    artJobs = ['package', 'branch', 'ntag', 'nightly_tag', 'jobstatus', 'result', 'pandaid', 'testname', 'attemptmark']
     jobs = [dict(zip(artJobs, row)) for row in tasks_raw]
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
 
@@ -164,7 +164,6 @@ def artOverview(request):
         if 'attemptmark' in j and j['attemptmark'] == 0:
             if j[art_aggr_order[0]] not in artpackagesdict.keys():
                 art_jobs_dict[j[art_aggr_order[0]]] = {}
-
                 artpackagesdict[j[art_aggr_order[0]]] = {}
                 for n in ntagslist:
                     artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)] = {}
@@ -193,10 +192,23 @@ def artOverview(request):
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
     if is_json_request(request):
-
         data = {
             'artpackages': artpackagesdict,
         }
+        # per nightly tag summary for buildmonitor globalview
+        if 'extra' in request.session['requestParams'] and 'per_nightly_tag' in request.session['requestParams']['extra']:
+            art_overview_per_nightly_tag = {}
+            for j in jobs:
+                if 'attemptmark' in j and j['attemptmark'] == 0:
+                    if j['nightly_tag'] not in art_overview_per_nightly_tag:
+                        art_overview_per_nightly_tag[j['nightly_tag']] = {}
+                    if j[art_aggr_order[0]] not in art_overview_per_nightly_tag[j['nightly_tag']]:
+                        art_overview_per_nightly_tag[j['nightly_tag']][j[art_aggr_order[0]]] = {}
+                        for state in statestocount:
+                            art_overview_per_nightly_tag[j['nightly_tag']][j[art_aggr_order[0]]][state] = 0
+                    finalresult, extraparams = get_final_result(j)
+                    art_overview_per_nightly_tag[j['nightly_tag']][j[art_aggr_order[0]]][finalresult] += 1
+            data['art_overview_per_nightly_tag'] = art_overview_per_nightly_tag
 
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
@@ -259,7 +271,7 @@ def artTasks(request):
     # process URL params to query params
     query = setupView(request, 'job')
 
-    # quering data from dedicated SQL function
+    # query data from dedicated SQL function
     cur = connection.cursor()
     query_raw = """
         SELECT package, branch, ntag, nightly_tag, pandaid, testname, taskid, status, result, attemptmark
