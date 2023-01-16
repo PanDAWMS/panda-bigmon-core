@@ -2569,8 +2569,7 @@ def userList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    nhours = 90 * 24
-    setupView(request, hours=nhours, limit=-99)
+    uquery, _, nhours = setupView(request, hours=90 * 24, limit=-99, wildCardExt=True)
     if VOMODE == 'atlas':
         view = 'database'
     else:
@@ -2594,11 +2593,12 @@ def userList(request):
         nrecent7 = 0
         nrecent30 = 0
         nrecent90 = 0
-        ## Move to a list of dicts and adjust CPU unit
+        # Move to a list of dicts and adjust CPU unit
         for u in userdb:
             u['latestjob'] = u['lastmod']
             udict = {}
             udict['name'] = u['name']
+            udict['dn'] = u['dn']
             udict['njobsa'] = u['njobsa'] if u['njobsa'] is not None else 0
             udict['cpua1'] = round(u['cpua1'] / 3600.) if u['cpua1'] is not None else 0
             udict['cpua7'] = round(u['cpua7'] / 3600.) if u['cpua7'] is not None else 0
