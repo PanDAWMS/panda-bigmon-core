@@ -16,23 +16,27 @@ from core.utils import is_json_request
 from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
-# We postpone JSON requests is server is overloaded
-# Done for protection from bunch of requests from JSON
+
+# We postpone JSON requests if server is overloaded
+# Done for protection from a bunch of requests for JSON output
 
 
 class DDOSMiddleware(object):
 
     sleepInterval = 5  # sec
     maxAllowedJSONRequstesPerHour = 600
-    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
-                              '188.184.90.172'  # J..h M......n request
-                              ]
-    excepted_views = ['/grafana/img/', '/payloadlog/', '/statpixel/', '/idds/getiddsfortask/', '/api/dc/staginginfofortask/']
+    notcachedRemoteAddress = [
+        '188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
+        '188.184.90.172'  # J..h M......n request
+    ]
+    excepted_views = [
+        '/grafana/img/', '/payloadlog/', '/statpixel/', '/idds/getiddsfortask/', '/api/dc/staginginfofortask/',
+        '/art/tasks/',
+    ]
     blacklist = ['130.132.21.90', '192.170.227.149']
     maxAllowedJSONRequstesParallel = 1
     maxAllowedSimultaneousRequestsToFileBrowser = 1
-    listOfServerBackendNodesIPs = ['188.184.93.101', '188.184.116.46', '188.184.104.150',
-                                   '188.184.84.149', '188.184.108.134', '188.184.108.131']
+    listOfServerBackendNodesIPs = settings.BIGMON_BACKEND_NODES_IP_LIST
 
     restrictedIPs = ['137.138.77.2',  # Incident on 13-01-2020 14:30:00
                      '188.185.76.164',  # EI Machine
@@ -208,5 +212,3 @@ class DDOSMiddleware(object):
         reqs.rtime = datetime.utcnow()
         reqs.save()
         return response
-
-

@@ -23,6 +23,9 @@ if 'BIGMON_HOST' in os.environ:
 # IPs of CACHING CRAWLERS if any
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46', '188.184.90.5']
 
+# IPs of BigPanDAmon backend nodes for DDOS protection script
+BIGMON_BACKEND_NODES_IP_LIST = os.environ.get('BIGMON_BACKEND_NODES_IP_LIST', [])
+
 # VIRTUALENV
 VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/opt/prod')
 
