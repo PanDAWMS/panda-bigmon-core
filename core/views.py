@@ -519,56 +519,61 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         fields.append('vo')
 
     if hours > 0:
-        ## Call param overrides default hours, but not a param on the URL
+        # Call param overrides default hours, but not a param on the URL
         LAST_N_HOURS_MAX = hours
-    ## For site-specific queries, allow longer time window
-
+    # For site-specific queries, allow longer time window
     if 'batchid' in request.session['requestParams'] and (hours is None or hours == 0):
         LAST_N_HOURS_MAX = 12
     if 'computingsite' in request.session['requestParams'] and hours is None:
         LAST_N_HOURS_MAX = 12
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         LAST_N_HOURS_MAX = 2 * 24
-    ## hours specified in the URL takes priority over the above
+    # hours specified in the URL takes priority over the above
     if 'hours' in request.session['requestParams']:
         LAST_N_HOURS_MAX = int(request.session['requestParams']['hours'])
     if 'days' in request.session['requestParams']:
         LAST_N_HOURS_MAX = int(request.session['requestParams']['days']) * 24
-    ## Exempt single-job, single-task etc queries from time constraint
+    # Exempt single-job, single-task etc queries from time constraint
     if 'hours' not in request.session['requestParams'] and 'days' not in request.session['requestParams']:
-        if 'jeditaskid' in request.session['requestParams']: deepquery = True
-        if 'taskid' in request.session['requestParams']: deepquery = True
-        if 'pandaid' in request.session['requestParams']: deepquery = True
-        if 'jobname' in request.session['requestParams']: deepquery = True
-        #if 'batchid' in request.session['requestParams']: deepquery = True
+        if ('jeditaskid' in request.session['requestParams'] or
+                'taskid' in request.session['requestParams'] or
+                'pandaid' in request.session['requestParams'] or
+                'jobname' in request.session['requestParams'] or
+                'batchid' in request.session['requestParams'] or (
+                querytype == 'user'
+                and 'extra' in request.session['requestParams']
+                and 'notimelimit' in request.session['requestParams']['extra'])):
+            deepquery = True
     if deepquery:
         opmode = 'notime'
         hours = LAST_N_HOURS_MAX = 24 * 180
         request.session['JOB_LIMIT'] = 999999
     if opmode != 'notime':
-        if LAST_N_HOURS_MAX <= 72 and not ('date_from' in request.session['requestParams'] or 'date_to' in request.session['requestParams']
-                                           or 'earlierthan' in request.session['requestParams'] or 'earlierthandays' in request.session['requestParams']):
+        if (LAST_N_HOURS_MAX <= 72 and
+                not ('date_from' in request.session['requestParams'] or
+                     'date_to' in request.session['requestParams'] or
+                     'earlierthan' in request.session['requestParams'] or
+                     'earlierthandays' in request.session['requestParams'])):
             request.session['viewParams']['selection'] = ", last %s hours" % LAST_N_HOURS_MAX
         else:
             request.session['viewParams']['selection'] = ", last %d days" % (float(LAST_N_HOURS_MAX) / 24.)
-        # if JOB_LIMIT < 999999 and JOB_LIMIT > 0:
-        #    viewParams['selection'] += ", <font style='color:#FF8040; size=-1'>Warning: limit %s per job table</font>" % JOB_LIMIT
-        request.session['viewParams']['selection'] += ". <b>Params:</b> "
-        # if 'days' not in requestParams:
-        #    viewParams['selection'] += "hours=%s" % LAST_N_HOURS_MAX
-        # else:
-        #    viewParams['selection'] += "days=%s" % int(LAST_N_HOURS_MAX/24)
-        if querytype == 'job' and request.session['JOB_LIMIT'] < 100000 and request.session['JOB_LIMIT'] > 0:
+        if querytype == 'job' and 100000 > request.session['JOB_LIMIT'] > 0:
             request.session['viewParams']['selection'] += " <b>limit=</b>%s" % request.session['JOB_LIMIT']
     else:
-        request.session['viewParams']['selection'] = ""
+        request.session['viewParams']['selection'] = ". <b>Params:</b> "
     for param in request.session['requestParams']:
-        if request.session['requestParams'][param] == 'None': continue
-        if request.session['requestParams'][param] == '': continue
-        if param == 'display_limit': continue
-        if param == 'sortby': continue
-        if param == 'timestamp': continue
-        if param == 'limit' and request.session['JOB_LIMIT'] > 0: continue
+        if request.session['requestParams'][param] == 'None':
+            continue
+        if request.session['requestParams'][param] == '':
+            continue
+        if param == 'display_limit':
+            continue
+        if param == 'sortby':
+            continue
+        if param == 'timestamp':
+            continue
+        if param == 'limit' and request.session['JOB_LIMIT'] > 0:
+            continue
         request.session['viewParams']['selection'] += " <b>%s=</b>%s " % (
         param, request.session['requestParams'][param])
 
@@ -2569,7 +2574,6 @@ def userList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    uquery, _, nhours = setupView(request, hours=90 * 24, limit=-99, wildCardExt=True)
     if VOMODE == 'atlas':
         view = 'database'
     else:
@@ -2582,10 +2586,15 @@ def userList(request):
     userdbl = []
     userstats = {}
     if view == 'database':
-        startdate = timezone.now() - timedelta(hours=nhours)
-        startdate = startdate.strftime(settings.DATETIME_FORMAT)
-        query = {'lastmod__gte': startdate}
-        userdb.extend(Users.objects.filter(**query).values())
+        uquery = setupView(request, hours=90 * 24, limit=-99, wildCardExt=False, querytype='user')
+        if 'modificationtime__castdate__range' in uquery:
+            if 'extra' in request.session['requestParams'] and 'notimelimit' in request.session['requestParams']['extra']:
+                del uquery['modificationtime__castdate__range']
+            else:
+                uquery['lastmod__castdate__range'] = uquery['modificationtime__castdate__range']
+                del uquery['modificationtime__castdate__range']
+
+        userdb.extend(Users.objects.filter(**uquery).values())
         anajobs = 0
         n1000 = 0
         n10k = 0
@@ -2638,7 +2647,7 @@ def userList(request):
             nhours = 12
         else:
             nhours = 7 * 24
-        query = setupView(request, hours=nhours, limit=999999)
+        query = setupView(request, hours=nhours, limit=999999, querytype='job')
         # looking into user analysis jobs only
         query['prodsourcelabel'] = 'user'
         # dynamically assemble user summary info
