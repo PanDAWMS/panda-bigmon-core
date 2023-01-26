@@ -25,12 +25,14 @@ def get_es_credentials(instance='es-atlas'):
     es_password = None
     if instance == 'es-atlas' and hasattr(settings, 'ES'):
         es_host = settings.ES.get('esHost', None)
-        es_host = es_host[0:8] + '1' + es_host[8:] + '/es' if es_host else None
+        es_port = settings.ES.get('esPort', None)
+        es_host = es_host + ':' + es_port + '/es' if es_host else None
         es_user = settings.ES.get('esUser', None)
         es_password = settings.ES.get('esPassword', None)
     elif instance == 'es-monit' and hasattr(settings, 'ES_MONIT'):
         es_host = settings.ES_MONIT.get('esHost', None)
-        es_host += ':' + settings.ES_MONIT.get('esPort', '')
+        es_port = settings.ES.get('esPort', None)
+        es_host = es_host + ':' + es_port + '/es' if es_host else None
         es_user = settings.ES_MONIT.get('esUser', None)
         es_password = settings.ES_MONIT.get('esPassword', None)
 
