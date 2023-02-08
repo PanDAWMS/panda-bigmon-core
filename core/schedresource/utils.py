@@ -350,3 +350,46 @@ def getFilePathForObjectStore(objectstore, filetype="logs"):
         _logger.info("Object store not defined in queuedata")
 
     return basepath
+
+
+def filter_pq_json(request, **kwargs):
+    """
+    Filter CRIC PQs JSON by request params. Only support filtering by int or str types of values
+    :param request:
+    :return: pqs_dict: filtered PQs dict
+    """
+    if 'pqs_dict' in kwargs:
+        pqs_dict = kwargs['pqs_dict']
+    else:
+        # get full PanDA queues dict
+        pqs_dict = get_panda_queues()
+    # get list of params we can filter on
+    filter_params = {}
+    if pqs_dict:
+        pqs_list = list(pqs_dict.values())
+        for key, value in pqs_list[0].items():
+            if isinstance(value, int) or isinstance(value, float):
+                filter_params[key] = 'str'
+            elif isinstance(value, str):
+                filter_params[key] = 'str'
+
+    # filter the PQs dict
+    for param in request.session['requestParams']:
+        req_param_value = request.session['requestParams'][param]
+        if param in filter_params and filter_params[param] == 'str':
+            if '*' not in req_param_value:
+                pqs_dict = {k: v for k, v in pqs_dict.items() if v[param] == req_param_value}
+            elif '*' in req_param_value and req_param_value.count('*') == 1 and req_param_value.startswith('*'):
+                pqs_dict = {k: v for k, v in pqs_dict.items() if v[param].endswith(req_param_value[1:])}
+            elif '*' in req_param_value and req_param_value.count('*') == 1 and req_param_value.endswith('*'):
+                pqs_dict = {k: v for k, v in pqs_dict.items() if v[param].startswith(req_param_value[:-1])}
+            elif '*' in req_param_value and req_param_value.count('*') == 2 and req_param_value.startswith('*') and req_param_value.endswith('*'):
+                pqs_dict = {k: v for k, v in pqs_dict.items() if req_param_value[1:-1] in v[param]}
+            elif '*' in req_param_value and req_param_value.count('*') >= 2:
+                subvalues = [item for item in req_param_value.split('*') if len(item) > 0]
+                for subvalue in subvalues:
+                    pqs_dict = {k: v for k, v in pqs_dict.items() if subvalue in v[param]}
+        elif param in filter_params and filter_params[param] == 'int':
+            pqs_dict = {k: v for k, v in pqs_dict.items() if v[param] == req_param_value}
+
+    return pqs_dict
