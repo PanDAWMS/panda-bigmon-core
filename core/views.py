@@ -1953,6 +1953,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             response = render(request, 'jobInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+    ### Get the current AUTH type
+    auth = get_auth_provider(request)
 
     eventservice = False
     query = setupView(request, hours=365 * 24)
@@ -2452,7 +2454,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             'clist': clist,
             'inputfiles': inputfiles,
             'rucioUserName': rucioUserName,
-            'prmon_logs': prmon_logs
+            'prmon_logs': prmon_logs,
+            'authtype': auth,
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
@@ -8661,13 +8664,19 @@ def getPayloadLog(request):
             id = int(request.POST['pandaid'])
             start_var = int(request.POST['start'])
             length_var = int(request.POST['length'])
-            draw_var = int(request.POST['draw'])
-            sort = request.POST['order[0][dir]']
-            search_string = request.POST['search[value]']
         except:
             HttpResponse(status=404, content_type='text/html')
     else:
         HttpResponse(status=404, content_type='text/html')
+
+    if  request.POST and "order[0][dir]" in request.POST:
+        sort = request.POST['order[0][dir]']
+    else:
+        sort = request.POST['sort']
+    if request.POST and "search[value]" in request.POST:
+        search_string = request.POST['search[value]']
+    else:
+        search_string = request.POST['search']
 
     payloadlog, job_running_flag, total = get_payloadlog(id, connection, start=start_var, length=length_var, mode=mode,
                                                          sort=sort, search_string=search_string)
@@ -8676,13 +8685,10 @@ def getPayloadLog(request):
     log_content['flag'] = job_running_flag
     log_content['recordsTotal'] = total
     log_content['recordsFiltered'] = total
-    log_content['draw'] = draw_var
-
+    if request.POST and "draw" in request.POST:
+        log_content['draw'] = request.POST['draw']
+    else:
+        log_content['draw'] = 0
     response = HttpResponse(json.dumps(log_content, cls=DateEncoder), content_type='application/json')
 
     return response
-
-
-
-
-
