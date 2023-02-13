@@ -94,13 +94,12 @@
       </div>
       <div ng-switch-when="success">
         <div class="callout success">
-          {$ result.message $}
+          <p>{$ result.message $}. The direct <a href="{$ result.link $}"> link</a> to the ElasticSearch index.</p>
         </div>
       </div>
       <div ng-switch-when="error" >
         <div class="callout alert">
-          {$ result.message $}
-        </div>
+         <p> {$ result.message $} </p>
       </div>
     </div>
 </div>
