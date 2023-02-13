@@ -18,6 +18,7 @@ from core.libs.sqlcustom import escape_input
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired
+from core.utils import is_json_request
 from core.views import initRequest, setupView, extensibleURL
 from core.harvester.models import HarvesterWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
 from core.harvester.utils import get_harverster_workers_for_task
@@ -1202,20 +1203,10 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
 
     if fields != '':
         values = list(fields)
-        for k, v in renamed_fields.items():
-            if k in values:
-                values.remove(k)
-                values.append(v)
     else:
-        if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
-            values = []
+        if is_json_request(request):
             from core.pandajob.models import Jobsactive4
-            for f in Jobsactive4._meta.get_fields():
-                if f.name =='resourcetype':
-                    values.append('resource_type')
-                elif f.name !='jobparameters' and f.name != 'metadata':
-                    values.append(f.name)
+            values = [f.name for f in Jobsactive4._meta.get_fields() if f.name != 'jobparameters' and f.name != 'metadata']
         else:
             values = (
                 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime',
@@ -1229,6 +1220,12 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
                 'destinationdblock', 'reqid', 'minramcount', 'statechangetime', 'avgvmem', 'maxvmem', 'maxpss',
                 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount',
                 'schedulerid')
+
+    # rename fields that has '_' in DB but not in model
+    for k, v in renamed_fields.items():
+        if k in values:
+            values.remove(k)
+            values.append(v)
 
     sqlQuery = """
     SELECT {2} FROM
