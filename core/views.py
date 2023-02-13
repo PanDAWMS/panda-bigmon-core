@@ -116,7 +116,7 @@ from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus, get_world_hs06_summary
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
 from core.schedresource.utils import get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs, \
-    get_panda_resource, get_pq_clouds, get_pq_object_store_path
+    get_panda_resource, get_pq_clouds, get_pq_object_store_path, filter_pq_json
 
 
 tcount = {}
@@ -3144,16 +3144,11 @@ def siteList(request):
 
     # get full list of queues
     pqs = get_panda_queues()
-    filter_params = []
-    if pqs:
-        pqs = list(pqs.values())
-        filter_params = list(pqs[0].keys())
+    if 'copytool' in request.session['requestParams']  and request.session['requestParams']['copytool'] is not None:
+        pqs = {k: v for k, v in pqs.items() if request.session['requestParams']['copytool'] in v['copytools']}
 
-    for param in request.session['requestParams']:
-        if param in filter_params:
-            pqs = [pq for pq in pqs if pq[param] == request.session['requestParams'][param]]
-        if param == 'copytool':
-            pqs = [pq for pq in pqs if request.session['requestParams'][param] in pq['copytools']]
+    pqs = filter_pq_json(request, pqs_dict=pqs)
+    pqs = list(pqs.values())
 
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
