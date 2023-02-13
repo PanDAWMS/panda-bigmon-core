@@ -1227,13 +1227,16 @@ def jobList(request, mode=None, param=None):
         '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams']['eventservice'] or
         '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams']['eventservice']):
         eventservice = True
-    elif 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+
+    if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
         try:
             jeditaskid = int(request.session['requestParams']['jeditaskid'])
         except:
             jeditaskid = None
         if jeditaskid:
             eventservice = is_event_service_task(jeditaskid)
+    else:
+        jeditaskid = None
 
     noarchjobs = False
     if 'noarchjobs' in request.session['requestParams'] and request.session['requestParams']['noarchjobs'] == '1':
@@ -1447,16 +1450,12 @@ def jobList(request, mode=None, param=None):
     _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     # If the list is for a particular JEDI task, filter out the jobs superseded by retries
-    taskids = {}
-    for job in jobs:
-        if 'jeditaskid' in job:
-            taskids[job['jeditaskid']] = 1
-
     # if ES -> nodrop by default
-    dropmode = True
-    if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop':
+    dropmode = False
+    if jeditaskid or ('mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'drop'):
         dropmode = True
-    if ('mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'nodrop') or eventservice:
+    if eventservice or (
+            'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'nodrop'):
         dropmode = False
 
     isReturnDroppedPMerge = False
@@ -1466,8 +1465,8 @@ def jobList(request, mode=None, param=None):
     droplist = []
     droppedPmerge = set()
     cntStatus = []
-    if dropmode and (len(taskids) == 1):
-        jobs, droplist, droppedPmerge = drop_job_retries(jobs, list(taskids.keys())[0], is_return_dropped_jobs= isReturnDroppedPMerge)
+    if dropmode and jeditaskid:
+        jobs, droplist, droppedPmerge = drop_job_retries(jobs, jeditaskid, is_return_dropped_jobs=isReturnDroppedPMerge)
         _logger.debug('Done droppping if was requested: {}'.format(time.time() - request.session['req_init_time']))
 
     # get attempts of file if fileid in request params
