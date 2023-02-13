@@ -1352,15 +1352,15 @@ def jobList(request, mode=None, param=None):
             'statechangetime',  'nevents', 'jobmetrics',
             'noutputdatafiles', 'parentid', 'actualcorecount', 'schedulerid', 'pilotid', 'commandtopilot',
             'cmtconfig', 'maxpss']
-    if not eventservice:
-        values.extend(['avgvmem', 'maxvmem', 'maxrss'])
+        if not eventservice:
+            values.extend(['avgvmem', 'maxvmem', 'maxrss'])
 
-    if settings.DEPLOYMENT != "POSTGRES":
-        values.append('nucleus')
-        values.append('eventservice')
-        values.append('gshare')
-        values.append('resourcetype')
-        values.append('container_name')
+        if settings.DEPLOYMENT != "POSTGRES":
+            values.append('nucleus')
+            values.append('eventservice')
+            values.append('gshare')
+            values.append('resourcetype')
+            values.append('container_name')
 
     totalJobs = 0
     showTop = 0
