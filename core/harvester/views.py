@@ -1182,7 +1182,12 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
     '''
 
     jobsList = []
-    renamed_fields = {'resourcetype': 'resource_type'}
+    renamed_fields = {
+        'resourcetype': 'resource_type',
+        'memoryleak': 'memory_leak',
+        'memoryleakx2': 'memory_leak_x2',
+        'joblabel': 'job_label',
+    }
     qjobstatus = ''
 
     if instance != '':
@@ -1226,32 +1231,32 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
                 'schedulerid')
 
     sqlQuery = """
-    SELECT DISTINCT {2} FROM
+    SELECT {2} FROM
     (SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSARCHIVED4, 
     (select
     pandaid as pid
     from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) 
     PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSARCHIVED4.PANDAID {3}
-    UNION ALL
+    UNION
     SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSACTIVE4, 
     (select
     pandaid as pid
     from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSACTIVE4.PANDAID {3}
-    UNION ALL 
+    UNION 
     SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSDEFINED4, 
     (select
     pandaid as pid
     from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSDEFINED4.PANDAID {3}
-    UNION ALL 
+    UNION 
     SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSWAITING4,
     (select
     pandaid as pid
     from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSWAITING4.PANDAID {3}
-    UNION ALL
+    UNION 
     SELECT {2} FROM {DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED, 
     (select
     pandaid as pid
@@ -1259,12 +1264,16 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED.PANDAID {3})  
     """
 
-    sqlQuery = sqlQuery.format(qinstance, qworkerid, ', '.join(values), qjobstatus, DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA,
-                               DB_SCHEMA_PANDA_ARCH=settings.DB_SCHEMA_PANDA_ARCH)
+    sqlQuery = sqlQuery.format(
+        qinstance,
+        qworkerid,
+        ', '.join(values),
+        qjobstatus,
+        DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA,
+        DB_SCHEMA_PANDA_ARCH=settings.DB_SCHEMA_PANDA_ARCH)
 
     cur = connection.cursor()
     cur.execute(sqlQuery)
-
     jobs = cur.fetchall()
 
     columns = [str(column[0]).lower() for column in cur.description]
@@ -1272,6 +1281,7 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
         jobsList.append(dict(zip(columns, job)))
 
     return jobsList
+
 
 def getCeHarvesterJobs(request, computingelment, fields=''):
     '''
