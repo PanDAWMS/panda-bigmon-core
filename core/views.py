@@ -3864,13 +3864,11 @@ def dashRegion(request):
 
     jquery, extra_str, hours = setupView(request, limit=9999999, querytype='job', wildCardExt=True)
 
-    # add queue related request params to query dict
-    if 'queuetype' in request.session['requestParams'] and request.session['requestParams']['queuetype']:
-        jquery['queuetype'] = request.session['requestParams']['queuetype']
-    if 'queuestatus' in request.session['requestParams'] and request.session['requestParams']['queuestatus']:
-        jquery['queuestatus'] = request.session['requestParams']['queuestatus']
     if 'site' in request.session['requestParams'] and request.session['requestParams']['site'] != 'all':
-        jquery['queuesite'] = request.session['requestParams']['site']
+        request.session['requestParams']['queueatlas_site'] = request.session['requestParams']['site']
+
+    # do queue related filtering according to request params
+    pqs_dict = filter_pq_json(request)
 
     # get job summary data
     jsr_queues_dict, jsr_sites_dict, jsr_regions_dict = get_job_summary_region(
@@ -3879,7 +3877,9 @@ def dashRegion(request):
         region=region,
         jobtype=jobtype,
         resourcetype=resourcetype,
-        split_by=split_by)
+        split_by=split_by,
+        pqs_dict=pqs_dict
+    )
 
     if is_json_request(request):
         extra_info_params = ['links', ]

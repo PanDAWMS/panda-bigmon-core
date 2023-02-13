@@ -377,9 +377,11 @@ def filter_pq_json(request, **kwargs):
     # filter the PQs dict
     filtered_pq_names_final = list(pqs_dict.keys())
     for param in request.session['requestParams']:
+        req_param_value = request.session['requestParams'][param]
+        if param.startswith('queue'):
+            param = param.replace('queue', '')
         if param in filter_params:
             filtered_pq_names = []
-            req_param_value = request.session['requestParams'][param]
             if filter_params[param] == 'str':
                 # handling OR clause
                 if '|' in req_param_value:

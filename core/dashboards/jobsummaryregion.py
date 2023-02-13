@@ -146,9 +146,6 @@ def get_job_summary_region(query, **kwargs):
     extra_metrics = copy.deepcopy(worker_metrics)
     extra_metrics.append('rcores')
 
-    # get PQ info
-    panda_queues_dict = get_panda_queues()
-
     if 'extra' in kwargs and len(kwargs['extra']) > 1:
         extra = kwargs['extra']
     else:
@@ -172,30 +169,24 @@ def get_job_summary_region(query, **kwargs):
         split_by = kwargs['split_by']
     else:
         split_by = None
+    if 'pqs_dict' in kwargs and kwargs['pqs_dict']:
+        pqs_dict = kwargs['pqs_dict']
+    else:
+        # get PQ info
+        pqs_dict = get_panda_queues()
 
-    # filter out queues by queue related selection params
-    pq_to_remove = []
+    # filter out queues that do not match to provided jobtype (analy/prod)
     if jobtype != 'all':
-        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if not is_jobtype_match_queue(jobtype, params)])
-    if region != 'all':
-        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['cloud'] != region])
-    if 'queuestatus' in query:
-        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['status'] != query['queuestatus']])
-    if 'queuetype' in query:
-        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['type'] != query['queuetype']])
-    if 'queuesite' in query:
-        pq_to_remove.extend([pqn for pqn, params in panda_queues_dict.items() if params['atlas_site'] != query['queuesite']])
-    if len(pq_to_remove) > 0:
-        for pqr in list(set(pq_to_remove)):
-            del panda_queues_dict[pqr]
+        pqs_dict = {pqn: params for pqn, params in pqs_dict.items() if is_jobtype_match_queue(jobtype, params)}
 
+    # filter out queues if there is computingsite in the query for jobs
     if 'computingsite' in query:
-        panda_queues_dict = {pqn:params for pqn, params in panda_queues_dict.items() if pqn == query['computingsite']}
+        pqs_dict = {pqn: params for pqn, params in pqs_dict.items() if pqn == query['computingsite']}
     elif 'computingsite__in' in query:
-        panda_queues_dict = {pqn:params for pqn, params in panda_queues_dict.items() if pqn in query['computingsite__in']}
+        pqs_dict = {pqn: params for pqn, params in pqs_dict.items() if pqn in query['computingsite__in']}
 
-    sites_list = list(set([params['atlas_site'] for pq, params in panda_queues_dict.items() if 'atlas_site' in params]))
-    regions_list = list(set([params['cloud'] for pq, params in panda_queues_dict.items() if 'cloud' in params]))
+    sites_list = list(set([params['atlas_site'] for pq, params in pqs_dict.items() if 'atlas_site' in params]))
+    regions_list = list(set([params['cloud'] for pq, params in pqs_dict.items() if 'cloud' in params]))
 
     # get PanDA getJob, updateJob request counts
     psq_dict = {}
@@ -203,7 +194,7 @@ def get_job_summary_region(query, **kwargs):
         psq_dict = getPilotCounts('all')
 
     # create template structure for grouping by queue
-    for pqn, params in panda_queues_dict.items():
+    for pqn, params in pqs_dict.items():
         jsr_queues_dict[pqn] = {'pq_params': {}, 'pq_pilots': {},  'summary': {'all': {'all': {}}}}
         jsr_queues_dict[pqn]['pq_params']['pqtype'] = params['type'] if 'type' in params else '-'
         jsr_queues_dict[pqn]['pq_params']['region'] = params['cloud'] if 'cloud' in params else '-'
