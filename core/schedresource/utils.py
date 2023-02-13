@@ -2,7 +2,7 @@
 Utils to get schedresources info from dedicated information system (CRIC)
 """
 import os
-
+import re
 import urllib3
 import logging
 import json
@@ -343,8 +343,8 @@ def getFilePathForObjectStore(objectstore, filetype="logs"):
                     basepath = url + basepath
 
         if basepath == "":
-            _logger.warning("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
-            filetype, objectstore))
+            _logger.warning("Object store path could not be extracted using file type={} from objectstore={}".format(
+                filetype, objectstore))
 
     else:
         _logger.info("Object store not defined in queuedata")
@@ -363,6 +363,7 @@ def filter_pq_json(request, **kwargs):
     else:
         # get full PanDA queues dict
         pqs_dict = get_panda_queues()
+
     # get list of params we can filter on
     filter_params = {}
     if pqs_dict:
@@ -374,22 +375,37 @@ def filter_pq_json(request, **kwargs):
                 filter_params[key] = 'str'
 
     # filter the PQs dict
+    filtered_pq_names_final = list(pqs_dict.keys())
     for param in request.session['requestParams']:
-        req_param_value = request.session['requestParams'][param]
-        if param in filter_params and filter_params[param] == 'str':
-            if '*' not in req_param_value:
-                pqs_dict = {k: v for k, v in pqs_dict.items() if v[param] == req_param_value}
-            elif '*' in req_param_value and req_param_value.count('*') == 1 and req_param_value.startswith('*'):
-                pqs_dict = {k: v for k, v in pqs_dict.items() if v[param].endswith(req_param_value[1:])}
-            elif '*' in req_param_value and req_param_value.count('*') == 1 and req_param_value.endswith('*'):
-                pqs_dict = {k: v for k, v in pqs_dict.items() if v[param].startswith(req_param_value[:-1])}
-            elif '*' in req_param_value and req_param_value.count('*') == 2 and req_param_value.startswith('*') and req_param_value.endswith('*'):
-                pqs_dict = {k: v for k, v in pqs_dict.items() if req_param_value[1:-1] in v[param]}
-            elif '*' in req_param_value and req_param_value.count('*') >= 2:
-                subvalues = [item for item in req_param_value.split('*') if len(item) > 0]
-                for subvalue in subvalues:
-                    pqs_dict = {k: v for k, v in pqs_dict.items() if subvalue in v[param]}
-        elif param in filter_params and filter_params[param] == 'int':
-            pqs_dict = {k: v for k, v in pqs_dict.items() if v[param] == req_param_value}
+        if param in filter_params:
+            filtered_pq_names = []
+            req_param_value = request.session['requestParams'][param]
+            if filter_params[param] == 'str':
+                # handling OR clause
+                if '|' in req_param_value:
+                    req_param_values = req_param_value.split('|')
+                else:
+                    req_param_values = [req_param_value, ]
+
+                for req_param_value in req_param_values:
+                    if '*' not in req_param_value:
+                        filtered_pq_names.extend(
+                            [k for k, v in pqs_dict.items() if v[param] is not None and v[param] == req_param_value])
+                    elif '*' in req_param_value:
+                        try:
+                            pattern = re.compile(r'^{}$'.format(req_param_value.replace('*', '.*')))
+                            filtered_pq_names.extend(
+                                [k for k, v in pqs_dict.items() if
+                                 v[param] is not None and pattern.match(v[param]) is not None])
+                        except Exception as e:
+                            _logger.exception('Failed to compile regex pattern and filter PQs list: \n{}'.format(e))
+
+            elif filter_params[param] == 'int':
+                filtered_pq_names.extend([k for k, v in pqs_dict.items() if v[param] == req_param_value])
+
+            # unite
+            filtered_pq_names_final = list(set(filtered_pq_names_final) & set(filtered_pq_names))
+
+    pqs_dict = {k: v for k, v in pqs_dict.items() if k in filtered_pq_names_final}
 
     return pqs_dict
