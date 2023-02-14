@@ -80,7 +80,7 @@ def cleanTaskList(tasks, **kwargs):
         else:
             task['owner'] = task['username']
 
-        if 'tasktype' in task and task['tasktype'].startswith('ana'):
+        if 'tasktype' in task and task['tasktype'] and task['tasktype'].startswith('ana'):
             if 'workinggroup' in task and task['workinggroup'] is not None and task['workinggroup'] != '':
                 task['category'] = 'group analysis' if 'username' in task and task['username'] not in ('artprod', 'atlevind', 'gangarbt') else 'service'
             else:
