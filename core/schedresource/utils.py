@@ -373,6 +373,10 @@ def filter_pq_json(request, **kwargs):
                 filter_params[key] = 'str'
             elif isinstance(value, str):
                 filter_params[key] = 'str'
+        # the 'site' meaning in BigPanDA language does not match to 'site' in CRIC due to historical reasons ->
+        # excluding it from available filter params
+        if 'site' in filter_params:
+            del filter_params['site']
 
     # filter the PQs dict
     filtered_pq_names_final = list(pqs_dict.keys())
