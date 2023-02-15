@@ -3058,7 +3058,6 @@ def userDashApi(request, agg=None):
             },]
         _logger.info('Got job status summary: {}'.format(time.time() - request.session['req_init_time']))
 
-
         for t in tasks:
             for metric in metrics:
                 if t['jeditaskid'] in metrics[metric]['group_by']:
@@ -3102,7 +3101,7 @@ def userDashApi(request, agg=None):
 
         task_list_table_headers = [
             'jeditaskid', 'reqid', 'creationdate', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished',
-            'superstatus', 'status', 'age',
+            'superstatus', 'status', 'duration_days',
             'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
             'errordialog', 'job_failed', 'top_errors',
         ]
