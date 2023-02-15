@@ -386,6 +386,7 @@ def filter_pq_json(request, **kwargs):
             param = param.replace('queue', '')
         if param in filter_params:
             filtered_pq_names = []
+            excluded_pq_names = []
             if filter_params[param] == 'str':
                 # handling OR clause
                 if '|' in req_param_value:
@@ -394,15 +395,27 @@ def filter_pq_json(request, **kwargs):
                     req_param_values = [req_param_value, ]
 
                 for req_param_value in req_param_values:
-                    if '*' not in req_param_value:
+                    is_not = False
+                    if req_param_value.startswith('!'):
+                        is_not = True
+                        req_param_value = req_param_value[1:]
+                    if '*' not in req_param_value and not is_not:
                         filtered_pq_names.extend(
+                            [k for k, v in pqs_dict.items() if v[param] is not None and v[param] == req_param_value])
+                    elif '*' not in req_param_value and is_not:
+                        excluded_pq_names.extend(
                             [k for k, v in pqs_dict.items() if v[param] is not None and v[param] == req_param_value])
                     elif '*' in req_param_value:
                         try:
                             pattern = re.compile(r'^{}$'.format(req_param_value.replace('*', '.*')))
-                            filtered_pq_names.extend(
-                                [k for k, v in pqs_dict.items() if
-                                 v[param] is not None and pattern.match(v[param]) is not None])
+                            if not is_not:
+                                filtered_pq_names.extend(
+                                    [k for k, v in pqs_dict.items() if
+                                     v[param] is not None and pattern.match(v[param]) is not None])
+                            else:
+                                excluded_pq_names.extend(
+                                    [k for k, v in pqs_dict.items() if
+                                     v[param] is not None and pattern.match(v[param]) is not None])
                         except Exception as e:
                             _logger.exception('Failed to compile regex pattern and filter PQs list: \n{}'.format(e))
 
@@ -410,7 +423,9 @@ def filter_pq_json(request, **kwargs):
                 filtered_pq_names.extend([k for k, v in pqs_dict.items() if v[param] == req_param_value])
 
             # unite
-            filtered_pq_names_final = list(set(filtered_pq_names_final) & set(filtered_pq_names))
+            if len(filtered_pq_names) > 0:
+                filtered_pq_names_final = list(set(filtered_pq_names_final) & set(filtered_pq_names))
+            filtered_pq_names_final = list(set(filtered_pq_names_final) - set(excluded_pq_names))
 
     pqs_dict = {k: v for k, v in pqs_dict.items() if k in filtered_pq_names_final}
 
