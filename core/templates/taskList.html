@@ -79,210 +79,210 @@
   {% if requestParams.eventservice %}<p><b>Event service tasks</b> {% endif %}
 </div>
 
-    {% if tasks %}
+{% if tasks %}
+  {% if flowstruct %}
+      {% include "googleFlowDiagram.html" with struct=flowstruct %}
+  {% endif %}
 
-        {% if flowstruct %}
-            {% include "googleFlowDiagram.html" with struct=flowstruct %}
-        {% endif %}
-
-        {% if sumd %}
-            <table>
-                <tr class='tablesection'>
-                    <th colspan=20> Task attribute summary, {{ ntasks }} tasks</th>
-                </tr>
-                {% for fdict in sumd %}
-                    <tr>
-                        <th> {{ fdict.field }} ({{ fdict.list|length }})</th>
-                        <td>
-                          <div class="comment more">
-                            {% if fdict.list|length > 300 %}
-                                Too many to list
-                            {% else %}
-                                {% for item in fdict.list %}
-                                    <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %}
-                                        class='{{ item.kname }} bp_tooltip task_{{ item.kname }}'{% endif %}> {{ item.kname }} </span>
-                                    {% if not request.session.xurls or fdict.field not in request.session.xurls %}
-                                        <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
-                                    {% else %}
-                                        <a href="{{ request.session.xurls|get_item:fdict.field }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                          </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-                {% if hashtags and hashtags|length > 0 %}
-                    <tr>
-                        <th>hashtags ({{ hashtags|length }})</th>
-                        <td>{% for hashtag in hashtags %}
-                            {% if 'hashtag' in requestParams %}
-                                <a href="{{ nohashtagurl }}hashtag={{ requestParams.hashtag }},{{ hashtag }}">{{ hashtag }}</a>
-                            {% else %}
-                                <a href="{{ xurl }}hashtag={{ hashtag }}">{{ hashtag }}</a>
-                            {% endif %}
-                            {% if not forloop.last %}, {% endif %}
-                        {% endfor %}</td>
-                    </tr>
-                {% endif %}
-            </table>
-        {% endif %}
-
-        {% if error_summary_table and error_summary_table|length > 0 %}
-            <div class="card bp-container-simple secondary" id="container_est">
-            <div class="card-divider"><p>Errors summary table:</p></div>
-            <div class="card-section">
-              <table class="data-table left-aligned" id="error_summary_table">
-                  <thead>
-                  <tr>
-                    <th>Preprocessed error message</th>
-                    <th>Example</th>
-                    <th>Count</th>
-                    <th>Nucleus</th>
-                  </tr>
-                  </thead>
-                  <tbody></tbody>
-              </table>
+  {% if sumd %}
+    <table>
+      <tr class='tablesection'>
+          <th colspan=20> Task attribute summary, {{ ntasks }} tasks</th>
+      </tr>
+      {% for fdict in sumd %}
+        <tr>
+          <th> {{ fdict.field }} ({{ fdict.list|length }})</th>
+          <td>
+            <div class="comment more">
+              {% if fdict.list|length > 300 %}
+                  Too many to list
+              {% else %}
+                  {% for item in fdict.list %}
+                      <span {% if fdict.field == 'status' or fdict.field == 'superstatus' %} class='{{ item.kname }} bp_tooltip task_{{ item.kname }}'{% endif %}>
+                        {% if fdict.field == 'username' %}
+                          <a href="{% url 'userInfo' %}{{ item.kname }}/">{{ item.kname }}</a>
+                        {% else %} {{ item.kname }} {% endif %}</span>
+                      {% if not request.session.xurls or fdict.field not in request.session.xurls %}
+                          <a href="{{ xurl }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
+                      {% else %}
+                          <a href="{{ request.session.xurls|get_item:fdict.field }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
+                      {% endif %}
+                  {% endfor %}
+              {% endif %}
             </div>
-            </div>
-        {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      {% if hashtags and hashtags|length > 0 %}
+          <tr>
+              <th>hashtags ({{ hashtags|length }})</th>
+              <td>{% for hashtag in hashtags %}
+                  {% if 'hashtag' in requestParams %}
+                      <a href="{{ nohashtagurl }}hashtag={{ requestParams.hashtag }},{{ hashtag }}">{{ hashtag }}</a>
+                  {% else %}
+                      <a href="{{ xurl }}hashtag={{ hashtag }}">{{ hashtag }}</a>
+                  {% endif %}
+                  {% if not forloop.last %}, {% endif %}
+              {% endfor %}</td>
+          </tr>
+      {% endif %}
+    </table>
+  {% endif %}
 
-        {% if datasetstage and datasetstage|length > 3 %}
-            <div class="card bp-container-simple secondary" id="container_sdt">
-            <div class="card-divider"><p>Datasets staging information for preselected tasks:</p></div>
-            <div class="card-section">
-              <table class="data-table left-aligned" id="stagingdatasetstable">
-                  <thead>
-                  <tr>
-                    <th>Task ID</th>
-                    <th>Source RSE</th>
-                    <th>Dataset</th>
-                    <th>Status</th>
-                    <th>Staged files</th>
-                    <th>Total files</th>
-                    <th>Start time</th>
-                    <th>End time</th>
-                    <th>Update time</th>
-                    <th>Rse</th>
-                  </tr>
-                  </thead>
-                  <tbody></tbody>
-              </table>
-            </div>
-            </div>
-        {% endif %}
+  {% if error_summary_table and error_summary_table|length > 0 %}
+      <div class="card bp-container-simple secondary" id="container_est">
+      <div class="card-divider"><p>Errors summary table:</p></div>
+      <div class="card-section">
+        <table class="data-table left-aligned" id="error_summary_table">
+            <thead>
+            <tr>
+              <th>Preprocessed error message</th>
+              <th>Example</th>
+              <th>Count</th>
+              <th>Nucleus</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+      </div>
+      </div>
+  {% endif %}
 
-        <div id="div-plot">
-            <a href="#plots" class="button bluebutton" onclick="togglePlots();"><span class="tooltip-right">Show jobs consumption plots<span class="tooltip-text">It might be slow if number of tasks in current selection is big.</span></span></a>
-        </div>
+  {% if datasetstage and datasetstage|length > 3 %}
+      <div class="card bp-container-simple secondary" id="container_sdt">
+      <div class="card-divider"><p>Datasets staging information for preselected tasks:</p></div>
+      <div class="card-section">
+        <table class="data-table left-aligned" id="stagingdatasetstable">
+            <thead>
+            <tr>
+              <th>Task ID</th>
+              <th>Source RSE</th>
+              <th>Dataset</th>
+              <th>Status</th>
+              <th>Staged files</th>
+              <th>Total files</th>
+              <th>Start time</th>
+              <th>End time</th>
+              <th>Update time</th>
+              <th>Rse</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+      </div>
+      </div>
+  {% endif %}
+
+  <div id="div-plot">
+      <a href="#plots" class="button bluebutton" onclick="togglePlots();"><span class="tooltip-right">Show jobs consumption plots<span class="tooltip-text">It might be slow if number of tasks in current selection is big.</span></span></a>
+  </div>
 
 
-        <div id="plots" data-ng-controller="jobConsumptionPlotsController">
-        <div class="card bp-container-simple secondary ng-hide" ng-hide="taskinfo.jc_plots.selection.is_hidden">
-          <div class="card-divider"><p>Job consumption plots:</p></div>
-          <div class="card-section">
-            <p ng-bind-html="taskinfo.jc_plots.message"></p>
+  <div id="plots" data-ng-controller="jobConsumptionPlotsController">
+  <div class="card bp-container-simple secondary ng-hide" ng-hide="taskinfo.jc_plots.selection.is_hidden">
+    <div class="card-divider"><p>Job consumption plots:</p></div>
+    <div class="card-section">
+      <p ng-bind-html="taskinfo.jc_plots.message"></p>
 
-            <fieldset class="inline">
-              <legend>Job category:</legend>
-              <label ng-repeat="option in taskinfo.jc_plots.options.category"><input type="radio" ng-value="option" ng-model="taskinfo.jc_plots.selection.category" ng-change="taskinfo.jc_plots.rebuild()">{$ option $}</label>
-            </fieldset>
+      <fieldset class="inline">
+        <legend>Job category:</legend>
+        <label ng-repeat="option in taskinfo.jc_plots.options.category"><input type="radio" ng-value="option" ng-model="taskinfo.jc_plots.selection.category" ng-change="taskinfo.jc_plots.rebuild()">{$ option $}</label>
+      </fieldset>
 
-            <div class="c3-chart-block" ng-repeat="plot in taskinfo.jc_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
-          </div>
-        </div>
-        </div>
+      <div class="c3-chart-block" ng-repeat="plot in taskinfo.jc_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
+    </div>
+  </div>
+  </div>
 
 
-        <div class="table-scroll">
-            <table>
-                <tr class='tablesection'>
-                    <th colspan=20> {{ display_limit }} tasks{% if 'sortby' in requestParams %}, sorted by
-                        {{ requestParams.sortby }} {% else %}, sorted by jeditaskid-desc {% endif %}
-                        {% if display_limit %} {% if tasks|length > display_limit %}
-                            <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a
-                                    href="{{ url_nolimit }}">Remove the limit</a></font>
-                        {% endif %} {% endif %}
-                    </th>
-                </tr>
-                <tr class='tablesection'>
-                    <th><a href="{{ nosorturl }}sortby=jeditaskid-asc">ID</a><br>Parent</th>
-                    {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
-                        <th>Jobset</th>{% endif %}
-                    <th><a href="{{ nosorturl }}sortby=taskname">Task name</a><br>TaskType/ProcessingType Campaign
-                        Group User {% if requestParams.tasktype == 'prod' %}     Tracker     Request {% endif %}
-                        Errors <br><font color='brown'>Logged status</font></th>
-                    <th>Task status<br><a href="{{ nosorturl }}sortby=nfiles">Nfiles</a></th>
-                    <th>Input files
-                      <br><span class="lost tooltip-right">Nlost <i class="fi-info"></i><span class="tooltip-text">The files were unavailable at a time of the task running therefore the PanDA did not create jobs for processing them and they are not included to the number of total input files.</span></span>
-                      <br><a href="{{ nosorturl }}sortby=pctfinished"><span class='finished'>Nfinish&nbsp;%</span></a>
-                      <a href="{{ nosorturl }}sortby=pctfailed"><span class='failed'>Nfail&nbsp;%</span></a>
-                      </th>
-                    <th>Total/<a href="{{ nosorturl }}sortby=totevrem">Remaining</a> events</th>
-                    <th><a href="{{ nosorturl }}sortby=creationdate-asc">Created</a></th>
-                    <th><a href="{{ nosorturl }}sortby=time-descending">Modified</a></th>
-                    <th><a href="{{ nosorturl }}sortby=statetime-descending">State changed</a></th>
-                    <th><a href="{{ nosorturl }}sortby=priority">Priority</a></th>
-                    <th><a href="{{ nosorturl }}sortby=nucleus">Nucleus</a></th>
-                    <th><a href="{{ nosorturl }}sortby=cloud">Cloud</a></th>
-
-                </tr>
-                {% for task in tasks %}
-                    <tr>
-                        <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
-                            {% if task.parent_tid and task.parent_tid != task.jeditaskid %}<br>
-                                <a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>{% endif %}
-                        </td>
-                        {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
-                            <td>{{ task.reqid }}</td>{% endif %}
-                        <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}
-                            {% if task.processingtype %}/{{ task.processingtype }} {% endif %}
-                            {% if task.campaign %}
-                                <a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}
-                            {% if task.workinggroup %}
-                                <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}
-                            <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a>
-                            {% if task.ticketid %}<a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">
-                                {% if task.ticketsystemtype %}{{ task.ticketsystemtype }}{% else %} JIRA {% endif %}</a>
-                            {% endif %}
-                            {% if task.deftreqid %}     RequestID:
-                                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/">{{ task.deftreqid }}</a> {% endif %}
-                            <a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">Errors</a>
-                            <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
-                        <td {% if task.scoutinghascritfailures == True %} class='broken_fill'
-                            {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
-                            {% else %} class='{{ task.superstatus }}_fill'
-                            {% endif %}>
-                            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">
-                                {% if task.superstatus %}
-                                    <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %}
-                                    <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}
-                            </a> {% if task.failedscouting == True %}<br>during scouting{% endif %}
-                            {% if task.dsinfo.nfiles >= 0 %} <br>{{ task.dsinfo.nfiles }} {% endif %} </td>
-                        <td>
-                          {% if task.dsinfo.nfilesmissing > 0 %}<span class="lost">+{{ task.dsinfo.nfilesmissing }} lost</span>{% endif %}
-                          {% if task.dsinfo.nfilesfinished > 0 %}
-                            <span class='finished'>{{ task.dsinfo.nfilesfinished }}&nbsp;{{ task.dsinfo.pctfinished }}%</span>
-                          {% endif %}
-                          {% if task.dsinfo.nfilesfailed > 0 %}
-                              <br><a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">
-                              <span class='failed'>{{ task.dsinfo.nfilesfailed }}&nbsp;{{ task.dsinfo.pctfailed }}%</span>{% endif %}</a>
-                        </td>
-                        <td><font size=-1>{% if task.totev > 0 %} {{ task.totev }} /
-                            {{ task.totevrem }} {% endif %}</font></td>
-                        <td><font size=-1>{{ task.creationdate }}</font></td>
-                        <td><font size=-1>{{ task.modificationtime }}</font></td>
-                        <td><font size=-1>{{ task.statechangetime }}</font></td>
-                        <td>{{ task.taskpriority }}</td>
-                        <td>{{ task.nucleus }}</td>
-                        <td>{{ task.cloud }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
-    {% else %}
-        <p>No matches to query.</p>
-    {% endif %}
+  <div class="table-scroll">
+  <table>
+    <tr class='tablesection'>
+        <th colspan=20> {{ display_limit }} tasks{% if 'sortby' in requestParams %}, sorted by
+            {{ requestParams.sortby }} {% else %}, sorted by jeditaskid-desc {% endif %}
+            {% if display_limit %} {% if tasks|length > display_limit %}
+                <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a
+                        href="{{ url_nolimit }}">Remove the limit</a></font>
+            {% endif %} {% endif %}
+        </th>
+    </tr>
+    <tr class='tablesection'>
+        <th><a href="{{ nosorturl }}sortby=jeditaskid-asc">ID</a><br>Parent</th>
+        {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
+            <th>Jobset</th>{% endif %}
+        <th><a href="{{ nosorturl }}sortby=taskname">Task name</a><br>TaskType/ProcessingType Campaign
+            Group User {% if requestParams.tasktype == 'prod' %}     Tracker     Request {% endif %}
+            Errors <br><font color='brown'>Logged status</font></th>
+        <th>Task status<br><a href="{{ nosorturl }}sortby=nfiles">Nfiles</a></th>
+        <th>Input files
+          <br><span class="lost tooltip-right">Nlost <i class="fi-info"></i><span class="tooltip-text">The files were unavailable at a time of the task running therefore the PanDA did not create jobs for processing them and they are not included to the number of total input files.</span></span>
+          <br><a href="{{ nosorturl }}sortby=pctfinished"><span class='finished'>Nfinish&nbsp;%</span></a>
+          <a href="{{ nosorturl }}sortby=pctfailed"><span class='failed'>Nfail&nbsp;%</span></a>
+        </th>
+        <th>Total/<a href="{{ nosorturl }}sortby=totevrem">Remaining</a> events</th>
+        <th><a href="{{ nosorturl }}sortby=creationdate-asc">Created</a></th>
+        <th><a href="{{ nosorturl }}sortby=time-descending">Modified</a></th>
+        <th><a href="{{ nosorturl }}sortby=statetime-descending">State changed</a></th>
+        <th><a href="{{ nosorturl }}sortby=priority">Priority</a></th>
+        <th><a href="{{ nosorturl }}sortby=nucleus">Nucleus</a></th>
+        <th><a href="{{ nosorturl }}sortby=cloud">Cloud</a></th>
+    </tr>
+    {% for task in tasks %}
+      <tr>
+        <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.jeditaskid }}</a>
+            {% if task.parent_tid and task.parent_tid != task.jeditaskid %}<br>
+                <a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>{% endif %}
+        </td>
+        {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
+            <td>{{ task.reqid }}</td>{% endif %}
+        <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}
+            {% if task.processingtype %}/{{ task.processingtype }} {% endif %}
+            {% if task.campaign %}
+                <a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}
+            {% if task.workinggroup %}
+                <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}
+            <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a>
+            {% if task.ticketid %}<a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">
+                {% if task.ticketsystemtype %}{{ task.ticketsystemtype }}{% else %} JIRA {% endif %}</a>
+            {% endif %}
+            {% if task.deftreqid %}     RequestID:
+                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/">{{ task.deftreqid }}</a> {% endif %}
+            <a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">Errors</a>
+            <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
+        <td {% if task.scoutinghascritfailures == True %} class='broken_fill'
+            {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
+            {% else %} class='{{ task.superstatus }}_fill'
+            {% endif %}>
+            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">
+                {% if task.superstatus %}
+                    <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %}
+                    <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}
+            </a> {% if task.failedscouting == True %}<br>during scouting{% endif %}
+            {% if task.dsinfo.nfiles >= 0 %} <br>{{ task.dsinfo.nfiles }} {% endif %} </td>
+        <td>
+          {% if task.dsinfo.nfilesmissing > 0 %}<span class="lost">+{{ task.dsinfo.nfilesmissing }} lost</span>{% endif %}
+          {% if task.dsinfo.nfilesfinished > 0 %}
+            <span class='finished'>{{ task.dsinfo.nfilesfinished }}&nbsp;{{ task.dsinfo.pctfinished }}%</span>
+          {% endif %}
+          {% if task.dsinfo.nfilesfailed > 0 %}
+              <br><a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">
+              <span class='failed'>{{ task.dsinfo.nfilesfailed }}&nbsp;{{ task.dsinfo.pctfailed }}%</span>{% endif %}</a>
+        </td>
+        <td><font size=-1>{% if task.totev > 0 %} {{ task.totev }} /
+            {{ task.totevrem }} {% endif %}</font></td>
+        <td><font size=-1>{{ task.creationdate }}</font></td>
+        <td><font size=-1>{{ task.modificationtime }}</font></td>
+        <td><font size=-1>{{ task.statechangetime }}</font></td>
+        <td>{{ task.taskpriority }}</td>
+        <td>{{ task.nucleus }}</td>
+        <td>{{ task.cloud }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+  </div>
+{% else %}
+    <p>No matches to query.</p>
+{% endif %}
 {% endblock %}
 
 {% block js_body_page %}
