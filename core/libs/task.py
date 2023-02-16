@@ -737,7 +737,7 @@ def get_task_age(task, **kwargs):
     endtime = datetime.now()
 
     if endtime and creationtime:
-        task_age = round(convert_sec((endtime-creationtime).total_seconds(), out_unit=out_unit), 2)
+        task_age = convert_sec((endtime-creationtime).total_seconds(), out_unit=out_unit, n_round_digits=2)
 
     return task_age
 
@@ -767,7 +767,7 @@ def get_task_duration(task, **kwargs):
         endtime = datetime.now()
 
     if endtime and creationtime:
-        task_duration = round(convert_sec((endtime-creationtime).total_seconds(), out_unit=out_unit), 2)
+        task_duration = convert_sec((endtime-creationtime).total_seconds(), out_unit=out_unit, n_round_digits=2)
 
     return task_duration
 

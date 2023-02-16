@@ -338,7 +338,7 @@ def convert_hs06(input, unit):
     return output
 
 
-def convert_sec(duration_sec, out_unit='str'):
+def convert_sec(duration_sec, out_unit='str', **kwargs):
     """
     Convert seconds to minutes, hours etc., or str format 'dd:hh:mm:ss'
     :param duration_sec: int: n seconds
@@ -346,6 +346,11 @@ def convert_sec(duration_sec, out_unit='str'):
     :return output
     """
     output = None
+    if 'n_round_digits' in kwargs and kwargs['n_round_digits'] and isinstance(kwargs['n_round_digits'], int):
+        n_round_digits = kwargs['n_round_digits']
+    else:
+        n_round_digits = 0
+
     multipliers_dict = {
         'sec': 1.0,
         'min': 1.0/60,
@@ -356,9 +361,9 @@ def convert_sec(duration_sec, out_unit='str'):
         'year': 1.0/(60*60*24*7*30*12 + 5),
     }
 
-    if duration_sec is not None and duration_sec > 0:
+    if duration_sec is not None and duration_sec >= 0:
         if out_unit in multipliers_dict:
-            output = duration_sec * multipliers_dict[out_unit]
+            output = round_to_n_digits(duration_sec * multipliers_dict[out_unit], n_round_digits)
         elif out_unit == 'str':
             output = str(timedelta(seconds=duration_sec)).split('.')[0]
             if 'day' in output:

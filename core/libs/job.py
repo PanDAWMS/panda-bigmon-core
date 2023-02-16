@@ -478,11 +478,11 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
         job['durationsec'] = get_job_walltime(job)
         job['durationsec'] = job['durationsec'] if job['durationsec'] is not None else 0
         job['durationmin'] = math.floor(job['durationsec'] / 60.0)
-        job['duration'] = convert_sec(job['durationsec'])
+        job['duration'] = convert_sec(job['durationsec'], out_unit='str')
 
         job['waittimesec'] = get_job_queuetime(job)
         job['waittimesec'] = job['waittimesec'] if job['waittimesec'] is not None else 0
-        job['waittime'] = convert_sec(job['waittimesec'])
+        job['waittime'] = convert_sec(job['waittimesec'], out_unit='str')
 
         if 'currentpriority' in job:
             plo = int(job['currentpriority']) - int(job['currentpriority']) % 100
