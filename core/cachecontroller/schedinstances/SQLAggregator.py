@@ -43,10 +43,15 @@ class SQLAggregator(BaseTasksProvider):
             for t in tables:  # For each table get the info from Database
                 try:
                     # utils.initDB(t)
-                    query = "SELECT prodUserName, SUM(cpuConsumptionTime) as cpuConsumptionTime, workingGroup \
-                                FROM %s WHERE modificationTime > :start_time AND (prodSourceLabel = 'user' OR \
-                                prodSourceLabel = 'panda') AND jobStatus != 'cancelled' GROUP BY workingGroup, prodUserName" % (t)
-                    rows = cursor.execute(query, {'start_time':start_time})
+                    query = """
+                    SELECT prodUserName, SUM(cpuconsumptiontime) as cpuconsumptiontime, workinggroup 
+                    FROM {} 
+                    WHERE modificationTime > :start_time 
+                        AND (prodsourcelabel = 'user' OR prodsourcelabel = 'panda') 
+                        AND jobstatus != 'cancelled' 
+                    GROUP BY workinggroup, produsername""".format(t)
+                    rows = cursor.execute(query, {'start_time': start_time})
+                    self.logger.debug("Got {} rows from {}, the first row:\n {}".format(len(rows), t, str(rows[0])))
                 except Exception as e:
                     self.logger.error(e)
                     return -1
@@ -55,13 +60,14 @@ class SQLAggregator(BaseTasksProvider):
                     user = r[0].replace("'", "")
                     cpuconsumption = (r[1])
                     if not r[2] is None:
-                        ## Include in group production stats
-                        var_name = 'cpup%s' % days
+                        # Include in group production stats
+                        var_name = 'cpup{}'.format(days)
                     else:
-                        ## Include in personal analysis stats
-                        var_name = 'cpua%s' % days
+                        # Include in personal analysis stats
+                        var_name = 'cpua{}'.format(days)
                     if user in users:
-                        if not var_name in users[user]: users[user][var_name] = 0
+                        if var_name not in users[user]:
+                            users[user][var_name] = 0
                     else:
                         users[user] = {}
                         users[user]['name'] = user
@@ -70,12 +76,14 @@ class SQLAggregator(BaseTasksProvider):
 
         userlist = []
         for u in users:
-            userdict = {}
-            userdict['name'] = u
+            userdict = {'name': u}
             for days in (1, 7):
                 for p in ('cpup%s' % days, 'cpua%s' % days):
-                    if p in users[u]: userdict[p] = users[u][p]
+                    if p in users[u]:
+                        userdict[p] = users[u][p]
             userlist.append(userdict)
+
+        self.logger.debug("Updating data for {} users, the first one:\n {}".format(len(userlist), str(userlist[0])))
         try:
             cursor.executemany("UPDATE ATLAS_PANDAMETA.USERS SET cpua1 = :cpua1, cpua7 = :cpua7, cpup1 = :cpup1, cpup7 = :cpup7 where name = :name", userlist)
             db.commit()
