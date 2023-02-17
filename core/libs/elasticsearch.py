@@ -31,7 +31,7 @@ def get_es_credentials(instance='es-atlas'):
         es_password = settings.ES.get('esPassword', None)
     elif instance == 'es-monit' and hasattr(settings, 'ES_MONIT'):
         es_host = settings.ES_MONIT.get('esHost', None)
-        es_port = settings.ES.get('esPort', None)
+        es_port = settings.ES_MONIT.get('esPort', None)
         es_host = es_host + ':' + es_port + '/es' if es_host else None
         es_user = settings.ES_MONIT.get('esUser', None)
         es_password = settings.ES_MONIT.get('esPassword', None)
@@ -180,7 +180,9 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
     else:
         result['status'] = 'success'
         result['message'] = "Successfully pushed data to the ES cluster"
+        result['link'] = "https://es-atlas.cern.ch/kibana/goto/c987a191e5fa02605e20e5e6eaa9bc1f?security_tenant=global"
         _logger.info(result['message'])
+
 
     return result
 
