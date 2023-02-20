@@ -49,6 +49,16 @@ for p in PYTHONPATH:
     if p not in sys.path:
         sys.path.insert(0, p)
 
+# load config variables from to env
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(path, "core", "settings", "config_vars.env"))
+    print(os.environ)
+except ImportError:
+    _logger.exception("No config vars were loaded to env")
+except:
+    _logger.exception("Failed to run load_dotenv()")
+
 # Activate your virtual env
 activate_env = os.path.expanduser(virtualenvPath + '/bin/activate_this.py')
 exec(open(activate_env).read(), dict(__file__=activate_env))
