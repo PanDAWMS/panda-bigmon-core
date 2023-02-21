@@ -121,7 +121,7 @@
         <tr>
             <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
             <td> {{ errval.count }} </td>
-            <td> {{ errval.diag|safe }}
+            <td> {{ errval.diag|force_escape|safe }}
             </td>
         </tr>
         {% endfor %}
@@ -171,7 +171,7 @@
 {% for errval in site.errorlist %}
 <tr><td>  </td>
     <td> <a href="{{jobsurlNoSite}}?computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td>
-    <td class="wrap-words"> <b>{{ errval.error }}</b>     <font size=-1> {{ errval.diag }} </font></td>
+    <td class="wrap-words"> <b>{{ errval.error }}</b>     <font size=-1> {{ errval.diag|force_escape|safe }} </font></td>
 </tr>
 {% endfor %}
 {% endfor %}
@@ -190,7 +190,7 @@
 {% for user in errsByUser %}
 <tr><th class="wrap-words"> <a href="{{xurl}}produsername={{ user.name }}"> {{ user.name }} </a> </th> <th> {{ user.toterrors }} </th> <th> Total errors </th>  </tr>
 {% for errval in user.errorlist %}
-<tr><td>  </td> <td> <a href="{{jobsurl}}produsername={{user.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>     {{ errval.diag }} </td>  </tr>
+<tr><td>  </td> <td> <a href="{{jobsurl}}produsername={{user.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>     {{ errval.diag|force_escape|safe }} </td>  </tr>
 {% endfor %}
 {% endfor %}
 </table>
@@ -211,7 +211,7 @@
 <th> Total errors in {{ task.toterrjobs }} jobs.     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a>     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a>     % failed: {{ task.pctfail }}     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ task.holding }} </span></a>      <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
 </tr>
 {% for errval in task.errorlist %}
-<tr><td> <a href="{{jobsurl}}{{task.tasktype}}={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>      {{ errval.diag }} </td>  </tr>
+<tr><td> <a href="{{jobsurl}}{{task.tasktype}}={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>      {{ errval.diag|force_escape|safe }} </td>  </tr>
 {% endfor %}
 {% endfor %}
 </table>

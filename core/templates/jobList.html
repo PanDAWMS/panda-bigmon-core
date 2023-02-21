@@ -208,7 +208,7 @@
         <tr>
             <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
             <td> {{ errval.count }} </td>
-            <td> {{ errval.diag|safe }}
+            <td> {{ errval.diag|force_escape|safe }}
             </td>
         </tr>
         {% endfor %}
