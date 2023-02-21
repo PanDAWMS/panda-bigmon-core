@@ -52,7 +52,7 @@ def get_CRIC_panda_queues():
                     # add all queues to dict despite VO
                     panda_queues_dict[pq] = params
         except Exception as exc:
-            print (exc)
+            print(exc)
         cache.set(f'pandaQueues{settings.DEPLOYMENT}', panda_queues_dict, 60*20)
     return panda_queues_dict
 
@@ -62,12 +62,12 @@ def get_panda_queues():
     Get PanDA queues info from available sources, priority: CRIC -> SchedconfigJson table
     :return: dict of PQs
     """
-    # try get info from CRIC
+    # try to get info from CRIC
     try:
         panda_queues_dict = get_CRIC_panda_queues()
     except:
         panda_queues_dict = None
-        _logger.error("[JSR] cannot get json from CRIC")
+        _logger.exception("cannot get json from CRIC, trying get them from schedconfig_json table")
 
     if not panda_queues_dict:
         # get data from new SCHEDCONFIGJSON table
@@ -241,7 +241,7 @@ def get_pq_object_store_path():
     pq_object_store_paths = {}
     pq_dict = get_panda_queues()
     for pq, pq_info in pq_dict.items():
-        if pq_info['catchall'] is not None and 'objectstore' in pq_info and (
+        if 'catchall' in pq_info and pq_info['catchall'] is not None and 'objectstore' in pq_info and (
                 pq_info['catchall'].find('log_to_objectstore') >= 0 or pq_info['objectstore'] != ''):
             try:
                 fpath = getFilePathForObjectStore(pq_info['objectstore'], filetype="logs")
@@ -269,8 +269,8 @@ def getCRICSEs():
                 su = data[se].get("su", None)
                 if su:
                     SEs.setdefault(su, set()).add(se)
-        except Exception:
-            _logger.exception('Got exception on getCRICSEs')
+        except Exception as e:
+            _logger.exception('Got exception on getCRICSEs:\n{}'.format(e))
         cache.set('CRIC_SEs', SEs, 7200)
     return SEs
 
