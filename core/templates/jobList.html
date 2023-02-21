@@ -342,8 +342,8 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
 		<td>{{ job.currentpriority }}</td>
     <td>{{ job.nevents }} ({{ job.ninputs }})</td>
     <td>{% if 'maxpssgbpercore' in job and job.maxpssgbpercore %}{{ job.maxpssgbpercore }}{% endif %}</td>
-		<td class="wrap small">{% if job.jobinfo != '' %}{{job.jobinfo|safe}}<br>{% endif %}
-		{% if job.errorinfo != '' %}<span class='alarm'>{{job.errorinfo|safe}}</span>{% endif %}
+		<td class="wrap small">{% if job.jobinfo != '' %}{{job.jobinfo|force_escape|safe}}<br>{% endif %}
+		{% if job.errorinfo != '' %}<span class='alarm'>{{job.errorinfo|force_escape|safe}}</span>{% endif %}
 		</td>
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
     <td colspan="20" class="small">Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a>  #{{ job.attemptnr }}</td></tr>

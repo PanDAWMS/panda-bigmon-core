@@ -207,8 +207,8 @@ time since last state change, <a href="{{nosorturl}}sortby=time-ascending">ascen
         {% if requestParams.jeditaskid  %}
         <td><font size=-1>{% if job.maxpss and job.maxpss != 'None' and job.maxpss != -1 %}{{ job.maxpss }}{% endif %}</font></td>
          {% endif %}
-		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
-		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
+		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|force_escape|safe}}</font><br>{% endif %}
+		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|force_escape|safe}}</font>{% endif %}
 		</td>
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}><td colspan=11> <font size=-1>Job name: <a href="{% url 'jobListProto' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a></font>     #{{ job.attemptnr }} </td></tr>
 	</tr>

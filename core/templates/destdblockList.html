@@ -148,8 +148,8 @@ Sort by
 		<td><font size=-1>{{ job.modificationtime|date:"m-d H:i" }}</font></td>
 		<td><font size=-1>{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a></font></td>
 		<td>{{ job.currentpriority }}</td>
-		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|safe}}</font><br>{% endif %}
-		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
+		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|force_escape|safe}}</font><br>{% endif %}
+		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|force_escape|safe}}</font>{% endif %}
 		</td>
 	<tr><td colspan=11> <font size=-1>Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}&jeditaskid={{ job.jeditaskid }}&sortby=attemptnr">{{ job.jobname }}</a></font>     #{{ job.attemptnr }} </td></tr>
 	</tr>
