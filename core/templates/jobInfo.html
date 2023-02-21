@@ -111,29 +111,29 @@
       {% if job.jobdispatchererrorcode or job.brokerageerrorcode or job.ddmerrorcode or job.exeerrorcode or job.piloterrorcode or job.superrorcode or job.taskbuffererrorcode %}
       <tr><th>Component</th><th>Code</th><th>Message</th></tr>
       {% if job.jobdispatchererrorcode %}
-        <tr><td>Job dispatch</td><td>{{ job.jobdispatchererrorcode }}</td><td>{{ job.jobdispatchererrordiag }}</td></tr>
+        <tr><td>Job dispatch</td><td>{{ job.jobdispatchererrorcode }}</td><td>{{ job.jobdispatchererrordiag|force_escape|safe }}</td></tr>
       {% endif %}
       {% if job.brokerageerrorcode %}
-        <tr><td>Brokerage</td><td>{{ job.brokerageerrorcode }}</td><td>{{ job.brokerageerrordiag }}</td></tr>
+        <tr><td>Brokerage</td><td>{{ job.brokerageerrorcode }}</td><td>{{ job.brokerageerrordiag|force_escape|safe }}</td></tr>
       {% endif %}
       {% if job.ddmerrorcode %}
-        <tr><td>DDM</td><td>{{ job.ddmerrorcode }}</td><td>{{ job.ddmerrordiag }}</td></tr>
+        <tr><td>DDM</td><td>{{ job.ddmerrorcode }}</td><td>{{ job.ddmerrordiag|force_escape|safe }}</td></tr>
       {% endif %}
       {% if job.exeerrorcode %}
-        <tr><td>Execution</td><td>{{ job.exeerrorcode }}</td><td>{{ job.exeerrordiag }}</td></tr>
+        <tr><td>Execution</td><td>{{ job.exeerrorcode }}</td><td>{{ job.exeerrordiag|force_escape|safe }}</td></tr>
       {% endif %}
       {% if job.piloterrorcode %}
-        <tr><td>Pilot</td><td>{{ job.piloterrorcode }}</td><td>{{ job.piloterrordiag }}</td></tr>
+        <tr><td>Pilot</td><td>{{ job.piloterrorcode }}</td><td>{{ job.piloterrordiag|force_escape|safe }}</td></tr>
       {% endif %}
       {% if job.superrorcode %}
-        <tr><td>Supervisor</td><td>{{ job.superrorcode }}</td><td>{{ job.superrordiag }}</td></tr>
+        <tr><td>Supervisor</td><td>{{ job.superrorcode }}</td><td>{{ job.superrordiag|force_escape|safe }}</td></tr>
       {% endif %}
       {% if job.taskbuffererrorcode %}
-        <tr><td>Task Buffer</td><td>{{ job.taskbuffererrorcode }}</td><td>{{ job.taskbuffererrordiag }}</td></tr>
+        <tr><td>Task Buffer</td><td>{{ job.taskbuffererrorcode }}</td><td>{{ job.taskbuffererrordiag|force_escape|safe }}</td></tr>
       {% endif %}
       {% endif %}
       {% if job.harvesterInfo.diagmessage %}
-        <tr><td>Harvester worker</td><td>{{ job.harvesterInfo.errorcode }}</td><td>{{ job.harvesterInfo.diagmessage }}</td></tr>
+        <tr><td>Harvester worker</td><td>{{ job.harvesterInfo.errorcode }}</td><td>{{ job.harvesterInfo.diagmessage|force_escape|safe }}</td></tr>
       {% endif %}
     </tbody>
   </table>
