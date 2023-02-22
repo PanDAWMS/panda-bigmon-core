@@ -970,21 +970,20 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if param not in wildSearchFields:
                             query[param] = request.session['requestParams'][param]
 
-    # process queue related params
-    # custom params
+    # process queue related params if any
     if querytype == 'job':
         if 'region' in request.session['requestParams']:
             request.session['requestParams']['queuecloud'] = request.session['requestParams']['region']
         if 'site' in request.session['requestParams']:
             request.session['requestParams']['queueatlas_site'] = request.session['requestParams']['site']
-
-        pqs_dict = filter_pq_json(request)
-        if len(pqs_dict) > 0:
-            if 'computingsite__in' in query:
-                # unite lists
-                query['computingsite__in'] = list(set(query['computingsite__in']) & set([k for k in pqs_dict]))
-            else:
-                query['computingsite__in'] = list(pqs_dict.keys())
+        if any(key.startswith('queue') for key, value in query.items()):
+            pqs_dict = filter_pq_json(request)
+            if len(pqs_dict) > 0:
+                if 'computingsite__in' in query:
+                    # unite lists
+                    query['computingsite__in'] = list(set(query['computingsite__in']) & set([k for k in pqs_dict]))
+                else:
+                    query['computingsite__in'] = list(pqs_dict.keys())
 
     if opmode in ['analysis', 'production'] and querytype == 'job':
         if opmode.startswith('analy'):
