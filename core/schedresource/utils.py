@@ -354,7 +354,8 @@ def getFilePathForObjectStore(objectstore, filetype="logs"):
 
 def filter_pq_json(request, **kwargs):
     """
-    Filter CRIC PQs JSON by request params. Only support filtering by int or str types of values
+    Filter CRIC PQs JSON by request params. Only support filtering by int or str types of values.
+    'site' param is not supported.
     :param request:
     :return: pqs_dict: filtered PQs dict
     """

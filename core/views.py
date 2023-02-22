@@ -861,11 +861,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 elif jobtype == 'test' or jobtype.find('test') >= 0:
                     query['produsername'] = 'gangarbt'
 
-            if param == 'site':
-                pqs = get_panda_queues()
-                query['computingsite__in'] = [info['nickname'] for pq, info in pqs.items() if
-                                              info['atlas_site'] == request.session['requestParams'][param]]
-
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
                     if request.session['requestParams'][param] == 'Not specified':
@@ -975,14 +970,21 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         if param not in wildSearchFields:
                             query[param] = request.session['requestParams'][param]
 
-    if 'region' in request.session['requestParams']:
-        region = request.session['requestParams']['region']
-        pq_clouds = get_pq_clouds()
-        siteListForRegion = []
-        for sn, rn in pq_clouds.items():
-            if rn == region:
-                siteListForRegion.append(str(sn))
-        query['computingsite__in'] = siteListForRegion
+    # process queue related params
+    # custom params
+    if querytype == 'job':
+        if 'region' in request.session['requestParams']:
+            request.session['requestParams']['queuecloud'] = request.session['requestParams']['region']
+        if 'site' in request.session['requestParams']:
+            request.session['requestParams']['queueatlas_site'] = request.session['requestParams']['site']
+
+        pqs_dict = filter_pq_json(request)
+        if len(pqs_dict) > 0:
+            if 'computingsite__in' in query:
+                # unite lists
+                query['computingsite__in'] = list(set(query['computingsite__in']) & set([k for k in pqs_dict]))
+            else:
+                query['computingsite__in'] = list(pqs_dict.keys())
 
     if opmode in ['analysis', 'production'] and querytype == 'job':
         if opmode.startswith('analy'):
@@ -990,7 +992,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif opmode.startswith('prod'):
             query['prodsourcelabel__in'] = ['managed']
 
-    if wildCardExt == False:
+    if not wildCardExt:
         return query
 
     try:
