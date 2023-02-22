@@ -136,7 +136,8 @@ statelist = ['pending', 'defined', 'waiting', 'assigned', 'throttled',
              'transferring', 'merging', 'finished', 'failed', 'cancelled', 'closed']
 sitestatelist = ['defined', 'waiting', 'assigned', 'throttled', 'activated', 'sent', 'starting', 'running', 'holding',
                  'merging', 'transferring', 'finished', 'failed', 'cancelled', 'closed']
-eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal','merged', 'corrupted']
+eventservicestatelist = ['ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal',
+                         'merged', 'corrupted']
 taskstatelist = ['registered', 'defined', 'assigning', 'ready', 'pending', 'scouting', 'scouted', 'running', 'prepared',
                  'done', 'failed', 'finished', 'aborting', 'aborted', 'finishing', 'topreprocess', 'preprocessing',
                  'tobroken', 'broken', 'toretry', 'toincexec', 'rerefine']
@@ -170,7 +171,7 @@ PHIGH = -1000000
 standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid',
                    'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
                    'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
-                   'jobsubstatus', 'nucleus','gshare', 'resourcetype']
+                   'jobsubstatus', 'nucleus', 'gshare', 'resourcetype']
 standard_taskfields = [
     'workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'currentpriority', 'username',
     'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
@@ -184,24 +185,27 @@ VOMODE = ' '
 
 
 @register.filter(takes_context=True)
-def get_count(dict, key):
-    return dict[key]['count']
+def get_count(input_dict, key):
+    return input_dict[key]['count']
+
 
 @register.filter(takes_context=True)
-def get_tk(dict, key):
-    return dict[key]['tk']
+def get_tk(input_dict, key):
+    return input_dict[key]['tk']
+
 
 @register.filter(takes_context=True)
-def get_item(dictionary, key):
-    return dictionary.get(key)
+def get_item(input_dict, key):
+    return input_dict.get(key)
+
 
 @register.simple_tag(takes_context=True)
 def get_renderedrow(context, **kwargs):
-    if kwargs['type']=="world_nucleussummary":
+    if kwargs['type'] == "world_nucleussummary":
         kwargs['statelist'] = statelist
         return Customrenderer.world_nucleussummary(context, kwargs)
 
-    if kwargs['type']=="world_computingsitesummary":
+    if kwargs['type'] == "world_computingsitesummary":
         kwargs['statelist'] = statelist
         return Customrenderer.world_computingsitesummary(context, kwargs)
 
@@ -216,7 +220,6 @@ def initRequest(request, callselfmon=True):
     VOMODE = ''
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
-        # VOMODE = 'devtest'
 
     request.session['req_init_time'] = time.time()
     request.session['IS_TESTER'] = False
@@ -243,23 +246,7 @@ def initRequest(request, callselfmon=True):
                     user.set_unusable_password()
                     user.save()
 
-    # if VOMODE == 'devtest':
-    #     request.session['ADFS_FULLNAME'] = ''
-    #     request.session['ADFS_EMAIL'] = ''
-    #     request.session['ADFS_FIRSTNAME'] = ''
-    #     request.session['ADFS_LASTNAME'] = ''
-    #     request.session['ADFS_LOGIN'] = ''
-    #     # user = None
-    #     user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
-    #     request.session['IS_TESTER'] = user.is_tester
-    #     request.user = user
-
-    # print("IP Address for debug-toolbar: " + request.META['REMOTE_ADDR'])
-
-
-    viewParams = {}
-    # if not 'viewParams' in request.session:
-    request.session['viewParams'] = viewParams
+    request.session['viewParams'] = {}
 
     # creating a dict in session to store long urls as it will not be saved to session storage
     # Session is NOT modified, because this alters sub dict
@@ -291,8 +278,6 @@ def initRequest(request, callselfmon=True):
     if 'timerange' in request.session:
         del request.session['timerange']
 
-    #if 'USER' in os.environ and os.environ['USER'] != 'apache':
-    #    request.session['debug'] = True
     if 'debug' in request.GET and request.GET['debug'] == 'insider':
         request.session['debug'] = True
         settings.DEBUG = True
@@ -302,16 +287,17 @@ def initRequest(request, callselfmon=True):
         request.session['debug'] = False
         settings.DEBUG = False
 
-    if len(hostname) > 0: request.session['hostname'] = hostname
+    if len(hostname) > 0:
+        request.session['hostname'] = hostname
 
-    #self monitor
+    # self monitor
     if callselfmon:
         initSelfMonitor(request)
 
     # Set default page lifetime in the http header, for the use of the front end cache
     set_cache_timeout(request)
 
-    # Is it an https connection with a legit cert presented by the user?
+    # Is it a https connection with a legit cert presented by the user?
     if 'SSL_CLIENT_S_DN' in request.META or 'HTTP_X_SSL_CLIENT_S_DN' in request.META:
         if 'SSL_CLIENT_S_DN' in request.META:
             request.session['userdn'] = request.META['SSL_CLIENT_S_DN']
@@ -366,7 +352,7 @@ def initRequest(request, callselfmon=True):
     else:
         for p in request.GET:
             pval = request.GET[p]
-            ####if injection###
+            # if injection
             if 'script' in pval.lower() and ('</' in pval.lower() or '/>' in pval.lower()):
                 data = {
                     'viewParams': request.session['viewParams'],
@@ -379,7 +365,7 @@ def initRequest(request, callselfmon=True):
             if p.lower() != 'batchid':  # Special requester exception
                 pval = pval.replace('#', '')
 
-            ## is it int, if it's supposed to be?
+            # is it int, if it's supposed to be?
             if p.lower() in (
                 'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount',
                 'taskpriority', 'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated', 'corepower',
@@ -440,6 +426,16 @@ def initRequest(request, callselfmon=True):
 
 
 def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardExt=False):
+    """
+    Transform HTTP request params into query params for ORM
+    :param request:
+    :param opmode: str: 'optional mode', e.g. notime to remove time limit in the query
+    :param hours:
+    :param limit:
+    :param querytype: job|task
+    :param wildCardExt: flag if process wildcards to str part of 'where' clause and return it
+    :return:
+    """
     viewParams = {}
     if not 'viewParams' in request.session:
         request.session['viewParams'] = viewParams
@@ -501,20 +497,24 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         LAST_N_HOURS_MAX = 7 * 24
 
     if VOMODE == 'atlas':
-        if 'cloud' not in fields: fields.append('cloud')
-        if 'atlasrelease' not in fields: fields.append('atlasrelease')
-        if 'produsername' in request.session['requestParams'] or 'jeditaskid' in request.session[
-            'requestParams'] or 'user' in request.session['requestParams']:
-            if 'jobsetid' not in fields: fields.append('jobsetid')
+        if 'cloud' not in fields:
+            fields.append('cloud')
+        if 'atlasrelease' not in fields:
+            fields.append('atlasrelease')
+        if 'produsername' in request.session['requestParams'] or 'jeditaskid' in request.session['requestParams'] or (
+                'user' in request.session['requestParams']):
+            if 'jobsetid' not in fields:
+                fields.append('jobsetid')
             if ('hours' not in request.session['requestParams']) and (
                 'days' not in request.session['requestParams']) and (
                         'jobsetid' in request.session['requestParams'] or 'taskid' in request.session[
                     'requestParams'] or 'jeditaskid' in request.session['requestParams']):
-                ## Cases where deep query is safe. Unless the time depth is specified in URL.
+                # Cases where deep query is safe. Unless the time depth is specified in URL.
                 if 'hours' not in request.session['requestParams'] and 'days' not in request.session['requestParams']:
                     deepquery = True
         else:
-            if 'jobsetid' in fields: fields.remove('jobsetid')
+            if 'jobsetid' in fields:
+                fields.remove('jobsetid')
     else:
         fields.append('vo')
 
@@ -582,25 +582,25 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         startdate = parse_datetime(request.session['requestParams']['date_from'])
     if not startdate:
         startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
-    # startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = None
 
+    enddate = None
     endtime__castdate__range = None
     if 'endtimerange' in request.session['requestParams']:
         endtimerange = request.session['requestParams']['endtimerange'].split('|')
-        endtime__castdate__range = [parse_datetime(endtimerange[0]).strftime(settings.DATETIME_FORMAT),
-                                    parse_datetime(endtimerange[1]).strftime(settings.DATETIME_FORMAT)]
+        endtime__castdate__range = [
+            parse_datetime(endtimerange[0]).strftime(settings.DATETIME_FORMAT),
+            parse_datetime(endtimerange[1]).strftime(settings.DATETIME_FORMAT)
+        ]
 
     if 'date_to' in request.session['requestParams']:
         enddate = parse_datetime(request.session['requestParams']['date_to'])
     if 'earlierthan' in request.session['requestParams']:
         enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthan']))
-    # enddate = enddate.strftime(settings.DATETIME_FORMAT)
     if 'earlierthandays' in request.session['requestParams']:
         enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthandays']) * 24)
-    # enddate = enddate.strftime(settings.DATETIME_FORMAT)
-    if enddate == None:
-        enddate = timezone.now()  # .strftime(settings.DATETIME_FORMAT)
+
+    if enddate is None:
+        enddate = timezone.now()
         request.session['noenddate'] = True
     else:
         request.session['noenddate'] = False
@@ -610,23 +610,25 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     else:
         if not endtime__castdate__range:
             query = {
-                'modificationtime__castdate__range': [startdate.strftime(settings.DATETIME_FORMAT), enddate.strftime(settings.DATETIME_FORMAT)]}
+                'modificationtime__castdate__range': [
+                    startdate.strftime(settings.DATETIME_FORMAT),
+                    enddate.strftime(settings.DATETIME_FORMAT)]
+            }
         else:
             query = {
-                'endtime__castdate__range': [endtime__castdate__range[0], endtime__castdate__range[1]]}
+                'endtime__castdate__range': [
+                    endtime__castdate__range[0],
+                    endtime__castdate__range[1]]
+            }
 
-
-    request.session['TFIRST'] = startdate  # startdate[:18]
-    request.session['TLAST'] = enddate  # enddate[:18]
+    # add min/max values to session
+    request.session['TFIRST'] = startdate
+    request.session['TLAST'] = enddate
 
     request.session['PLOW'] = 1000000
     request.session['PHIGH'] = -1000000
 
-    ### Add any extensions to the query determined from the URL
-    #query['vo'] = 'atlas'
-    #for vo in ['atlas', 'core']:
-    #    if 'HTTP_HOST' in request.META and request.META['HTTP_HOST'].startswith(vo):
-    #        query['vo'] = vo
+    # Add any extensions to the query determined from the URL
     for param in request.session['requestParams']:
         if param in ('hours', 'days'): continue
         elif param == 'cloud' and request.session['requestParams'][param] == 'All':
@@ -643,11 +645,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             else:
                 query['schedulerid'] = 'harvester-'+val
         elif param == 'schedulerid':
-             if 'harvester-*' in request.session['requestParams'][param]:
-                 query['schedulerid__startswith'] = 'harvester'
-             else:
-                 val = request.session['requestParams'][param]
-                 query['schedulerid__startswith'] = val
+            if 'harvester-*' in request.session['requestParams'][param]:
+                query['schedulerid__startswith'] = 'harvester'
+            else:
+                val = request.session['requestParams'][param]
+                query['schedulerid__startswith'] = val
         elif param == 'priorityrange':
             mat = re.match('([0-9]+)\:([0-9]+)', request.session['requestParams'][param])
             if mat:
@@ -693,19 +695,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param == 'processingtype' and '|' not in request.session['requestParams'][param] and '*' not in request.session['requestParams'][param] and '!' not in request.session['requestParams'][param]:
             val = request.session['requestParams'][param]
             query['processingtype'] = val
-        elif param == 'mismatchedcloudsite' and request.session['requestParams'][param] == 'true':
-            listOfCloudSitesMismatched = cache.get('mismatched-cloud-sites-list')
-            if (listOfCloudSitesMismatched is None) or (len(listOfCloudSitesMismatched) == 0):
-                request.session['viewParams'][
-                    'selection'] += "      <b>The query can not be processed because list of mismatches is not found. Please visit %s/dash/production/?cloudview=region page and then try again</b>" % \
-                                    request.session['hostname']
-            else:
-                for count, cloudSitePair in enumerate(listOfCloudSitesMismatched):
-                    extraQueryString += 'AND ( ( (cloud=\'%s\') and (computingsite=\'%s\') ) ' % (
-                    cloudSitePair[1], cloudSitePair[0])
-                    if (count < (len(listOfCloudSitesMismatched) - 1)):
-                        extraQueryString += ' OR '
-                extraQueryString += ')'
         elif param == 'pilotversion' and request.session['requestParams'][param]:
             val = request.session['requestParams'][param]
             if val == 'Not specified':
@@ -725,7 +714,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             and (endtime - starttime) * 24 * 60 > {} and (endtime - starttime) * 24 * 60 < {} ) 
             or 
             (endtime is NULL and starttime is not null 
-            and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 > {} and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 < {} ) 
+            and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 > {} 
+            and (CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - starttime) * 24 * 60 < {} ) 
             ) """.format(str(durationrange[0]), str(durationrange[1]), str(durationrange[0]), str(durationrange[1]))
         elif param == 'neventsrange' and request.session['requestParams'][param]:
             try:
@@ -751,7 +741,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             # add a new no_container_name xurl to request session
             if 'xurl' not in request.session:
                 request.session['xurls'] = {}
-            request.session['xurls']['container_name'] = removeParam(extensibleURL(request), 'container_name', mode='extensible')
+            request.session['xurls']['container_name'] = removeParam(
+                extensibleURL(request),
+                'container_name',
+                mode='extensible'
+            )
             continue
         elif param == 'reqtoken':
             data = getCacheData(request, request.session['requestParams']['reqtoken'])
@@ -944,25 +938,21 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                 paramvalues = []
                             query['eventservice__in'] = paramvalues
                         else:
-                            if request.session['requestParams'][param] == 'esmerge' or request.session['requestParams'][
-                                param] == '2':
+                            param_val = request.session['requestParams'][param]
+                            if param_val == 'esmerge' or param_val == '2':
                                 query['eventservice'] = 2
-                            elif request.session['requestParams'][param] == 'clone' or request.session['requestParams'][
-                                param] == '3':
+                            elif param_val == 'clone' or param_val == '3':
                                 query['eventservice'] = 3
-                            elif request.session['requestParams'][param] == 'jumbo' or request.session['requestParams'][
-                                param] == '4':
+                            elif param_val == 'jumbo' or param_val == '4':
                                 query['eventservice'] = 4
-                            elif request.session['requestParams'][param] == 'cojumbo' or request.session['requestParams'][
-                                param] == '5':
+                            elif param_val == 'cojumbo' or param_val == '5':
                                 query['eventservice'] = 5
-                            elif request.session['requestParams'][param] == 'eventservice' or \
-                                            request.session['requestParams'][param] == '1':
+                            elif param_val == 'eventservice' or param_val == '1':
                                 query['eventservice'] = 1
                                 extraQueryString += " AND not specialhandling like \'%%sc:%%\' "
-                            elif request.session['requestParams'][param] == 'not2':
+                            elif param_val == 'not2':
                                 extraQueryString += ' AND (eventservice != 2) '
-                            elif request.session['requestParams'][param] == 'all':
+                            elif param_val == 'all':
                                 query['eventservice__isnull'] = False
                                 continue
                             else:
@@ -977,7 +967,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         else:
                             query['resourcetype'] = request.session['requestParams'][param]
                     else:
-                        if (param not in wildSearchFields):
+                        if param not in wildSearchFields:
                             query[param] = request.session['requestParams'][param]
 
     if 'region' in request.session['requestParams']:
