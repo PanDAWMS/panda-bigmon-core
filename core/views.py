@@ -3537,14 +3537,16 @@ def calculateRWwithPrio_JEDI(query):
     values = ['jeditaskid', 'datasetid', 'modificationtime', 'cloud', 'nrem', 'walltime', 'fsize', 'startevent',
               'endevent', 'nevents']
     ###TODO Rework it
-    if 'schedulerid' in query.keys():
+    if 'schedulerid' in query:
         del query['schedulerid']
-    elif 'schedulerid__startswith' in query.keys():
+    elif 'schedulerid__startswith' in query:
         del query['schedulerid__startswith']
+    elif 'compitingsite' in query:
+        del query['compitingsite__in']
     progressEntries = []
     progressEntries.extend(GetRWWithPrioJedi3DAYS.objects.filter(**query).values(*values))
-    allCloudsRW = 0;
-    allCloudsNREMJ = 0;
+    allCloudsRW = 0
+    allCloudsNREMJ = 0
 
     if len(progressEntries) > 0:
         for progrEntry in progressEntries:
