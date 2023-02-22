@@ -109,4 +109,3 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     rows = dictfetchall(cur, style=style)
     cur.close()
     return rows
-
