@@ -976,7 +976,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             request.session['requestParams']['queuecloud'] = request.session['requestParams']['region']
         if 'site' in request.session['requestParams']:
             request.session['requestParams']['queueatlas_site'] = request.session['requestParams']['site']
-        if any(key.startswith('queue') for key, value in query.items()):
+        # check if queue params are provided and computingsite not explicitly specified
+        if any(key.startswith('queue') for key, value in request.session['requestParams'].items()) and (
+            'computingsite' not in request.session['requestParams']
+        ):
             pqs_dict = filter_pq_json(request)
             if len(pqs_dict) > 0:
                 if 'computingsite__in' in query:
@@ -3549,7 +3552,7 @@ def calculateRWwithPrio_JEDI(query):
         del query['schedulerid']
     elif 'schedulerid__startswith' in query:
         del query['schedulerid__startswith']
-    elif 'compitingsite' in query:
+    elif 'compitingsite__in' in query:
         del query['compitingsite__in']
     progressEntries = []
     progressEntries.extend(GetRWWithPrioJedi3DAYS.objects.filter(**query).values(*values))
