@@ -1537,7 +1537,7 @@ def jobList(request, mode=None, param=None):
             display_limit = int(request.session['requestParams']['display_limit'])
         url_nolimit = removeParam(request.get_full_path(), 'display_limit')
     else:
-        display_limit = 1000
+        display_limit = 100
         url_nolimit = request.get_full_path()
     njobsmax = display_limit
 
