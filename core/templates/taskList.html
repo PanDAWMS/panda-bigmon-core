@@ -164,7 +164,7 @@
               <th>Start time</th>
               <th>End time</th>
               <th>Update time</th>
-              <th>Rse</th>
+              <th>RSE</th>
             </tr>
             </thead>
             <tbody></tbody>
@@ -225,7 +225,6 @@
         <th><a href="{{ nosorturl }}sortby=statetime-descending">State changed</a></th>
         <th><a href="{{ nosorturl }}sortby=priority">Priority</a></th>
         <th><a href="{{ nosorturl }}sortby=nucleus">Nucleus</a></th>
-        <th><a href="{{ nosorturl }}sortby=cloud">Cloud</a></th>
     </tr>
     {% for task in tasks %}
       <tr>
@@ -275,7 +274,6 @@
         <td><font size=-1>{{ task.statechangetime }}</font></td>
         <td>{{ task.taskpriority }}</td>
         <td>{{ task.nucleus }}</td>
-        <td>{{ task.cloud }}</td>
       </tr>
     {% endfor %}
   </table>

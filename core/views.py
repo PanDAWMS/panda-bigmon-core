@@ -39,7 +39,7 @@ import core.Customrenderer as Customrenderer
 from core.common.utils import getPrefix, getContextVariables
 from core.pandajob.SQLLookups import CastDate
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    GetRWWithPrioJedi3DAYS, RemainedEventsPerCloud3dayswind, CombinedWaitActDefArch4, PandaJob
+    CombinedWaitActDefArch4, PandaJob
 from core.schedresource.models import SchedconfigJson
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -123,7 +123,8 @@ DateTimeField.register_lookup(CastDate)
 
 try:
     hostname = subprocess.getoutput('hostname')
-    if hostname.find('.') > 0: hostname = hostname[:hostname.find('.')]
+    if hostname.find('.') > 0:
+        hostname = hostname[:hostname.find('.')]
 except:
     hostname = ''
 
@@ -3541,45 +3542,6 @@ def getEffectiveFileSize(fsize, startEvent, endEvent, nEvents):
     return effectiveFsize
 
 
-def calculateRWwithPrio_JEDI(query):
-    # query = {}
-    retRWMap = {}
-    retNREMJMap = {}
-    values = ['jeditaskid', 'datasetid', 'modificationtime', 'cloud', 'nrem', 'walltime', 'fsize', 'startevent',
-              'endevent', 'nevents']
-    ###TODO Rework it
-    if 'schedulerid' in query:
-        del query['schedulerid']
-    elif 'schedulerid__startswith' in query:
-        del query['schedulerid__startswith']
-    elif 'compitingsite__in' in query:
-        del query['compitingsite__in']
-    progressEntries = []
-    progressEntries.extend(GetRWWithPrioJedi3DAYS.objects.filter(**query).values(*values))
-    allCloudsRW = 0
-    allCloudsNREMJ = 0
-
-    if len(progressEntries) > 0:
-        for progrEntry in progressEntries:
-            if progrEntry['fsize'] != None:
-                effectiveFsize = getEffectiveFileSize(progrEntry['fsize'], progrEntry['startevent'],
-                                                      progrEntry['endevent'], progrEntry['nevents'])
-                tmpRW = progrEntry['nrem'] * effectiveFsize * progrEntry['walltime']
-                if not progrEntry['cloud'] in retRWMap:
-                    retRWMap[progrEntry['cloud']] = 0
-                retRWMap[progrEntry['cloud']] += tmpRW
-                allCloudsRW += tmpRW
-                if not progrEntry['cloud'] in retNREMJMap:
-                    retNREMJMap[progrEntry['cloud']] = 0
-                retNREMJMap[progrEntry['cloud']] += progrEntry['nrem']
-                allCloudsNREMJ += progrEntry['nrem']
-    retRWMap['All'] = allCloudsRW
-    retNREMJMap['All'] = allCloudsNREMJ
-    for cloudName, rwValue in retRWMap.items():
-        retRWMap[cloudName] = int(rwValue / 24 / 3600)
-    return retRWMap, retNREMJMap
-
-
 @login_customrequired
 def dashboard(request, view='all'):
     valid, response = initRequest(request)
@@ -3610,7 +3572,6 @@ def dashboard(request, view='all'):
             elif view == 'all':
                 return redirect('/dash/region/')
 
-    #    data = getCacheEntry(request, "dashboard", skipCentralRefresh=True)
     data = getCacheEntry(request, "dashboard")
     if data is not None:
         data = json.loads(data)
@@ -3639,8 +3600,7 @@ def dashboard(request, view='all'):
             estailtojobslinks = '&eventservice=eventservice'
         elif 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
             extra = "(not (not eventservice is null and eventservice in (1, 5) and not specialhandling like '%%sc:%%'))"
-        elif 'esmerge' in request.session['requestParams'] and request.session['requestParams'][
-            'esmerge'].upper() == 'TRUE':
+        elif 'esmerge' in request.session['requestParams'] and request.session['requestParams']['esmerge'].upper() == 'TRUE':
             extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
             estailtojobslinks = '&eventservice=2'
         noldtransjobs, transclouds, transrclouds = stateNotUpdated(request, state='transferring',
@@ -3658,10 +3618,22 @@ def dashboard(request, view='all'):
         transrclouds = []
 
     errthreshold = 10
-
     query = setupView(request, hours=hours, limit=999999, opmode=view)
+
+    # this is decommissioned -> return error message
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'task':
-        return dashTasks(request, hours, view)
+        err_message = 'This view was decommissioned!'
+        if is_json_request(request):
+            return JsonResponse({'error': err_message}, safe=False)
+        else:
+            data = {
+                'request': request,
+                'viewParams': request.session['viewParams'],
+                'requestParams': request.session['requestParams'],
+                'warning': err_message,
+            }
+            response = render(request, 'dashboard.html', data, content_type='text/html')
+            return response
 
     if VOMODE != 'atlas':
         sortby = 'name'
@@ -3723,15 +3695,12 @@ def dashboard(request, view='all'):
                 isarchive=0).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
         nucleus = {}
         statelist1 = statelist
-        #    del statelist1[statelist1.index('jclosed')]
-        #    del statelist1[statelist1.index('pending')]
-
         if len(worldJobsSummary) > 0:
             for jobs in worldJobsSummary:
                 if jobs['nucleus'] in nucleus:
                     if jobs['computingsite'] in nucleus[jobs['nucleus']]:
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] += jobs['countjobsinstate']
-                        if (jobs['jobstatus'] in ('finished', 'failed', 'merging')):
+                        if jobs['jobstatus'] in ('finished', 'failed', 'merging'):
                             nucleus[jobs['nucleus']][jobs['computingsite']]['events' + jobs['jobstatus']] += jobs[
                                 'counteventsinstate']
 
@@ -3739,24 +3708,23 @@ def dashboard(request, view='all'):
                         nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                         for state in statelist1:
                             nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
-                            if (state in ('finished', 'failed', 'merging')):
+                            if state in ('finished', 'failed', 'merging'):
                                 nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = 0
 
                         nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
-                        if (state in ('finished', 'failed', 'merging')):
+                        if state in ('finished', 'failed', 'merging'):
                             nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = jobs[
                                 'counteventsinstate']
-
                 else:
                     nucleus[jobs['nucleus']] = {}
                     nucleus[jobs['nucleus']][jobs['computingsite']] = {}
                     for state in statelist1:
                         nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
-                        if (state in ('finished', 'failed', 'merging')):
+                        if state in ('finished', 'failed', 'merging'):
                             nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = 0
 
                     nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
-                    if (state in ('finished', 'failed', 'merging')):
+                    if state in ('finished', 'failed', 'merging'):
                         nucleus[jobs['nucleus']][jobs['computingsite']]['events' + jobs['jobstatus']] = jobs[
                             'counteventsinstate']
 
@@ -3827,17 +3795,6 @@ def dashboard(request, view='all'):
             notime = False
 
         fullsummary = cloud_site_summary(query, extra=extra, view=view, cloudview=cloudview, notime=notime)
-        cloudTaskSummary = wg_task_summary(request, fieldname='cloud', view=view, taskdays=taskdays)
-        jobsLeft = {}
-        rw = {}
-
-        if settings.DEPLOYMENT == 'ORACLE_ATLAS':
-            rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
-            for cloud in fullsummary:
-                if cloud['name'] in nRemJobs.keys():
-                    jobsLeft[cloud['name']] = nRemJobs[cloud['name']]
-                if cloud['name'] in rwData.keys():
-                    rw[cloud['name']] = rwData[cloud['name']]
 
         if not is_json_request(request) or 'keephtml' in request.session['requestParams']:
             xurl = extensibleURL(request)
@@ -3859,7 +3816,6 @@ def dashboard(request, view='all'):
                 'cloudview': cloudview,
                 'hours': hours,
                 'errthreshold': errthreshold,
-                'cloudTaskSummary': cloudTaskSummary,
                 'taskstates': taskstatedict,
                 'taskdays': taskdays,
                 'estailtojobslinks': estailtojobslinks,
@@ -3867,12 +3823,9 @@ def dashboard(request, view='all'):
                 'transclouds': transclouds,
                 'transrclouds': transrclouds,
                 'hoursSinceUpdate': hoursSinceUpdate,
-                'jobsLeft': jobsLeft,
-                'rw': rw,
                 'template': 'dashboard.html',
                 'built': datetime.now().strftime("%H:%M:%S"),
             }
-            # self monitor
             response = render(request, 'dashboard.html', data, content_type='text/html')
             setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 60)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -3889,15 +3842,12 @@ def dashboard(request, view='all'):
                 'cloudview': cloudview,
                 'hours': hours,
                 'errthreshold': errthreshold,
-                'cloudTaskSummary': cloudTaskSummary,
                 'taskstates': taskstatedict,
                 'taskdays': taskdays,
                 'noldtransjobs': noldtransjobs,
                 'transclouds': transclouds,
                 'transrclouds': transrclouds,
                 'hoursSinceUpdate': hoursSinceUpdate,
-                'jobsLeft': jobsLeft,
-                'rw': rw,
                 'built': datetime.now().strftime("%H:%M:%S"),
             }
 
@@ -4247,101 +4197,6 @@ def dashObjectStore(request):
     return dashboard(request, view='objectstore')
 
 
-def dashTasks(request, hours, view='production'):
-    valid, response = initRequest(request)
-    if not valid: return response
-
-    if view == 'production':
-        errthreshold = 5
-    else:
-        errthreshold = 15
-
-    if 'days' in request.session['requestParams']:
-        taskdays = int(request.session['requestParams']['days'])
-    else:
-        taskdays = 7
-    hours = taskdays * 24
-    query = setupView(request, hours=hours, limit=999999, opmode=view, querytype='task')
-
-    cloudTaskSummary = wg_task_summary(request, fieldname='cloud', view=view, taskdays=taskdays)
-
-    # taskJobSummary = dashTaskSummary(request, hours, view)     not particularly informative
-    taskJobSummary = []
-
-    if 'display_limit' in request.session['requestParams']:
-        try:
-            display_limit = int(request.session['requestParams']['display_limit'])
-        except:
-            display_limit = 300
-    else:
-        display_limit = 300
-
-    cloudview = 'cloud'
-    if 'cloudview' in request.session['requestParams']:
-        cloudview = request.session['requestParams']['cloudview']
-    if view == 'analysis':
-        cloudview = 'region'
-    elif view != 'production':
-        cloudview = 'N/A'
-
-    fullsummary = cloud_site_summary(query, view=view, cloudview=cloudview)
-
-    jobsLeft = {}
-    rw = {}
-    rwData, nRemJobs = calculateRWwithPrio_JEDI(query)
-    for cloud in fullsummary:
-        leftCount = 0
-        if cloud['name'] in nRemJobs.keys():
-            jobsLeft[cloud['name']] = nRemJobs[cloud['name']]
-        if cloud['name'] in rwData.keys():
-            rw[cloud['name']] = rwData[cloud['name']]
-
-    if not is_json_request(request):
-        xurl = extensibleURL(request)
-        nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'url': request.path,
-            'xurl': xurl,
-            'nosorturl': nosorturl,
-            'user': None,
-            'view': view,
-            'mode': 'task',
-            'hours': hours,
-            'errthreshold': errthreshold,
-            'cloudTaskSummary': cloudTaskSummary,
-            'taskstates': taskstatedict,
-            'taskdays': taskdays,
-            'taskJobSummary': taskJobSummary[:display_limit],
-            'display_limit': display_limit,
-            'jobsLeft': jobsLeft,
-            'estailtojobslinks': '',
-            'rw': rw,
-            'template': 'dashboard.html',
-            'built': datetime.now().strftime("%H:%M:%S"),
-        }
-        setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 60)
-        response = render(request, 'dashboard.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-    else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        remainingEvents = RemainedEventsPerCloud3dayswind.objects.values('cloud', 'nrem')
-        remainingEventsSet = {}
-        for remev in remainingEvents:
-            remainingEventsSet[remev['cloud']] = remev['nrem']
-        data = {
-            'jobsLeft': jobsLeft,
-            'remainingWeightedEvents': remainingEventsSet,
-        }
-        return HttpResponse(json.dumps(data), content_type='application/json')
-
-
 def taskESExtendedInfo(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
@@ -4352,7 +4207,8 @@ def taskESExtendedInfo(request):
     equery = {'jeditaskid': jeditaskid}
     eventsdict.extend(
         JediEvents.objects.filter(**equery).values('status').annotate(count=Count('status')).order_by('status'))
-    for state in eventsdict: state['statusname'] = eventservicestatelist[state['status']]
+    for state in eventsdict:
+        state['statusname'] = eventservicestatelist[state['status']]
 
     estaskstr = ''
     for s in eventsdict:
@@ -4388,7 +4244,7 @@ def taskList(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        if data['eventservice'] == True:
+        if data['eventservice'] is True:
             response = render(request, 'taskListES.html', data, content_type='text/html')
         else:
             response = render(request, 'taskList.html', data, content_type='text/html')
@@ -4412,28 +4268,44 @@ def taskList(request):
         sortby = request.session['requestParams']['sortby']
     eventservice = False
     if 'eventservice' in request.session['requestParams'] and (
-            request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
-        'eventservice'] == '1'):
+            request.session['requestParams']['eventservice'] == 'eventservice' or
+            request.session['requestParams']['eventservice'] == '1'):
         eventservice = True
         hours = 7 * 24
     extraquery = ''
-    if 'hashtag' in request.session['requestParams']:
-        hashtagsrt = request.session['requestParams']['hashtag']
-        if ',' in hashtagsrt:
-            hashtaglistquery = ''.join("'" + ht + "' ," for ht in hashtagsrt.split(','))
-        elif '|' in hashtagsrt:
-            hashtaglistquery = ''.join("'" + ht + "' ," for ht in hashtagsrt.split('|'))
-        else:
-            hashtaglistquery = "'" + request.session['requestParams']['hashtag'] + "'"
-        hashtaglistquery = hashtaglistquery[:-1] if hashtaglistquery[-1] == ',' else hashtaglistquery
-        extraquery = """JEDITASKID IN ( SELECT HTT.TASKID FROM ATLAS_DEFT.T_HASHTAG H, ATLAS_DEFT.T_HT_TO_TASK HTT WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ( %s ))""" % (
-            hashtaglistquery)
 
-    if 'tape' in request.session['requestParams']:
-        extraquery = """JEDITASKID IN (SELECT TASKID FROM ATLAS_DEFT.t_production_task where PRIMARY_INPUT in (select DATASET FROM ATLAS_DEFT.T_DATASET_STAGING) )"""
+    if 'ATLAS' in settings.DEPLOYMENT:
+        if 'hashtag' in request.session['requestParams']:
+            hashtagsrt = request.session['requestParams']['hashtag']
+            if ',' in hashtagsrt:
+                hashtaglistquery = ''.join("'" + ht + "' ," for ht in hashtagsrt.split(','))
+            elif '|' in hashtagsrt:
+                hashtaglistquery = ''.join("'" + ht + "' ," for ht in hashtagsrt.split('|'))
+            else:
+                hashtaglistquery = "'" + request.session['requestParams']['hashtag'] + "'"
+            hashtaglistquery = hashtaglistquery[:-1] if hashtaglistquery[-1] == ',' else hashtaglistquery
+            extraquery = """
+            JEDITASKID IN ( 
+                SELECT HTT.TASKID 
+                FROM ATLAS_DEFT.T_HASHTAG H, ATLAS_DEFT.T_HT_TO_TASK HTT 
+                WHERE JEDITASKID = HTT.TASKID AND H.HT_ID = HTT.HT_ID AND H.HASHTAG IN ({})
+                )
+            """.format(hashtaglistquery)
 
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task',
-                                                           wildCardExt=True)
+        if 'tape' in request.session['requestParams']:
+            extraquery = """
+            jeditaskid in (
+                select taskid FROM ATLAS_DEFT.t_production_task 
+                where PRIMARY_INPUT in (select dataset from atlas_deft.t_dataset_staging) 
+            )
+            """
+
+    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(
+        request,
+        hours=hours,
+        limit=9999999,
+        querytype='task',
+        wildCardExt=True)
 
     tmpTableName = get_tmp_table_name()
 

@@ -8,6 +8,13 @@
 
 {{ viewParams.header }}
 
+{% if warning %}
+<div class="callout alert large" data-closable>
+  <h5>{{ warning }}</h5>
+</div>
+{% endif %}
+
+
 {% if cloudview == 'region' %}
 <div class="callout alert large" data-closable>
     <h5>Please participate in testing
@@ -65,49 +72,6 @@ Click on column titles to sort.
 </p>
 {% endif %}
 
-{% if mode == 'task' %}
-
-{% if cloudTaskSummary %}
-
-<table>
-<tr class='tablesection'><th colspan=30> {{ view }} task summary by cloud, last {{ taskdays }} days</span>         <font size=-1>Hover over state name to see full name. <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">Task state documentation</a></font> </th></tr>
-<tr class='tablesection'>
-<th>Cloud</th>
-
-{% if rw %}
-<th><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Task_brokerage" target="new">RW</a></th>
-{% endif %}
-
-{% if jobsLeft %}
-<th>nJobs left</th>
-{% endif %}
-<th><font size=-1>nTask</font></th>
-{% for state in taskstates %}
-<th><div title="{{state.state}}"><font size=-1><span class="{{ state.state }}"> {{ state.short }} </span></font></div></th>
-{% endfor %}
-</tr>
-
-
-{% for fdict in cloudTaskSummary %}
-<tr><td> <b>{{ fdict.field }}</b> </td>
-{% if rw %}
-<td>{{ rw|get_item:fdict.field }}</td>
-{% endif %}
-{% if jobsLeft %}
-<td bgcolor=whitesmoke align='right'> <a href="{% url 'jobList' %}?cloud={{ fdict.field }}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&hours={{hours}}&jobstatus=waiting|assigned|activated|starting|running|transferring|holding|defined|sent|throttled|merging&jobtype={{ view }}&display_limit=100">{{ jobsLeft|get_item:fdict.field }}</a> </td>
-{% endif %}
-<td> <a href="{% url 'taskList' %}?cloud={{fdict.field}}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&jobtype={{view}}{% if requestParams.project %}&project={{requestParams.project}}{% endif %}&days={{taskdays}}">{{ fdict.count }}</a></td>
-{% for item in fdict.list %}
-<td {% if item.kvalue > 0 %} class='{{item.kname}}_fill' {% endif %}> <a href="{% url 'taskList' %}?cloud={{fdict.field}}{% if requestParams.workinggroup %}&workinggroup={{requestParams.workinggroup}}{% endif %}{% if requestParams.processingtype %}&processingtype={{requestParams.processingtype}}{% endif %}{% if requestParams.project %}{% if requestParams.tasktype %}&tasktype={{requestParams.tasktype}}{% endif %}&project={{requestParams.project}}{% endif %}&status={{item.kname}}&jobtype={{view}}&days={{taskdays}}"><span {% if item.kvalue == 0 %}class='{{item.kname}}'{% else %}class='{{item.kname}}_fill'{% endif %}>{{ item.kvalue }}</span></a></td>
-{% endfor %}
-</tr>
-{% endfor %}
-
-</table>
-
-<p>
-{% endif %}
-{% endif %}
 {% endif %}
 
 
@@ -549,47 +513,6 @@ of all jobs
 {% endfor %}
 </table>
 
-{% endif %}
-
-{% if taskJobSummary %}
-<p>
-<table>
-<tr class='tablesection'>
-<th> Job summary for {{ taskJobSummary|length }} recently active {{ view }} tasks. 
-{% if display_limit >= taskJobSummary|length %}     display_limit={{ display_limit }} {% endif %}
-</th>
-<th> Status </th>
-<th> nJobs </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=defined">defined</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=waiting">waiting</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=assigned">assigned</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=throttled">throttled</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=activated">activated</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=sent">sent</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=starting">starting</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=running">running</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=holding">holding</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=merging">merging</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=transferring">transferring</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=finished">finished</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=failed">failed</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=cancelled">cancelled</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=closed">closed</a></div> </th>
-<th class="tablesection vertical-dash-header"> <div class="vertical-dash-header"><a href="{{nosorturl}}sortby=pctfail">% failed</a></div> </th>
-</tr>
-{% for task in taskJobSummary %}
-<tr>
-<td> <a href="{% url 'taskInfo' task.taskid %}"><span class="{{task.status}}">{{ task.name }}</span></a></td>
-<td> <span class="{{task.status}}{% if task.count > 0 %}_fill{% endif %}">{{ task.status }}</span> </td>
-<td><a href="{% url 'jobList' %}?taskid={{ task.taskid }}{{ estailtojobslinks }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> {{ task.count }} </a></td>
-{% for state in task.statelist %}
-<td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}><a href="{% url 'jobList' %}?taskid={{ task.taskid }}{{ estailtojobslinks }}&jobstatus={{ state.name }}&hours={{hours}}&jobtype={{ view }}&display_limit=100"> <span class="{{ state.name }}{% if state.count > 0 %}_fill{% endif %}"> {{ state.count }}</span></a> </td>
-{% endfor %}
-<td> <a href="{% url 'errorSummary' %}?taskid={{ task.taskid }}&sortby=count&hours={{hours}}"> {% if task.pctfail > errthreshold %} <font color=red>{{ task.pctfail  }}</font> {% else %} {{ task.pctfail  }} {% endif %} </a></td>
-</tr>
-{% endfor %}
-</table>
-</p>
 {% endif %}
 
 <script language="javascript">
