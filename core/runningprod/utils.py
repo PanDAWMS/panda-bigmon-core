@@ -67,7 +67,7 @@ def updateView(request, query, exquery, wild_card_str):
     for f in running_prod_fields:
         if f in request.session['requestParams'] and request.session['requestParams'][f] and f not in query and f not in wild_card_str:
             if f == 'hashtags':
-                wild_card_str += ' AND ('
+                wild_card_str += ' and ('
                 wildCards = request.session['requestParams'][f].split(',')
                 currentCardCount = 1
                 countCards = len(wildCards)
@@ -80,9 +80,12 @@ def updateView(request, query, exquery, wild_card_str):
                         card = '*' + card
                     wild_card_str += preprocess_wild_card_string(card, 'hashtags')
                     if currentCardCount < countCards:
-                        wild_card_str += ' AND '
+                        wild_card_str += ' and '
                     currentCardCount += 1
                     wild_card_str += ')'
+            elif f == 'scope' and (
+                    '!' in request.session['requestParams'][f] or '*' in request.session['requestParams'][f]):
+                wild_card_str += ' and ({})'.format(preprocess_wild_card_string(request.session['requestParams'][f], f))
             else:
                 query[f] = request.session['requestParams'][f]
 
