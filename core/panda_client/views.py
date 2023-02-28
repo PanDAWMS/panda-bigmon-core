@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task, setDebugMode, to_bool
 from core.views import initRequest
 
+from core.oauth.utils import is_expert
 
 @csrf_exempt
 def client(request):
@@ -32,7 +33,7 @@ def client(request):
                         modeOn = to_bool(params['modeOn'])
                     else:
                         modeOn = False
-                info['text'] = setDebugMode(auth=auth, pandaID=data['pandaid'], modeOn=modeOn)
+                info['text'] = setDebugMode(auth, pandaid=data['pandaid'], modeOn=modeOn, is_expert=is_expert(request))
                 if (info['text'].find('Succeeded') != -1 and modeOn):
                     info['redirect'] = 'true'
                 else:
