@@ -11,6 +11,7 @@ from django.conf import settings
 class BPUser(AbstractUser):
     is_tester = models.BooleanField(db_column='is_tester', null=True, blank=False)
     last_login = models.DateTimeField(db_column='last_login', auto_now_add=True, blank=False)
+    is_expert = models.BooleanField(db_column='is_expert', null=True, blank=False)
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."auth_user"'
 

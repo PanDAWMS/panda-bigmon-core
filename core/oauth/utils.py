@@ -95,3 +95,19 @@ def get_auth_provider(request):
     else:
         auth_provider = None
     return auth_provider
+
+def is_expert(request):
+
+    try:
+        bpuser = BPUser.objects.get(id=request.user.id)
+    except:
+        _logger.exception('Exception was caught while getting row from AUTH_USER by user_id')
+        return False
+    if bpuser:
+        if bpuser.is_expert == 1:
+            return True
+        else:
+            return False
+    else:
+        _logger.exception('There is no user with user_id equals {}'.format(request.session['USER_ID']))
+        return False

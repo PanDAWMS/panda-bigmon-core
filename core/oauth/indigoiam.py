@@ -34,4 +34,3 @@ class IndigoIamOIDC(BaseOAuth2):
     def user_data(self, access_token, *args, **kwargs):
         return self.get_json(urljoin(self.setting('BASEPATH'), 'userinfo'),
                              headers={'Authorization': f'Bearer {access_token}'})
-
