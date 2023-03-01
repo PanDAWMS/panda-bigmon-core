@@ -70,7 +70,7 @@ from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
-from core.oauth.utils import login_customrequired, get_auth_provider
+from core.oauth.utils import login_customrequired, get_auth_provider, is_expert
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
@@ -6015,6 +6015,8 @@ def taskInfo(request, jeditaskid=0):
                     'nfiles'] > 10000):
             cacheexpiration = 3600 * 24 * 31  # we store such data a month
 
+        user_expert = is_expert(request)
+
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -6036,7 +6038,8 @@ def taskInfo(request, jeditaskid=0):
             'built': datetime.now().strftime("%m-%d %H:%M:%S"),
             'warning': warning,
             'info': info,
-            'authtype': auth
+            'authtype': auth,
+            'userexpert': user_expert
         }
         data.update(getContextVariables(request))
 
@@ -6098,6 +6101,9 @@ def taskInfo(request, jeditaskid=0):
             data['task'].update(metrics)
             setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
             response = render(request, 'taskInfo.html', data, content_type='text/html')
+
+
+
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
