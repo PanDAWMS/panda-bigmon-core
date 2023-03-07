@@ -4,6 +4,7 @@ import threading
 from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIMEOUT_WHEN_DB_LOADED
 import logging
 
+
 class SQLAggregator(BaseTasksProvider):
 
     lock = threading.RLock()
@@ -13,7 +14,7 @@ class SQLAggregator(BaseTasksProvider):
 
         self.logger.info("SQLAggregator started")
 
-        while (self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS):
+        while self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS:
             threading.sleep(TIMEOUT_WHEN_DB_LOADED)
 
         quotas = ('cpua1', 'cpua7', 'cpup1', 'cpup7')
@@ -37,9 +38,7 @@ class SQLAggregator(BaseTasksProvider):
         for days in (1, 7):
             current_time = datetime.utcnow()
             start_time = current_time - timedelta(days=days)
-
-            tables = ('ATLAS_PANDA.JOBSACTIVE4', 'ATLAS_PANDA.JOBSARCHIVED4', 'ATLAS_PANDAARCH.JOBSARCHIVED')  # List of Tables
-
+            tables = ('ATLAS_PANDA.JOBSACTIVE4', 'ATLAS_PANDA.JOBSARCHIVED4', 'ATLAS_PANDAARCH.JOBSARCHIVED')
             for t in tables:  # For each table get the info from Database
                 try:
                     # utils.initDB(t)
@@ -51,7 +50,7 @@ class SQLAggregator(BaseTasksProvider):
                         AND jobstatus != 'cancelled' 
                     GROUP BY workinggroup, produsername""".format(t)
                     rows = cursor.execute(query, {'start_time': start_time})
-                    self.logger.info("Got {} rows from {}, the first row:\n{}".format(len(list(rows)), t, str(rows[0])))
+                    self.logger.info("Got {} rows from {}".format(len(list(rows)), t))
                 except Exception as e:
                     self.logger.error(e)
                     return -1
@@ -83,7 +82,7 @@ class SQLAggregator(BaseTasksProvider):
                         userdict[p] = users[u][p]
             userlist.append(userdict)
 
-        self.logger.info("Updating data for {} users, the first one:\n{}".format(len(userlist), str(userlist[0])))
+        self.logger.info("Updating data for {} users".format(len(userlist)))
         try:
             cursor.executemany(
                 """
@@ -98,4 +97,3 @@ class SQLAggregator(BaseTasksProvider):
         self.logger.info("SQLAggregator finished")
         cursor.close()
         return 0
-
