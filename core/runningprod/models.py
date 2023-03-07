@@ -50,6 +50,7 @@ class RunningProdTasksModel(models.Model):
     container_name = models.BigIntegerField(db_column='container_name')
     stepid = models.IntegerField(null=True, db_column='stepid', blank=True)
     sliceid = models.IntegerField(null=True, db_column='sliceid', blank=True)
+    scope = models.CharField(max_length=256, db_column='scope')
     
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."runningprodtasks"'
@@ -95,6 +96,7 @@ class FrozenProdTasksModel(models.Model):
     container_name = models.BigIntegerField(db_column='container_name')
     stepid = models.IntegerField(null=True, db_column='stepid', blank=True)
     sliceid = models.IntegerField(null=True, db_column='sliceid', blank=True)
+    scope = models.CharField(max_length=256, db_column='scope')
     
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."frozenprodtasks"'

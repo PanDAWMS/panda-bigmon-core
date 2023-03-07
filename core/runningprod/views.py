@@ -65,6 +65,7 @@ def runningProdTasks(request):
                 request.session['requestParams']['campaign'] = 'mc*'
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DPD':
             productiontype = 'DPD'
+            request.session['requestParams']['scope'] = '!valid*'
             if 'workinggroup' not in request.session['requestParams']:
                 request.session['requestParams']['workinggroup'] = 'GP_*'
             if 'processingtype' not in request.session['requestParams']:
@@ -76,11 +77,12 @@ def runningProdTasks(request):
             if 'processingtype' not in request.session['requestParams']:
                 request.session['requestParams']['processingtype'] = 'reprocessing'
 
-    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request,
-                                                            hours=0,
-                                                            limit=9999999,
-                                                            querytype='task',
-                                                            wildCardExt=True)
+    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(
+        request,
+        hours=0,
+        limit=9999999,
+        querytype='task',
+        wildCardExt=True)
     tquery, exquery, wildCardExtension = updateView(request, tquery, exquery, wildCardExtension)
 
     load_ended_tasks = False
