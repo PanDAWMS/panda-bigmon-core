@@ -17,9 +17,9 @@ class SQLAggregator(BaseTasksProvider):
             threading.sleep(TIMEOUT_WHEN_DB_LOADED)
 
         quotas = ('cpua1', 'cpua7', 'cpup1', 'cpup7')
-        ## Pick up the users with nonzero usage and zero them out
+        # Pick up the users with nonzero usage and zero them out
         try:
-            query = "SELECT name,dn FROM ATLAS_PANDAMETA.USERS where cpua1>0 or cpua7>0 or cpup1>0 or cpup7>0"
+            query = "SELECT name, dn FROM ATLAS_PANDAMETA.USERS where cpua1>0 or cpua7>0 or cpup1>0 or cpup7>0"
             db = self.pool.acquire()
             cursor = db.cursor()
             rows = cursor.execute(query)
@@ -51,7 +51,7 @@ class SQLAggregator(BaseTasksProvider):
                         AND jobstatus != 'cancelled' 
                     GROUP BY workinggroup, produsername""".format(t)
                     rows = cursor.execute(query, {'start_time': start_time})
-                    self.logger.debug("Got {} rows from {}, the first row:\n {}".format(len(rows), t, str(rows[0])))
+                    self.logger.info("Got {} rows from {}, the first row:\n{}".format(len(list(rows)), t, str(rows[0])))
                 except Exception as e:
                     self.logger.error(e)
                     return -1
@@ -83,9 +83,14 @@ class SQLAggregator(BaseTasksProvider):
                         userdict[p] = users[u][p]
             userlist.append(userdict)
 
-        self.logger.debug("Updating data for {} users, the first one:\n {}".format(len(userlist), str(userlist[0])))
+        self.logger.info("Updating data for {} users, the first one:\n{}".format(len(userlist), str(userlist[0])))
         try:
-            cursor.executemany("UPDATE ATLAS_PANDAMETA.USERS SET cpua1 = :cpua1, cpua7 = :cpua7, cpup1 = :cpup1, cpup7 = :cpup7 where name = :name", userlist)
+            cursor.executemany(
+                """
+                UPDATE ATLAS_PANDAMETA.USERS 
+                SET cpua1 = :cpua1, cpua7 = :cpua7, cpup1 = :cpup1, cpup7 = :cpup7 
+                where name = :name
+                """, userlist)
             db.commit()
         except Exception as e:
             self.logger.error(e)
