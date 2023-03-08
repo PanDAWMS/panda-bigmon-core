@@ -81,11 +81,6 @@ class DDOSMiddleware(object):
         except:
             x_referer = ''
 
-        try:
-            url_view = request.path if len(request.path.split('/')) <= 2 else '/'.join(request.path.split('/')[0:2]) + '/'
-        except:
-            url_view = ''
-
         # we limit number of requests per hour for a set of IPs
         try:
             useragent = request.META.get('HTTP_USER_AGENT')
@@ -136,7 +131,7 @@ class DDOSMiddleware(object):
             return HttpResponse(json.dumps({'message': 'rejected'}), status=400, content_type='application/json')
 
         # do not check requests from excepted views and not JSON requests
-        if url_view not in self.excepted_views and is_json_request(request):
+        if request.path not in self.excepted_views and is_json_request(request):
 
             # Check against number of unprocessed requests to filebrowser from ART subsystem
             if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
