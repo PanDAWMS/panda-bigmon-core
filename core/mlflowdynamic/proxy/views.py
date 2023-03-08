@@ -10,12 +10,8 @@ import logging
 
 import urllib3
 
-try:
-    from django.utils.six.moves.urllib.parse import (
-        urlparse, urlencode, quote_plus)
-except ImportError:
-    # Django 3 has no six
-    from urllib.parse import urlparse, urlencode, quote_plus
+# Django 3 has no six
+from urllib.parse import urlparse, urlencode, quote_plus
 
 from django.shortcuts import redirect
 from django.views.generic import View

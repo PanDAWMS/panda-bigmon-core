@@ -6,13 +6,16 @@
 
 <p>The dynamic user list view shows dynamic usage info from the latest jobs.
 {% if viewParams.MON_VO == 'ATLAS' %}
-  Alternate view: <a href="{% url 'userList' %}?view=database&sortby=date">Summary usage information updated every few hours</a><p>
+  Alternate view: <a href="{% url 'userList' %}?view=database">Summary usage information updated every few hours</a><p>
 {% endif %}
 {% endif %}
 
 {% if show == 'all' or userdb %}
 <p>The usage stats view shows summary usage information updated every few hours.
-  Alternate view: <a href="{% url 'userList' %}?view=dynamic&sortby=date">Dynamic usage info from the latest jobs</a></p>
+  By default, the page shows users who have at least one job for last 90 days.
+  To remove time range limit please add <code>&extra=notimelimit</code> to the URL or
+    follow <a href="{% url 'userList' %}?view=database&extra=notimelimit">the link</a>
+  Alternate view: <a href="{% url 'userList' %}?view=dynamic&sortby=date">dynamic usage info from the latest jobs</a>.</p>
 {% endif %}
 
 </div>

@@ -1,7 +1,7 @@
 """"""
 import logging
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
-    Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived, Jobsarchived4
+    Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived, Jobsarchived4
 from core.libs.datetimestrings import parse_datetime
 from core.libs.job import is_event_service
 from core.libs.exlib import get_event_status_summary, split_into_intervals
@@ -26,15 +26,17 @@ def get_pandajob_models_by_year(timewindow):
             2017: [Jobsarchived_y2017, ],
             2018: [Jobsarchived_y2018, ],
             2019: [Jobsarchived_y2019, ],
-            2020: [Jobsarchived, ],
+            2020: [Jobsarchived_y2020, ],
             2021: [Jobsarchived, ],
-            2022: [Jobsarchived, Jobsarchived4],
+            2022: [Jobsarchived, ],
+            2023: [Jobsarchived, Jobsarchived4],
         }
     else:
         pjm_year_dict = {
             2020: [Jobsarchived, ],
             2021: [Jobsarchived, ],
-            2022: [Jobsarchived, Jobsarchived4],
+            2022: [Jobsarchived, ],
+            2023: [Jobsarchived, Jobsarchived4],
         }
     pandajob_models = []
 
@@ -66,6 +68,7 @@ def get_pandajob_arch_models_by_year(timewindow):
             2017: [Jobsarchived_y2017, ],
             2018: [Jobsarchived_y2018, ],
             2019: [Jobsarchived_y2019, ],
+            2020: [Jobsarchived_y2020, ],
         }
 
     pandajob_models = []

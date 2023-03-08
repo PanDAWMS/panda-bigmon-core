@@ -7,7 +7,7 @@
 import random, json, math
 from datetime import datetime
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from django.db import connection
 from django.utils.cache import patch_response_headers
 from core.libs.cache import getCacheEntry, setCacheEntry, setCacheData
@@ -30,7 +30,7 @@ def errorsScattering(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('errorsScattering.html', data, content_type='text/html')
+        response = render(request, 'errorsScattering.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -73,7 +73,7 @@ def errorsScattering(request):
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
     new_cur = connection.cursor()
-    tmpTableName = get_tmp_table_name()    
+    tmpTableName = get_tmp_table_name()
     if settings.DEPLOYMENT == "POSTGRES":
         create_temporary_table(new_cur, tmpTableName)
     ins_query = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
@@ -249,7 +249,7 @@ def errorsScattering(request):
         'built': datetime.now().strftime("%H:%M:%S"),
     }
     setCacheEntry(request, "errorsScattering", json.dumps(data, cls=DateEncoder), 60 * 20)
-    response = render_to_response('errorsScattering.html', data, content_type='text/html')
+    response = render(request, 'errorsScattering.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
@@ -264,7 +264,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('errorsScatteringDetailed.html', data, content_type='text/html')
+        response = render(request, 'errorsScatteringDetailed.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -754,7 +754,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
     }
     print ('%s starting rendering of the page' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     setCacheEntry(request, "errorsScatteringDetailed", json.dumps(data, cls=DateEncoder), 60 * 20)
-    response = render_to_response('errorsScatteringDetailed.html', data, content_type='text/html')
+    response = render(request, 'errorsScatteringDetailed.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 

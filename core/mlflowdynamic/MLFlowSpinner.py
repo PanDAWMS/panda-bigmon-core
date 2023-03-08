@@ -2,7 +2,7 @@
 from core.mlflowdynamic.proxy.views import ProxyView
 from django.shortcuts import redirect
 from core.mlflowdynamic.proxy.response import get_django_response
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from core.mlflowdynamic.models import MLFlowContainers
 from core.mlflowdynamic.openshiftcontroller import occlicalls
@@ -89,19 +89,19 @@ class MLFlowProxyView(ProxyView):
         try:
             taskid = self.extract_taskid(path)
         except:
-            response = render_to_response('banner.html',
+            response = render(request, 'banner.html',
                                       {"message": "HPO Task is not supplied in request", "status": "error"},
                                       content_type='text/html')
         if not self.check_task_is_hpo(taskid):
-            response = render_to_response('banner.html',
+            response = render(request, 'banner.html',
                                       {"message": "Requested task is not HPO, please correct", "status": "error"},
                                       content_type='text/html')
         (entry, created) = self.get_mlflow_container_for_task(taskid)
         if entry.status == "failed":
-            response = render_to_response('banner.html', {"message": "Error during spinning up the container. Try later.",
+            response = render(request, 'banner.html', {"message": "Error during spinning up the container. Try later.",
                                                       "status": "error"}, content_type='text/html')
         if entry.status == "spinning":
-            response = render_to_response('banner.html',
+            response = render(request, 'banner.html',
                                       {"message": "Spinning up an MLFlow containter. Please refresh in 30 seconds. After MLFlow container spins up it might take additional time while input data becomes available. If case of slow data transer, refresh page additionally in few minutes.", "status": "spinning"},
                                       content_type='text/html')
         if entry.status in "active":

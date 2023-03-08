@@ -4,6 +4,7 @@ import threading
 from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIMEOUT_WHEN_DB_LOADED
 import logging
 
+
 class SQLAggregator(BaseTasksProvider):
 
     lock = threading.RLock()
@@ -13,13 +14,13 @@ class SQLAggregator(BaseTasksProvider):
 
         self.logger.info("SQLAggregator started")
 
-        while (self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS):
+        while self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS:
             threading.sleep(TIMEOUT_WHEN_DB_LOADED)
 
         quotas = ('cpua1', 'cpua7', 'cpup1', 'cpup7')
-        ## Pick up the users with nonzero usage and zero them out
+        # Pick up the users with nonzero usage and zero them out
         try:
-            query = "SELECT name,dn FROM ATLAS_PANDAMETA.USERS where cpua1>0 or cpua7>0 or cpup1>0 or cpup7>0"
+            query = "SELECT name, dn FROM ATLAS_PANDAMETA.USERS where cpua1>0 or cpua7>0 or cpup1>0 or cpup7>0"
             db = self.pool.acquire()
             cursor = db.cursor()
             rows = cursor.execute(query)
@@ -37,31 +38,36 @@ class SQLAggregator(BaseTasksProvider):
         for days in (1, 7):
             current_time = datetime.utcnow()
             start_time = current_time - timedelta(days=days)
-
-            tables = ('ATLAS_PANDA.JOBSACTIVE4', 'ATLAS_PANDA.JOBSARCHIVED4', 'ATLAS_PANDAARCH.JOBSARCHIVED')  # List of Tables
-
+            tables = ('ATLAS_PANDA.JOBSACTIVE4', 'ATLAS_PANDA.JOBSARCHIVED4', 'ATLAS_PANDAARCH.JOBSARCHIVED')
             for t in tables:  # For each table get the info from Database
                 try:
                     # utils.initDB(t)
-                    query = "SELECT prodUserName, SUM(cpuConsumptionTime) as cpuConsumptionTime, workingGroup \
-                                FROM %s WHERE modificationTime > :start_time AND (prodSourceLabel = 'user' OR \
-                                prodSourceLabel = 'panda') AND jobStatus != 'cancelled' GROUP BY workingGroup, prodUserName" % (t)
-                    rows = cursor.execute(query, {'start_time':start_time})
+                    query = """
+                    SELECT prodUserName, SUM(cpuconsumptiontime) as cpuconsumptiontime, workinggroup 
+                    FROM {} 
+                    WHERE modificationTime > :start_time 
+                        AND (prodsourcelabel = 'user' OR prodsourcelabel = 'panda') 
+                        AND jobstatus != 'cancelled' 
+                    GROUP BY workinggroup, produsername""".format(t)
+                    cursor.execute(query, {'start_time': start_time})
+                    rows = cursor.fetchall()
+                    self.logger.info("Got {} rows from {}".format(len(list(rows)), t))
                 except Exception as e:
                     self.logger.error(e)
                     return -1
 
                 for r in rows:
                     user = r[0].replace("'", "")
-                    cpuconsumption = (r[1])
+                    cpuconsumption = r[1]
                     if not r[2] is None:
-                        ## Include in group production stats
-                        var_name = 'cpup%s' % days
+                        # Include in group production stats
+                        var_name = 'cpup{}'.format(days)
                     else:
-                        ## Include in personal analysis stats
-                        var_name = 'cpua%s' % days
+                        # Include in personal analysis stats
+                        var_name = 'cpua{}'.format(days)
                     if user in users:
-                        if not var_name in users[user]: users[user][var_name] = 0
+                        if var_name not in users[user]:
+                            users[user][var_name] = 0
                     else:
                         users[user] = {}
                         users[user]['name'] = user
@@ -70,14 +76,21 @@ class SQLAggregator(BaseTasksProvider):
 
         userlist = []
         for u in users:
-            userdict = {}
-            userdict['name'] = u
+            userdict = {'name': u}
             for days in (1, 7):
-                for p in ('cpup%s' % days, 'cpua%s' % days):
-                    if p in users[u]: userdict[p] = users[u][p]
+                for p in ('cpup{}'.format(days), 'cpua{}'.format(days)):
+                    if p in users[u]:
+                        userdict[p] = users[u][p]
             userlist.append(userdict)
+
+        self.logger.info("Updating data for {} users".format(len(userlist)))
         try:
-            cursor.executemany("UPDATE ATLAS_PANDAMETA.USERS SET cpua1 = :cpua1, cpua7 = :cpua7, cpup1 = :cpup1, cpup7 = :cpup7 where name = :name", userlist)
+            cursor.executemany(
+                """
+                UPDATE ATLAS_PANDAMETA.USERS 
+                SET cpua1 = :cpua1, cpua7 = :cpua7, cpup1 = :cpup1, cpup7 = :cpup7 
+                where name = :name
+                """, userlist)
             db.commit()
         except Exception as e:
             self.logger.error(e)
@@ -85,4 +98,3 @@ class SQLAggregator(BaseTasksProvider):
         self.logger.info("SQLAggregator finished")
         cursor.close()
         return 0
-

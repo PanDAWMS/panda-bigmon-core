@@ -1,4 +1,4 @@
-{% load staticfiles %}{% load common_tags %}<!DOCTYPE html>
+{% load static %}{% load common_tags %}<!DOCTYPE html>
 <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
 <!--[if lt IE 7]> <html class="lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>    <html class="lt-ie9 lt-ie8"> <![endif]-->
@@ -36,7 +36,7 @@
 <!-- Included JS library Files -->
 {% block js_head %}
   {% block js_head_site_library %}
-    <script src="{% static 'js/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery/jquery-3.6.1.min.js' %}"></script>
     <script src="{% static 'js/vendor/what-input.js' %}"></script>
     <script src="{% static 'js/vendor/foundation.min.js' %}"></script>
     <script src="{% static 'js/foundation-datepicker/js/foundation-datepicker.min.js' %}"></script>
@@ -119,8 +119,6 @@
                     </ul>
                 </li>
                 <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
-                <li><a href="{% url 'dashAnalysis' %}?mode=task">Analysis tasks</a></li>
-                <li><a href="{% url 'dashProduction' %}?mode=task">Production tasks</a></li>
                 <li><a>Data Carousel</a>
                     <ul class="submenu menu">
                         <li><a href="{% url 'dataCarouselleDashBoard' %}">Dashboard</a></li>
@@ -129,7 +127,6 @@
                 </li>
                 <li><a href="{% url 'iddsmain' %}">iDDS</a></li>
                 <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
-{#                <li><a href="{% url 'dashObjectStore' %}">Objectstore view</a></li>#}
                 <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
                 <li><a href="{% url 'BuildGlobal' %}">Nightlies and CI</a></li>
             {% else %}
@@ -169,7 +166,7 @@
                 <li><a href="{% url 'jobList' %}?jobtype=production&display_limit=100">Production</a></li>
                 <li><a href="{% url 'jobList' %}?jobtype=groupproduction&display_limit=100">Group production</a></li>
                 <li><a href="{% url 'jobList' %}?jobtype=eventservice&display_limit=100">Event service</a></li>
-                <li><a href="{% url 'jobList' %}?container_name=all&display_limit=300">Containerized</a></li>
+                <li><a href="{% url 'jobList' %}?container_name=all&display_limit=100">Containerized</a></li>
                 <li><a href="{% url 'status_summary-index' %}">Status Summary</a></li>
             {% endif %}
             <li><a href="{% url 'jobList' %}?jobtype=test&display_limit=100">Test</a></li>

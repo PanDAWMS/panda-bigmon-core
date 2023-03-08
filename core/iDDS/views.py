@@ -1,6 +1,6 @@
 import json
 import logging
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 from django.template.defaulttags import register
@@ -40,7 +40,7 @@ def main(request):
     data = getCacheEntry(request, "iDDSrequests")
     if data is not None:
         data = json.loads(data)
-        response = render_to_response('landing.html', data, content_type='text/html')
+        response = render(request, 'landing.html', data, content_type='text/html')
         return response
 
     query_time = setupView(request, hours=24*7, querytype='idds')
@@ -60,16 +60,18 @@ def main(request):
     iDDSrequests = lower_dicts_in_list(iDDSrequests)
     subtitleValue.replace('requests', iDDSrequests)
     requests_summary = generate_requests_summary(iDDSrequests)
-
-    data = {
-        'requests_summary': requests_summary,
-        'request': request,
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-        'iDDSrequests': json.dumps(iDDSrequests, cls=DateEncoder),
-    }
-    setCacheEntry(request, "iDDSrequests", json.dumps(data, cls=DateEncoder), 60 * 10)
-    response = render_to_response('landing.html', data, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    if is_json_request(request):
+        response = JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)
+    else:
+        data = {
+            'requests_summary': requests_summary,
+            'request': request,
+            'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+            'iDDSrequests': json.dumps(iDDSrequests, cls=DateEncoder),
+        }
+        setCacheEntry(request, "iDDSrequests", json.dumps(data, cls=DateEncoder), 60 * 10)
+        response = render(request, 'landing.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
 
     return response
 
@@ -196,6 +198,6 @@ def wfprogress(request):
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
-    response = render_to_response('workflows.html', data, content_type='text/html')
+    response = render(request, 'workflows.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response

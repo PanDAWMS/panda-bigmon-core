@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from django.utils.cache import patch_response_headers
 
 from core.libs.cache import getCacheEntry, setCacheEntry
@@ -40,7 +40,7 @@ def runningProdTasks(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('runningProdTasks.html', data, content_type='text/html')
+        response = render(request, 'runningProdTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -65,6 +65,7 @@ def runningProdTasks(request):
                 request.session['requestParams']['campaign'] = 'mc*'
         if request.session['requestParams']['preset'] and request.session['requestParams']['preset'].upper() == 'DPD':
             productiontype = 'DPD'
+            request.session['requestParams']['scope'] = '!valid*'
             if 'workinggroup' not in request.session['requestParams']:
                 request.session['requestParams']['workinggroup'] = 'GP_*'
             if 'processingtype' not in request.session['requestParams']:
@@ -76,11 +77,12 @@ def runningProdTasks(request):
             if 'processingtype' not in request.session['requestParams']:
                 request.session['requestParams']['processingtype'] = 'reprocessing'
 
-    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(request,
-                                                            hours=0,
-                                                            limit=9999999,
-                                                            querytype='task',
-                                                            wildCardExt=True)
+    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(
+        request,
+        hours=0,
+        limit=9999999,
+        querytype='task',
+        wildCardExt=True)
     tquery, exquery, wildCardExtension = updateView(request, tquery, exquery, wildCardExtension)
 
     load_ended_tasks = False
@@ -168,7 +170,7 @@ def runningProdTasks(request):
             'gsum': gsum,
             'plots': plots_dict,
         }
-        response = render_to_response('runningProdTasks.html', data, content_type='text/html')
+        response = render(request, 'runningProdTasks.html', data, content_type='text/html')
         setCacheEntry(request, "runningProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -265,7 +267,7 @@ def prodNeventsTrend(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'plotData': json.dumps(plot_data)
         }
-        response = render_to_response('prodNeventsTrend.html', data, content_type='text/html')
+        response = render(request, 'prodNeventsTrend.html', data, content_type='text/html')
         setCacheEntry(request, "prodNeventsTrend", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -296,7 +298,7 @@ def runningProdRequests(request):
         #     data['neventsByProcessingType'] = preparePlotData(data['neventsByProcessingType'])
         # if 'aslotsByType' in data:
         #     data['aslotsByType'] = preparePlotData(data['aslotsByType'])
-        response = render_to_response('runningProdRequests.html', data, content_type='text/html')
+        response = render(request, 'runningProdRequests.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -380,7 +382,7 @@ def runningProdRequests(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'transKey': transactionKey,
         }
-        response = render_to_response('runningProdRequests.html', data, content_type='text/html')
+        response = render(request, 'runningProdRequests.html', data, content_type='text/html')
         setCacheEntry(request, "runningProdRequests", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response

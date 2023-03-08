@@ -8,7 +8,7 @@ import time
 import multiprocessing
 from datetime import datetime, timedelta
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
@@ -62,7 +62,7 @@ def art(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('artMainPage.html', data, content_type='text/html')
+        response = render(request, 'artMainPage.html', data, content_type='text/html')
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -92,7 +92,7 @@ def art(request):
     }
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
-        response = render_to_response('artMainPage.html', data, content_type='text/html')
+        response = render(request, 'artMainPage.html', data, content_type='text/html')
     else:
         response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     setCacheEntry(request, "artMain", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
@@ -135,7 +135,7 @@ def artOverview(request):
                     data['requestParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
-        response = render_to_response('artOverview.html', data, content_type='text/html')
+        response = render(request, 'artOverview.html', data, content_type='text/html')
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -145,14 +145,14 @@ def artOverview(request):
     
     # quering data from dedicated SQL function
     query_raw = """
-        SELECT package, branch, ntag, status, result, pandaid, testname, attemptmark
+        SELECT package, branch, ntag, nightly_tag, status, result, pandaid, testname, attemptmark
         FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
         """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur = connection.cursor()
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
     cur.close()
-    artJobs = ['package', 'branch', 'ntag', 'jobstatus', 'result', 'pandaid', 'testname', 'attemptmark']
+    artJobs = ['package', 'branch', 'ntag', 'nightly_tag', 'jobstatus', 'result', 'pandaid', 'testname', 'attemptmark']
     jobs = [dict(zip(artJobs, row)) for row in tasks_raw]
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
 
@@ -164,7 +164,6 @@ def artOverview(request):
         if 'attemptmark' in j and j['attemptmark'] == 0:
             if j[art_aggr_order[0]] not in artpackagesdict.keys():
                 art_jobs_dict[j[art_aggr_order[0]]] = {}
-
                 artpackagesdict[j[art_aggr_order[0]]] = {}
                 for n in ntagslist:
                     artpackagesdict[j[art_aggr_order[0]]][n.strftime(artdateformat)] = {}
@@ -193,10 +192,23 @@ def artOverview(request):
     noviewurl = removeParam(xurl, 'view', mode='extensible')
 
     if is_json_request(request):
-
         data = {
             'artpackages': artpackagesdict,
         }
+        # per nightly tag summary for buildmonitor globalview
+        if 'extra' in request.session['requestParams'] and 'per_nightly_tag' in request.session['requestParams']['extra']:
+            art_overview_per_nightly_tag = {}
+            for j in jobs:
+                if 'attemptmark' in j and j['attemptmark'] == 0:
+                    if j['nightly_tag'] not in art_overview_per_nightly_tag:
+                        art_overview_per_nightly_tag[j['nightly_tag']] = {}
+                    if j[art_aggr_order[0]] not in art_overview_per_nightly_tag[j['nightly_tag']]:
+                        art_overview_per_nightly_tag[j['nightly_tag']][j[art_aggr_order[0]]] = {}
+                        for state in statestocount:
+                            art_overview_per_nightly_tag[j['nightly_tag']][j[art_aggr_order[0]]][state] = 0
+                    finalresult, extraparams = get_final_result(j)
+                    art_overview_per_nightly_tag[j['nightly_tag']][j[art_aggr_order[0]]][finalresult] += 1
+            data['art_overview_per_nightly_tag'] = art_overview_per_nightly_tag
 
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
@@ -211,7 +223,7 @@ def artOverview(request):
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
         }
         setCacheEntry(request, "artOverview", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
-        response = render_to_response('artOverview.html', data, content_type='text/html')
+        response = render(request, 'artOverview.html', data, content_type='text/html')
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -251,7 +263,7 @@ def artTasks(request):
                     data['requestParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
-        response = render_to_response('artTasks.html', data, content_type='text/html')
+        response = render(request, 'artTasks.html', data, content_type='text/html')
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -259,7 +271,7 @@ def artTasks(request):
     # process URL params to query params
     query = setupView(request, 'job')
 
-    # quering data from dedicated SQL function
+    # query data from dedicated SQL function
     cur = connection.cursor()
     query_raw = """
         SELECT package, branch, ntag, nightly_tag, pandaid, testname, taskid, status, result, attemptmark
@@ -343,7 +355,7 @@ def artTasks(request):
             'ntaglist': [ntag.strftime(artdateformat) for ntag in ntagslist],
         }
         setCacheEntry(request, "artTasks", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
-        response = render_to_response('artTasks.html', data, content_type='text/html')
+        response = render(request, 'artTasks.html', data, content_type='text/html')
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -386,7 +398,7 @@ def artJobs(request):
                     data['requestParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
-        response = render_to_response('artJobs.html', data, content_type='text/html')
+        response = render(request, 'artJobs.html', data, content_type='text/html')
         _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -625,7 +637,7 @@ def artJobs(request):
             'linktoplots': linktoplots,
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
-        response = render_to_response('artJobs.html', data, content_type='text/html')
+        response = render(request, 'artJobs.html', data, content_type='text/html')
         _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -719,7 +731,7 @@ def artStability(request):
                     data['requestParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
                     data['requestParams']['ntag'] = ntags[0]
-        response = render_to_response('artStability.html', data, content_type='text/html')
+        response = render(request, 'artStability.html', data, content_type='text/html')
         _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -842,7 +854,7 @@ def artStability(request):
             'artjobsdiff': art_jobs_diff,
         }
         setCacheEntry(request, "artStability", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
-        response = render_to_response('artStability.html', data, content_type='text/html')
+        response = render(request, 'artStability.html', data, content_type='text/html')
         _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -866,7 +878,7 @@ def artErrors(request):
         _logger.info('Got data from cache: {}s'.format(time.time() - request.session['req_init_time']))
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('artErrors.html', data, content_type='text/html')
+        response = render(request, 'artErrors.html', data, content_type='text/html')
         _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -959,7 +971,7 @@ def artErrors(request):
             'artjoberrors': artjoberrors,
         }
         setCacheEntry(request, "artErrors", json.dumps(data, cls=DateEncoder), 60 * cache_timeout)
-        response = render_to_response('artErrors.html', data, content_type='text/html')
+        response = render(request, 'artErrors.html', data, content_type='text/html')
         _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response

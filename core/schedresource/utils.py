@@ -2,7 +2,7 @@
 Utils to get schedresources info from dedicated information system (CRIC)
 """
 import os
-
+import re
 import urllib3
 import logging
 import json
@@ -343,10 +343,91 @@ def getFilePathForObjectStore(objectstore, filetype="logs"):
                     basepath = url + basepath
 
         if basepath == "":
-            _logger.warning("Object store path could not be extracted using file type \'%s\' from objectstore=\'%s\'" % (
-            filetype, objectstore))
+            _logger.warning("Object store path could not be extracted using file type={} from objectstore={}".format(
+                filetype, objectstore))
 
     else:
         _logger.info("Object store not defined in queuedata")
 
     return basepath
+
+
+def filter_pq_json(request, **kwargs):
+    """
+    Filter CRIC PQs JSON by request params. Only support filtering by int or str types of values.
+    'site' param is not supported.
+    :param request:
+    :return: pqs_dict: filtered PQs dict
+    """
+    if 'pqs_dict' in kwargs:
+        pqs_dict = kwargs['pqs_dict']
+    else:
+        # get full PanDA queues dict
+        pqs_dict = get_panda_queues()
+
+    # get list of params we can filter on
+    filter_params = {}
+    if pqs_dict:
+        pqs_list = list(pqs_dict.values())
+        for key, value in pqs_list[0].items():
+            if isinstance(value, int) or isinstance(value, float):
+                filter_params[key] = 'str'
+            elif isinstance(value, str):
+                filter_params[key] = 'str'
+        # the 'site' meaning in BigPanDA language does not match to 'site' in CRIC due to historical reasons ->
+        # excluding it from available filter params
+        if 'site' in filter_params:
+            del filter_params['site']
+
+    # filter the PQs dict
+    filtered_pq_names_final = list(pqs_dict.keys())
+    for param in request.session['requestParams']:
+        req_param_value = request.session['requestParams'][param]
+        if param.startswith('queue'):
+            param = param.replace('queue', '')
+        if param in filter_params:
+            filtered_pq_names = []
+            excluded_pq_names = []
+            if filter_params[param] == 'str':
+                # handling OR clause
+                if '|' in req_param_value:
+                    req_param_values = req_param_value.split('|')
+                else:
+                    req_param_values = [req_param_value, ]
+
+                for req_param_value in req_param_values:
+                    is_not = False
+                    if req_param_value.startswith('!'):
+                        is_not = True
+                        req_param_value = req_param_value[1:]
+                    if '*' not in req_param_value and not is_not:
+                        filtered_pq_names.extend(
+                            [k for k, v in pqs_dict.items() if v[param] is not None and v[param] == req_param_value])
+                    elif '*' not in req_param_value and is_not:
+                        excluded_pq_names.extend(
+                            [k for k, v in pqs_dict.items() if v[param] is not None and v[param] == req_param_value])
+                    elif '*' in req_param_value:
+                        try:
+                            pattern = re.compile(r'^{}$'.format(req_param_value.replace('*', '.*')))
+                            if not is_not:
+                                filtered_pq_names.extend(
+                                    [k for k, v in pqs_dict.items() if
+                                     v[param] is not None and pattern.match(v[param]) is not None])
+                            else:
+                                excluded_pq_names.extend(
+                                    [k for k, v in pqs_dict.items() if
+                                     v[param] is not None and pattern.match(v[param]) is not None])
+                        except Exception as e:
+                            _logger.exception('Failed to compile regex pattern and filter PQs list: \n{}'.format(e))
+
+            elif filter_params[param] == 'int':
+                filtered_pq_names.extend([k for k, v in pqs_dict.items() if v[param] == req_param_value])
+
+            # unite
+            if len(filtered_pq_names) > 0:
+                filtered_pq_names_final = list(set(filtered_pq_names_final) & set(filtered_pq_names))
+            filtered_pq_names_final = list(set(filtered_pq_names_final) - set(excluded_pq_names))
+
+    pqs_dict = {k: v for k, v in pqs_dict.items() if k in filtered_pq_names_final}
+
+    return pqs_dict

@@ -8,7 +8,7 @@ from django.db import connection
 from django.db.models import Count
 
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 
 from django.utils.cache import patch_response_headers
 
@@ -18,6 +18,7 @@ from core.libs.sqlcustom import escape_input
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired
+from core.utils import is_json_request
 from core.views import initRequest, setupView, extensibleURL
 from core.harvester.models import HarvesterWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots
 from core.harvester.utils import get_harverster_workers_for_task
@@ -76,7 +77,7 @@ def harvesterWorkersDash(request):
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    response = render_to_response('harvworksummarydash.html', data, content_type='text/html')
+    response = render(request, 'harvworksummarydash.html', data, content_type='text/html')
     return response
 
 @login_customrequired
@@ -117,7 +118,7 @@ def harvesterWorkerList(request):
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    response = render_to_response('harvworkerslist.html', data, content_type='text/html')
+    response = render(request, 'harvworkerslist.html', data, content_type='text/html')
     return response
 
 @login_customrequired
@@ -192,7 +193,7 @@ def harvesterWorkerInfo(request):
             'json' in request.session['requestParams']):
         return HttpResponse(json.dumps(data['workerinfo'], cls=DateEncoder), content_type='application/json')
     else:
-        response = render_to_response('harvworkerinfo.html', data, content_type='text/html')
+        response = render(request, 'harvworkerinfo.html', data, content_type='text/html')
         return response
 
 def harvesterfm (request):
@@ -208,7 +209,7 @@ def harvestermon(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('harvestermon.html', data, content_type='text/html')
+        response = render(request, 'harvestermon.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -485,7 +486,7 @@ def harvestermon(request):
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
 
-        return render_to_response('harvestermon.html', data, content_type='text/html')
+        return render(request, 'harvestermon.html', data, content_type='text/html')
 
     elif 'computingsite' in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
 
@@ -724,7 +725,7 @@ def harvestermon(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        return render_to_response('harvestermon.html', data, content_type='text/html')
+        return render(request, 'harvestermon.html', data, content_type='text/html')
     elif 'pandaid' in request.session['requestParams'] and 'computingsite' not in request.session['requestParams'] and 'instance' not in request.session['requestParams']:
 
         pandaid = request.session['requestParams']['pandaid']
@@ -874,7 +875,7 @@ def harvestermon(request):
                 }
         # setCacheEntry(request, transactionKey, json.dumps(generalWorkersList[:display_limit_workers], cls=DateEncoder), 60 * 60, isData=True)
         setCacheEntry(request, "harvester", json.dumps(data, cls=DateEncoder), 60 * 20)
-        return render_to_response('harvestermon.html', data, content_type='text/html')
+        return render(request, 'harvestermon.html', data, content_type='text/html')
     else:
         sqlQuery = f"""
           SELECT HARVESTER_ID as HARVID,
@@ -910,7 +911,7 @@ def harvestermon(request):
         #data =json.dumps(data,cls=DateEncoder)
         if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
-            return render_to_response('harvestermon.html', data, content_type='text/html')
+            return render(request, 'harvestermon.html', data, content_type='text/html')
         else:
             return HttpResponse(json.dumps(instanceDictionary, cls=DateTimeEncoder), content_type='application/json')
 
@@ -1104,7 +1105,7 @@ def harvesterslots(request):
         'built': datetime.now().strftime("%H:%M:%S"),
 
     }
-    return render_to_response('harvesterslots.html', data, content_type='text/html')
+    return render(request, 'harvesterslots.html', data, content_type='text/html')
 
 
 def getWorkersByJobID(pandaid, instance=''):
@@ -1182,7 +1183,12 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
     '''
 
     jobsList = []
-    renamed_fields = {'resourcetype': 'resource_type'}
+    renamed_fields = {
+        'resourcetype': 'resource_type',
+        'memoryleak': 'memory_leak',
+        'memoryleakx2': 'memory_leak_x2',
+        'joblabel': 'job_label',
+    }
     qjobstatus = ''
 
     if instance != '':
@@ -1197,20 +1203,10 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
 
     if fields != '':
         values = list(fields)
-        for k, v in renamed_fields.items():
-            if k in values:
-                values.remove(k)
-                values.append(v)
     else:
-        if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
-            values = []
+        if is_json_request(request):
             from core.pandajob.models import Jobsactive4
-            for f in Jobsactive4._meta.get_fields():
-                if f.name =='resourcetype':
-                    values.append('resource_type')
-                elif f.name !='jobparameters' and f.name != 'metadata':
-                    values.append(f.name)
+            values = [f.name for f in Jobsactive4._meta.get_fields() if f.name != 'jobparameters' and f.name != 'metadata']
         else:
             values = (
                 'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime',
@@ -1225,33 +1221,39 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
                 'maxrss', 'nucleus', 'eventservice', 'nevents','gshare','noutputdatafiles','parentid','actualcorecount',
                 'schedulerid')
 
+    # rename fields that has '_' in DB but not in model
+    for k, v in renamed_fields.items():
+        if k in values:
+            values.remove(k)
+            values.append(v)
+
     sqlQuery = """
-    SELECT DISTINCT {2} FROM
+    SELECT {2} FROM
     (SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSARCHIVED4, 
     (select
     pandaid as pid
     from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) 
     PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSARCHIVED4.PANDAID {3}
-    UNION ALL
+    UNION
     SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSACTIVE4, 
     (select
     pandaid as pid
     from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSACTIVE4.PANDAID {3}
-    UNION ALL 
+    UNION 
     SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSDEFINED4, 
     (select
     pandaid as pid
     from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSDEFINED4.PANDAID {3}
-    UNION ALL 
+    UNION 
     SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSWAITING4,
     (select
     pandaid as pid
     from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSWAITING4.PANDAID {3}
-    UNION ALL
+    UNION 
     SELECT {2} FROM {DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED, 
     (select
     pandaid as pid
@@ -1259,12 +1261,16 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
     {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED.PANDAID {3})  
     """
 
-    sqlQuery = sqlQuery.format(qinstance, qworkerid, ', '.join(values), qjobstatus, DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA,
-                               DB_SCHEMA_PANDA_ARCH=settings.DB_SCHEMA_PANDA_ARCH)
+    sqlQuery = sqlQuery.format(
+        qinstance,
+        qworkerid,
+        ', '.join(values),
+        qjobstatus,
+        DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA,
+        DB_SCHEMA_PANDA_ARCH=settings.DB_SCHEMA_PANDA_ARCH)
 
     cur = connection.cursor()
     cur.execute(sqlQuery)
-
     jobs = cur.fetchall()
 
     columns = [str(column[0]).lower() for column in cur.description]
@@ -1272,6 +1278,7 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
         jobsList.append(dict(zip(columns, job)))
 
     return jobsList
+
 
 def getCeHarvesterJobs(request, computingelment, fields=''):
     '''

@@ -1,12 +1,16 @@
 {% extends "_base_core.html" %}
-{% load staticfiles %}
+{% load common_tags %}
+{% load humanize %}
+{% load static %}
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static 'css/jquery.terminal.min.css' %}"/>
 {% endblock %}
 {% block js_head_page_library %}
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/jquery.terminal.min.js' %}"></script>
 {% endblock %}
 
 {% block page_title %}PanDA job {{ pandaid }}{% endblock %}
@@ -199,6 +203,7 @@
     <div   class=" dropdown-items">
     {% if debugmode %}
         <a href="#payloadlog" onclick="togglePayloadLog()"> Real-time log</a>
+{#        <a href="#terminalpayloadlog" onclick="terminalTogglePayloadLog()"> Real-time log (terminal)</a>#}
     {% endif %}
         {% if logfile.lfn %}
           {% if viewParams.MON_VO == 'ATLAS' %}
@@ -339,6 +344,21 @@
     {% endif %}
 </div>
 {% endif %}
+{% if viewParams.MON_VO == 'ATLAS' %}
+<div class="columns small-5 medium-4 large-3 align-right" style="padding-right: 0px; width: auto">
+  {% with 'finished failed transferring aborted merging' as finalstatelist %}
+      {% if not job.jobstatus in finalstatelist %}
+         {% if 'indigoiam' in authtype %}
+             {% if debugmode %}
+              <a onclick="javascript:operationjob_token({{ jobid }}, 'setdebugmode', {modeOn:'False'});" class='bp-button command'>Disable Debug mode</a>
+             {% else %}
+              <a onclick="javascript:operationjob_token({{ jobid }}, 'setdebugmode', {modeOn:'True'});" class='bp-button command'>Enable Debug mode</a>
+             {% endif %}
+          {% endif %}
+      {% endif %}
+  {% endwith %}
+</div>
+{% endif %}
 </div>
 
 <div id="div-upstream-retries"></div>
@@ -350,12 +370,19 @@
 {% if debugmode %}
 <div id="payloadLog" ng-app="jobInfoAppSL" ng-controller="JobPayLoadLogController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="payload_log.is_hidden">
+    <div class="card-divider"><p>Payload log streamed in real time by pilot:</p></div>
     <div class="card-section">
-      <table class="data-table left-aligned nowrap" id="payloadlogtable">
+      <table class="data-table dark left-aligned nowrap" id="payloadlogtable">
         <thead></thead>
         <tbody></tbody>
       </table>
     </div>
+  </div>
+</div>
+<div id="payloadLog_terminal" ng-app="jobInfoAppSLTerminal" ng-controller="JobPayLoadLogTerminalController">
+    <div class="card bp-container-simple secondary ng-hide" ng-hide="payload_log_terminal.is_hidden">
+    <div id="web-terminal"></div>
+</script>
   </div>
 </div>
 {% endif %}
@@ -466,6 +493,10 @@
 $(document).ready(function () {
     var files_list = {{ files|safe }};
     buildFilesTable(files_list);
+    let url = window.location.href;
+    if (url.indexOf("#payloadlog") > -1) {
+        togglePayloadLog();
+    }
 });
 
 function loadJobRelationships(pandaid, direction) {
@@ -748,7 +779,7 @@ function togglePayloadLog() {
         };
        $scope.payload_log.buildDataTable = function () {
            $scope.payload_log.flag = false
-
+           {#$.fn.dataTableExt.oStdClasses.sWrapper = "dataTables_wrapper dt-foundation no-footer dark";#}
            $scope.payload_log.data_table = $('#payloadlogtable').dataTable({
                "lengthMenu": [[10, 20, 50, 100, 200], [10, 20, 50, 100, 200]],
                "processing": true,
@@ -792,7 +823,7 @@ function togglePayloadLog() {
                         data: "@timestamp_nanoseconds",
                     },
                     {
-                        title: "LogLevel",
+                        title: "Log Level",
                         data: "level",
                         sDefaultContent: "-"
                     },
@@ -814,12 +845,141 @@ function togglePayloadLog() {
             $scope.payload_log.buildDataTable();
         };
     });
+
+function terminalTogglePayloadLog() {
+    let scope = angular.element(document.getElementById('payloadLog_terminal')).scope();
+    if (scope.payload_log_terminal.is_hidden) {
+      scope.$apply(function () {
+        scope.payload_log_terminal.toggle();
+      });
+    }
+}
+    app.controller('JobPayLoadLogTerminalController', function ($scope, $http, $sce) {
+       $scope.payload_log_terminal = {
+          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+          data: [],
+          is_hidden: true,
+          data_table: "",
+          plot_data: {
+            columns: [],
+            ext: {
+              xs: {},
+              size: [getWidth() - 40, 400],
+              colors: "task_states",
+              labels: ['Time', 'Task attempt'],
+            },
+          },
+          plot: "",
+        };
+       $scope.payload_log_terminal.initTerminal = function () {
+           $scope.payload_log_terminal.flag = false;
+           $scope.payload_log_terminal.terminal = $(function() {
+                var terminal = $('#web-terminal').terminal(
+                    function(command, term) {
+                        if (command == 'help') {
+                            term.echo('Help command');
+                        }
+                        if (command == 'start') {
+                            term.pause();
+                            $.post('{% url 'getpayloadlog' %}', {
+                                pandaid:{{pandaid|safe}},
+                                start:0,
+                                length: 50,
+                                draw: 1,
+                                sort: 'asc',
+                                search: ''})
+                                .then(function(response) {
+                                    term.echo(response).resume();
+                                });
+                        }
+                    },
+                    {
+
+                        greetings: 'Wellcome to BigPanDA Web Terminal. Created using jQuery terminal v2.52.2',
+                        name: 'RealTimeLogs',
+                        height: 600,
+                        prompt: '> ',
+                        onInit: function(term) {
+                            term.pause(); term.echo('The last 50 messages from payload log')
+
+                            $.post('{% url 'getpayloadlog' %}', {
+                                pandaid:{{pandaid|safe}},
+                                start:0,
+                                length: 50,
+                                draw: 1,
+                                sort: 'asc',
+                                search: ''})
+                                .then(function(response) {
+                                    const logs = response['payloadlog'];
+
+                                    logs.forEach((log) => {
+                                    let message = log['@timestamp_nanoseconds'] + " " + log['level']+ " " + log['message'];
+                                     term.echo(message);}
+                                    );
+                                    term.resume();
+                                });
+                        },
+                        keypress: function(e, term) {
+                            if (e.which == 100 && e.ctrlKey) {
+                                stop = true;
+                                term.resume();
+                                return false;
+                            }
+                        }
+                    });
+
+});
+        };
+
+       $scope.payload_log_terminal.toggle = function() {
+            $scope.payload_log_terminal.is_hidden = false;
+            $scope.payload_log_terminal.initTerminal();
+        };
+    });
+
+function operationjob_token(pandaID, action, params) {
+    var message = '';
+    var debug_mode = '{{ debugmode|safe }}';
+
+    if (action == 'setdebugmode' & debug_mode == 'False' ) {
+        message = 'Enable debug mode for this job? This will allow to see payload logs in real-time.';
+    }
+    else if (action == 'setdebugmode' & debug_mode == 'True' ) {
+        message = 'Disable debug mode for this job?';
+    }
+    else {
+        // Reserve
+    }
+    if (confirm(message)) {
+        $.ajax({
+                url: {% url 'panda_client' %},
+                data: {pandaID: pandaID, action: action, params: JSON.stringify(params)},
+                async: false,
+                type: "POST",
+                success: function(result){
+                    result_obj = JSON.parse(result)
+                    alert(result_obj['text']);
+                    url_redirect = window.location.origin + window.location.pathname + window.location.search;
+                    if (result_obj['redirect'] == 'true') {
+                        url_redirect += '#payloadlog';
+                        window.location.href=window.location.href + '#payloadlog';
+                        window.location.replace(url_redirect);
+                    }
+                    else {
+                        url_redirect = url_redirect.replace('#payloadlog','');
+                        window.location.href=url_redirect;
+                        window.location.replace(url_redirect);
+                    }
+                     document.location.reload();
+                }});
+
+    } else {
+        // Do nothing!
+    }
+}
+
+
 </script>
 {% endblock %}
 
-
-{% block help %}
-<a name="help"></a>
-{% include "jobInfoHelp.html" %}
-{% endblock %}
 

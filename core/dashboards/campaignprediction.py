@@ -2,14 +2,14 @@
     Created on 14.08.2019 by Sergey Padolski
 """
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.db import connection
 from core.views import initRequest, setupView
 from django.views.decorators.cache import never_cache
 import core.libs.CampaignPredictionHelper as cph
 from django.core.cache import cache
 import operator
-from django.utils.six.moves import cPickle as pickle
+import pickle
 from django.http import JsonResponse
 import numpy as np
 import humanize
@@ -185,6 +185,6 @@ def campaignPredictionDash(request):
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
 
-    response = render_to_response('CampaignCalculator_reduced.html', data, content_type='text/html')
+    response = render(request, 'CampaignCalculator_reduced.html', data, content_type='text/html')
     return response
 

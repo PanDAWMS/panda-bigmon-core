@@ -7,7 +7,7 @@ from decimal import Decimal
 
 import urllib3
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.db import connection
 
@@ -132,7 +132,7 @@ def globalshares(request):
             'tablerows':tablerows,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        response = render_to_response('globalshares.html', data, content_type='text/html')
+        response = render(request, 'globalshares.html', data, content_type='text/html')
         setCacheEntry(request, "globalshares", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response

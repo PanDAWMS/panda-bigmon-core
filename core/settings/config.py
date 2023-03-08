@@ -21,10 +21,13 @@ if 'BIGMON_HOST' in os.environ:
     ALLOWED_HOSTS.append(os.environ['BIGMON_HOST'])
 
 # IPs of CACHING CRAWLERS if any
-CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46']
+CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46', '188.184.90.5']
+
+# IPs of BigPanDAmon backend nodes for DDOS protection script
+BIGMON_BACKEND_NODES_IP_LIST = os.environ.get('BIGMON_BACKEND_NODES_IP_LIST', [])
 
 # VIRTUALENV
-VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/data/wenaus/virtualenv/twrpm')
+VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/opt/prod')
 
 # WSGI
 if 'BIGMON_WSGI_PATH' in os.environ:
@@ -76,6 +79,7 @@ TEMPLATES = [
                 'django.template.context_processors.i18n',
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
+                'django.template.context_processors.request',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -154,6 +158,7 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     IDDS_HOST = 'https://aipanda015.cern.ch:443/idds'
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # set default datetime format for datetime.datetime.strftime()
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"

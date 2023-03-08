@@ -1,6 +1,6 @@
 
 from datetime import timedelta
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.utils import timezone
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -24,7 +24,7 @@ def login(request):
                      'requestParams' : request.session['requestParams'],
                      "errormessage" : "Sorry, we could not find your DN '%s' in database" % request.session['userdn'],\
                     }
-             return False, render_to_response('adError.html', data, RequestContext(request))
+             return False, render(request, 'adError.html', data, RequestContext(request))
 
     else:
         try:
@@ -37,7 +37,7 @@ def login(request):
                 'url': url,
                 "errormessage" : "No valid client certificate found.",\
                }
-        return False, render_to_response('adError.html', data, RequestContext(request))
+        return False, render(request, 'adError.html', data, RequestContext(request))
  
 def adMain(request):
    
@@ -54,7 +54,7 @@ def adMain(request):
        'url' : request.path,\
     }
 
-    return render_to_response('adMain.html', data, RequestContext(request))
+    return render(request, 'adMain.html', data, RequestContext(request))
 
 def listReqPlot(request):
     valid, response = initRequest(request)
@@ -160,5 +160,5 @@ def listReqPlot(request):
        'reqHist': reqHists,\
     }
 
-    return render_to_response('req_plot.html', data, RequestContext(request))
+    return render(request, 'req_plot.html', data, RequestContext(request))
 

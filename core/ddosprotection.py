@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.db.models import Count
 from django.db import connection
 from django.http import HttpResponse
+from django.db import DatabaseError
 
 from core.common.models import AllRequests
 from core.utils import is_json_request
@@ -16,23 +17,27 @@ from core.utils import is_json_request
 from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
-# We postpone JSON requests is server is overloaded
-# Done for protection from bunch of requests from JSON
+
+# We postpone JSON requests if server is overloaded
+# Done for protection from a bunch of requests for JSON output
 
 
 class DDOSMiddleware(object):
 
     sleepInterval = 5  # sec
     maxAllowedJSONRequstesPerHour = 600
-    notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
-                              '188.184.90.172'  # J..h M......n request
-                              ]
-    excepted_views = ['/grafana/img/', '/payloadlog/', '/statpixel/', '/idds/getiddsfortask/', '/api/dc/staginginfofortask/']
+    notcachedRemoteAddress = [
+        '188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
+        '188.184.90.172'  # J..h M......n request
+    ]
+    excepted_views = [
+        '/grafana/img/', '/payloadlog/', '/statpixel/', '/idds/getiddsfortask/', '/api/dc/staginginfofortask/',
+        '/art/tasks/',
+    ]
     blacklist = ['130.132.21.90', '192.170.227.149']
     maxAllowedJSONRequstesParallel = 1
     maxAllowedSimultaneousRequestsToFileBrowser = 1
-    listOfServerBackendNodesIPs = ['188.184.93.101', '188.184.116.46', '188.184.104.150',
-                                   '188.184.84.149', '188.184.108.134', '188.184.108.131']
+    listOfServerBackendNodesIPs = settings.BIGMON_BACKEND_NODES_IP_LIST
 
     restrictedIPs = ['137.138.77.2',  # Incident on 13-01-2020 14:30:00
                      '188.185.76.164',  # EI Machine
@@ -58,8 +63,12 @@ class DDOSMiddleware(object):
             x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case one server config
         if x_forwarded_for is not None:
             try:
-                x_forwarded_for = re.findall(r'[0-9]+(?:\.[0-9]+){3}', x_forwarded_for)[0]
-                ip = ipaddress.ip_address(x_forwarded_for)
+                ips_found = re.findall(
+                    r'((?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{1,4})|((?:[0-9]{1,3}\.){3}[0-9])',
+                    x_forwarded_for
+                )
+                ip = [i for i in ips_found[0] if i][0]  # filter out empty values
+                ip = ipaddress.ip_address(ip)
             except:
                 _logger.warning('Provided HTTP_X_FORWARDED_FOR={} is not a correct IP address.'.format(x_forwarded_for))
                 return HttpResponse(
@@ -71,11 +80,6 @@ class DDOSMiddleware(object):
             x_referer = request.META.get('HTTP_REFERER')
         except:
             x_referer = ''
-
-        try:
-            url_view = request.path if len(request.path.split('/')) <= 2 else '/'.join(request.path.split('/')[0:2]) + '/'
-        except:
-            url_view = ''
 
         # we limit number of requests per hour for a set of IPs
         try:
@@ -120,10 +124,14 @@ class DDOSMiddleware(object):
             dbtotalsess=dbtotalsess,
             dbactivesess=dbactivesess
         )
-        reqs.save()
+        try:
+            reqs.save()
+        except DatabaseError as ex:
+            _logger.exception("Rejecting request since failed to save metadata to DB table because of \n{}".format(ex))
+            return HttpResponse(json.dumps({'message': 'rejected'}), status=400, content_type='application/json')
 
         # do not check requests from excepted views and not JSON requests
-        if url_view not in self.excepted_views and is_json_request(request):
+        if request.path not in self.excepted_views and is_json_request(request):
 
             # Check against number of unprocessed requests to filebrowser from ART subsystem
             if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
@@ -204,5 +212,3 @@ class DDOSMiddleware(object):
         reqs.rtime = datetime.utcnow()
         reqs.save()
         return response
-
-

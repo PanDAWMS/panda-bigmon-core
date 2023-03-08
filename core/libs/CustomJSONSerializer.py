@@ -1,12 +1,11 @@
 import decimal
 import json
 import numpy as np
+import pickle
 
 from django.core.serializers.json import DjangoJSONEncoder
-try:
-    from django.utils.six.moves import cPickle as pickle
-except ImportError:
-    import pickle
+
+
 
 class CustomJSONSerializer(object):
     def dumps(self, obj):

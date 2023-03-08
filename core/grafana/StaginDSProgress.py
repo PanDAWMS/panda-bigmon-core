@@ -6,7 +6,7 @@ import pandas as pd
 from django.http import JsonResponse
 from django.db import connection
 from django.utils import timezone
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 
 from core.oauth.utils import login_customrequired
 from core.libs.exlib import dictfetchall
@@ -140,6 +140,6 @@ def getDATASetsProgressPlot(request):
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
 
-    response = render_to_response('DSProgressplot.html', data, content_type='text/html')
+    response = render(request, 'DSProgressplot.html', data, content_type='text/html')
     #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response

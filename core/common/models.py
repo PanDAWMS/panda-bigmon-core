@@ -105,29 +105,29 @@ class Filestable4(models.Model):
 
 class FilestableArch(models.Model):
     row_id = models.BigIntegerField(db_column='row_id', primary_key=True)
-    pandaid = models.BigIntegerField(db_column='pandaid') 
+    pandaid = models.BigIntegerField(db_column='pandaid')
     modificationtime = models.DateTimeField(db_column='modificationtime')
     creationtime = models.DateTimeField(db_column='creationtime')
-    guid = models.CharField(max_length=64, db_column='guid', blank=True) 
-    lfn = models.CharField(max_length=256, db_column='lfn', blank=True) 
-    type = models.CharField(max_length=20, db_column='type', blank=True) 
-    dataset = models.CharField(max_length=255, db_column='dataset', blank=True) 
-    status = models.CharField(max_length=64, db_column='status', blank=True) 
-    proddblock = models.CharField(max_length=255, db_column='proddblock', blank=True) 
-    proddblocktoken = models.CharField(max_length=250, db_column='proddblocktoken', blank=True) 
-    dispatchdblock = models.CharField(max_length=265, db_column='dispatchdblock', blank=True) 
-    dispatchdblocktoken = models.CharField(max_length=250, db_column='dispatchdblocktoken', blank=True) 
-    destinationdblock = models.CharField(max_length=265, db_column='destinationdblock', blank=True) 
-    destinationdblocktoken = models.CharField(max_length=250, db_column='destinationdblocktoken', blank=True) 
-    destinationse = models.CharField(max_length=250, db_column='destinationse', blank=True) 
-    fsize = models.BigIntegerField(db_column='fsize') 
-    md5sum = models.CharField(max_length=40, db_column='md5sum', blank=True) 
-    checksum = models.CharField(max_length=40, db_column='checksum', blank=True) 
-    scope = models.CharField(max_length=30, db_column='scope', blank=True) 
-    jeditaskid = models.BigIntegerField(null=True, db_column='jeditaskid', blank=True) 
-    datasetid = models.BigIntegerField(null=True, db_column='datasetid', blank=True) 
-    fileid = models.BigIntegerField(null=True, db_column='fileid', blank=True) 
-    attemptnr = models.IntegerField(null=True, db_column='attemptnr', blank=True) 
+    guid = models.CharField(max_length=64, db_column='guid', blank=True)
+    lfn = models.CharField(max_length=256, db_column='lfn', blank=True)
+    type = models.CharField(max_length=20, db_column='type', blank=True)
+    dataset = models.CharField(max_length=255, db_column='dataset', blank=True)
+    status = models.CharField(max_length=64, db_column='status', blank=True)
+    proddblock = models.CharField(max_length=255, db_column='proddblock', blank=True)
+    proddblocktoken = models.CharField(max_length=250, db_column='proddblocktoken', blank=True)
+    dispatchdblock = models.CharField(max_length=265, db_column='dispatchdblock', blank=True)
+    dispatchdblocktoken = models.CharField(max_length=250, db_column='dispatchdblocktoken', blank=True)
+    destinationdblock = models.CharField(max_length=265, db_column='destinationdblock', blank=True)
+    destinationdblocktoken = models.CharField(max_length=250, db_column='destinationdblocktoken', blank=True)
+    destinationse = models.CharField(max_length=250, db_column='destinationse', blank=True)
+    fsize = models.BigIntegerField(db_column='fsize')
+    md5sum = models.CharField(max_length=40, db_column='md5sum', blank=True)
+    checksum = models.CharField(max_length=40, db_column='checksum', blank=True)
+    scope = models.CharField(max_length=30, db_column='scope', blank=True)
+    jeditaskid = models.BigIntegerField(null=True, db_column='jeditaskid', blank=True)
+    datasetid = models.BigIntegerField(null=True, db_column='datasetid', blank=True)
+    fileid = models.BigIntegerField(null=True, db_column='fileid', blank=True)
+    attemptnr = models.IntegerField(null=True, db_column='attemptnr', blank=True)
 
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."filestable_arch"'
@@ -413,16 +413,16 @@ class TasksStatusLog(models.Model):
 
 class JediWorkQueue(models.Model):
     queue_id = models.IntegerField(primary_key=True, db_column='queue_id')
-    queue_name = models.CharField(max_length=16, db_column='queue_name') 
-    queue_type = models.CharField(max_length=16, db_column='queue_type') 
-    vo = models.CharField(max_length=16, db_column='vo') 
-    status = models.CharField(max_length=64, db_column='status', blank=True) 
+    queue_name = models.CharField(max_length=16, db_column='queue_name')
+    queue_type = models.CharField(max_length=16, db_column='queue_type')
+    vo = models.CharField(max_length=16, db_column='vo')
+    status = models.CharField(max_length=64, db_column='status', blank=True)
     partitionid = models.IntegerField(null=True, db_column='partitionid', blank=True)
     stretchable = models.IntegerField(null=True, db_column='stretchable', blank=True)
     queue_share = models.IntegerField(null=True, db_column='queue_share', blank=True)
     queue_order = models.IntegerField(null=True, db_column='queue_order', blank=True)
-    criteria = models.CharField(max_length=256, db_column='criteria', blank=True) 
-    variables = models.CharField(max_length=256, db_column='variables', blank=True) 
+    criteria = models.CharField(max_length=256, db_column='criteria', blank=True)
+    variables = models.CharField(max_length=256, db_column='variables', blank=True)
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_work_queue"'
         app_label = 'jedi'
@@ -470,11 +470,11 @@ class Jobsdebug(models.Model):
 
 
 class Logstable(models.Model):
-    pandaid = models.IntegerField(primary_key=True, db_column='pandaid') 
-    log1 = models.TextField(db_column='log1') 
-    log2 = models.TextField(db_column='log2') 
-    log3 = models.TextField(db_column='log3') 
-    log4 = models.TextField(db_column='log4') 
+    pandaid = models.IntegerField(primary_key=True, db_column='pandaid')
+    log1 = models.TextField(db_column='log1')
+    log2 = models.TextField(db_column='log2')
+    log3 = models.TextField(db_column='log3')
+    log4 = models.TextField(db_column='log4')
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."logstable"'
         app_label = 'panda'
@@ -766,7 +766,7 @@ class TRequest(models.Model):
     phys_group = models.CharField(max_length=20, db_column='phys_group', null=False, choices=PHYS_GROUPS, blank=True)
     energy_gev = models.DecimalField(decimal_places=0, max_digits=8, db_column='energy_gev', null=False, blank=True)
     project = models.ForeignKey(TProject,db_column='project', null=True, blank=False, on_delete=models.DO_NOTHING)
-    is_error = models.NullBooleanField(db_column='exception', null=True, blank=False)
+    is_error = models.BooleanField(db_column='exception', null=True, blank=False)
     jira_reference = models.CharField(max_length=50, db_column='reference', null=True, blank=True)
 
     def save(self, *args, **kwargs):
@@ -876,7 +876,7 @@ class InputRequestList(models.Model):
     project_mode = models.CharField(max_length=256, db_column='project_mode')
     priority = models.DecimalField(decimal_places=0, max_digits=12, db_column='priority')
     input_events = models.DecimalField(decimal_places=0, max_digits=12, db_column='input_events')
-    is_hide = models.NullBooleanField(db_column='hided', null=True, blank=False)
+    is_hide = models.BooleanField(db_column='hided', null=True, blank=False)
 
     def save(self, *args, **kwargs):
         if not self.id:

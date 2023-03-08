@@ -7,9 +7,9 @@ import logging
 import json
 from datetime import datetime
 
-from django.db.models import Count, Q
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.db.models import Count, Sum, Q
+from django.shortcuts import render
+from django.template import RequestContext, loader
 from django.http import HttpResponse
 
 from .utils import build_query, summarize_data
@@ -215,5 +215,5 @@ def index(request):
     data, errors, warnings, query, GET_parameters = index_data(request)
     data['viewParams'] = {'MON_VO': 'ATLAS'},
     data['request'] = request
-    return render_to_response('per_computingsite.html', data, RequestContext(request))
+    return render(request, 'per_computingsite.html', data, RequestContext(request))
 

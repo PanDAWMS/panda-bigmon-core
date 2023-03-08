@@ -1,9 +1,11 @@
 core/settings/config.py
 core/settings/local.py
 core/settings/base.py
+core/settings/config_vars.env
 # IntellijIdea files
 *.iml
 .idea
 out
 /core/settings/base.py
 /core/settings/config.py
+/core/settings/config_vars.env

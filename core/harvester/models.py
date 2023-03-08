@@ -4,7 +4,7 @@ from django.conf import settings
 
 class HarvesterWorkers(models.Model):
     harvesterid = models.CharField(max_length=50, db_column='harvesterid', null=False, blank=True)
-    workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='workerid', null=False)
+    workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='workerid', null=False, primary_key=True)
     lastupdate = models.DateTimeField(null=True, db_column='lastupdate', blank=True)
     status = models.CharField(max_length=80, db_column='status', null=False, blank=True)
     batchid = models.CharField(max_length=80, db_column='batchid', null=False, blank=True)
@@ -30,6 +30,7 @@ class HarvesterWorkers(models.Model):
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_workers"'
 
 
+
 class HarvesterDialogs(models.Model):
     harvesterid = models.CharField(max_length=50, db_column='harvester_id', null=False, blank=True)
     diagid = models.IntegerField(db_column='diagid', null=False, blank=True)
@@ -40,6 +41,7 @@ class HarvesterDialogs(models.Model):
     diagmessage = models.CharField(max_length=500, db_column='diagmessage')
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_dialogs"'
+
 
 
 class HarvesterWorkerStats(models.Model):
@@ -54,13 +56,15 @@ class HarvesterWorkerStats(models.Model):
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_worker_stats"'
 
 
+
 class HarvesterRelJobsWorkers(models.Model):
     harvesterid = models.CharField(max_length=50, db_column='harvesterid', null=False, blank=True)
     workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='workerid', null=False)
-    pandaid = models.DecimalField(decimal_places=0, max_digits=11, db_column='pandaid', null=False)
+    pandaid = models.DecimalField(decimal_places=0, max_digits=11, db_column='pandaid', null=False, primary_key=True)
     lastupdate = models.DateTimeField(null=True, db_column='lastupdate', blank=True)
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_rel_jobs_workers"'
+
 
 
 class HarvesterSlots(models.Model):

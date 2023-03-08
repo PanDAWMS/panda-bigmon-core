@@ -32,7 +32,7 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
         mode = kwargs['mode']
 
     task_archive_flag = 1
-    if 'task_archive_flag' in kwargs and kwargs['task_archive_flag']:
+    if 'task_archive_flag' in kwargs and kwargs['task_archive_flag'] is not None:
         task_archive_flag = kwargs['task_archive_flag']
     jobs = []
 

@@ -3,13 +3,19 @@ from requests import post
 from core.oauth.utils import get_auth_provider
 from django.conf import settings
 
+def to_bool(value):
+    if str(value).lower() in ("true"):
+        return True
+    if str(value).lower() in ("false"):
+        return False
+    raise Exception('Invalid value for boolean conversion: ' + str(value))
+
 def _get_full_url(command):
     if hasattr(settings, 'PANDA_SERVER_URL') and settings.PANDA_SERVER_URL:
         fullUrl = settings.PANDA_SERVER_URL + '/{0}'.format(command)
         return fullUrl
     else:
         raise Exception("PANDA_SERVER_URL attribute does not exist in settings")
-
 
 def get_auth_indigoiam(request):
     header = {}
@@ -26,7 +32,7 @@ def get_auth_indigoiam(request):
             else:
                 id_token = social.extra_data['id_token']
         else:
-            header = {"detail": "[P]lease log in via indigoiam"}
+            header = {"detail": "We can not perform this action because it is only available for token-based authentication. Please re-login again with the green “Sign in with IAM” option."}
             return header
 
         header['Authorization'] = 'Bearer {0}'.format(id_token)
@@ -89,6 +95,41 @@ def finish_task(auth, jeditaskid, soft=True):
         resp = 'Jeditaskid is not defined'
 
     return resp
+
+
+# set debug mode
+def setDebugMode(auth, **kwargs):
+    """Set dubug mode for a job
+
+        request parameters:
+           pandaID: pandaID of the job to debug
+           modeOn: True/False to enable/disable the debug mode
+    """
+    data = {}
+
+    if 'pandaid' in kwargs and kwargs['pandaid'] is not None:
+        data['pandaID'] = kwargs['pandaid']
+    else:
+        resp = 'PandaID is not defined'
+
+    if 'modeOn' in kwargs and kwargs['modeOn'] is not None:
+        data['modeOn'] = kwargs['modeOn']
+    else:
+        resp = 'ModeOn is not defined'
+
+    if 'is_expert' in kwargs and kwargs['is_expert']:
+        auth['HTTP_ORIGIN'] = 'atlas.production'
+
+    url = _get_full_url('setDebugMode')
+
+    try:
+        resp = post(url, headers=auth, data=data)
+        resp = resp.text
+    except Exception as ex:
+        resp = "ERROR to set debug mode: %s %s" % (ex, resp.status_code)
+
+    return resp
+
 
 ### TODO change it later
 # def pandaclient_initialization(request):

@@ -98,18 +98,8 @@ No dynamic usage information found.
 <div class="card-divider"><p>Recent users:</p></div>
 <div class="card-section">
   <table class="data-table nowrap" id="userstable">
-      <thead>
-      <tr>
-        <th>User</th>
-        <th>nJobs</th>
-        <th>Last modification</th>
-        <th>Personal CPU-hrs<br>1 day</th>
-        <th>Personal CPU-hrs<br>7 days</th>
-        <th>Group CPU-hrs<br>1 day</th>
-        <th>Group CPU-hrs<br>7 days</th>
-      </tr>
-      </thead>
-      <tbody></tbody>
+    <thead></thead>
+    <tbody></tbody>
   </table>
 </div>
 </div>
@@ -290,31 +280,35 @@ function buildUsersTable(data) {
     "scrollX": true,
     "aaSorting": [[2,'desc']],
     "columnDefs": [
-        {"type": "num-html", "targets": [1,3,4,5,6] }
+      {"type": "num-html", "targets": [1,3,4,5,6], },
+      {targets: 7, searchable: true, visible: false,}
     ],
     "data": data,
     "aoColumns": [
         {
-            "data": "name",
-            className: "text icons3",
-            sDefaultContent: "---",
-            "render": function(data, type, row, meta) {
-                let links = '';
-                if (data) {
-                  links += ' <a href = "{% url 'userInfo' %}?user=' + data + '" target="_blank">' + data + '</a>'
-                  links += ' <a href = "{% url 'userInfo' %}?user=' + data + '&view=dash" target="_blank"><div class="tooltip-right"><i class="fi-link"></i><span container="body" class="tooltip-text">User dash</span></div></a>'
-                  links += ' <a href = "{% url 'userProfile' %}' + data + '/" target="_blank"><div class="tooltip-right"><i class="fi-graph-trend"></i><span container="body" class="tooltip-text">Jobs profile</span></div></a>'
-                }
-                return links
-            }
+          title: "User",
+          data: "name",
+          className: "text icons3",
+          sDefaultContent: "---",
+          "render": function(data, type, row, meta) {
+              let links = '';
+              if (data) {
+                links += ' <a href = "{% url 'userInfo' %}?user=' + data + '" target="_blank">' + data + '</a>'
+                links += ' <a href = "{% url 'userInfo' %}?user=' + data + '&view=dash" target="_blank"><div class="tooltip-right"><i class="fi-link"></i><span container="body" class="tooltip-text">User dash</span></div></a>'
+                links += ' <a href = "{% url 'userProfile' %}' + data + '/" target="_blank"><div class="tooltip-right"><i class="fi-graph-trend"></i><span container="body" class="tooltip-text">Jobs profile</span></div></a>'
+              }
+              return links
+          }
         },
         {
-            "data": "njobsa",
-            sDefaultContent: "-",
-            className: 'num',
+          title: "N jobs",
+          data: "njobsa",
+          sDefaultContent: "-",
+          className: 'num',
         },
         {
-            "data": "lastmod",
+          title: "Last modification",
+          data: "lastmod",
             sDefaultContent: "-",
             "render": function(data, type, row, meta) {
                 if (data && data.length > 0) {
@@ -326,24 +320,33 @@ function buildUsersTable(data) {
             },
         },
         {
-            "data": "cpua1",
-            sDefaultContent: "-",
-            className: 'num',
+          title: "Personal CPU-hrs (1 day)",
+          data: "cpua1",
+          sDefaultContent: "-",
+          className: 'num',
         },
         {
-            "data": "cpua7",
-            sDefaultContent: "-",
-            className: 'num',
+          title: "Personal CPU-hrs (7 days)",
+          data: "cpua7",
+          sDefaultContent: "-",
+          className: 'num',
         },
         {
-            "data": "cpup1",
-            sDefaultContent: "-",
-            className: 'num',
+          title: "Group CPU-hrs (1 day)",
+          data: "cpup1",
+          sDefaultContent: "-",
+          className: 'num',
         },
         {
-            "data": "cpup7",
-            sDefaultContent: "-",
-            className: 'num',
+          title: "Group CPU-hrs (7 day)",
+          data: "cpup7",
+          sDefaultContent: "-",
+          className: 'num',
+        },
+        {
+          title: "DN",
+          data: "dn",
+          sDefaultContent: "-",
         },
     ],
   })

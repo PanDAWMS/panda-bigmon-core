@@ -7,7 +7,7 @@ from datetime import datetime
 import json
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 
 from core.pandajob.models import Jobsarchived4, Jobsarchived
 
@@ -34,7 +34,7 @@ def getPlots(request):
             'requestParams': request.session['requestParams'],
             "errormessage": "No pandaid provided!",
         }
-        return render_to_response('errorPage.html', data, content_type='text/html')
+        return render(request, 'errorPage.html', data, content_type='text/html')
     else:
         pandaid = request.session['requestParams']['pandaid']
         try:
@@ -45,7 +45,7 @@ def getPlots(request):
                 'requestParams': request.session['requestParams'],
                 "errormessage": "Illegal value {} for pandaid provided! Check the URL please!".format(pandaid),
             }
-            return render_to_response('errorPage.html', data, content_type='text/html')
+            return render(request, 'errorPage.html', data, content_type='text/html')
     # redirect to new PrMon plots page
     return redirect('prMonPlots', pandaid=pandaid)
 
@@ -96,7 +96,7 @@ def prMonPlots(request, pandaid=-1):
         'plotsList': plots_list,
         "error": msg,
     }
-    return render_to_response('jobMemoryMonitor.html', data, content_type='text/html')
+    return render(request, 'jobMemoryMonitor.html', data, content_type='text/html')
 
 
 def get_seconds(line):

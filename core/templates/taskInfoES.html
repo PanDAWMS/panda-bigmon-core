@@ -1,7 +1,7 @@
 {% extends "_base_core.html" %}
 {% load humanize %}
 {% load common_tags %}
-{% load staticfiles %}
+{% load static %}
 {% block page_title %} {{ jeditaskid }} ES task {% endblock %}
 {% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
 {% block css_page_library %}
@@ -568,9 +568,11 @@
     <div class="dropdownplots">
         <button class="dropdownbutton">Memory & walltime usage</button>
         <div id="dropdown-plotchoice" class="dropdown-plot">
-            <a style="cursor: pointer;" href="#plots" onclick="togglePlots('d3splot');">Memory and Walltime usage</a>
-              <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_ES_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_ES_task,viewMode:view)"
-               target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)</span></a>
+          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="#plots" onclick="togglePlots();">Show plots in the page</a>
+          <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_a_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Dashboard @ Kibana </span></a>
+          {% if userexpert %}
+          <a href="https://atlas-kibana.mwt2.org:5601/app/dashboards#/view/BP_ES_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Editable dashboard @ Kibana for experts</span></a>
+          {% endif %}
         </div>
     </div>
 
@@ -585,8 +587,6 @@
                 <a href="{% url 'taskprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Profile</a>
                 <a href="{% url 'taskesprofileplot' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Events Processing Profile (Not dropped finished jobs)</a>
             {% endif %}
-            <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_ES_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_ES_task,viewMode:view)"
-               target="_blank"><span class="tooltip-upper">Memory and Walltime usage (Kibana)</span></a>
         </div>
     </div>
 

@@ -10,7 +10,7 @@ from PIL import Image
 
 import hashlib
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from django.template import loader
 from django.utils import encoding
 from django.utils.cache import patch_response_headers
@@ -143,7 +143,7 @@ def index(request):
         'plots': plots,
     }
 
-    response = render_to_response('grafana-api-plots.html', data, content_type='text/html')
+    response = render(request, 'grafana-api-plots.html', data, content_type='text/html')
     return response
 
 
@@ -164,7 +164,7 @@ def chartjs(request):
         'plots': plots,
     }
 
-    response = render_to_response('grafana-chartjs-plots.html', data, content_type='text/html')
+    response = render(request, 'grafana-chartjs-plots.html', data, content_type='text/html')
     return response
 
 

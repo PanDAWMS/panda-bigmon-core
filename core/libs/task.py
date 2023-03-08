@@ -13,7 +13,7 @@ from django.db.models import Count, Sum
 from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
 from core.libs.datetimestrings import parse_datetime
 from core.libs.elasticsearch import create_es_connection
 from core.libs.job import drop_duplicates
@@ -72,7 +72,8 @@ def cleanTaskList(tasks, **kwargs):
             task['deftreqid'] = task['reqid']
         if 'corecount' in task and task['corecount'] is None:
             task['corecount'] = 1
-        task['age'] = get_task_age(task)
+        task['age'] = get_task_age(task, out_unit='day')
+        task['duration_days'] = get_task_duration(task, out_unit='day')
         if 'campaign' in task and task['campaign']:
             task['campaign_cut'] = ':'.join(task['campaign'].split(':')[1:]) if ':' in task['campaign'] else task['campaign']
         if 'workinggroup' in task and task['workinggroup'] is not None and task['workinggroup'] != '':
@@ -717,12 +718,41 @@ def get_hs06s_summary_for_task(query):
     return hs06sSum
 
 
-def get_task_age(task):
+def get_task_age(task, **kwargs):
     """
     :param task: dict of task params, creationtime is obligatory
-    :return: age in days or -1 if not enough data provided
+    :return: age in days or None if not enough data provided
     """
-    task_age = -1
+    if 'out_unit' in kwargs and kwargs['out_unit']:
+        out_unit = kwargs['out_unit']
+    else:
+        out_unit = 'day'
+
+    task_age = None
+
+    if 'creationdate' in task and task['creationdate'] is not None:
+        creationtime = parse_datetime(task['creationdate']) if not isinstance(task['creationdate'], datetime) else task['creationdate']
+    else:
+        creationtime = None
+    endtime = datetime.now()
+
+    if endtime and creationtime:
+        task_age = convert_sec((endtime-creationtime).total_seconds(), out_unit=out_unit, n_round_digits=2)
+
+    return task_age
+
+
+def get_task_duration(task, **kwargs):
+    """
+    :param task: dict of task params, creationtime is obligatory
+    :return: task_duration: duration in days or None if not enough data provided
+    """
+    if 'out_unit' in kwargs and kwargs['out_unit']:
+        out_unit = kwargs['out_unit']
+    else:
+        out_unit = 'day'
+
+    task_duration = None
 
     if 'creationdate' in task and task['creationdate'] is not None:
         creationtime = parse_datetime(task['creationdate']) if not isinstance(task['creationdate'], datetime) else task['creationdate']
@@ -737,9 +767,9 @@ def get_task_age(task):
         endtime = datetime.now()
 
     if endtime and creationtime:
-        task_age = round((endtime-creationtime).total_seconds() / 60. / 60. / 24., 2)
+        task_duration = convert_sec((endtime-creationtime).total_seconds(), out_unit=out_unit, n_round_digits=2)
 
-    return task_age
+    return task_duration
 
 
 def get_task_timewindow(task, **kwargs):

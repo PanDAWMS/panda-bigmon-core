@@ -18,11 +18,8 @@ LANGUAGE_NAME = 'English'
 LANGUAGE_NAME_LOCAL = 'English'
 
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
 # Site ID
@@ -59,11 +56,11 @@ ROOT_URLCONF = 'core.urls'
 
 # Auth
 AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
     'core.oauth.Cernauth2.CernAuthOIDC',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'core.oauth.indigoiam.IndigoIamOIDC',
-    'django.contrib.auth.backends.ModelBackend',
 )
 AUTH_USER_MODEL = 'oauth.BPUser'
 
@@ -113,7 +110,6 @@ INSTALLED_APPS_DJANGO_PLUGINS = (
     # Django plugins
     'rest_framework',
     'django_datatables_view',
-    'djangojs',
     'django_extensions',
 )
 COMMON_INSTALLED_APPS = \

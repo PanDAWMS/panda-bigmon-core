@@ -7,6 +7,7 @@ import logging
 import json
 import time
 import datetime
+import pickle
 import numpy as np
 import pandas as pd
 import cx_Oracle
@@ -16,7 +17,7 @@ from urllib.error import HTTPError
 from elasticsearch_dsl import Search
 
 from django.core.cache import cache
-from django.utils.six.moves import cPickle as pickle
+
 from django.db import connection
 
 from core.reports.sendMail import send_mail_bp
@@ -195,6 +196,12 @@ def getStagingData(request):
                 dataset['update_time_sort'] = int(dataset['update_time'].total_seconds())
             else:
                 dataset['update_time_sort'] = None
+
+            datasetname = dataset.get('dataset')
+            if ':' in datasetname:
+                dataset['scope'] = datasetname.split(':')[0]
+            else:
+                dataset['scope'] = datasetname.split('.')[0]
 
             data[dataset['taskid']] = dataset
     return data

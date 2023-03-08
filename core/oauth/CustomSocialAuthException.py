@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-from social_core.exceptions import AuthFailed, SocialAuthBaseException
-from django.contrib import messages
-from social_core.utils import social_logger
 from social_django.middleware import SocialAuthExceptionMiddleware
-from social_core import exceptions as social_exceptions
-from django.contrib.messages.api import MessageFailure
-from django.shortcuts import redirect
-from django.utils.http import urlquote
+
 
 class CustomSocialAuthExceptionMiddleware(SocialAuthExceptionMiddleware):
 

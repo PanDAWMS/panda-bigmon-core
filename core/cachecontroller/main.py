@@ -16,7 +16,11 @@ from schedinstances.DataCarouselPrestageCollector import DataCarouselPrestageCol
 from schedinstances.MLFlowCleanup import MLFlowCleanup
 
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
-from settingscron import LOG_PATH
+try:
+    from core import settings
+    LOG_PATH = settings.local.LOG_ROOT + '/cachecontroller.log'
+except ImportError:
+    from settingscron import LOG_PATH
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()

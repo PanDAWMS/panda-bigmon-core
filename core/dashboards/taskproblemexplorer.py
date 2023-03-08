@@ -9,7 +9,7 @@ import json
 import re
 from datetime import datetime, timedelta
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.http import HttpResponse
 from django.utils.cache import patch_response_headers
 
@@ -44,7 +44,7 @@ def taskProblemExplorer(request):
     if data is not None:
         data = json.loads(data)
         data['request'] = request
-        response = render_to_response('taskProblemExplorer.html', data, content_type='text/html')
+        response = render(request, 'taskProblemExplorer.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
@@ -267,7 +267,7 @@ def taskProblemExplorer(request):
             'plots': plots,
             'error_summary_table': error_summary_table,
         }
-        response = render_to_response('taskProblemExplorer.html', data, content_type='text/html')
+        response = render(request, 'taskProblemExplorer.html', data, content_type='text/html')
         setCacheEntry(request, "taskProblemExplorer", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response

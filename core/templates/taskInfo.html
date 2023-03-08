@@ -1,6 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}{% load common_tags %}{% load humanize %}
-{% block page_title %} {{ jeditaskid }} task  {% endblock %}
+{% block page_title %} {{ jeditaskid }} task {% endblock %}
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
   <!-- Load c3.css -->
@@ -221,7 +221,8 @@
     </div>
   {% endif %}
 
-  <div class="bp-container-wrapper">
+  <div class="row bp-container-wrapper">
+  <div class="columns small-7 medium-8 large-9">
   <div class="bp-dropdown-button">
       <button class="dropdown">Task extra info</button>
       <div class="dropdown-items">
@@ -295,8 +296,11 @@
   <div class="bp-dropdown-button">
       <button class="dropdown">Memory & walltime usage</button>
       <div class="dropdown-items">
-          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="#plots" onclick="togglePlots();">Memory and walltime usage</a>
-          <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_a_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Memory and walltime usage (Kibana)</span></a>
+          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="#plots" onclick="togglePlots();">Show plots in the page</a>
+          <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_a_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Dashboard @ Kibana </span></a>
+          {% if userexpert %}
+          <a href="https://atlas-kibana.mwt2.org:5601/app/dashboards#/view/BP_ES_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Editable dashboard @ Kibana for experts</span></a>
+          {% endif %}
       </div>
   </div>
 
@@ -308,23 +312,23 @@
               <a href="{% url 'taskchain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Tree diagram)</a>
           {% endif %}
           <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'taskProfileMonitor' task.jeditaskid %}" target="_blank">Task Profile</a>
-         <a href="https://atlas-kibana.mwt2.org:5601/s/webexports/app/dashboards#/view/BP_a_task?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom }}',to:'{{ task.kibanatimeto }}'))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!t),query:(language:lucene,query:'jeditaskid:{{ task.jeditaskid }}'),timeRestore:!t,title:BP_a_task,viewMode:view)" target="_blank"><span class="tooltip-upper">Memory and walltime usage (Kibana)</span></a>
-      </div>
+     </div>
   </div>
-
+  </div>
+  <div class="columns small-5 medium-4 large-3 align-right">
   {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
       {% if not task.status in finalstatelist %}
-          <div style="float: right">
           {% if 'indigoiam' in authtype %}
-              <a onclick="javascript:killtasks_token({{ task.jeditaskid }}, 'finishtask');" class='bp-button kill'>Finish (PanDA client)</a>
-              <a onclick="javascript:killtasks_token({{ task.jeditaskid }}, 'killtask');" class='bp-button kill'>Abort (PanDA client)</a>
+              <a onclick="javascript:operationtask_token({{ task.jeditaskid }}, 'finishtask');" class='bp-button kill'>Finish (PanDA client)</a>
+              <a onclick="javascript:operationtask_token({{ task.jeditaskid }}, 'killtask');" class='bp-button kill'>Abort (PanDA client)</a>
           {% else %}
               <a onclick="killtasks({{ task.jeditaskid }}, 0);" class='bp-button kill'>Finish</a>
               <a onclick="killtasks({{ task.jeditaskid }}, 1);" class='bp-button kill'>Abort</a>
           {% endif %}
-          </div>
+
       {% endif %}
   {% endwith %}
+  </div>
   </div>
 
   {% if warning.dropmode %}
@@ -496,15 +500,19 @@
     </thead>
     <tbody>
       <tr>
-           <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid }}"><i class="fi-graph-trend"></i></a></th>
-           <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
+       <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid }}"><i class="fi-graph-trend"></i></a></th>
+       <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
       </tr>
-      <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">
-          <th ng-if="key!='step_action_id'">{$ key $}</th>
-          <td ng-if="key=='dataset'"><a href="https://rucio-ui.cern.ch/did?name={$ value $}">{$ value $}</a></td>
-          <td ng-if="key=='status'"><a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a></td>
-          <td ng-if="key=='rse'"><a href="https://rucio-ui.cern.ch/rule?rule_id={$ value $}">{$ value $}</a></td>
-          <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
+      <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO!='ATLAS' ">
+        <th ng-if="key!='step_action_id'">{$ key $}</th>
+        <td ng-if="key!='step_action_id'">{$ value $}</td>
+      </tr>
+      <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO=='ATLAS' ">
+        <th ng-if="key!='step_action_id'">{$ key $}</th>
+        <td ng-if="key=='dataset'"><a href="https://rucio-ui.cern.ch/did?name={$ json['scope'] $}:{$ value $}">{$ value $}</a></td>
+        <td ng-if="key=='status'"><a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a></td>
+        <td ng-if="key=='rse'"><a href="https://rucio-ui.cern.ch/rule?rule_id={$ value $}">{$ value $}</a></td>
+        <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
       </tr>
     </tbody>
   </table>
@@ -660,6 +668,7 @@
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script>
 var MON_VO = '{{ viewParams.MON_VO|safe }}';
+var jeditaskid = {{ jeditaskid | safe }};
 google.charts.load('current', {'packages':['sankey']});
 
     app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
@@ -689,34 +698,33 @@ google.charts.load('current', {'packages':['sankey']});
         $scope.loading = true;
         $rootScope.$on('idds_info', function(event, data) {
             $scope.iddsjson = data;
-            console.log(data);
             $scope.loading = false;
         });
     });
     app.controller('StagingDSController', function ($scope, $http) {
-        $scope.json = "";
-        $scope.getStagingDS = function () {
-
-            $http({
-                    url: '/api/dc/staginginfofortask/',
-                    method: "GET",
-                    params: {'jeditaskid':{{ jeditaskid|safe }}}
-                }
-            ).then(function (res) {
-                $scope.json = angular.fromJson(res.data);
-                if  ({{ jeditaskid|safe }} in $scope.json) {
-                    var displaydiv = document.getElementById('dsStageDiv');
-                    displaydiv.style.display = "";
-                    $scope.json = $scope.json[{{ jeditaskid|safe }}];
-                }
-            });
-        };
-        var init = function () {
-            $scope.getStagingDS();
-        };
-        if (MON_VO === 'ATLAS') {
-          init();
-        }
+      $scope.json = "";
+      $scope.MON_VO = MON_VO;
+      $scope.getStagingDS = function () {
+        $http({
+            url: '/api/dc/staginginfofortask/',
+            method: "GET",
+            params: {'jeditaskid':jeditaskid}
+          }
+        ).then(function (res) {
+          $scope.json = angular.fromJson(res.data);
+          if (jeditaskid in $scope.json) {
+            var displaydiv = document.getElementById('dsStageDiv');
+            displaydiv.style.display = "";
+            $scope.json = $scope.json[jeditaskid];
+          }
+        });
+      };
+      var init = function () {
+          $scope.getStagingDS();
+      };
+      if (MON_VO === 'ATLAS') {
+        init();
+      }
     });
 
     var jc_plot_data = {{ plotsDict|safe }};
@@ -1153,20 +1161,27 @@ function killtasks(taskID, action) {
     }
 }
 
-function killtasks_token(taskID, action) {
+function operationtask_token(taskID, action) {
     var message = '';
-    if (action == 'finishtask' )
+    if (action == 'finishtask' ) {
         message = 'Are you sure you want to FINISH this task?'
-    else
+    }
+    else if (action == 'killtask') {
         message = 'Are you sure you want to ABORT this task?'
+    }
+    else {
+        // Reserve
+    }
     if (confirm(message)) {
+
         $.ajax({
             url: {% url 'panda_client' %},
-            data: {task: taskID, action: action},
+            data: {taskID: taskID, action: action},
             async: false,
             type: "POST",
-            success: function(msg){
-               alert(msg);
+            success: function(result){
+                result_obj = JSON.parse(result)
+                alert(result_obj['text']);
               }
         })
     } else {

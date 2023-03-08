@@ -9,7 +9,8 @@ import multiprocessing
 from datetime import datetime
 
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render, redirect
+from django.db import connection, transaction, DatabaseError
 
 from django.utils.cache import patch_response_headers
 
@@ -107,7 +108,7 @@ def compareJobs(request):
 
 
     if not pandaidstr:
-        return render_to_response('errorPage.html', {'errormessage': 'No pandaids for comparison provided'}, content_type='text/html')
+        return render(request, 'errorPage.html', {'errormessage': 'No pandaids for comparison provided'}, content_type='text/html')
 
     pandaids = []
     for pid in pandaidstr:
@@ -211,6 +212,6 @@ def compareJobs(request):
         'built': datetime.now().strftime("%H:%M:%S"),
     }
 
-    response = render_to_response('compareJobs.html', data, content_type='text/html')
+    response = render(request, 'compareJobs.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response

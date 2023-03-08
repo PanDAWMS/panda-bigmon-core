@@ -1,16 +1,10 @@
-from django.shortcuts import render, redirect
-#from django.shortcuts import render_to_response, redirect
-from datetime import datetime
+from django.shortcuts import render
 from core.views import initRequest
-from django.db import connection, transaction
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
+from django.db import connection
 from django.urls import reverse
 from django.core.cache import cache
-import json, re, os
-from pprint import pprint
+import json, re
 from collections import defaultdict
-from operator import itemgetter, attrgetter
 from core.libs.DateEncoder import DateEncoder
 
 
@@ -227,5 +221,4 @@ ectory/gitwww/GITWebArea/nightlies"
     data={'viewParams': request.session['viewParams'], 'reslt3':json.dumps(reslt3, cls=DateEncoder)}
 
     return render(request,'globalviewDemo.html', data, content_type='text/html')
-#    return render_to_response('globalviewDemo.html', data, content_type='text/html') 
 

@@ -7,15 +7,17 @@ from django.db import models
 from django.conf import settings
 
 
+
 class BPUser(AbstractUser):
-    is_tester = models.NullBooleanField(db_column='is_tester', null=True, blank=False)
+    is_tester = models.BooleanField(db_column='is_tester', null=True, blank=False)
     last_login = models.DateTimeField(db_column='last_login', auto_now_add=True, blank=False)
+    is_expert = models.BooleanField(db_column='is_expert', null=True, blank=False)
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."auth_user"'
 
 
 class BPUserSettings(models.Model):
-    userid = models.IntegerField(db_column='userid', null=False)
+    userid = models.IntegerField(db_column='userid', null=False, primary_key=True)
     page = models.CharField(db_column='page', max_length=100, null=False)
     preferences = models.CharField(db_column='preferences', max_length=4000)
 

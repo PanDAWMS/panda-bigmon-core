@@ -1,5 +1,5 @@
 from core.views import initRequest
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 import urllib.request
 from urllib.error import HTTPError, URLError
@@ -86,6 +86,6 @@ def daggraph(request):
     data = {
         'DAG': DAG
     }
-    response = render_to_response('DAGgraph.html', data, content_type='text/html')
+    response = render(request, 'DAGgraph.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response

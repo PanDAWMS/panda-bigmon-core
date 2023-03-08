@@ -1,8 +1,6 @@
 import urllib3
 import json
-
-from django.shortcuts import render_to_response
-
+from django.shortcuts import render
 from core.views import initRequest
 from core.libs.sqlcustom import escape_input
 from core.oauth.utils import login_customrequired
@@ -88,5 +86,5 @@ def campaignProgressDash(request):
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }
 
-    response = render_to_response('campaignProgressDKB.html', data, content_type='text/html')
+    response = render(request, 'campaignProgressDKB.html', data, content_type='text/html')
     return response

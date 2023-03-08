@@ -10,8 +10,8 @@ from django.conf import settings
 
 urlpatterns = [
     re_path(r'^idds/$', idds_views.main, name='iddsmain'),
-    re_path(r'^idds/collections/$', idds_views.collections, name='iddscollections'),
     re_path(r'^idds/transforms/$', idds_views.transforms, name='iddstransforms'),
+    re_path(r'^idds/collections/$', idds_views.collections, name='iddscollections'),
     re_path(r'^idds/processings/$', idds_views.processings, name='iddprocessings'),
     re_path(r'^idds/contents/$', idds_views.iddscontents, name='iddsсontents'),
     re_path(r'^idds/getiddsfortask/$', idds_views.getiDDSInfoForTaskRequest, name='getiDDSInfoForTask'),

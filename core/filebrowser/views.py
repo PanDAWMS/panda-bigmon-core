@@ -6,7 +6,7 @@ import logging
 import re
 import json
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.conf import settings
 from .utils import get_rucio_file, get_filebrowser_vo, remove_folder, get_fullpath_filebrowser_directory, \
@@ -167,7 +167,7 @@ def index(request):
         data = {
             'errormessage': errormessage
         }
-        return render_to_response('errorPage.html', data, content_type='text/html')
+        return render(request, 'errorPage.html', data, content_type='text/html')
 
     _logger.debug("index step1 - " + datetime.now().strftime("%H:%M:%S") + "  ")
 
@@ -190,7 +190,7 @@ def index(request):
         data = {
             'errormessage': errormessage
         }
-        return render_to_response('errorPage.html', data, content_type='text/html')
+        return render(request, 'errorPage.html', data, content_type='text/html')
     if not len(files):
         msg = 'Something went wrong while the log file downloading. [guid={}, scope={}, lfn={}] \n'.format(guid, scope, lfn)
         _logger.warning(msg)
@@ -233,7 +233,7 @@ def index(request):
         if 'download' in errors and errors['download'] and len(errors['download']) > 0:
             if len(files) > 0 and 'status' in files[0] and files[0]['status'] != 'failed' and sizemb <= 0:
                 status = 500
-        return render_to_response('filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
+        return render(request, 'filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
     else:
         resp = HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
         _logger.debug("index step4 - " + datetime.now().strftime("%H:%M:%S") + "  ")
