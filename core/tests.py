@@ -2,6 +2,8 @@ import unittest
 import json
 import random
 import time
+import numpy as np
+import pandas as pd
 from django.test import Client
 from core.oauth.models import BPUser
 
@@ -329,3 +331,86 @@ class BPCoreTest(unittest.TestCase):
     def test_work_queues(self):
         response = self.client.get('/workQueues/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
+
+
+class BPPerfTest(unittest.TestCase):
+    """
+    Test performance of views
+    """
+    def setUp(self):
+        # Every test needs a client
+        self.client = Client()
+        # log in client as test user
+        self.client.force_login(BPUser.objects.get_or_create(username='testuser')[0])
+        # create random timestamp to avoid getting cached data
+        self.timestamp_str = 'timestamp={}'.format(random.randrange(999999999))
+        # headers template
+        self.headers = {}
+        # per test time
+        self.start_time = time.time()
+        # current time in test between requests
+        self.since_last_time = time.time()
+
+    def tearDown(self):
+        print('{}: {}s'.format(self.id(), (time.time() - self.start_time)))
+
+    def generate_random_timestamp(self):
+        return 'timestamp={}'.format(random.randrange(999999999))
+
+    # jobs
+    @unittest.skip('skipping performance test, comment out this decorator if you need to run it ')
+    def test_jobs(self):
+        try:
+            from core.settings.local import LOG_ROOT
+            path = LOG_ROOT
+        except:
+            path = '/tmp/'
+
+        results = [[
+            'limit',
+            'usual',
+            'json',
+            'display_limit_1',
+            'display_limit_1000'
+        ]]
+        # getting limits array (10, 20, ... 100, 200, ...1000, 2000, ... 10000, 20000, ...)
+        log_array = np.logspace(1, 5, 5)
+        inc_array = np.arange(1, 10, 1)
+        limits = np.outer(log_array, inc_array).flatten()
+        # doing requests with incremental limits
+        for limit in limits:
+            tmp_results = [limit, ]
+
+            self.since_last_time = time.time()
+            self.client.get('/jobs/?days=2&{}&limit={}'.format(self.generate_random_timestamp(), int(limit)))
+            tmp_results.append((time.time() - self.since_last_time))
+            print('{}: {}s'.format(limit, (time.time() - self.since_last_time)))
+
+            self.since_last_time = time.time()
+            self.client.get('/jobs/?days=2&{}&limit={}&json&outputs=nothing'.format(
+                self.generate_random_timestamp(),
+                int(limit)
+            ))
+            tmp_results.append((time.time() - self.since_last_time))
+            print('{}: {}s'.format(limit, (time.time() - self.since_last_time)))
+
+            self.since_last_time = time.time()
+            self.client.get('/jobs/?days=2&{}&limit={}&display_limit=1'.format(
+                self.generate_random_timestamp(),
+                int(limit)
+            ))
+            tmp_results.append((time.time() - self.since_last_time))
+            print('{}: {}s'.format(limit, (time.time() - self.since_last_time)))
+
+            self.since_last_time = time.time()
+            self.client.get('/jobs/?days=2&{}&limit={}&display_limit=1000'.format(
+                self.generate_random_timestamp(),
+                int(limit)
+            ))
+            tmp_results.append((time.time() - self.since_last_time))
+            print('{}: {}s'.format(limit, (time.time() - self.since_last_time)))
+
+            results.append(tmp_results)
+
+            # write results into csv file
+            pd.DataFrame(results[1:]).to_csv(path + "perf_results.csv", index=False, header=results[0])
