@@ -1200,11 +1200,11 @@ def jobList(request, mode=None, param=None):
     data = getCacheEntry(request, "jobList")
     if data is not None:
         data = json.loads(data)
-        if 'istestmonitor' in request.session['requestParams'] and request.session['requestParams'][
-            'istestmonitor'] == 'yes':
+        if 'istestmonitor' in request.session['requestParams'] and (
+                request.session['requestParams']['istestmonitor'] == 'yes'):
             return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
         data['request'] = request
-        if data['eventservice'] == True:
+        if data['eventservice']:
             response = render(request, 'jobListES.html', data, content_type='text/html')
         else:
             response = render(request, 'jobList.html', data, content_type='text/html')
@@ -1225,15 +1225,16 @@ def jobList(request, mode=None, param=None):
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         eventservice = True
     if 'eventservice' in request.session['requestParams'] and (
-            request.session['requestParams']['eventservice'] == 'eventservice' or request.session['requestParams'][
-        'eventservice'] == '1' or request.session['requestParams']['eventservice'] == '4' or
+            request.session['requestParams']['eventservice'] == 'eventservice' or
+            request.session['requestParams']['eventservice'] == '1' or
+            request.session['requestParams']['eventservice'] == '4' or
             request.session['requestParams']['eventservice'] == 'jumbo'):
         eventservice = True
     elif 'eventservice' in request.session['requestParams'] and (
-            '1' in request.session['requestParams']['eventservice'] or '2' in request.session['requestParams'][
-        'eventservice'] or
-            '4' in request.session['requestParams']['eventservice'] or '5' in request.session['requestParams'][
-                'eventservice']):
+            '1' in request.session['requestParams']['eventservice'] or
+            '2' in request.session['requestParams']['eventservice'] or
+            '4' in request.session['requestParams']['eventservice'] or
+            '5' in request.session['requestParams']['eventservice']):
         eventservice = True
 
     if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
@@ -1412,10 +1413,10 @@ def jobList(request, mode=None, param=None):
     else:
         # exclude time from query for DB tables with active jobs
         etquery = copy.deepcopy(query)
-        if ('modificationtime__castdate__range' in etquery and len(
-                set(['date_to', 'hours']).intersection(request.session['requestParams'].keys())) == 0) or (
-                'jobstatus' in request.session['requestParams'] and is_job_active(
-            request.session['requestParams']['jobstatus'])):
+        if ('modificationtime__castdate__range' in etquery and (
+                len({'date_to', 'hours'}.intersection(request.session['requestParams'].keys())) == 0)) or (
+                'jobstatus' in request.session['requestParams'] and (
+                is_job_active(request.session['requestParams']['jobstatus']))):
             del etquery['modificationtime__castdate__range']
             warning['notimelimit'] = "no time window limiting was applied for active jobs in this selection"
 
@@ -1448,12 +1449,12 @@ def jobList(request, mode=None, param=None):
                                                             settings.DATETIME_FORMAT)).days > 2 or
                         (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
                                                             settings.DATETIME_FORMAT)).days > 2):
-                    if 'jeditaskid' in request.session['requestParams'] or (is_json_request(request) and (
-                            'fulllist' in request.session['requestParams'] and request.session['requestParams'][
-                        'fulllist'] == 'true')):
+                    if 'jeditaskid' in request.session['requestParams'] or (
+                            is_json_request(request) and (
+                            'fulllist' in request.session['requestParams'] and (
+                            request.session['requestParams']['fulllist'] == 'true'))):
                         del query['modificationtime__castdate__range']
-                    archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:JOB_LIMIT].values(
-                        *values)
+                    archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:JOB_LIMIT].values(*values)
                     listJobs.append(Jobsarchived)
                     totalJobs = len(archJobs)
                     jobs.extend(archJobs)
@@ -1647,8 +1648,7 @@ def jobList(request, mode=None, param=None):
     _logger.debug('Built error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if not is_json_request(request):
-
-        # Here we getting extended data for list of jobs to be shown
+        # Here we're getting extended data for list of jobs to be shown
         jobsToShow = jobs[:njobsmax]
         from core.libs import exlib
         try:
@@ -1823,7 +1823,8 @@ def jobList(request, mode=None, param=None):
                 counter = 0
                 if len(files) > 0:
                     for f in files:
-                        if f['type'] == 'input': ninput += 1
+                        if f['type'] == 'input':
+                            ninput += 1
                         f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
 
                         f['DSQuery'] = {'jeditaskid': job['jeditaskid'], 'datasetid': f['datasetid']}
@@ -1887,11 +1888,18 @@ def jobList(request, mode=None, param=None):
                     else:
                         del job[field]
 
-        data = {
-            "selectionsummary": sumd,
-            "jobs": jobs,
-            "errsByCount": errsByCount,
-        }
+        # add outputs to data to return
+        data = {}
+        if 'outputs' in request.session['requestParams'] and len(jobs) > 0:
+            outputs = request.session['requestParams']['outputs'].split(',')
+        else:
+            # return everything
+            outputs = ['selectionsummary', 'jobs', 'errsByCount']
+
+        data['selectionsummary'] = sumd if 'selectionsummary' in outputs else []
+        data['jobs'] = jobs if 'jobs' in outputs else []
+        data['errsByCount'] = errsByCount if 'errsByCount' in outputs else []
+
         # cache json response for particular usage (HC test monitor for RU)
         if 'istestmonitor' in request.session['requestParams'] and request.session['requestParams'][
             'istestmonitor'] == 'yes':
