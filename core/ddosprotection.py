@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.db.models import Count
 from django.db import connection
 from django.http import HttpResponse
+from django.db import DatabaseError
 
 from core.common.models import AllRequests
 from core.utils import is_json_request
@@ -128,7 +129,11 @@ class DDOSMiddleware(object):
             dbtotalsess=dbtotalsess,
             dbactivesess=dbactivesess
         )
-        reqs.save()
+        try:
+            reqs.save()
+        except DatabaseError as ex:
+            _logger.exception("Rejecting request since failed to save metadata to DB table because of \n{}".format(ex))
+            return HttpResponse(json.dumps({'message': 'rejected'}), status=400, content_type='application/json')
 
         # do not check requests from excepted views and not JSON requests
         if url_view not in self.excepted_views and is_json_request(request):
