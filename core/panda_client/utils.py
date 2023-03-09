@@ -118,7 +118,7 @@ def setDebugMode(auth, **kwargs):
         resp = 'ModeOn is not defined'
 
     if 'is_expert' in kwargs and kwargs['is_expert']:
-        auth['HTTP_ORIGIN'] = 'atlas.production'
+        auth['Origin'] = 'atlas.production'
 
     url = _get_full_url('setDebugMode')
 

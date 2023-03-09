@@ -49,8 +49,7 @@ class SQLAggregator(BaseTasksProvider):
                         AND (prodsourcelabel = 'user' OR prodsourcelabel = 'panda') 
                         AND jobstatus != 'cancelled' 
                     GROUP BY workinggroup, produsername""".format(t)
-                    cursor.execute(query, {'start_time': start_time})
-                    rows = cursor.fetchall()
+                    rows = cursor.execute(query, {'start_time': start_time})
                     self.logger.info("Got {} rows from {}".format(len(list(rows)), t))
                 except Exception as e:
                     self.logger.error(e)
@@ -58,7 +57,7 @@ class SQLAggregator(BaseTasksProvider):
 
                 for r in rows:
                     user = r[0].replace("'", "")
-                    cpuconsumption = r[1]
+                    cpuconsumption = (r[1])
                     if not r[2] is None:
                         # Include in group production stats
                         var_name = 'cpup{}'.format(days)
@@ -78,7 +77,7 @@ class SQLAggregator(BaseTasksProvider):
         for u in users:
             userdict = {'name': u}
             for days in (1, 7):
-                for p in ('cpup{}'.format(days), 'cpua{}'.format(days)):
+                for p in ('cpup%s' % days, 'cpua%s' % days):
                     if p in users[u]:
                         userdict[p] = users[u][p]
             userlist.append(userdict)
