@@ -24,7 +24,7 @@ def textify(html):
 
 def send_mail_bp(template, subject, summary, recipient, send_html=False):
     # uncomment for debugging
-    recipient = 'aleksandr.alekseev@cern.ch'
+    # recipient = 'tatiana.korchuganova@cern.ch'
     # ----
     isSuccess = True
     nmails = 0
