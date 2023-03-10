@@ -1301,10 +1301,9 @@ footer {
 }
 
 .footer-wrap {
-  height: 66px;
+  /*height: 66px;*/
 }
 .sub-footer {
-  height: 22px;
   background-color: #DDDDDD;
   font-size: 85%;
 }
@@ -1316,7 +1315,6 @@ footer {
     padding: 2px 0.7rem;
   }
 .footer {
-  height: 44px;
   background-color: #333;
   color: #fefefe;
 }
@@ -1328,15 +1326,15 @@ footer {
   .footer.row .columns {
     margin: 0;
     padding: 0;
-    height: inherit;
     background-color: #333;
   }
   .footer.row .columns > img {
       max-width: 100%;
       max-height: 100%;
+    height: 100%;
   }
   .footer.row .columns p {
-    padding: 0.7rem;
+    padding: 0 0.7rem;
     color: #fefefe;
     margin: 0;
   }
