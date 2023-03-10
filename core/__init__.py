@@ -1,6 +1,8 @@
+from core.utils import get_most_recent_git_tag
 
-VERSION = (0, 0, 1)
+
+VERSION = get_most_recent_git_tag()
 
 __version__ = VERSION
-__versionstr__ = '.'.join(map(str, VERSION))
+
 

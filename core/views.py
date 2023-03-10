@@ -218,6 +218,10 @@ def initRequest(request, callselfmon=True):
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
 
+    request.session['meta'] = {
+        'version': settings.VERSION,
+    }
+
     request.session['req_init_time'] = time.time()
     request.session['IS_TESTER'] = False
 
