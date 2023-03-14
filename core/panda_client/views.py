@@ -1,4 +1,5 @@
 import json
+import logging
 from django.http import HttpResponse
 
 from django.views.decorators.csrf import csrf_exempt
@@ -8,6 +9,7 @@ from core.views import initRequest
 
 from core.oauth.utils import is_expert
 
+_logger = logging.getLogger('panda.client')
 @csrf_exempt
 def client(request):
     valid, response = initRequest(request)
@@ -15,6 +17,7 @@ def client(request):
         return response
     auth = get_auth_indigoiam(request)
     info = {}
+
     info['redirect'] = 'false'
     if auth is not None and ('Authorization' in auth and 'Origin' in auth):
         if len(request.session['requestParams']) > 0:
@@ -33,7 +36,9 @@ def client(request):
                         modeOn = to_bool(params['modeOn'])
                     else:
                         modeOn = False
-                info['text'] = setDebugMode(auth, pandaid=data['pandaid'], modeOn=modeOn, is_expert=is_expert(request))
+
+                info['text'] = setDebugMode(auth, pandaid=data['pandaid'], modeOn=modeOn, is_expert=is_expert(request),
+                                            user_id=request.user.id)
                 if (info['text'].find('Succeeded') != -1 and modeOn):
                     info['redirect'] = 'true'
                 else:

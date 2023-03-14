@@ -1,8 +1,11 @@
 import time
+import logging
+
 from requests import post
 from core.oauth.utils import get_auth_provider
 from django.conf import settings
 
+_logger = logging.getLogger('panda.client')
 def to_bool(value):
     if str(value).lower() in ("true"):
         return True
@@ -99,7 +102,7 @@ def finish_task(auth, jeditaskid, soft=True):
 
 # set debug mode
 def setDebugMode(auth, **kwargs):
-    """Set dubug mode for a job
+    """Set debug mode for a job
 
         request parameters:
            pandaID: pandaID of the job to debug
@@ -128,6 +131,10 @@ def setDebugMode(auth, **kwargs):
     except Exception as ex:
         resp = "ERROR to set debug mode: %s %s" % (ex, resp.status_code)
 
+    _logger.debug('SetDebugMode. URL: {0} Response: {1}. Parameters. userid: {2} autorization: {3} origin: {4} pandaID: {5} modeOn: {6} isExpert: {7}'.
+                      format(url, resp, kwargs['user_id'], auth['Authorization'], auth['Origin'], data['pandaID'],
+                             data['modeOn'],
+                             kwargs['is_expert']))
     return resp
 
 

@@ -6733,7 +6733,7 @@ def incidentList(request):
 def esatlasPandaLoggerJson(request):
     valid, response = initRequest(request)
 
-    if not valid or settings:
+    if not valid or settings is None:
         return response
 
     if settings.DEPLOYMENT != 'ORACLE_ATLAS':
@@ -6743,7 +6743,7 @@ def esatlasPandaLoggerJson(request):
 
     s = Search(using=connection, index='atlas_jedilogs-*')
 
-    s.aggs.bucket('jediTaskID', 'terms', field='jediTaskID', size=1000) \
+    s.aggs.bucket('jediTaskID', 'terms', field='jediTaskID', size=100) \
         .bucket('type', 'terms', field='fields.type.keyword') \
         .bucket('logLevel', 'terms', field='logLevel.keyword')
 

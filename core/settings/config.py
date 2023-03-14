@@ -297,6 +297,14 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
+        'panda-client': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.panda.client",
+            'maxBytes': LOG_SIZE,
+            'backupCount': 2,
+            'formatter': 'verbose',
+        },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
@@ -337,11 +345,15 @@ LOGGING = {
             'handlers': ['logfile-filebrowser', 'logfile-error'],
             'level': LOG_LEVEL,
         },
+        'panda.client': {
+            'handlers': ['panda-client'],
+            'level': LOG_LEVEL,
+        },
         'social': {
             'handlers': ['logfile-error', 'social'],
             'level': LOG_LEVEL,
             'propagate': True,
-        },
+        }
     },
     'formatters': {
         'full': {
