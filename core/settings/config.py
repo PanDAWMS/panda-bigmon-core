@@ -298,7 +298,7 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'panda-client': {
-            'level': LOG_LEVEL,
+            'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_ROOT + "/logfile.panda.client",
             'maxBytes': LOG_SIZE,
