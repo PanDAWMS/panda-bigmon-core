@@ -347,7 +347,7 @@ LOGGING = {
         },
         'panda.client': {
             'handlers': ['panda-client'],
-            'level': LOG_LEVEL,
+            'level': 'DEBUG',
         },
         'social': {
             'handlers': ['logfile-error', 'social'],
