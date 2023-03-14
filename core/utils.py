@@ -92,7 +92,7 @@ def get_most_recent_git_tag():
     Getting recent git tag to show which version is running
     :return: git_tag
     """
-    git_path = os.getcwd()
+    git_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     try:
         git_tag = str(
