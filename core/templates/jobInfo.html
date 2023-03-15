@@ -429,7 +429,7 @@
 	{% if job.transfertype %}<tr><th>Transfer type</th><td>{{ job.transfertype }}</td></tr>{% endif %}
 	{% if job.specialhandling %}<tr><th>Special handling</th><td>{{ job.specialhandling }}</td></tr>{% endif %}
 	{% if job.nevents %}<tr><th># events</th><td>{{ job.nevents }}</td></tr>{% endif %}
-	{% if job.attemptnr %}<tr><th>Attempt number</th><td>{{ job.attemptnr }} of a maximum {{ job.maxattempt }}</td></tr></tr>{% endif %}
+	{% if job.attemptnr %}<tr><th>Attempt number</th><td>{{ job.attemptnr }}</td></tr></tr>{% endif %}
 	{% if job.destinationse %}<tr><th>Output destination</th><td>{{ job.destinationse }}</td></tr>{% endif %}
 	{% if job.cpuconsumptiontime %}<tr><th>CPU consumption time (s)</th><td>{{ job.cpuconsumptiontime }}</td></tr>{% endif %}
 	{% if job.jobmetrics %}<tr><th>Job metrics</th><td>{{ job.jobmetrics }}</td></tr>{% endif %}
@@ -469,12 +469,14 @@
 </thead>
 <tbody>
 {% for col in columns %}
+{% if col.name != 'maxattempt' %}
 <tr>
   <th>{{ col.name }}</th>
   <td> {% if col.name == 'jobsetid' %} <a href="{% url 'jobList' %}?produsername={{ produsername }}&jobsetid={{ col.value }}">{{ col.value }}</a>
     {% elif col.name != 'metastruct' %}{{ col.value }} {% else %} {% endif %}
   </td>
 </tr>
+{% endif %}
 {% endfor %}
 </tbody>
 </table>
