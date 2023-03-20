@@ -1,5 +1,6 @@
 import time
 import logging
+import jwt
 
 from requests import post
 from core.oauth.utils import get_auth_provider
@@ -101,7 +102,7 @@ def finish_task(auth, jeditaskid, soft=True):
 
 
 # set debug mode
-def setDebugMode(auth, **kwargs):
+def set_debug_mode(auth, **kwargs):
     """Set debug mode for a job
 
         request parameters:
@@ -120,8 +121,12 @@ def setDebugMode(auth, **kwargs):
     else:
         resp = 'ModeOn is not defined'
 
-    if 'is_expert' in kwargs and kwargs['is_expert']:
-        auth['Origin'] = 'atlas.production'
+    if 'groups' in kwargs and len(kwargs['groups']) > 0:
+        groups = list(kwargs['groups'])
+        if 'atlas/production' in groups:
+            auth['Origin'] = 'atlas.production'
+        else:
+            auth['Origin'] = 'atlas'
 
     url = _get_full_url('setDebugMode')
 
@@ -131,11 +136,16 @@ def setDebugMode(auth, **kwargs):
     except Exception as ex:
         resp = "ERROR to set debug mode: %s %s" % (ex, resp.status_code)
 
-    _logger.debug('SetDebugMode. URL: {0} Response: {1}. Parameters. userid: {2} autorization: {3} origin: {4} pandaID: {5} modeOn: {6} isExpert: {7}'.
+    _logger.debug('SetDebugMode. URL: {0} Response: {1}. Parameters. userid: {2} Autorization: {3} Origin: {4} PandaID: {5} ModeOn: {6} Groups: {7}'.
                       format(url, resp, kwargs['user_id'], auth['Authorization'], auth['Origin'], data['pandaID'],
-                             data['modeOn'],
-                             kwargs['is_expert']))
+                             data['modeOn'], groups
+                             ))
     return resp
+
+def get_user_groups(idtoken):
+    token = (idtoken.split(' '))[1]
+    d = jwt.decode(token, verify=False, options={"verify_signature": False})
+    return d['groups']
 
 
 ### TODO change it later

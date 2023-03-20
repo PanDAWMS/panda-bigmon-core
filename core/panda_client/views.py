@@ -4,7 +4,7 @@ from django.http import HttpResponse
 
 from django.views.decorators.csrf import csrf_exempt
 
-from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task, setDebugMode, to_bool
+from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task, set_debug_mode, to_bool, get_user_groups
 from core.views import initRequest
 
 from core.oauth.utils import is_expert
@@ -37,8 +37,8 @@ def client(request):
                     else:
                         modeOn = False
 
-                info['text'] = setDebugMode(auth, pandaid=data['pandaid'], modeOn=modeOn, is_expert=is_expert(request),
-                                            user_id=request.user.id)
+                info['text'] = set_debug_mode(auth, pandaid=data['pandaid'], modeOn=modeOn,
+                                            user_id=request.user.id, groups=get_user_groups(auth['Authorization']))
                 if (info['text'].find('Succeeded') != -1 and modeOn):
                     info['redirect'] = 'true'
                 else:
