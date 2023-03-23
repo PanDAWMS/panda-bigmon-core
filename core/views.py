@@ -1281,22 +1281,24 @@ def jobList(request, mode=None, param=None):
         if jeditaskid and datasetid and fileid:
             extraquery_files += """
                 pandaid in (
-                (select pandaid from atlas_panda.filestable4 
+                (select pandaid from {}.filestable4 
                     where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
                 union all
-                (select pandaid from atlas_pandaarch.filestable_arch 
+                (select pandaid from {}.filestable_arch 
                     where jeditaskid = {} and datasetid in ( {} ) and fileid = {} )
-                ) """.format(jeditaskid, datasetid, fileid, jeditaskid, datasetid, fileid)
+                ) """.format(settings.DB_SCHEMA_PANDA, jeditaskid, datasetid, fileid,
+                             settings.DB_SCHEMA_PANDA_ARCH, jeditaskid, datasetid, fileid)
 
         if 'ecstate' in request.session['requestParams'] and tk and datasetid:
             extraquery_files += """
                 pandaid in (
-                    (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid in ( {} ) 
-                        and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                    (select pandaid from {}.filestable4 where jeditaskid = {} and datasetid in ( {} ) 
+                        and fileid in (select id from {}.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
                     union all 
-                    (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid in ( {} ) 
-                        and fileid in (select id from atlas_pandabigmon.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
-                    ) """.format(jeditaskid, datasetid, tk, jeditaskid, datasetid, tk)
+                    (select pandaid from {}.filestable_arch where jeditaskid = {} and datasetid in ( {} ) 
+                        and fileid in (select id from {}.TMP_IDS1DEBUG where TRANSACTIONKEY={}) )
+                    ) """.format(settings.DB_SCHEMA_PANDA, jeditaskid, datasetid, settings.DB_SCHEMA, tk,
+                                 settings.DB_SCHEMA_PANDA_ARCH, jeditaskid, settings.DB_SCHEMA, datasetid, tk)
     elif 'jeditaskid' in request.session['requestParams'] and 'datasetid' in request.session['requestParams']:
         fileid = None
         if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
@@ -1310,10 +1312,11 @@ def jobList(request, mode=None, param=None):
         if datasetid and jeditaskid:
             extraquery_files += """
                 pandaid in (
-                (select pandaid from atlas_panda.filestable4 where jeditaskid = {} and datasetid = {} )
+                (select pandaid from {}.filestable4 where jeditaskid = {} and datasetid = {} )
                 union all
-                (select pandaid from atlas_pandaarch.filestable_arch where jeditaskid = {} and datasetid = {})
-                ) """.format(jeditaskid, datasetid, jeditaskid, datasetid)
+                (select pandaid from {}.filestable_arch where jeditaskid = {} and datasetid = {})
+                ) """.format(settings.DB_SCHEMA_PANDA, jeditaskid, datasetid,
+                             settings.DB_SCHEMA_PANDA_ARCH, jeditaskid, datasetid)
     else:
         fileid = None
 
@@ -1330,8 +1333,8 @@ def jobList(request, mode=None, param=None):
 
         extraquery_tasks += """
             jeditaskid in (
-            select jeditaskid from atlas_panda.jedi_tasks where taskname like '{}' and username like '{}'
-            ) """.format(taskname, taskusername)
+            select jeditaskid from {}.jedi_tasks where taskname like '{}' and username like '{}'
+            ) """.format(settings.DB_SCHEMA_PANDA, taskname, taskusername)
 
     _logger.debug('Specific params processing: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -3158,6 +3161,13 @@ def userDashApi(request, agg=None):
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
                 link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
                 link_logs_base = '/filebrowser/?'
+                t['top_errors_list'] = [[
+                    '<a href="{}{}={}">{}</a>'.format(link_jobs_base, err['codename'], err['codeval'], err['count']),
+                    ' [{}]'.format(err['error']),
+                    ' "{}"'.format(err['diag']),
+                    ' <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(link_logs_base, err['example_pandaid'])
+                    ] for err in errs_by_task_dict[t['jeditaskid']]['errorlist']
+                ][:2]
                 t['top_errors'] = '<br>'.join(
                     ['<a href="{}{}={}">{}</a> [{}] "{}" <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(
                         link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag'],
@@ -3193,7 +3203,7 @@ def userDashApi(request, agg=None):
             'nfilesfailed', 'pctfinished',
             'superstatus', 'status', 'duration_days',
             'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
-            'errordialog', 'job_failed', 'top_errors',
+            'errordialog', 'job_failed', 'top_errors_list',
         ]
         tasks_to_show = []
         for t in tasks:
@@ -4539,7 +4549,7 @@ def taskList(request):
         tmpTableName = get_tmp_table_name()
 
         tk_es_jobs = random.randrange(1000000)
-        #        connection.enter_transaction_management()
+        # connection.enter_transaction_management()
         new_cur = connection.cursor()
         if settings.DEPLOYMENT == "POSTGRES":
             create_temporary_table(new_cur, tmpTableName)
@@ -4552,8 +4562,9 @@ def taskList(request):
         #        connection.commit()
         new_cur.execute(
             """
-            SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID,STATUS FROM ATLAS_PANDA.JEDI_EVENTS ev, %s WHERE TRANSACTIONKEY=%i AND PANDAID = ID
-            """ % (tmpTableName, tk_es_jobs)
+            SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */  PANDAID, STATUS 
+            FROM {}.JEDI_EVENTS ev, {} WHERE TRANSACTIONKEY={} AND PANDAID = ID
+            """.format(settings.DB_SCHEMA_PANDA, tmpTableName, tk_es_jobs)
         )
         evtable = dictfetchall(new_cur)
 
@@ -4574,7 +4585,7 @@ def taskList(request):
                         estaskstr += " %s(%s) " % (s, estaskdict[taskid][s])
                 task['estaskstr'] = estaskstr
 
-    ## set up google flow diagram
+    # set up google flow diagram
     flowstruct = buildGoogleFlowDiagram(request, tasks=tasks)
     xurl = extensibleURL(request)
     nosorturl = removeParam(xurl, 'sortby', mode='extensible')
@@ -5038,13 +5049,13 @@ def getErrorSummaryForEvents(request):
                   (select pandaid, error_code,
                     sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
                     count(*) as nerrorsinjob
-                  from ATLAS_PANDA.Jedi_events
+                  from {}.jedi_events
                   where jeditaskid={} and ERROR_CODE is not null
                   group by error_code, pandaid ) e
                 join
                   (select ID from {} where TRANSACTIONKEY={} ) j
                 on e.pandaid = j.ID))
-            group by error_code""".format(jeditaskid, tmpTableName, transactionKey)
+            group by error_code""".format(settings.DB_SCHEMA_PANDA, jeditaskid, tmpTableName, transactionKey)
         elif transactionKeyDJ:
             eequery = """
             select error_code,
@@ -5059,12 +5070,12 @@ def getErrorSummaryForEvents(request):
                   (select pandaid, error_code,
                     sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
                     count(*) as nerrorsinjob
-                  from ATLAS_PANDA.Jedi_events
+                  from {}.jedi_events
                   where jeditaskid={} and ERROR_CODE is not null 
                     and pandaid not in ( select ID from {} where TRANSACTIONKEY={} )
                   group by error_code, pandaid ) e
                 ))
-            group by error_code""".format(jeditaskid, tmpTableName, transactionKeyDJ)
+            group by error_code""".format(settings.DB_SCHEMA_PANDA, jeditaskid, tmpTableName, transactionKeyDJ)
         else:
             data = {"error": "no failed events found"}
             return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
@@ -5080,11 +5091,11 @@ def getErrorSummaryForEvents(request):
                         sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) as neventsinjob,
                         count(*) as nerrorsinjob,
                         row_number() over (partition by error_code ORDER BY sum(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) desc) as aff
-                          from ATLAS_PANDA.Jedi_events
-                          where jeditaskid=%i and ERROR_CODE is not null
+                          from {}.jedi_events
+                          where jeditaskid={} and ERROR_CODE is not null
                           group by error_code, pandaid)
                   group by error_code
-            """ % (jeditaskid)
+            """.format(settings.DB_SCHEMA_PANDA, jeditaskid)
         )
         eventsErrorsUP = dictfetchall(new_cur)
     else:
@@ -6000,7 +6011,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
     valid, response = initRequest(request)
     if not valid: return response
 
-    tmpTableName = 'ATLAS_PANDABIGMON.TMP_IDS1DEBUG'
+    tmpTableName = get_tmp_table_name()
 
     if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
         jeditaskid = request.session['requestParams']['jeditaskid']
@@ -6020,16 +6031,17 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
     sqlRequest = """
         select /*+ INDEX_RS_ASC(e JEDI_EVENTS_PK) NO_INDEX_FFS(e JEDI_EVENTS_PK) */
           j.computingsite, j.COMPUTINGELEMENT,e.objstore_id,e.status,count(e.status) as nevents
-          from atlas_panda.jedi_events e
+          from {}.jedi_events e
             join
-                (select computingsite, computingelement,pandaid from ATLAS_PANDA.JOBSARCHIVED4 where jeditaskid={} {}
+                (select computingsite, computingelement,pandaid from {}.JOBSARCHIVED4 where jeditaskid={} {}
                 UNION
-                select computingsite, computingelement,pandaid from ATLAS_PANDAARCH.JOBSARCHIVED where jeditaskid={} {}
+                select computingsite, computingelement,pandaid from {}.JOBSARCHIVED where jeditaskid={} {}
                 ) j
             on (e.jeditaskid={} and e.pandaid=j.pandaid)
-        group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(jeditaskid, extrastr,
-                                                                                        jeditaskid, extrastr,
-                                                                                        jeditaskid)
+        group by j.computingsite, j.COMPUTINGELEMENT, e.objstore_id, e.status""".format(
+        settings.DB_SCHEMA_PANDA, settings.DB_SCHEMA_PANDA, jeditaskid, extrastr,
+        settings.DB_SCHEMA_PANDA_ARCH, jeditaskid, extrastr,
+        jeditaskid)
     cur = connection.cursor()
     cur.execute(sqlRequest)
     ossummary = cur.fetchall()
@@ -6053,7 +6065,7 @@ def taskchain(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     new_cur = connection.cursor()
-    taskChainSQL = "SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKSCHAIN_TEST(%i))" % jeditaskid
+    taskChainSQL = "SELECT * FROM table({}.GETTASKSCHAIN_TEST(%i))".format(settings.DB_SCHEMA, jeditaskid)
     new_cur.execute(taskChainSQL)
     taskChain = new_cur.fetchall()
     results = ["".join(map(str, r)) for r in taskChain]
@@ -7115,7 +7127,7 @@ def ttc(request):
     if len(taskevents) > 0:
         taskev = taskevents[0]
     cur = connection.cursor()
-    cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETTASKPROFILE('%s'))" % taskrec['jeditaskid'])
+    cur.execute("SELECT * FROM table({}.GETTASKPROFILE('%s'))".format(settings.DB_SCHEMA, taskrec['jeditaskid']))
     taskprofiled = cur.fetchall()
     cur.close()
 
@@ -8157,9 +8169,11 @@ def g4exceptions(request):
         for job in jobs:
             new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
                 tmpTableName, job['pandaid'], transactionKey))  # Backend dependable
-        new_cur.execute(
-            "SELECT JOBPARAMETERS, PANDAID FROM ATLAS_PANDA.JOBPARAMSTABLE WHERE PANDAID in (SELECT ID FROM %s WHERE TRANSACTIONKEY=%i)" % (
-                tmpTableName, transactionKey))
+        new_cur.execute("""
+            SELECT JOBPARAMETERS, PANDAID 
+            FROM {}.JOBPARAMSTABLE 
+            WHERE PANDAID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})
+            """.format(settings.DB_SCHEMA_PANDA, tmpTableName, transactionKey))
         mrecs = dictfetchall(new_cur)
         jobsToRemove = set()
         for rec in mrecs:
@@ -8183,7 +8197,7 @@ def g4exceptions(request):
     errorJobs = {}
 
     for job in jobs:
-        if (job['metastruct']['executor'][0]['logfileReport']['countSummary']['FATAL'] > 0):
+        if job['metastruct']['executor'][0]['logfileReport']['countSummary']['FATAL'] > 0:
             message = job['metastruct']['executor'][0]['logfileReport']['details']['FATAL'][0]['message']
             exceptMess = message[message.find("G4Exception :") + 14: message.find("issued by :") - 1]
             if exceptMess not in errorFrequency:
@@ -8278,33 +8292,40 @@ def getBadEventsForTask(request):
     data = []
     cursor = connection.cursor()
 
-    plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
-            ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb,
-            RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDAIDS, 
-            count(*) from 
-            atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 group by DATASETID, ERROR_CODE """ % jeditaskid
+    plsql = """
+    select datasetid, error_code, 
+        rtrim(xmlagg(xmlelement(e,def_min_eventid,',').extract('//text()') order by def_min_eventid).getclobval(),',') as bb,
+        rtrim(xmlagg(xmlelement(e,pandaid,',').extract('//text()') order by pandaid).getclobval(),',') as pandaids, 
+        count(*) 
+    from {}.jedi_events 
+    where jeditaskid={} and attemptnr = 1 group by datasetid, error_code 
+    """.format(settings.DB_SCHEMA_PANDA, jeditaskid)
 
     if mode == 'drop':
-        plsql = """select DATASETID, ERROR_CODE, RTRIM(XMLAGG(XMLELEMENT(E,DEF_MIN_EVENTID,',').EXTRACT('//text()') 
-            ORDER BY DEF_MIN_EVENTID).GetClobVal(),',') as bb, 
-            RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDAIDS,
-            count(*) from 
-            atlas_panda.jedi_events where jeditaskid=%d and attemptnr = 1 
-            and PANDAID IN (SELECT PANDAID FROM ATLAS_PANDA.JEDI_DATASET_CONTENTS where jeditaskid=%d and type in ('input', 'pseudo_input'))
-            group by DATASETID, ERROR_CODE """ % (jeditaskid, jeditaskid)
+        plsql = """
+        select datasetid, error_code, 
+            rtrim(xmlagg(xmlelement(e,def_min_eventid,',').extract('//text()') order by def_min_eventid).getclobval(),',') as bb, 
+            rtrim(xmlagg(xmlelement(e,pandaid,',').extract('//text()') order by pandaid).getclobval(),',') as pandaids,
+            count(*) 
+        from {}.jedi_events 
+        where jeditaskid={} and attemptnr = 1 and pandaid in (
+            select pandaid 
+            from {}.jedi_dataset_contents 
+            where jeditaskid={} and type in ('input', 'pseudo_input')
+            )
+        group by datasetid, error_code 
+        """.format(settings.DB_SCHEMA_PANDA, jeditaskid, settings.DB_SCHEMA_PANDA, jeditaskid)
 
     cursor.execute(plsql)
     evtable = cursor.fetchall()
-
     errorCodes = get_job_error_desc()
-
     for row in evtable:
         dataitem = {}
         dataitem['DATASETID'] = row[0]
-        dataitem['ERROR_CODE'] = (errorCodes['piloterrorcode'][row[1]] + " (" + str(row[1]) + ")") if row[1] in \
-                                                                                                      errorCodes[
-                                                                                                          'piloterrorcode'] else \
-        row[1]
+        dataitem['ERROR_CODE'] = "{} ({})".format(
+            errorCodes['piloterrorcode'][row[1]] if row[1] in errorCodes['piloterrorcode'] else '',
+            str(row[1])
+        )
         dataitem['EVENTS'] = list(set(str(row[2].read()).split(','))) if not row[2] is None else None
         dataitem['PANDAIDS'] = list(set(str(row[3].read()).split(','))) if not row[3] is None else None
         if dataitem['EVENTS']: dataitem['EVENTS'] = sorted(dataitem['EVENTS'])
@@ -8322,10 +8343,19 @@ def getEventsChunks(request):
 
     # We reconstruct here jobsets retries
 
-    sqlRequest = """SELECT OLDPANDAID, NEWPANDAID, MAX(LEV) as LEV, MIN(PTH) as PTH FROM (
-    SELECT OLDPANDAID, NEWPANDAID, LEVEL as LEV, CONNECT_BY_ISLEAF as IL, SYS_CONNECT_BY_PATH(OLDPANDAID, ',') PTH FROM (
-    SELECT OLDPANDAID, NEWPANDAID FROm ATLAS_PANDA.JEDI_JOB_RETRY_HISTORY WHERE JEDITASKID=%s and RELATIONTYPE='jobset_retry')t1 CONNECT BY OLDPANDAID=PRIOR NEWPANDAID
-    )t2 GROUP BY OLDPANDAID, NEWPANDAID;""" % str(jeditaskid)
+    sqlRequest = """
+    select oldpandaid, newpandaid, max(lev) as lev, min(pth) as pth 
+    from (
+        select oldpandaid, newpandaid, level as lev, connect_by_isleaf as il, sys_connect_by_path(oldpandaid, ',') pth 
+        from (
+            select oldpandaid, newpandaid 
+            from {}.jedi_job_retry_history 
+            where jeditaskid={} and relationtype='jobset_retry'
+            ) t1 
+        connect by oldpandaid=prior newpandaid
+    ) t2 
+    group by oldpandaid, newpandaid
+    """.format(settings.DB_SCHEMA_PANDA, str(jeditaskid))
 
     cur = connection.cursor()
     cur.execute(sqlRequest)
