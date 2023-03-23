@@ -1,0 +1,74 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% load common_tags %}
+
+{% block page_title %}Harvester monitor page{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %} {{ viewParams.selection|safe }} {% endblock %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
+  <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
+{% endblock %}
+
+{% block css_page %}
+  <link rel="stylesheet" href="{% static "css/harvester.css" %}?{% cache_bust "css/harvester.css" %}">
+{% endblock %}
+
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/moment.min.js' %}"></script>
+  <script src="{% static 'js/datatables/datetime-moment.js' %}"></script>
+  <script src="{% static 'js/datatables/datetime.js' %}"></script>
+  <script src="{% static 'js/datatables/jquery-ui.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
+  <script src="{% static 'js/jquery.shorten.1.0.js' %}"></script>
+  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+    <table id="harvesterinstances" style="width: 100%" class="data-table bluelinks">
+        <caption style="height: 30px;vertical-align: middle">Harvester instances</caption>
+        <thead>
+            <th>Instance</th>
+            <th>SW version</th>
+            <th>Description</th>
+            <th>Commit stamp</th>
+            <th>Last update</th>
+        </thead>
+        <tbody>
+        {% for instance in instances %}
+            <tr>
+                <td>
+                    <a href="{% url "harvesterWorkerList" %}?instance={{ instance.harvesterid|safe }}">{{ instance.harvesterid|safe }}</a>
+                </td>
+                <td>
+                    {{ instance.swversion }}
+                </td>
+                <td>
+                    {{ instance.commitstamp }}
+                </td>
+                <td>
+                    {{ instance.description }}
+                </td>
+                <td>
+                    {{ instance.lastupdate|date:"Y-m-d h:i:s" }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        $(document).ready(function () {
+            $('#harvesterinstances').dataTable({"iDisplayLength": 100, responsive: true,});
+        });
+    </script>
+
+{% endblock %}
+
+{#{% block helptext %}#}
+{#{% include "harvesterInfoHelp.html" with helptitle="Harvester list help" show="all" %}#}
+{#{% endblock %}#}

@@ -450,7 +450,8 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     .bp-table.secondary tbody tr td:last-child {
       border-right: none;}
   .bp-table.secondary tbody th a , .bp-table.secondary tbody td a {
-    color: #272727;
+    color: #272727 ; /* #3b5f8f */
+    font-weight: 550;
     text-decoration: none;
     border-bottom: 1px dotted;
   }

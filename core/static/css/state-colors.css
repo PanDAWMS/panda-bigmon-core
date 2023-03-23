@@ -52,6 +52,7 @@
 .assigning { color:#099999 }
 .scheduled { color:#099999 }
 .assigned { color:#099999 }
+.submitted{ color:#099999 }
 .defined { color:#2174bb }
 .registered { color:#2174bb }
 .test { color:#2174bb }
@@ -60,6 +61,7 @@
 .toincexec { color:grey }
 .rerefine { color:grey }
 .queued { color:grey }
+.idle { color:grey }
 .offline { color:#4a4a4a }
 .closed { color:#4a4a4a}
 .reassign { color:#FF8174 }
@@ -129,6 +131,7 @@
 .assigning_fill { color:black;  background-color:#d9efef; position: static; }
 .assigned_fill { color:black;  background-color: #d9efef }
 .scheduled_fill { color:black;  background-color:#d9efef }
+.submitted_fill { color:black;  background-color:#d9efef }
 
 .activated_fill { color:black;  background-color:#d9efde }
 .ready_fill { color:black;  background-color:#d9efde; position: static; }
@@ -161,6 +164,7 @@
 
 .closed_fill { color:black; background-color:#bdbdbd }
 .offline_fill { color:black; background-color:#bdbdbd }
+.idle_fill { color:black; background-color:#bdbdbd }
 
 /*States of requests*/
 

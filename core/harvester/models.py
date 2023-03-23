@@ -2,6 +2,20 @@ from django.db import models
 from django.conf import settings
 
 
+class HarvesterInstances(models.Model):
+    harvesterid = models.CharField(max_length=50, db_column='harvester_id', null=False, blank=False, primary_key=True)
+    description = models.CharField(max_length=250, db_column='description', null=True, blank=True)
+    starttime = models.DateTimeField(null=True, db_column='starttime', blank=True)
+    owner = models.CharField(max_length=50, db_column='owner', null=False, blank=True)
+    hostname = models.CharField(max_length=50, db_column='hostname', null=False, blank=True)
+    lastupdate = models.DateTimeField(null=True, db_column='lastupdate', blank=True)
+    swversion = models.CharField(max_length=50, db_column='sw_version', null=False, blank=True)
+    commitstamp = models.CharField(max_length=100, db_column='commit_stamp', blank=True)
+
+    class Meta:
+        app_label = 'panda'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_instances"'
+
 class HarvesterWorkers(models.Model):
     harvesterid = models.CharField(max_length=50, db_column='harvesterid', null=False, blank=True)
     workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='workerid', null=False, primary_key=True)
@@ -26,9 +40,9 @@ class HarvesterWorkers(models.Model):
     computingelement = models.CharField(max_length=128, db_column='computingelement', null=False, blank=True)
     njobs = models.IntegerField( db_column='njobs', null=False)
     jobtype = models.CharField(max_length=128, db_column='jobtype', null=False, blank=True)
+
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_workers"'
-
 
 
 class HarvesterDialogs(models.Model):
@@ -39,9 +53,10 @@ class HarvesterDialogs(models.Model):
     creationtime = models.DateTimeField(null=True, db_column='creationtime', blank=True)
     messagelevel = models.CharField(max_length=10, db_column='messagelevel')
     diagmessage = models.CharField(max_length=500, db_column='diagmessage')
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_dialogs"'
 
+    class Meta:
+        app_label = 'panda'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_dialogs"'
 
 
 class HarvesterWorkerStats(models.Model):
@@ -52,9 +67,10 @@ class HarvesterWorkerStats(models.Model):
     jobtype = models.CharField(max_length=128, db_column='jobtype', null=False, blank=True)
     nworkers = models.IntegerField(db_column='n_workers', null=False)
     lastupdate = models.DateTimeField(null=True, db_column='lastupdate', blank=True)
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_worker_stats"'
 
+    class Meta:
+        app_label = 'panda'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_worker_stats"'
 
 
 class HarvesterRelJobsWorkers(models.Model):
@@ -62,9 +78,10 @@ class HarvesterRelJobsWorkers(models.Model):
     workerid = models.DecimalField(decimal_places=0, max_digits=11, db_column='workerid', null=False)
     pandaid = models.DecimalField(decimal_places=0, max_digits=11, db_column='pandaid', null=False, primary_key=True)
     lastupdate = models.DateTimeField(null=True, db_column='lastupdate', blank=True)
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_rel_jobs_workers"'
 
+    class Meta:
+        app_label = 'panda'
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_rel_jobs_workers"'
 
 
 class HarvesterSlots(models.Model):
@@ -74,5 +91,7 @@ class HarvesterSlots(models.Model):
     numslots = models.DecimalField(decimal_places=0, max_digits=11, db_column='numslots', null=False)
     modificationtime = models.DateTimeField(null=True, db_column='modificationtime', blank=True)
     expirationtime = models.DateTimeField(null=True, db_column='expirationtime', blank=True)
+
     class Meta:
+        app_label = 'panda'
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."harvester_slots"'
