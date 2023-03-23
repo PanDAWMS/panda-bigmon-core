@@ -76,16 +76,17 @@ def globalviewDemo(request):
                 dd[row1[0]][19] += row1[20]
                 dd[row1[0]][20] += row1[21]
     reslt2 = []
-    dict_g = {'SIMULATION': 'BAC', 'TIER0': 'BAAC', 'TRIGGER_RELEASE': 'BAB', 'CI': 'AA0', 'MASTER': 'AA01',
-              'GIT': 'AA1', 'ATN': 'AA2', 'ATN_TESTS': 'AA3', 'ATN(UNDER_CONSTRUCTION)': 'AA4', 'DEVELOPMENT': 'AA5',
-              'HLT_POINT1': 'D', 'PATCH': 'EA', 'PHYSICSANALYSIS': 'EB', 'UPGRADE_STUDIES': 'CC',
-              'ROOT6_INTEGRATION': 'AAA', 'OTHER': 'GB', 'DOXYGEN': 'Z', '19.0.X_BUGFIX': 'BD', '19.1.X_BUGFIX': 'BC',
-              '19.2.X_BUGFIX': 'BB', 'GAUDI_HIVE': 'BAAA', 'UPGRADE_INTEGRATION': 'BAAB'}
+    dict_g = {'CI': 'AA0', '^[\d_\-]*PRODUCTION.*$': 'AA01', '^[\d_\-]*MASTER.*$': 'AA02', '^[\d_\-]*MAIN.*$': 'AA02',
+              '^[\d_\-]*ARM.*$': 'AA05', 'LANG': 'AA06', 'CENTOS': 'AA07', 'NEXT': 'AA08', 'LCG': 'AA1', 'BRAN': 'AA2',
+              'CONSTR': 'Z1', 'LEGACY': 'B1', 'ANALYSIS': 'B2', 'UPGRADE': 'B3', 'BUG': 'B4', 'GAUDI': 'C0',
+              'DEV': 'C1', 'EXP': 'C2', 'DEV': 'C1', 'OTHER': 'C9', 'TEST': 'Z7', 'TRAIN': 'Z8', 'DOXYGEN': 'Z9'}
     for k, v in dd.items():
         ar1 = []
         ar1.append(k)
         row10u = v[0].upper()
-        name_code = dict_g.get(row10u, 'Y' + row10u)
+        keyList = [k for k in dict_g.keys() if re.search(k, row10u)]
+        key_name_code = next(iter(keyList),'Y')
+        name_code = dict_g.get(key_name_code, 'Y' + row10u)
         v[0] = row10u
         #        v[13]='<a href="http://atlas-nightlies-browser.cern.ch/~platinum/nightlies/info?tp=g&nightly='+k+'&rel='+v[13]+'&ar=*">'+v[13]+'</a>'
         ar1.extend(v)
