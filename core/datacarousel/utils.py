@@ -151,10 +151,10 @@ def getStagingData(request):
         for id in taskl:
             executionData.append((id, transactionKey))
 
-        query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+        query = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
         new_cur.executemany(query, executionData)
         connection.commit()
-        selection += "and t2.taskid in (SELECT tmp.id FROM %s tmp where TRANSACTIONKEY=%i)"  % (tmpTableName, transactionKey)
+        selection += "and t2.taskid in (SELECT tmp.id FROM %s tmp where transactionkey=%i)"  % (tmpTableName, transactionKey)
     else:
         selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING)"
 
@@ -171,21 +171,25 @@ def getStagingData(request):
         selection += " AND t4.processingtype in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
 
     if not jeditaskid:
-        selection += " AND not (NVL(t4.ENDTIME, CURRENT_TIMESTAMP) < t1.start_time) AND (END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or (END_TIME is NULL and not (t1.STATUS = 'done')))" \
-                     % (timewindow[0], timewindow[1])
+        selection += """  
+        and not (nvl(t4.endtime, current_timestamp) < t1.start_time) 
+        and (
+            end_time between to_date('{}', 'YYYY-mm-dd HH24:MI:SS') and to_date('{}', 'YYYY-mm-dd HH24:MI:SS') 
+            or (end_time is null and not (t1.status = 'done'))
+        )
+        """.format(timewindow[0], timewindow[1])
 
     new_cur.execute(
         """
-        SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
-            t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, t1.DATASET_BYTES, t1.STAGED_BYTES,
-            ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence, 
-            (CURRENT_TIMESTAMP-t1.UPDATE_TIME) as UPDATE_TIME, t4.processingtype, t2.STEP_ACTION_ID 
-        FROM ATLAS_DEFT.T_DATASET_STAGING t1
-        INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
-        INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
-        INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID %s 
-        """ % selection
-    )
+        select t1.dataset, t1.status, t1.staged_files, t1.start_time, t1.end_time, t1.rse as rse, t1.total_files, 
+            t1.update_time, t1.source_rse, t2.taskid, t3.campaign, t3.pr_id, t1.dataset_bytes, t1.staged_bytes,
+            row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence, 
+            (current_timestamp-t1.update_time) as update_time, t4.processingtype, t2.step_action_id 
+        from atlas_deft.t_dataset_staging t1
+        inner join {0}.t_action_staging t2 on t1.dataset_staging_id=t2.dataset_staging_id
+        inner join {0}.t_production_task t3 on t2.taskid=t3.taskid 
+        inner join {1}.jedi_tasks t4 on t2.taskid=t4.jeditaskid {2} 
+        """.format('atlas_deft', settings.DB_SCHEMA_PANDA, selection))
     datasets = dictfetchall(new_cur)
     for dataset in datasets:
         # Sort out requests by request on February 19, 2020
@@ -209,22 +213,29 @@ def getStagingData(request):
 
 def getStagingDatasets(timewindow, source):
     selection = """
-    select tbig.DATASET, tbig.STATUS, tbig.STAGED_FILES, tbig.START_TIME, tbig.END_TIME, tbig.RRULE, tbig.TOTAL_FILES, 
-        tbig.SOURCE_RSE, tbig.TASKID, NULL as PROGRESS_RETRIEVED, NULL as PROGRESS_DATA 
+    select tbig.dataset, tbig.status, tbig.staged_files, tbig.start_time, tbig.end_time, tbig.rrule, tbig.total_files, 
+        tbig.source_rse, tbig.taskid, null as progress_retrieved, null as progress_data 
     from (
-        SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RRULE, t1.TOTAL_FILES,
-            t1.SOURCE_RSE, t2.TASKID, 
-            ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence 
-        FROM ATLAS_DEFT.T_DATASET_STAGING t1
-        INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
-        INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID
-        order by t1.START_TIME desc
+        select t1.dataset, t1.status, t1.staged_files, t1.start_time, t1.end_time, t1.rse as rrule, t1.total_files,
+            t1.source_rse, t2.taskid, 
+            row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence 
+        from {0}.t_dataset_staging t1
+        inner join {0}.t_action_staging t2 on t1.dataset_staging_id=t2.dataset_staging_id
+        inner join {0}.t_production_task t3 on t2.taskid=t3.taskid
+        order by t1.start_time desc
         ) tbig 
-    LEFT OUTER JOIN ATLAS_PANDABIGMON.DATACAR_ST_PROGRESS_ARCH arch on arch.RRULE=tbig.RRULE
-    where occurence=1 and tbig.RRULE is not NULL
-    """
-    selection += " AND (tbig.END_TIME BETWEEN TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') and TO_DATE(\'%s\','YYYY-mm-dd HH24:MI:SS') or (tbig.END_TIME is NULL and not (tbig.STATUS in ('done', 'cancelled'))))" \
-                 % (timewindow[0], timewindow[1])
+    left outer join {1}.datacar_st_progress_arch arch on arch.rrule=tbig.rrule
+    where occurence=1 and tbig.rrule is not null
+    """.format('atlas_deft', settings.DB_SCHEMA)
+    selection += """ 
+    AND (
+        tbig.end_time between to_date('{}','YYYY-mm-dd HH24:MI:SS') 
+        and to_date('{}','YYYY-mm-dd HH24:MI:SS') 
+        or (
+            tbig.end_time is null 
+            and not tbig.status in ('done', 'cancelled')
+        )
+    )""".format(timewindow[0], timewindow[1])
     cursor = connection.cursor()
     cursor.execute(selection)
     datasets = dictfetchall(cursor)
@@ -257,11 +268,12 @@ def retreiveStagingStatistics(SEs, taskstoingnore):
     query = """
     select * 
     from (
-        select START_TIME, PROGRESS_DATA, TOTAL_FILES, RRULE, TASKID, SOURCE_RSE, 
-            row_number() over (PARTITION BY SOURCE_RSE order by START_TIME desc) as rn 
-        from atlas_pandabigmon.DATACAR_ST_PROGRESS_ARCH 
-        where PROGRESS_RETRIEVED=1 and SOURCE_RSE in (%s)
-    ) where rn <= 15""" % (SEsStr)
+        select start_time, progress_data, total_files, rrule, taskid, source_rse, 
+            row_number() over (partition by source_rse order by start_time desc) as rn 
+        from {}.datacar_st_progress_arch 
+        where progress_retrieved=1 and source_rse in ({})
+    ) where rn <= 15
+    """.format(settings.DB_SCHEMA, SEsStr)
     cursor.execute(query)
 
     data = {}
