@@ -5,6 +5,7 @@ import matplotlib.dates as md
 
 import os
 from django.db import connection
+from django.conf import settings
 from core.common.models import JediTasks, TasksStatusLog
 from core.pandajob.models import Jobsarchived4, Jobsarchived
 from core.libs.exlib import drop_duplicates
@@ -48,20 +49,30 @@ class TaskProgressPlot:
         else:
             return frame
 
-
-    def get_raw_task_profile(self,taskid):
+    def get_raw_task_profile(self, taskid):
         cur = connection.cursor()
-        cur.execute("select starttime, endtime, row_number() over (PARTITION BY jeditaskid order by endtime ) as njobs from ATLAS_PANDAARCH.JOBSARCHIVED WHERE JEDITASKID={0} and JOBSTATUS='finished'" .format(taskid))
+        cur.execute("""
+        select starttime, endtime, row_number() over (partition by jeditaskid order by endtime ) as njobs 
+        from {}.jobsarchived 
+        where jeditaskid={} and jobstatus='finished'
+        """.format(settings.DB_SCHEMA_PANDA_ARCH, taskid))
         rows = cur.fetchall()
-        return pd.DataFrame(rows, columns=['starttime','endtime','njobs'])
+        return pd.DataFrame(rows, columns=['starttime', 'endtime', 'njobs'])
 
-
-    def get_raw_task_profile_fresh(self,taskid):
+    def get_raw_task_profile_fresh(self, taskid):
         cur = connection.cursor()
-        cur.execute("SELECT  * FROM ("
-                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED WHERE JEDITASKID={0} and JOBSTATUS='finished' UNION "
-                    "SELECT DISTINCT starttime, creationtime, endtime, pandaid, jeditaskid, EVENTSERVICE FROM JOBSARCHIVED4 WHERE JEDITASKID={0} and JOBSTATUS='finished'"
-                    ")t ORDER BY pandaid asc".format(taskid))
+        cur.execute("""
+        select  * from (
+            select distinct starttime, creationtime, endtime, pandaid, jeditaskid, eventservice 
+            from {0}.jobsarchived 
+            where jeditaskid={1} and jobstatus='finished' 
+            union 
+            select distinct starttime, creationtime, endtime, pandaid, jeditaskid, eventservice 
+            from {0}.jobsarchived4 
+            where jeditaskid={1} and jobstatus='finished'
+        ) t 
+        order by pandaid asc
+        """.format(settings.DB_SCHEMA_PANDA, taskid))
         rows = cur.fetchall()
 
         starttime_run = []
@@ -169,16 +180,32 @@ class TaskProgressPlot:
 
         return task_profile_dict
 
-
-    def get_es_raw_task_profile_fresh(self,taskid):
+    def get_es_raw_task_profile_fresh(self, taskid):
         cur = connection.cursor()
 
-        cur.execute("""select MODIFICATIONTIME, SUM(ESEVENTS_MERGED) over (PARTITION BY jeditaskid order by MODIFICATIONTIME ) as NEVENTS from
-                    (SELECT t1.ESEVENTS_MERGED, MODIFICATIONTIME, JEDITASKID FROM (SELECT SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS ESEVENTS_MERGED,PANDAID FROM ATLAS_PANDA.JEDI_EVENTS WHERE JEDITASKID={0} AND STATUS=9 GROUP BY PANDAID) t1
-                    JOIN JOBSARCHIVED4 ON t1.PANDAID = JOBSARCHIVED4.PANDAID AND JEDITASKID={0} AND JOBSARCHIVED4.JOBSTATUS='finished'
-                    UNION All
-                    SELECT t2.ESEVENTS_MERGED, MODIFICATIONTIME, JEDITASKID FROM (SELECT SUM(DEF_MAX_EVENTID-DEF_MIN_EVENTID+1) AS ESEVENTS_MERGED,PANDAID FROM ATLAS_PANDA.JEDI_EVENTS WHERE JEDITASKID={0} AND STATUS=9 GROUP BY PANDAID) t2
-                    JOIN JOBSARCHIVED ON t2.PANDAID = JOBSARCHIVED.PANDAID AND JEDITASKID={0} AND JOBSARCHIVED.JOBSTATUS='finished') t3""".format(taskid))
+        cur.execute("""
+        select modificationtime, 
+               sum(esevents_merged) over (partition by jeditaskid order by modificationtime ) as nevents 
+        from (
+            select t1.esevents_merged, ja4.modificationtime, ja4.jeditaskid 
+            from (
+                select sum(def_max_eventid-def_min_eventid+1) as esevents_merged, pandaid 
+                from {0}.jedi_events 
+                where jeditaskid={1} and status=9 
+                group by pandaid
+            ) t1
+            join {0}.jobsarchived4 ja4 on t1.pandaid = ja4.pandaid and jeditaskid={0} and ja4.jobstatus='finished'
+            union all
+            select t2.esevents_merged, ja.modificationtime, ja.jeditaskid 
+            from (
+                select sum(def_max_eventid-def_min_eventid+1) as esevents_merged, pandaid 
+                from {0}.jedi_events 
+                where jeditaskid={1} and status=9 
+                group by pandaid
+            ) t2
+            join {0}.jobsarchived ja on t2.pandaid = ja.pandaid and ja.jeditaskid={0} and ja.jobstatus='finished'
+        ) t3
+        """.format(settings.DB_SCHEMA_PANDA, taskid))
         rows = cur.fetchall()
 
         modificationtimeList = []
@@ -197,8 +224,6 @@ class TaskProgressPlot:
         else:
             None
 
-
-
     def make_profile_graph(self,frame, taskid):
         fig = plt.figure(figsize=(20, 15))
         plt.title('Execution profile for task {0}, NJOBS={1}'.format(taskid, len(frame) - 1), fontsize=24)
@@ -206,7 +231,6 @@ class TaskProgressPlot:
         plt.ylabel("Number of completed jobs", fontsize=18)
         plt.plot(frame.ENDTIME, frame.NJOBS, '.r')
         return fig
-
 
     def make_verbose_profile_graph(self,frame, taskid, status=None, daterange=None):
         plt.style.use('fivethirtyeight')
