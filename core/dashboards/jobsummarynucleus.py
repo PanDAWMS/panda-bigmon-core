@@ -8,6 +8,7 @@ import logging
 from django.db import connection
 from django.db.models import Count
 from django.db.utils import DatabaseError
+from django.conf import settings
 
 from core.pandajob.models import CombinedWaitActDefArch4
 import core.constants as const 
@@ -159,11 +160,11 @@ def get_world_hs06_summary(query, **kwargs):
 
     try:
         cur = connection.cursor()
-        cur.execute("SELECT * FROM table(ATLAS_PANDABIGMON.GETHS06SSUMMARY('{}'))".format(extra))
+        cur.execute("select * from table({}.geths06ssummary('{}'))".format(settings.DB_SCHEMA, extra))
         hspersite = cur.fetchall()
         cur.close()
     except DatabaseError:
-        _logger.exception('Internal Server Error to get HS06s summary from GETHS06SSUMMARY SQL function')
+        _logger.exception('Internal Server Error! Failed to get HS06s summary from GETHS06SSUMMARY SQL function')
         raise
 
     keys = ['nucleus', 'computingsite', 'hs06s_used', 'hs06s_failed']
