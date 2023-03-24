@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from django.db import connection
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 
 from django.utils.cache import patch_response_headers
@@ -63,11 +63,10 @@ def harvesterInstances(request):
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams']
     }
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         return render(request, 'harvesterInstances.html', data, content_type='text/html')
     else:
-        return HttpResponse(json.dumps(instances, cls=DateTimeEncoder), content_type='application/json')
+        return JsonResponse({'instances': instances}, encoder=DateTimeEncoder, safe=False)
 
 
 @login_customrequired
@@ -130,6 +129,7 @@ def harvesterWorkers(request):
     worker_list.extend(list(HarvesterWorkers.objects.filter(**wquery).extra(where=[extra]).values()))
     _logger.debug('Got workers: {}'.format(time.time() - request.session['req_init_time']))
 
+    # making attribute summary
     sumd = {}
     worker_params_to_count = [
         'status',
@@ -142,60 +142,71 @@ def harvesterWorkers(request):
     ]
     for wp in worker_params_to_count:
         sumd[wp] = dict(Counter(worker[wp] for worker in worker_list))
-
-    jobscnt = 0
-    for worker in worker_list:
-        if worker['njobs'] is not None:
-            jobscnt += worker['njobs']
-
     sumd = collections.OrderedDict(sumd)
 
-    suml = []
-    for field, attr_summary in sumd.items():
-        tmp_dict = {'field': field, 'attrs': []}
-        if isinstance(attr_summary, dict) and len(attr_summary) > 0:
-            tmp_dict['attrs'] = [[attr, count] for attr, count in attr_summary.items()]
-        suml.append(tmp_dict)
-    suml = sorted(suml, key=lambda x: x['field'])
+    if is_json_request(request):
+        data = {
+            'summary': sumd,
+            'workers': worker_list,
+        }
+        response = JsonResponse(data, encoder=DateTimeEncoder, safe=False)
+    else:
+        jobscnt = 0
+        for worker in worker_list:
+            if worker['njobs'] is not None:
+                jobscnt += worker['njobs']
 
-    # prepare harvester info if instance is specified
-    instance = ''
-    harvester_info = {}
-    if 'instance' in request.session['requestParams']:
-        instance = request.session['requestParams']['instance']
-        iquery = {'harvesterid': instance}
-        instance_params_to_show = [
-            'harvesterid',
-            'description',
-            'starttime',
-            'owner',
-            'hostname',
-            'lastupdate',
-            'swversion',
-            'commitstamp'
-        ]
-        harvester_info = HarvesterInstances.objects.filter(**iquery).values(*instance_params_to_show)[0]
-        _logger.debug('Got instance: {}'.format(time.time() - request.session['req_init_time']))
-        for datetime_field in ('lastupdate', 'submittime', 'starttime', 'endtime'):
-            if datetime_field in harvester_info and isinstance(harvester_info[datetime_field], datetime):
-                harvester_info[datetime_field] = harvester_info[datetime_field].strftime(settings.DATETIME_FORMAT)
+        # dict -> list for template
+        suml = []
+        for field, attr_summary in sumd.items():
+            tmp_dict = {'field': field, 'attrs': []}
+            if isinstance(attr_summary, dict) and len(attr_summary) > 0:
+                tmp_dict['attrs'] = [[attr, count] for attr, count in attr_summary.items()]
+            suml.append(tmp_dict)
+        suml = sorted(suml, key=lambda x: x['field'])
 
-    data = {
-        'harvesterinfo': harvester_info,
-        'suml': suml,
-        'type': 'workers',
-        'instance': instance,
-        'computingsite': 0,
-        'xurl': xurl,
-        'request': request,
-        'requestParams': request.session['requestParams'],
-        'viewParams': request.session['viewParams'],
-        'built': datetime.now().strftime("%H:%M:%S"),
-        'url': '?' + url.split('?')[1] if '?' in url else '?' + url
-    }
-    setCacheEntry(request, "harvesterWorkers", json.dumps(data, cls=DateEncoder), 60 * 20)
-    _logger.debug('Finished preprocessing: {}'.format(time.time() - request.session['req_init_time']))
-    return render(request, 'harvesterWorkers.html', data, content_type='text/html')
+        # prepare harvester info if instance is specified
+        instance = ''
+        harvester_info = {}
+        if 'instance' in request.session['requestParams']:
+            instance = request.session['requestParams']['instance']
+            iquery = {'harvesterid': instance}
+            instance_params_to_show = [
+                'harvesterid',
+                'description',
+                'starttime',
+                'owner',
+                'hostname',
+                'lastupdate',
+                'swversion',
+                'commitstamp'
+            ]
+            harvester_info = HarvesterInstances.objects.filter(**iquery).values(*instance_params_to_show)[0]
+            _logger.debug('Got instance: {}'.format(time.time() - request.session['req_init_time']))
+            for datetime_field in ('lastupdate', 'submittime', 'starttime', 'endtime'):
+                if datetime_field in harvester_info and isinstance(harvester_info[datetime_field], datetime):
+                    harvester_info[datetime_field] = harvester_info[datetime_field].strftime(settings.DATETIME_FORMAT)
+        _logger.debug('Finished preprocessing: {}'.format(time.time() - request.session['req_init_time']))
+
+        data = {
+            'harvesterinfo': harvester_info,
+            'nworkers': len(worker_list),
+            'njobs': jobscnt,
+            'suml': suml,
+            'type': 'workers',
+            'instance': instance,
+            'computingsite': 0,
+            'xurl': xurl,
+            'request': request,
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'url': '?' + url.split('?')[1] if '?' in url else '?' + url
+        }
+        setCacheEntry(request, "harvesterWorkers", json.dumps(data, cls=DateEncoder), 60 * 20)
+        response = render(request, 'harvesterWorkers.html', data, content_type='text/html')
+        _logger.debug('Rendered: {}'.format(time.time() - request.session['req_init_time']))
+    return response
 
 
 @login_customrequired
@@ -243,7 +254,7 @@ def harvesterWorkerInfo(request, workerid):
             for k, v in list(workerinfo.items()):
                 if is_timestamp(k):
                     try:
-                        val = v.strftime(defaultDatetimeFormat)
+                        val = v.strftime(settings.DATETIME_FORMAT)
                         workerinfo[k] = val
                     except:
                         pass
@@ -282,15 +293,13 @@ def get_harvester_workers(request):
     if '_' in request.session['requestParams']:
         xurl = xurl.replace('_={0}&'.format(request.session['requestParams']['_']), '')
 
-    data = None
-    # data = get_cache_entry(request, xurl, isData=True)
+    # data = None
+    data = getCacheEntry(request, xurl, isData=True)
     if data is not None:
         data = json.loads(data)
         # endSelfMonitor(request)
 
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
-
-    wquery, extra = setup_harvester_view(request, 'worker')
 
     if 'dt' in request.session['requestParams']:
         if 'display_limit_workers' in request.session['requestParams']:
@@ -299,6 +308,7 @@ def get_harvester_workers(request):
             display_limit_workers = 1000
 
         worker_list = []
+        wquery, extra = setup_harvester_view(request, 'worker')
         worker_list.extend(list(HarvesterWorkers.objects.filter(**wquery).extra(where=[extra])[:display_limit_workers].values()))
 
         if 'key' not in request.session['requestParams']:
@@ -351,9 +361,6 @@ def get_harvester_jobs(request):
     valid, response = initRequest(request)
     if not valid:
         return HttpResponse(status=400)
-
-    if 'instance' in request.session['requestParams']:
-        instance = request.session['requestParams']['instance']
 
     jquery, extra = setup_harvester_view(request, 'jobs')
 
