@@ -28,47 +28,39 @@
 {% endblock %}
 
 {% block body %}
-
-    <table id="harvesterinstances" style="width: 100%" class="data-table bluelinks">
-        <caption style="height: 30px;vertical-align: middle">Harvester instances</caption>
-        <thead>
-            <th>Instance</th>
-            <th>SW version</th>
-            <th>Description</th>
-            <th>Commit stamp</th>
-            <th>Last update</th>
-        </thead>
-        <tbody>
-        {% for instance in instances %}
-            <tr>
-                <td>
-                    <a href="{% url "harvesterWorkerList" %}?instance={{ instance.harvesterid|safe }}">{{ instance.harvesterid|safe }}</a>
-                </td>
-                <td>
-                    {{ instance.swversion }}
-                </td>
-                <td>
-                    {{ instance.commitstamp }}
-                </td>
-                <td>
-                    {{ instance.description }}
-                </td>
-                <td>
-                    {{ instance.lastupdate|date:"Y-m-d h:i:s" }}
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
+<div class="card bp-container-simple secondary">
+  <div class="card-divider"><p>Harvester instances</p></div>
+  <div class="card-section">
+    <table id="harvesterinstances" class="data-table">
+      <thead>
+      <tr>
+        <th>Instance</th>
+        <th>SW version</th>
+        <th>Description</th>
+        <th>Commit stamp</th>
+        <th>Last update</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for instance in instances %}
+        <tr>
+          <td><div class="tooltip-right"><a href="{% url "harvesterWorkerList" %}?instance={{ instance.harvesterid|safe }}">{{ instance.harvesterid|safe }}</a><span class="tooltip-text">See workers for {{ instance.harvesterid|safe }} instance</span></div></td>
+          <td>{{ instance.swversion }}</td>
+          <td>{{ instance.commitstamp }}</td>
+          <td>{{ instance.description }}</td>
+          <td>{{ instance.lastupdate|date:"Y-m-d h:i:s" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
     </table>
-
-    <script>
-        $(document).ready(function () {
-            $('#harvesterinstances').dataTable({"iDisplayLength": 100, responsive: true,});
-        });
-    </script>
-
+  </div>
+</div>
 {% endblock %}
 
-{#{% block helptext %}#}
-{#{% include "harvesterInfoHelp.html" with helptitle="Harvester list help" show="all" %}#}
-{#{% endblock %}#}
+{% block js_body_page %}
+  <script>
+    $(document).ready(function () {
+        $('#harvesterinstances').dataTable({"iDisplayLength": 100, responsive: true,});
+    });
+  </script>
+{% endblock %}
