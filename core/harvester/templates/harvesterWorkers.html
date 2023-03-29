@@ -29,17 +29,43 @@
 
 {% block body %}
 
+{% if instance and harvesterinfo|length > 0 %}
+<div class="table-scroll">
+<table class="fresh-table unstriped">
+<thead>
+<tr>
+  <th colspan="20">Harvester instance: {{ instance }}</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+	<th>Harvester ID</th>
+	<th>Owner</th>
+	<th>Hostname</th>
+	<th>SW version</th>
+	<th>Started<br>Last updated</th>
+  <th>Commit stamp</th>
+	<th>Description</th>
+</tr>
+<tr>
+  <td>{{ harvesterinfo.harvesterid }}</td>
+  <td>{{ harvesterinfo.owner }}</td>
+  <td>{{ harvesterinfo.hostname }}</td>
+  <td>{{ harvesterinfo.swversion }}</td>
+  <td>{{ harvesterinfo.starttime }}<br>{{ harvesterinfo.lastupdate }}</td>
+  <td>{{ harvesterinfo.commitstamp }}</td>
+  <td>{{ harvesterinfo.description }}</td>
+</tr>
+</tbody>
+</table>
+</div>
+{% endif %}
+
 <table class="bp-table secondary">
 <thead>
 <tr><th colspan=2> Harvester worker attributes summary, {% if instance %}{{ instance }} instance {% elif computingsite %} {{ computingsite }} computing site {% endif %}</th></tr>
 </thead>
 <tbody>
-  {% for field, value in harvesterinfo.items %}
-    <tr>
-      <td>{{ field }}</td>
-      <td>{{ value }}</td>
-    </tr>
-  {% endfor %}
   {% for row in suml %}
     <tr>
       <td><b>{{ row.field }} ({{ row.attrs|length }})</b> </td>
@@ -65,7 +91,7 @@
   </ul>
   <div class="tabs-content primary" data-tabs-content="harvesterinfo-tabs">
     <div class="tabs-panel is-active" id="panel_workerlist">
-      <table id="datatableHWL" class="data-table compact">
+      <table id="datatableHWL" class="data-table nowrap">
         <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
         <thead>
         <tr>
@@ -73,7 +99,7 @@
           <th class="num">Worker ID</th>
           <th class="num">Jobs</th>
           <th class="num">Last update</th>
-          <th>Status</th>
+          <th class="state">Status</th>
           <th class="num">Batch ID</th>
           <th>Computingsite</th>
           <th>Computing element</th>
@@ -96,7 +122,7 @@
       </table>
     </div>
     <div class="tabs-panel" id="panel_dialoglist">
-      <table id="datatableHDL" style="width: 100%" class="data-table compact">
+      <table id="datatableHDL" style="width: 100%" class="data-table nowrap">
         <caption style="height: 30px;vertical-align: middle">Dialog messages from harvester instances</caption>
         <thead><tr>
           <th>Creation time</th>
@@ -117,7 +143,7 @@
       </table>
     </div>
     <div class="tabs-panel" id="panel_workerstats">
-      <table id="datatableHWSL" style="width: 100%" class="data-table compact">
+      <table id="datatableHWSL" style="width: 100%" class="data-table nowrap">
         <caption style="height: 30px;vertical-align: middle">The table for realtime statistics of harvester workers</caption>
         <thead>
         <tr>
@@ -145,7 +171,7 @@
       </table>
     </div>
     <div class="tabs-panel" id="panel_joblist">
-      <table id="datatableHJL" class="data-table compact">
+      <table id="datatableHJL" class="data-table nowrap">
         <thead>
         <tr>
           <th>Last update</th>
@@ -259,6 +285,7 @@ function workersTable() {
             },
             {
                 "data": "status",
+                "className": "state",
                 sDefaultContent: "",
             },
             {

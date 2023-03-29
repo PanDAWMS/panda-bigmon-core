@@ -13,6 +13,7 @@
 .broken { color:firebrick }
 .lost { color:firebrick }
 .tobroken { color:firebrick }
+.missed { color:firebrick }
 .deleted { color:red }
 .failed { color:red }
 .aborted { color:red }
@@ -81,6 +82,7 @@
 .tobroken_fill { color:black;  background-color:#db9591; }
 .broken_fill { color:black;  background-color:#db9591; }
 .lost_fill { color:black;  background-color:#db9591; }
+.missed_fill { color:black;  background-color:#db9591; }
 
 .corrupted_fill { color:black;  background-color:#FF8174 }
 .alarm_fill { color:black;  background-color:#FF8174 }
