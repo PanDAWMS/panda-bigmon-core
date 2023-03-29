@@ -213,10 +213,8 @@ class JediDatasets(models.Model):
     destination = models.CharField(max_length=180, db_column='destination', blank=True)
     nfilesonhold = models.IntegerField(null=True, db_column='nfilesonhold', blank=True)
     templateid = models.BigIntegerField(db_column='templateid', blank=True)
-
-    if 'ORACLE' in settings.DEPLOYMENT:
-        nfileswaiting = models.IntegerField(null=True, db_column='nfileswaiting', blank=True)
-        nfilesmissing = models.IntegerField(null=True, db_column='nfilesmissing', blank=True)
+    nfileswaiting = models.IntegerField(null=True, db_column='nfileswaiting', blank=True)
+    nfilesmissing = models.IntegerField(null=True, db_column='nfilesmissing', blank=True)
 
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_datasets"'
