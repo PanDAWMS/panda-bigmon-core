@@ -18,7 +18,7 @@ class Harvester(BaseURLTasksProvider):
 
         if harvList is not None:
             for hin in harvList:
-                urlsQueue.put((self.BASIC_PRIORITY, '/harvesters/?instance='+str(hin['instance'])))
+                urlsQueue.put((self.BASIC_PRIORITY, '/harvester/workers/?instance='+str(hin['instance'])))
 
         return urlsQueue
 
