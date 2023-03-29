@@ -210,28 +210,31 @@ def harvesterWorkers(request):
 
 
 @login_customrequired
-def harvesterWorkerInfo(request, workerid):
+def harvesterWorkerInfo(request, workerid=None):
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=400)
+        return response
+
     if workerid is None:
-        return HttpResponse(status=400)
+        if 'workerid' in request.session['requestParams']:
+            workerid = request.session['requestParams']['workerid']
+            try:
+                workerid = int(workerid)
+            except:
+                _logger.exception('Provided workerid is not integer')
 
     harvesterid = None
     if 'harvesterid' in request.session['requestParams']:
         harvesterid = escape_input(request.session['requestParams']['harvesterid'])
+    elif 'instance' in request.session['requestParams']:
+        harvesterid = escape_input(request.session['requestParams']['instance'])
 
     workerinfo = {}
-    workerslist = []
     error = None
     if harvesterid and workerid:
-        tquery = {}
-        tquery['harvesterid'] = harvesterid
-        tquery['workerid'] = workerid
-        wvalues = ('harvesterid', 'workerid', 'lastupdate', 'status', 'batchid', 'nodeid', 'queuename', 'computingsite',
-                   'submittime', 'starttime', 'endtime', 'ncore', 'errorcode', 'stdout', 'stderr', 'batchlog',
-                   'resourcetype', 'nativeexitcode', 'nativestatus', 'diagmessage', 'computingelement', 'njobs')
-        workerslist.extend(HarvesterWorkers.objects.filter(**tquery).values(*wvalues))
+        workerslist = []
+        tquery = {'harvesterid': harvesterid, 'workerid': workerid}
+        workerslist.extend(HarvesterWorkers.objects.filter(**tquery).values())
 
         if len(workerslist) > 0:
             workerinfo = workerslist[0]
@@ -261,7 +264,7 @@ def harvesterWorkerInfo(request, workerid):
         else:
             workerinfo = None
     else:
-        error = "Harvesterid + Workerid is not specified"
+        error = "harvesterid or/and workerid not specified"
 
     data = {
         'request': request,
@@ -273,12 +276,9 @@ def harvesterWorkerInfo(request, workerid):
         'requestParams': request.session['requestParams'],
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-            'json' in request.session['requestParams']):
-        # endSelfMonitor(request)
+    if is_json_request(request):
         return HttpResponse(json.dumps(data['workerinfo'], cls=DateEncoder), content_type='application/json')
     else:
-        # endSelfMonitor(request)
         response = render(request, 'harvesterWorkerInfo.html', data, content_type='text/html')
         return response
 
@@ -287,9 +287,10 @@ def harvesterWorkerInfo(request, workerid):
 
 def get_harvester_workers(request):
     valid, response = initRequest(request)
+    if not valid:
+        return response
 
     xurl = extensibleURL(request)
-
     if '_' in request.session['requestParams']:
         xurl = xurl.replace('_={0}&'.format(request.session['requestParams']['_']), '')
 
@@ -319,6 +320,8 @@ def get_harvester_workers(request):
 
 def get_harvester_dialogs(request):
     valid, response = initRequest(request)
+    if not valid:
+        return response
 
     if 'instance' not in request.session['requestParams']:
         return HttpResponse(status=400)
@@ -1343,7 +1346,7 @@ def workersJSON(request):
             return HttpResponse(json.dumps(workersList, cls=DateTimeEncoder), content_type='application/json')
 
 @login_customrequired
-def harvesterslots(request):
+def harvesterSlots(request):
     valid, response = initRequest(request)
 
     harvesterslotsList = []
@@ -1370,7 +1373,7 @@ def harvesterslots(request):
         'built': datetime.now().strftime("%H:%M:%S"),
 
     }
-    return render(request, 'harvesterslots.html', data, content_type='text/html')
+    return render(request, 'harvesterSlots.html', data, content_type='text/html')
 
 
 def getWorkersByJobID(pandaid, instance=''):

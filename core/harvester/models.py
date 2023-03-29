@@ -38,7 +38,7 @@ class HarvesterWorkers(models.Model):
     nativestatus = models.CharField(max_length=80, db_column='nativestatus', null=False, blank=True)
     diagmessage = models.CharField(max_length=500, db_column='diagmessage', null=False, blank=True)
     computingelement = models.CharField(max_length=128, db_column='computingelement', null=False, blank=True)
-    njobs = models.IntegerField( db_column='njobs', null=False)
+    njobs = models.IntegerField(db_column='njobs', null=False)
     jobtype = models.CharField(max_length=128, db_column='jobtype', null=False, blank=True)
 
     class Meta:
