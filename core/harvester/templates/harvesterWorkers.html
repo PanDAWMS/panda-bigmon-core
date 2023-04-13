@@ -3,16 +3,11 @@
 {% load static %}
 {% load common_tags %}
 
-{% block page_title %}Harvester monitor page{% endblock %}
-{% block title %}PanDA monitor{% endblock %}
+{% block page_title %}Harvester {% if instance %}{{ instance }}{% endif %} {% endblock %}
 {% block subtitle %} {{ viewParams.selection|safe }}{% endblock %}
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
   <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-{% endblock %}
-
-{% block css_page %}
-  <link rel="stylesheet" href="{% static "css/harvester.css" %}?{% cache_bust "css/harvester.css" %}">
 {% endblock %}
 
 {% block js_head_page_library %}
@@ -29,6 +24,10 @@
 
 {% block body %}
 
+<p>
+  <b>{{ nworkers }} workers </b> in this selection
+</p>
+
 {% if instance and harvesterinfo|length > 0 %}
 <div class="table-scroll">
 <table class="fresh-table unstriped">
@@ -43,7 +42,8 @@
 	<th>Owner</th>
 	<th>Hostname</th>
 	<th>SW version</th>
-	<th>Started<br>Last updated</th>
+	<th>Started</th>
+  <th>Last updated</th>
   <th>Commit stamp</th>
 	<th>Description</th>
 </tr>
@@ -52,7 +52,8 @@
   <td>{{ harvesterinfo.owner }}</td>
   <td>{{ harvesterinfo.hostname }}</td>
   <td>{{ harvesterinfo.swversion }}</td>
-  <td>{{ harvesterinfo.starttime }}<br>{{ harvesterinfo.lastupdate }}</td>
+  <td>{{ harvesterinfo.starttime }}</td>
+  <td>{{ harvesterinfo.lastupdate }}</td>
   <td>{{ harvesterinfo.commitstamp }}</td>
   <td>{{ harvesterinfo.description }}</td>
 </tr>
@@ -63,7 +64,7 @@
 
 <table class="bp-table secondary">
 <thead>
-<tr><th colspan=2> Harvester worker attributes summary, {% if instance %}{{ instance }} instance {% elif computingsite %} {{ computingsite }} computing site {% endif %}</th></tr>
+<tr><th colspan=2> Harvester worker attributes summary</th></tr>
 </thead>
 <tbody>
   {% for row in suml %}
@@ -83,14 +84,25 @@
 
 
 <div id="harvesterinfodiv">
-  <ul class="tabs primary" data-tabs id="harvesterinfo-tabs">
+  <ul class="tabs primary" data-tabs data-deep-link="true" id="harvesterinfo-tabs">
     <li class="tabs-title is-active"><a href="#panel_workerlist" aria-selected="true">Workers</a></li>
     <li class="tabs-title"><a href="#panel_joblist">Jobs</a></li>
     <li class="tabs-title"><a href="#panel_workerstats">Worker Statistics</a></li>
-    <li class="tabs-title"><a href="#panel_dialoglist">Dialog Messages</a></li>
+    <li class="tabs-title"><a href="#panel_dialoglist">Diagnostic Messages</a></li>
   </ul>
   <div class="tabs-content primary" data-tabs-content="harvesterinfo-tabs">
     <div class="tabs-panel is-active" id="panel_workerlist">
+      <div class="row bp">
+      <div class="small-12 medium-4 large-3 columns">
+        <div class="input-group bp">
+          <span class="input-group-label"># workers limit</span>
+          <input class="input-group-field" id="numberW" type="number" value="1000">
+          <div class="input-group-button">
+            <input type="submit" value="Reload" id="reloadWorkers">
+          </div>
+        </div>
+      </div>
+      </div>
       <table id="datatableHWL" class="data-table nowrap">
         <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
         <thead>
@@ -123,9 +135,10 @@
     </div>
     <div class="tabs-panel" id="panel_dialoglist">
       <table id="datatableHDL" style="width: 100%" class="data-table nowrap">
-        <caption style="height: 30px;vertical-align: middle">Dialog messages from harvester instances</caption>
+        <caption style="height: 30px;vertical-align: middle">Diagnostic messages from harvester instances</caption>
         <thead><tr>
           <th>Creation time</th>
+          <th>Harvester instance</th>
           <th>Module name</th>
           <th>Message level</th>
           <th>Diag message</th>
@@ -138,20 +151,18 @@
           <th></th>
           <th></th>
           <th></th>
+          <th></th>
         </tr>
         </tfoot>
       </table>
     </div>
     <div class="tabs-panel" id="panel_workerstats">
-      <table id="datatableHWSL" style="width: 100%" class="data-table nowrap">
+      <table id="datatableHWSL" style="width: 100%" class="data-table nowrap unstriped">
         <caption style="height: 30px;vertical-align: middle">The table for realtime statistics of harvester workers</caption>
         <thead>
         <tr>
-          {% if instance == 0 %}
-            <th>Harvester</th>
-          {% else %}
-            <th>Computing site</th>
-          {% endif %}
+          <th>Harvester instance</th>
+          <th>Computing site</th>
           <th>Resource type</th>
           <th>Status</th>
           <th>Number of workers</th>
@@ -166,11 +177,23 @@
           <th></th>
           <th></th>
           <th></th>
+          <th></th>
         </tr>
         </tfoot>
       </table>
     </div>
     <div class="tabs-panel" id="panel_joblist">
+      <div class="row bp">
+      <div class="small-12 medium-4 large-3 columns">
+        <div class="input-group bp">
+          <span class="input-group-label"># jobs limit</span>
+          <input class="input-group-field" id="numberJ" type="number" value="1000">
+          <div class="input-group-button">
+            <input type="submit" value="Reload" id="reloadJobs">
+          </div>
+        </div>
+      </div>
+      </div>
       <table id="datatableHJL" class="data-table nowrap">
         <thead>
         <tr>
@@ -197,7 +220,31 @@
 <script>
 
 $(document).ready(function () {
-  $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
+  $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 200});
+
+  $('#reloadWorkers').click(function () {
+      var number = $('#numberW').val();
+      var key = getRandomInt(100000000, 900000000)
+      var url = "{% url 'getworkers' %}{{url|safe}}&dt&display_limit_workers=" + number + "&key=" + key
+      $('#datatableHWL').DataTable().ajax.url(url).load();
+  });
+  $('#reloadJobs').click(function () {
+      var number = $('#numberJ').val();
+      var url = "{% url 'getjobs' %}{{ url|safe }}&limit=" + number;
+      $('#datatableHJL').DataTable().ajax.url(url).load();
+  });
+  $('#reloadWorkerStats').click(function () {
+      let number = $('#numberW').val();
+      let url = "{% url 'getworkerstats' %}?instance={{ instance|safe }}&limit=" + number
+      $('#harvesterworkerstats').DataTable().ajax.url(url).load();
+  });
+      $('#reloadDialogs').click(function () {
+      var number = $('#numberD').val();
+      var instance = "{{ instance|safe }}";
+      let url = "{% url 'getworkerstats' %}?instance={{ instance|safe }}&limit=" + number
+      $('#harvesterdialogs').DataTable().ajax.url(url).load();
+  });
+
   workersTable();
 });
 
@@ -209,10 +256,9 @@ function workersTable() {
 
     $('#datatableHWL').dataTable({
         "order": [[ 3, "desc" ]],
-        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
         "paging": true,
         "scrollX": true,
-
         "ajax": {
             "processing": true,
             "url": "{% url 'getworkers' %}{{url|safe}}&dt&display_limit_workers=1000",
@@ -440,12 +486,12 @@ function workersTable() {
     });
 }
 function dialogsTable(number) {
-    var url = "{% url 'getdialogs' %}{{ url|safe }}&limit=" + number
+    var url = "{% url 'getdialogs' %}{{ url|safe }}&limit=" + number;
     $('#datatableHDL').dataTable({
         "order": [[0, "desc"]],
         "retrieve": true,
         "searching": true,
-        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
         "ajax": {
             "processing": true,
             "url": url,
@@ -468,6 +514,9 @@ function dialogsTable(number) {
                     }
                 }
             },
+            {   "data": "harvesterid",
+                 sDefaultContent: "",
+            },
             {
                 "data": "modulename",
                 sDefaultContent: ""
@@ -485,17 +534,15 @@ function dialogsTable(number) {
         ],
 
         "createdRow": function (row, data, index) {
-        if (data["messagelevel"] == 'ERROR') {
-
-            $('td', row).eq(2).addClass('errspan');
-        }
-        else{
-        $('td', row).eq(2).addClass(data["messagelevel"].toString().toLowerCase());
-        }
-        $('td', row).eq(3).addClass("textleft")
+          if (data["messagelevel"] == 'ERROR') {
+              $('td', row).eq(3).addClass('errspan');
+          }
+          else {
+            $('td', row).eq(3).addClass(data["messagelevel"].toString().toLowerCase());
+          }
         },
         initComplete: function () {
-            this.api().columns([1, 2]).every(function () {
+            this.api().columns([1, 2, 3]).every(function () {
                 var column = this;
                 var select = $('<select><option value="">Show all</option></select>')
                     .appendTo($(column.footer()).empty())
@@ -518,12 +565,12 @@ function dialogsTable(number) {
 }
 function jobsTable(number) {
     var url = "{% url 'getjobs' %}{{ url|safe }}&limit=" + number;
-
+    url += !(url.includes('instance') || url.includes('harvesterid')) ? '&instance=' + "{{ instance|safe }}" : '';
     $('#datatableHJL').dataTable({
         "order": [[0, "desc"]],
         "retrieve": true,
         "searching": true,
-        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
         "ajax": {
             "processing": true,
             "url": url,
@@ -580,97 +627,81 @@ function jobsTable(number) {
     });
 
 }
-function workerstatsTable(number) {
-    var instance = "{{ instance|safe}}";
-    if (instance!="0") {
-      var url = "{% url 'getworkerstats' %}{{ url|safe }}" + "&limit=" + number;
-      dt = "computingsite"
-    } else {
-      var url = "{% url 'getworkerstats' %}{{ url|safe }}&limit=" + number
-      dt = "harvesterid"
-    }
-    $('#datatableHWSL').dataTable({
-        "order": [[0, "desc"]],
-        "retrieve": true,
-        "searching": true,
-        "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-        "ajax": {
-            "processing": true,
-            "url": url,
-            "dataSrc": ''
-        },
-        "aoColumns": [
-            {   "data": dt,
-                 sDefaultContent: "",
-            },
-            {
-                "data": "resourcetype",
-                sDefaultContent: ""
-            },
-            {
-                "data": "status",
-                sDefaultContent: "",
-            },
-            {
-                "data": "nworkers",
-                sDefaultContent: "",
-            },
-            {
-                "data": "lastupdate",
-                sDefaultContent: "",
-                "render": function (data, type, full, meta) {
-                    if(type === "sort" || type === "type"){
-                        return data;
-                    }
-                    if (moment(data).isValid()) {
-                        return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
-                    }
-                    else {
-                        return "-"
-                    }
-                }
-            },
-        ],
-        "createdRow": function (row, data, index) {
-            if (data["status"] == 'running') {
-                $('td', row).eq(0).addClass('running_fill');
-                $('td', row).eq(1).addClass('running_fill');
-                $('td', row).eq(2).addClass('running_fill');
-                $('td', row).eq(3).addClass('running_fill');
-                $('td', row).eq(4).addClass('running_fill');
-            }
-            else if (data["status"] == 'submitted') {
-                $('td', row).eq(0).addClass('submitted_fill');
-                $('td', row).eq(1).addClass('submitted_fill');
-                $('td', row).eq(2).addClass('submitted_fill');
-                $('td', row).eq(3).addClass('submitted_fill');
-                $('td', row).eq(4).addClass('submitted_fill');
-            }
-        },
+function workerstatsTable() {
+  var url = "{% url 'getworkerstats' %}{{ url|safe }}";
+  $('#datatableHWSL').dataTable({
+      "order": [[0, "desc"]],
+      "retrieve": true,
+      "searching": true,
+      "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+      "stripeClasses": [],
+      "ajax": {
+          "processing": true,
+          "url": url,
+          "dataSrc": ''
+      },
+      "aoColumns": [
+          {   "data": "harvesterid",
+               sDefaultContent: "",
+          },
+          {   "data": "computingsite",
+               sDefaultContent: "",
+          },
+          {
+              "data": "resourcetype",
+              sDefaultContent: ""
+          },
+          {
+              "data": "status",
+              sDefaultContent: "",
+          },
+          {
+              "data": "nworkers",
+              sDefaultContent: "",
+          },
+          {
+              "data": "lastupdate",
+              sDefaultContent: "",
+              "render": function (data, type, full, meta) {
+                  if(type === "sort" || type === "type"){
+                      return data;
+                  }
+                  if (moment(data).isValid()) {
+                      return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
+                  }
+                  else {
+                      return "-"
+                  }
+              }
+          },
+      ],
+      "createdRow": function (row, data, index) {
+        $(row).addClass(data["status"] + "_fill");
+      },
 
-        initComplete: function () {
-            this.api().columns([0,1,2]).every(function () {
-                var column = this;
+      initComplete: function () {
+          this.api().columns([0,1,2]).every(function () {
+              var column = this;
 
-                    var select = $('<select><option value="">Show all</option></select>')
-                        .appendTo($(column.footer()).empty())
-                        .on('change', function () {
+                  var select = $('<select><option value="">Show all</option></select>')
+                      .appendTo($(column.footer()).empty())
+                      .on('change', function () {
 
-                            var val = $.fn.dataTable.util.escapeRegex(
-                                $(this).val()
-                            );
+                          var val = $.fn.dataTable.util.escapeRegex(
+                              $(this).val()
+                          );
 
-                            column
-                                .search(val ? '^' + val + '$' : '', true, false)
-                                .draw(true);
-                        });
+                          column
+                              .search(val ? '^' + val + '$' : '', true, false)
+                              .draw(true);
+                      });
 
-                    column.data().unique().sort().each(function (d, j) {
-                        select.append('<option value="' + d + '">' + d + '</option>')
-                    });
-            });
-        }
-    });
+                  column.data().unique().sort().each(function (d, j) {
+                      select.append('<option value="' + d + '">' + d + '</option>')
+                  });
+          });
+      }
+  });
 
 }
 
@@ -680,19 +711,13 @@ $("#harvesterinfo-tabs").on('change.zf.tabs', function() {
   let number = 1000;
   switch (active_tab_id) {
       case 'panel_dialoglist':
-          {#var number = $('#numberD').val();#}
           dialogsTable(number);
-          {#$("#harvesterdialogs_filter").hide();#}
           break;
       case 'panel_workerstats':
-          {#var number = $('#numberW').val();#}
-          workerstatsTable(number);
-          {#$("#harvesterworkerstats_filter").hide();#}
+          workerstatsTable();
           break;
       case 'panel_joblist':
-          {#var number = $('#numberJ').val();#}
           jobsTable(number);
-          {#$("#harvesterjobs_filter").hide();#}
           break;
 }
 });

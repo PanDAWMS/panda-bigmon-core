@@ -151,11 +151,6 @@ def harvesterWorkers(request):
         }
         response = JsonResponse(data, encoder=DateTimeEncoder, safe=False)
     else:
-        jobscnt = 0
-        for worker in worker_list:
-            if worker['njobs'] is not None:
-                jobscnt += worker['njobs']
-
         # dict -> list for template
         suml = []
         for field, attr_summary in sumd.items():
@@ -166,10 +161,18 @@ def harvesterWorkers(request):
         suml = sorted(suml, key=lambda x: x['field'])
 
         # prepare harvester info if instance is specified
-        instance = ''
+        instance = None
         harvester_info = {}
         if 'instance' in request.session['requestParams']:
             instance = request.session['requestParams']['instance']
+        elif 'harvesterid' in request.session['requestParams']:
+            instance = request.session['requestParams']['harvesterid']
+        else:
+            # check if all found workers are from the same instance
+            if 'harvesterid' in sumd and len(sumd['harvesterid']) == 1:
+                instance = list(sumd['harvesterid'].keys())[0]
+                url += '&harvesterid={}'.format(instance)
+        if instance:
             iquery = {'harvesterid': instance}
             instance_params_to_show = [
                 'harvesterid',
@@ -191,7 +194,6 @@ def harvesterWorkers(request):
         data = {
             'harvesterinfo': harvester_info,
             'nworkers': len(worker_list),
-            'njobs': jobscnt,
             'suml': suml,
             'type': 'workers',
             'instance': instance,
@@ -298,8 +300,6 @@ def get_harvester_workers(request):
     data = getCacheEntry(request, xurl, isData=True)
     if data is not None:
         data = json.loads(data)
-        # endSelfMonitor(request)
-
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     if 'dt' in request.session['requestParams']:
@@ -310,7 +310,7 @@ def get_harvester_workers(request):
 
         worker_list = []
         wquery, extra = setup_harvester_view(request, 'worker')
-        worker_list.extend(list(HarvesterWorkers.objects.filter(**wquery).extra(where=[extra])[:display_limit_workers].values()))
+        worker_list.extend(list(HarvesterWorkers.objects.filter(**wquery).extra(where=[extra]).order_by('-lastupdate')[:display_limit_workers].values()))
 
         if 'key' not in request.session['requestParams']:
             setCacheEntry(request, xurl, json.dumps(worker_list, cls=DateTimeEncoder), 60 * 20, isData=True)
@@ -323,9 +323,6 @@ def get_harvester_dialogs(request):
     if not valid:
         return response
 
-    if 'instance' not in request.session['requestParams']:
-        return HttpResponse(status=400)
-
     dquery, extra = setup_harvester_view(request, 'dialog')
 
     limit = 100
@@ -333,8 +330,7 @@ def get_harvester_dialogs(request):
         limit = int(request.session['requestParams']['limit'])
 
     dialogs_list = []
-    values = ['creationtime', 'modulename', 'messagelevel', 'diagmessage']
-
+    values = ['creationtime', 'harvesterid', 'modulename', 'messagelevel', 'diagmessage']
     dialogs_list.extend(HarvesterDialogs.objects.filter(**dquery).order_by('-creationtime')[:limit].values(*values))
 
     return HttpResponse(json.dumps(dialogs_list, cls=DateTimeEncoder), content_type='application/json')
@@ -345,17 +341,10 @@ def get_harvester_worker_stats(request):
     if not valid:
         return HttpResponse(status=400)
 
-    if 'instance' not in request.session['requestParams']:
-        return HttpResponse(status=400)
-
     wquery, extra = setup_harvester_view(request, 'workerstat')
-
     harvsterworkerstats = []
-    limit = 100
-    if 'limit' in request.session['requestParams']:
-        limit = int(request.session['requestParams']['limit'])
-    wvalues = ('computingsite', 'resourcetype', 'status', 'nworkers', 'lastupdate')
-    harvsterworkerstats.extend(HarvesterWorkerStats.objects.filter(**wquery).values(*wvalues).order_by('-lastupdate')[:limit])
+    wvalues = ('harvesterid', 'computingsite', 'resourcetype', 'status', 'nworkers', 'lastupdate')
+    harvsterworkerstats.extend(HarvesterWorkerStats.objects.filter(**wquery).values(*wvalues).order_by('-lastupdate'))
 
     return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='application/json')
 

@@ -78,6 +78,9 @@ def setup_harvester_view(request, otype='worker'):
                         startdate.strftime(settings.DATETIME_FORMAT),
                         enddate.strftime(settings.DATETIME_FORMAT)]
         elif otype == 'workerstat':
+            if rparam in ('status',):
+                # status of worker != aggregated status for statistics -> exclude from query
+                continue
             for field in HarvesterWorkerStats._meta.get_fields():
                 param = field.name
                 if rparam == param:
@@ -92,6 +95,11 @@ def setup_harvester_view(request, otype='worker'):
                 if len(internal_extra) > 0:
                     internal_extra += ' and '
                 internal_extra += rparam + '= \'' + rvalue + '\''
+                continue
+            if rparam == 'pandaid':
+                pandaids = request.session['requestParams']['pandaid'].split(',')
+                if len(pandaids) > 0:
+                    query['pandaid__in'] = pandaids
                 continue
             for field in HarvesterRelJobsWorkers._meta.get_fields():
                 param = field.name

@@ -113,6 +113,13 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
   max-width: 100%;
 }
 
+.row.bp {
+  max-width: 100%;
+}
+.row.bp .columns, .row.bp .column {
+  padding: 0.3rem 0.3rem 0 0.3rem;
+}
+
 .row .column.column-block {
   /*padding: 0 0.3rem 0 0.3rem;*/
 }
@@ -253,7 +260,6 @@ a.bp-button {
     background-color: #272727;
   }
 
-
 .bp-button.kill {
   display: inline-block;
   min-width: 100px;
@@ -269,6 +275,17 @@ a.bp-button {
   .bp-button.kill:hover {
     background-color: #272727;
     color: #fefefe;
+}
+
+a.bp-button.command {
+  display: inline-block;
+  min-width: 100px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+  background-color: #099999;
+  color: white;
 }
 
 a.bp-button-with-logo {
@@ -390,6 +407,47 @@ a.bp-button-with-logo:hover > .text {
     .bp-dropdown-button > div.dropdown-items a:hover {
       background-color: rgba(53,86,129, 0.3)
     }
+
+
+.input-group.bp {
+  margin-bottom: 0.3rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.input-group.bp .input-group-label {
+  font-size: inherit;
+  padding: 0 0.7rem;
+  border-color: #e6e6e6;
+}
+
+.input-group.bp .input-group-field {
+  height: 1.75rem;
+  font-size: inherit;
+  border-color: #e6e6e6;
+  box-shadow: none;
+}
+
+.input-group.bp .input-group-button a,
+.input-group.bp .input-group-button input,
+.input-group.bp .input-group-button button,
+.input-group.bp .input-group-button label {
+  height: 1.75rem;
+}
+
+.input-group.bp .input-group-button > input[type="submit"] {
+  text-align: center;
+  border: none;
+  padding: 0.4rem 0.7rem;
+  font-size: inherit;
+  font-weight: bold;
+  background-color: #5e789a;
+  color: white;
+}
+  .input-group.bp .input-group-button > input[type="submit"]:hover {
+    background-color: #272727;
+  }
+
 
 
 .dropdownplots {
@@ -1697,15 +1755,4 @@ footer {
 .zselect ul li.selectall,
 .zselect ul li.deselectall{
   cursor: pointer!important;
-}
-.bp-button.command {
-  display: inline-block;
-  min-width: 100px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: bold;
-  text-decoration: none;
-  background-color: #099999;
-  color: white;
-
 }
