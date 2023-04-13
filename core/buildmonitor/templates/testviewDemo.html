@@ -24,7 +24,17 @@
        <H3>branch {{ nightly }}, release {{ rel }}, project={{ proj }}, platform={{ ar }}</H3>
 </div>
 
-<div id="linkslist"><P><a href="{% url 'BuildGlobal' %}">Link to global system page</a></div>
+<div id="linkslist"><P><UL>
+<LI><a href="{% url 'BuildGlobal' %}">Link to global system page</a>
+{% if "ci" in nightly|safe|lower %}
+<LI>Notes on tailored CI testing<UL>
+<LI>Tests found redundant for a MR changeset (but still performed) are marked with a note icon {{ nicon|safe }}
+<LI>Tests found redundant and cancelled are marked with a cancel icon {{ cicon|safe }}
+<LI>Details on test tailoring are in
+<a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/SelectiveCITesting">this twiki page</a>
+</UL>
+{% endif %}
+</UL></div>
 
 <table id="TestsResults" class="stripe">
      <thead>

@@ -55,7 +55,7 @@
 var json=JSON.stringify({{ reslt3 | safe }});
 
 var globaldisplayTable = $('#firstGlobalExample').dataTable({
-"order": [[9, 'asc']],
+"order": [[9, 'asc'], [1, 'asc']],
 "pageLength": 100,
 "lengthMenu": [[-1, 25, 50, 100], ["All", 25, 50, 100]],
 "data": JSON.parse(json),

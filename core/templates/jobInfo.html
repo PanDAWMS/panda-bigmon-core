@@ -958,23 +958,11 @@ function operationjob_token(pandaID, action, params) {
                 data: {pandaID: pandaID, action: action, params: JSON.stringify(params)},
                 async: false,
                 type: "POST",
-                success: function(result){
-                    result_obj = JSON.parse(result)
-                    alert(result_obj['text']);
-                    url_redirect = window.location.origin + window.location.pathname + window.location.search;
-                    if (result_obj['redirect'] == 'true') {
-                        url_redirect += '#payloadlog';
-                        window.location.href=window.location.href + '#payloadlog';
-                        window.location.replace(url_redirect);
-                    }
-                    else {
-                        url_redirect = url_redirect.replace('#payloadlog','');
-                        window.location.href=url_redirect;
-                        window.location.replace(url_redirect);
-                    }
-                     document.location.reload();
+                cache: false,
+                success: function(result) {
+                    let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+                    window.location = notimestampurl + 'timestamp=' + d;
                 }});
-
     } else {
         // Do nothing!
     }

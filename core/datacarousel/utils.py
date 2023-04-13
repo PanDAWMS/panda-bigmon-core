@@ -443,7 +443,7 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
     if rule_info.get('error') and ('[TAPE SOURCE]' in rule_info.get('error')):
         return True, stuck_files
     # Check in ES that files have failed attempts from tape. Limit to 1000 files, should be enough
-    es_conn = create_es_connection(instance='es-monit', verify_certs=False, timeout=10000)
+    es_conn = create_es_connection(instance='es-monit', timeout=10000)
     start_time = rule_info.get('created_at', None)
     days_since_start = (datetime.datetime.now() - start_time).days if start_time else settings.DATA_CAROUSEL_MAIL_REPEAT
     sources = list(getCRICSEs().get(rse, []))
