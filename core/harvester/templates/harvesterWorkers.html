@@ -565,7 +565,7 @@ function dialogsTable(number) {
 }
 function jobsTable(number) {
     var url = "{% url 'getjobs' %}{{ url|safe }}&limit=" + number;
-    url += !(url.includes('instance') || url.includes('harvesterid')) ? '&instance=' + "{{ instance|safe }}" : '';
+    url += (!(url.includes('instance') || url.includes('harvesterid')) && !("{{ instance|safe }}"== "None")) ? '&instance=' + "{{ instance|safe }}" : '';
     $('#datatableHJL').dataTable({
         "order": [[0, "desc"]],
         "retrieve": true,
