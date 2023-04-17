@@ -54,6 +54,10 @@ class BPHarvesterTest(unittest.TestCase):
         response = self.client.get('/harvester/instances/?' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
 
+    def test_harvester_slots(self):
+        response = self.client.get('/harvester/slots/?' + self.timestamp_str)
+        self.assertEqual(response.status_code, 200)
+
     def test_harvester_workers(self):
         self.assertIsInstance(self.test_data['instance'], str)
         response = self.client.get('/harvester/workers/?instance={}&{}'.format(
@@ -72,9 +76,34 @@ class BPHarvesterTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_api_harvester_get_workers(self):
-        self.assertIsInstance(self.test_data['workerid'], int)
-        response = self.client.get('/harvester/getworkers/?instance={}&{}'.format(
+        self.assertIsInstance(self.test_data['instance'], str)
+        response = self.client.get('/harvester/getworkers/?instance={}&dt&{}'.format(
             self.test_data['instance'],
             self.timestamp_str
         ))
         self.assertEqual(response.status_code, 200)
+
+    def test_api_harvester_get_worker_stats(self):
+        self.assertIsInstance(self.test_data['instance'], str)
+        response = self.client.get('/harvester/getworkerstats/?instance={}&{}'.format(
+            self.test_data['instance'],
+            self.timestamp_str
+        ))
+        self.assertEqual(response.status_code, 200)
+
+    def test_api_harvester_get_jobs(self):
+        self.assertIsInstance(self.test_data['instance'], str)
+        response = self.client.get('/harvester/getjobs/?instance={}&{}'.format(
+            self.test_data['instance'],
+            self.timestamp_str
+        ))
+        self.assertEqual(response.status_code, 200)
+
+    def test_api_harvester_get_getdiagnostics(self):
+        self.assertIsInstance(self.test_data['instance'], str)
+        response = self.client.get('/harvester/getdiagnostics/?instance={}&{}'.format(
+            self.test_data['instance'],
+            self.timestamp_str
+        ))
+        self.assertEqual(response.status_code, 200)
+

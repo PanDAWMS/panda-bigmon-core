@@ -78,7 +78,7 @@
 	<td>{% if job.waittime %}{{ job.waittime }}{% else %}-{% endif %}<br>{% if job.duration %}{{ job.duration }}{% else %}-{% endif %}</td>
 	<td>{% if viewParams.MON_VO != 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite  %}">{{ job.computingsite }}</a></td>
   {% if job.harvesterInfo and job.harvesterInfo|length > 0 %}
-    <td><a href="{% url 'harvesters' %}?instance={{ job.harvesterInfo.harvesterid }}">{{ job.harvesterInfo.harvesterid }}</a>
+    <td><a href="{% url 'harvesterWorkerList' %}?instance={{ job.harvesterInfo.harvesterid }}">{{ job.harvesterInfo.harvesterid }}</a>
         <br><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ job.harvesterInfo.harvesterid }}&workerid={{ job.harvesterInfo.workerid }}">{{ job.harvesterInfo.workerid }}</a>
     </td>
   {% endif %}
@@ -280,7 +280,7 @@
             <a href="{% url 'jobList' %}?jobname={{ job.jobname }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">Previous attempts</a>
         {% endif %}
         {% if job.harvesterInfo %}
-            <a href="{% url "harvesters" %}?pandaid={{pandaid}}&days={{ job.days_since_creation }}">Associated Harvester workers</a>
+            <a href="{% url "harvesterWorkerList" %}?pandaid={{pandaid}}&days={{ job.days_since_creation }}">Associated Harvester workers</a>
         {% endif %}
         {% if job.jobsetid and job.jobsetid > 0 %}
             <a href="{% url 'jobList' %}?produsername={{ job.produsername }}&mode=nodrop&jobsetid={{ job.jobsetid }}">Jobs for {{ job.jobsetid }} jobset</a>

@@ -40,7 +40,7 @@
 <a class="bp-button" href="{% url 'wnInfo' site.siteid %}?hours={{ njobhours }}">Worker nodes</a>
 <a class="bp-button" href="{% url 'jobList' %}?computingsite={{site.siteid}}&hours={{njobhours}}&display_limit=100">Jobs</a>
 <a class="bp-button" href="{% url 'errorSummary' %}?computingsite={{site.siteid}}">Errors</a>
-<a class="bp-button" href="{% url 'harvesters' %}?computingsite={{site.siteid}}">Harvester workers</a>
+<a class="bp-button" href="{% url 'harvesterWorkerList' %}?computingsite={{site.siteid}}">Harvester workers</a>
 <a class="bp-button-with-logo" target="_blank" href="https://{{ request.session.crichost }}/atlas/pandaqueue/detail/{{ site.nickname }}/full/"><div class="img-box"><img src="{% static 'images/cric-logo.png' %}"></div><span class="text">PQ description</span></a>
 {% if viewParams.MON_VO == 'ATLAS' %}
 <a class="bp-button" target="_blank" href="http://apfmon.lancs.ac.uk/q/{{ site.nickname }}">APF, pilots</a>

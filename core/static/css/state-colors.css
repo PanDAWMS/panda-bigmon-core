@@ -43,21 +43,21 @@
 .scouting { color:#47D147 }
 .scouted { color:#47D147 }
 .picked { color:#47D147 }
-.running { color:#34a934 !important; }
+.running { color:#34a934; }
 .merging { color:#34a934 }
 .partial { color:#34a934 }
 .transferring { color:#34a934 }
 .activated { color:#3b8e67 }
 .prepared { color:#3b8e67 }
 .ready { color:#3b8e67 }
-.submitted{ color:#3b8e67 !important; }
+.submitted{ color:#3b8e67; }
 .assigning { color:#099999 }
 .scheduled { color:#099999 }
 .assigned { color:#099999 }
 .defined { color:#2174bb }
 .registered { color:#2174bb }
 .test { color:#2174bb }
-.to_submit { color:#2174bb !important;}
+.to_submit { color:#2174bb;}
 .staging { color:#934fff }
 .toretry { color:grey }
 .toincexec { color:grey }
@@ -116,7 +116,7 @@
 .merging_fill { color:black;  background-color:#addf80 }
 .partial_fill { color:black;  background-color:#addf80 }
 
-.running_fill { color:black;  background-color:#C7E9A9 !important;  }
+.running_fill { color:black;  background-color:#C7E9A9;  }
 .starting_fill { color:black;  background-color:#C7E9A9;  }
 .scouted_fill { color:black;  background-color:#C7E9A9;  }
 .cached_fill { color:black;  background-color:#C7E9A9 }
@@ -138,13 +138,13 @@
 
 .activated_fill { color:black;  background-color:#d9efde }
 .ready_fill { color:black;  background-color:#d9efde;  }
-.submitted_fill { color:black;  background-color:#d9efde !important; }
+.submitted_fill { color:black;  background-color:#d9efde; }
 
 .defined_fill { color:black;  background-color:#e6f0f6;  }
 .queued_fill { color:black;  background-color:#e6f0f6;  }
 .registered_fill { color:black;  background-color:#e6f0f6;   }
 .test_fill { color:black; background-color:#e6f0f6 }
-.to_submit_fill { color:black; background-color:#e6f0f6 !important;}
+.to_submit_fill { color:black; background-color:#e6f0f6;}
 
 .paused_fill { color:black;  background-color:#edeeef;  }
 .passed_fill { color: black; background-color:#edeeef; }

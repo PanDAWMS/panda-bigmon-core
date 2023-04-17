@@ -24,6 +24,7 @@
 
 {% block body %}
 
+{% if nworkers > 0 %}
 <p>
   <b>{{ nworkers }} workers </b> in this selection
 </p>
@@ -217,6 +218,10 @@
   </div>
 </div>
 
+{% else %}
+  <p>No workers found. Check the filters in the URL or increase time range using <code>&hours=N</code> parameter.</p>
+{% endif %}
+
 <script>
 
 $(document).ready(function () {
@@ -322,7 +327,7 @@ function workersTable() {
                         return data;
                     }
                     if (moment(data).isValid()) {
-                        return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
                     }
                     else {
                         return "-"
@@ -370,7 +375,7 @@ function workersTable() {
                         return data;
                     }
                     if (moment(data).isValid()) {
-                        return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
                     }
                     else {
                         return "-"
@@ -386,7 +391,7 @@ function workersTable() {
                         return data;
                     }
                     if (moment(data).isValid()) {
-                        return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
                     }
                     else {
                         return "-"
@@ -402,7 +407,7 @@ function workersTable() {
                         return data;
                     }
                     if (moment(data).isValid()) {
-                        return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
                     }
                     else {
                         return "-"
@@ -485,8 +490,8 @@ function workersTable() {
         }
     });
 }
-function dialogsTable(number) {
-    var url = "{% url 'getdialogs' %}{{ url|safe }}&limit=" + number;
+function diagnosticsTable(number) {
+    var url = "{% url 'getdiagnostics' %}{{ url|safe }}&limit=" + number;
     $('#datatableHDL').dataTable({
         "order": [[0, "desc"]],
         "retrieve": true,
@@ -507,7 +512,7 @@ function dialogsTable(number) {
                         return data;
                     }
                     if (moment(data).isValid()) {
-                        return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
                     }
                     else {
                         return "-"
@@ -565,7 +570,7 @@ function dialogsTable(number) {
 }
 function jobsTable(number) {
     var url = "{% url 'getjobs' %}{{ url|safe }}&limit=" + number;
-    url += (!(url.includes('instance') || url.includes('harvesterid')) && !("{{ instance|safe }}"== "None")) ? '&instance=' + "{{ instance|safe }}" : '';
+    url += (!(url.includes('instance') || url.includes('harvesterid')) && !("{{ instance|safe }}" === "None")) ? '&instance=' + "{{ instance|safe }}" : '';
     $('#datatableHJL').dataTable({
         "order": [[0, "desc"]],
         "retrieve": true,
@@ -585,7 +590,7 @@ function jobsTable(number) {
                         return data;
                     }
                     if (moment(data).isValid()) {
-                        return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
                     }
                     else {
                         return "-"
@@ -614,16 +619,6 @@ function jobsTable(number) {
             },
 
         ],
-        "createdRow": function (row, data, index) {
-            if (data["status"] == 'running') {
-                $('td', row).eq(0).addClass('running_fill');
-                $('td', row).eq(1).addClass('running_fill');
-                $('td', row).eq(2).addClass('running_fill');
-                $('td', row).eq(3).addClass('running_fill');
-
-            }
-        },
-
     });
 
 }
@@ -667,7 +662,7 @@ function workerstatsTable() {
                       return data;
                   }
                   if (moment(data).isValid()) {
-                      return moment(data).utc().format('YYYY-MM-DD hh:mm:ss')
+                      return moment(data).format('YYYY-MM-DD HH:mm:ss')
                   }
                   else {
                       return "-"
@@ -676,7 +671,11 @@ function workerstatsTable() {
           },
       ],
       "createdRow": function (row, data, index) {
-        $(row).addClass(data["status"] + "_fill");
+        let n_columns = Object.keys(data).length;
+        console.log(n_columns);
+        for (let i=0; i<n_columns; i++) {
+          $('td', row).eq(i).addClass(data["status"] + "_fill");
+        }
       },
 
       initComplete: function () {
@@ -711,7 +710,7 @@ $("#harvesterinfo-tabs").on('change.zf.tabs', function() {
   let number = 1000;
   switch (active_tab_id) {
       case 'panel_dialoglist':
-          dialogsTable(number);
+          diagnosticsTable(number);
           break;
       case 'panel_workerstats':
           workerstatsTable();
@@ -725,6 +724,6 @@ $("#harvesterinfo-tabs").on('change.zf.tabs', function() {
 
 {% endblock %}
 
-{#{% block helptext %}#}
-{#{% include "harvesterInfoHelp.html" with helptitle="Harvester list help" show="all" %}#}
-{#{% endblock %}#}
+{% block helptext %}
+{% include "harvesterInfoHelp.html" with helptitle="Harvester workers help" show="all" %}
+{% endblock %}

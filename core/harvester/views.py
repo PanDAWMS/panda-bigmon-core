@@ -316,9 +316,11 @@ def get_harvester_workers(request):
             setCacheEntry(request, xurl, json.dumps(worker_list, cls=DateTimeEncoder), 60 * 20, isData=True)
 
         return HttpResponse(json.dumps(worker_list, cls=DateTimeEncoder), content_type='application/json')
+    else:
+        return HttpResponse(status=400)
 
 
-def get_harvester_dialogs(request):
+def get_harvester_diagnostics(request):
     valid, response = initRequest(request)
     if not valid:
         return response

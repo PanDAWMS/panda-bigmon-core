@@ -22,9 +22,9 @@ def setup_harvester_view(request, otype='worker'):
 
     internal_extra = ''
 
-    DEFAULT_HOURS = 24
+    DEFAULT_HOURS = 12
     startdate = None
-    enddate = datetime.now()
+    enddate = datetime.utcnow()
 
     if 'hours' in request.session['requestParams']:
         startdate = enddate - timedelta(hours=int(request.session['requestParams']['hours']))
@@ -49,13 +49,17 @@ def setup_harvester_view(request, otype='worker'):
             'yyyy-mm-dd hh24:mi:ss'
         )
 
-    if 'instance' in request.session['requestParams']:
-        query['harvesterid'] = request.session['requestParams']['instance']
+    if 'instance' in request.session['requestParams'] or 'harvesterid' in request.session['requestParams']:
+        if 'instance' in request.session['requestParams']:
+            harvesterid = request.session['requestParams']['instance']
+        else:
+            harvesterid = request.session['requestParams']['harvesterid']
+        query['harvesterid'] = harvesterid
         if otype == 'jobs':
             # to use index on workers table
             if len(internal_extra) > 0:
                 internal_extra += ' and '
-            internal_extra = "harvesterid = '{}' ".format(request.session['requestParams']['instance'])
+            internal_extra += "harvesterid = '{}' ".format(harvesterid)
 
     for rparam, rvalue in list(request.session['requestParams'].items()):
         if otype == 'worker':
@@ -63,6 +67,8 @@ def setup_harvester_view(request, otype='worker'):
                 param = field.name
                 if rparam == param:
                     query[param] = rvalue
+            if rparam == 'workerids':
+                query['workerid__in'] = rvalue.split(',')
             if rparam == 'pandaid':
                 extra += """ and workerid in (
                     select workerid from {}.harvester_rel_jobs_workers where pandaid in ({})
