@@ -4,6 +4,7 @@ ART related models
 
 from __future__ import unicode_literals
 from django.db import models
+from django.conf import settings
 
 
 class ARTResults(models.Model):
@@ -20,7 +21,7 @@ class ARTResults(models.Model):
     lock_time = models.DateTimeField(null=True, db_column='lock_time', blank=True)
 
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."ART_RESULTS"'
+        db_table = f'"{settings.DB_SCHEMA}"."ART_RESULTS"'
 
 
 class ARTSubResult(models.Model):
@@ -29,7 +30,7 @@ class ARTSubResult(models.Model):
     result = models.TextField(db_column='RESULT_JSON', blank=True)
 
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."ART_SUBRESULT"'
+        db_table = f'"{settings.DB_SCHEMA}"."ART_SUBRESULT"'
 
 
 class ARTResultsQueue(models.Model):
@@ -38,7 +39,7 @@ class ARTResultsQueue(models.Model):
     is_locked = models.IntegerField(db_column='is_locked')
     lock_time = models.DateTimeField(null=True, db_column='lock_time', blank=True)
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."ART_RESULTS_QUEUE"'
+        db_table = f'"{settings.DB_SCHEMA}"."ART_RESULTS_QUEUE"'
 
 
 class ARTTests(models.Model):
@@ -56,4 +57,4 @@ class ARTTests(models.Model):
 
     # subresult = models.OneToOneField('ARTSubResult', related_name='pandaid_sr', on_delete=models.DO_NOTHING, db_column='pandaid')
     class Meta:
-        db_table = u'"ATLAS_PANDABIGMON"."ART_TESTS"'
+        db_table = f'"{settings.DB_SCHEMA}"."ART_TESTS"'
