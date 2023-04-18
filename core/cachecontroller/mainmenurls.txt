@@ -33,7 +33,7 @@
 /bigpandamonitor/
 /art/
 /errorsscat/
-/artmonitview
+/artmonitview/
 /dash/region/
 /dash/region/?jobtype=analy&splitby=jobtype
 /dash/region/?jobtype=prod&splitby=jobtype
