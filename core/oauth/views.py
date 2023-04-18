@@ -44,7 +44,11 @@ def loginauth2(request):
 
     # store the redirect url in the session to be picked up after the auth completed
     request.session['next'] = next
-    response = render(request, 'login.html', {'request': request, 'auth_providers': auth_providers}, content_type='text/html')
+    data = {
+        'request': request,
+        'auth_providers': auth_providers,
+    }
+    response = render(request, 'login.html', data, content_type='text/html')
     response.delete_cookie('sessionid')
     return response
 

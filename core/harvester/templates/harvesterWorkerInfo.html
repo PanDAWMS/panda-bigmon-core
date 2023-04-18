@@ -1,0 +1,76 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}Harvester worker {{ workerid }}{% endblock %}
+{% block subtitle %}Harvester Worker details {{ viewParams.selection|safe }} {% endblock %}
+{% block js_head_page_library %}
+ <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
+{% endblock %}
+
+{% block body %}
+{% if error %}
+<div class="callout alert">
+  <h5>Error!</h5>
+  <p>{{ error }}</p>
+</div>
+{% else %}
+<table class="bp-table secondary">
+<thead>
+  <tr><th colspan=24>Harvester worker parameters</th></tr>
+</thead>
+<tbody>
+  {% for name,value in workerinfo.items %}
+    {% if name != 'corrJobs' and name != 'jobsStatuses' and name != 'jobsSubStatuses' and name != 'njobs'%}
+      <tr>
+        <td>{{ name }}</td>
+        <td>{% if 'http' in value or 'https' in value and value %} <a href="{{ value }}" target="_blank">{{ value }}</a>{% elif value is None or value == '' %}-{% else %} {{ value }} {% endif %}</td>
+      </tr>
+    {% elif name == 'corrJobs'  %}
+      <tr>
+        <td>Correspondent Jobs</td>
+        <td><div class="comment more">
+          {% for pandaid in value %}
+            <span class="item"><a href="{% url 'jobInfo' pandaid %}">{{ pandaid }}</a></span>
+          {% endfor %}
+        </div></td>
+      </tr>
+    {% elif name == 'jobsStatuses'%}
+      <tr>
+        <td>jobstatus</td>
+       <td>
+        <div class="comment more">
+          {% for jobstatus, jobstatuscount in value.items %}
+            <span class="item"><span class='{{ jobstatus }}'>{{ jobstatus }}</span> <a href="{% url 'jobList' %}?{% if harvesterid %}harvesterinstance={{ harvesterid }}{% endif %}{% if workerid %}&workerid={{ workerid }}{% endif %}&jobstatus={{ jobstatus }}"> ({{ jobstatuscount }})</a></span>
+          {% endfor %}
+        </div>
+      </td>
+      </tr>
+    {% elif name == 'jobsSubStatuses'%}
+      <tr>
+        <td>jobsubstatus</td>
+        <td><div class="comment more">
+          {% for jobsubstatus, jobsubtatuscount in value.items %}
+             {{ jobsubstatus }} ({{ jobsubtatuscount }})
+          {% endfor %}
+        </div></td>
+      </tr>
+    {% elif name == 'njobs'%}
+      <tr>
+        <td>{{ name }}</td>
+        <td><a href="{% url 'jobList' %}?{% if harvesterid %}harvesterinstance={{ harvesterid }}{% endif %}{% if workerid %}&workerid={{ workerid }}{% endif %}"> {{ value }}</a></td>
+      </tr>
+    {% endif %}
+  {% endfor %}
+</tbody>
+</table>
+{% endif %}
+{% endblock %}
+
+{% block js_body_page %}
+<script>
+$(document).ready(function() {
+  $(".comment").shorten();
+});
+</script>
+{% endblock %}

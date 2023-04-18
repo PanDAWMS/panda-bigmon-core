@@ -1111,7 +1111,7 @@ function buildQueueSummary(data, divid) {
         sDefaultContent: "---",
         className: "num",
         render: function(data, type, row, meta) {
-            return '<a href = "{% url 'harvesters' %}?hours=12&status=submitted&computingsite=' + row[0] + '">' + row[8] + '</a>';
+            return '<a href = "{% url 'harvesterWorkerList' %}?hours=12&status=submitted&computingsite=' + row[0] + '">' + row[8] + '</a>';
         }
       },
       {
@@ -1123,7 +1123,7 @@ function buildQueueSummary(data, divid) {
           (row[21] !== 0) ? diffpct = (row[9] - row[21])*100./row[21] : diffpct = 0;
           if (diffpct > 20) {cellstr += 'alert';}
           else if (diffpct > 10) {cellstr += 'warning';}
-          cellstr += '" href = "{% url 'harvesters' %}?hours=12&status=running&computingsite=' + row[0] + '">' + row[9] + '</a>';
+          cellstr += '" href = "{% url 'harvesterWorkerList' %}?hours=12&status=running&computingsite=' + row[0] + '">' + row[9] + '</a>';
           return cellstr
         }
       },

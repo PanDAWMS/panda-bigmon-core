@@ -1,0 +1,729 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% load common_tags %}
+
+{% block page_title %}Harvester {% if instance %}{{ instance }}{% endif %} {% endblock %}
+{% block subtitle %} {{ viewParams.selection|safe }}{% endblock %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
+  <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
+{% endblock %}
+
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/moment.min.js' %}"></script>
+  <script src="{% static 'js/datatables/datetime-moment.js' %}"></script>
+  <script src="{% static 'js/datatables/datetime.js' %}"></script>
+  <script src="{% static 'js/datatables/jquery-ui.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
+  <script src="{% static 'js/jquery.shorten.1.0.js' %}"></script>
+  <script src="{% static 'js/d3.v3.min.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+{% if nworkers > 0 %}
+<p>
+  <b>{{ nworkers }} workers </b> in this selection
+</p>
+
+{% if instance and harvesterinfo|length > 0 %}
+<div class="table-scroll">
+<table class="fresh-table unstriped">
+<thead>
+<tr>
+  <th colspan="20">Harvester instance: {{ instance }}</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+	<th>Harvester ID</th>
+	<th>Owner</th>
+	<th>Hostname</th>
+	<th>SW version</th>
+	<th>Started</th>
+  <th>Last updated</th>
+  <th>Commit stamp</th>
+	<th>Description</th>
+</tr>
+<tr>
+  <td>{{ harvesterinfo.harvesterid }}</td>
+  <td>{{ harvesterinfo.owner }}</td>
+  <td>{{ harvesterinfo.hostname }}</td>
+  <td>{{ harvesterinfo.swversion }}</td>
+  <td>{{ harvesterinfo.starttime }}</td>
+  <td>{{ harvesterinfo.lastupdate }}</td>
+  <td>{{ harvesterinfo.commitstamp }}</td>
+  <td>{{ harvesterinfo.description }}</td>
+</tr>
+</tbody>
+</table>
+</div>
+{% endif %}
+
+<table class="bp-table secondary">
+<thead>
+<tr><th colspan=2> Harvester worker attributes summary</th></tr>
+</thead>
+<tbody>
+  {% for row in suml %}
+    <tr>
+      <td><b>{{ row.field }} ({{ row.attrs|length }})</b> </td>
+      <td>
+        <div class="comment more">
+        {% for item in row.attrs %}
+          <span class="item"><span class="{% if row.field == 'status' %}{{ item.0 }}{% endif %}">{{ item.0 }}</span> <a href="{{ xurl }}{{ row.field }}={{ item.0|safe }}">({{ item.1 }})</a></span>
+        {% endfor %}
+        </div>
+      </td>
+    </tr>
+  {% endfor %}
+</tbody>
+</table>
+
+
+<div id="harvesterinfodiv">
+  <ul class="tabs primary" data-tabs data-deep-link="true" id="harvesterinfo-tabs">
+    <li class="tabs-title is-active"><a href="#panel_workerlist" aria-selected="true">Workers</a></li>
+    <li class="tabs-title"><a href="#panel_joblist">Jobs</a></li>
+    <li class="tabs-title"><a href="#panel_workerstats">Worker Statistics</a></li>
+    <li class="tabs-title"><a href="#panel_dialoglist">Diagnostic Messages</a></li>
+  </ul>
+  <div class="tabs-content primary" data-tabs-content="harvesterinfo-tabs">
+    <div class="tabs-panel is-active" id="panel_workerlist">
+      <div class="row bp">
+      <div class="small-12 medium-4 large-3 columns">
+        <div class="input-group bp">
+          <span class="input-group-label"># workers limit</span>
+          <input class="input-group-field" id="numberW" type="number" value="1000">
+          <div class="input-group-button">
+            <input type="submit" value="Reload" id="reloadWorkers">
+          </div>
+        </div>
+      </div>
+      </div>
+      <table id="datatableHWL" class="data-table nowrap">
+        <caption style="height: 30px;vertical-align: middle">Workers submitted by harvesters</caption>
+        <thead>
+        <tr>
+          <th>Instance</th>
+          <th class="num">Worker ID</th>
+          <th class="num">Jobs</th>
+          <th class="num">Last update</th>
+          <th class="state">Status</th>
+          <th class="num">Batch ID</th>
+          <th>Computingsite</th>
+          <th>Computing element</th>
+          <th class="num">Submit time</th>
+          <th class="num">Start time</th>
+          <th class="num">End time</th>
+          <th class="num">Error code</th>
+          <th>Stdout</th>
+          <th>Stderr</th>
+          <th>Batch log</th>
+          <th>JDL</th>
+          <th>Resource type</th>
+          <th class="num">Native exit code</th>
+          <th>Native status</th>
+          <th>Diag message</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div class="tabs-panel" id="panel_dialoglist">
+      <table id="datatableHDL" style="width: 100%" class="data-table nowrap">
+        <caption style="height: 30px;vertical-align: middle">Diagnostic messages from harvester instances</caption>
+        <thead><tr>
+          <th>Creation time</th>
+          <th>Harvester instance</th>
+          <th>Module name</th>
+          <th>Message level</th>
+          <th>Diag message</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+        <tr>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+        </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="tabs-panel" id="panel_workerstats">
+      <table id="datatableHWSL" style="width: 100%" class="data-table nowrap unstriped">
+        <caption style="height: 30px;vertical-align: middle">The table for realtime statistics of harvester workers</caption>
+        <thead>
+        <tr>
+          <th>Harvester instance</th>
+          <th>Computing site</th>
+          <th>Resource type</th>
+          <th>Status</th>
+          <th>Number of workers</th>
+          <th>Last update</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+        <tr>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+        </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="tabs-panel" id="panel_joblist">
+      <div class="row bp">
+      <div class="small-12 medium-4 large-3 columns">
+        <div class="input-group bp">
+          <span class="input-group-label"># jobs limit</span>
+          <input class="input-group-field" id="numberJ" type="number" value="1000">
+          <div class="input-group-button">
+            <input type="submit" value="Reload" id="reloadJobs">
+          </div>
+        </div>
+      </div>
+      </div>
+      <table id="datatableHJL" class="data-table nowrap">
+        <thead>
+        <tr>
+          <th>Last update</th>
+          <th>Harvester</th>
+          <th>Workerid</th>
+          <th>Pandaid</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+        <tr>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+        </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% else %}
+  <p>No workers found. Check the filters in the URL or increase time range using <code>&hours=N</code> parameter.</p>
+{% endif %}
+
+<script>
+
+$(document).ready(function () {
+  $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 200});
+
+  $('#reloadWorkers').click(function () {
+      var number = $('#numberW').val();
+      var key = getRandomInt(100000000, 900000000)
+      var url = "{% url 'getworkers' %}{{url|safe}}&dt&display_limit_workers=" + number + "&key=" + key
+      $('#datatableHWL').DataTable().ajax.url(url).load();
+  });
+  $('#reloadJobs').click(function () {
+      var number = $('#numberJ').val();
+      var url = "{% url 'getjobs' %}{{ url|safe }}&limit=" + number;
+      $('#datatableHJL').DataTable().ajax.url(url).load();
+  });
+  $('#reloadWorkerStats').click(function () {
+      let number = $('#numberW').val();
+      let url = "{% url 'getworkerstats' %}?instance={{ instance|safe }}&limit=" + number
+      $('#harvesterworkerstats').DataTable().ajax.url(url).load();
+  });
+      $('#reloadDialogs').click(function () {
+      var number = $('#numberD').val();
+      var instance = "{{ instance|safe }}";
+      let url = "{% url 'getworkerstats' %}?instance={{ instance|safe }}&limit=" + number
+      $('#harvesterdialogs').DataTable().ajax.url(url).load();
+  });
+
+  workersTable();
+});
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function workersTable() {
+
+    $('#datatableHWL').dataTable({
+        "order": [[ 3, "desc" ]],
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+        "paging": true,
+        "scrollX": true,
+        "ajax": {
+            "processing": true,
+            "url": "{% url 'getworkers' %}{{url|safe}}&dt&display_limit_workers=1000",
+            "dataSrc": ''
+        },
+        "aoColumns": [
+            {
+                "data": "harvesterid",
+                sDefaultContent: "",
+            },
+            {
+                data: "workerid",
+                sDefaultContent: "",
+                "className": "num",
+                "render": function (data, type, full, meta) {
+                    if (type === "sort" || type === 'type') {
+                        return data;
+                    }
+                    else {
+                        let hwi_base_url = "{% url 'harvesterWorkerInfo' workerid='000000' %}?harvesterid=" + full['harvesterid'];
+                        if (full['njobs']!=null) {
+                            if("harvesterid" in full) {
+                            return '' +'<a href="' + hwi_base_url.replace('000000', data)+'">'+full['workerid']+'</a>';
+                            } else {
+                            return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">'
+                            }
+                        }
+                        else {
+                            return '' + '<a href="' + hwi_base_url.replace('000000', data)+'">'+full['workerid']+'</a>'
+                        }
+                    }
+                }
+            },
+            {
+                data: "njobs",
+                sDefaultContent: "",
+                "className": "num",
+                "render": function (data, type, full, meta) {
+                    if (type === "sort" || type === 'type') {
+                        return data;
+                    }
+                    else {
+                        if (full['njobs']!=null) {
+                            if("harvesterid" in full){
+                            return  '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' +  full['njobs']  + '</a>'
+                            }
+                            else {
+                            return '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' +  full['njobs'] +  '</a>'
+                            }
+                        }
+                        else { return '-' }
+                    }
+                }
+            },
+            {
+                "data": "lastupdate",
+                "className": "num",
+                sDefaultContent: "",
+                "render": function (data, type, full, meta) {
+                    if(type === "sort" || type === "type"){
+                        return data;
+                    }
+                    if (moment(data).isValid()) {
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
+                    }
+                    else {
+                        return "-"
+                    }
+                }
+            },
+            {
+                "data": "status",
+                "className": "state",
+                sDefaultContent: "",
+            },
+            {
+                "data": "batchid",
+                sDefaultContent: "",
+                "className": "num",
+                "render": function (data, type, full, meta) {
+                    if (type === "sort" || type === 'type') {
+                        return data;
+                    }
+                    else {
+                            if("harvesterid" in full){
+                            return '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid']  +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
+                            }
+                            else {
+                            return  '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] +'&batchid=' +full['batchid'] +'">' + full['batchid'] + '</a>'
+                            }
+
+                    }
+                }
+            },
+            {
+                "data": "computingsite",
+                sDefaultContent: "",
+            },
+            {
+                "data": "computingelement",
+                sDefaultContent: "",
+            },
+            {
+                "data": "submittime",
+                sDefaultContent: "",
+                "className": "num",
+                "render": function (data, type, full, meta) {
+                    if(type === "sort" || type === "type"){
+                        return data;
+                    }
+                    if (moment(data).isValid()) {
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
+                    }
+                    else {
+                        return "-"
+                    }
+                }
+            },
+            {
+                "data": "starttime",
+                sDefaultContent: "",
+                "className": "num",
+                "render": function (data, type, full, meta) {
+                    if(type === "sort" || type === "type"){
+                        return data;
+                    }
+                    if (moment(data).isValid()) {
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
+                    }
+                    else {
+                        return "-"
+                    }
+                }
+            },
+            {
+                "data": "endtime",
+                sDefaultContent: "",
+                "className": "num",
+                "render": function (data, type, full, meta) {
+                    if(type === "sort" || type === "type"){
+                        return data;
+                    }
+                    if (moment(data).isValid()) {
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
+                    }
+                    else {
+                        return "-"
+                    }
+                }
+            },
+            {
+                "data": "errorcode",
+                sDefaultContent: "",
+            },
+            {
+                "data": "stdout",
+                sDefaultContent: "",
+                "render": function (data, type, full, meta) {
+                    if (full['stdout'] == 0 || full['stdout']==null) {
+                        return "-"
+                    }
+                    else {
+                        return '<a href = "' + full['stdout'] + '" target="_blank">' + 'Link' + '</a>'
+                    }
+                }
+            },
+            {
+                "data": "stderr",
+                sDefaultContent: "",
+                "render": function (data, type, full, meta) {
+                    if (full['stderr'] == 0  || full['stderr']==null) {
+                        return "-"
+                    }
+                    else {
+                        return '<a href = "' + full['stderr'] + '" target="_blank">' + 'Link' + '</a>'
+                    }
+                }
+            },
+            {
+                "data": "batchlog",
+                sDefaultContent: "",
+                "render": function (data, type, full, meta) {
+
+                    if (full['batchlog'] == 0 || full['batchlog'] == null) {
+                        return "-"
+                    } else {
+                        return '<a href = "' + full['batchlog'] + '" target="_blank">' + 'Link' + '</a>'
+                    }
+                }
+            },
+            {
+                "data": "jdl",
+                sDefaultContent: "",
+                "render": function (data, type, full, meta) {
+                    if (full['jdl'] == 0  || full['jdl']==null) {
+                        return "-"
+                    }
+                    else {
+                        return '<a href = "' + full['jdl'] + '" target="_blank">' + 'Link' + '</a>'
+                    }
+                }
+            },
+            {
+                "data": "resourcetype",
+                sDefaultContent: "",
+            },
+            {
+                "data": "nativeexitcode",
+                sDefaultContent: "",
+                "className": "num",
+            },
+            {
+                "data": "nativestatus",
+                sDefaultContent: "",
+            },
+            {
+                "data": "diagmessage",
+                sDefaultContent: "",
+            },
+        ],
+        "createdRow": function (row, data, index) {
+            $('td', row).eq(4,18).addClass(data['status'] + '_fill');
+            $('td', row).eq(1,2,3,5,8,9,10,11,17).addClass("dt-right");
+        }
+    });
+}
+function diagnosticsTable(number) {
+    var url = "{% url 'getdiagnostics' %}{{ url|safe }}&limit=" + number;
+    $('#datatableHDL').dataTable({
+        "order": [[0, "desc"]],
+        "retrieve": true,
+        "searching": true,
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+        "ajax": {
+            "processing": true,
+            "url": url,
+            "dataSrc": ''
+        },
+        "aoColumns": [
+            {
+                "data": "creationtime",
+                sDefaultContent: "",
+                "className": "num",
+                "render": function (data, type, full, meta) {
+                    if(type === "sort" || type === "type"){
+                        return data;
+                    }
+                    if (moment(data).isValid()) {
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
+                    }
+                    else {
+                        return "-"
+                    }
+                }
+            },
+            {   "data": "harvesterid",
+                 sDefaultContent: "",
+            },
+            {
+                "data": "modulename",
+                sDefaultContent: ""
+            },
+            {
+                "data": "messagelevel",
+                sDefaultContent: ""
+            },
+            {
+                "data": "diagmessage",
+                "orderable": false,
+                sDefaultContent: "",
+            },
+
+        ],
+
+        "createdRow": function (row, data, index) {
+          if (data["messagelevel"] == 'ERROR') {
+              $('td', row).eq(3).addClass('errspan');
+          }
+          else {
+            $('td', row).eq(3).addClass(data["messagelevel"].toString().toLowerCase());
+          }
+        },
+        initComplete: function () {
+            this.api().columns([1, 2, 3]).every(function () {
+                var column = this;
+                var select = $('<select><option value="">Show all</option></select>')
+                    .appendTo($(column.footer()).empty())
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
+                });
+            });
+        }
+    });
+}
+function jobsTable(number) {
+    var url = "{% url 'getjobs' %}{{ url|safe }}&limit=" + number;
+    url += (!(url.includes('instance') || url.includes('harvesterid')) && !("{{ instance|safe }}" === "None")) ? '&instance=' + "{{ instance|safe }}" : '';
+    $('#datatableHJL').dataTable({
+        "order": [[0, "desc"]],
+        "retrieve": true,
+        "searching": true,
+        "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+        "ajax": {
+            "processing": true,
+            "url": url,
+            "dataSrc": ''
+        },
+        "aoColumns": [
+            {
+                "data": "lastupdate",
+                sDefaultContent: "",
+                "render": function (data, type, full, meta) {
+                    if(type === "sort" || type === "type"){
+                        return data;
+                    }
+                    if (moment(data).isValid()) {
+                        return moment(data).format('YYYY-MM-DD HH:mm:ss')
+                    }
+                    else {
+                        return "-"
+                    }
+                }
+            },
+            {
+                "data": "harvesterid",
+                sDefaultContent: "",
+            },
+            {
+                "data": "workerid",
+                sDefaultContent: ""
+            },
+            {
+                "data": "pandaid",
+                sDefaultContent: "",
+                "render": function (data, type, full, meta) {
+                    if (type === "sort" || type === 'type') {
+                        return data;
+                    }
+                    else {
+                        return '<a href = "{% url 'jobInfo' %}/'+full['pandaid']+'">' + full['pandaid'] + '</a>'
+                    }
+                }
+            },
+
+        ],
+    });
+
+}
+function workerstatsTable() {
+  var url = "{% url 'getworkerstats' %}{{ url|safe }}";
+  $('#datatableHWSL').dataTable({
+      "order": [[0, "desc"]],
+      "retrieve": true,
+      "searching": true,
+      "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+      "stripeClasses": [],
+      "ajax": {
+          "processing": true,
+          "url": url,
+          "dataSrc": ''
+      },
+      "aoColumns": [
+          {   "data": "harvesterid",
+               sDefaultContent: "",
+          },
+          {   "data": "computingsite",
+               sDefaultContent: "",
+          },
+          {
+              "data": "resourcetype",
+              sDefaultContent: ""
+          },
+          {
+              "data": "status",
+              sDefaultContent: "",
+          },
+          {
+              "data": "nworkers",
+              sDefaultContent: "",
+          },
+          {
+              "data": "lastupdate",
+              sDefaultContent: "",
+              "render": function (data, type, full, meta) {
+                  if(type === "sort" || type === "type"){
+                      return data;
+                  }
+                  if (moment(data).isValid()) {
+                      return moment(data).format('YYYY-MM-DD HH:mm:ss')
+                  }
+                  else {
+                      return "-"
+                  }
+              }
+          },
+      ],
+      "createdRow": function (row, data, index) {
+        let n_columns = Object.keys(data).length;
+        console.log(n_columns);
+        for (let i=0; i<n_columns; i++) {
+          $('td', row).eq(i).addClass(data["status"] + "_fill");
+        }
+      },
+
+      initComplete: function () {
+          this.api().columns([0,1,2]).every(function () {
+              var column = this;
+
+                  var select = $('<select><option value="">Show all</option></select>')
+                      .appendTo($(column.footer()).empty())
+                      .on('change', function () {
+
+                          var val = $.fn.dataTable.util.escapeRegex(
+                              $(this).val()
+                          );
+
+                          column
+                              .search(val ? '^' + val + '$' : '', true, false)
+                              .draw(true);
+                      });
+
+                  column.data().unique().sort().each(function (d, j) {
+                      select.append('<option value="' + d + '">' + d + '</option>')
+                  });
+          });
+      }
+  });
+
+}
+
+
+$("#harvesterinfo-tabs").on('change.zf.tabs', function() {
+  let active_tab_id = $('div[data-tabs-content="'+$(this).attr('id')+'"]').find('.tabs-panel.is-active').attr('id');
+  let number = 1000;
+  switch (active_tab_id) {
+      case 'panel_dialoglist':
+          diagnosticsTable(number);
+          break;
+      case 'panel_workerstats':
+          workerstatsTable();
+          break;
+      case 'panel_joblist':
+          jobsTable(number);
+          break;
+}
+});
+</script>
+
+{% endblock %}
+
+{% block helptext %}
+{% include "harvesterInfoHelp.html" with helptitle="Harvester workers help" show="all" %}
+{% endblock %}

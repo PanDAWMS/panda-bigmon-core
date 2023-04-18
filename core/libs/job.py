@@ -381,7 +381,7 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
         fieldsStr = request.session['requestParams']['fields']
         fields = fieldsStr.split("|")
         if 'metastruct' in fields:
-            doAddMeta = True
+            do_add_metadata = True
 
     pq_clouds = get_pq_clouds()
 
@@ -504,8 +504,6 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
                 'actualcorecount' in job and job['actualcorecount'] is not None and job['actualcorecount'] > 0) and (
                     'durationsec' in job and job['durationsec'] is not None and job['durationsec'] > 0):
             job['cpuefficiency'] = round(100.0 * job['cpuconsumptiontime'] / job['durationsec'] / job['actualcorecount'], 2)
-
-    jobs = sorted(jobs, key=lambda x: x['modificationtime'], reverse=True)
 
     _logger.debug('Job list cleaned')
     return jobs

@@ -84,7 +84,6 @@
   </button>
 </div>
 
-
 {% if ntasks > 0 %}
   <div id="scope" data-ng-controller="userDashController" class="ng-cloak">
   <div class="card bp-container-simple secondary" id="plots">
@@ -124,6 +123,8 @@
 
 <script src="{% static 'js/d3jsplot.js' %}"></script>
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+<script src="{% static 'js/datatables/renderEllipsisCustom.js' %}?{% cache_bust "js/datatables/renderEllipsisCustom.js" %}"></script>
+
 
 
 <script type="text/javascript">
@@ -136,6 +137,7 @@
       page: {
         width: getWidth(),
         screen_cat: getScreenCategory(getWidth()),
+        is_minimized: false,
       },
       message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
       metrics: metrics,
@@ -238,7 +240,8 @@
       "scrollX": true,
       "aaSorting": [[0, 'desc']],
       "columnDefs": [
-          {"type": "num-html", "targets": [0,1,3,6,7,8,9,12,13,14,15,16,17,19,20] }
+          {"type": "num-html", "targets": [0,1,3,6,7,8,9,12,13,14,15,16,17,19,20] },
+          {#{ targets: 18, render: DataTable.render.ellipsis( 17, true, false)}#}
       ],
       "data": $scope.userinfo.tasks.list,
       "buttons": [
@@ -273,7 +276,7 @@
           sDefaultContent: "-",
           render: function(data, type, row, meta) {
             if (data) {
-              return '<a href="{{ xurl }}reqid=' + data +'">' + data + '</a>'
+              return (data === row[0]) ? '-': '<a href="{{ xurl }}reqid=' + data +'">' + data + '</a>'
             }
             else {
               return '-'
@@ -468,7 +471,12 @@
           className: 'alert',
           render: function(data, type, row, meta) {
             if (data && data.length > 0) {
-              return data.replace(/\_/g, '_<wbr>');
+              if ($scope.userinfo.page.is_minimized) {
+                return ellipsisCustom( data, type, 17, true, false, true, 'left' );
+              }
+              else {
+                return data.replace(/\_/g, '_<wbr>');
+              }
             }
             else {
               return '-'
@@ -495,8 +503,22 @@
           sDefaultContent: "-",
           className: 'alert',
           render: function(data, type, row, meta) {
-            if (data && data.length > 2 ) {
+            if (data && !Array.isArray(data) ) {
+              {#return '-'#}
               return data.replace(/\./g, '.<wbr>');
+            }
+            else if (data && Array.isArray(data) && data.length > 0 && $scope.userinfo.page.is_minimized ) {
+              return data.reduce((acc, cur) => {
+                cur[2] = ellipsisCustom(cur[2], type, 17, true, false, true, 'left');
+                acc += '<br><span class="nowrap">' + cur.join('') + '</span>';
+                return acc
+              }, '')
+            }
+            else if (data && Array.isArray(data) && data.length > 0 ) {
+              return data.reduce((acc, cur) => {
+                acc += '<br>' + cur.join(' ')
+                return acc
+              }, '')
             }
             else {
               return '-'

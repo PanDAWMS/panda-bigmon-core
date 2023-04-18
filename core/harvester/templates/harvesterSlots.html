@@ -28,40 +28,35 @@
 {% endblock %}
 
 {% block body %}
-
-<table id="harvesterslots">
-    <caption style="height: 30px;vertical-align: middle">Harvester slots</caption>
+<div class="card bp-container-simple secondary">
+  <div class="card-divider"><p>Harvester slots</p></div>
+  <div class="card-section">
+    <table id="harvesterslots" class="data-table">
     <thead>
-            <th>Pandaqueuename</th>
-            <th>Gshare</th>
-            <th>Resourcetype</th>
-            <th>Numslots</th>
-            <th>Modificationtime</th>
-            <th>Expirationtime</th>
+      <tr>
+        <th>PQ name</th>
+        <th>Global share</th>
+        <th>Resource type</th>
+        <th>#slots</th>
+        <th>Modification time</th>
+        <th>Expiration time</th>
+      </tr>
     </thead>
-{% for slot in harvesterslots %}
-<tr>
-<td>
- <a href="{% url "harvesters" %}?computingsite={{ slot.pandaqueuename }}">{{ slot.pandaqueuename }}</a>
-</td>
-<td>
-{{ slot.gshare }}
-</td>
-<td>
-{{ slot.resourcetype }}
-</td>
-<td>
-{{ slot.numslots }}
-</td>
- <td>
-{{ slot.modificationtime }}
-</td>
-<td>
-{{ slot.expirationtime }}
-</td>
-</tr>
-{% endfor %}
-</table>
+    <tbody>
+      {% for slot in harvesterslots %}
+      <tr>
+        <td><div class="tooltip-right"><a href="{% url "harvesterWorkerList" %}?computingsite={{ slot.pandaqueuename }}">{{ slot.pandaqueuename }}</a><span class="tooltip-text">See workers for {{ slot.pandaqueuename }} site</span></div></td>
+        <td>{{ slot.gshare }}</td>
+        <td>{{ slot.resourcetype }}</td>
+        <td>{{ slot.numslots }}</td>
+        <td>{{ slot.modificationtime }}</td>
+        <td>{{ slot.expirationtime }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    </table>
+  </div>
+</div>
 
 {% endblock %}
 

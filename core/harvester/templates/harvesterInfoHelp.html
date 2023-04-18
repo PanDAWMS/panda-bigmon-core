@@ -2,37 +2,39 @@
 <div class="card-divider"><p>Harvester list help:</p></div>
 <div class="card-section">
 
+<p>This page is a summary of Harvester workers. It is better to specify <code>instance</code> as this is the indexed field and therefore works faster.
+  The default time range is last 12 hours, you can change it using <code>hours=N</code> filter. </p>
+
+<p>See the Harvester documentation on workers <a href="https://github.com/HSF/harvester/wiki/State-and-sequence-diagrams">status transitions</a>.</p>
 <p>
 Available filters for this page:
 </p>
 <ul>
 <li>
-  <p><b>Information for a specific computingsite.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&computingsite=ANALY_UIO">/harvesters/?instance=act403&computingsite=ANALY_UIO</a></p>
+  by  <code>instance</code>,
+  e.g. <a href="{% url 'harvesterWorkerList' %}?instance=CERN_central_A">/harvesters/?instance=CERN_central_A</a>
 </li>
 <li>
-    <p><b>Information for a specific resourcetype.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&resourcetype=SCORE">/harvesters/?instance=act403&resourcetype=SCORE</a></p>
+  by  <code>computingsite</code>,
+  e.g. <a href="{% url 'harvesterWorkerList' %}?instance=CERN_central_A&computingsite= MWT2">/harvesters/?instance=CERN_central_A&computingsite= MWT2</a>
 </li>
 <li>
-    <p><b>Information for a specific computingelement.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&computingelement=None">/harvesters/?instance=act403&computingelement=None</a></p>
+  by <code>resourcetype</code>,
+  e.g. <a href="{% url 'harvesterWorkerList' %}?instance=CERN_central_A&resourcetype=SCORE">/harvesters/?instance=CERN_central_A&resourcetype=SCORE</a>
 </li>
 <li>
-    <p><b>Information for a specific status.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&status=running">/harvesters/?instance=act403&status=running</a></p>
+  by <code>computingelement</code>,
+  e.g. <a href="{% url 'harvesterWorkerList' %}?instance=CERN_central_A&computingelement=iut2-gk02.mwt2.org:9619">/harvesters/?instance=CERN_central_A&computingelement=iut2-gk02.mwt2.org:9619</a>
 </li>
 <li>
-    <p><b>Information for a specific workerid or workerids.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&workerid=759585,759584">/harvesters/?instance=act403&workerid=759585,759584</a></p>
+  by <code>status</code>,
+  e.g. <a href="{% url 'harvesterWorkerList' %}?instance=CERN_central_A&status=running">/harvesters/?instance=CERN_central_A&status=running</a>
 </li>
 <li>
-    <p><b>Information for the last N days.</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&days=3">/harvesters/?instance=act403&days=3</a></p>
-</li>
-<li>
-    <p><b>Information for the last N hours (default 24 hours).</b> E.g. <a href="{% url 'harvesters' %}?instance=act403&hours=48">/harvesters/?instance=act403&hours=48</a></p>
+  by <code> workerid</code> or list of <code>workerids</code>,
+  e.g. <a href="{% url 'harvesterWorkerList' %}?instance=CERN_central_A&workerids=467254600,467374162">/harvesters/?instance=CERN_central_A&workerid=467254600,467374162</a>
 </li>
 </ul>
-
-<p>If you need information about workers which are associated with a specific computingsite, use computingsite parameter instead of instance parameter.
-  E.g. <a href="{% url 'harvesters' %}?instance=act403&computingsite=ANALY_UIO">/harvesters/?computingsite=ANALY_UIO</a></p>
-
-<p>See the Harvester documentation on workers <a href="https://github.com/HSF/harvester/wiki/State-and-sequence-diagrams">status transitions</a>.</p>
 
 </div>
 </div>
