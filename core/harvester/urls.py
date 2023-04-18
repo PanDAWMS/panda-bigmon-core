@@ -13,6 +13,7 @@ urlpatterns = [
     # legacy, keep to redirect
     re_path(r'^harvesterworkersdash/$', harvester.harvestermon),
     re_path(r'^harvesterworkerslist/$', harvester.harvestermon),
+    re_path(r'^harvesterworkerinfo/$', harvester.harvesterWorkerInfo),
 
 
     re_path(r'^harvester/slots/$', harvester.harvesterSlots, name='harvesterSlots'),
