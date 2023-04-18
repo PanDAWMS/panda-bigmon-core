@@ -71,7 +71,7 @@ def prMonPlots(request, pandaid=-1):
 
         if len(job) > 0:
             job = job[0]
-            if 'cmtconfig' in job and 'gpu' in job['cmtconfig']:
+            if 'cmtconfig' in job and job['cmtconfig'] and 'gpu' in job['cmtconfig']:
                 processor_type = 'gpu'
 
     plots_list = [
