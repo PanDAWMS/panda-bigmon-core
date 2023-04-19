@@ -132,13 +132,13 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
                     h.oldpandaid, h.relationtype, h.newpandaid
             from (
                 select ja4.pandaid, ja4.jeditaskid, ja4.eventservice, ja4.specialhandling, ja4.jobstatus, ja4.jobsetid, ja4.jobsubstatus, ja4.processingtype 
-                    from ATLAS_PANDA.JOBSARCHIVED4 ja4 where ja4.jeditaskid = {3}
+                    from {4}.JOBSARCHIVED4 ja4 where ja4.jeditaskid = {3}
                 union
                 select ja.pandaid, ja.jeditaskid, ja.eventservice, ja.specialhandling, ja.jobstatus, ja.jobsetid, ja.jobsubstatus, ja.processingtype 
-                    from ATLAS_PANDAARCH.JOBSARCHIVED ja where ja.jeditaskid = {4}
+                    from {5}.JOBSARCHIVED ja where ja.jeditaskid = {3}
             ) j
             LEFT JOIN
-            ATLAS_PANDA.jedi_job_retry_history h
+            {4}.jedi_job_retry_history h
             ON (h.jeditaskid = j.jeditaskid AND h.oldpandaid = j.pandaid) 
                 OR (h.oldpandaid=j.jobsetid and h.jeditaskid = j.jeditaskid)
             )
@@ -171,7 +171,14 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
               ) 
               OR  (jobstatus='closed' and (jobsubstatus in ('es_unused', 'es_inaction')))
     )                   
-    """.format(tmpTableName, transactionKey, timezone.now().strftime("%Y-%m-%d"), jeditaskid, jeditaskid)
+    """.format(
+        tmpTableName,
+        transactionKey,
+        timezone.now().strftime("%Y-%m-%d"),
+        jeditaskid,
+        settings.DB_SCHEMA_PANDA,
+        settings.DB_SCHEMA_PANDA_ARCH
+    )
 
     new_cur.execute(ins_query)
     # form an extra query condition to exclude retried pandaids from selection

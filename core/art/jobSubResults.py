@@ -121,10 +121,10 @@ def lock_nqueuedjobs(cur, nrows):
     """
 
     lock_time = datetime.now().strftime(settings.DATETIME_FORMAT)
-    lquery = """UPDATE atlas_pandabigmon.art_results_queue
+    lquery = """UPDATE {}.art_results_queue
                 SET IS_LOCKED = 1,
-                    LOCK_TIME = to_date('%s', 'YYYY-MM-DD HH24:MI:SS')
-                WHERE rownum <= %i AND IS_LOCKED = 0""" % (lock_time, nrows)
+                    LOCK_TIME = to_date('{}', 'YYYY-MM-DD HH24:MI:SS')
+                WHERE rownum <= {} AND IS_LOCKED = 0""".format(settings.DB_SCHEMA, lock_time, nrows)
     try:
         cur.execute(lquery)
     except DatabaseError as e:
@@ -141,9 +141,9 @@ def delete_queuedjobs(cur, lock_time):
     :return:
     """
 
-    dquery = """DELETE FROM atlas_pandabigmon.art_results_queue
+    dquery = """DELETE FROM {}.art_results_queue
                   WHERE IS_LOCKED = 1
-                    AND LOCK_TIME = to_date('%s', 'YYYY-MM-DD HH24:MI:SS')""" % (lock_time)
+                    AND LOCK_TIME = to_date('{}', 'YYYY-MM-DD HH24:MI:SS')""".format(settings.DB_SCHEMA, lock_time)
     try:
         cur.execute(dquery)
     except DatabaseError as e:
@@ -160,8 +160,8 @@ def clear_queue(cur):
     :return:
     """
 
-    cquery = """DELETE FROM atlas_pandabigmon.art_results_queue
-                  WHERE IS_LOCKED = 1"""
+    cquery = """DELETE FROM {}.art_results_queue
+                  WHERE IS_LOCKED = 1""".format(settings.DB_SCHEMA)
     try:
         cur.execute(cquery)
     except DatabaseError as e:

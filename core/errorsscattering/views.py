@@ -382,7 +382,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
                                sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc, 
                                sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc,  
                                computingsite, reqid, jeditaskid 
-                        from atlas_panda.jobsarchived4 where jeditaskid in (
+                        from {5}.jobsarchived4 where jeditaskid in (
                             select id from {0} where transactionkey={1}) and modificationtime > to_date('{2}', 'YYYY-MM-DD HH24:MI:SS') and {3}
                                 group by computingsite, jeditaskid, reqid
                         union
@@ -390,13 +390,21 @@ def errorsScatteringDetailed(request, cloud, reqid):
                                sum(case when jobstatus = 'finished' then 1 else 0 end) as finishedc,  
                                sum(case when jobstatus in ('finished', 'failed') then 1 else 0 end) as allc,
                                computingsite, reqid, jeditaskid 
-                        from atlas_pandaarch.jobsarchived where jeditaskid in (
+                        from {6}.jobsarchived where jeditaskid in (
                               select id from {0} where transactionkey={1}) and modificationtime > to_date('{2}', 'YYYY-MM-DD HH24:MI:SS') and {3}
                                 group by computingsite, jeditaskid, reqid
             ) j
             where j.allc > 0  and {4}
             group by jeditaskid, computingsite, reqid
-    """.format(tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition, condition)
+    """.format(
+        tmpTableName,
+        transactionKey,
+        query['modificationtime__castdate__range'][0],
+        jcondition,
+        condition,
+        settings.DB_SCHEMA_PANDA,
+        settings.DB_SCHEMA_PANDA_ARCH
+    )
 
     new_cur.execute(querystr)
 

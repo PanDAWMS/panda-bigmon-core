@@ -5,11 +5,11 @@ import numpy as np
 import re
 from decimal import Decimal
 
-import urllib3
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.db import connection
+from django.conf import settings
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
@@ -20,7 +20,8 @@ from core.schedresource.utils import get_pq_fairshare_policy, get_pq_resource_ty
 import json
 
 from core.globalshares import GlobalShares
-from core.globalshares.utils import get_gs_plots_data, get_child_elements, get_child_sumstats
+from core.globalshares.utils import get_gs_plots_data, get_child_elements, get_child_sumstats, get_hs_distribution
+from core.globalshares.models import GlobalSharesModel, JobsShareStats
 
 @login_customrequired
 def globalshares(request):
@@ -146,15 +147,8 @@ def get_resources_gshare():
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
     resourcesDictSites = get_pq_resource_types()
-    sqlRequest = """
-    SELECT gshare, computingsite, jobstatus_grouped, SUM(HS) 
-    FROM (SELECT gshare, computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
-    ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY gshare,computingsite, jobstatus_grouped order by gshare
-    """
-    cur = connection.cursor()
-    cur.execute(sqlRequest)
+    hs_distribution_raw = get_hs_distribution(group_by=('gshare', 'computingsite'), out_format='tuple')
     # get the hs distribution data into a dictionary structure
-    hs_distribution_raw = cur.fetchall()
     hs_distribution_dict = {}
     hs_queued_total = 0
     hs_executing_total = 0
@@ -256,45 +250,25 @@ def add_resources(gshare,tableRows,resourceslist,level):
 
 
 def get_shares(parents=''):
-    comment = ' /* DBProxy.get_shares */'
-    methodName = comment.split(' ')[-2].split('.')[-1]
-
-    sql = """
-           SELECT NAME, VALUE, PARENT, PRODSOURCELABEL, WORKINGGROUP, CAMPAIGN, PROCESSINGTYPE
-           FROM ATLAS_PANDA.GLOBAL_SHARES
-           """
-    var_map = None
-
-    if parents == '':
-        # Get all shares
-        pass
-    elif parents is None:
-        # Get top level shares
-        sql += "WHERE parent IS NULL"
-
+    """
+    Get global shares from DB
+    :param parents:
+    :return:
+    """
+    gvalues = ('name', 'value', 'parent', 'prodsourcelabel', 'workinggroup', 'campaign', 'processingtype')
+    gquery = {}
+    if parents is None:
+        gquery['parent__isnull'] = True
     elif type(parents) == np.unicode:
-        # Get the children of a specific share
-        var_map = {':parent': parents}
-        sql += "WHERE parent = :parent"
-
+        gquery['parent'] = parents
     elif type(parents) in (list, tuple):
-        # Get the children of a list of shares
-        i = 0
-        var_map = {}
-        for parent in parents:
-            key = ':parent{0}'.format(i)
-            var_map[key] = parent
-            i += 1
+        gquery['parent__in'] = parents
 
-        parentBindings = ','.join(':parent{0}'.format(i) for i in xrange(len(parents)))
-        sql += "WHERE parent IN ({0})".format(parentBindings)
+    global_shares_list = []
+    global_shares_list.extend(GlobalSharesModel.objects.filter(**gquery).values(*gvalues))
+    global_shares_tuples = [(tuple(gs[gv] for gv in gvalues)) for gs in global_shares_list]
 
-    cur = connection.cursor()
-    cur.execute(sql, var_map)
-    resList = cur.fetchall()
-    cur.close()
-
-    return resList
+    return global_shares_tuples
 
 
 def __load_branch(share):
@@ -336,12 +310,7 @@ def __get_hs_leave_distribution():
     tree.normalize()
     leave_shares = tree.get_leaves()
 
-    sql_hs_distribution = "SELECT gshare, jobstatus_grouped, SUM(HS) FROM (SELECT gshare, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing' ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY gshare, jobstatus_grouped"
-
-    cur = connection.cursor()
-    cur.execute(sql_hs_distribution)
-    hs_distribution_raw = cur.fetchall()
-    cur.close()
+    hs_distribution_raw = get_hs_distribution(group_by='gshare', out_format='tuple')
 
     # get the hs distribution data into a dictionary structure
     hs_distribution_dict = {}
@@ -440,41 +409,41 @@ def getChildStat(node, hs_distribution_dict, level):
 ###JSON for Datatables globalshares###
 def detailedInformationJSON(request):
     fullListGS = []
-    sqlRequest = '''
-SELECT gshare, corecount, jobstatus, count(*), sum(HS06)  FROM 
-(select gshare,  (CASE 
-WHEN corecount is null THEN 1 else corecount END 
-) as corecount, 
- (CASE 
-  WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
- WHEN jobstatus in ('sent','running') THEN 'running'
- WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
-END) as jobstatus,HS06
-from
-atlas_panda.jobsactive4 
-UNION ALL
-select gshare,  (CASE 
-WHEN corecount is null THEN 1 else corecount END 
-) as corecount, 
-(CASE 
- WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
- WHEN jobstatus in ('sent','running') THEN 'running'
- WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
-END) as jobstatus,HS06
-from
-atlas_panda.JOBSDEFINED4
-UNION ALL
-select gshare,  (CASE 
-   WHEN corecount is null THEN 1 else corecount END  
-) as corecount, (CASE 
- WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
- WHEN jobstatus in ('sent','running') THEN 'running'
- WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
-END) as jobstatus,HS06 from
-atlas_panda.JOBSWAITING4) 
-group by gshare, corecount, jobstatus
-order by gshare, corecount, jobstatus
-'''
+    sqlRequest = """
+        SELECT gshare, corecount, jobstatus, count(*), sum(HS06)  FROM 
+        (select gshare,  (CASE 
+        WHEN corecount is null THEN 1 else corecount END 
+        ) as corecount, 
+         (CASE 
+          WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
+         WHEN jobstatus in ('sent','running') THEN 'running'
+         WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
+        END) as jobstatus,HS06
+        from
+        {0}.jobsactive4 
+        UNION ALL
+        select gshare,  (CASE 
+        WHEN corecount is null THEN 1 else corecount END 
+        ) as corecount, 
+        (CASE 
+         WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
+         WHEN jobstatus in ('sent','running') THEN 'running'
+         WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
+        END) as jobstatus,HS06
+        from
+        {0}.JOBSDEFINED4
+        UNION ALL
+        select gshare,  (CASE 
+           WHEN corecount is null THEN 1 else corecount END  
+        ) as corecount, (CASE 
+         WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
+         WHEN jobstatus in ('sent','running') THEN 'running'
+         WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
+        END) as jobstatus,HS06 from
+        {0}.JOBSWAITING4) 
+        group by gshare, corecount, jobstatus
+        order by gshare, corecount, jobstatus
+    """.format(settings.DB_SCHEMA_PANDA)
     #if isJobsss:
     #sqlRequest += ' WHERE '+ codename + '='+codeval
     # INPUT_EVENTS, TOTAL_EVENTS, STEP
@@ -498,37 +467,37 @@ order by gshare, corecount, jobstatus
 def sharesDistributionJSON(request):
     fullListGS = []
     sqlRequest = '''
-SELECT gshare,COMPUTINGSITE, corecount, jobstatus, COUNT(*), SUM(HS06)
-FROM (select gshare,COMPUTINGSITE, (CASE 
-   WHEN corecount is null THEN 1 else corecount END   
-) as corecount, 
- (CASE jobstatus
-  WHEN 'running' THEN 'running'
-  ELSE 'scheduled'
-END) as jobstatus, HS06
-from
-atlas_panda.jobsactive4 
-UNION ALL
-select gshare,COMPUTINGSITE, (CASE 
-  WHEN corecount is null THEN 1 else corecount END  
-) as corecount, 
- (CASE jobstatus
-  WHEN 'running' THEN 'running'
-  ELSE 'scheduled'
-END) as jobstatus, HS06
-from
-atlas_panda.JOBSDEFINED4
-UNION ALL
-select gshare,COMPUTINGSITE, (CASE 
- WHEN corecount is null THEN 1 else corecount END   
-) as corecount, (CASE jobstatus
-  WHEN 'running' THEN 'running'
-  ELSE 'scheduled'
-END) as jobstatus, HS06 from
-atlas_panda.JOBSWAITING4
-) group by gshare,COMPUTINGSITE, corecount, jobstatus
-order by gshare,COMPUTINGSITE, corecount, jobstatus
-'''
+        SELECT gshare,COMPUTINGSITE, corecount, jobstatus, COUNT(*), SUM(HS06)
+        FROM (select gshare,COMPUTINGSITE, (CASE 
+           WHEN corecount is null THEN 1 else corecount END   
+        ) as corecount, 
+         (CASE jobstatus
+          WHEN 'running' THEN 'running'
+          ELSE 'scheduled'
+        END) as jobstatus, HS06
+        from
+        {0}.jobsactive4 
+        UNION ALL
+        select gshare,COMPUTINGSITE, (CASE 
+          WHEN corecount is null THEN 1 else corecount END  
+        ) as corecount, 
+         (CASE jobstatus
+          WHEN 'running' THEN 'running'
+          ELSE 'scheduled'
+        END) as jobstatus, HS06
+        from
+        {0}.JOBSDEFINED4
+        UNION ALL
+        select gshare,COMPUTINGSITE, (CASE 
+         WHEN corecount is null THEN 1 else corecount END   
+        ) as corecount, (CASE jobstatus
+          WHEN 'running' THEN 'running'
+          ELSE 'scheduled'
+        END) as jobstatus, HS06 from
+        {0}.JOBSWAITING4
+        ) group by gshare,COMPUTINGSITE, corecount, jobstatus
+        order by gshare,COMPUTINGSITE, corecount, jobstatus
+    '''.format(settings.DB_SCHEMA_PANDA)
     #if isJobsss:
     #sqlRequest += ' WHERE '+ codename + '='+codeval
     # INPUT_EVENTS, TOTAL_EVENTS, STEP
@@ -561,37 +530,37 @@ order by gshare,COMPUTINGSITE, corecount, jobstatus
 def siteWorkQueuesJSON(request):
     fullListGS = []
     sqlRequest = '''
-SELECT COMPUTINGSITE,gshare, corecount, jobstatus,COUNT (*)
-FROM (select COMPUTINGSITE,gshare, (CASE 
-   WHEN corecount is null THEN 1 else corecount END 
-) as corecount, 
- (CASE jobstatus
-  WHEN 'running' THEN 'running'
-  ELSE 'scheduled'
-END) as jobstatus
-from
-atlas_panda.jobsactive4 
-UNION ALL
-select COMPUTINGSITE,gshare, (CASE 
-  WHEN corecount is null THEN 1 else corecount END 
-) as corecount, 
- (CASE jobstatus
-  WHEN 'running' THEN 'running'
-  ELSE 'scheduled'
-END) as jobstatus
-from
-atlas_panda.JOBSDEFINED4
-UNION ALL
-select COMPUTINGSITE,gshare, (CASE 
-WHEN corecount is null THEN 1 else corecount END  
-) as corecount, (CASE jobstatus
-  WHEN 'running' THEN 'running'
-  ELSE 'scheduled'
-END) as jobstatus from
-atlas_panda.JOBSWAITING4
-) group by COMPUTINGSITE,gshare, corecount, jobstatus
-order by COMPUTINGSITE,gshare, corecount, jobstatus
-'''
+        SELECT COMPUTINGSITE,gshare, corecount, jobstatus,COUNT (*)
+        FROM (select COMPUTINGSITE,gshare, (CASE 
+           WHEN corecount is null THEN 1 else corecount END 
+        ) as corecount, 
+         (CASE jobstatus
+          WHEN 'running' THEN 'running'
+          ELSE 'scheduled'
+        END) as jobstatus
+        from
+        {0}.jobsactive4 
+        UNION ALL
+        select COMPUTINGSITE,gshare, (CASE 
+          WHEN corecount is null THEN 1 else corecount END 
+        ) as corecount, 
+         (CASE jobstatus
+          WHEN 'running' THEN 'running'
+          ELSE 'scheduled'
+        END) as jobstatus
+        from
+        {0}.JOBSDEFINED4
+        UNION ALL
+        select COMPUTINGSITE,gshare, (CASE 
+        WHEN corecount is null THEN 1 else corecount END  
+        ) as corecount, (CASE jobstatus
+          WHEN 'running' THEN 'running'
+          ELSE 'scheduled'
+        END) as jobstatus from
+        {0}.JOBSWAITING4
+        ) group by COMPUTINGSITE,gshare, corecount, jobstatus
+        order by COMPUTINGSITE,gshare, corecount, jobstatus
+    '''.format(settings.DB_SCHEMA_PANDA)
     #if isJobsss:
     #sqlRequest += ' WHERE '+ codename + '='+codeval
     # INPUT_EVENTS, TOTAL_EVENTS, STEP
@@ -625,13 +594,10 @@ def resourcesType(request):
     IGNORE = 'ignore'
     resourcesList = []
     resourcesDictSites = get_pq_resource_types()
-    sqlRequest = """SELECT computingsite, jobstatus_grouped, SUM(HS) 
-    FROM (SELECT computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
-    ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY computingsite, jobstatus_grouped"""
-    cur = connection.cursor()
-    cur.execute(sqlRequest)
+
+    hs_distribution_raw = get_hs_distribution(group_by='computingsite', out_format='tuple')
+
     # get the hs distribution data into a dictionary structure
-    hs_distribution_raw = cur.fetchall()
     hs_distribution_dict = {}
     hs_queued_total = 0
     hs_executing_total = 0
@@ -646,8 +612,6 @@ def resourcesType(request):
         except:
             continue
         hs_distribution_dict.setdefault(resourcetype, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0,IGNORE:0})
-        #hs_distribution_dict[resourcetype][status_group] = hs
-
         total_hs += hs
 
         # calculate totals
@@ -660,6 +624,7 @@ def resourcesType(request):
         else:
             hs_ignore_total += hs
             hs_distribution_dict[resourcetype][status_group] += hs
+
     ignore = 0
     pled = 0
     executing = 0
@@ -684,16 +649,19 @@ def resourcesType(request):
         hs_distribution_dict[hs_entry]['ignore_percent'] =  (hs_distribution_dict[hs_entry]['ignore']/ignore)* 100
         hs_distribution_dict[hs_entry]['executing_percent'] =  (hs_distribution_dict[hs_entry]['executing'] /executing) * 100
         hs_distribution_dict[hs_entry]['queued_percent'] = (hs_distribution_dict[hs_entry]['queued']/queued) * 100
-        hs_distribution_list.append({'resource':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
-                                     'ignore':hs_distribution_dict[hs_entry]['ignore'],
-                                     'ignore_percent':round(hs_distribution_dict[hs_entry]['ignore_percent'],2),
-                                     'executing':hs_distribution_dict[hs_entry]['executing'],
-                                     'executing_percent': round(hs_distribution_dict[hs_entry]['executing_percent'],2),
-                                     'queued':hs_distribution_dict[hs_entry]['queued'],
-                                     'queued_percent':round(hs_distribution_dict[hs_entry]['queued_percent'],2),
-                                     'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
-                                     'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
-                                     })
+        hs_distribution_list.append(
+            {
+                'resource':hs_entry, 'pledged':hs_distribution_dict[hs_entry]['pledged'],
+                'ignore':hs_distribution_dict[hs_entry]['ignore'],
+                'ignore_percent':round(hs_distribution_dict[hs_entry]['ignore_percent'],2),
+                'executing':hs_distribution_dict[hs_entry]['executing'],
+                'executing_percent': round(hs_distribution_dict[hs_entry]['executing_percent'],2),
+                'queued':hs_distribution_dict[hs_entry]['queued'],
+                'queued_percent':round(hs_distribution_dict[hs_entry]['queued_percent'],2),
+                'total_hs':hs_distribution_dict[hs_entry]['total_hs'],
+                'total_hs_percent': round((hs_distribution_dict[hs_entry]['total_hs']/total_hs)*100,2)
+            }
+        )
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 
 
@@ -702,7 +670,7 @@ def fairsharePolicy(request):
     QUEUED = 'queued'
     PLEDGED = 'pledged'
     IGNORE = 'ignore'
-    #sqlrequest ="""select SITEID, fairsharepolicy  from atlas_pandameta.schedconfig"""
+
     fairsharepolicyDict = get_pq_fairshare_policy()
     newfairsharepolicyDict = {}
     fairsharepolicies = fairsharepolicyDict.values()
@@ -727,13 +695,10 @@ def fairsharePolicy(request):
                            newfairsharepolicyDict[site]['type=any'] = 60
 
         else: newfairsharepolicyDict[site]['type=any'] = 100
-    sqlRequest = """SELECT computingsite, jobstatus_grouped, SUM(HS) 
-     FROM (SELECT computingsite, HS, CASE WHEN jobstatus IN('activated') THEN 'queued' WHEN jobstatus IN('sent', 'running') THEN 'executing'
-     ELSE 'ignore' END jobstatus_grouped FROM ATLAS_PANDA.JOBS_SHARE_STATS JSS) GROUP BY computingsite, jobstatus_grouped"""
-    cur = connection.cursor()
-    cur.execute(sqlRequest)
+
+    hs_distribution_raw = get_hs_distribution(group_by='computingsite', out_format='tuple')
+
     # get the hs distribution data into a dictionary structure
-    hs_distribution_raw = cur.fetchall()
     hs_distribution_dict = {}
     hs_queued_total = 0
     hs_executing_total = 0
@@ -828,16 +793,16 @@ def coreTypes(request):
     json_value(gg.DATA, '$.fairsharepolicy') as fairsharepolicy,
     json_value(gg.DATA, '$.catchall') as catchall
     FROM
-    atlas_panda.jobs_share_stats jj,
-    atlas_panda.schedconfig_json gg
+    {0}.jobs_share_stats jj,
+    {0}.schedconfig_json gg
     where jj.COMPUTINGSITE = gg.PANDA_QUEUE) GROUP BY corecount, jobstatus_grouped order by corecount
-    """
+    """.format(settings.DB_SCHEMA_PANDA)
 
     cur = connection.cursor()
     cur.execute(sqlRequest)
-    # get the hs distribution data into a dictionary structure
-
     hs_distribution_raw = cur.fetchall()
+
+    # get the hs distribution data into a dictionary structure
     hs_distribution_dict = {}
     hs_queued_total = 0
     hs_executing_total = 0
@@ -849,7 +814,6 @@ def coreTypes(request):
     for hs_entry in hs_distribution_raw:
         corecount, status_group, hs = hs_entry
         hs_distribution_dict.setdefault(corecount, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0, IGNORE:0})
-        #hs_distribution_dict[corecount][status_group] = hs
         total_hs += hs
 
         # calculate totals

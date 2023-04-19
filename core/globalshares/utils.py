@@ -3,6 +3,9 @@
 """
 import re
 
+from django.db.models import Case, When, Value, Sum
+from core.globalshares.models import JobsShareStats
+
 def get_child_elements(tree,childsgsharelist):
     for gshare in tree:
         if gshare!='childlist':
@@ -30,6 +33,33 @@ def get_child_sumstats(childsgsharelist,resourcesdict,gshare):
                             parentgshare[gshare][resource][k] += resourcesdict[child][resource][k]
     return parentgshare
 
+
+def get_hs_distribution(group_by='gshare', out_format='dict'):
+    """
+    Get HS06s aggregation from jobs_share_stats table
+    :param group_by: field to group by
+    :return:
+    """
+    group_by_list = []
+    if type(group_by) in (list, tuple) and len(set(group_by) - set([f.name for f in JobsShareStats._meta.get_fields()])) == 0:
+        group_by_list = list(group_by)
+    elif isinstance(group_by, str) and group_by in [f.name for f in JobsShareStats._meta.get_fields()]:
+        group_by_list.append(group_by)
+    else:
+        return []
+    group_by_list.append('jobstatus_grouped')
+    hs_distribution = JobsShareStats.objects.annotate(
+        jobstatus_grouped=Case(
+            When(jobstatus='activated', then=Value('queued')),
+            When(jobstatus__in=('sent', 'running'), then=Value('executing')),
+            default=Value('ignore')
+        )
+    ).values(*group_by_list).annotate(hs_sum=Sum('hs'))
+    group_by_list.append('hs_sum')
+    if out_format == 'tuple':
+        hs_distribution = [tuple(row[v] for v in group_by_list) for row in hs_distribution]
+
+    return hs_distribution
 
 def get_gs_plots_data(gs_list, resources_dict, gs_tree_dict):
     gs_plot_data = {

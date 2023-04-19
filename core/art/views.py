@@ -146,8 +146,8 @@ def artOverview(request):
     # quering data from dedicated SQL function
     query_raw = """
         SELECT package, branch, ntag, nightly_tag, status, result, pandaid, testname, attemptmark
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
-        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+        FROM table({}.ARTTESTS_LIGHT('{}','{}','{}')) 
+        """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur = connection.cursor()
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
@@ -275,8 +275,8 @@ def artTasks(request):
     cur = connection.cursor()
     query_raw = """
         SELECT package, branch, ntag, nightly_tag, pandaid, testname, taskid, status, result, attemptmark
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
-        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+        FROM table({}.ARTTESTS_LIGHT('{}','{}','{}')) 
+        """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
     cur.close()
@@ -442,8 +442,8 @@ def artJobs(request):
             c.attemptmark, 
             c.inputfileid,
             c.extrainfo 
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS('{}','{}','{}')) c
-        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+        FROM table({}.ARTTESTS('{}','{}','{}')) c
+        """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
@@ -754,8 +754,8 @@ def artStability(request):
             c.pandaid, 
             c.result, 
             c.attemptmark 
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) c
-        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+        FROM table({}.ARTTESTS_LIGHT('{}','{}','{}')) c
+        """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
@@ -900,9 +900,9 @@ def artErrors(request):
             c.status, 
             c.pandaid, 
             c.result 
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) c
+        FROM table({}.ARTTESTS_LIGHT('{}','{}','{}')) c
         WHERE c.attemptmark = 0
-        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+        """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
@@ -992,15 +992,15 @@ def updateARTJobList(request):
 
     # Adding to ART_RESULTS_QUEUE jobs with not loaded result json yet
     cur = connection.cursor()
-    cur.execute("""INSERT INTO atlas_pandabigmon.art_results_queue
+    cur.execute("""INSERT INTO {0}.art_results_queue
                     (pandaid, IS_LOCKED, LOCK_TIME)
-                    SELECT pandaid, 0, NULL  FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}'))
+                    SELECT pandaid, 0, NULL  FROM table({0}.ARTTESTS_LIGHT('{1}','{2}','{3}'))
                     WHERE pandaid is not NULL
                           and attemptmark = 0  
                           and result is NULL
                           and status in ('finished', 'failed')
-                          and pandaid not in (select pandaid from atlas_pandabigmon.art_results_queue)
-                """.format(query['ntag_from'], query['ntag_to'], query['strcondition']))
+                          and pandaid not in (select pandaid from {0}.art_results_queue)
+                """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition']))
     cur.close()
 
     data = {
@@ -1316,9 +1316,9 @@ def sendArtReport(request):
     cur = connection.cursor()
     query_raw = """
         SELECT taskid, package, branch, ntag, nightly_tag, testname, status, result
-        FROM table(ATLAS_PANDABIGMON.ARTTESTS_LIGHT('{}','{}','{}')) 
+        FROM table({}.ARTTESTS_LIGHT('{}','{}','{}')) 
         WHERE attemptmark = 0
-        """.format(query['ntag_from'], query['ntag_to'], query['strcondition'])
+        """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition'])
     cur.execute(query_raw)
     jobs = cur.fetchall()
     cur.close()
