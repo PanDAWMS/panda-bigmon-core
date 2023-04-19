@@ -1488,37 +1488,42 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
             values.append(v)
 
     sqlQuery = """
-    SELECT {2} FROM
-    (SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSARCHIVED4, 
-    (select
-    pandaid as pid
-    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
-    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) 
-    PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSARCHIVED4.PANDAID {3}
-    UNION
-    SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSACTIVE4, 
-    (select
-    pandaid as pid
-    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
-    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSACTIVE4.PANDAID {3}
-    UNION 
-    SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSDEFINED4, 
-    (select
-    pandaid as pid
-    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
-    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSDEFINED4.PANDAID {3}
-    UNION 
-    SELECT {2} FROM {DB_SCHEMA_PANDA}.JOBSWAITING4,
-    (select
-    pandaid as pid
-    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
-    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA}.JOBSWAITING4.PANDAID {3}
-    UNION 
-    SELECT {2} FROM {DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED, 
-    (select
-    pandaid as pid
-    from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers where
-    {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.harvesterid {0} and {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers.workerid {1}) PIDACTIVE WHERE PIDACTIVE.pid={DB_SCHEMA_PANDA_ARCH}.JOBSARCHIVED.PANDAID {3})  
+    select {2} from (
+        select {2} from {DB_SCHEMA_PANDA}.jobsarchived4 jarch4 , (
+            select pandaid as pid
+            from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers 
+            where harvesterid {0} and workerid {1}
+            ) hj 
+        where hj.pid=jarch4.pandaid {3}
+        union
+        select {2} from {DB_SCHEMA_PANDA}.jobsactive4 jact4, (
+            select pandaid as pid
+            from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers 
+            where harvesterid {0} and workerid {1}
+            ) hj 
+        where hj.pid=jact4.pandaid {3}
+        union 
+        select {2} from {DB_SCHEMA_PANDA}.jobsdefined4 jd4, (
+            select pandaid as pid
+            from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers 
+            where harvesterid {0} and workerid {1}
+            ) hj 
+        where hj.pid=jd4.pandaid {3}
+        union 
+        select {2} FROM {DB_SCHEMA_PANDA}.jobswaiting4 jw4, (
+            select pandaid as pid
+            from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers 
+            where harvesterid {0} and workerid {1}
+            ) hj 
+        where hj.pid=jw4.pandaid {3}
+        union 
+        select {2} from {DB_SCHEMA_PANDA_ARCH}.jobsarchived ja, (
+            select pandaid as pid
+            from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers 
+            where harvesterid {0} and workerid {1}
+            ) hj 
+        where hj.pid=ja.pandaid {3}
+    )  comb_data
     """
 
     sqlQuery = sqlQuery.format(
