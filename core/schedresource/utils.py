@@ -284,24 +284,17 @@ def getCRICSites():
     if not (sitesUcore and sitesHarvester and computevsAtlasCE and sitesType):
         sitesUcore, sitesHarvester = [], []
         computevsAtlasCE, sitesType = {}, {}
-        url = "https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json"
-        http = urllib3.PoolManager()
-        data = {}
-        try:
-            r = http.request('GET', url)
-            data = json.loads(r.data.decode('utf-8'))
 
-            for cs in data.keys():
-                if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
-                    sitesUcore.append(data[cs]['siteid'])
-                if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
-                    sitesHarvester.append(data[cs]['siteid'])
-                if 'panda_site' in data[cs]:
-                    computevsAtlasCE[cs] = data[cs]['atlas_site']
-                if 'type' in data[cs]:
-                    sitesType[cs] = data[cs]['type']
-        except Exception as exc:
-            print(exc)
+        data = get_panda_queues()
+        for cs in data:
+            if 'unifiedPandaQueue' in data[cs]['catchall'] or 'ucore' in data[cs]['capability']:
+                sitesUcore.append(data[cs]['siteid'])
+            if 'harvester' in data[cs] and len(data[cs]['harvester']) != 0:
+                sitesHarvester.append(data[cs]['siteid'])
+            if 'panda_site' in data[cs]:
+                computevsAtlasCE[cs] = data[cs]['atlas_site']
+            if 'type' in data[cs]:
+                sitesType[cs] = data[cs]['type']
 
         cache.set('sitesUcore', sitesUcore, 3600)
         cache.set('sitesHarvester', sitesHarvester, 3600)

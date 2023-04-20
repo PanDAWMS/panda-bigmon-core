@@ -69,7 +69,6 @@ def cloud_site_summary(query, extra='(1=1)', view='all', cloudview='region', not
     start_time = time.time()
 
     ucoreComputingSites, harvesterComputingSites, typeComputingSites, _ = getCRICSites()
-
     _logger.debug('Got CRIC json: {}'.format(time.time() - start_time))
 
     siteinfol = get_basic_info_for_pqs([])
