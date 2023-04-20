@@ -27,7 +27,7 @@
 </thead>
 <tbody>
 <tr>
-	<th>PanDA ID {% if not job.jeditaskid %} <br>Attempt# {% endif %}</th>
+	<th>PanDA ID</th>
 	<th>Owner{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / VO{% endif %}{% endif %}</th>
 	{% if job.workinggroup %}
     <th>WG</th>
@@ -55,7 +55,15 @@
   <th>Attempt</th>
 </tr>
 <tr>
-	<td>{{ job.pandaid }}  {% if not job.jeditaskid %} <br>Attempt {{ job.attemptnr }} {% endif %}</td>
+	<td>{{ job.pandaid }}
+    {% if request.user.is_tester %}
+      <br>
+      <div class="button-group bp-comparison">
+        <a class="button {% if isincomparisonlist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')"><span class="tooltip-right">{% if isincomparisonlist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if isincomparisonlist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
+        <a class="button" href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
+      </div>
+    {% endif %}
+  </td>
 	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
 	{% if job.workinggroup %}
     <td><a href="{% url 'workingGroups' %}?workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a></td>
@@ -294,15 +302,6 @@
       <a {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'transferring' or job.jobstatus ==  'aborted' or job.jobstatus == 'merging' %}{% else %}class="disabled"{% endif %} href="{% url 'prMonPlots' job.pandaid %}" target="_blank">Memory and IO plots</a>
     </div>
 </div>
-{% if request.user.is_tester %}
-<div style="float: right">
-    {% if isincomparisonlist %}
-        <a id="comparisonbutton" onclick="toggleComparisonList('comparisonbutton', '{{ job.pandaid }}')" class="removefromcomparisonbutton">Remove job from comparison</a>
-    {% else %}
-        <a id="comparisonbutton" onclick="toggleComparisonList('comparisonbutton', '{{ job.pandaid }}')" class="addtocomparisonbutton">Add job to comparison</a>
-    {% endif %}
-</div>
-{% endif %}
 </div>
 
 
@@ -486,33 +485,6 @@ function loadJobStatusLog(pandaid) {
     }).done(function (response) {
         $('#div-statuslog').html(response);
     });
-
-}
-
-function toggleComparisonList(buttonid, value) {
-    var buttontext = document.getElementById(buttonid).innerHTML;
-    if (buttontext.indexOf('Add') >= 0) {
-        $.ajax({
-            url: '/addtocomparison/',
-            data: 'object=job&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            $('#' + buttonid).html('Remove job from comparison');
-            document.getElementById(buttonid).className = "removefromcomparisonbutton";
-            });
-    }
-    else {
-        $.ajax({
-            url: '/deletefromcomparison/',
-            data: 'object=job&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            $('#' + buttonid).html('Add job to comparison');
-            document.getElementById(buttonid).className = "addtocomparisonbutton";
-            });
-    }
 
 }
 

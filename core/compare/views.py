@@ -9,8 +9,7 @@ import multiprocessing
 from datetime import datetime
 
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
-from django.db import connection, transaction, DatabaseError
+from django.shortcuts import render
 
 from django.utils.cache import patch_response_headers
 
@@ -33,7 +32,7 @@ def addToComparison(request):
         value = request.session['requestParams']['value']
 
     newList = []
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         userid = request.user.id
         # try:
         newList = add_to_comparison(object, userid, value)
@@ -49,20 +48,20 @@ def deleteFromComparison(request):
     valid, response = initRequest(request)
     if not valid: return response
 
+    comp_object = None
+    comp_value = None
     if 'object' in request.session['requestParams']:
-        object = request.session['requestParams']['object']
+        comp_object = request.session['requestParams']['object']
     if 'value' in request.session['requestParams']:
-        value = request.session['requestParams']['value']
+        comp_value = request.session['requestParams']['value']
 
-    newList = []
-    if request.user.is_authenticated():
+    new_list = []
+    if request.user.is_authenticated and comp_object and comp_value:
         userid = request.user.id
-        # try:
-        newList = delete_from_comparison(object, userid, value)
-        # except:
-        #     pass
+        new_list = delete_from_comparison(comp_object, userid, comp_value)
 
-    data = {'newList': newList}
+
+    data = {'newList': new_list}
     dump = json.dumps(data, cls=DateEncoder)
     return HttpResponse(dump, content_type='application/json')
 
@@ -72,16 +71,14 @@ def clearComparison(request):
     valid, response = initRequest(request)
     if not valid: return response
 
+    comp_object = None
     if 'object' in request.session['requestParams']:
-        object = request.session['requestParams']['object']
+        comp_object = request.session['requestParams']['object']
 
-    newList = []
-    if request.user.is_authenticated():
+    result = []
+    if request.user.is_authenticated and comp_object:
         userid = request.user.id
-        # try:
-        result = clear_comparison_list(object, userid)
-        # except:
-        #     pass
+        result = clear_comparison_list(comp_object, userid)
 
     data = {'result': result}
     dump = json.dumps(data, cls=DateEncoder)

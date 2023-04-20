@@ -288,13 +288,10 @@ Sort by
 		     Consumer: <a href="{% url 'jobInfo' %}?pandaid={{ job.consumer }}">{{ job.consumer }}</a>
 		    {% endif %}
             {% if request.user.is_tester %}
-            {% if job.pandaid in clist %}
-                <br>
-                <a id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')" class="removefromcomparisonbuttoncompact">Remove from comparison</a>
-            {% else %}
-                <br>
-                <a id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')" class="addtocomparisonbuttoncompact">Add to comparison</a>
-            {% endif %}
+              <div class="button-group bp-comparison">
+                <a class="button {% if job.pandaid in clist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')"><span class="tooltip-right">{% if job.pandaid in clist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if job.pandaid in clist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
+                <a class="button" href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
+              </div>
             {% endif %}
 		</td>
 		<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %}<br><a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }}{% endif %} {% endif %}
@@ -346,33 +343,6 @@ function toggleDetailDisplay(className) {
    for (i=0; i<el.length; i++) {
      el[i].style.display = (el[i].style.display=="none") ? "" : "none";
    }
-}
-
-function toggleComparisonList(buttonid, value) {
-    var buttontext = document.getElementById(buttonid).innerHTML;
-    if (buttontext.indexOf('Add') >= 0) {
-        $.ajax({
-            url: '/addtocomparison/',
-            data: 'object=job&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            $('#' + buttonid).html('Remove from comparison');
-            document.getElementById(buttonid).className = "removefromcomparisonbuttoncompact";
-            });
-    }
-    else {
-        $.ajax({
-            url: '/deletefromcomparison/',
-            data: 'object=job&value='+value,
-            async: true,
-            cache: false
-        }).done(function (response) {
-            $('#' + buttonid).html('Add to comparison');
-            document.getElementById(buttonid).className = "addtocomparisonbuttoncompact";
-            });
-    }
-
 }
 
 function DisplayErrorCountListTableData() {

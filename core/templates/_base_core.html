@@ -726,6 +726,38 @@
               });
       }
 
+      function toggleComparisonList(buttonid, value) {
+        var button_class = document.getElementById(buttonid).className;
+        if (button_class.includes('add')) {
+            $.ajax({
+                url: '/addtocomparison/',
+                data: 'object=job&value='+value,
+                async: true,
+                cache: false
+            }).done(function (response) {
+                let button_icon = document.querySelector('#' + buttonid + ' i');
+                button_icon.className = "fi-minus";
+                let tooltip_text = document.querySelector('#' + buttonid + ' .tooltip-right .tooltip-text');
+                tooltip_text.innerHTML = 'Remove from comparison';
+                document.getElementById(buttonid).className = "button remove";
+                });
+        }
+        else if (button_class.includes('remove')) {
+            $.ajax({
+                url: '/deletefromcomparison/',
+                data: 'object=job&value='+value,
+                async: true,
+                cache: false
+            }).done(function (response) {
+                let button_icon = document.querySelector('#' + buttonid + ' i');
+                button_icon.className = "fi-plus";
+                let tooltip_text = document.querySelector('#' + buttonid + ' .tooltip-right .tooltip-text');
+                tooltip_text.innerHTML = 'Add to comparison';
+                document.getElementById(buttonid).className = "button add";
+                });
+        }
+      }
+
       function grantRights(type) {
           var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({

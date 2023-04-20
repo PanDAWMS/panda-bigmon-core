@@ -616,59 +616,20 @@ float: none !important; }
     font-size: 100%;
 }
 
-.removefromcomparisonbutton {
-  display: inline-block;
-  min-width: 200px;
-  font-family: sans-serif;
-  text-align: center;
-  font-size: 14px;
-  /*font-weight: bold;*/
-  text-decoration: none;
-  background-color: firebrick;
-  color: white !important;
-  padding: 10px;
-}
-
-.addtocomparisonbutton {
-  display: inline-block;
-  min-width: 200px;
-  font-family: sans-serif;
-  text-align: center;
-  font-size: 14px;
-  /*font-weight: bold;*/
-  text-decoration: none;
-  background-color: #4ba173;
-  color: white !important;
-  padding: 10px;
+.button-group.bp-comparison {
 
 }
-
-.removefromcomparisonbuttoncompact {
-  display: inline-block;
-  width: 90px;
-  font-family: sans-serif;
-  text-align: center;
-  font-size: 0.65rem;
-  /*font-weight: bold;*/
-  text-decoration: none;
-  background-color: firebrick;
-  color: white !important;
-  padding: 2px;
-}
-
-.addtocomparisonbuttoncompact {
-  display: inline-block;
-  width: 90px;
-  font-family: sans-serif;
-  text-align: center;
-  font-size: 0.65rem;
-  /*font-weight: bold;*/
-  text-decoration: none;
-  background-color: #4ba173;
-  color: white !important;
-  padding: 2px;
-
-}
+  .button-group.bp-comparison > .button {
+    color: white;
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+  }
+  .button-group.bp-comparison > .button.add {
+    background-color: #4ba173;
+  }
+  .button-group.bp-comparison > .button.remove {
+    background-color: firebrick;
+  }
 
 a.close-x-sign {
     color: firebrick !important;
