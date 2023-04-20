@@ -358,7 +358,7 @@ def get_job_summary_split(query, extra):
         elif '__endswith' in qn and qn.replace('__endswith', '') in fields:
             extra_str += " and (" + fields[qn.replace('__endswith', '')] + " LIKE '%%" + qvs + "')"
         elif qn in fields:
-            extra_str += " and (" + fields[qn] + "= '" + qvs + "' )"
+            extra_str += " and (" + fields[qn] + "= '" + str(qvs) + "' )"
 
     # get jobs groupings, the jobsactive4 table can keep failed analysis jobs for up to 7 days, so splitting the query
     query_raw = """
