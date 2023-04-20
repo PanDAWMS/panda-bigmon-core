@@ -6420,25 +6420,34 @@ def errorSummary(request):
 
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
-    # Build the state summary and add state info to site error summary
+    # Build the state summary by computingsite to give perspective
     notime = False  # behave as it used to before introducing notime for dashboards. Pull only 12hrs.
-    statesummary = cloud_site_summary(query, extra=wildCardExtension, view=jobtype, cloudview='region', notime=notime)
+    # remove jobstatus from query
+    squery = copy.deepcopy(query)
+    if 'jobstatus__in' in squery:
+        del squery['jobstatus__in']
+    jsr_queues_dict, _, _ = get_job_summary_region(squery, extra=wildCardExtension)
     sitestates = {}
     savestates = ['finished', 'failed', 'cancelled', 'holding', ]
-    for cloud in statesummary:
-        for site in cloud['sites']:
-            sitename = cloud['sites'][site]['name']
-            sitestates[sitename] = {}
-            for s in savestates:
-                sitestates[sitename][s] = cloud['sites'][site]['states'][s]['count']
-            sitestates[sitename]['pctfail'] = cloud['sites'][site]['pctfail']
+    for pq, data in jsr_queues_dict.items():
+        sitestates[pq] = {}
+        for s in savestates:
+            sitestates[pq][s] = 0
+            if 'summary' in data and 'all' in data['summary'] and 'all' in data['summary']['all'] and s in data['summary']['all']['all']:
+                sitestates[pq][s] += data['summary']['all']['all'][s]
+        if sitestates[pq]['failed'] > 0:
+            sitestates[pq]['pctfail'] = round(100.0*sitestates[pq]['finished']/(sitestates[pq]['finished'] + sitestates[pq]['failed']), 2)
+        else:
+            sitestates[pq]['pctfail'] = 0
 
     for site in errsBySite:
         sitename = site['name']
         if sitename in sitestates:
             for s in savestates:
-                if s in sitestates[sitename]: site[s] = sitestates[sitename][s]
-            if 'pctfail' in sitestates[sitename]: site['pctfail'] = sitestates[sitename]['pctfail']
+                if s in sitestates[sitename]:
+                    site[s] = sitestates[sitename][s]
+            if 'pctfail' in sitestates[sitename]:
+                site['pctfail'] = sitestates[sitename]['pctfail']
 
     _logger.info('Built errors by site summary: {}'.format(time.time() - request.session['req_init_time']))
 
