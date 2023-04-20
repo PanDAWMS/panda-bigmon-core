@@ -231,20 +231,24 @@ def send_stalled_requests_report(request):
     if not valid:
         return response
 
+    # it is ATLAS specific view -> return no content
+    if 'ATLAS' not in settings.DEPLOYMENT:
+        return JsonResponse({'sent': 0}, status=204)
+    DB_SCHEMA_DEFT = 'atlas_deft'
     # get data
     try:
         query = """
-        SELECT t1.DATASET, t1.STATUS, t1.STAGED_FILES, t1.START_TIME, t1.END_TIME, t1.RSE as RSE, t1.TOTAL_FILES, 
-            t1.UPDATE_TIME, t1.SOURCE_RSE, t2.TASKID, t3.campaign, t3.PR_ID, 
-            ROW_NUMBER() OVER(PARTITION BY t1.DATASET_STAGING_ID ORDER BY t1.start_time DESC) AS occurence, 
-            (CURRENT_TIMESTAMP-t1.UPDATE_TIME) as UPDATE_TIME, t4.processingtype 
-        FROM ATLAS_DEFT.T_DATASET_STAGING t1
-        INNER join ATLAS_DEFT.T_ACTION_STAGING t2 on t1.DATASET_STAGING_ID=t2.DATASET_STAGING_ID
-        INNER JOIN ATLAS_DEFT.T_PRODUCTION_TASK t3 on t2.TASKID=t3.TASKID 
-        INNER JOIN ATLAS_PANDA.JEDI_TASKS t4 on t2.TASKID=t4.JEDITASKID 
-        where END_TIME is NULL and (t1.STATUS = 'staging') and t1.UPDATE_TIME <= TRUNC(SYSDATE) - {} 
+        select t1.dataset, t1.status, t1.staged_files, t1.start_time, t1.end_time, t1.rse as rse, t1.total_files, 
+            t1.update_time, t1.source_rse, t2.taskid, t3.campaign, t3.pr_id, 
+            row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence, 
+            (current_timestamp-t1.update_time) as update_time, t4.processingtype 
+        from {2}.t_dataset_staging t1
+        inner join {2}.t_action_staging t2 on t1.dataset_staging_id=t2.dataset_staging_id
+        inner join {2}.t_production_task t3 on t2.taskid=t3.taskid 
+        inner join {1}.jedi_tasks t4 on t2.taskid=t4.jeditaskid 
+        where end_time is null and (t1.status = 'staging') and t1.update_time <= trunc(sysdate) - {0} 
             and t4.status not in ('cancelled','failed','broken','aborted','finished','done')
-        """.format(settings.DATA_CAROUSEL_MAIL_DELAY_DAYS)
+        """.format(settings.DATA_CAROUSEL_MAIL_DELAY_DAYS, settings.DB_SCHEMA_PANDA, DB_SCHEMA_DEFT)
         cursor = connection.cursor()
         cursor.execute(query)
         rows = dictfetchall(cursor)
