@@ -124,18 +124,18 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
     jeditaskid = newquery['jeditaskid']
 
     ins_query = """
-    INSERT INTO {0} 
-    (ID,TRANSACTIONKEY,INS_TIME) 
+    insert into {0} 
+    (id,transactionkey,ins_time) 
     select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from (
         select unique pandaid from (
             select j.pandaid, j.jeditaskid, j.eventservice, j.specialhandling, j.jobstatus, j.jobsetid, j.jobsubstatus, j.processingtype,
                     h.oldpandaid, h.relationtype, h.newpandaid
             from (
                 select ja4.pandaid, ja4.jeditaskid, ja4.eventservice, ja4.specialhandling, ja4.jobstatus, ja4.jobsetid, ja4.jobsubstatus, ja4.processingtype 
-                    from {4}.JOBSARCHIVED4 ja4 where ja4.jeditaskid = {3}
+                    from {4}.jobsarchived4 ja4 where ja4.jeditaskid = {3}
                 union
                 select ja.pandaid, ja.jeditaskid, ja.eventservice, ja.specialhandling, ja.jobstatus, ja.jobsetid, ja.jobsubstatus, ja.processingtype 
-                    from {5}.JOBSARCHIVED ja where ja.jeditaskid = {3}
+                    from {5}.jobsarchived ja where ja.jeditaskid = {3}
             ) j
             LEFT JOIN
             {4}.jedi_job_retry_history h
@@ -182,6 +182,6 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
 
     new_cur.execute(ins_query)
     # form an extra query condition to exclude retried pandaids from selection
-    extra += " AND pandaid not in ( select id from {0} where TRANSACTIONKEY = {1})".format(tmpTableName, transactionKey)
+    extra += " AND pandaid not in ( select id from {0} where transactionkey = {1})".format(tmpTableName, transactionKey)
 
     return extra, transactionKey

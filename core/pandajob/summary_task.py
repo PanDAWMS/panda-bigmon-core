@@ -142,19 +142,19 @@ def job_summary_for_task_light(taskrec):
         jsquery = """
             select jobstatus, case eventservice when 1 then 'es' when 5 then 'es' when 2 then 'esmerge' when 4 then 'jumbo' else 'unknown' end, count(pandaid) as njobs from (
             (
-            select pandaid, es as eventservice, jobstatus from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
+            select pandaid, es as eventservice, jobstatus from {0}.combined_wait_act_def_arch4 where jeditaskid = :jtid
             )
             union all
             (
-            select pandaid, eventservice, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid
+            select pandaid, eventservice, jobstatus from {1}.jobsarchived where jeditaskid = :jtid
             minus
-            select pandaid, eventservice, jobstatus from atlas_pandaarch.jobsarchived where jeditaskid = :jtid and pandaid in (
-                select pandaid from atlas_pandabigmon.combined_wait_act_def_arch4 where jeditaskid = :jtid
+            select pandaid, eventservice, jobstatus from {1}.jobsarchived where jeditaskid = :jtid and pandaid in (
+                select pandaid from {0}.combined_wait_act_def_arch4 where jeditaskid = :jtid
                 )
             )
             )
             group by jobstatus, eventservice
-        """
+        """.format(settings.DB_SCHEMA, settings.DB_SCHEMA_PANDA_ARCH)
         cur = connection.cursor()
         cur.execute(jsquery, {'jtid': jeditaskidstr})
         js_count = cur.fetchall()
@@ -224,17 +224,17 @@ def get_top_memory_consumers(taskrec):
                 maxrss number(10, 0) path '$.maxrss',
                 corecount number(10, 0) path '$.corecount')) s,
         (select pandaid, jeditaskid, computingsite, maxpss/1000 as jobmaxpss, maxpss/1000/actualcorecount as jobmaxpss_percore 
-        from ATLAS_PANDA.jobsarchived4 
+        from {DB_SCHEMA_PANDA}.jobsarchived4 
             where jeditaskid = :jdtsid and maxrss is not null
         union
         select pandaid, jeditaskid, computingsite, maxpss/1000 as jobmaxpss, maxpss/1000/actualcorecount as jobmaxpss_percore 
-        from ATLAS_PANDAARCH.jobsarchived 
+        from {DB_SCHEMA_PANDA_ARCH}.jobsarchived 
             where jeditaskid = :jdtsid  and maxrss is not null
         ) j
         where j.computingsite = s.nickname
     ) 
     where jobrank <= 3
-    """.format(DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA)
+    """.format(DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA, DB_SCHEMA_PANDA_ARCH=settings.DB_SCHEMA_PANDA_ARCH)
     try:
         cur = connection.cursor()
         cur.execute(tmcquerystr, {'jdtsid': jeditaskidstr})

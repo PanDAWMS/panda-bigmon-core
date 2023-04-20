@@ -9,55 +9,6 @@
 {% endblock %}
 {% block extra_js %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
-    <script src="{% static 'js/d3.v3.min.js' %}"></script>
-    <script src="/static/js/d3jsplot.js"></script>
-    <script type="text/javascript">
-    function toggle(idtotoggle, buttonid){
-        if ($("#" + idtotoggle).is(':visible')){
-            $("#" + idtotoggle).hide();
-            document.getElementById(buttonid).innerHTML='Show all params'}
-        else {
-            $("#" + idtotoggle).show();
-            document.getElementById(buttonid).innerHTML='Hide all params'}
-    }
-
-    function deletefromcomparison(object, value) {
-        var currentURL = window.location.href;
-        if (currentURL.indexOf('pandaid=') > -1) {
-            var url = new URL(currentURL);
-            var pandaids = url.searchParams.get("pandaid").split("|");
-            var index = pandaids.indexOf(value);
-            if (index > -1) {
-              pandaids.splice(index, 1);
-            }
-            newURL = url.origin + url.pathname;
-            if (pandaids.length > 0) {
-                newURL += '?pandaid=' + pandaids.join('|')
-            }
-            window.location = newURL;
-        }
-        else {
-            var newURL = document.getElementById('reloadlink').href;
-            $.ajax({
-                url: '/deletefromcomparison/',
-                data: 'object=' + object + '&value=' + value,
-                async: true,
-                cache: false
-            }).done(function (response) {
-                window.location = newURL;
-            });
-        }
-    }
-
-    function togglerows(classtotoggle, buttonid){
-        if ($('.'+classtotoggle).is(':visible')){
-            $('.'+classtotoggle).hide();
-            document.getElementById(buttonid).innerHTML='Show equal'}
-        else {
-            $('.'+classtotoggle).show();
-            document.getElementById(buttonid).innerHTML='Hide equal'}
-    }
-</script>
 {% endblock %}
 {% block body %}
 <div class="float-right">
@@ -107,4 +58,61 @@
 </table>
 
 
+{% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript">
+    {% if request.session.urls_cut.notimerangeurl %}
+        var notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
+    {% else %}
+        var notimerangeurl =  window.location.href + '?';
+    {% endif %}
+
+    function toggle(idtotoggle, buttonid){
+        if ($("#" + idtotoggle).is(':visible')){
+            $("#" + idtotoggle).hide();
+            document.getElementById(buttonid).innerHTML='Show all params'}
+        else {
+            $("#" + idtotoggle).show();
+            document.getElementById(buttonid).innerHTML='Hide all params'}
+    }
+
+    function deletefromcomparison(object, value) {
+        var currentURL = window.location.href;
+        if (currentURL.indexOf('pandaid=') > -1) {
+            var url = new URL(currentURL);
+            var pandaids = url.searchParams.get("pandaid").split("|");
+            var index = pandaids.indexOf(value);
+            if (index > -1) {
+              pandaids.splice(index, 1);
+            }
+            newURL = url.origin + url.pathname;
+            if (pandaids.length > 0) {
+                newURL += '?pandaid=' + pandaids.join('|')
+            }
+            window.location = newURL;
+        }
+        else {
+            let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+            var newURL = notimestampurl + 'timestamp=' + d;
+            $.ajax({
+                url: '/deletefromcomparison/',
+                data: 'object=' + object + '&value=' + value,
+                async: true,
+                cache: false
+            }).done(function (response) {
+                window.location = newURL;
+            });
+        }
+    }
+
+    function togglerows(classtotoggle, buttonid){
+        if ($('.'+classtotoggle).is(':visible')){
+            $('.'+classtotoggle).hide();
+            document.getElementById(buttonid).innerHTML='Show equal'}
+        else {
+            $('.'+classtotoggle).show();
+            document.getElementById(buttonid).innerHTML='Hide equal'}
+    }
+</script>
 {% endblock %}

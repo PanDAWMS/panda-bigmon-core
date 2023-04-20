@@ -76,9 +76,11 @@ def fileList(jobs):
             pandaLFN.setdefault(dataset['pandaid'],[]).append(dataset['lfn'])
 
         query['datasetid__in'] = list(datasetIDQ)
-        JediDatasetContentsTable.extend(JediDatasetContents.objects.filter(**query).extra(where=["datasetid in (SELECT datasetid from ATLAS_PANDA.JEDI_DATASETS where masterid is NULL)"]).values())
+        extra_str = "datasetid in (select datasetid from {}.jedi_datasets where masterid is null)".format(
+            settings.DB_SCHEMA_PANDA
+        )
+        JediDatasetContentsTable.extend(JediDatasetContents.objects.filter(**query).extra(where=[extra_str]).values())
         njob = {}
-
         for jds in JediDatasetContentsTable:
             if jds['pandaid'] not in njob:
                 njob[jds['pandaid']] = {}
@@ -215,18 +217,18 @@ def get_event_status_summary(pandaids, eventservicestatelist):
     executionData = []
     for id in pandaids:
         executionData.append((id, transactionKey))
-    query = """INSERT INTO """ + tmpTableName + """(ID,TRANSACTIONKEY) VALUES (%s, %s)"""
+    query = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
     new_cur.executemany(query, executionData)
 
     new_cur.execute(
         """
-        SELECT STATUS, COUNT(STATUS) AS COUNTSTAT 
-        FROM (
-            SELECT /*+ dynamic_sampling(TMP_IDS1 0) cardinality(TMP_IDS1 10) INDEX_RS_ASC(ev JEDI_EVENTS_PANDAID_STATUS_IDX) NO_INDEX_FFS(ev JEDI_EVENTS_PK) NO_INDEX_SS(ev JEDI_EVENTS_PK) */ PANDAID, STATUS 
-            FROM ATLAS_PANDA.JEDI_EVENTS ev, %s 
-            WHERE TRANSACTIONKEY = %i AND  PANDAID = ID
+        select status, count(status) as countstat 
+        from (
+            select /*+ dynamic_sampling(tmp_ids1 0) cardinality(tmp_ids1 10) index_rs_asc(ev jedi_events_pandaid_status_idx) no_index_ffs(ev jedi_events_pk) no_index_ss(ev jedi_events_pk) */ pandaid, status 
+            from {2}.jedi_events ev, {0} 
+            where transactionkey = {1} and  pandaid = id
         ) t1 
-        GROUP BY STATUS""" % (tmpTableName, transactionKey))
+        group by status""".format(tmpTableName, transactionKey, settings.DB_SCHEMA_PANDA))
 
     evtable = dictfetchall(new_cur)
 
@@ -263,23 +265,23 @@ def is_timestamp(key):
 
 
 def get_tmp_table_name():
-    tmpTableName = f"{settings.DB_SCHEMA}.TMP_IDS1"
+    tmpTableName = f"{settings.DB_SCHEMA}.tmp_ids1"
     if settings.DEPLOYMENT == 'POSTGRES':
-        tmpTableName = "TMP_IDS1"
+        tmpTableName = "tmp_ids1"
     return tmpTableName
 
 
 def get_tmp_table_name_debug():
-    tmpTableName = f"{settings.DB_SCHEMA}.TMP_IDS1DEBUG"
+    tmpTableName = f"{settings.DB_SCHEMA}.tmp_ids1debug"
     return tmpTableName
 
 
 def create_temporary_table(cursor, tmpTableName):
     # Postgres does not keep the temporary table definition across connections, this is why we should recreate them
     sql_query = f"""
-    CREATE TEMPORARY TABLE if not exists {tmpTableName} 
-    ("id" bigint, "transactionkey" bigint) ON COMMIT PRESERVE ROWS;
-    COMMIT;
+    create temporary table if not exists {tmpTableName} 
+    ("id" bigint, "transactionkey" bigint) on commit preserve rows;
+    commit;
     """
     cursor.execute(sql_query)
 
