@@ -548,24 +548,24 @@ def input_summary_for_task(taskrec, dsets):
                     jdc.lfn, jdc.startevent, jdc.endevent, 
                     jdc.attemptnr, jdc.maxattempt, jdc.failedattempt, jdc.maxfailure,
                     case when (jdc.maxattempt <= jdc.attemptnr or jdc.failedattempt >= jdc.maxfailure) and jdc.status = 'ready' then 'failed' else jdc.status end as cstatus
-                 from atlas_panda.jedi_dataset_contents jdc, 
-                     atlas_panda.jedi_datasets jd
+                 from {1}.jedi_dataset_contents jdc, 
+                     {1}.jedi_datasets jd
                  where jd.datasetid = jdc.datasetid 
-                    and jd.jeditaskid = {}
+                    and jd.jeditaskid = {0}
                     and jd.masterid is NULL
                     and jdc.type in ( 'input', 'pseudo_input')
                 ) jdcf 
                 LEFT JOIN
                 (select f4.jeditaskid, f4.fileid, f4.datasetid, f4.pandaid, 
                     case when ja4.jobstatus = 'transferring' and ja4.eventservice = 2 then 'esmerge_transferring' when ja4.eventservice = 2 then 'esmerge_merging' else null end as esmergestatus
-                 from atlas_panda.filestable4 f4, ATLAS_PANDA.jobsactive4 ja4 
+                 from {1}.filestable4 f4, {1}.jobsactive4 ja4 
                  where f4.pandaid = ja4.pandaid and f4.type in ( 'input', 'pseudo_input') 
-                            and f4.jeditaskid = {}
+                            and f4.jeditaskid = {0}
                 ) f
                 on jdcf.datasetid = f.datasetid and jdcf.fileid = f.fileid
                 group by jdcf.jeditaskid, jdcf.datasetid, jdcf.fileid, jdcf.lfn, jdcf.startevent, jdcf.endevent, 
                     jdcf.attemptnr, jdcf.maxattempt, jdcf.failedattempt, jdcf.maxfailure, jdcf.cstatus, f.esmergestatus
-            ) ifs """.format(jeditaskid, jeditaskid)
+            ) ifs """.format(jeditaskid, settings.DB_SCHEMA_PANDA)
 
         cur = connection.cursor()
         cur.execute(ifsquery)

@@ -3,6 +3,7 @@ A set of functions to get jobs from JOBS* and group them by object store
 """
 
 from django.db import connection
+from django.conf import settings
 from core.libs.cache import setCacheData
 from core.libs.sqlcustom import fix_lob
 
@@ -14,18 +15,18 @@ import core.constants as const
 def objectstore_summary_data(hours):
 
     sqlRequest = """
-    SELECT JOBSTATUS, COUNT(JOBSTATUS) as COUNTJOBSINSTATE, COMPUTINGSITE, OBJSE, RTRIM(XMLAGG(XMLELEMENT(E,PANDAID,',').EXTRACT('//text()') ORDER BY PANDAID).GetClobVal(),',') AS PANDALIST 
-    FROM 
-      (SELECT DISTINCT t1.PANDAID, NUCLEUS, COMPUTINGSITE, JOBSTATUS, TASKTYPE, ES, CASE WHEN t2.OBJSTORE_ID > 0 THEN TO_CHAR(t2.OBJSTORE_ID) ELSE t3.destinationse END AS OBJSE 
-      FROM ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4 t1 
-      LEFT JOIN ATLAS_PANDA.JEDI_EVENTS t2 ON t1.PANDAID=t2.PANDAID and t1.JEDITASKID =  t2.JEDITASKID and (t2.ziprow_id>0 or t2.OBJSTORE_ID > 0) 
-      LEFT JOIN ATLAS_PANDA.filestable4 t3 ON (t3.pandaid = t2.pandaid and  t3.JEDITASKID = t2.JEDITASKID and t3.row_id=t2.ziprow_id) WHERE t1.ES in (1) and t1.CLOUD='WORLD' and t1.MODIFICATIONTIME > (sysdate - interval '{hours}' hour) 
-      AND t3.MODIFICATIONTIME >  (sysdate - interval '{hours}' hour)
+    select jobstatus, count(jobstatus) as countjobsinstate, computingsite, objse, rtrim(xmlagg(xmlelement(e,pandaid,',').extract('//text()') order by pandaid).getclobval(),',') as pandalist 
+    from 
+      (select distinct t1.pandaid, nucleus, computingsite, jobstatus, tasktype, es, case when t2.objstore_id > 0 then to_char(t2.objstore_id) else t3.destinationse end as objse 
+      from {DB_SCHEMA_BIGMON}.combined_wait_act_def_arch4 t1 
+      left join {DB_SCHEMA_PANDA}.jedi_events t2 on t1.pandaid=t2.pandaid and t1.jeditaskid =  t2.jeditaskid and (t2.ziprow_id>0 or t2.objstore_id > 0) 
+      left join {DB_SCHEMA_PANDA}.filestable4 t3 on (t3.pandaid = t2.pandaid and  t3.jeditaskid = t2.jeditaskid and t3.row_id=t2.ziprow_id) where t1.es in (1) and t1.cloud='world' and t1.modificationtime > (sysdate - interval '{hours}' hour) 
+      and t3.modificationtime >  (sysdate - interval '{hours}' hour)
       ) 
-    WHERE NOT OBJSE IS NULL 
-    GROUP BY JOBSTATUS, JOBSTATUS, COMPUTINGSITE, OBJSE 
-    order by OBJSE
-    """.format(hours=hours)
+    where not objse is null 
+    group by jobstatus, jobstatus, computingsite, objse 
+    order by objse
+    """.format(hours=hours, DB_SCHEMA_PANDA=settings.DB_SCHEMA_PANDA, DB_SCHEMA_BIGMON=settings.DB_SCHEMA)
 
     cur = connection.cursor()
     cur.execute(sqlRequest)

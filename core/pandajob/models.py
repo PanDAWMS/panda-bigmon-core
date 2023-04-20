@@ -323,41 +323,41 @@ class PandaJobArch(models.Model):
 
 class Jobsarchived_y2014(PandaJobArch):
     class Meta:
-        db_table = u'"atlas_pandaarch"."y2014_jobsarchived"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}."y2014_jobsarchived"'
         app_label = 'pandaarch'
 
 
 class Jobsarchived_y2015(PandaJobArch):
     class Meta:
-        db_table = u'"atlas_pandaarch"."y2015_jobsarchived"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}."y2015_jobsarchived"'
         app_label = 'pandaarch'
 
 
 class Jobsarchived_y2016(PandaJobArch):
     class Meta:
-        db_table = u'"atlas_pandaarch"."y2016_jobsarchived"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}."y2016_jobsarchived"'
         app_label = 'pandaarch'
 
 
 class Jobsarchived_y2017(PandaJobArch):
     class Meta:
-        db_table = u'"atlas_pandaarch"."y2017_jobsarchived"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}."y2017_jobsarchived"'
         app_label = 'pandaarch'
 
 
 class Jobsarchived_y2018(PandaJobArch):
     class Meta:
-        db_table = u'"atlas_pandaarch"."y2018_jobsarchived"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}."y2018_jobsarchived"'
         app_label = 'pandaarch'
 
 
 class Jobsarchived_y2019(PandaJobArch):
     class Meta:
-        db_table = u'"atlas_pandaarch"."y2019_jobsarchived"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}."y2019_jobsarchived"'
         app_label = 'pandaarch'
 
 
 class Jobsarchived_y2020(PandaJobArch):
     class Meta:
-        db_table = u'"atlas_pandaarch"."y2020_jobsarchived"'
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}."y2020_jobsarchived"'
         app_label = 'pandaarch'
