@@ -336,8 +336,11 @@
                   "data": "type",
                   sDefaultContent: "-",
                   "render": function(data, type, row, meta) {
-                      var links = '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
-                      if (row['type'] == 'input') {
+                      var links = '';
+                      if ("{{ request.session.rucio_ui }}".length > 0) {
+                        links += '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                      }
+                      if (row['type'] === 'input') {
                            links += ', <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
                       }
                       return links;

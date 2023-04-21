@@ -162,8 +162,8 @@
                     data: "rucio_rule",
                     sDefaultContent: "-",
                     render: function(data, type, full, meta) {
-                      if (data.length > 0) {
-                        return '<a target="_blank" href="https://rucio-ui.cern.ch/rule?rule_id=' + data + '">' + data + '</a>'
+                      if (data.length > 0 && "{{ request.session.rucio_ui }}".length > 0) {
+                        return '<a target="_blank" href="{{ request.session.rucio_ui }}rule?rule_id=' + data + '">' + data + '</a>'
                       }
                       else {
                         return data;

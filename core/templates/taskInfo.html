@@ -509,9 +509,9 @@
       </tr>
       <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO=='ATLAS' ">
         <th ng-if="key!='step_action_id'">{$ key $}</th>
-        <td ng-if="key=='dataset'"><a href="https://rucio-ui.cern.ch/did?name={$ json['scope'] $}:{$ value $}">{$ value $}</a></td>
+        <td ng-if="key=='dataset'">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}did?name={$ json['scope'] $}:{$ value $}">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
         <td ng-if="key=='status'"><a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a></td>
-        <td ng-if="key=='rse'"><a href="https://rucio-ui.cern.ch/rule?rule_id={$ value $}">{$ value $}</a></td>
+        <td ng-if="key=='rse'">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}rule?rule_id={$ value $}">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
         <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
       </tr>
     </tbody>
@@ -1280,9 +1280,13 @@ function buildDatasetsTable(data) {
             "data": "type",
             sDefaultContent: "-",
             "render": function(data, type, row, meta) {
-                var links = '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
-                if (row['type'] == 'input') {
-                     links += ', <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
+                var links = '';
+                if ("{{ request.session.rucio_ui }}".length > 0) {
+                  links += '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                }
+                if (row['type'] === 'input') {
+                  links += (links.length > 0) ? ', ': '';
+                  links += '<a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
                 }
                 return links;
             }

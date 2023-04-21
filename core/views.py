@@ -326,6 +326,8 @@ def initRequest(request, callselfmon=True):
     # add CRIC URL base to session
     if settings.CRIC_API_URL:
         request.session['crichost'] = urlparse(settings.CRIC_API_URL).hostname
+    if settings.RUCIO_UI_URL:
+        request.session['rucio_ui'] = settings.RUCIO_UI_URL
 
     # remove xurls from session if it is kept from previous requests
     if 'xurls' in request.session:
@@ -7706,22 +7708,26 @@ def loadFileList(request, datasetid=-1):
         for f in files_ft:
             files_ft_dict[f['fileid']] = f
 
+
     for f in files:
         f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-        ruciolink_base = 'https://rucio-ui.cern.ch/did?scope='
-        f['ruciolink'] = ''
-        if f['fileid'] in files_ft_dict:
-            name_param = ''
-            if len(files_ft_dict[f['fileid']]['dispatchdblock']) > 0:
-                name_param = 'dispatchdblock'
-            elif len(files_ft_dict[f['fileid']]['destinationdblock']) > 0:
-                name_param = 'destinationdblock'
-            if len(name_param) > 0:
-                if files_ft_dict[f['fileid']][name_param].startswith(files_ft_dict[f['fileid']]['scope']):
-                    ruciolink_base += files_ft_dict[f['fileid']]['scope']
-                else:
-                    ruciolink_base += files_ft_dict[f['fileid']][name_param].split('.')[0]
-                f['ruciolink'] = ruciolink_base + '&name=' + files_ft_dict[f['fileid']][name_param]
+        if settings.RUCIO_UI_URL is not None and isinstance(settings.RUCIO_UI_URL, str) and len(settings.RUCIO_UI_URL) > 0:
+            ruciolink_base = settings.RUCIO_UI_URL + 'did?scope='
+            f['ruciolink'] = ''
+            if f['fileid'] in files_ft_dict:
+                name_param = ''
+                if 'dispatchdblock' in files_ft_dict[f['fileid']] and len(files_ft_dict[f['fileid']]['dispatchdblock']) > 0:
+                    name_param = 'dispatchdblock'
+                elif 'destinationdblock' in files_ft_dict[f['fileid']] and len(files_ft_dict[f['fileid']]['destinationdblock']) > 0:
+                    name_param = 'destinationdblock'
+                if len(name_param) > 0:
+                    if files_ft_dict[f['fileid']][name_param].startswith(files_ft_dict[f['fileid']]['scope']):
+                        ruciolink_base += files_ft_dict[f['fileid']]['scope']
+                    else:
+                        ruciolink_base += files_ft_dict[f['fileid']][name_param].split('.')[0]
+                    f['ruciolink'] = ruciolink_base + '&name=' + files_ft_dict[f['fileid']][name_param]
+        else:
+            f['ruciolink'] = ''
         f['creationdatecut'] = f['creationdate'].strftime('%Y-%m-%d')
         f['creationdate'] = f['creationdate'].strftime(settings.DATETIME_FORMAT)
 

@@ -135,6 +135,7 @@ if DEPLOYMENT == 'ORACLE_ATLAS':
     DATABASES = dbaccess_oracle_atlas
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
     IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
+    RUCIO_UI_URL = 'https://rucio-ui.cern.ch/'
 elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA = 'doma_pandabigmon'
     DB_SCHEMA_PANDA = 'doma_panda'
@@ -144,6 +145,7 @@ elif DEPLOYMENT == 'POSTGRES':
     DATABASES = dbaccess_postgres
     CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json')
     IDDS_HOST = os.environ.get('IDDS_HOST', 'https://iddsserver.cern.ch:443/idds')
+    RUCIO_UI_URL = os.environ.get('RUCIO_UI_URL', '')
     PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
                                                   "https://storage.googleapis.com/drp-us-central1-logging"
                                                   "/logs/{queue_name}/PandaJob_{panda_id}")
@@ -156,6 +158,7 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     DATABASES = dbaccess_oracle_doma
     CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
     IDDS_HOST = 'https://aipanda015.cern.ch:443/idds'
+    RUCIO_UI_URL = os.environ.get('RUCIO_UI_URL', '')
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

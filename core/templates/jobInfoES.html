@@ -270,9 +270,9 @@
                 <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}} process for {{ coreData.pipelinetask }} pipeline task</a>
         {% endif %}
 
-        {% if rucioUserName|length > 0 %}
+        {% if rucioUserName|length > 0 and request.session.rucio_ui|length > 0 %}
             {% for rucioUserNameIt in rucioUserName %}
-              <a href="https://rucio-ui.cern.ch/r2d2?account={{ rucioUserNameIt }}">DDM User activity ({{ rucioUserNameIt }})</a>
+              <a href="{{ request.session.rucio_ui }}r2d2?account={{ rucioUserNameIt }}">DDM User activity ({{ rucioUserNameIt }})</a>
             {% endfor %}
         {% endif %}
     </div>
@@ -547,7 +547,9 @@ function buildFilesTable(data) {
                 let links = '';
                 if (row['type'] !== 'pseudo_input') {
                   links += '<a href = "{% url 'fileInfo' %}?lfn=' + row['lfn'] + '&scope=' + row['scope'] + '">'+row['lfn']+'</a>';
-                  links += ' <a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['lfn'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  if ("{{ request.session.rucio_ui }}".length > 0) {
+                    links += ' <a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['lfn'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  }
                 }
                 else {
                   links += row['lfn'];
@@ -625,7 +627,9 @@ function buildFilesTable(data) {
             "render": function(data, type, row, meta) {
                 let links = '';
                 if (row['type'] !== 'pseudo_input' && data) {
-                  links += '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['ruciodatasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  if ("{{ request.session.rucio_ui }}".length > 0) {
+                    links += '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['ruciodatasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  }
                   links += ', <a href = "{% url 'datasetInfo' %}?datasetname=' + row['datasetname'] + '&jeditaskid=' + row['jeditaskid'] + '">'+row['datasetname']+'</a>';
                 }
                 else if (data) {
@@ -642,8 +646,8 @@ function buildFilesTable(data) {
             sDefaultContent: "-",
             className: 'num',
             "render": function(data, type, row, meta) {
-                if (data && data.length > 0) {
-                  return '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['dispatchdblock'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
+                if (data && data.length > 0 && "{{ request.session.rucio_ui }}".length > 0) {
+                  return '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['dispatchdblock'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
                 }
                 else {
                   return '-'
@@ -656,8 +660,8 @@ function buildFilesTable(data) {
             className: 'num',
             "render": function(data, type, row, meta) {
                 let links = row['destinationdblock_vis'];
-                if (data && data.length > 0) {
-                  links += ' <a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['destinationdblock'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
+                if (data && data.length > 0 && "{{ request.session.rucio_ui }}".length > 0) {
+                  links += ' <a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['destinationdblock'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
                 }
                 else {
                   links += '-'
