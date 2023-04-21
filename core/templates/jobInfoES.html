@@ -8,6 +8,7 @@
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/jquery.shorten.1.0.js' %}"></script>
 {% endblock %}
 
 {% block page_title %}PanDA job {{ pandaid }}{% endblock %}
@@ -384,7 +385,7 @@
 	{% if job.destinationse %}<tr><th>Output destination</th><td>{{ job.destinationse }}</td></tr>{% endif %}
 	{% if job.cpuconsumptiontime %}<tr><th>CPU consumption time (s)</th><td>{{ job.cpuconsumptiontime }}</td></tr>{% endif %}
 	{% if job.jobmetrics %}<tr><th>Job metrics</th><td>{{ job.jobmetrics }}</td></tr>{% endif %}
-	{% if jobparams %}<tr><th>Job parameters</th><td>{{ jobparams }}</td></tr>{% endif %}
+  {% if jobparams %}<tr><th>Job parameters</th><td><div class="comment more wrap-words">{{ jobparams }}</div></td></tr>{% endif %}
 	{% if job.pilotid %}<tr><th>Pilot ID</th><td>{{ job.pilotid }}</td></tr>{% endif %}
 	{% if job.batchid %}<tr><th>Batch ID</th><td>{{ job.batchid }}</td></tr>{% endif %}
 </tbody>
@@ -444,6 +445,7 @@
 
 
 $(document).ready(function () {
+    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
     var files_list = {{ files|safe }};
     buildFilesTable(files_list);
     var events_list = {{ evtable|safe }};
