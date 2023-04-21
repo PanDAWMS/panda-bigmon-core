@@ -251,142 +251,137 @@
 
 
     <div class="top-bar-right">
-        <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
-            {% if viewParams.MON_VO == 'ATLAS' %}
-              {% if request.user and request.user.is_authenticated %}
-              <script>
-               function getSelectValue()
-               {
-                   var selectedValue = document.getElementById("searchselectid").value;
-                   switch (selectedValue) {
-                       case 'site':
-                           $("#searchinputid").autocomplete({
-                                    source: "{% url 'getsites' %}",
-                                    select: function (event, ui) { //item selected
-                                    AutoCompleteSelectHandler(event, ui)
-                                    },
-                                    minLength: 1,
-                                    });
-                                    break;
-                                }
+      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+          {% if request.user and request.user.is_authenticated %}
+          <script>
+           function getSelectValue() {
+               var selectedValue = document.getElementById("searchselectid").value;
+               switch (selectedValue) {
+                   case 'site':
+                        $("#searchinputid").autocomplete({
+                            source: "{% url 'getsites' %}",
+                            select: function (event, ui) { //item selected
+                                AutoCompleteSelectHandler(event, ui);
+                            },
+                            minLength: 1,
+                        });
+                        break;
                }
-               function AutoCompleteSelectHandler(event, ui)
-               {
-                   var selectedObj = ui.item;
-               }
-               </script>
-                <li>
-                <div class="row collapse searchbox show-for-large">
-                  <div class="large-7 medium-7 columns">
-                    <select id="searchselectid" name="objectstosearch" class="searchselect" onchange="getSelectValue();">
-                        <option class="searchoption" value="pandaid">Job by ID</option>
-                        <option class="searchoption" value="batchid">Jobs for batch ID</option>
-                        <option class="searchoption" value="jeditaskid">Task by ID</option>
-                        <option class="searchoption" value="taskname">Task by name</option>
-                        <option class="searchoption" value="reqid">Tasks for request ID</option>
-                        <option class="searchoption" value="campaign">Tasks for campaign</option>
-                        <option class="searchoption" value="project">Tasks for project</option>
-                        <option class="searchoption" value="tag">Tasks for tag</option>
-                        <option class="searchoption" value="hashtag">Tasks for #</option>
-                        <option class="searchoption" value="site">Site by name</option>
-                        <option class="searchoption" value="user">User</option>
-                        <option class="searchoption" value="dataset">Dataset by name</option>
-                        <option class="searchoption" value="filename">File by name</option>
-                      </select>
-                  </div>
-                  <div class="large-4 medium-4 columns">
-
-                  <input id="searchinputid" name="searchinputid" class="searchinput" type="text" placeholder="Enter...">
-                  </div>
-
-                  <div class="large-1 medium-1 columns">
-                    <a onclick="bpsearch('searchselectid', 'searchinputid')" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
-                  </div>
-                </div>
-                </li>
-              {% endif %}
-                {% comment %}
-                <li class="name">
-                    <a href="https://bigpanda.cern.ch{% url 'userInfo' %}">My BigPanDA</a>
-                </li>
-                {% endcomment %}
-
-                <li class="has-submenu">
-                <a href="#">Prodsys</a>
-                <ul  class="submenu menu vertical">
-                    <li><a href="https://prodtask-dev.cern.ch/prodtask/task_table/">Prodsys task list</a>
-                    <li><a href="https://prodtask-dev.cern.ch/prodtask/task_manage/">Manage tasks</a>
-                    <li><a href="https://prodtask-dev.cern.ch/prodtask/task_create/">Create task</a>
-                    <li><a href="https://prodtask-dev.cern.ch/prodtask/request_table/">Requests</a>
-                    <li><a href="https://prodtask-dev.cern.ch/getdatasets/">Input dataset search</a>
-                    <li><a href="https://prodtask-dev.cern.ch/prodtask/production_dataset_table/">Aborted and obsolete datasets</a>
-                </ul>
-                </li>
-
-                <li class="has-submenu">
-                <a href="#">Services</a>
-                <ul class="submenu menu vertical">
-                    <li><a href="http://apfmon.lancs.ac.uk/">Pilot factory monitor</a>
-                    <li><a href="http://dashb-atlas-job.cern.ch/dashboard/request.py/dailysummary#button=jobstatus&sites%5B%5D=All+T3210&sitesCat%5B%5D=All+Clouds&activities%5B%5D=Data+Processing&activities%5B%5D=Extra+Production&activities%5B%5D=Group+Production&activities%5B%5D=MC+Reconstruction&activities%5B%5D=MC+Simulation&activities%5B%5D=Others&activities%5B%5D=T0+Processing&resourcetype=All&sitesSort=7&sitesCatSort=1&start=null&end=null&timerange=last24&granularity=Hourly&generic=3&sortby=3&series=All">Dashboard historical views</a></li>
-                    <li><a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17">DDM dashboard</a>
-                    <li><a href="http://dashb-atlas-ssb.cern.ch/dashboard/request.py/siteview#currentView=Shifter+view&highlight=false">Site Status Board</a>
-                    <li><a href="http://adc-monitoring.cern.ch/">All ADC monitoring services</a>
-                </ul>
-                </li>
-
-            {% endif %}
-
-            {% if "username" in request.session %}
+           }
+           function AutoCompleteSelectHandler(event, ui)
+           {
+               var selectedObj = ui.item;
+           }
+           </script>
             <li>
-            <a href="{% url 'userInfo' request.session.username %}?display_limit=200">{{request.session.username}}</a>
-            </li>
-            {% endif %}
+            <div class="row collapse searchbox show-for-large">
+              <div class="large-7 medium-7 columns">
+                <select id="searchselectid" name="objectstosearch" class="searchselect" onchange="getSelectValue();">
+                  <option class="searchoption" value="pandaid">Job by ID</option>
+                  <option class="searchoption" value="batchid">Jobs for batch ID</option>
+                  <option class="searchoption" value="jeditaskid">Task by ID</option>
+                  <option class="searchoption" value="taskname">Task by name</option>
+                  <option class="searchoption" value="reqid">Tasks for request ID</option>
+                  {% if viewParams.MON_VO == 'ATLAS' %}
+                    <option class="searchoption" value="campaign">Tasks for campaign</option>
+                    <option class="searchoption" value="project">Tasks for project</option>
+                    <option class="searchoption" value="tag">Tasks for tag</option>
+                    <option class="searchoption" value="hashtag">Tasks for #</option>
+                  {% endif %}
+                  <option class="searchoption" value="site">Site by name</option>
+                  <option class="searchoption" value="user">User</option>
+                  <option class="searchoption" value="dataset">Dataset by name</option>
+                  <option class="searchoption" value="filename">File by name</option>
+                </select>
+              </div>
+              <div class="large-4 medium-4 columns">
 
-            <li class="has-submenu">
-            <a href="#"><span class='help'>Help</span></a>
-            <ul class="submenu menu vertical">
-                <li><a href="#doc"><span class='help'>See the bottom of the page for contextual help on current page</span></a>
-                <li><a href="/help/"><span class='help'>Complete PanDA monitor help page</span></a>
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/AtlasDAST">Distributed analysis support</a>
-                {% endif %}
-                <li><a href="mailto:atlas-adc-pandamon-support@cern.ch">PanDA monitor support</a>
-                <li><a href="https://github.com/PanDAWMS"> PanDA repository </a>
-                <li><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
-            </ul>
-            </li>
+              <input id="searchinputid" name="searchinputid" class="searchinput" type="text" placeholder="Enter...">
+              </div>
 
-            {% if request.user and request.user.is_authenticated %}
+              <div class="large-1 medium-1 columns">
+                <a onclick="bpsearch('searchselectid', 'searchinputid')" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
+              </div>
+            </div>
+            </li>
+          {% endif %}
+          {% if viewParams.MON_VO == 'ATLAS' %}
               <li class="has-submenu">
-                <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 1rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
-                <ul class="submenu menu vertical">
-                    <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
-                    <li><span class="li-text loggeduser">{{ request.user.email }}</span>
-                    {% if request.user.is_tester %}
-                        <li><a href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
-                        <li><a onclick="clearComparisonList('job')">Clear jobs comparison list</a>
-                    {% endif %}
-                    <li><a href="{% url 'userInfo' %}">My BigPanDA</a>
-                    {% if request.user.is_tester %}
-                        <li><a onclick="denyRights('tester')">Abandon tester rights</a>
-                    {% else %}
-                        <li><a onclick="grantRights('tester')">Become a tester</a>
-                    {% endif %}
-                    <li><a href="{% url 'logout' %}"><span class="reassign">Logout</span></a>
-                </ul>
+              <a href="#">Prodsys</a>
+              <ul  class="submenu menu vertical">
+                  <li><a href="https://prodtask-dev.cern.ch/prodtask/task_table/">Prodsys task list</a>
+                  <li><a href="https://prodtask-dev.cern.ch/prodtask/task_manage/">Manage tasks</a>
+                  <li><a href="https://prodtask-dev.cern.ch/prodtask/task_create/">Create task</a>
+                  <li><a href="https://prodtask-dev.cern.ch/prodtask/request_table/">Requests</a>
+                  <li><a href="https://prodtask-dev.cern.ch/getdatasets/">Input dataset search</a>
+                  <li><a href="https://prodtask-dev.cern.ch/prodtask/production_dataset_table/">Aborted and obsolete datasets</a>
+              </ul>
               </li>
-            {% else %}
-                <li>
-                 <a href="{% url 'loginauth2' %}">Login</a>
-                </li>
-            {% endif %}
 
-            {% if request.user and request.user.is_authenticated and request.user.is_tester and '/errors/' in request.path %}
-            <li class="settings-button">
-             <button type="button" data-open="offCanvasRight"><i class="fi-widget"></i></button>
+              <li class="has-submenu">
+              <a href="#">Services</a>
+              <ul class="submenu menu vertical">
+                  <li><a href="http://apfmon.lancs.ac.uk/">Pilot factory monitor</a>
+                  <li><a href="http://dashb-atlas-job.cern.ch/dashboard/request.py/dailysummary#button=jobstatus&sites%5B%5D=All+T3210&sitesCat%5B%5D=All+Clouds&activities%5B%5D=Data+Processing&activities%5B%5D=Extra+Production&activities%5B%5D=Group+Production&activities%5B%5D=MC+Reconstruction&activities%5B%5D=MC+Simulation&activities%5B%5D=Others&activities%5B%5D=T0+Processing&resourcetype=All&sitesSort=7&sitesCatSort=1&start=null&end=null&timerange=last24&granularity=Hourly&generic=3&sortby=3&series=All">Dashboard historical views</a></li>
+                  <li><a href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17">DDM dashboard</a>
+                  <li><a href="http://dashb-atlas-ssb.cern.ch/dashboard/request.py/siteview#currentView=Shifter+view&highlight=false">Site Status Board</a>
+                  <li><a href="http://adc-monitoring.cern.ch/">All ADC monitoring services</a>
+              </ul>
+              </li>
+
+          {% endif %}
+
+          {% if "username" in request.session %}
+          <li>
+          <a href="{% url 'userInfo' request.session.username %}?display_limit=200">{{request.session.username}}</a>
+          </li>
+          {% endif %}
+
+          <li class="has-submenu">
+          <a href="#"><span class='help'>Help</span></a>
+          <ul class="submenu menu vertical">
+              <li><a href="#doc"><span class='help'>See the bottom of the page for contextual help on current page</span></a>
+              <li><a href="/help/"><span class='help'>Complete PanDA monitor help page</span></a>
+              {% if viewParams.MON_VO == 'ATLAS' %}
+              <li><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/AtlasDAST">Distributed analysis support</a>
+              {% endif %}
+              <li><a href="mailto:atlas-adc-pandamon-support@cern.ch">PanDA monitor support</a>
+              <li><a href="https://github.com/PanDAWMS"> PanDA repository </a>
+              <li><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
+          </ul>
+          </li>
+
+          {% if request.user and request.user.is_authenticated %}
+            <li class="has-submenu">
+              <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 1rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
+              <ul class="submenu menu vertical">
+                  <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
+                  <li><span class="li-text loggeduser">{{ request.user.email }}</span>
+                  {% if request.user.is_tester %}
+                      <li><a href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
+                      <li><a onclick="clearComparisonList('job')">Clear jobs comparison list</a>
+                  {% endif %}
+                  <li><a href="{% url 'userInfo' %}">My BigPanDA</a>
+                  {% if request.user.is_tester %}
+                      <li><a onclick="denyRights('tester')">Abandon tester rights</a>
+                  {% else %}
+                      <li><a onclick="grantRights('tester')">Become a tester</a>
+                  {% endif %}
+                  <li><a href="{% url 'logout' %}"><span class="reassign">Logout</span></a>
+              </ul>
             </li>
-            {% endif %}
-        </ul>
+          {% else %}
+              <li>
+               <a href="{% url 'loginauth2' %}">Login</a>
+              </li>
+          {% endif %}
+
+          {% if request.user and request.user.is_authenticated and request.user.is_tester and '/errors/' in request.path %}
+          <li class="settings-button">
+           <button type="button" data-open="offCanvasRight"><i class="fi-widget"></i></button>
+          </li>
+          {% endif %}
+      </ul>
     </div>
 </div>
 <!-- End Header and Nav -->

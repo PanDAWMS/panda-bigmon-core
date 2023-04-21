@@ -247,8 +247,9 @@
 {% if errsByCount %}
    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('failedjob');"><br>Click to show/hide failed jobs details</a>
 {% endif %}
-
+{% if viewParams.MON_VO == 'ATLAS' %}
  <a href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
+{% endif %}
 <p>
 
 <div class="table-scroll">

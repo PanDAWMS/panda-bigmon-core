@@ -400,7 +400,7 @@
         </tr>
         <tr bgcolor='lightcyan'>
             <th>Task ID</th>
-            {% if task.deftreqid %}
+            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
                 <th> Request</th> {% endif %}
             {% if task.reqid != task.jeditaskid and not task.deftreqid %}
                 <th>Jobset</th>{% endif %}
@@ -426,9 +426,15 @@
                 <th>Tracker</th> {% endif %}
         </tr>
         <tr>
-            <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
-                   target="_blank">{{ task.jeditaskid }}</a></td>
-            {% if task.deftreqid %}
+            <td>
+              {% if viewParams.MON_VO == 'ATLAS' %}
+                <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
+                   target="_blank">{{ task.jeditaskid }}</a>
+              {% else %}
+                {{ task.jeditaskid }}
+              {% endif %}
+            </td>
+            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
                 <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
                        target="_blank">{{ task.deftreqid }}</a></td>
             {% endif %}
@@ -505,7 +511,7 @@
             {% else %}
                 <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Nodrop mode</a>
             {% endif %}
-            {% if vomode == 'atlas' %}
+            {% if viewParams.MON_VO == 'ATLAS' %}
                 {% if task.tasktype == 'prod' %}
                     <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
                        target="_blank">Prod Task view (to manage task)</a>

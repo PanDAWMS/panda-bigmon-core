@@ -34,7 +34,7 @@
         {% if task.campaign %}
             <th> Campaign</th>
         {% endif %}
-        {% if task.deftreqid %}
+        {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
             <th> Request</th>
         {% endif %}
         <th>Type</th>
@@ -103,12 +103,18 @@
         {% endif %}
       </tr>
       <tr>
-        <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
-               target="_blank">{{ task.jeditaskid }}</a></td>
+        <td>
+          {% if viewParams.MON_VO == 'ATLAS' %}
+            <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
+               target="_blank">{{ task.jeditaskid }}</a>
+          {% else %}
+            {{ task.jeditaskid }}
+          {% endif %}
+        </td>
         {% if task.campaign %}
             <td><a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{% if task.campaign_cut %}{{ task.campaign_cut }}{% else %}{{ task.campaign }}{% endif %}</a></td>
         {% endif %}
-        {% if task.deftreqid %}
+        {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
             <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
                    target="_blank">{{ task.deftreqid }}</a></td>
         {% endif %}
@@ -231,7 +237,7 @@
           {% else %}
               <a href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
           {% endif %}
-          {% if vomode == 'atlas' %}
+          {% if viewParams.MON_VO == 'ATLAS' %}
               {% if task.tasktype == 'prod' %}
                   <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
                      target="_blank">Manage Prod Task</a>
@@ -510,7 +516,7 @@
       <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO=='ATLAS' ">
         <th ng-if="key!='step_action_id'">{$ key $}</th>
         <td ng-if="key=='dataset'">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}did?name={$ json['scope'] $}:{$ value $}">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
-        <td ng-if="key=='status'"><a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a></td>
+        <td ng-if="key=='status'" class="{$ value $}_fill">{% if viewParams.MON_VO == 'ATLAS' %}<a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
         <td ng-if="key=='rse'">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}rule?rule_id={$ value $}">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
         <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
       </tr>
