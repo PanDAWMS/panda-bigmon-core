@@ -7,7 +7,7 @@ BASE_URL = "http://bigpanda.cern.ch"
 TIMEOUT_WHEN_DB_LOADED = 5
 URL_WITH_BIG_TASKS = '/tasks/?site=ORNL_Titan_MCORE&status=running&json'
 URL_WITH_ES_TASKS = '/tasks/?eventservice=eventservice&json'
-HARVESTER_LIST_URL = '/harvester/instances/?json'
+HARVESTER_LIST_URL = '/harvester/instances/?days=7&json'
 LOG_PATH = "/tmp/cachecontroller.log"
 PANDA_LOGGER_PATH = "/cephfs/atlpan/filebrowser"
 MAX_LOG_AGE_DAYS = 3

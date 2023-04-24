@@ -88,7 +88,10 @@ def harvesterInstances(request):
         return response
 
     xurl = extensibleURL(request)
-    iquery = {}
+    if 'days' in request.session['requestParams'] or 'hours' in request.session['requestParams']:
+        iquery, _ = setup_harvester_view(request, 'instance')
+    else:
+        iquery = {}
     instances = list(HarvesterInstances.objects.filter(**iquery).values())
 
     request.session['viewParams']['selection'] = 'Harvester instances'

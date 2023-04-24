@@ -48,6 +48,11 @@ def setup_harvester_view(request, otype='worker'):
             enddate.strftime(settings.DATETIME_FORMAT),
             'yyyy-mm-dd hh24:mi:ss'
         )
+    elif otype == 'instance':
+        query['lastupdate__range'] = [
+            startdate.strftime(settings.DATETIME_FORMAT),
+            enddate.strftime(settings.DATETIME_FORMAT)
+        ]
 
     if 'instance' in request.session['requestParams'] or 'harvesterid' in request.session['requestParams']:
         if 'instance' in request.session['requestParams']:
