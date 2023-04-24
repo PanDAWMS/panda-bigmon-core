@@ -6,6 +6,7 @@ Created by Tatiana Korchuganova on 05.03.2020
 import json
 import logging
 import numpy as np
+from html import escape
 
 from django.core.cache import cache
 
@@ -123,9 +124,13 @@ def errorInfo(job, nchars=300, mode='html', **kwargs):
     for error_cat in const.JOB_ERROR_CATEGORIES:
         if error_cat['error'] in job and job[error_cat['error']] != '' and not job[error_cat['error']] is None and int(job[error_cat['error']]) != 0 and int(job[error_cat['error']]) not in codesDescribed:
             if error_cat['diag'] is not None:
-                errtxt += '{} {}: {} <br>'.format(error_cat['title'], job[error_cat['error']], job[error_cat['diag']])
+                errtxt += '{} {}: {} <br>'.format(
+                    error_cat['title'],
+                    job[error_cat['error']],
+                    escape(job[error_cat['diag']], quote=True)
+                )
                 if err1 == '':
-                    err1 = "{}: {}".format(error_cat['name'], job[error_cat['diag']])
+                    err1 = "{}: {}".format(error_cat['name'], escape(job[error_cat['diag']], quote=True))
             else:
                 errtxt += '{} {} <br>'.format(error_cat['title'], job[error_cat['error']])
                 if err1 == '':

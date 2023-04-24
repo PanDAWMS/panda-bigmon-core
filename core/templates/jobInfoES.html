@@ -129,7 +129,7 @@
       <tr><th colspan="20">Job error summary:</th></tr>
     </thead>
     <tbody>
-      <tr><td colspan="20">Error description: {{ job.errorinfo|force_escape|safe }}</td></tr>
+      <tr><td colspan="20">Error description: {{ job.errorinfo|safe }}</td></tr>
       {% if job.jobdispatchererrorcode or job.brokerageerrorcode or job.ddmerrorcode or job.exeerrorcode or job.piloterrorcode or job.superrorcode or job.taskbuffererrorcode %}
       <tr><th>Component</th><th>Code</th><th>Message</th></tr>
       {% if job.jobdispatchererrorcode %}
