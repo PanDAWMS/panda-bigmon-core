@@ -2369,8 +2369,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
     # jobset info
     jobsetinfo = {}
-    if ('jobset' in request.session['requestParams'] or is_event_service(job)) and 'jobsetid' in job and job[
-        'jobsetid'] > 0:
+    if ('jobset' in request.session['requestParams'] or is_event_service(job)) and (
+            'jobsetid' in job and job['jobsetid'] and isinstance(job['jobsetid'], int) and job['jobsetid'] > 0):
         jobs = []
         jsquery = {
             'jobsetid': job['jobsetid'],
