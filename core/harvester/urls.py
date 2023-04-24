@@ -25,7 +25,7 @@ urlpatterns = [
     re_path(r'^harvesterworkersdash/$', harvester.harvesterWorkers),
     re_path(r'^harvesterworkerslist/$', harvester.harvesterWorkers),
     re_path(r'^harvesterworkerinfo/$', harvester.harvesterWorkerInfo),
-    re_path(r'^harvesters/$', harvester.harvestermon, name='harvesters'),
-    re_path(r'^workers/$', harvester.get_harvester_workers, name='workers'),
+    re_path(r'^harvesters/$', harvester.harvesters),
+    re_path(r'^workers/$', harvester.get_harvester_workers),
 
 ]

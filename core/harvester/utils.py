@@ -142,16 +142,16 @@ def isHarvesterJob(pandaid):
     jobHarvesterInfo = []
 
     sqlQuery = f"""
-    SELECT workerid, HARVESTERID, BATCHLOG, COMPUTINGELEMENT, ERRORCODE, DIAGMESSAGE  FROM (SELECT 
-      a.PANDAID,
+    SELECT workerid, harvesterid, batchlog, computingelement, errorcode, diagmessage  from (select 
+      a.pandaid,
       a.workerid,
-      a.HARVESTERID,
-      b.BATCHLOG,
-      b.COMPUTINGELEMENT,
-      b.ERRORCODE,
-      b.DIAGMESSAGE
-      FROM {settings.DB_SCHEMA_PANDA}.HARVESTER_REL_JOBS_WORKERS a,
-      {settings.DB_SCHEMA_PANDA}.HARVESTER_WORKERS b
+      a.harvesterid,
+      b.batchlog,
+      b.computingelement,
+      b.errorcode,
+      b.diagmessage
+      from {settings.DB_SCHEMA_PANDA}.harvester_rel_jobs_workers a,
+      {settings.DB_SCHEMA_PANDA}.harvester_workers b
       WHERE a.harvesterid = b.harvesterid and a.workerid = b.WORKERID) tmp_sub where pandaid = {pandaid}
   """
     cur = connection.cursor()

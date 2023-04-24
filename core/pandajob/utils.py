@@ -133,7 +133,7 @@ def job_summary_dict(request, jobs, fieldlist=None):
     if fieldlist:
         flist = fieldlist
     else:
-        flist = const.JOB_FIELDS_STANDARD
+        flist = const.JOB_FIELDS_ATTR_SUMMARY
 
     numeric_fields = ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount',
                       'reqid', 'jobsetid',)

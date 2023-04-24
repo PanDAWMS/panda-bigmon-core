@@ -1422,7 +1422,7 @@ def jobList(request, mode=None, param=None):
             jobstatus=harvesterjobstatus,
             fields=values)
     elif 'harvesterce' in request.session['requestParams']:
-        jobs = getCeHarvesterJobs(request, computingelment=request.session['requestParams']['harvesterce'])
+        jobs = getCeHarvesterJobs(request, computingelement=request.session['requestParams']['harvesterce'])
     else:
         # apply order by to get recent jobs
         order_by = '-modificationtime'
