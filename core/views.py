@@ -5859,12 +5859,14 @@ def taskInfo(request, jeditaskid=0):
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
-
-            connection = create_es_connection()
-            split_rule = get_split_rule_info(connection, jeditaskid)
-            if len(split_rule) > 0:
-                info['split_rule'] = {}
-                info['split_rule']['messages'] = split_rule
+            try:
+                connection = create_es_connection()
+                split_rule = get_split_rule_info(connection, jeditaskid)
+                if len(split_rule) > 0:
+                    info['split_rule'] = {}
+                    info['split_rule']['messages'] = split_rule
+            except Exception as e:
+                _logger.exception('Failed to get split rule info for task from elasticSearch with:\n{}'.format(e))
 
             # datetime type -> str in order to avoid encoding errors in template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
