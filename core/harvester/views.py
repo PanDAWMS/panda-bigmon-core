@@ -134,10 +134,19 @@ def harvesterWorkers(request):
     n_workers = HarvesterWorkers.objects.filter(**wquery).extra(where=[extra]).count()
     if n_workers == 0:
         del wquery['submittime__range']
+        last_submission_time = None
         try:
             last_submission_time = HarvesterWorkers.objects.filter(**wquery).latest('submittime').submittime
         except:
-            print("no workers at all")
+            _logger.exception('Failed to get last submitted worker - it seams there are no workers at all ')
+        if last_submission_time is not None:
+            warning['timewindow'] = """The time window was extended to the last submitted worker 
+                            since no workers have been found for specified or default time period"""
+            wquery['submittime__range'] = [
+                (last_submission_time - timedelta(hours=1)).strftime(settings.DATETIME_FORMAT),
+                datetime.now().strftime(settings.DATETIME_FORMAT)
+            ]
+        else:
             data = {
                 'warning': 'No workers have been find for the instance',
                 'request': request,
@@ -145,13 +154,6 @@ def harvesterWorkers(request):
                 'viewParams': request.session['viewParams'],
             }
             return render(request, 'harvesterWorkers.html', data, content_type='text/html')
-
-        warning['timewindow'] = """The time window was extended to the last submitted worker 
-                        since no workers have been found for specified or default time period"""
-        wquery['submittime__range'] = [
-            (last_submission_time - timedelta(hours=1)).strftime(settings.DATETIME_FORMAT),
-            datetime.now().strftime(settings.DATETIME_FORMAT)
-        ]
 
     timewindow = (datetime.strptime(wquery['submittime__range'][1], settings.DATETIME_FORMAT) -
                   datetime.strptime(wquery['submittime__range'][0], settings.DATETIME_FORMAT))
