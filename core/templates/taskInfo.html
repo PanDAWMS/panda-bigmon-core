@@ -10,6 +10,7 @@
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/jquery.shorten.1.0.js' %}"></script>
   <!-- Load d3.js and c3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
@@ -34,7 +35,7 @@
         {% if task.campaign %}
             <th> Campaign</th>
         {% endif %}
-        {% if task.deftreqid %}
+        {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
             <th> Request</th>
         {% endif %}
         <th>Type</th>
@@ -103,12 +104,18 @@
         {% endif %}
       </tr>
       <tr>
-        <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
-               target="_blank">{{ task.jeditaskid }}</a></td>
+        <td>
+          {% if viewParams.MON_VO == 'ATLAS' %}
+            <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
+               target="_blank">{{ task.jeditaskid }}</a>
+          {% else %}
+            {{ task.jeditaskid }}
+          {% endif %}
+        </td>
         {% if task.campaign %}
             <td><a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{% if task.campaign_cut %}{{ task.campaign_cut }}{% else %}{{ task.campaign }}{% endif %}</a></td>
         {% endif %}
-        {% if task.deftreqid %}
+        {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
             <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
                    target="_blank">{{ task.deftreqid }}</a></td>
         {% endif %}
@@ -231,7 +238,7 @@
           {% else %}
               <a href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
           {% endif %}
-          {% if vomode == 'atlas' %}
+          {% if viewParams.MON_VO == 'ATLAS' %}
               {% if task.tasktype == 'prod' %}
                   <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
                      target="_blank">Manage Prod Task</a>
@@ -509,9 +516,9 @@
       </tr>
       <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO=='ATLAS' ">
         <th ng-if="key!='step_action_id'">{$ key $}</th>
-        <td ng-if="key=='dataset'"><a href="https://rucio-ui.cern.ch/did?name={$ json['scope'] $}:{$ value $}">{$ value $}</a></td>
-        <td ng-if="key=='status'"><a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a></td>
-        <td ng-if="key=='rse'"><a href="https://rucio-ui.cern.ch/rule?rule_id={$ value $}">{$ value $}</a></td>
+        <td ng-if="key=='dataset'">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}did?name={$ json['scope'] $}:{$ value $}">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
+        <td ng-if="key=='status'" class="{$ value $}_fill">{% if viewParams.MON_VO == 'ATLAS' %}<a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
+        <td ng-if="key=='rse'">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}rule?rule_id={$ value $}">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
         <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
       </tr>
     </tbody>
@@ -599,7 +606,7 @@
       <tbody>
         {% for p in jobparams %}
             <tr>
-                <td class="wrap-words">{{ p|safe }}</td>
+              <td><div class="comment more wrap-words">{{ p|safe }}</div></td>
             </tr>
         {% endfor %}
       </tbody>
@@ -615,12 +622,16 @@
       </thead>
       <tbody>
         {% for p in taskparams %}
-            {% if p.name != 'jobParameters' and p.name != 'log' %}
-                <tr>
-                    <td class="bold">{{ p.name }}</td>
-                    <td class="wrap-words">{% if not p.value is None and not p.value == '' %} {{ p.value }} {% else %}&mdash;{% endif %}</td>
-                </tr>
-            {% endif %}
+          {% if p.name != 'jobParameters' and p.name != 'log' %}
+            <tr>
+              <td class="bold">{{ p.name }}</td>
+              <td>
+                <div class="comment more wrap-words">
+                  {% if not p.value is None and not p.value == '' %} {{ p.value }} {% else %}&mdash;{% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>
@@ -671,438 +682,439 @@ var MON_VO = '{{ viewParams.MON_VO|safe }}';
 var jeditaskid = {{ jeditaskid | safe }};
 google.charts.load('current', {'packages':['sankey']});
 
-    app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
-        $scope.iddsjson = "";
-        $scope.getiDDs = function () {
-                $http({
-                        url: '/idds/getiddsfortask/',
-                        method: "GET",
-                        params: {'jeditaskid':{{ jeditaskid|safe }}}
-                    }
-                ).then(function (res) {
-                    var iddsjson = angular.fromJson(res.data);
-                    if (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)) {
-                        $scope.iddsjson = iddsjson['data'];
-                        idds_data = iddsjson['data'];
-                        $rootScope.$emit('idds_info', idds_data);
-                        $('#iDDsDiv').show();
-                    }
-                });
-        };
-        var init = function () {
-            $scope.getiDDs();
-        };
-        init();
+app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
+    $scope.iddsjson = "";
+    $scope.getiDDs = function () {
+            $http({
+                    url: '/idds/getiddsfortask/',
+                    method: "GET",
+                    params: {'jeditaskid':{{ jeditaskid|safe }}}
+                }
+            ).then(function (res) {
+                var iddsjson = angular.fromJson(res.data);
+                if (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)) {
+                    $scope.iddsjson = iddsjson['data'];
+                    idds_data = iddsjson['data'];
+                    $rootScope.$emit('idds_info', idds_data);
+                    $('#iDDsDiv').show();
+                }
+            });
+    };
+    var init = function () {
+        $scope.getiDDs();
+    };
+    init();
+});
+app.controller('iDDSGeneralInfo', function($rootScope, $scope) {
+    $scope.loading = true;
+    $rootScope.$on('idds_info', function(event, data) {
+        $scope.iddsjson = data;
+        $scope.loading = false;
     });
-    app.controller('iDDSGeneralInfo', function($rootScope, $scope) {
-        $scope.loading = true;
-        $rootScope.$on('idds_info', function(event, data) {
-            $scope.iddsjson = data;
-            $scope.loading = false;
-        });
-    });
-    app.controller('StagingDSController', function ($scope, $http) {
-      $scope.json = "";
-      $scope.MON_VO = MON_VO;
-      $scope.getStagingDS = function () {
-        $http({
-            url: '/api/dc/staginginfofortask/',
-            method: "GET",
-            params: {'jeditaskid':jeditaskid}
-          }
-        ).then(function (res) {
-          $scope.json = angular.fromJson(res.data);
-          if (jeditaskid in $scope.json) {
-            var displaydiv = document.getElementById('dsStageDiv');
-            displaydiv.style.display = "";
-            $scope.json = $scope.json[jeditaskid];
-          }
-        });
-      };
-      var init = function () {
-          $scope.getStagingDS();
-      };
-      if (MON_VO === 'ATLAS') {
-        init();
+});
+app.controller('StagingDSController', function ($scope, $http) {
+  $scope.json = "";
+  $scope.MON_VO = MON_VO;
+  $scope.getStagingDS = function () {
+    $http({
+        url: '/api/dc/staginginfofortask/',
+        method: "GET",
+        params: {'jeditaskid':jeditaskid}
+      }
+    ).then(function (res) {
+      $scope.json = angular.fromJson(res.data);
+      if (jeditaskid in $scope.json) {
+        var displaydiv = document.getElementById('dsStageDiv');
+        displaydiv.style.display = "";
+        $scope.json = $scope.json[jeditaskid];
       }
     });
+  };
+  var init = function () {
+      $scope.getStagingDS();
+  };
+  if (MON_VO === 'ATLAS') {
+    init();
+  }
+});
 
-    var jc_plot_data = {{ plotsDict|safe }};
-    app.controller('jobConsumptionPlotsController', function($scope) {
-      $scope.taskinfo = {};
-      $scope.taskinfo.jc_plots = {
-        selection: {
-          category: '',
-          is_hidden: true,
-          mode: ''
-        },
-        options: {
-          category: []
-        },
-        plot_data: {},
-        charts: {}
-      };
+var jc_plot_data = {{ plotsDict|safe }};
+app.controller('jobConsumptionPlotsController', function($scope) {
+  $scope.taskinfo = {};
+  $scope.taskinfo.jc_plots = {
+    selection: {
+      category: '',
+      is_hidden: true,
+      mode: ''
+    },
+    options: {
+      category: []
+    },
+    plot_data: {},
+    charts: {}
+  };
 
-      $scope.taskinfo.jc_plots.fill = function () {
-        $scope.taskinfo.jc_plots.plot_data = jc_plot_data;
-        if (Object.keys($scope.taskinfo.jc_plots.plot_data).length > 1) {
-          Object.keys($scope.taskinfo.jc_plots.plot_data[1].data.data).forEach((key) => {
-            $scope.taskinfo.jc_plots.options.category.push(key);
-          });
-          $scope.taskinfo.jc_plots.options.category.sort();
-          if ($scope.taskinfo.jc_plots.options.category.includes('run')) {
-            $scope.taskinfo.jc_plots.selection.category = 'run';
-          }
-          else {
-            $scope.taskinfo.jc_plots.selection.category = 'all';
-          }
-        }
-      };
+  $scope.taskinfo.jc_plots.fill = function () {
+    $scope.taskinfo.jc_plots.plot_data = jc_plot_data;
+    if (Object.keys($scope.taskinfo.jc_plots.plot_data).length > 1) {
+      Object.keys($scope.taskinfo.jc_plots.plot_data[1].data.data).forEach((key) => {
+        $scope.taskinfo.jc_plots.options.category.push(key);
+      });
+      $scope.taskinfo.jc_plots.options.category.sort();
+      if ($scope.taskinfo.jc_plots.options.category.includes('run')) {
+        $scope.taskinfo.jc_plots.selection.category = 'run';
+      }
+      else {
+        $scope.taskinfo.jc_plots.selection.category = 'all';
+      }
+    }
+  };
 
-      $scope.taskinfo.jc_plots.build = function () {
-        $scope.taskinfo.jc_plots.plot_data.forEach((item) => {
-          if (item.data.details.type === 'pie') {
-            $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_donut(item.data.data[$scope.taskinfo.jc_plots.selection.category]['columns'], item.name + "_chart", item.data.details.title, item.data.details)
-          }
-          else if (item.data.details.type === 'stack_bar') {
-            $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_stacked_bar_hist(item.data.data[$scope.taskinfo.jc_plots.selection.category], item.data.details, item.name + "_chart");
-          }
-        })
-      };
-
-      $scope.taskinfo.jc_plots.rebuild = function () {
-        $scope.taskinfo.jc_plots.destroy();
-        $scope.taskinfo.jc_plots.build();
-      };
-
-      $scope.taskinfo.jc_plots.destroy = function () {
-        let plot_names = Object.keys($scope.taskinfo.jc_plots.charts);
-        plot_names.forEach((item) => {
-          if ($scope.taskinfo.jc_plots.charts[item]) {
-            $scope.taskinfo.jc_plots.charts[item] = $scope.taskinfo.jc_plots.charts[item].destroy();
-          }
-        });
-      };
-
-      $scope.taskinfo.jc_plots.toggle = function () {
-
-        if (Object.keys($scope.taskinfo.jc_plots.plot_data).length === 0) $scope.taskinfo.jc_plots.fill();
-
-        if ($scope.taskinfo.jc_plots.options.category.length > 0) {
-          ($scope.taskinfo.jc_plots.selection.is_hidden) ? $scope.taskinfo.jc_plots.selection.is_hidden = false : $scope.taskinfo.jc_plots.selection.is_hidden = true;
-        }
-      };
-
+  $scope.taskinfo.jc_plots.build = function () {
+    $scope.taskinfo.jc_plots.plot_data.forEach((item) => {
+      if (item.data.details.type === 'pie') {
+        $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_donut(item.data.data[$scope.taskinfo.jc_plots.selection.category]['columns'], item.name + "_chart", item.data.details.title, item.data.details)
+      }
+      else if (item.data.details.type === 'stack_bar') {
+        $scope.taskinfo.jc_plots.charts[item.name + "_chart"] = draw_stacked_bar_hist(item.data.data[$scope.taskinfo.jc_plots.selection.category], item.data.details, item.name + "_chart");
+      }
     })
-    .directive('jcplotDirective', function ($timeout) {
-        var template = '<div id="{$plot.name$}_chart"></div>';
-        return {
-            template: template,
-            scope: {
-                plot: '=',
-                parent: '=',
-            },
-            link: function (scope, element, attrs) {
-              $timeout(() => {
-                element.ready(() => {
-                  if (scope.plot.data.details.type === 'pie') {
-                    if ('size' in scope.plot.data.details) {scope.plot.data.details.size[0] = getWidth();}
-                    scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_donut(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category]['columns'], scope.plot.name + "_chart", scope.plot.data.details.title, scope.plot.data.details)
-                  }
-                  else if (scope.plot.data.details.type === 'stack_bar') {
-                    scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category], scope.plot.data.details, scope.plot.name + "_chart");
-                  }
-                });
-              });
+  };
+
+  $scope.taskinfo.jc_plots.rebuild = function () {
+    $scope.taskinfo.jc_plots.destroy();
+    $scope.taskinfo.jc_plots.build();
+  };
+
+  $scope.taskinfo.jc_plots.destroy = function () {
+    let plot_names = Object.keys($scope.taskinfo.jc_plots.charts);
+    plot_names.forEach((item) => {
+      if ($scope.taskinfo.jc_plots.charts[item]) {
+        $scope.taskinfo.jc_plots.charts[item] = $scope.taskinfo.jc_plots.charts[item].destroy();
+      }
+    });
+  };
+
+  $scope.taskinfo.jc_plots.toggle = function () {
+
+    if (Object.keys($scope.taskinfo.jc_plots.plot_data).length === 0) $scope.taskinfo.jc_plots.fill();
+
+    if ($scope.taskinfo.jc_plots.options.category.length > 0) {
+      ($scope.taskinfo.jc_plots.selection.is_hidden) ? $scope.taskinfo.jc_plots.selection.is_hidden = false : $scope.taskinfo.jc_plots.selection.is_hidden = true;
+    }
+  };
+
+})
+.directive('jcplotDirective', function ($timeout) {
+    var template = '<div id="{$plot.name$}_chart"></div>';
+    return {
+        template: template,
+        scope: {
+            plot: '=',
+            parent: '=',
+        },
+        link: function (scope, element, attrs) {
+          $timeout(() => {
+            element.ready(() => {
+              if (scope.plot.data.details.type === 'pie') {
+                if ('size' in scope.plot.data.details) {scope.plot.data.details.size[0] = getWidth();}
+                scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_donut(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category]['columns'], scope.plot.name + "_chart", scope.plot.data.details.title, scope.plot.data.details)
+              }
+              else if (scope.plot.data.details.type === 'stack_bar') {
+                scope.parent.taskinfo.jc_plots.charts[scope.plot.name + "_chart"] = draw_stacked_bar_hist(scope.plot.data.data[scope.parent.taskinfo.jc_plots.selection.category], scope.plot.data.details, scope.plot.name + "_chart");
+              }
+            });
+          });
+        }
+    };
+});
+
+
+app.controller('taskflowController', function ($scope, $http, $sce) {
+    $scope.taskflow = {
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      data: [],
+      is_hidden: true,
+      plot_data: {
+        columns: [],
+      },
+      plot: "",
+    };
+    $scope.taskflow.get = function () {
+        $http({
+                url: "{% url 'taskFlowDiagram' jeditaskid %}",
+                method: "GET",
+                params: {'json':1}
             }
-        };
-    });
-
-
-    app.controller('taskflowController', function ($scope, $http, $sce) {
-        $scope.taskflow = {
-          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
-          data: [],
-          is_hidden: true,
-          plot_data: {
-            columns: [],
+        ).then(function success(response) {
+            $scope.taskflow.message = "";
+            $scope.taskflow.data = angular.fromJson(response.data.data);
+            console.log(response.data.data)
+            if ($scope.taskflow.data.length > 0) {
+              $scope.taskflow.buildPlot();
+            }
+            else {
+              $scope.taskflow.message = $sce.trustAsHtml("No data received :(");
+            }
           },
-          plot: "",
-        };
-        $scope.taskflow.get = function () {
-            $http({
-                    url: "{% url 'taskFlowDiagram' jeditaskid %}",
-                    method: "GET",
-                    params: {'json':1}
-                }
-            ).then(function success(response) {
-                $scope.taskflow.message = "";
-                $scope.taskflow.data = angular.fromJson(response.data.data);
-                console.log(response.data.data)
-                if ($scope.taskflow.data.length > 0) {
-                  $scope.taskflow.buildPlot();
-                }
-                else {
-                  $scope.taskflow.message = $sce.trustAsHtml("No data received :(");
-                }
-              },
-              function error(response) {
-                console.log(response);
-                $scope.taskflow.message = $sce.trustAsHtml('Failed to load data :( ');
-              }
-            );
-        };
+          function error(response) {
+            console.log(response);
+            $scope.taskflow.message = $sce.trustAsHtml('Failed to load data :( ');
+          }
+        );
+    };
 
-        $scope.taskflow.buildPlot = function() {
-            var data = new google.visualization.DataTable();
-                data.addColumn('string', 'From');
-                data.addColumn('string', 'To');
-                data.addColumn('number', 'Weight');
-                data.addRows($scope.taskflow.data);
+    $scope.taskflow.buildPlot = function() {
+        var data = new google.visualization.DataTable();
+            data.addColumn('string', 'From');
+            data.addColumn('string', 'To');
+            data.addColumn('number', 'Weight');
+            data.addRows($scope.taskflow.data);
 
-        // Sets chart options.
-        var options = {
-            width: getWidth()-40,
-            {#sankey: {#}
-            {#    link: { color: { fill: '#d799ae' } },#}
-            {#    node: { colors: [ '#a61d4c' ]},#}
-            {# },#}
-        };
+    // Sets chart options.
+    var options = {
+        width: getWidth()-40,
+        {#sankey: {#}
+        {#    link: { color: { fill: '#d799ae' } },#}
+        {#    node: { colors: [ '#a61d4c' ]},#}
+        {# },#}
+    };
 
-        // Instantiates and draws our chart, passing in some options.
-        var chart = new google.visualization.Sankey(document.getElementById('sankey_basic'));
-        chart.draw(data, options);
+    // Instantiates and draws our chart, passing in some options.
+    var chart = new google.visualization.Sankey(document.getElementById('sankey_basic'));
+    chart.draw(data, options);
 
-        };
-        $scope.taskflow.toggle = function() {
-            $scope.taskflow.is_hidden = false;
-            $scope.taskflow.get();
-        };
-    });
+    };
+    $scope.taskflow.toggle = function() {
+        $scope.taskflow.is_hidden = false;
+        $scope.taskflow.get();
+    };
+});
 
 
-    app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
-        $scope.status_log = {
-          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
-          data: [],
-          is_hidden: true,
-          data_table: "",
-          plot_data: {
-            columns: [],
-            ext: {
-              xs: {},
-              size: [getWidth() - 40, 400],
-              colors: "task_states",
-              labels: ['Time', 'Task attempt'],
-            },
-          },
-          plot: "",
-        };
-        $scope.status_log.get = function () {
-            $http({
-                    url: "{% url 'gettaskstatuslog' jeditaskid %}",
-                    method: "GET",
-                    params: {'json':1}
-                }
-            ).then(function success(response) {
-                $scope.status_log.message = "";
-                $scope.status_log.data = angular.fromJson(response.data);
-                if ($scope.status_log.data.length > 0) {
-                  $scope.status_log.buildPlot();
-                  $scope.status_log.buildDataTable();
-                }
-                else {
-                  $scope.status_log.message = $sce.trustAsHtml("No data received :(");
-                }
-              },
-              function error(response) {
-                console.log(response);
-                $scope.status_log.message = $sce.trustAsHtml('Failed to load data :( ');
-              }
-            );
-        };
-        $scope.status_log.buildDataTable = function () {
-            $scope.status_log.data_table = $('#taskstatuslogtable').dataTable({
-                "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
-                "paging": true,
-                "scrollX": true,
-                "aaSorting": [[1,'asc']],
-                "data": $scope.status_log.data,
-                "aoColumns": [
-                    {
-                        title: "Attempt",
-                        data: "attemptnr",
-                        sDefaultContent: "-",
-                    },
-                    {
-                        title: "Time",
-                        data: "modiftime_str",
-                        sDefaultContent: "-",
-                    },
-                    {
-                        title: "Status",
-                        data: "status",
-                        sDefaultContent: "-",
-                        className: 'state',
-                    },
-                    {
-                        title: "Duration, d:h:m:s",
-                        data: "duration",
-                        sDefaultContent: "-",
-                    },
-                    {
-                        title: "Modification host",
-                        data: "modificationhost",
-                        sDefaultContent: "-",
-                    },
-                    {
-                        title: "Reason",
-                        data: "reason",
-                        sDefaultContent: "-",
-                    },
-
-                ],
-                "createdRow": function ( row, data, index ) {
-                    $('td', row).eq(2).addClass(data['status'] + '_fill');
-                }
-              })
-        };
-        $scope.status_log.buildPlot = function() {
+app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
+    $scope.status_log = {
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      data: [],
+      is_hidden: true,
+      data_table: "",
+      plot_data: {
+        columns: [],
+        ext: {
+          xs: {},
+          size: [getWidth() - 40, 400],
+          colors: "task_states",
+          labels: ['Time', 'Task attempt'],
+        },
+      },
+      plot: "",
+    };
+    $scope.status_log.get = function () {
+        $http({
+                url: "{% url 'gettaskstatuslog' jeditaskid %}",
+                method: "GET",
+                params: {'json':1}
+            }
+        ).then(function success(response) {
+            $scope.status_log.message = "";
+            $scope.status_log.data = angular.fromJson(response.data);
             if ($scope.status_log.data.length > 0) {
-                let tmp_obj = {};
-                $scope.status_log.plot_data.columns.push(['x', ]);
-                $scope.status_log.data.forEach((item) => {
-                    tmp_obj[item.status] = [item.status, ];
-                    $scope.status_log.plot_data.columns[0].push(item.modiftime_str);
-                });
-                $scope.status_log.data.forEach((item) => {
-                  Object.keys(tmp_obj).forEach((key) => {
-                    (item.status === key) ? tmp_obj[key].push(item.attemptnr+1) : tmp_obj[key].push(0);
-                  });
-                });
-                Object.keys(tmp_obj).forEach((key) => {
-                  $scope.status_log.plot_data.columns.push([key, ...tmp_obj[key]]);
-                })
+              $scope.status_log.buildPlot();
+              $scope.status_log.buildDataTable();
             }
-            $scope.status_log.plot = draw_steps($scope.status_log.plot_data.columns, 'tsl_plot', 'Task statuses transition', $scope.status_log.plot_data.ext);
-        };
-        $scope.status_log.toggle = function() {
-            $scope.status_log.is_hidden = false;
-            $scope.status_log.get();
-        };
-    });
-
-    app.controller('TaskLogsController', function ($scope, $http, $sce) {
-       $scope.task_logs = {
-          message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
-          data: [],
-          is_hidden: true,
-          data_table: "",
-          plot_data: {
-            columns: [],
-            ext: {
-              xs: {},
-              size: [getWidth() - 40, 400],
-              colors: "task_states",
-              labels: ['Time', 'Task attempt'],
-            },
+            else {
+              $scope.status_log.message = $sce.trustAsHtml("No data received :(");
+            }
           },
-          plot: "",
-        };
-       $scope.task_logs.get = function () {
-            $http({
-                    url: "{% url 'gettasklogs' jeditaskid %}",
-                    method: "GET",
-                    params: {'json':1}
-                }
-            ).then(function success(response) {
-                $scope.task_logs.message = "";
-                $scope.task_logs.data = angular.fromJson(response.data);
-                if ($scope.task_logs.data.length > 0) {
-                  $scope.task_logs.buildDataTable();
-                }
-                else {
-                  $scope.task_logs.message = $sce.trustAsHtml("No data received :(");
-                }
-              },
-              function error(response) {
-                console.log(response);
-                $scope.task_logs.message = $sce.trustAsHtml('Failed to load data :( ');
-              }
-            );
-       };
-       $scope.task_logs.buildDataTable = function () {
-            $scope.task_logs.data_table = $('#tasklogstable').dataTable({
-                "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
-                "paging": true,
-                "scrollX": true,
-                "aaSorting": [[1,'asc']],
-                "data": $scope.task_logs.data,
-                {#rowsGroup: [0],#}
-                "aoColumns": [
-                    {
-                        title: "LogName",
-                        data: "logname",
-                        sDefaultContent: "-",
-                        "render": function (data, type, full, meta) {
-                            var link_to_kibana = ''
-                            if (full['logname']  == 'recoverlostfiles') {
-                                link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + ' (panda log)' + '</a>'
-                            }
-                            else {
-                                link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + '</a>'
-                            }
-                            return link_to_kibana
-                        }
-                    },
-                    {
-                        title: "LogLevel",
-                        data: "loglevel",
-                        sDefaultContent: "-",
-                        "render": function (data, type, full, meta) {
-                            var link_to_kibana = ''
-                            if (full['logname']  == 'recoverlostfiles') {
-                                link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
-                            }
-                            else {
-                                link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
-                            }
-                            return link_to_kibana
-                        }
-                    },
-                    {
-                        title: "#",
-                        data: "lcount",
-                        sDefaultContent: "-",
+          function error(response) {
+            console.log(response);
+            $scope.status_log.message = $sce.trustAsHtml('Failed to load data :( ');
+          }
+        );
+    };
+    $scope.status_log.buildDataTable = function () {
+        $scope.status_log.data_table = $('#taskstatuslogtable').dataTable({
+            "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+            "paging": true,
+            "scrollX": true,
+            "aaSorting": [[1,'asc']],
+            "data": $scope.status_log.data,
+            "aoColumns": [
+                {
+                    title: "Attempt",
+                    data: "attemptnr",
+                    sDefaultContent: "-",
+                },
+                {
+                    title: "Time",
+                    data: "modiftime_str",
+                    sDefaultContent: "-",
+                },
+                {
+                    title: "Status",
+                    data: "status",
+                    sDefaultContent: "-",
+                    className: 'state',
+                },
+                {
+                    title: "Duration, d:h:m:s",
+                    data: "duration",
+                    sDefaultContent: "-",
+                },
+                {
+                    title: "Modification host",
+                    data: "modificationhost",
+                    sDefaultContent: "-",
+                },
+                {
+                    title: "Reason",
+                    data: "reason",
+                    sDefaultContent: "-",
+                },
 
+            ],
+            "createdRow": function ( row, data, index ) {
+                $('td', row).eq(2).addClass(data['status'] + '_fill');
+            }
+          })
+    };
+    $scope.status_log.buildPlot = function() {
+        if ($scope.status_log.data.length > 0) {
+            let tmp_obj = {};
+            $scope.status_log.plot_data.columns.push(['x', ]);
+            $scope.status_log.data.forEach((item) => {
+                tmp_obj[item.status] = [item.status, ];
+                $scope.status_log.plot_data.columns[0].push(item.modiftime_str);
+            });
+            $scope.status_log.data.forEach((item) => {
+              Object.keys(tmp_obj).forEach((key) => {
+                (item.status === key) ? tmp_obj[key].push(item.attemptnr+1) : tmp_obj[key].push(0);
+              });
+            });
+            Object.keys(tmp_obj).forEach((key) => {
+              $scope.status_log.plot_data.columns.push([key, ...tmp_obj[key]]);
+            })
+        }
+        $scope.status_log.plot = draw_steps($scope.status_log.plot_data.columns, 'tsl_plot', 'Task statuses transition', $scope.status_log.plot_data.ext);
+    };
+    $scope.status_log.toggle = function() {
+        $scope.status_log.is_hidden = false;
+        $scope.status_log.get();
+    };
+});
+
+app.controller('TaskLogsController', function ($scope, $http, $sce) {
+   $scope.task_logs = {
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      data: [],
+      is_hidden: true,
+      data_table: "",
+      plot_data: {
+        columns: [],
+        ext: {
+          xs: {},
+          size: [getWidth() - 40, 400],
+          colors: "task_states",
+          labels: ['Time', 'Task attempt'],
+        },
+      },
+      plot: "",
+    };
+   $scope.task_logs.get = function () {
+        $http({
+                url: "{% url 'gettasklogs' jeditaskid %}",
+                method: "GET",
+                params: {'json':1}
+            }
+        ).then(function success(response) {
+            $scope.task_logs.message = "";
+            $scope.task_logs.data = angular.fromJson(response.data);
+            if ($scope.task_logs.data.length > 0) {
+              $scope.task_logs.buildDataTable();
+            }
+            else {
+              $scope.task_logs.message = $sce.trustAsHtml("No data received :(");
+            }
+          },
+          function error(response) {
+            console.log(response);
+            $scope.task_logs.message = $sce.trustAsHtml('Failed to load data :( ');
+          }
+        );
+   };
+   $scope.task_logs.buildDataTable = function () {
+        $scope.task_logs.data_table = $('#tasklogstable').dataTable({
+            "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+            "paging": true,
+            "scrollX": true,
+            "aaSorting": [[1,'asc']],
+            "data": $scope.task_logs.data,
+            {#rowsGroup: [0],#}
+            "aoColumns": [
+                {
+                    title: "LogName",
+                    data: "logname",
+                    sDefaultContent: "-",
+                    "render": function (data, type, full, meta) {
+                        var link_to_kibana = ''
+                        if (full['logname']  == 'recoverlostfiles') {
+                            link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + ' (panda log)' + '</a>'
+                        }
+                        else {
+                            link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + '</a>'
+                        }
+                        return link_to_kibana
                     }
+                },
+                {
+                    title: "LogLevel",
+                    data: "loglevel",
+                    sDefaultContent: "-",
+                    "render": function (data, type, full, meta) {
+                        var link_to_kibana = ''
+                        if (full['logname']  == 'recoverlostfiles') {
+                            link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
+                        }
+                        else {
+                            link_to_kibana = '<a href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
+                        }
+                        return link_to_kibana
+                    }
+                },
+                {
+                    title: "#",
+                    data: "lcount",
+                    sDefaultContent: "-",
 
-                ],
-                "createdRow": function ( row, data, index ) {
-                    $('td', row).eq(2).addClass(data['status'] + '_fill');
                 }
-              })
-        };
-       $scope.task_logs.toggle = function() {
-            $scope.task_logs.is_hidden = false;
-            $scope.task_logs.get();
-        };
-    });
 
-    $(document).ready(function () {
-        var dataset_list = {{ datasets|safe }};
-        buildDatasetsTable(dataset_list);
-        var url = window.location.href;
-        if (url.indexOf("#plots") > -1) {
-            togglePlots();
-        }
-        if (url.indexOf("#statuslog") > -1) {
-            toggleStatusLog();
-        }
-        if (url.indexOf("#tasklogs") > -1) {
-            toggleTaskLogs();
-        }
-    });
+            ],
+            "createdRow": function ( row, data, index ) {
+                $('td', row).eq(2).addClass(data['status'] + '_fill');
+            }
+          })
+    };
+   $scope.task_logs.toggle = function() {
+        $scope.task_logs.is_hidden = false;
+        $scope.task_logs.get();
+    };
+});
+
+$(document).ready(function () {
+    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
+    var dataset_list = {{ datasets|safe }};
+    buildDatasetsTable(dataset_list);
+    var url = window.location.href;
+    if (url.indexOf("#plots") > -1) {
+        togglePlots();
+    }
+    if (url.indexOf("#statuslog") > -1) {
+        toggleStatusLog();
+    }
+    if (url.indexOf("#tasklogs") > -1) {
+        toggleTaskLogs();
+    }
+});
 
 function togglePlots() {
   let scope = angular.element(document.getElementById('plots')).scope();
@@ -1280,9 +1292,13 @@ function buildDatasetsTable(data) {
             "data": "type",
             sDefaultContent: "-",
             "render": function(data, type, row, meta) {
-                var links = '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
-                if (row['type'] == 'input') {
-                     links += ', <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
+                var links = '';
+                if ("{{ request.session.rucio_ui }}".length > 0) {
+                  links += '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                }
+                if (row['type'] === 'input') {
+                  links += (links.length > 0) ? ', ': '';
+                  links += '<a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
                 }
                 return links;
             }

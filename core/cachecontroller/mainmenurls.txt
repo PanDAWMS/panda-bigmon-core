@@ -40,3 +40,4 @@
 /dash/world/
 /dc/sendstalledreport/
 /slowtasks/
+/harvester/workers/

@@ -244,7 +244,7 @@
             {% if task.ticketid %}<a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">
                 {% if task.ticketsystemtype %}{{ task.ticketsystemtype }}{% else %} JIRA {% endif %}</a>
             {% endif %}
-            {% if task.deftreqid %}     RequestID:
+            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}     RequestID:
                 <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/">{{ task.deftreqid }}</a> {% endif %}
             <a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">Errors</a>
             <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
@@ -408,14 +408,11 @@
     $('#stagingdatasetstable').dataTable({
         data: jsonData,
         columns: [
-            {
-                data: 'TASKID',
-                "render": function (data, type, full, meta) {
-                    var entry = '<a href="'+{% url 'taskInfo' %}+
-                    full['TASKID'] + '">' + full['TASKID'] + '</a>';
-                    entry += '<a target="_blank" href="'+{% url 'staginprogressplot' %}+
-                    '?jeditaskid=' + full['TASKID'] + '"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
-                    return entry;
+            {data: 'TASKID',
+              "render": function (data, type, full, meta) {
+                var entry = '<a href="{% url 'taskInfo' %}' + full['TASKID'] + '">' + full['TASKID'] + '</a>';
+                entry += '<a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid=' + full['TASKID'] + '"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
+                return entry;
                 },
             },
             {data: 'SOURCE_RSE'},
@@ -426,10 +423,15 @@
             {data: 'START_TIME'},
             {data: 'END_TIME'},
             {data: 'UPDATE_TIME'},
-            {
-                data: 'RSE', "render": function (data, type, full, meta) {
-                    return '<a target="_blanc" href="https://rucio-ui.cern.ch/rule?rule_id=' + full['RSE'] + '">' + full['RSE'] + '</a>';
-                },
+            {data: 'RSE',
+              "render": function (data, type, full, meta) {
+                if ("{{ request.session.rucio_ui }}".length > 0) {
+                    return '<a target="_blanc" href="{{ request.session.rucio_ui }}rule?rule_id=' + full['RSE'] + '">' + full['RSE'] + '</a>';
+                }
+                else {
+                  return data;
+                }
+              },
             },
         ]
     });

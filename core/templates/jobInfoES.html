@@ -8,6 +8,7 @@
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+  <script src="{% static 'js/jquery.shorten.1.0.js' %}"></script>
 {% endblock %}
 
 {% block page_title %}PanDA job {{ pandaid }}{% endblock %}
@@ -270,9 +271,9 @@
                 <a href="http://srs.slac.stanford.edu/Pipeline-II/exp/SRS/pi.jsp?pi={{coreData.processinstance}}">{{coreData.processinstance}} process for {{ coreData.pipelinetask }} pipeline task</a>
         {% endif %}
 
-        {% if rucioUserName|length > 0 %}
+        {% if rucioUserName|length > 0 and request.session.rucio_ui|length > 0 %}
             {% for rucioUserNameIt in rucioUserName %}
-              <a href="https://rucio-ui.cern.ch/r2d2?account={{ rucioUserNameIt }}">DDM User activity ({{ rucioUserNameIt }})</a>
+              <a href="{{ request.session.rucio_ui }}r2d2?account={{ rucioUserNameIt }}">DDM User activity ({{ rucioUserNameIt }})</a>
             {% endfor %}
         {% endif %}
     </div>
@@ -384,7 +385,7 @@
 	{% if job.destinationse %}<tr><th>Output destination</th><td>{{ job.destinationse }}</td></tr>{% endif %}
 	{% if job.cpuconsumptiontime %}<tr><th>CPU consumption time (s)</th><td>{{ job.cpuconsumptiontime }}</td></tr>{% endif %}
 	{% if job.jobmetrics %}<tr><th>Job metrics</th><td>{{ job.jobmetrics }}</td></tr>{% endif %}
-	{% if jobparams %}<tr><th>Job parameters</th><td>{{ jobparams }}</td></tr>{% endif %}
+  {% if jobparams %}<tr><th>Job parameters</th><td><div class="comment more wrap-words">{{ jobparams }}</div></td></tr>{% endif %}
 	{% if job.pilotid %}<tr><th>Pilot ID</th><td>{{ job.pilotid }}</td></tr>{% endif %}
 	{% if job.batchid %}<tr><th>Batch ID</th><td>{{ job.batchid }}</td></tr>{% endif %}
 </tbody>
@@ -444,6 +445,7 @@
 
 
 $(document).ready(function () {
+    $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
     var files_list = {{ files|safe }};
     buildFilesTable(files_list);
     var events_list = {{ evtable|safe }};
@@ -547,7 +549,9 @@ function buildFilesTable(data) {
                 let links = '';
                 if (row['type'] !== 'pseudo_input') {
                   links += '<a href = "{% url 'fileInfo' %}?lfn=' + row['lfn'] + '&scope=' + row['scope'] + '">'+row['lfn']+'</a>';
-                  links += ' <a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['lfn'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  if ("{{ request.session.rucio_ui }}".length > 0) {
+                    links += ' <a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['lfn'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  }
                 }
                 else {
                   links += row['lfn'];
@@ -625,7 +629,9 @@ function buildFilesTable(data) {
             "render": function(data, type, row, meta) {
                 let links = '';
                 if (row['type'] !== 'pseudo_input' && data) {
-                  links += '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['ruciodatasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  if ("{{ request.session.rucio_ui }}".length > 0) {
+                    links += '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['ruciodatasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                  }
                   links += ', <a href = "{% url 'datasetInfo' %}?datasetname=' + row['datasetname'] + '&jeditaskid=' + row['jeditaskid'] + '">'+row['datasetname']+'</a>';
                 }
                 else if (data) {
@@ -642,8 +648,8 @@ function buildFilesTable(data) {
             sDefaultContent: "-",
             className: 'num',
             "render": function(data, type, row, meta) {
-                if (data && data.length > 0) {
-                  return '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['dispatchdblock'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
+                if (data && data.length > 0 && "{{ request.session.rucio_ui }}".length > 0) {
+                  return '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['dispatchdblock'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
                 }
                 else {
                   return '-'
@@ -656,8 +662,8 @@ function buildFilesTable(data) {
             className: 'num',
             "render": function(data, type, row, meta) {
                 let links = row['destinationdblock_vis'];
-                if (data && data.length > 0) {
-                  links += ' <a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['destinationdblock'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
+                if (data && data.length > 0 && "{{ request.session.rucio_ui }}".length > 0) {
+                  links += ' <a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['destinationdblock'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
                 }
                 else {
                   links += '-'

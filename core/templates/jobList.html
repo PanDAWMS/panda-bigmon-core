@@ -247,8 +247,9 @@
 {% if errsByCount %}
    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('failedjob');"><br>Click to show/hide failed jobs details</a>
 {% endif %}
-
+{% if viewParams.MON_VO == 'ATLAS' %}
  <a href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
+{% endif %}
 <p>
 
 <div class="table-scroll">
@@ -345,7 +346,7 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
     <td colspan="20" class="small">Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a>  #{{ job.attemptnr }}</td></tr>
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
-    <td colspan="20" class="highlightcell small">Datasets: {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a> || <a href="https://rucio-ui.cern.ch/did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a> {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> {% endif %} <b> Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+    <td colspan="20" class="highlightcell small">Datasets: {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a>  {% if request.session.rucio_ui|length > 0 %}|| <a href="{{ request.session.rucio_ui }}did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %} {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> {% endif %} <b> Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
     {% endfor %}
 </table>
 </div>

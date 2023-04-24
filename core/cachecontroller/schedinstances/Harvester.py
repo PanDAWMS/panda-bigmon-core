@@ -16,9 +16,9 @@ class Harvester(BaseURLTasksProvider):
         urlsQueue = queue.PriorityQueue(-1)
         harvList = self.downloadPayloadJSON(HARVESTER_LIST_URL)
 
-        if harvList is not None:
-            for hin in harvList:
-                urlsQueue.put((self.BASIC_PRIORITY, '/harvester/workers/?instance='+str(hin['instance'])))
+        if harvList is not None and 'instances' in harvList:
+            for hin in harvList['instances']:
+                urlsQueue.put((self.BASIC_PRIORITY, '/harvester/workers/?instance='+str(hin['harvesterid'])))
 
         return urlsQueue
 

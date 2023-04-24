@@ -15,6 +15,7 @@
   <script src="{% static 'js/datatables/dataTables.rowsGroup.js' %}"></script>
   <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
   <script src="{% static 'js/humanize.min.js' %}"></script>
+  <script src="{% static 'js/jquery.shorten.1.0.js' %}"></script>
   <!-- Load d3.js and c3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
@@ -336,8 +337,11 @@
                   "data": "type",
                   sDefaultContent: "-",
                   "render": function(data, type, row, meta) {
-                      var links = '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
-                      if (row['type'] == 'input') {
+                      var links = '';
+                      if ("{{ request.session.rucio_ui }}".length > 0) {
+                        links += '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                      }
+                      if (row['type'] === 'input') {
                            links += ', <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
                       }
                       return links;
@@ -366,6 +370,7 @@
       }
 
       $(document).ready(function () {
+          $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
           var dataset_list = {{ datasets|safe }};
           buildDatasetsTable(dataset_list);
           var url = window.location.href;
@@ -397,7 +402,7 @@
         </tr>
         <tr bgcolor='lightcyan'>
             <th>Task ID</th>
-            {% if task.deftreqid %}
+            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
                 <th> Request</th> {% endif %}
             {% if task.reqid != task.jeditaskid and not task.deftreqid %}
                 <th>Jobset</th>{% endif %}
@@ -423,9 +428,15 @@
                 <th>Tracker</th> {% endif %}
         </tr>
         <tr>
-            <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
-                   target="_blank">{{ task.jeditaskid }}</a></td>
-            {% if task.deftreqid %}
+            <td>
+              {% if viewParams.MON_VO == 'ATLAS' %}
+                <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
+                   target="_blank">{{ task.jeditaskid }}</a>
+              {% else %}
+                {{ task.jeditaskid }}
+              {% endif %}
+            </td>
+            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
                 <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
                        target="_blank">{{ task.deftreqid }}</a></td>
             {% endif %}
@@ -502,7 +513,7 @@
             {% else %}
                 <a style="cursor: pointer;" href="{{ nomodeurl }}mode=nodrop">Nodrop mode</a>
             {% endif %}
-            {% if vomode == 'atlas' %}
+            {% if viewParams.MON_VO == 'ATLAS' %}
                 {% if task.tasktype == 'prod' %}
                     <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
                        target="_blank">Prod Task view (to manage task)</a>
@@ -785,7 +796,7 @@
                 </tr>
                 {% for p in jobparams %}
                     <tr>
-                        <td><font size=-1>{{ p|safe }}</font></td>
+                      <td><div class="comment more wrap-words">{{ p|safe }}</div></td>
                     </tr>
                 {% endfor %}
             </table>
@@ -803,7 +814,11 @@
                 {% if p.name != 'jobParameters' and p.name != 'log' %}
                     <tr>
                         <th> {{ p.name }} </th>
-                        <td>{% if p.value != None %} {{ p.value }} {% endif %}</td>
+                        <td>
+                          <div class="comment more wrap-words">
+                            {% if not p.value is None and not p.value == '' %} {{ p.value }} {% else %}&mdash;{% endif %}
+                          </div>
+                        </td>
                     </tr>
                 {% endif %}
             {% endfor %}

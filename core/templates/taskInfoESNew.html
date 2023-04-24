@@ -36,7 +36,7 @@
     <tbody>
       <tr>
           <th>Task ID</th>
-          {% if task.deftreqid %}
+          {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
             <th> Request</th>
           {% endif %}
           <th>Type</th>
@@ -74,9 +74,15 @@
           {% endif %}
       </tr>
       <tr>
-          <td><a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
-                 target="_blank">{{ task.jeditaskid }}</a></td>
-          {% if task.deftreqid %}
+          <td>
+            {% if viewParams.MON_VO == 'ATLAS' %}
+              <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/"
+                 target="_blank">{{ task.jeditaskid }}</a>
+            {% else %}
+              {{ task.jeditaskid }}
+            {% endif %}
+          </td>
+          {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
                 <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
                        target="_blank">{{ task.deftreqid }}</a></td>
           {% endif %}
@@ -156,7 +162,7 @@
       <button class="dropdownbutton">Task extra info</button>
       <div id="dropdown-plotchoice" class="dropdown-plot">
           <a href="{% url 'taskInfo' jeditaskid %}?version=old">Old task ES page</a>
-          {% if vomode == 'atlas' %}
+          {% if viewParams.MON_VO == 'ATLAS' %}
               {% if task.tasktype == 'prod' %}
                   <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
                      target="_blank">Prod Task view (to manage task)</a>
@@ -1236,11 +1242,14 @@
               "data": "type",
               sDefaultContent: "-",
               "render": function(data, type, row, meta) {
-                  var links = '<a href="https://rucio-ui.cern.ch/did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
-                  if (row['type'] == 'input') {
-                       links += ', <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
-                  }
-                  return links;
+                var links = '';
+                if ("{{ request.session.rucio_ui }}".length > 0) {
+                  links += '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                }
+                if (row['type'] === 'input') {
+                     links += ', <a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
+                }
+                return links;
               }
 
           },
