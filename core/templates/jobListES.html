@@ -311,7 +311,7 @@ Sort by
         <td>{{ job.currentpriority }}</td>
         <td>{{ job.nevents }} ({{ job.ninputs }})</td>
 		<td width=250>{% if job.jobinfo != '' %}<font size=-1>{{job.jobinfo|force_escape|safe}}</font><br>{% endif %}
-		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|force_escape|safe}}</font>{% endif %}
+		{% if job.errorinfo != '' %}<font size=-1 class='alarm'>{{job.errorinfo|safe}}</font>{% endif %}
 		</td>
 	<tr><td colspan=20> {{ job.esjobstr }} </td></tr>
 	</tr>
