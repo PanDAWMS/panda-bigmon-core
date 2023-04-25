@@ -14,7 +14,7 @@ from django.views.decorators.cache import never_cache
 from django.utils import timezone
 from django.db import connection
 
-from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes
+from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes, convert_sec
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
@@ -177,11 +177,10 @@ def getDTCSubmissionHist(request):
             'size': round(convert_bytes(dsdata['dataset_bytes'], output_unit='GB'), 2),
             'progress': int(math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
             'source_rse': dsdata['source_rse'],
-            'elapsedtime': str(epltime).split('.')[0] if epltime is not None else '---',
+            'elapsedtime': convert_sec(epltime.total_seconds(), out_unit='str') if epltime is not None else '---',
             'start_time': dsdata['start_time'].strftime(settings.DATETIME_FORMAT) if dsdata['start_time'] else '---',
             'rse': dsdata['rse'],
-            'update_time': str(dsdata['update_time']).split('.')[0] if dsdata['update_time'] is not None else '---',
-            'update_time_sort': dsdata['update_time_sort'],
+            'update_time': convert_sec(dsdata['update_time'].total_seconds(), out_unit='str') if dsdata['update_time'] is not None else '---',
             'processingtype': dsdata['processingtype']})
 
     # fill options for selection menus

@@ -496,7 +496,7 @@
             { title: 'Staged files', data: 'staged_files', className: 'num' },
             { title: 'Progress [%]', data: 'progress', className: 'num' },
             { title: 'Source RSE', data: 'source_rse' },
-            { title: 'Time elapsed', data: 'elapsedtime', defaultValue: '---'},
+            { title: 'Time elapsed [d:h:m:s]', data: 'elapsedtime', defaultValue: '---'},
             { title: 'Started at', data: 'start_time' },
             { title: 'Rucio rule', data: 'rse',
               "render": function(data, type, full, meta) {
@@ -508,7 +508,7 @@
                   }
                 },
             },
-            { title: 'Update time', data: 'update_time', defaultValue: '---',},
+            { title: 'Since last update [d:h:m:s]', data: 'update_time', defaultValue: '---',},
           ],
           createdRow: function ( row, data, index ) {
               $('td', row).eq(3).addClass(data['status'] + '_fill');
