@@ -91,6 +91,8 @@ SOCIAL_AUTH_PIPELINE = (
 # installed apps
 INSTALLED_APPS_DJANGO_FRAMEWORK = (
     # Django framework
+    'daphne',
+    'channels',
     'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -105,7 +107,7 @@ INSTALLED_APPS_DJANGO_PLUGINS = (
     # Django plugins
     'rest_framework',
     'django_datatables_view',
-    'django_extensions',
+    'django_extensions'
 )
 COMMON_INSTALLED_APPS = \
     INSTALLED_APPS_DJANGO_FRAMEWORK + \
@@ -139,8 +141,18 @@ INSTALLED_APPS_EXTRA = [
     "core.oi",
     "core.reports",
     "core.runningprod",
-    "core.panda_client"
+    "core.panda_client",
+    "core.kafka"
 ]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
+ASGI_APPLICATION = 'core.asgi.application'
+
 
 if len(INSTALLED_APPS_EXTRA) > 0:
     INSTALLED_APPS_BIGPANDAMON_CORE += tuple([str(app_name) for app_name in INSTALLED_APPS_EXTRA])
