@@ -35,7 +35,7 @@
         {% if task.campaign %}
             <th> Campaign</th>
         {% endif %}
-        {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
+        {% if task.deftreqid %}
             <th> Request</th>
         {% endif %}
         <th>Type</th>
@@ -115,9 +115,15 @@
         {% if task.campaign %}
             <td><a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{% if task.campaign_cut %}{{ task.campaign_cut }}{% else %}{{ task.campaign }}{% endif %}</a></td>
         {% endif %}
-        {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
-            <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
-                   target="_blank">{{ task.deftreqid }}</a></td>
+        {% if task.deftreqid %}
+            <td>
+              {% if viewParams.MON_VO == 'ATLAS' %}
+                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
+                     target="_blank">{{ task.deftreqid }}</a>
+              {% else %}
+                {{ task.deftreqid }}
+              {% endif %}
+            </td>
         {% endif %}
         <td>{% if task.tasktype == 'anal' %} analy {% else %} {{ task.tasktype }} {% endif %}</td>
         <td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>

@@ -36,7 +36,7 @@
     <tbody>
       <tr>
           <th>Task ID</th>
-          {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
+          {% if task.deftreqid %}
             <th> Request</th>
           {% endif %}
           <th>Type</th>
@@ -82,9 +82,15 @@
               {{ task.jeditaskid }}
             {% endif %}
           </td>
-          {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
-                <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
-                       target="_blank">{{ task.deftreqid }}</a></td>
+          {% if task.deftreqid %}
+            <td>
+              {% if viewParams.MON_VO == 'ATLAS' %}
+                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
+                     target="_blank">{{ task.deftreqid }}</a>
+              {% else %}
+                {{ task.deftreqid }}
+              {% endif %}
+            </td>
           {% endif %}
           <td>{{ task.tasktype }}</td>
           <td>{% if task.processingtype %} {{ task.processingtype }} {% endif %} </td>

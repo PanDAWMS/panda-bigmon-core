@@ -402,7 +402,7 @@
         </tr>
         <tr bgcolor='lightcyan'>
             <th>Task ID</th>
-            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
+            {% if task.deftreqid %}
                 <th> Request</th> {% endif %}
             {% if task.reqid != task.jeditaskid and not task.deftreqid %}
                 <th>Jobset</th>{% endif %}
@@ -436,9 +436,15 @@
                 {{ task.jeditaskid }}
               {% endif %}
             </td>
-            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
-                <td><a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
-                       target="_blank">{{ task.deftreqid }}</a></td>
+            {% if task.deftreqid %}
+              <td>
+                {% if viewParams.MON_VO == 'ATLAS' %}
+                  <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
+                       target="_blank">{{ task.deftreqid }}</a>
+                {% else %}
+                  {{ task.deftreqid }}
+                {% endif %}
+              </td>
             {% endif %}
             {% if task.reqid != task.jeditaskid and not task.deftreqid %}
                 <td>{{ task.reqid }}</td>{% endif %}
