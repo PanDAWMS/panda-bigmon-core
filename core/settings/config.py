@@ -33,6 +33,10 @@ VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/opt/prod')
 if 'BIGMON_WSGI_PATH' in os.environ:
     WSGI_PATH = os.environ['BIGMON_WSGI_PATH']
 
+# ASGI
+if 'BIGMON_ASGI_PATH' in os.environ:
+    ASGI_PATH = os.environ['BIGMON_ASGI_PATH']
+
 # VO
 if 'BIGMON_VO' in os.environ:
     MON_VO = os.environ['BIGMON_VO']
