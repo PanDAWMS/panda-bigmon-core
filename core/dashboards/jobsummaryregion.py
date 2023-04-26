@@ -161,7 +161,7 @@ def get_job_summary_region(query, **kwargs):
     else:
         jobtype = 'all'
     if 'resourcetype' in kwargs and kwargs['resourcetype'] != 'all':
-        resourcetype = kwargs['jobtype']
+        resourcetype = kwargs['resourcetype']
         resource_types = [kwargs['resourcetype']]
     else:
         resourcetype = 'all'
@@ -187,6 +187,31 @@ def get_job_summary_region(query, **kwargs):
 
     sites_list = list(set([params['atlas_site'] for pq, params in pqs_dict.items() if 'atlas_site' in params]))
     regions_list = list(set([params['cloud'] for pq, params in pqs_dict.items() if 'cloud' in params]))
+
+    # get job summary
+    jsq = get_job_summary_split(query, extra=extra)
+
+    # check if there is more values of resourcetype than 4 default ones, if yes -> add them to the list
+    if len(jsq) > 0:
+        job_resource_types_extra = list(set([row['resourcetype'] for row in jsq]) - set(resource_types))
+        if None in job_resource_types_extra or '' in job_resource_types_extra:
+            # replace None with 'Not specified'
+            resource_types.append('Not specified')
+            for row in jsq:
+                if row['resourcetype'] is None or row['resourcetype'] == '':
+                    row['resourcetype'] = 'Not specified'
+
+        # adding extra job resourcetype to the list
+        resource_types.extend([rt for rt in job_resource_types_extra if rt and rt != ''])
+
+    # get workers info
+    wsq = []
+    if 'core.harvester' in settings.INSTALLED_APPS:
+        from core.harvester.utils import get_workers_summary_split
+        if 'computingsite__in' not in query:
+            # put full list of compitingsites to use index in workers table
+            query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
+        wsq = get_workers_summary_split(query)
 
     # get PanDA getJob, updateJob request counts
     psq_dict = {}
@@ -266,18 +291,6 @@ def get_job_summary_region(query, **kwargs):
                     jsr_sites_dict[s][jt]['all'][em] = 0
                     jsr_sites_dict[s]['all'][rt][em] = 0
                     jsr_sites_dict[s]['all']['all'][em] = 0
-
-    # get job info
-    jsq = get_job_summary_split(query, extra=extra)
-
-    # get workers info
-    wsq = []
-    if 'core.harvester' in settings.INSTALLED_APPS:
-        from core.harvester.utils import get_workers_summary_split
-        if 'computingsite__in' not in query:
-            # put full list of compitingsites to use index in workers table
-            query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
-        wsq = get_workers_summary_split(query)
 
     # fill template with real values of job states counts
     for row in jsq:
@@ -368,7 +381,7 @@ def get_job_summary_split(query, extra):
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
             case when jobstatus in ('finished', 'failed') then {walltime_sec} else 0 end as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from {db_scheme}.JOBSARCHIVED4 ja4  where modificationtime > TO_DATE('{date_from}', 'YYYY-MM-DD HH24:MI:SS') and {extra_str}
+        from {db_scheme}.jobsarchived4 ja4  where modificationtime > TO_DATE('{date_from}', 'YYYY-MM-DD HH24:MI:SS') and {extra_str}
         union
         select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
