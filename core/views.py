@@ -871,7 +871,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
                     if request.session['requestParams'][param] == 'Not specified':
-                        extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(param)
+                        extraQueryString += " AND ( {0} is NULL or {0} = '' ) ".format(field.db_column)
                         extraQueryFields.append(param)
                         continue
                     if param == 'minramcount':
@@ -3968,9 +3968,12 @@ def dashRegion(request):
             split_by=split_by)
 
         # prepare lists of unique values for drop down menus
-        select_params_dict = {}
-        select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
-        select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
+        select_params_dict = {
+            'resourcetype': sorted(
+                [rt for rt in jsr_queues_dict[list(jsr_queues_dict.keys())[0]]['summary']['all'].keys() if rt != 'all']),
+            'queuetype': sorted(list(set([pq[1] for pq in jsr_queues_list]))),
+            'queuestatus': sorted(list(set([pq[3] for pq in jsr_queues_list]))),
+        }
 
         pq_info_basic = get_basic_info_for_pqs([])
         unique_sites_dict = {}

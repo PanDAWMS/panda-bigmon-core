@@ -103,7 +103,7 @@ def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
         'rc_test2': 'analy',
     }
 
-    if settings.DEPLOYMENT == 'ORACLE_DOMA':
+    if 'ATLAS' not in settings.DEPLOYMENT:
         psl_to_jt.update({
             'test': 'prod',
             'ANY': 'prod',

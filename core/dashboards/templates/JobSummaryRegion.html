@@ -283,15 +283,15 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
         ],
         resourcetype: [
           {name:'all', value:'', query: ''},
-          {name:'SCORE', value:'SCORE', query: 'resourcetype=SCORE&'},
-          {name:'SCORE_HIMEM', value:'SCORE_HIMEM', query: 'resourcetype=SCORE_HIMEM&'},
-          {name:'MCORE', value:'MCORE', query: 'resourcetype=MCORE&'},
-          {name:'MCORE_HIMEM', value:'MCORE_HIMEM', query: 'resourcetype=MCORE_HIMEM&'}
         ],
     };
     select_params.region.forEach(function (param) {
      $scope.dash.availableOptions.region.push({name:param, value:param, query:'region' + param + '&'});
      $scope.dash.availableOptions.site.push({name:'all', value:'', region:param, query:'' });
+    });
+
+    select_params.resourcetype.forEach(function (param) {
+     $scope.dash.availableOptions.resourcetype.push({name:param, value:param, query:'resourcetype' + param + '&'});
     });
 
     select_params.site.forEach(function (param) {
@@ -347,8 +347,8 @@ app.controller('JobSummaryRegionController', ['$scope', function($scope) {
     };
 
     $scope.change = function (selection) {
-        (selection.jobtype.length > 0) ? $scope.dash.selection.splitby.jobtype = true : $scope.dash.selection.splitby.jobtype = false;
-        (selection.resourcetype.length > 0) ? $scope.dash.selection.splitby.resourcetype = true : $scope.dash.selection.splitby.resourcetype = false;
+        (selection.jobtype.length > 3) ? $scope.dash.selection.splitby.jobtype = true : $scope.dash.selection.splitby.jobtype = false;
+        (selection.resourcetype.length > 3) ? $scope.dash.selection.splitby.resourcetype = true : $scope.dash.selection.splitby.resourcetype = false;
     }
 }]);
 
