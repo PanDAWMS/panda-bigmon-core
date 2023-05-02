@@ -6443,7 +6443,7 @@ def errorSummary(request):
             if 'summary' in data and 'all' in data['summary'] and 'all' in data['summary']['all'] and s in data['summary']['all']['all']:
                 sitestates[pq][s] += data['summary']['all']['all'][s]
         if sitestates[pq]['failed'] > 0:
-            sitestates[pq]['pctfail'] = round(100.0*sitestates[pq]['finished']/(sitestates[pq]['finished'] + sitestates[pq]['failed']), 2)
+            sitestates[pq]['pctfail'] = round(100.0*sitestates[pq]['failed']/(sitestates[pq]['finished'] + sitestates[pq]['failed']), 1)
         else:
             sitestates[pq]['pctfail'] = 0
 
