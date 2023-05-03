@@ -1569,6 +1569,14 @@ footer {
   }
     .bp-tabs-content .bp-tabs-panel[aria-hidden="false"], .bp-tabs-content .bp-tabs-panel.is-active {
       display: block; }
+  .bp-tabs-content .bp-tabs-panel-ng {
+    /* this is panel that managed by angularjs to show/hide */
+    display: block;
+    padding: 0.3rem 0;
+    border-right: 1px solid #5e789a;
+    border-left: 1px solid #5e789a;
+    border-bottom: 1px solid #5e789a;
+  }
 
 
 /* ---------------------------------------------------------- */

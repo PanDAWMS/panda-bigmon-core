@@ -34,7 +34,7 @@
   <li class="bp-tabs-title" ng-repeat="panel in art.panels" on-finish-render="ngRepeatFinished"><a ng-click="art.activatePanel(panel.id)" ng-class="art.isSelectedClass(panel.id)">{$ panel.name $}</a></li>
 </ul>
 <div class="bp-tabs-content" data-tabs-content="art-tabs">
-  <div id="panel_{$ panel.id $}" class="tabs-panel" ng-repeat="panel in art.panels" ng-show="art.isActive(panel.id)">
+  <div id="panel_{$ panel.id $}" class="bp-tabs-panel-ng" ng-repeat="panel in art.panels" ng-show="art.isActive(panel.id)">
     <div id="container_{$ panel.id $}">
     <table id="table_{$ panel.id $}" class="data-table left-aligned nowrap">
       <thead>
@@ -149,7 +149,7 @@ app.controller('artStabilityController', ['$scope', '$timeout', function($scope,
       "data": $scope.art.data[$scope.art.panels[tab_id].name],
       "columns": columns,
       initComplete: function () {
-        this.api().columns([0,1]).every(function () {
+        this.api().columns().every(function () {
           var column = this;
           var select = $('<select><option value="">Show all</option></select>')
               .appendTo($(column.footer()).empty())

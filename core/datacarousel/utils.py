@@ -196,11 +196,6 @@ def getStagingData(request):
         if dataset['STATUS'] in ('staging', 'queued', 'done'):
             dataset = {k.lower(): v for k, v in dataset.items()}
 
-            if dataset.get('update_time'):
-                dataset['update_time_sort'] = int(dataset['update_time'].total_seconds())
-            else:
-                dataset['update_time_sort'] = None
-
             datasetname = dataset.get('dataset')
             if ':' in datasetname:
                 dataset['scope'] = datasetname.split(':')[0]
