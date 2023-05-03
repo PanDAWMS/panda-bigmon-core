@@ -20,36 +20,28 @@
 
 {% block body %}
     <div id="web-terminal"></div>
-{#        <div class="container">#}
-{#            <div class="row">#}
-{#                <div class="col-6 mx-auto mt-5">#}
-{#                    <h1 id="app">{{text}}</h1>#}
-{#                </div>#}
-{#            </div>#}
-{#        </div>#}
 {% endblock %}
 
 {% block js_body_page %}
        <script>
-            var socket = new WebSocket('ws://aipanda163.cern.ch:8002/ws/kafka_messages/');
+            console.log(window.location.host);
+            console.log(window.location.hostname);
+            console.log(window.location.protocol);
+            if (window.location.protocol != "https:") {
+                web_socket_protocol = 'ws://';
+                web_socket_host = web_socket_protocol + window.location.host
+            }
+            else {
+                web_socket_protocol = 'wss://';
+                web_socket_host = web_socket_protocol + window.location.hostname
+            }
+            var socket = new WebSocket(web_socket_host +'/ws/kafka_messages/');
             var terminal = $('#web-terminal').terminal(
                     function(command, term) {
                         if (command == 'help') {
                             term.echo('Help command');
                         }
                         if (command == 'start') {
-                            {#term.pause();#}
-
-                            {#$.post('{% url 'getpayloadlog' %}', {#}
-                            {#    pandaid:{{pandaid|safe}},#}
-                            {#    start:0,#}
-                            {#    length: 50,#}
-                            {#    draw: 1,#}
-                            {#    sort: 'asc',#}
-                            {#    search: ''})#}
-                            {#    .then(function(response) {#}
-                            {#        term.echo(response).resume();#}
-                            {#    });#}
                         }
                     },
                     {
@@ -62,7 +54,6 @@
                             {#term.echo('The last 50 messages from payload log')#}
                         socket.onmessage = function(event) {
                             var data = JSON.parse(event.data);
-                            console.log(data);
                             term.echo(data.message)
                         }
                         },
