@@ -1,5 +1,5 @@
 """
-Set of functions related to jobs errors parsing and extracting descriptions
+Set of functions related to job errors parsing and extracting descriptions
 
 Created by Tatiana Korchuganova on 05.03.2020
 """
@@ -9,12 +9,13 @@ import numpy as np
 from html import escape
 
 from django.core.cache import cache
+from django.conf import settings
 
 from core.pandajob.models import Jobsarchived4, Jobsarchived
 
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table
 
-from core.ErrorCodes import ErrorCodes
+from core.libs.ErrorCodes import ErrorCodes, ErrorCodesAtlas
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -25,16 +26,18 @@ def get_job_error_desc():
     Get ErrorCodes and put into cache
     :return:
     """
-
     try:
         error_desc_dict = cache.get('errorCodes', None)
     except Exception as e:
         _logger.warning('Can not get error codes from cache: \n{} \nLoading directly instead...'.format(e))
         error_desc_dict = None
-
+    error_desc_dict = None
     if not error_desc_dict:
-        codes = ErrorCodes()
-        _, error_desc_dict, _ = codes.getErrorCodes()
+        if 'ATLAS' in settings.DEPLOYMENT:
+            codes = ErrorCodesAtlas()
+        else:
+            codes = ErrorCodes()
+        error_desc_dict = codes.getErrorCodes()
         cache.set('errorCodes', error_desc_dict, 60*60*24)
     return error_desc_dict
 
