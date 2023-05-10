@@ -16,6 +16,7 @@ urlpatterns = [
     re_path(r'^api/dc/tails/$', dc_views.getStagingTailsData, name='datacartaildata'),
     re_path(r'^api/dc/staginginfofortask/$', dc_views.getStagingInfoForTask, name='getStagingInfoForTask'),
     re_path(r'^api/dc/dash/$', dc_views.getDTCSubmissionHist, name='getDTCSubmissionHist'),
+    re_path(r'^api/dc/stuckfiles/$', dc_views.get_stuck_files, name='datacarstuckfiles'),
 
     re_path(r'^dc/sendstalledreport/$', dc_views.send_stalled_requests_report, name='sendStalledReport'),
 ]
