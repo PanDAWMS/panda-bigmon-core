@@ -12,7 +12,7 @@ class ProdMonDBRouter(object):
             return 'idds'
         if model._meta.app_label == 'jedi':
             return 'default'
-        if model._meta.app_label == "taskmon":
+        if model._meta.app_label == "deft":
             return "default"
         return None
 

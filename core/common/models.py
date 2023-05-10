@@ -982,7 +982,7 @@ class TTask(models.Model):
     class Meta:
         managed = False
         db_table =  u'"ATLAS_DEFT"."T_TASK"'
-        app_label = 'taskmon'
+        app_label = 'deft'
 
 
 class ProductionTask(models.Model):

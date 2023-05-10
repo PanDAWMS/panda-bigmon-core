@@ -19,7 +19,9 @@ from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
 from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report_rse, \
-    retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds, staging_rule_verification
+    retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds, staging_rule_verification, \
+    get_stuck_files_data
+
 
 from django.conf import settings
 
@@ -223,6 +225,36 @@ def getDTCSubmissionHist(request):
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
 
+
+
+def get_stuck_files(request):
+    """
+    Return list of probably stuck in staging files for a dataset or Rucio rule & Rucio Storage Element
+    :param request:
+    :return: stuck_files
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    datasetname = None
+    rule_id = None
+    source_rse = None
+    if 'rule_id' in request.session['requestParams'] and request.session['requestParams']['rule_id']:
+        rule_id = request.session['requestParams']['rule_id']
+    if 'source_rse' in request.session['requestParams'] and request.session['requestParams']['source_rse']:
+        source_rse = request.session['requestParams']['source_rse']
+
+    stuck_files = {}
+    if rule_id and source_rse:
+        stuck_files = get_stuck_files_data(rule_id, source_rse)
+
+    # dict -> list for table
+    stuck_files_list = []
+    for f, data in stuck_files.items():
+        stuck_files_list.extend(data['transfers'])
+
+    return JsonResponse({'data': stuck_files_list})
 
 @never_cache
 def send_stalled_requests_report(request):

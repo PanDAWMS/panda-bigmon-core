@@ -1261,6 +1261,9 @@ fieldset.inline {
   .card.bp-container-simple .card-section > ul {
     margin: 0 0.7rem 0.3rem 1.5rem;
   }
+  .card.bp-container-simple .card-section > pre {
+    font-size: smaller;
+  }
   .card.bp-container-simple .card-section > .dataTables_wrapper {
     padding: 0 0.3rem;
     margin: 0.3rem 0;
@@ -1346,20 +1349,17 @@ fieldset.inline {
   }
 
 .card.bp-container-simple.alert {
-  border: 1px solid #FFABA2;
+  border: 1px solid #f7c4c4;
   font-size: 0.875rem;
 }
   .card.bp-container-simple.alert > .card-divider {
-    background-color: #FFABA2;
+    background-color: #f7c4c4;
     color: #272727;
-  }
-  .card.bp-container-simple.alert > .card-section {
-    font-size: smaller;
-    padding: 0.3rem 0.7rem;
   }
   .card.bp-container-simple.alert > .card-section > pre {
     padding: 0.3rem 0.7rem;
   }
+
 
 
 .card.bp-container-simple > .card-section > ul.uservisits a {

@@ -23,7 +23,7 @@ from django.db import connection
 from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView
-from core.libs.exlib import dictfetchall, get_tmp_table_name
+from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime
 from core.libs.elasticsearch import create_es_connection
 from core.schedresource.utils import getCRICSEs
 from core.filebrowser.ruciowrapper import ruciowrapper
@@ -33,8 +33,6 @@ from django.conf import settings
 _logger = logging.getLogger('bigpandamon')
 
 BASE_STAGE_INFO_URL = 'https://bigpanda.cern.ch/staginprogress/?jeditaskid='
-#BASE_STAGE_INFO_URL = 'http://aipanda163.cern.ch:8000/staginprogress/?jeditaskid='
-
 
 def getBinnedData(listData, additionalList1 = None, additionalList2 = None):
     isTimeNotDelta = True
@@ -454,3 +452,58 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
     if s.count() > 0:
         return True, stuck_files
     return False, stuck_files
+
+
+def get_stuck_files_data(rule_id, source_rse):
+    """
+    Get stuck files and info of failed transfers
+    :param rule_id:
+    :param source_rse:
+    :return: stuck_files_info: dict
+    """
+    stuck_files_info = {}
+    rucio = ruciowrapper()
+    # Get list of files which are not yet staged
+    stuck_files = [file_lock['name'] for file_lock in rucio.client.list_replica_locks(rule_id) if file_lock['state'] != 'OK']
+    if len(stuck_files) > 0:
+        stuck_files_info = {f: {'transfers': []} for f in stuck_files}
+        # Check rucio claims it's Tape problem:
+        rule_info = rucio.client.get_replication_rule(rule_id)
+        # Check in ES that files have failed attempts from tape. Limit to 1000 files, should be enough
+        es_conn = create_es_connection(instance='es-monit', timeout=10000)
+        start_time = rule_info.get('created_at', None)
+        days_since_start = (datetime.datetime.now() - start_time).days if start_time else settings.DATA_CAROUSEL_MAIL_REPEAT
+        sources = list(getCRICSEs().get(source_rse, []))
+        s = Search(using=es_conn, index='monit_prod_ddm_enr_*').\
+            query("terms", data__name=stuck_files[:1000]).\
+            query("range", **{
+                    "metadata.timestamp": {
+                        "gte": f"now-{days_since_start}d/d",
+                        "lt": "now/d"
+                    }}).\
+            query("match", data__event_type='transfer-failed'). \
+            query("match", data__activity='Staging'). \
+            query('terms', data__src_endpoint=sources)
+
+        for hit in s:
+            if hit['data']['name'] in stuck_files_info:
+                stuck_files_info[hit['data']['name']]['transfers'].append({
+                    'lfn': hit['data']['name'],
+                    'src': hit['data']['src_rse'],
+                    'dst': hit['data']['dst_rse'],
+                    'transfer_link': hit['data']['transfer_link'],
+                    'submitted_at': convert_epoch_to_datetime(
+                        hit['data']['submitted_at']).strftime(settings.DATETIME_FORMAT),
+                    'started_at': convert_epoch_to_datetime(
+                        hit['data']['started_at']).strftime(settings.DATETIME_FORMAT),
+                    'transferred_at': convert_epoch_to_datetime(
+                        hit['data']['transferred_at']).strftime(settings.DATETIME_FORMAT),
+                    'duration': hit['data']['duration'],
+                    'reason': hit['data']['reason'],
+                    'transfer_id': hit['data']['transfer_id'],
+                })
+
+    return stuck_files_info
+
+
+
