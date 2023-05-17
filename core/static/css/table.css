@@ -658,20 +658,26 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table td.bold {
     font-weight: bold;
   }
+  .data-table td.icons4 {
+    padding-right: 4rem;
+  }
   .data-table td.icons3 {
-    padding-right: 3.5rem;
+    padding-right: 3rem;
   }
   .data-table td.icons2 {
-    padding-right: 2.5rem;
+    padding-right: 2rem;
   }
   .data-table td.icons1 {
-    padding-right: 1.5rem;
+    padding-right: 1rem;
   }
   .data-table tbody td > a.alert {
     color: firebrick !important;
   }
   .data-table tbody td > a.warning {
     color: #FF9933 !important;
+  }
+  .data-table tbody td > a > .bp-tooltip {
+    border-bottom: none;
   }
   .data-table .num {
     text-align: right !important;
@@ -879,7 +885,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     .fresh-table tbody td a {
         color: #49668d;
         font-weight: bold;}
-    .fresh-table tbody td[class$="_fill"] a {
+    .fresh-table tbody td[class*="_fill"] a {
         font-weight: bold;
         color: #0a0a0a;}
     .fresh-table tbody td a:hover {
