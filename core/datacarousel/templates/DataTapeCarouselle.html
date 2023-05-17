@@ -13,9 +13,6 @@
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
 {% endblock %}
-{% block css_page %}
-  <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
-{% endblock %}
 {% block js_head_page_library %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
@@ -132,8 +129,26 @@
       <div class="card-divider"><p>Staging datasets:</p></div>
       <div class="card-section">
         <p ng-bind-html="loading_placeholder"></p>
-        <table class="data-table nowrap" id="stagingdatasetstable">
-         <thead></thead>
+        <table class="data-table nowrap hover" id="stagingdatasetstable">
+         <thead>
+          <tr>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+          </tr>
+         </thead>
+         <tbody></tbody>
          <tfoot>
           <tr>
              <th></th>
@@ -175,7 +190,6 @@
   <script type="text/javascript">
   google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
 
-  var detailsDataTable;
   var chart_list = ['submittime', 'submittimefiles', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];
   var charts = {
     submittime: {
@@ -374,7 +388,7 @@
   };
 
   app.service('Service', ['$http', service])
-     .controller('dataviewctrl', ['$scope', '$sce', '$compile', '$location', '$anchorScroll', 'Service', controller]);
+     .controller('dataviewctrl', ['$scope', '$sce', '$compile', '$location', '$timeout', '$anchorScroll', 'Service', controller]);
 
   function service($http){
     var get = function(requestparams) {
@@ -395,7 +409,7 @@
     }
   }
 
-  function controller($scope, $sce, $compile, $location, $anchorScroll, Service){
+  function controller($scope, $sce, $compile, $location, $timeout, $anchorScroll, Service){
     $scope.is_hidden = true;
     $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
     $scope.stuckfiles = {
@@ -509,9 +523,9 @@
 
       $scope.selection.options = response.data.selection;
 
-      detailsDataTable = $('#stagingdatasetstable').DataTable({
-          bDestroy: true,
+      $scope.data_table = $('#stagingdatasetstable').DataTable({
           scrollX: true,
+          autoWidth: true,
           columnDefs: [{"type": "num-html", "targets": [5,6,7,8,10,13] }],
           data: response.data.detailstable,
           columns: [
@@ -534,13 +548,13 @@
             { title: 'Source RSE', data: 'source_rse' },
             { title: 'Time elapsed [d:h:m:s]', data: 'elapsedtime', defaultValue: '---'},
             { title: 'Started at', data: 'start_time' },
-            { title: 'Rucio rule', data: 'rse',
+            { title: 'Rucio rule', data: 'rse', className: 'text icons1',
               "render": function(data, type, full, meta) {
                   let entry = ''
                   if (data && "{{ request.session.rucio_ui }}".length > 0) {
                     entry += '<a href="{{ request.session.rucio_ui }}rule?rule_id=' + full['rse'] + '">' + full['rse'].slice(0,3) + '...' + full['rse'].slice(full['rse'].length-3, full['rse'].length) + ' <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
                     if (data && full['status'] === 'staging') {
-                      entry += ` <a target="_blank" ng-click="stuckfiles.toggle('` + full['rse'] + `','` + full['source_rse'] + `')"><div class="tooltip-right"><i class="fi-plus"></i><span class="tooltip-text">Look for stuck files</span></div></a>`
+                      entry += ` <a target="_blank" ng-click="stuckfiles.toggle('` + full['rse'] + `','` + full['source_rse'] + `')"><div class="bp-tooltip left"><i class="fi-plus"></i><span class="tooltip-text">Look for stuck files</span></div></a>`
                     }
                   }
                   else {
@@ -564,12 +578,8 @@
                           var val = $.fn.dataTable.util.escapeRegex(
                               $(this).val()
                           );
-
-                          column
-                              .search( val ? '^'+val+'$' : '', true, false )
-                              .draw();
+                          column.search( val ? '^'+val+'$' : '', true, false ).draw();
                       });
-
                   column.data().unique().sort().each( function ( d, j ) {
                       select.append( '<option value="'+d+'">'+d+'</option>' )
                   });
