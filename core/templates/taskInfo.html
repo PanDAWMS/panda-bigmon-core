@@ -45,7 +45,7 @@
         {% endif %}
         <th>User</th>
         <th>Nucleus</th>
-        <th>Task status</th>
+        <th class="mid">Status</th>
         {% if task.superstatus and task.superstatus != task.status %}
             <th> Detailed JEDI status</th>
         {% endif %}
@@ -132,7 +132,7 @@
         {% endif %}
         <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
         <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
-        <td class='{{ task.status }}_fill'>
+        <td class='{{ task.status }}_fill mid'>
           {% if task.superstatus %}
             <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
                   class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</a>
@@ -160,41 +160,41 @@
           </td>
 
           {% if task.dsinfo %}
-            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
-              <br>{{ task.currenttotevhs06 | intcomma }}
-              <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
-              <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span>
+            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06|intcomma }}{% else %}&mdash;{% endif %}</span>
+              <br>{{ task.currenttotevhs06|intcomma }}
+              <br><span class='finished'>{{ task.totevprochs06|intcomma }}</span>
+              <br><span class='failed'>{{ task.failedevprochs06|intcomma }}</span>
             </td>
           {% endif %}
         {% else %}
           {% if task.dsinfo %}
-            <td class="num"> {{ task.dsinfo.nfiles }}
+            <td class="num"> {{ task.dsinfo.nfiles|intcomma }}
               {% if task.dsinfo.nfilesmissing > 0 %}
                 <span class='lost tooltip-upper'> + {{ task.dsinfo.nfilesmissing }} lost <i class="fi-info"></i><span class="tooltip-text">The files were unavailable at a time of the task running therefore the PanDA did not create jobs for processing them and they are not included to the number of total input files.</span></span>
               {% endif %}
-              <br><span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
+              <br><span class='finished'>({{ task.dsinfo.pctfinished|floatformat }}%) {{ task.dsinfo.nfilesfinished|intcomma }} </span>
               {% if task.dsinfo.nfilesfailed > 0 %}
-                <br><span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>
+                <br><span class='failed'>({{ task.dsinfo.pctfailed|floatformat }}%) {{ task.dsinfo.nfilesfailed|intcomma }}</span>
               {% endif %}
             </td>
             {% if task.totev > 0 %}
-              <td class="num"> {{ task.totev | intcomma }}
-                <br><span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span>
+              <td class="num"> {{ task.totev|intcomma }}
+                <br><span class='finished'>({{ task.pctfinished|floatformat }}%) {{ task.totevproc|intcomma }}</span>
               </td>
             {% endif %}
             {% if task.totevoutput > 0 %}
-              <td class="num"> {{ task.totevoutput | intcomma }}</td>
+              <td class="num"> {{ task.totevoutput|intcomma }}</td>
             {% endif %}
             {% if task.transpath == 'ReSim_tf.py' %}
               <td class="num">
-                {% if task.resimeventspernevents_avgpercent %}{{ task.resimeventspernevents_avgpercent | intcomma }}%{% else %}-{% endif %}
-                <br> {% if task.resimevents_sum %}{{ task.resimevents_sum | intcomma }}{% else %}-{% endif %}
+                {% if task.resimeventspernevents_avgpercent %}{{ task.resimeventspernevents_avgpercent|intcomma }}%{% else %}-{% endif %}
+                <br> {% if task.resimevents_sum %}{{ task.resimevents_sum|intcomma }}{% else %}-{% endif %}
               </td>
             {% endif %}
-            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
-              <br>{{ task.currenttotevhs06 | intcomma }}
-              <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
-              <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span>
+            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06|intcomma }}{% else %}&mdash;{% endif %}</span>
+              <br>{{ task.currenttotevhs06|intcomma }}
+              <br><span class='finished'>{{ task.totevprochs06|intcomma }}</span>
+              <br><span class='failed'>{{ task.failedevprochs06|intcomma }}</span>
             </td>
           {% endif %}
         {% endif %}
@@ -232,6 +232,20 @@
         </div>
       {% endif %}
     </div>
+  {% endif %}
+
+  {% if viewParams.MON_VO == 'ATLAS' %}
+    {% if info.split_rule %}
+      <div class="callout info">
+        <h5>The split rule has been changed for this task: </h5>
+        <ul>
+         {% for message in  info.split_rule.messages %}
+             <li>{{ message }}</li>
+         {% endfor %}
+        </ul>
+        <p>The control of the job size explained <a target="_blank" href="https://panda-wms.readthedocs.io/en/latest/client/prun.html#how-to-control-job-size">here</a> </p>
+        </div>
+    {% endif %}
   {% endif %}
 
   <div class="row bp-container-wrapper">
@@ -443,19 +457,8 @@
       </button>
     </div>
   {% endif %}
-    {% if viewParams.MON_VO == 'ATLAS' %}
-    {% if info.split_rule %}<p></p>
-      <div class="callout secondary" data-closable>
-        <h5>The split rule(s) has been changed for this task: </h5>
-        <ul>
-         {% for message in  info.split_rule.messages %}
-             <li style="font-size: smaller">{{message}}</li>
-         {% endfor %}
-        </ul>
-        </div>
-    {% endif %}
-    {% endif %}
-    <div id="taskflow" ng-app="taskInfoAppSL" ng-controller="taskflowController">
+
+  <div id="taskflow" ng-app="taskInfoAppSL" ng-controller="taskflowController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="taskflow.is_hidden">
     <div class="card-divider"><p>Task Flow Diagram</p></div>
     <div class="card-section">
