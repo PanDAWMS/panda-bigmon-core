@@ -36,7 +36,7 @@ def get_es_credentials(instance):
             es_user = settings.ES_MONIT.get('esUser', None)
             es_password = settings.ES_MONIT.get('esPassword', None)
     else:
-        if hasattr(settings, 'ELASTIC'):
+        if hasattr(settings, 'ES_CLUSTER'):
             es_host = settings.ELASTIC.get('esHost', None)
             es_port = settings.ELASTIC.get('esPort', None)
             es_protocol = settings.ELASTIC.get('esProtocol', None)
@@ -59,7 +59,7 @@ def create_es_connection(instance='es-atlas', protocol='https', timeout=2000, ma
 
     try:
         if protocol == 'https':
-            ca_certs = settings.CA_CERTS_ES
+            ca_certs = settings.ES_CA_CERT
 
             connection = Elasticsearch(
                 ['{0}://{1}'.format(protocol, es_host)],
@@ -215,7 +215,7 @@ def get_split_rule_info(es_conn, jeditaskid):
     :return: split rule messagees
     """
     split_rules = []
-    jedi_logs_index = settings.JEDI_LOGS_ESINDEX
+    jedi_logs_index = settings.ES_INDEX_JEDI_LOGS
 
     s = Search(using=es_conn, index=jedi_logs_index)
     s = s.source(['@timestamp', 'message'])

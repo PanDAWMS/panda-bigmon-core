@@ -6770,7 +6770,7 @@ def esatlasPandaLoggerJson(request):
 
     es_conn = create_es_connection()
 
-    jedi_logs_index = settings.JEDI_LOGS_ESINDEX
+    jedi_logs_index = settings.ES_INDEX_JEDI_LOGS
 
     s = Search(using=es_conn, index=jedi_logs_index)
 
@@ -6883,8 +6883,8 @@ def esatlasPandaLogger(request):
     }
     jediCat = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6', 'cat7']
 
-    panda_index = settings.PANDA_LOGS_ESINDEX + '-'
-    jedi_index = settings.JEDI_LOGS_ESINDEX + '-'
+    panda_index = settings.ES_INDEX_PANDA_LOGS[:-1]+'-'
+    jedi_index = settings.ES_INDEX_JEDI_LOGS[:-1]+'-'
 
     indices = [panda_index, jedi_index]
 
@@ -8256,7 +8256,11 @@ def initSelfMonitor(request):
     else:
         remote = request.META['REMOTE_ADDR']
 
-    urlProto = request.META['wsgi.url_scheme']
+    if 'wsgi.url_scheme' in request.META:
+        urlProto = request.META['wsgi.url_scheme']
+    else:
+        urlProto = 'http'
+
     if 'HTTP_X_FORWARDED_PROTO' in request.META:
         urlProto = request.META['HTTP_X_FORWARDED_PROTO']
     urlProto = str(urlProto) + "://"
@@ -8767,7 +8771,7 @@ def getPayloadLog(request):
     else:
         search_string = request.POST['search']
 
-    pilot_logs_index = settings.PILOT_LOGS_ESINDEX
+    pilot_logs_index = settings.ES_INDEX_PILOT_LOGS
 
     payloadlog, job_running_flag, total = get_payloadlog(id, connection, pilot_logs_index, start=start_var, length=length_var, mode=mode,
                                                          sort=sort, search_string=search_string)
