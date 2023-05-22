@@ -28,6 +28,7 @@
 .brokeroff { color:#deb900 }
 .holding { color:#FF9933 }
 .throttled { color:#FF9933 }
+.throttling { color:#FF9933 }
 .exhausted { color:#FF9933 }
 .finishing { color:#FF9933 }
 .cancelled { color:#e67300 }
@@ -160,6 +161,7 @@
 
 .holding_fill { color:black; background-color:#FFE38E }
 .throttled_fill { color:black; background-color:#FFE38E; }
+.throttling_fill { color:black; background-color:#FFE38E; }
 .exhausted_fill { color:black; background-color:#FFE38E; }
 
 .pending_fill { color:black;  background-color:#FFF5D6; }

@@ -98,7 +98,7 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     left join {settings.DB_SCHEMA_IDDS}.collections c on r.request_id=c.request_id
     left join {settings.DB_SCHEMA_IDDS}.transforms t on t.transform_id=c.transform_id 
     left join {settings.DB_SCHEMA_IDDS}.processings p on p.transform_id=t.transform_id
-    where c.relation_type=0 and {condition} order by r.request_id desc
+    where (c.relation_type=0 or c.relation_type is null) and {condition} order by r.request_id desc
     """
     cur = connections[connection_name].cursor()
     _logger.info('!!! Using connection named: {}, vendor: {}, host: {}, port: {}, user: {} \n Query: {}'.format(
