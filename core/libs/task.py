@@ -880,9 +880,11 @@ def get_logs_by_taskid(jeditaskid):
 
     tasks_logs = []
 
-    connection = create_es_connection()
+    es_conn = create_es_connection()
 
-    s = Search(using=connection, index='atlas_jedilogs-*')
+    jedi_logs_index = settings.JEDI_LOGS_ESINDEX +'-*'
+
+    s = Search(using=es_conn, index=jedi_logs_index)
 
     s = s.filter('term', **{'jediTaskID': jeditaskid})
 
@@ -900,7 +902,9 @@ def get_logs_by_taskid(jeditaskid):
                 tasks_logs.append({'jediTaskID': jeditaskid, 'logname': type, 'loglevel': levelname,
                                    'lcount': str(levelnames['doc_count'])})
 
-    s = Search(using=connection, index='atlas_pandalogs-*')
+    panda_logs_index = settings.PANDA_LOGS_ESINDEX + '-*'
+
+    s = Search(using=connection, index=panda_logs_index)
 
     s = s.filter('term', **{'jediTaskID': jeditaskid})
 
