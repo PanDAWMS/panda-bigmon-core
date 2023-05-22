@@ -95,7 +95,7 @@ def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort=
     flag_running_job = True
     end = start + length
 
-    s = Search(using=es_conn, index='{0}*'.format(index))
+    s = Search(using=es_conn, index=index)
 
     s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID",
                   "Harvester_WorkerID", "Harvester_ID"])
@@ -215,7 +215,8 @@ def get_split_rule_info(es_conn, jeditaskid):
     :return: split rule messagees
     """
     split_rules = []
-    jedi_logs_index = settings.JEDI_LOGS_ESINDEX +'-*'
+    jedi_logs_index = settings.JEDI_LOGS_ESINDEX
+
     s = Search(using=es_conn, index=jedi_logs_index)
     s = s.source(['@timestamp', 'message'])
     s = s.filter('term', jediTaskID='{0}'.format(jeditaskid))

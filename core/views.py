@@ -6768,11 +6768,11 @@ def esatlasPandaLoggerJson(request):
     if settings.DEPLOYMENT != 'ORACLE_ATLAS':
         return HttpResponse('It does not exist for non ATLAS BipPanDA monitoring system', content_type='text/html')
 
-    connection = create_es_connection()
+    es_conn = create_es_connection()
 
-    index = settings.JEDI_LOGS_ESINDEX
+    jedi_logs_index = settings.JEDI_LOGS_ESINDEX
 
-    s = Search(using=connection, index='{0}*'.format(index))
+    s = Search(using=es_conn, index=jedi_logs_index)
 
     s.aggs.bucket('jediTaskID', 'terms', field='jediTaskID', size=100) \
         .bucket('type', 'terms', field='fields.type.keyword') \

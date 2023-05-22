@@ -45,10 +45,11 @@ if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDE
 PANDA_SERVER_URL = os.environ.get('PANDA_SERVER_URL', 'https://pandaserver.cern.ch/server/panda')
 
 # ElasticSearch
-PANDA_LOGS_ESINDEX = os.environ.get('PANDA_LOGS_ESINDEX', 'atlas_pandalogs')
-JEDI_LOGS_ESINDEX = os.environ.get('JEDI_LOGS_ESINDEX', 'atlas_jedilogs')
-PILOT_LOGS_ESINDEX = os.environ.get('PILOT_LOGS_ESINDEX', 'atlas_pilotlogs')
+PANDA_LOGS_ESINDEX = os.environ.get('PANDA_LOGS_ESINDEX', 'atlas_pandalogs*')
+JEDI_LOGS_ESINDEX = os.environ.get('JEDI_LOGS_ESINDEX', 'atlas_jedilogs*')
+PILOT_LOGS_ESINDEX = os.environ.get('PILOT_LOGS_ESINDEX', 'atlas_pilotlogs*')
 CA_CERTS_ES = os.environ.get('CA_CERTS_ES', '/etc/pki/tls/certs/ca-bundle.trust.crt')
+
 # DB_ROUTERS for atlas's prodtask
 DATABASE_ROUTERS = [
     'core.dbrouter.ProdMonDBRouter',
