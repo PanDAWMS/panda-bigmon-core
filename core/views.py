@@ -6766,11 +6766,13 @@ def esatlasPandaLoggerJson(request):
         return response
 
     if settings.DEPLOYMENT != 'ORACLE_ATLAS':
-        return HttpResponse('It does not exist for non ATLAS BipPanDA monintoring system', content_type='text/html')
+        return HttpResponse('It does not exist for non ATLAS BipPanDA monitoring system', content_type='text/html')
 
-    connection = create_es_connection()
+    es_conn = create_es_connection()
 
-    s = Search(using=connection, index='atlas_jedilogs-*')
+    jedi_logs_index = settings.ES_INDEX_JEDI_LOGS
+
+    s = Search(using=es_conn, index=jedi_logs_index)
 
     s.aggs.bucket('jediTaskID', 'terms', field='jediTaskID', size=100) \
         .bucket('type', 'terms', field='fields.type.keyword') \
@@ -6881,7 +6883,10 @@ def esatlasPandaLogger(request):
     }
     jediCat = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6', 'cat7']
 
-    indices = ['atlas_pandalogs-', 'atlas_jedilogs-']
+    panda_index = settings.ES_INDEX_PANDA_LOGS[:-1]+'-'
+    jedi_index = settings.ES_INDEX_JEDI_LOGS[:-1]+'-'
+
+    indices = [panda_index, jedi_index]
 
     panda = {}
     jedi = {}
@@ -6895,7 +6900,7 @@ def esatlasPandaLogger(request):
 
         res = s.execute()
 
-        if index == "atlas_pandalogs-":
+        if index == panda_index:
             for cat in pandaCat:
                 panda[cat] = {}
             for agg in res['aggregations']['logName']['buckets']:
@@ -6912,7 +6917,7 @@ def esatlasPandaLogger(request):
                         panda[cat][name][type][levelname] = {}
                         panda[cat][name][type][levelname]['logLevel'] = levelname
                         panda[cat][name][type][levelname]['lcount'] = str(levelnames['doc_count'])
-        elif index == "atlas_jedilogs-":
+        elif index == jedi_index:
             for cat in jediCat:
                 jedi[cat] = {}
             for agg in res['aggregations']['logName']['buckets']:
@@ -8251,7 +8256,11 @@ def initSelfMonitor(request):
     else:
         remote = request.META['REMOTE_ADDR']
 
-    urlProto = request.META['wsgi.url_scheme']
+    if 'wsgi.url_scheme' in request.META:
+        urlProto = request.META['wsgi.url_scheme']
+    else:
+        urlProto = 'http'
+
     if 'HTTP_X_FORWARDED_PROTO' in request.META:
         urlProto = request.META['HTTP_X_FORWARDED_PROTO']
     urlProto = str(urlProto) + "://"
@@ -8762,7 +8771,9 @@ def getPayloadLog(request):
     else:
         search_string = request.POST['search']
 
-    payloadlog, job_running_flag, total = get_payloadlog(id, connection, start=start_var, length=length_var, mode=mode,
+    pilot_logs_index = settings.ES_INDEX_PILOT_LOGS
+
+    payloadlog, job_running_flag, total = get_payloadlog(id, connection, pilot_logs_index, start=start_var, length=length_var, mode=mode,
                                                          sort=sort, search_string=search_string)
 
     log_content['payloadlog'] = payloadlog

@@ -13,8 +13,7 @@ from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
-
-def get_es_credentials(instance='es-atlas'):
+def get_es_credentials(instance):
     """
     Getting credentials from settings
     :param instance: str, es-atlas or es-monit
@@ -23,47 +22,69 @@ def get_es_credentials(instance='es-atlas'):
     es_host = None
     es_user = None
     es_password = None
-    if instance == 'es-atlas' and hasattr(settings, 'ES'):
-        es_host = settings.ES.get('esHost', None)
-        es_port = settings.ES.get('esPort', None)
-        es_host = es_host + ':' + es_port + '/es' if es_host else None
-        es_user = settings.ES.get('esUser', None)
-        es_password = settings.ES.get('esPassword', None)
-    elif instance == 'es-monit' and hasattr(settings, 'ES_MONIT'):
-        es_host = settings.ES_MONIT.get('esHost', None)
-        es_port = settings.ES_MONIT.get('esPort', None)
-        es_host = es_host + ':' + es_port + '/es' if es_host else None
-        es_user = settings.ES_MONIT.get('esUser', None)
-        es_password = settings.ES_MONIT.get('esPassword', None)
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
+        if instance == 'es-atlas' and hasattr(settings, 'ES'):
+            es_host = settings.ES.get('esHost', None)
+            es_port = settings.ES.get('esPort', None)
+            es_host = es_host + ':' + es_port + '/es' if es_host else None
+            es_user = settings.ES.get('esUser', None)
+            es_password = settings.ES.get('esPassword', None)
+        elif instance == 'es-monit' and hasattr(settings, 'ES_MONIT'):
+            es_host = settings.ES_MONIT.get('esHost', None)
+            es_port = settings.ES_MONIT.get('esPort', None)
+            es_host = es_host + ':' + es_port + '/es' if es_host else None
+            es_user = settings.ES_MONIT.get('esUser', None)
+            es_password = settings.ES_MONIT.get('esPassword', None)
+    else:
+        if hasattr(settings, 'ES_CLUSTER'):
+            es_host = settings.ELASTIC.get('esHost', None)
+            es_port = settings.ELASTIC.get('esPort', None)
+            es_protocol = settings.ELASTIC.get('esProtocol', None)
+            es_path = settings.ELASTIC.get('esPath', None)
+            es_host = es_protocol + '://' + es_host + ':' + es_port + '/' + es_path if es_host else None
+            es_user = settings.ELASTIC.get('esUser', None)
+            es_password = settings.ELASTIC.get('esPassword', None)
 
     if any(i is None for i in (es_host, es_user, es_password)):
         raise Exception('ES cluster credentials was not found in settings')
     else:
         return es_host, es_user, es_password
 
-
-def create_es_connection(verify_certs=True, timeout=2000, max_retries=10, retry_on_timeout=True, instance='es-atlas'):
+def create_es_connection(instance='es-atlas', protocol='https', timeout=2000, max_retries=10,
+                         retry_on_timeout=True):
     """
     Create a connection to ElasticSearch cluster
     """
     es_host, es_user, es_password = get_es_credentials(instance)
+
     try:
-        connection = Elasticsearch(
-            ['https://{0}'.format(es_host)],
-            http_auth=(es_user, es_password),
-            verify_certs=verify_certs,
-            timeout=timeout,
-            max_retries=max_retries,
-            retry_on_timeout=retry_on_timeout,
-            ca_certs='/etc/pki/tls/certs/ca-bundle.trust.crt'
-        )
+        if protocol == 'https':
+            ca_certs = settings.ES_CA_CERT
+
+            connection = Elasticsearch(
+                ['{0}://{1}'.format(protocol, es_host)],
+                http_auth=(es_user, es_password),
+                verify_certs=True,
+                timeout=timeout,
+                max_retries=max_retries,
+                retry_on_timeout=retry_on_timeout,
+                ca_certs = ca_certs
+            )
+        else:
+            connection = Elasticsearch(
+                ['{0}://{1}'.format(protocol, es_host)],
+                http_auth=(es_user, es_password),
+                timeout=timeout,
+                max_retries=max_retries,
+                retry_on_timeout=retry_on_timeout)
         return connection
+
     except Exception as ex:
         _logger.error(ex)
     return None
 
 
-def get_payloadlog(id, es_conn, start=0, length=50, mode='pandaid', sort='asc', search_string=''):
+def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort='asc', search_string=''):
     """
     Get pilot logs from ATLAS ElasticSearch storage
     """
@@ -73,7 +94,8 @@ def get_payloadlog(id, es_conn, start=0, length=50, mode='pandaid', sort='asc', 
     total = 0
     flag_running_job = True
     end = start + length
-    s = Search(using=es_conn, index='atlas_pilotlogs*')
+
+    s = Search(using=es_conn, index=index)
 
     s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID",
                   "Harvester_WorkerID", "Harvester_ID"])
@@ -103,7 +125,6 @@ def get_payloadlog(id, es_conn, start=0, length=50, mode='pandaid', sort='asc', 
         _logger.error(ex)
 
     return logs_list, flag_running_job, total
-
 
 def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', id_param='jeditaskid'):
     """
@@ -186,7 +207,6 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
 
     return result
 
-
 def get_split_rule_info(es_conn, jeditaskid):
     """
     Get split rule entries from ATLAS Elastic
@@ -195,7 +215,9 @@ def get_split_rule_info(es_conn, jeditaskid):
     :return: split rule messagees
     """
     split_rules = []
-    s = Search(using=es_conn, index='atlas_jedilogs*')
+    jedi_logs_index = settings.ES_INDEX_JEDI_LOGS
+
+    s = Search(using=es_conn, index=jedi_logs_index)
     s = s.source(['@timestamp', 'message'])
     s = s.filter('term', jediTaskID='{0}'.format(jeditaskid))
     q = Q("match", message='change_split_rule')
