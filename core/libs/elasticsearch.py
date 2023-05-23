@@ -38,9 +38,9 @@ def get_es_credentials(instance):
     else:
         if hasattr(settings, 'ES_CLUSTER'):
             es_host = settings.ES_CLUSTER.get('esHost', None)
-            es_port = settings.ES_CLUSTER.get('esPort', None)
-            es_protocol = settings.ES_CLUSTER.get('esProtocol', None)
-            es_path = settings.ES_CLUSTER.get('esPath', None)
+            es_port = settings.ES_CLUSTER.get('esPort', '9200')
+            es_protocol = settings.ES_CLUSTER.get('esProtocol', 'http')
+            es_path = settings.ES_CLUSTER.get('esPath', '')
             es_host = es_protocol + '://' + es_host + ':' + es_port + es_path if es_host else None
             es_user = settings.ES_CLUSTER.get('esUser', None)
             es_password = settings.ES_CLUSTER.get('esPassword', None)
