@@ -37,13 +37,13 @@ def get_es_credentials(instance):
             es_password = settings.ES_MONIT.get('esPassword', None)
     else:
         if hasattr(settings, 'ES_CLUSTER'):
-            es_host = settings.ELASTIC.get('esHost', None)
-            es_port = settings.ELASTIC.get('esPort', None)
-            es_protocol = settings.ELASTIC.get('esProtocol', None)
-            es_path = settings.ELASTIC.get('esPath', None)
-            es_host = es_protocol + '://' + es_host + ':' + es_port + '/' + es_path if es_host else None
-            es_user = settings.ELASTIC.get('esUser', None)
-            es_password = settings.ELASTIC.get('esPassword', None)
+            es_host = settings.ES_CLUSTER.get('esHost', None)
+            es_port = settings.ES_CLUSTER.get('esPort', None)
+            es_protocol = settings.ES_CLUSTER.get('esProtocol', None)
+            es_path = settings.ES_CLUSTER.get('esPath', None)
+            es_host = es_protocol + '://' + es_host + ':' + es_port + es_path if es_host else None
+            es_user = settings.ES_CLUSTER.get('esUser', None)
+            es_password = settings.ES_CLUSTER.get('esPassword', None)
 
     if any(i is None for i in (es_host, es_user, es_password)):
         raise Exception('ES cluster credentials was not found in settings')
