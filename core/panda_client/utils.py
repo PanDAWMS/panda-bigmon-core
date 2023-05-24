@@ -63,7 +63,7 @@ def kill_task(auth, jeditaskid):
             resp = post(url, headers=auth, data=data)
             resp = resp.text
         except Exception as ex:
-            resp = "ERROR killTask: %s %s" % (ex, resp.status_code)
+            resp = "ERROR killTask: %s" % (ex)
     else:
         resp = 'Jeditaskid is not defined'
 
