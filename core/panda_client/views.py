@@ -29,7 +29,6 @@ def client(request):
                 jeditaskid = data['taskid']
             else:
                 jeditaskid = None
-                info['text'] ='Error! JeditaskID is none'
 
             ###Finish Task
             if data['action'] == 'finishtask' and jeditaskid is not None:
@@ -53,7 +52,10 @@ def client(request):
                 else:
                     info['redirect'] = 'false'
             else:
-                info['text'] = 'Operation error'
+                if jeditaskid is None:
+                    info['text'] = 'Error! JeditaskID is none'
+                else:
+                    info['text'] = 'Operation error'
         else:
             info['text'] = 'Request body is empty'
     else:
