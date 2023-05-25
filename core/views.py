@@ -8414,6 +8414,50 @@ def getEventsChunks(request):
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='application/json')
 
 
+def getTaskDataMovementData(request, jeditaskid=None):
+    """
+    Getting information of volume of input data has been moved initiated by PanDA
+    :param request: request
+    :param jeditaskid: int
+    :return:
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    data_movement_info = {}
+
+    if not jeditaskid:
+        return JsonResponse(data={}, status=400)
+
+    query_str = """
+    with a as (
+    select pandaid,dispatchdblock from atlas_panda.jobsarchived4 where jeditaskid=:jeditaskid and dispatchdblock is not null 
+    union 
+    select pandaid,dispatchdblock from atlas_pandaarch.jobsarchived where jeditaskid=:jeditaskid and dispatchdblock is not null
+    ) 
+    select count(*) as n, count(distinct lfn) as nfiles, count(distinct pandaid) as njobs, sum(fsize) fsize_sum from (
+        select f.pandaid, f.lfn, fsize from atlas_panda.filestable4 f, a 
+            where jeditaskid=:jeditaskid  and f.pandaid=a.pandaid and f.dispatchdblock=a.dispatchdblock 
+        union 
+        select f.pandaid, f.lfn, fsize from atlas_pandaarch.filestable_arch f, a 
+            where jeditaskid=:jeditaskid  and f.pandaid=a.pandaid and f.dispatchdblock=a.dispatchdblock
+    )
+    """
+    cur = connection.cursor()
+    cur.execute(query_str, {'jeditaskid': jeditaskid})
+    result = cur.fetchall()
+    cur.close()
+
+    if len(result) > 0 and result[0][0] > 0:
+        data_movement_info['n'] = result[0][0]
+        data_movement_info['nfiles'] = result[0][1]
+        data_movement_info['njobs'] = result[0][2]
+        data_movement_info['fsize_sum'] = round(convert_bytes(result[0][3], 'GB'), 2) if result[0][3] is not None else 0
+
+    return JsonResponse(data_movement_info)
+
+
 @never_cache
 def getJobStatusLog(request, pandaid=None):
     """

@@ -63,6 +63,8 @@ urlpatterns = [
     re_path(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
     re_path(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
     re_path(r'^taskflow/(?P<jeditaskid>.*)/$', coremon_views.taskFlowDiagram, name='taskFlowDiagram'),
+    re_path(r'^api/taskdatamovement/(?P<jeditaskid>.*)/$', coremon_views.getTaskDataMovementData, name='taskdatamovement'),
+
 
 
     re_path(r'^errors/$', coremon_views.errorSummary, name='errorSummary'),

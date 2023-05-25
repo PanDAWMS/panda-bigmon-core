@@ -306,7 +306,8 @@
           <a href="#taskflow" onclick="toggletaskflow() ">Show taskflow</a>
           <a href="#statuslog" onclick="toggleStatusLog() ">Show task status log</a>
           {% if viewParams.MON_VO == 'ATLAS' %}
-          <a href="#tasklogs" onclick="toggleTaskLogs() ">Show task logs from ElasticSearch</a>
+            <a href="#tasklogs" onclick="toggleTaskLogs() ">Show task logs from ElasticSearch</a>
+            <a href="#datamovement" onclick="toggleTaskDataMovement() ">Show task data movement summary</a>
           {% endif %}
           <a href="#jobparams">Jump to job parameters</a>
           {% if jobscoutids|length > 0 %}
@@ -506,6 +507,19 @@
 
       <div class="c3-chart-block" ng-repeat="plot in taskinfo.jc_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
     </div>
+  </div>
+  </div>
+
+  <div id="datamovement" ng-app="taskInfoAppDM" ng-controller="TaskDataMovementController">
+  <div class="callout info ng-hide" ng-hide="datamovement.container.is_hidden">
+    <h6>Data Movement Summary: </h6>
+    <div ng-bind-html="datamovement.message"></div>
+    <p class="ng-hide" ng-hide="datamovement.content.is_hidden">
+      In total, <span class="bold" ng-bind="datamovement.data.n"></span> times
+      <span class="bold" ng-bind="datamovement.data.nfiles"></span> unique files have been moved by PanDA for
+      <span class="bold" ng-bind="datamovement.data.njobs"></span> jobs in this tasks,
+      the total volume is <span class="bold" ng-bind="datamovement.data.fsize_sum"></span> GB.
+    </p>
   </div>
   </div>
 
@@ -920,9 +934,9 @@ app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
     };
     $scope.status_log.get = function () {
         $http({
-                url: "{% url 'gettaskstatuslog' jeditaskid %}",
-                method: "GET",
-                params: {'json':1}
+              url: "{% url 'gettaskstatuslog' jeditaskid %}",
+              method: "GET",
+              params: {'json':1}
             }
         ).then(function success(response) {
             $scope.status_log.message = "";
@@ -980,7 +994,6 @@ app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
                     data: "reason",
                     sDefaultContent: "-",
                 },
-
             ],
             "createdRow": function ( row, data, index ) {
                 $('td', row).eq(2).addClass(data['status'] + '_fill');
@@ -1109,6 +1122,46 @@ app.controller('TaskLogsController', function ($scope, $http, $sce) {
     };
 });
 
+app.controller('TaskDataMovementController', function ($scope, $http, $sce) {
+   $scope.datamovement = {
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      data: {},
+      container: {
+        is_hidden: true,
+      },
+      content: {
+        is_hidden: true,
+      }
+    };
+   $scope.datamovement.get = function () {
+        $http({
+                url: "{% url 'taskdatamovement' jeditaskid %}",
+                method: "GET",
+                params: {'json':1}
+            }
+        ).then(function success(response) {
+            $scope.datamovement.data = angular.fromJson(response.data);
+            if (Object.keys($scope.datamovement.data).length > 0) {
+              $scope.datamovement.message = $sce.trustAsHtml("");
+              $scope.datamovement.content.is_hidden = false;
+            }
+            else {
+              $scope.datamovement.message = $sce.trustAsHtml("<p>No data was moved in this task by PanDA");
+            }
+          },
+          function error(response) {
+            console.log(response);
+            $scope.datamovement.message = $sce.trustAsHtml('<p>Failed to load data :( </p>');
+          }
+        );
+   };
+
+   $scope.datamovement.toggle = function() {
+      $scope.datamovement.container.is_hidden = false;
+      $scope.datamovement.get();
+   };
+});
+
 $(document).ready(function () {
     $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
     var dataset_list = {{ datasets|safe }};
@@ -1122,6 +1175,9 @@ $(document).ready(function () {
     }
     if (url.indexOf("#tasklogs") > -1) {
         toggleTaskLogs();
+    }
+    if (url.indexOf("#taskdatamovement") > -1) {
+      toggleTaskDataMovement();
     }
 });
 
@@ -1154,6 +1210,15 @@ function toggleTaskLogs() {
     if (scope.task_logs.is_hidden) {
       scope.$apply(function () {
         scope.task_logs.toggle();
+      });
+    }
+}
+
+function toggleTaskDataMovement() {
+    let scope = angular.element(document.getElementById('datamovement')).scope();
+    if (scope.datamovement.container.is_hidden) {
+      scope.$apply(function () {
+        scope.datamovement.toggle();
       });
     }
 }
