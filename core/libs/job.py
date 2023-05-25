@@ -40,12 +40,23 @@ def is_debug_mode(job):
     :param job: dict
     :return: bool
     """
+    is_debug = False
+
     if ('specialhandling' in job and not job['specialhandling'] is None and 'debug' in job['specialhandling']) or (
             'commandtopilot' in job and job['commandtopilot'] is not None and len(job['commandtopilot']) > 0 and job['commandtopilot'] != 'tobekilled'
     ):
-        return True
+        is_debug = True
+        _logger.debug("Debug mode: active pandaid: {0} specialhandling: {1} commandtopilot: {2}".format(job['pandaid'], job['specialhandling'], job['commandtopilot']))
     else:
-        return False
+        if ('specialhandling' in job and 'commandtopilot' in job):
+            _logger.debug(
+                "Debug mode: not active pandaid: {0} specialhandling: {1} commandtopilot: {2}".format(
+                    job['pandaid'], job['specialhandling'], job['commandtopilot']))
+        else:
+            _logger.debug(
+                "Debug mode: not possible to determine by current parameters pandaid: {0}".format(
+                    job['pandaid']))
+    return is_debug
 
 
 def is_job_active(jobststus):
