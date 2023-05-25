@@ -65,10 +65,11 @@ def kill_task(auth, jeditaskid):
         except Exception as ex:
             resp = "ERROR killTask: %s" % (ex)
             _logger.error(ex)
+        _logger.debug("Finish task command. jeditaskid: {0}, properErrorCode: {1},, URL: {2}, response: {3}".
+                      format(data['jediTaskID'], data['properErrorCode'], url, resp))
     else:
         resp = 'Jeditaskid is not defined'
-    _logger.debug("Finish task command. jeditaskid: {0}, properErrorCode: {1}, URL: {2}, response: {3}".
-                  format(data['jediTaskID'], data['properErrorCode'], url, resp))
+
     return resp
 
 
@@ -96,12 +97,11 @@ def finish_task(auth, jeditaskid, soft=True):
             resp = post(url, headers=auth, data=data)
             resp = resp.text
         except Exception as ex:
-            resp = "ERROR finishTask: %s" % (ex)
-            _logger.error(ex)
+            resp = "ERROR finishTask: %s %s" % (ex, resp.status_code)
     else:
         resp = 'Jeditaskid is not defined'
     _logger.debug("Finish task command. jeditaskid: {0}, properErrorCode: {1}, soft: {2}, URL: {3}, response: {4}".
-                  format(data['jediTaskID'], data['properErrorCode'], data['soft'], url, resp))
+                      format(data['jediTaskID'], data['properErrorCode'], data['soft'], url, resp))
     return resp
 
 
