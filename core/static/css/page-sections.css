@@ -124,6 +124,10 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
   /*padding: 0 0.3rem 0 0.3rem;*/
 }
 
+span.bold {
+  font-weight: bold;
+}
+
 .panel {
   width: 600px;
   height: 500px;
@@ -204,6 +208,11 @@ div.bp-selected-params p {
 .callout {
   border: none;
   padding: 0.7rem;
+}
+.callout h6  {
+  font-size: 0.875rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
 }
 .callout p  {
   font-size: 0.875rem;
