@@ -46,7 +46,7 @@ def is_debug_mode(job):
             'commandtopilot' in job and job['commandtopilot'] is not None and len(job['commandtopilot']) > 0 and job['commandtopilot'] != 'tobekilled'
     ):
         is_debug = True
-        _logger.debug("Debug mode: active pandaid: {0} specialhandling: {1} commandtopilot: {2}".format(job['pandaid'], job['specialhandling'], job['commandtopilot']))
+        _logger.debug("Debug mode: active pandaid: {0} specialhandling: {1}".format(job['pandaid'], job['specialhandling']))
     else:
         if ('specialhandling' in job and 'commandtopilot' in job):
             _logger.debug(
