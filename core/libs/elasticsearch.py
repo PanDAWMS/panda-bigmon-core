@@ -35,20 +35,20 @@ def get_es_credentials(instance):
             es_host = es_host + ':' + es_port + '/es' if es_host else None
             es_user = settings.ES_MONIT.get('esUser', None)
             es_password = settings.ES_MONIT.get('esPassword', None)
+
+        if any(i is None for i in (es_host, es_user, es_password)):
+            raise Exception('ES cluster credentials was not found in settings')
     else:
         if hasattr(settings, 'ES_CLUSTER'):
-            es_host = settings.ES_CLUSTER.get('esHost', None)
+            es_host = settings.ES_CLUSTER.get('esHost', '')
             es_port = settings.ES_CLUSTER.get('esPort', '9200')
             es_protocol = settings.ES_CLUSTER.get('esProtocol', 'http')
             es_path = settings.ES_CLUSTER.get('esPath', '')
-            es_host = es_protocol + '://' + es_host + ':' + es_port + es_path if es_host else None
-            es_user = settings.ES_CLUSTER.get('esUser', None)
-            es_password = settings.ES_CLUSTER.get('esPassword', None)
+            es_host = es_protocol + '://' + es_host + ':' + es_port + es_path
+            es_user = settings.ES_CLUSTER.get('esUser', '')
+            es_password = settings.ES_CLUSTER.get('esPassword', '')
 
-    if any(i is None for i in (es_host, es_user, es_password)):
-        raise Exception('ES cluster credentials was not found in settings')
-    else:
-        return es_host, es_user, es_password
+    return es_host, es_user, es_password
 
 def create_es_connection(instance='es-atlas', protocol='https', timeout=2000, max_retries=10,
                          retry_on_timeout=True):
