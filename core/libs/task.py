@@ -904,7 +904,7 @@ def get_logs_by_taskid(jeditaskid):
 
     panda_logs_index = settings.ES_INDEX_PANDA_LOGS
 
-    s = Search(using=connection, index=panda_logs_index)
+    s = Search(using=es_conn, index=panda_logs_index)
 
     s = s.filter('term', **{'jediTaskID': jeditaskid})
 
