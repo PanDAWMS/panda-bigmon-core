@@ -252,7 +252,7 @@
             {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
             {% else %} class='{{ task.superstatus }}_fill'
             {% endif %}>
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">
+            <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task">
                 {% if task.superstatus %}
                     <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %}
                     <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}
