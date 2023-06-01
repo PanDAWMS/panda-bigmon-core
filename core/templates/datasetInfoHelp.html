@@ -5,14 +5,8 @@
 <p>This page accumulates all the information of JEDI dataset.
 </p>
 <p>
-See the JEDI twiki for documentation on PanDA JEDI dataset
-<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_dataset_status">status transitions</a> and
-<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#The_JEDI_Datasets_table">schema</a>.
-</p>
-
-<p>
-Be sure to familiarize yourself with
-<a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJediAnalysis#Differences_from_user_s_point_of">JEDI based analysis differences from a user perspective</a>, important ones relate to datasets.
+See the JEDI documentation on PanDA JEDI dataset
+<a href="https://panda-wms.readthedocs.io/en/latest/architecture/jedi.html#dataset">status transitions</a>.
 </p>
 
 <p><b>Dataset states description:</b></p>
@@ -26,7 +20,6 @@ Be sure to familiarize yourself with
 {% if show == 'all' or  dsrec.status == 'running' %} <li>  Status <b class='running'>running</b> indicates files are being added to the output dataset {% endif %}</li>
 {% if show == 'all' or  dsrec.status == 'prepared' %} <li>  Status <b class='prepared'>prepared</b> indicates the dataset is ready for post-processing {% endif %}</li>
 </ul>
-
 
 
 </div>

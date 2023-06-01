@@ -138,7 +138,7 @@
 
         <td> <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </td>
 
-		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %} <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}</a></td>
+		<td  class='{{task.superstatus}}_fill'><a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task">{% if task.superstatus %} <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %} <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}</a></td>
         <td>
             {{ task.dsinfo.nfiles }} | <span class='finished'> {{ task.dsinfo.nfilesfinished }}</span> | <span class='failed'>{{ task.dsinfo.nfilesfailed }}</span>
         </td>

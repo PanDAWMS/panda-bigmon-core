@@ -134,16 +134,16 @@
         <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
         <td class='{{ task.status }}_fill mid'>
           {% if task.superstatus %}
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+            <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task"
                   class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</a>
           {% else %}
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+            <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task"
                class="bp_tooltip task_{{ task.status }}"><b>{{ task.status }}</b></a>
           {% endif %}
         </td>
         {% if task.superstatus and task.superstatus != task.status %}
           <td class='{{ task.status }}_fill'>
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+            <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task"
                class="bp_tooltip task_{{ task.status }}"><b>{{ task.status }}</b></a>
           </td>
         {% endif %}
@@ -335,7 +335,7 @@
   <div class="bp-dropdown-button">
       <button class="dropdown">Other plots</button>
       <div class="dropdown-items">
-          {% if not task.tasktype == 'anal' %}
+          {% if not task.tasktype == 'anal' and viewParams.MON_VO == 'ATLAS' %}
               <a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Gantt diagram)</a>
               <a href="{% url 'taskchain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Tree diagram)</a>
           {% endif %}
@@ -1176,7 +1176,7 @@ $(document).ready(function () {
     if (url.indexOf("#tasklogs") > -1) {
         toggleTaskLogs();
     }
-    if (url.indexOf("#taskdatamovement") > -1) {
+    if (url.indexOf("#datamovement") > -1) {
       toggleTaskDataMovement();
     }
 });
