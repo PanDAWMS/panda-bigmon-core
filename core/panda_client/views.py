@@ -22,12 +22,20 @@ def client(request):
     if auth is not None and ('Authorization' in auth and 'Origin' in auth):
         if len(request.session['requestParams']) > 0:
             data = request.session['requestParams']
+
+            if 'taskID' in data and data['taskID'] is not None:
+                jeditaskid = data['taskID']
+            elif 'taskid' in data and data['taskid'] is not None:
+                jeditaskid = data['taskid']
+            else:
+                jeditaskid = None
+
             ###Finish Task
-            if data['action'] == 'finishtask' and ('taskID' in data and data['taskID'] is not None):
-                info['text'] = finish_task(auth=auth, jeditaskid=data['taskID'])
+            if data['action'] == 'finishtask' and jeditaskid is not None:
+                info['text'] = finish_task(auth=auth, jeditaskid=jeditaskid)
             ### Kill Task
-            elif data['action'] == 'killtask' and ('taskID' in data and data['taskID'] is not None):
-                info['text'] = kill_task(auth=auth, jeditaskid=data['taskID'])
+            elif data['action'] == 'killtask' and  jeditaskid is not None:
+                info['text'] = kill_task(auth=auth, jeditaskid=jeditaskid)
             ### Set debug mode
             elif data['action'] == 'setdebugmode' and ('pandaid' in data and data['pandaid'] is not None):
                 if ('params' in data and data['params'] is not None):
@@ -44,7 +52,10 @@ def client(request):
                 else:
                     info['redirect'] = 'false'
             else:
-                info['text'] = 'Operation error'
+                if jeditaskid is None:
+                    info['text'] = 'Error! JeditaskID is none'
+                else:
+                    info['text'] = 'Operation error'
         else:
             info['text'] = 'Request body is empty'
     else:
