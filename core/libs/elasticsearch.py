@@ -181,7 +181,7 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
     data = ''.join(jsons)
 
     # send data via POST request
-    es_host, es_user, es_password = get_es_credentials()
+    es_host, es_user, es_password = get_es_credentials(instance='es-atlas')
     if '/' in es_host:
         es_host = es_host.split('/')[0]
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
