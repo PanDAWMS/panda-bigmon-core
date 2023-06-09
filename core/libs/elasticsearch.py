@@ -35,20 +35,20 @@ def get_es_credentials(instance):
             es_host = es_host + ':' + es_port + '/es' if es_host else None
             es_user = settings.ES_MONIT.get('esUser', None)
             es_password = settings.ES_MONIT.get('esPassword', None)
+
+        if any(i is None for i in (es_host, es_user, es_password)):
+            raise Exception('ES cluster credentials was not found in settings')
     else:
         if hasattr(settings, 'ES_CLUSTER'):
-            es_host = settings.ES_CLUSTER.get('esHost', None)
+            es_host = settings.ES_CLUSTER.get('esHost', '')
             es_port = settings.ES_CLUSTER.get('esPort', '9200')
             es_protocol = settings.ES_CLUSTER.get('esProtocol', 'http')
             es_path = settings.ES_CLUSTER.get('esPath', '')
-            es_host = es_protocol + '://' + es_host + ':' + es_port + es_path if es_host else None
-            es_user = settings.ES_CLUSTER.get('esUser', None)
-            es_password = settings.ES_CLUSTER.get('esPassword', None)
+            es_host = es_protocol + '://' + es_host + ':' + es_port + es_path
+            es_user = settings.ES_CLUSTER.get('esUser', '')
+            es_password = settings.ES_CLUSTER.get('esPassword', '')
 
-    if any(i is None for i in (es_host, es_user, es_password)):
-        raise Exception('ES cluster credentials was not found in settings')
-    else:
-        return es_host, es_user, es_password
+    return es_host, es_user, es_password
 
 def create_es_connection(instance='es-atlas', protocol='https', timeout=2000, max_retries=10,
                          retry_on_timeout=True):
@@ -93,6 +93,7 @@ def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort=
     jobs = []
     total = 0
     flag_running_job = True
+
     end = start + length
 
     s = Search(using=es_conn, index=index)
@@ -106,15 +107,16 @@ def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort=
         if len(jobs) == 0:
             flag_running_job = False
         if sort == 'asc':
-            s = s.filter('term', PandaJobID__keyword='{0}'.format(id)).sort("@timestamp")
+            s = s.query('match', PandaJobID='{0}'.format(id)).sort("@timestamp")
         else:
-            s = s.filter('term', PandaJobID__keyword='{0}'.format(id)).sort("-@timestamp")
+            s = s.query('match', PandaJobID='{0}'.format(id)).sort("-@timestamp")
         if search_string != '':
             q = Q("multi_match", query=search_string, fields=['level', 'message'])
             s = s.query(q)
     elif mode == 'jeditaskid':
-        s = s.filter('term', TaskID__keyword='{0}'.format(id)).sort("@timestamp")
+        s = s.query('match', TaskID='{0}'.format(id)).sort("@timestamp")
     try:
+        _logger.debug('ElasticSearch query: {0}'.format(str(s.to_dict())))
         response = s[start:end].execute()
 
         total = response.hits.total.value
@@ -181,7 +183,7 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
     data = ''.join(jsons)
 
     # send data via POST request
-    es_host, es_user, es_password = get_es_credentials()
+    es_host, es_user, es_password = get_es_credentials(instance='es-atlas')
     if '/' in es_host:
         es_host = es_host.split('/')[0]
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
