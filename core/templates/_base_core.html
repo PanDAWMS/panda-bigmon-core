@@ -483,17 +483,6 @@
 
 <img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
 
-{% if debuginfo %}
-<p>********** DEBUG:<br>
-{{ debuginfo|safe }}
-<br><br>********** Request:<br>{{ request }}
-<br><br>********** Session:<br>
-{% for key, val in request.session.items %}
-{{ key }} = {{ val }} <br>
-{% endfor %}
-</p>
-{% endif %}
-
 </div>
 
 

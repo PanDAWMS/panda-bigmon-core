@@ -288,13 +288,6 @@ def initRequest(request, callselfmon=True):
     if 'timerange' in request.session:
         del request.session['timerange']
 
-    if 'debug' in request.GET and request.GET['debug'] == 'insider':
-        request.session['debug'] = True
-    elif settings.DEBUG is True:
-        request.session['debug'] = True
-    else:
-        request.session['debug'] = False
-
     if len(hostname) > 0:
         request.session['hostname'] = hostname
 
@@ -1086,15 +1079,6 @@ def mainPage(request):
         return response
     setupView(request)
 
-    debuginfo = None
-    if request.session['debug']:
-        debuginfo = "<h2>Debug info</h2>"
-        for name in dir(settings):
-            debuginfo += "%s = %s<br>" % (name, getattr(settings, name))
-        debuginfo += "<br>******* Environment<br>"
-        for env in os.environ:
-            debuginfo += "%s = %s<br>" % (env, os.environ[env])
-
     if not is_json_request(request):
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -1103,7 +1087,6 @@ def mainPage(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'debuginfo': debuginfo,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
