@@ -93,6 +93,7 @@ def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort=
     jobs = []
     total = 0
     flag_running_job = True
+
     end = start + length
 
     s = Search(using=es_conn, index=index)
@@ -106,15 +107,16 @@ def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort=
         if len(jobs) == 0:
             flag_running_job = False
         if sort == 'asc':
-            s = s.filter('term', PandaJobID__keyword='{0}'.format(id)).sort("@timestamp")
+            s = s.query('match', PandaJobID='{0}'.format(id)).sort("@timestamp")
         else:
-            s = s.filter('term', PandaJobID__keyword='{0}'.format(id)).sort("-@timestamp")
+            s = s.query('match', PandaJobID='{0}'.format(id)).sort("-@timestamp")
         if search_string != '':
             q = Q("multi_match", query=search_string, fields=['level', 'message'])
             s = s.query(q)
     elif mode == 'jeditaskid':
-        s = s.filter('term', TaskID__keyword='{0}'.format(id)).sort("@timestamp")
+        s = s.query('match', TaskID='{0}'.format(id)).sort("@timestamp")
     try:
+        _logger.debug('ElasticSearch query: {0}'.format(str(s.to_dict())))
         response = s[start:end].execute()
 
         total = response.hits.total.value
