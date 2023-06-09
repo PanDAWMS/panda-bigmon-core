@@ -5,10 +5,10 @@ import logging
 from django.db import connection
 from django.db.models import Count
 from django.conf import settings
-from core.libs.exlib import dictfetchall
+from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_table
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, get_tmp_table_name_debug
 
-from core.common.models import JediEvents
+from core.common.models import JediEvents, GetEventsForTask
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -118,3 +118,38 @@ def event_summary_for_task(mode, query, **kwargs):
         eventslist.append(eventstatus)
 
     return eventslist
+
+
+def add_event_summary_to_tasklist(tasks, transaction_key=None):
+    """
+    Adding 'eventsData' to tasks
+    :param tasks:
+    :param transaction_key:
+    :return:
+    """
+
+    tmp_table_name = get_tmp_table_name()
+    if transaction_key is None:
+        # insert taskids into tmp table
+        taskl = [t['jeditaskid'] for t in tasks]
+        transaction_key = insert_to_temp_table(taskl)
+
+    # we get here events data
+    event_info_dict = {}
+    extra_str = "jeditaskid in (select id from {} where transactionkey={})".format(tmp_table_name, transaction_key)
+    task_event_info = GetEventsForTask.objects.extra(where=[extra_str]).values('jeditaskid', 'totevrem', 'totev')
+
+    # We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
+    for t in task_event_info:
+        event_info_dict[t["jeditaskid"]] = {
+            "jeditaskid" : t["jeditaskid"],
+            "totevrem" : t["totevrem"],
+            "totev" : t["totev"]
+        }
+
+    # adding event data to tasks
+    for task in tasks:
+        if task['jeditaskid'] in event_info_dict.keys():
+            task['eventsData'] = event_info_dict[task['jeditaskid']]
+
+    return tasks

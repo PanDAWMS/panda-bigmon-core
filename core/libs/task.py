@@ -10,7 +10,8 @@ from elasticsearch_dsl import Search
 
 from django.db import connection
 from django.db.models import Count, Sum
-from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks
+from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks, \
+    JediJobRetryHistory
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
@@ -94,22 +95,24 @@ def cleanTaskList(tasks, **kwargs):
 
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
-        dvalues = ('jeditaskid', 'type', 'masterid', 'nfiles', 'nfilesfinished', 'nfilesfailed', 'nfilesmissing')
+        dvalues = (
+            'jeditaskid', 'type', 'masterid',
+            'nfiles', 'nfilesfinished', 'nfilesfailed', 'nfilesmissing', 'nfilestobeused',
+            'nevents', 'neventsused'
+        )
         dvalues = list(set(dvalues) & set([f.name for f in JediDatasets._meta.get_fields()]))
         dsquery = {
             'type__in': ['input', 'pseudo_input'],
             'masterid__isnull': True,
         }
         extra = '(1=1)'
-
         taskl = [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
-
         if len(taskl) <= settings.DB_N_MAX_IN_QUERY:
             dsquery['jeditaskid__in'] = taskl
         else:
             # Backend dependable
             tk = insert_to_temp_table(taskl)
-            extra = "JEDITASKID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})".format(get_tmp_table_name(), tk)
+            extra = "jeditaskid in (select id from {} where transactionkey={})".format(get_tmp_table_name(), tk)
 
         dsets = JediDatasets.objects.filter(**dsquery).extra(where=[extra]).values(*dvalues)
         ds_dict = {}
@@ -120,22 +123,17 @@ def cleanTaskList(tasks, **kwargs):
                     ds_dict[taskid] = []
                 ds_dict[taskid].append(ds)
 
+        input_dataset_rse = {}
         if add_datasets_locality:
             input_dataset_rse = get_dataset_locality(taskl)
 
         for task in tasks:
-            if 'totevrem' not in task:
-                task['totevrem'] = None
-
-            dsinfo = {}
-            if task['jeditaskid'] in ds_dict:
-                task_dsets = ds_dict[task['jeditaskid']]
-            else:
-                task_dsets = []
+            task_dsets = ds_dict[task['jeditaskid']] if task['jeditaskid'] in ds_dict else []
             task_dsets, dsinfo = calculate_dataset_stats(task_dsets)
-
             task['dsinfo'] = dsinfo
             task.update(dsinfo)
+
+        tasks = flag_tasks_with_scouting_failures(tasks, ds_dict)
 
     if sortby is not None:
         if sortby == 'creationdate-asc':
@@ -164,6 +162,31 @@ def cleanTaskList(tasks, **kwargs):
             tasks = sorted(tasks, key=lambda x: x['cloud'], reverse=True)
     else:
         tasks = sorted(tasks, key=lambda x: -x['jeditaskid'])
+
+    return tasks
+
+
+def tasks_not_updated(request, query, state='submitted', hours_since_update=36, extra_str='(1=1)'):
+    """
+    Getting tasks which stuck in a state for more than N hours
+    :param request:
+    :param query:
+    :param state:
+    :param hours_since_update:
+    :param extra_str:
+    :return: tasks: list of dicts
+    """
+    if 'status' in request.session['requestParams']:
+        query['status'] = request.session['requestParams']['status']
+    else:
+        query['status'] = state
+    if 'statenotupdated' in request.session['requestParams']:
+        hours_since_update = int(request.session['requestParams']['statenotupdated'])
+
+    query['statechangetime__lte'] = (
+            datetime.utcnow() - timedelta(hours=hours_since_update)).strftime(settings.DATETIME_FORMAT)
+
+    tasks = JediTasks.objects.filter(**query).extra(where=[extra_str]).values()
 
     return tasks
 
@@ -413,6 +436,7 @@ def calculate_dataset_stats(dsets):
         'pctfailed': 0,
         'neventsTot': 0,
         'neventsUsedTot': 0,
+        'neventsRemaining': 0,
         'neventsOutput': 0,
     }
     if not dsets or len(dsets) == 0:
@@ -450,8 +474,9 @@ def calculate_dataset_stats(dsets):
                 # OUTPUT0 - the first and the main steam of outputs
                 dsinfo['neventsOutput'] += int(ds['nevents']) if 'nevents' in ds and ds['nevents'] and ds['nevents'] > 0 else 0
 
-        dsinfo['pctfinished'] = round_to_n_digits(100.*dsinfo['nfilesfinished']/dsinfo['nfiles'], 1, method='floor') if dsinfo['nfiles'] > 0 else 0
-        dsinfo['pctfailed'] = round_to_n_digits(100.*dsinfo['nfilesfailed']/dsinfo['nfiles'], 1, method='floor') if dsinfo['nfiles'] > 0 else 0
+        dsinfo['neventsRemaining'] = dsinfo['neventsTot'] - dsinfo['neventsUsedTot']
+        dsinfo['pctfinished'] = round_to_n_digits(100.*dsinfo['nfilesfinished']/dsinfo['nfiles'], 0, method='floor') if dsinfo['nfiles'] > 0 else 0
+        dsinfo['pctfailed'] = round_to_n_digits(100.*dsinfo['nfilesfailed']/dsinfo['nfiles'], 0, method='floor') if dsinfo['nfiles'] > 0 else 0
 
     return dsets, dsinfo
 
@@ -855,27 +880,6 @@ def get_dataset_locality(jeditaskid):
     return rse_dict
 
 
-def get_prod_slice_by_taskid(jeditaskid):
-    try:
-        jsquery = """
-            SELECT tasks.taskid, tasks.PR_ID, tasks.STEP_ID, datasets.SLICE from ATLAS_DEFT.T_PRODUCTION_TASK tasks 
-            JOIN ATLAS_DEFT.T_PRODUCTION_STEP steps on tasks.step_id = steps.step_id 
-            JOIN ATLAS_DEFT.T_INPUT_DATASET datasets ON datasets.IND_ID=steps.IND_ID  
-            where tasks.taskid=:taskid
-        """
-        cur = connection.cursor()
-        cur.execute(jsquery, {'taskid': jeditaskid})
-        task_prod_info = cur.fetchall()
-        cur.close()
-    except Exception as ex:
-        task_prod_info = None
-        _logger.exception('Failed to get slice by taskid from DEFT DB:\n{}'.format(ex))
-    slice = None
-    if task_prod_info:
-        slice = task_prod_info[0][3]
-    return slice
-
-
 def get_logs_by_taskid(jeditaskid):
 
     tasks_logs = []
@@ -1035,3 +1039,50 @@ def get_task_flow_data(jeditaskid):
     # transform data for plot and return
     return executeTF({'data': {'datasets': dataset_dict, } })
 
+
+def flag_tasks_with_scouting_failures(tasks, ds_dict):
+    """
+    Add flags to tasks if they seam to have problems during scouting step.
+    It will result in change of color coding for status cell
+    :param tasks: list of dicts
+    :param ds_dict: dict with datasets for every task
+    :return: tasks
+    """
+    taskl = []
+    for task in tasks:
+        if task['jeditaskid'] in ds_dict:
+            # tasks suspected in failures during scouting
+            if task['status'] in ('failed', 'broken') and True in [
+                (ds['nfilesfailed'] > ds['nfilestobeused']) for ds in ds_dict[task['jeditaskid']] if ds['type'] == 'input' and ds['nfilesfailed'] and ds['nfilestobeused']]:
+                task['failedscouting'] = True
+            # scouting has critical failures
+            elif task['status'] == 'scouting' and True in [
+                (ds['nfilesfailed'] > 0) for ds in ds_dict[task['jeditaskid']] if ds['type'] == 'input' and ds['nfilesfailed'] ]:
+                task['scoutinghascritfailures'] = True
+            elif task['status'] == 'scouting' and sum(
+                    [ds['nfilesfailed'] for ds in ds_dict[task['jeditaskid']] if ds['type'] == 'input' and ds['nfilesfailed']]) == 0:
+                # potentially non-critical failures during scouting, flag it, and will check if there are job retries
+                task['scoutinghasnoncritfailures'] = True
+                taskl.append(task['jeditaskid'])
+
+    tquery = {
+        'relationtype': 'retry'
+    }
+    extra_str = '(1=1)'
+    if len(taskl) > settings.DB_N_MAX_IN_QUERY:
+        tmp_table_name = get_tmp_table_name()
+        transaction_key = insert_to_temp_table(taskl)
+        extra_str += " and jeditaskid in (select id from {} where transactionkey={})".format(tmp_table_name, transaction_key)
+    else:
+        tquery['jeditaskid__in'] = taskl
+    retries = JediJobRetryHistory.objects.filter(**tquery).extra(where=[extra_str]).values('jeditaskid')
+    retries_dict = {}
+    for r in retries:
+        if r['jeditaskid'] not in retries_dict:
+            retries_dict[r['jeditaskid']] = True
+
+    for task in tasks:
+        if 'scoutinghasnoncritfailures' in task and task['scoutinghasnoncritfailures']:
+            task['scoutinghasnoncritfailures'] = retries_dict[task['jeditaskid']] if task['jeditaskid'] in retries_dict else False
+
+    return tasks
