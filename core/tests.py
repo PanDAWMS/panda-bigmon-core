@@ -24,7 +24,9 @@ class BPCoreTest(unittest.TestCase):
         }
         # get last finished job
         client = Client()
-        response = client.get('/jobs/?json&datasets=true&limit=1&jobstatus=finished&days=7&sortby=time-descending')
+        response = client.get(
+            '/jobs/?json&datasets=true&limit=1&jobstatus=finished&days=7&produsername=!gangarbt&sortby=time-descending'
+        )
         data = json.loads(response.content)
         if data is not None and 'jobs' in data and len(data['jobs']) > 0:
             cls.test_data['pandaid'] = data['jobs'][0]['pandaid']
