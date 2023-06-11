@@ -10,6 +10,7 @@ from elasticsearch_dsl import Search, Q
 from core.pandajob.models import Jobsactive4
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from django.conf import settings
+from urllib.parse import urlparse
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -23,19 +24,19 @@ def get_es_credentials(instance):
     es_user = None
     es_password = None
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
+        protocol = 'https'
         if instance == 'es-atlas' and hasattr(settings, 'ES'):
             es_host = settings.ES.get('esHost', None)
             es_port = settings.ES.get('esPort', None)
-            es_host = es_host + ':' + es_port + '/es' if es_host else None
+            es_host = protocol +'://'+ es_host + ':' + es_port + '/es' if es_host else None
             es_user = settings.ES.get('esUser', None)
             es_password = settings.ES.get('esPassword', None)
         elif instance == 'es-monit' and hasattr(settings, 'ES_MONIT'):
             es_host = settings.ES_MONIT.get('esHost', None)
             es_port = settings.ES_MONIT.get('esPort', None)
-            es_host = es_host + ':' + es_port + '/es' if es_host else None
+            es_host = protocol + '://' + es_host + ':' + es_port + '/es' if es_host else None
             es_user = settings.ES_MONIT.get('esUser', None)
             es_password = settings.ES_MONIT.get('esPassword', None)
-
         if any(i is None for i in (es_host, es_user, es_password)):
             raise Exception('ES cluster credentials was not found in settings')
     else:
@@ -50,19 +51,21 @@ def get_es_credentials(instance):
 
     return es_host, es_user, es_password
 
-def create_es_connection(instance='es-atlas', protocol='https', timeout=2000, max_retries=10,
+def create_es_connection(instance='es-atlas', timeout=2000, max_retries=10,
                          retry_on_timeout=True):
     """
     Create a connection to ElasticSearch cluster
     """
     es_host, es_user, es_password = get_es_credentials(instance)
-
     try:
+        parsed_uri = urlparse(es_host)
+        protocol = '{uri.scheme}'.format(uri=parsed_uri)
+
         if protocol == 'https':
             ca_certs = settings.ES_CA_CERT
 
             connection = Elasticsearch(
-                ['{0}://{1}'.format(protocol, es_host)],
+                [es_host],
                 http_auth=(es_user, es_password),
                 verify_certs=True,
                 timeout=timeout,
@@ -72,11 +75,12 @@ def create_es_connection(instance='es-atlas', protocol='https', timeout=2000, ma
             )
         else:
             connection = Elasticsearch(
-                ['{0}://{1}'.format(protocol, es_host)],
+                [es_host],
                 http_auth=(es_user, es_password),
                 timeout=timeout,
                 max_retries=max_retries,
                 retry_on_timeout=retry_on_timeout)
+
         return connection
 
     except Exception as ex:
