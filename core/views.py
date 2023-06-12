@@ -4777,29 +4777,6 @@ def getErrorSummaryForEvents(request):
     return response
 
 
-def getBrokerageLog(request):
-    iquery = {}
-    iquery['type'] = 'prod_brokerage'
-    iquery['name'] = 'panda.mon.jedi'
-    if 'taskid' in request.session['requestParams']:
-        iquery['message__startswith'] = request.session['requestParams']['taskid']
-    if 'jeditaskid' in request.session['requestParams']:
-        iquery['message__icontains'] = "jeditaskid=%s" % request.session['requestParams']['jeditaskid']
-    if 'hours' not in request.session['requestParams']:
-        hours = 72
-    else:
-        hours = int(request.session['requestParams']['hours'])
-    startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = timezone.now().strftime(settings.DATETIME_FORMAT)
-    iquery['bintime__range'] = [startdate, enddate]
-    records = Pandalog.objects.filter(**iquery).order_by('bintime').reverse()[:request.session['JOB_LIMIT']].values()
-    sites = {}
-    for record in records:
-        message = records['message']
-        print(message)
-
-
 def taskprofileplot(request):
     jeditaskid = 0
     if 'jeditaskid' in request.GET: jeditaskid = int(request.GET['jeditaskid'])
@@ -5392,8 +5369,6 @@ def taskInfo(request, jeditaskid=0):
         if jeditaskid in dataset_locality and ds['datasetid'] in dataset_locality[jeditaskid]:
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
-
-    # getBrokerageLog(request)
 
     # get sum of hs06sec grouped by status
     # creating a jquery with timewindow
@@ -8158,8 +8133,16 @@ def getPayloadLog(request):
 
     pilot_logs_index = settings.ES_INDEX_PILOT_LOGS
 
-    payloadlog, job_running_flag, total = get_payloadlog(id, connection, pilot_logs_index, start=start_var, length=length_var, mode=mode,
-                                                         sort=sort, search_string=search_string)
+    payloadlog, job_running_flag, total = get_payloadlog(
+        id,
+        connection,
+        pilot_logs_index,
+        start=start_var,
+        length=length_var,
+        mode=mode,
+        sort=sort,
+        search_string=search_string
+    )
 
     log_content['payloadlog'] = payloadlog
     log_content['flag'] = job_running_flag
