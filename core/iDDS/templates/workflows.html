@@ -94,12 +94,12 @@ var requests_table = $('#requests_table').DataTable({
         { data: "r_status", title: "workflow status" },
         { data: "request_id", title: "graph",
             render: function(data, type, row, meta) {
-                return '<a target=blank href = "' + '{% url "daggraph" %}' +'?requestid='+row['request_id']+'">'+'plot'+'</a>';
+                return '<a target=blank href = "' + '{% url "daggraph" %}' +'?idds_request_id='+row['request_id']+'">'+'plot'+'</a>';
             }
         },
         { data: "r_name", title: "workflow name",
             render: function(data, type, row, meta) {
-                return '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links_all']+'">'+row['r_name']+'</a>';
+                return '<a target=blank href = "{% url "taskList" %}?idds_request_id='+row['request_id']+'">'+row['r_name']+'</a>';
             }
         },
         { data: "created_at", title: "created on (UTC)" },
@@ -111,13 +111,13 @@ var requests_table = $('#requests_table').DataTable({
 
                 switch(key) {
                   case 'Finished':
-                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="finished">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
+                    retVal += '<a target=blank href = "{% url "taskList" %}?idds_request_id='+row['request_id']+'&idds_transform_status=Finished'+'"><span class="finished">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
                     break;
                   case 'Failed':
-                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="failed">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
+                    retVal += '<a target=blank href = "{% url "taskList" %}?idds_request_id='+row['request_id']+'&idds_transform_status=Failed'+'"><span class="failed">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
                     break;
                   case 'Running':
-                    retVal += '<a target=blank href = "{% url "taskList" %}?jeditaskid='+row['tasks_links'][key]+'"><span class="running">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
+                    retVal += '<a target=blank href = "{% url "taskList" %}?idds_request_id='+row['request_id']+'&idds_transform_status=Running'+'"><span class="running">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
                     break;
                   default:
                     retVal += '<span class="registered">'+key+'('+row['tasks_statuses'][key]+')'+'</span> ';

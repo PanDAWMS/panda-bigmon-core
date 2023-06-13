@@ -44,7 +44,12 @@ def daggraph(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    requestid = int(request.session['requestParams']['requestid'])
+    if 'idds_request_id' not in request.session['requestParams']:
+        data = {
+            'errormessage': 'idds_request_id is not provided'
+        }
+        return render(request, 'errorPage.html', data, content_type='text/html', status=400)
+    requestid = int(request.session['requestParams']['idds_request_id'])
     kwargs = {}
     stats = query_idds_server(requestid, **kwargs)
     nodes_dag_vis = []

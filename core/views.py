@@ -4294,8 +4294,21 @@ def taskList(request):
 
     if 'ATLAS' in settings.DEPLOYMENT:
         query, extra_str = extend_view_deft(request, query, extra_str)
+    if any(['idds' in p for p in request.session['requestParams']]):
+        try:
+            from core.iDDS.utils import extend_view_idds
+            query, extra_str = extend_view_idds(request, query, extra_str)
+        except ImportError:
+            _logger.exception('Failed to import iDDS utils')
+        else:
+            _logger.exception('Failed to extend query with idds related parameters')
 
-    # if jeditaskid list in query is too long -> put it in tmp table and remove time limit
+    # remove time limit if jeditaskid in query
+    if 'modificationtime__castdate__range' in query and (
+            'jeditaskid__in' in query or 'jeditaskid in' in extra_str.lower()):
+        del query['modificationtime__castdate__range']
+
+    # if jeditaskid list in query is too long -> put it in tmp table
     if 'jeditaskid__in' in query and len(query['jeditaskid__in']) > settings.DB_N_MAX_IN_QUERY:
         tmp_table_name = get_tmp_table_name()
         transaction_key = insert_to_temp_table(query['jeditaskid__in'])
@@ -4304,8 +4317,6 @@ def taskList(request):
             transaction_key
         )
         del query['jeditaskid__in']
-        if 'modificationtime__castdate__range' in query:
-            del query['modificationtime__castdate__range']
 
     listTasks = []
     if 'statenotupdated' in request.session['requestParams']:
