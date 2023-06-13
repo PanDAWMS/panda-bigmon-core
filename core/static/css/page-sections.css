@@ -124,6 +124,10 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
   /*padding: 0 0.3rem 0 0.3rem;*/
 }
 
+span.bold {
+  font-weight: bold;
+}
+
 .panel {
   width: 600px;
   height: 500px;
@@ -201,27 +205,40 @@ div.bp-selected-params p {
   margin-bottom: 0;
 }
 
-.callout p {
-  font-size: 0.875rem;
-  margin-bottom: 0.7rem;
+.callout {
+  border: none;
+  padding: 0.7rem;
 }
-.callout ul li {
+.callout h6  {
   font-size: 0.875rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
 }
-.callout pre {
+.callout p  {
   font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+.callout ul li, .callout pre  {
+  font-size: 0.75rem;
+}
+.callout a {
+  color: black;
+  font-weight: bold;
+  border-bottom: 1px dotted;
+}
+.callout.secondary {
+  background-color: #e4e7eb;
+}
+.callout.info {
+  background-color: #e4f7e6;
+}
+.callout.warning {
+  background-color: #FFF5D6;
+}
+.callout.alert {
+  background-color: #ffcccc;
 }
 
-.callout.info {
-  background-color: #e1faea;
-}
-  .callout.info h5 {
-    font-weight: bold;
-  }
-  .callout.info a {
-    color: black;
-    border-bottom: 1px dotted;
-  }
 
 div.normal {
   font-size: 0.875rem;
@@ -1261,6 +1278,9 @@ fieldset.inline {
   .card.bp-container-simple .card-section > ul {
     margin: 0 0.7rem 0.3rem 1.5rem;
   }
+  .card.bp-container-simple .card-section > pre {
+    font-size: smaller;
+  }
   .card.bp-container-simple .card-section > .dataTables_wrapper {
     padding: 0 0.3rem;
     margin: 0.3rem 0;
@@ -1346,20 +1366,17 @@ fieldset.inline {
   }
 
 .card.bp-container-simple.alert {
-  border: 1px solid #FFABA2;
+  border: 1px solid #f7c4c4;
   font-size: 0.875rem;
 }
   .card.bp-container-simple.alert > .card-divider {
-    background-color: #FFABA2;
+    background-color: #f7c4c4;
     color: #272727;
-  }
-  .card.bp-container-simple.alert > .card-section {
-    font-size: smaller;
-    padding: 0.3rem 0.7rem;
   }
   .card.bp-container-simple.alert > .card-section > pre {
     padding: 0.3rem 0.7rem;
   }
+
 
 
 .card.bp-container-simple > .card-section > ul.uservisits a {

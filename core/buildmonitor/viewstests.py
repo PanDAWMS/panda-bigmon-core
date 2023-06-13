@@ -60,7 +60,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     note_icon='<div class="ui-widget ui-state-disabled" style="display:inline-block";> <span \
 title="N/A" class="ui-icon ui-icon-note">ICONNT</span></div>'
     cancel_icon='<div class="ui-widget ui-state-check" style="display:inline-block";> <span \
-title="N/A" class="ui-icon ui-icon-cancel">ICONCN</span></div>'
+title="N/A" class="ui-icon ui-icon-cancel">ICON20</span></div>'
     majorwarn_icon=warn_icon
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':minorwarn_icon,'2':majorwarn_icon,'3':error_icon,'10':clock_icon}
     di_excess={'N/A':radiooff_icon,'0':blank_icon,'1':note_icon,'2':cancel_icon}

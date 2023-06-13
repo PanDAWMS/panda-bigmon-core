@@ -54,8 +54,8 @@ def loginauth2(request):
 
 
 def loginerror(request):
-    warning = """The login to BigPanDA monitor is failed. Cleaning of your browser cookies might help. 
-                 If the error is persistent, please write to """
+    warning = """The login to BigPanDA monitor has failed. Cleaning of your browser cookies might help. 
+                 If the error persists, please write to """
     response = render(request, 'login.html', {'request': request, 'warning': warning}, content_type='text/html')
     #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response

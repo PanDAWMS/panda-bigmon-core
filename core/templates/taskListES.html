@@ -2,14 +2,14 @@
 {% load static %}
 {% load common_tags %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA ES tasks{% endblock %}
-{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
-{% block subtitle %}PanDA Event Service tasks{{viewParams.selection|safe }}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA</a>{% endblock %}
+{% block subtitle %}Event Service tasks{{viewParams.selection|safe }}
 {% if vo %}     for VO {{ vo }}
 {% endif %}
 {% endblock %}
 
 {% block subtitle_params %}
-{% if tasksTotalCount != None%} <b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{display_limit }}{% endif %}&limit={{tasksTotalCount}}">{{ tasksTotalCount }}</a></b> {% endif %}
+{% if tasksTotalCount %}<b> Total tasks found &#x7E; <a href="{{ request.session.urls_cut.nolimiturl }}limit={{ tasksTotalCount }}">{{ tasksTotalCount }}</a></b>{% endif %}
 {% endblock %}
 
 {% block css_page_library %}
@@ -106,13 +106,15 @@
   
   
 <table>
-<tr class='tablesection'><th colspan=20> {{ display_limit }} tasks{% if 'sortby' in requestParams %}, sorted by {{ requestParams.sortby }} {% else %}, sorted by jeditaskid {% endif %}
-{% if display_limit %} {% if tasks|length >= display_limit %}
-        <font size=-1>Only the most recent {{ display_limit }} tasks are shown. <a href="{{ url_nolimit }}">Remove the limit</a></font>
-{% endif %} {% endif %}
-</th></tr>
 <tr class='tablesection'>
-	<th><a href="{{nosorturl}}">ID</a></th>
+  <th colspan=20> {{ tasks|length }} tasks, sorted by
+    {% if 'sortby' in requestParams %} {{ requestParams.sortby }} {% else %} jeditaskid-desc {% endif %}
+    {% if ntasks > tasks|length %}
+      <a href="{{ request.session.urls_cut.nodisplaylimiturl }}display_limit={{ ntasks }}">, remove the limit</a>
+    {% endif %}
+  </th></tr>
+<tr class='tablesection'>
+	<th><a href="{{request.session.urls_cut.nosorturl}}">ID</a></th>
     {% if requestParams.tasktype == 'anal' %}<th>Jobset</th>{% endif %}
 	<th>TaskType/ProcessingType     Group<br><font color='brown'>Logged status</font></th>
 
@@ -123,10 +125,10 @@
 	<th>Nevents | remaining</th>
 
 	<th>Event dispatches</th>
-	<th><a href="{{nosorturl}}">Created</a></th>
-	<th><a href="{{nosorturl}}sortby=time-descending">Modified</a></th>
-	<th><a href="{{nosorturl}}sortby=statetime-descending">State changed</a></th>
-	<th><a href="{{nosorturl}}sortby=priority">Priority</a></th>
+	<th><a href="{{request.session.urls_cut.nosorturl}}">Created</a></th>
+	<th><a href="{{request.session.urls_cut.nosorturl}}sortby=time-descending">Modified</a></th>
+	<th><a href="{{request.session.urls_cut.nosorturl}}sortby=statetime-descending">State changed</a></th>
+	<th><a href="{{request.session.urls_cut.nosorturl}}sortby=priority">Priority</a></th>
 </tr>
 {% for task in tasks %}
 	<tr>
@@ -138,7 +140,7 @@
 
         <td> <a href="{% url 'siteInfo' task.site %}">{{ task.site }}</a> </td>
 
-		<td  class='{{task.superstatus}}_fill'><a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{% if task.superstatus %} <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %} <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}</a></td>
+		<td  class='{{task.superstatus}}_fill'><a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task">{% if task.superstatus %} <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %} <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}</a></td>
         <td>
             {{ task.dsinfo.nfiles }} | <span class='finished'> {{ task.dsinfo.nfilesfinished }}</span> | <span class='failed'>{{ task.dsinfo.nfilesfailed }}</span>
         </td>

@@ -347,7 +347,7 @@
               {% endif %}
               <li><a href="mailto:atlas-adc-pandamon-support@cern.ch">PanDA monitor support</a>
               <li><a href="https://github.com/PanDAWMS"> PanDA repository </a>
-              <li><a href="http://twiki.cern.ch/twiki/bin/view/PanDA/PanDA">PanDA home</a>
+              <li><a href="https://panda-wms.readthedocs.io/en/latest/index.html">PanDA home</a>
           </ul>
           </li>
 
@@ -482,17 +482,6 @@
 </table>
 
 <img src="{% url 'statpixel' %}?uid=" style="width:1px;height:1px;">
-
-{% if debuginfo %}
-<p>********** DEBUG:<br>
-{{ debuginfo|safe }}
-<br><br>********** Request:<br>{{ request }}
-<br><br>********** Session:<br>
-{% for key, val in request.session.items %}
-{{ key }} = {{ val }} <br>
-{% endfor %}
-</p>
-{% endif %}
 
 </div>
 

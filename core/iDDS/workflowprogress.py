@@ -32,7 +32,11 @@ def get_workflow_progress_data(request_params, **kwargs):
     workflows_semi_grouped = []
     if not workflows_items.empty:
         workflows_items.USERNAME.fillna(value='', inplace=True)
-        workflows_pd = workflows_items.astype({"WORKLOAD_ID":str}).astype({"R_CREATED_AT":str}).groupby(['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'USERNAME']).agg(
+        # workflows_items.PROCESSING_FILES.fillna(value=0, inplace=True)
+        workflows_pd = workflows_items.astype({"WORKLOAD_ID":str}).astype({"R_CREATED_AT":str}).groupby(
+            ['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'USERNAME'],
+            dropna=False
+        ).agg(
             PROCESSING_FILES_SUM=pd.NamedAgg(column="PROCESSING_FILES", aggfunc="sum"),
             PROCESSED_FILES_SUM=pd.NamedAgg(column="PROCESSED_FILES", aggfunc="sum"),
             TOTAL_FILES=pd.NamedAgg(column="TOTAL_FILES", aggfunc="sum"),
@@ -40,20 +44,42 @@ def get_workflow_progress_data(request_params, **kwargs):
             R_CREATED_AT=pd.NamedAgg(column="R_CREATED_AT", aggfunc="first"),
             workload_ids=('WORKLOAD_ID', lambda x: '|'.join(x)),
         ).reset_index()
-        workflows_pd = workflows_pd.astype({"R_STATUS":int, 'P_STATUS':int, "PROCESSING_FILES_SUM": int,
-                                            "PROCESSED_FILES_SUM": int, "TOTAL_FILES": int, "P_STATUS_COUNT": int})
+        # fill NAN with 0 for N files
+        workflows_pd.TOTAL_FILES.fillna(value=0, inplace=True)
+        workflows_pd.PROCESSING_FILES_SUM.fillna(value=0, inplace=True)
+        workflows_pd.PROCESSED_FILES_SUM.fillna(value=0, inplace=True)
+        workflows_pd.P_STATUS.fillna(value=0, inplace=True)
+        workflows_pd = workflows_pd.astype({
+            "R_STATUS":int,
+            "P_STATUS":int,
+            "PROCESSING_FILES_SUM": int,
+            "PROCESSED_FILES_SUM": int,
+            "TOTAL_FILES": int,
+            "P_STATUS_COUNT": int
+        })
         workflows_semi_grouped = workflows_pd.values.tolist()
     workflows = {}
     for workflow_group in workflows_semi_grouped:
         workflow = workflows.setdefault(workflow_group[0], {
-            "REQUEST_ID":workflow_group[0], "R_STATUS": subtitleValue.substitleValue("requests", "status")[workflow_group[1]], "CREATED_AT":workflow_group[8],"TOTAL_TASKS":0,
-            "TASKS_STATUSES":{}, "TASKS_LINKS":{}, "REMAINING_FILES":0,"PROCESSED_FILES":0,"PROCESSING_FILES":0,
-            "TOTAL_FILES":0, "TASKS_LINKS_ALL":''})
+            "REQUEST_ID":workflow_group[0],
+            "R_STATUS": subtitleValue.substitleValue("requests", "status")[workflow_group[1]] if \
+                workflow_group[1] in subtitleValue.substitleValue("requests", "status") else \
+                'N/A',
+            "CREATED_AT":workflow_group[8],"TOTAL_TASKS":0,
+            "TASKS_STATUSES":{},
+            "TASKS_LINKS":{},
+            "REMAINING_FILES":0,
+            "PROCESSED_FILES":0,
+            "PROCESSING_FILES":0,
+            "TOTAL_FILES":0,
+            "TASKS_LINKS_ALL":''})
         workflow['TOTAL_TASKS'] += workflow_group[8]
         workflow['R_NAME'] = workflow_group[3]
         workflow['USERNAME'] = workflow_group[4]
         workflow['CREATED_AT'] = workflow_group[9]
-        processing_status_name = subtitleValue.substitleValue("processings", "status")[workflow_group[2]]
+        processing_status_name = subtitleValue.substitleValue("processings", "status")[workflow_group[2]] if \
+            workflow_group[2] in subtitleValue.substitleValue("processings", "status") else \
+            'N/A'
         workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[8]
         workflow["TASKS_LINKS_ALL"] += ('|'+ workflow_group[10].replace('.0','')) if \
             len(workflow["TASKS_LINKS_ALL"]) > 0 else \

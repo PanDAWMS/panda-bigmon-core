@@ -1,6 +1,6 @@
 {% load static %}
 <div class="card bp-container-simple help">
-<div class="card-divider"><p>Data Carouselle dashboard:</p></div>
+<div class="card-divider"><p>Data Carousel dashboard:</p></div>
 <div class="card-section">
   <p><a href="{% url 'dataCarouselleDashBoard' %}">This page</a> summarizes input datasets staging from TAPE RSE. </p>
   <p>By default page shows all non-finished stagings and staged datasets that were modified in last 24 hours.
@@ -8,8 +8,11 @@
     To apply the new time range push the <b>Apply</b> button.</p>
   <p>Use <b>multi-select menus</b> in top-right corner of the page to select particular campaign or source RSE.
     Click on the <b>Update</b> button to reload the data.</p>
-
-  <p>If you notice any issue or if you have an advise how to improve the page, please let us know
+  <p>To look for potentially stuck files click on <i class="fi-plus"></i> sign in Rucio rule column which is available for datasets in
+    active staging state only. The new table will appear below with list of failed file stagings.
+    Note, all failed attempts are shown so number of rows in the table != number of stuck files.
+    We are limited by 1000 of rows because of the peculiarity of the data source.</p>
+  <p>If you notice any issue or if you have an advice how to improve the page, please let us know
     <a class="blacklink" href="mailto:atlas-adc-pandamon-support@cern.ch"><b>atlas-adc-pandamon-support@cern.ch</b></a> !</p>
 </div>
 </div>

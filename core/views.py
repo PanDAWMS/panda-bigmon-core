@@ -8248,10 +8248,8 @@ def initSelfMonitor(request):
         remote = request.META['HTTP_X_FORWARDED_FOR']
     else:
         remote = request.META['REMOTE_ADDR']
-    if 'wsgi.url_scheme' in request.META:
-        urlProto = request.META['wsgi.url_scheme']
-    else:
-        urlProto = 'http'
+
+    urlProto = request.META['wsgi.url_scheme']
     if 'HTTP_X_FORWARDED_PROTO' in request.META:
         urlProto = request.META['HTTP_X_FORWARDED_PROTO']
     urlProto = str(urlProto) + "://"

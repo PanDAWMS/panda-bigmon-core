@@ -45,7 +45,7 @@
         {% endif %}
         <th>User</th>
         <th>Nucleus</th>
-        <th>Task status</th>
+        <th class="mid">Status</th>
         {% if task.superstatus and task.superstatus != task.status %}
             <th> Detailed JEDI status</th>
         {% endif %}
@@ -132,18 +132,18 @@
         {% endif %}
         <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
         <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
-        <td class='{{ task.status }}_fill'>
+        <td class='{{ task.status }}_fill mid'>
           {% if task.superstatus %}
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+            <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task"
                   class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</a>
           {% else %}
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+            <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task"
                class="bp_tooltip task_{{ task.status }}"><b>{{ task.status }}</b></a>
           {% endif %}
         </td>
         {% if task.superstatus and task.superstatus != task.status %}
           <td class='{{ task.status }}_fill'>
-            <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status"
+            <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task"
                class="bp_tooltip task_{{ task.status }}"><b>{{ task.status }}</b></a>
           </td>
         {% endif %}
@@ -160,41 +160,41 @@
           </td>
 
           {% if task.dsinfo %}
-            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
-              <br>{{ task.currenttotevhs06 | intcomma }}
-              <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
-              <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span>
+            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06|intcomma }}{% else %}&mdash;{% endif %}</span>
+              <br>{{ task.currenttotevhs06|intcomma }}
+              <br><span class='finished'>{{ task.totevprochs06|intcomma }}</span>
+              <br><span class='failed'>{{ task.failedevprochs06|intcomma }}</span>
             </td>
           {% endif %}
         {% else %}
           {% if task.dsinfo %}
-            <td class="num"> {{ task.dsinfo.nfiles }}
+            <td class="num"> {{ task.dsinfo.nfiles|intcomma }}
               {% if task.dsinfo.nfilesmissing > 0 %}
                 <span class='lost tooltip-upper'> + {{ task.dsinfo.nfilesmissing }} lost <i class="fi-info"></i><span class="tooltip-text">The files were unavailable at a time of the task running therefore the PanDA did not create jobs for processing them and they are not included to the number of total input files.</span></span>
               {% endif %}
-              <br><span class='finished'>{{ task.dsinfo.nfilesfinished }} ({{ task.dsinfo.pctfinished|floatformat }}%)</span>
+              <br><span class='finished'>({{ task.dsinfo.pctfinished|floatformat }}%) {{ task.dsinfo.nfilesfinished|intcomma }} </span>
               {% if task.dsinfo.nfilesfailed > 0 %}
-                <br><span class='failed'>{{ task.dsinfo.nfilesfailed }} ({{ task.dsinfo.pctfailed|floatformat }}%)</span>
+                <br><span class='failed'>({{ task.dsinfo.pctfailed|floatformat }}%) {{ task.dsinfo.nfilesfailed|intcomma }}</span>
               {% endif %}
             </td>
             {% if task.totev > 0 %}
-              <td class="num"> {{ task.totev | intcomma }}
-                <br><span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span>
+              <td class="num"> {{ task.totev|intcomma }}
+                <br><span class='finished'>({{ task.pctfinished|floatformat }}%) {{ task.totevproc|intcomma }}</span>
               </td>
             {% endif %}
             {% if task.totevoutput > 0 %}
-              <td class="num"> {{ task.totevoutput | intcomma }}</td>
+              <td class="num"> {{ task.totevoutput|intcomma }}</td>
             {% endif %}
             {% if task.transpath == 'ReSim_tf.py' %}
               <td class="num">
-                {% if task.resimeventspernevents_avgpercent %}{{ task.resimeventspernevents_avgpercent | intcomma }}%{% else %}-{% endif %}
-                <br> {% if task.resimevents_sum %}{{ task.resimevents_sum | intcomma }}{% else %}-{% endif %}
+                {% if task.resimeventspernevents_avgpercent %}{{ task.resimeventspernevents_avgpercent|intcomma }}%{% else %}-{% endif %}
+                <br> {% if task.resimevents_sum %}{{ task.resimevents_sum|intcomma }}{% else %}-{% endif %}
               </td>
             {% endif %}
-            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06 | intcomma }}{% else %}&mdash;{% endif %}</span>
-              <br>{{ task.currenttotevhs06 | intcomma }}
-              <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
-              <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span>
+            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06|intcomma }}{% else %}&mdash;{% endif %}</span>
+              <br>{{ task.currenttotevhs06|intcomma }}
+              <br><span class='finished'>{{ task.totevprochs06|intcomma }}</span>
+              <br><span class='failed'>{{ task.failedevprochs06|intcomma }}</span>
             </td>
           {% endif %}
         {% endif %}
@@ -232,6 +232,20 @@
         </div>
       {% endif %}
     </div>
+  {% endif %}
+
+  {% if viewParams.MON_VO == 'ATLAS' %}
+    {% if info.split_rule %}
+      <div class="callout info">
+        <h5>The split rule has been changed for this task: </h5>
+        <ul>
+         {% for message in  info.split_rule.messages %}
+             <li>{{ message }}</li>
+         {% endfor %}
+        </ul>
+        <p>The control of the job size explained <a target="_blank" href="https://panda-wms.readthedocs.io/en/latest/client/prun.html#how-to-control-job-size">here</a> </p>
+        </div>
+    {% endif %}
   {% endif %}
 
   <div class="row bp-container-wrapper">
@@ -292,7 +306,8 @@
           <a href="#taskflow" onclick="toggletaskflow() ">Show taskflow</a>
           <a href="#statuslog" onclick="toggleStatusLog() ">Show task status log</a>
           {% if viewParams.MON_VO == 'ATLAS' %}
-          <a href="#tasklogs" onclick="toggleTaskLogs() ">Show task logs from ElasticSearch</a>
+            <a href="#tasklogs" onclick="toggleTaskLogs() ">Show task logs from ElasticSearch</a>
+            <a href="#datamovement" onclick="toggleTaskDataMovement() ">Show task data movement summary</a>
           {% endif %}
           <a href="#jobparams">Jump to job parameters</a>
           {% if jobscoutids|length > 0 %}
@@ -320,7 +335,7 @@
   <div class="bp-dropdown-button">
       <button class="dropdown">Other plots</button>
       <div class="dropdown-items">
-          {% if not task.tasktype == 'anal' %}
+          {% if not task.tasktype == 'anal' and viewParams.MON_VO == 'ATLAS' %}
               <a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Gantt diagram)</a>
               <a href="{% url 'taskchain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Tree diagram)</a>
           {% endif %}
@@ -443,19 +458,8 @@
       </button>
     </div>
   {% endif %}
-    {% if viewParams.MON_VO == 'ATLAS' %}
-    {% if info.split_rule %}<p></p>
-      <div class="callout secondary" data-closable>
-        <h5>The split rule(s) has been changed for this task: </h5>
-        <ul>
-         {% for message in  info.split_rule.messages %}
-             <li style="font-size: smaller">{{message}}</li>
-         {% endfor %}
-        </ul>
-        </div>
-    {% endif %}
-    {% endif %}
-    <div id="taskflow" ng-app="taskInfoAppSL" ng-controller="taskflowController">
+
+  <div id="taskflow" ng-app="taskInfoAppSL" ng-controller="taskflowController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="taskflow.is_hidden">
     <div class="card-divider"><p>Task Flow Diagram</p></div>
     <div class="card-section">
@@ -503,6 +507,19 @@
 
       <div class="c3-chart-block" ng-repeat="plot in taskinfo.jc_plots.plot_data" jcplot-directive plot="plot" parent="$parent"></div>
     </div>
+  </div>
+  </div>
+
+  <div id="datamovement" ng-app="taskInfoAppDM" ng-controller="TaskDataMovementController">
+  <div class="callout info ng-hide" ng-hide="datamovement.container.is_hidden">
+    <h6>Data Movement Summary: </h6>
+    <div ng-bind-html="datamovement.message"></div>
+    <p class="ng-hide" ng-hide="datamovement.content.is_hidden">
+      In total, <span class="bold" ng-bind="datamovement.data.n"></span> times
+      <span class="bold" ng-bind="datamovement.data.nfiles"></span> unique files have been moved by PanDA for
+      <span class="bold" ng-bind="datamovement.data.njobs"></span> jobs in this tasks,
+      the total volume is <span class="bold" ng-bind="datamovement.data.fsize_sum"></span> GB.
+    </p>
   </div>
   </div>
 
@@ -917,9 +934,9 @@ app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
     };
     $scope.status_log.get = function () {
         $http({
-                url: "{% url 'gettaskstatuslog' jeditaskid %}",
-                method: "GET",
-                params: {'json':1}
+              url: "{% url 'gettaskstatuslog' jeditaskid %}",
+              method: "GET",
+              params: {'json':1}
             }
         ).then(function success(response) {
             $scope.status_log.message = "";
@@ -977,7 +994,6 @@ app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
                     data: "reason",
                     sDefaultContent: "-",
                 },
-
             ],
             "createdRow": function ( row, data, index ) {
                 $('td', row).eq(2).addClass(data['status'] + '_fill');
@@ -1106,6 +1122,46 @@ app.controller('TaskLogsController', function ($scope, $http, $sce) {
     };
 });
 
+app.controller('TaskDataMovementController', function ($scope, $http, $sce) {
+   $scope.datamovement = {
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      data: {},
+      container: {
+        is_hidden: true,
+      },
+      content: {
+        is_hidden: true,
+      }
+    };
+   $scope.datamovement.get = function () {
+        $http({
+                url: "{% url 'taskdatamovement' jeditaskid %}",
+                method: "GET",
+                params: {'json':1}
+            }
+        ).then(function success(response) {
+            $scope.datamovement.data = angular.fromJson(response.data);
+            if (Object.keys($scope.datamovement.data).length > 0) {
+              $scope.datamovement.message = $sce.trustAsHtml("");
+              $scope.datamovement.content.is_hidden = false;
+            }
+            else {
+              $scope.datamovement.message = $sce.trustAsHtml("<p>No data was moved in this task by PanDA");
+            }
+          },
+          function error(response) {
+            console.log(response);
+            $scope.datamovement.message = $sce.trustAsHtml('<p>Failed to load data :( </p>');
+          }
+        );
+   };
+
+   $scope.datamovement.toggle = function() {
+      $scope.datamovement.container.is_hidden = false;
+      $scope.datamovement.get();
+   };
+});
+
 $(document).ready(function () {
     $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
     var dataset_list = {{ datasets|safe }};
@@ -1119,6 +1175,9 @@ $(document).ready(function () {
     }
     if (url.indexOf("#tasklogs") > -1) {
         toggleTaskLogs();
+    }
+    if (url.indexOf("#datamovement") > -1) {
+      toggleTaskDataMovement();
     }
 });
 
@@ -1151,6 +1210,15 @@ function toggleTaskLogs() {
     if (scope.task_logs.is_hidden) {
       scope.$apply(function () {
         scope.task_logs.toggle();
+      });
+    }
+}
+
+function toggleTaskDataMovement() {
+    let scope = angular.element(document.getElementById('datamovement')).scope();
+    if (scope.datamovement.container.is_hidden) {
+      scope.$apply(function () {
+        scope.datamovement.toggle();
       });
     }
 }

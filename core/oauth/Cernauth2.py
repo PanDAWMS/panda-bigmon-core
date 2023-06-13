@@ -45,7 +45,8 @@ class CernAuthOIDC(BaseOAuth2):
         """Load user data from the service"""
         return self.get_json(
             self.USER_DATA,
-            headers=self.get_auth_header(access_token)
+            # headers=self.get_auth_header(access_token)
+            data={"access_token": access_token}
         )
 
     def get_auth_header(self, access_token):

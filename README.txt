@@ -1,3 +1,3 @@
 BigPanDAmon package ...
-Documentation: https://twiki.cern.ch/twiki/bin/view/PanDA/BigPanDAmonitoring
+Documentation: https://panda-wms.readthedocs.io/en/latest/client/monitoring.html
 

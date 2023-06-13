@@ -1,4 +1,4 @@
-
+import datetime
 import math
 import random
 import numpy as np
@@ -373,6 +373,21 @@ def convert_sec(duration_sec, out_unit='str', **kwargs):
                 output = output.replace(' days, ', ':')
             else:
                 output = '0:' + output
+
+    return output
+
+def convert_epoch_to_datetime(timestamp):
+    """
+    Converting epoch to datetime + checking if it is in milliseconds or seconds
+    :param timestamp: int
+    :return: output: datetime in UTC
+    """
+    output = None
+    if isinstance(timestamp, int) and timestamp > 0:
+        if len(str(timestamp)) >= 13:
+            # it seems the input is in milliseconds -> convert to seconds
+            timestamp = int(timestamp/1000.)
+        output = datetime.datetime.utcfromtimestamp(timestamp)
 
     return output
 

@@ -13,18 +13,16 @@
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
 {% endblock %}
-{% block css_page %}
-  <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
-{% endblock %}
 {% block js_head_page_library %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.foundation.min.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 {% endblock %}
 
 {% block body %}
-  <div data-ng-controller="dataviewctrl">
+  <div data-ng-controller="dataviewctrl" id="datacar">
     <div class="row">
       <div class="columns medium-8">
         <div id="chartACTCH_div"><p ng-bind-html="loading_placeholder"></p></div>
@@ -131,8 +129,26 @@
       <div class="card-divider"><p>Staging datasets:</p></div>
       <div class="card-section">
         <p ng-bind-html="loading_placeholder"></p>
-        <table class="data-table nowrap" id="stagingdatasetstable">
-         <thead></thead>
+        <table class="data-table nowrap hover" id="stagingdatasetstable">
+         <thead>
+          <tr>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+             <th></th>
+          </tr>
+         </thead>
+         <tbody></tbody>
          <tfoot>
           <tr>
              <th></th>
@@ -154,6 +170,16 @@
         </table>
       </div>
     </div>
+
+    <a id="stuckfiles"></a>
+    <div class="card bp-container-simple alert ng-hide" id="container_sf" ng-hide="stuckfiles.is_hidden">
+      <div class="card-divider"><p>Failed file staging from <span ng-bind-html="stuckfiles.source_rse"></span> in <span ng-bind-html="stuckfiles.rule_id"></span> rule:</p></div>
+      <div class="card-section">
+        <p ng-bind-html="stuckfiles.loading_placeholder"></p>
+        <table class="data-table" id="stuckfilestable"></table>
+      </div>
+    </div>
+
   </div>
 
 {% endblock %}
@@ -164,7 +190,6 @@
   <script type="text/javascript">
   google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
 
-  var detailsDataTable;
   var chart_list = ['submittime', 'submittimefiles', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];
   var charts = {
     submittime: {
@@ -363,23 +388,39 @@
   };
 
   app.service('Service', ['$http', service])
-     .controller('dataviewctrl', ['$scope', '$sce','Service', controller]);
+     .controller('dataviewctrl', ['$scope', '$sce', '$compile', '$location', '$timeout', '$anchorScroll', 'Service', controller]);
 
-  function service($http, $scope){
+  function service($http){
     var get = function(requestparams) {
       return $http({
         method: 'GET',
         url: '{% url 'getDTCSubmissionHist' %}'+requestparams,
         cache: false
       })};
+    var get_stuck_files = function(rule_id, source_rse) {
+      return $http({
+        method: 'GET',
+        url: '{% url 'datacarstuckfiles' %}?rule_id=' + rule_id + '&source_rse=' + source_rse,
+        cache: false
+      })}
     return {
-      get: get
+      get: get,
+      get_stuck_files: get_stuck_files,
     }
   }
 
-  function controller($scope, $sce, Service){
+  function controller($scope, $sce, $compile, $location, $timeout, $anchorScroll, Service){
     $scope.is_hidden = true;
     $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
+    $scope.stuckfiles = {
+      is_hidden: true,
+      loading_placeholder: '',
+      rule_id: '',
+      source_rse: '',
+      data: [],
+      data_table_id: '#stuckfilestable',
+      data_table: null,
+    }
     $scope.request_params = {{ requestParams|safe }};
     $scope.selection = {
       options: {},
@@ -390,6 +431,15 @@
         $scope.selection.selected[key] = $scope.request_params[key].split(',');
       }
     });
+    $scope.scroll_to = function(anchor) {
+      if ($location.hash() !== anchor) {
+        // set the $location.hash to `newHash` and $anchorScroll will automatically scroll to it
+        $location.hash(anchor);
+      } else {
+        // call $anchorScroll() explicitly, since $location.hash hasn't changed
+        $anchorScroll();
+      }
+    };
 
     $scope.gog = function() {
       var request = "";
@@ -473,9 +523,9 @@
 
       $scope.selection.options = response.data.selection;
 
-      detailsDataTable = $('#stagingdatasetstable').DataTable({
-          bDestroy: true,
+      $scope.data_table = $('#stagingdatasetstable').DataTable({
           scrollX: true,
+          autoWidth: true,
           columnDefs: [{"type": "num-html", "targets": [5,6,7,8,10,13] }],
           data: response.data.detailstable,
           columns: [
@@ -498,20 +548,26 @@
             { title: 'Source RSE', data: 'source_rse' },
             { title: 'Time elapsed [d:h:m:s]', data: 'elapsedtime', defaultValue: '---'},
             { title: 'Started at', data: 'start_time' },
-            { title: 'Rucio rule', data: 'rse',
+            { title: 'Rucio rule', data: 'rse', className: 'text icons1',
               "render": function(data, type, full, meta) {
+                  let entry = ''
                   if (data && "{{ request.session.rucio_ui }}".length > 0) {
-                    return '<a href="{{ request.session.rucio_ui }}rule?rule_id=' + full['rse'] + '">' + full['rse'].slice(0,3) + '...' + full['rse'].slice(full['rse'].length-3, full['rse'].length) + ' <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                    entry += '<a href="{{ request.session.rucio_ui }}rule?rule_id=' + full['rse'] + '">' + full['rse'].slice(0,3) + '...' + full['rse'].slice(full['rse'].length-3, full['rse'].length) + ' <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                    if (data && full['status'] === 'staging') {
+                      entry += ` <a target="_blank" ng-click="stuckfiles.toggle('` + full['rse'] + `','` + full['source_rse'] + `')"><div class="bp-tooltip left"><i class="fi-plus"></i><span class="tooltip-text">Look for stuck files</span></div></a>`
+                    }
                   }
                   else {
-                    return '---'
+                    entry = '---'
                   }
+                  return entry
                 },
             },
             { title: 'Since last update [d:h:m:s]', data: 'update_time', defaultValue: '---',},
           ],
           createdRow: function ( row, data, index ) {
               $('td', row).eq(3).addClass(data['status'] + '_fill');
+              $compile(angular.element(row).contents())($scope);
           },
           initComplete: function () {
               this.api().columns([0,3,4,9]).every( function () {
@@ -522,12 +578,8 @@
                           var val = $.fn.dataTable.util.escapeRegex(
                               $(this).val()
                           );
-
-                          column
-                              .search( val ? '^'+val+'$' : '', true, false )
-                              .draw();
+                          column.search( val ? '^'+val+'$' : '', true, false ).draw();
                       });
-
                   column.data().unique().sort().each( function ( d, j ) {
                       select.append( '<option value="'+d+'">'+d+'</option>' )
                   });
@@ -536,8 +588,71 @@
       });
     };
 
+    $scope.stuckfiles.build_table = function () {
+      $scope.stuckfiles.data_table = $($scope.stuckfiles.data_table_id).DataTable({
+          bDestroy: true,
+          scrollX: true,
+          orderFixed: [0, 'asc'],
+          order: [[3, 'desc']],
+          rowGroup: {
+              dataSrc: 0
+          },
+          data: $scope.stuckfiles.data,
+          columns: [
+            { title: 'File name', data: 'lfn', },
+            { title: 'Source RSE', data: 'src', className: 'nowrap', },
+            { title: 'Destination RSE', data: 'dst', className: 'nowrap',},
+            { title: 'Submitted at', data: 'submitted_at',  className: 'nowrap',},
+            { title: 'Duration, s', data: 'duration' },
+            { title: 'FTS link', data: 'transfer_link',
+              render: function (data) {
+                return '<a href="'+ data + '"><i class="fi-link"></i></a>'
+            }},
+            { title: 'Reason', data: 'reason',
+            render: function (data) {
+                return data.replace(/\./g, '.<wbr>').replace(/\_/g, '_<wbr>');;
+            }},
+          ],
+      });
+    }
+
+    $scope.stuckfiles.toggle = function (rule_id, source_rse) {
+      $scope.stuckfiles.rule_id = $sce.trustAsHtml(rule_id);
+      $scope.stuckfiles.source_rse = $sce.trustAsHtml(source_rse);
+      if ($scope.stuckfiles.is_hidden) {
+        $scope.stuckfiles.is_hidden = false;
+      }
+      $scope.stuckfiles.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
+      if ($scope.stuckfiles.data_table) {
+        // clear table
+        $scope.stuckfiles.data_table.clear().draw();
+      }
+      // jump to table
+      $scope.scroll_to('stuckfiles');
+      // load data
+      Service.get_stuck_files(rule_id, source_rse).then(
+        function successCallback(response) {
+          $scope.stuckfiles.data = response.data.data;
+          if ($scope.stuckfiles.data.length > 0) {
+            $scope.stuckfiles.loading_placeholder = '';
+            if ($scope.stuckfiles.data_table === null) {
+              $scope.stuckfiles.build_table();
+            }
+            else {
+              $scope.stuckfiles.data_table.rows.add($scope.stuckfiles.data).draw();
+            }
+          }
+          else {
+            $scope.stuckfiles.loading_placeholder = $sce.trustAsHtml('<p>No failed file stagings found :(</p>');
+          }
+        },
+        function errorCallback(response) {
+          $scope.stuckfiles.data = [];
+          $scope.stuckfiles.loading_placeholder = $sce.trustAsHtml('<p>Failed to load data :(</p>');
+        }
+      )
+    }
     $scope.gog();
-    {#Service.get('?'+$scope.getTimeForQuery()).then($scope.processResponce);#}
   }
 
   //create trigger to resizeEnd event

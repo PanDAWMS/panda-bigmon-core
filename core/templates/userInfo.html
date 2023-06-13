@@ -147,7 +147,7 @@
              {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
              {% else %} class='{{task.superstatus}}_fill'
              {% endif %}>
-            {% if task.superstatus %} <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.superstatus }}</a> {% else %} <a href="https://twiki.cern.ch/twiki/bin/view/PanDA/PandaJEDI#Transition_of_task_status">{{ task.status }}</a> {% endif %}
+            {% if task.superstatus %} <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task">{{ task.superstatus }}</a> {% else %} <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task">{{ task.status }}</a> {% endif %}
         {% if task.dsinfo.nfiles > 0 %} <br>{{task.dsinfo.nfiles}} {% endif %} </td>
         <td>{% if task.dsinfo.nfilesfinished > 0 %}<span  class='finished'>{{task.dsinfo.pctfinished}}%</span>{% endif %} {% if task.dsinfo.nfilesfailed > 0 %}<a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span class='failed'> {{task.dsinfo.pctfailed}}%</span>{% endif %}</a>
         <br> {% if task.dsinfo.nfilesfinished > 0 %} <span  class='finished'>{{ task.dsinfo.nfilesfinished }}</span> {% endif %}     {% if task.dsinfo.nfilesfailed > 0 %} <a href="{% url 'errorSummary' %}?jeditaskid={{task.jeditaskid}}"><span  class='failed'>{{ task.dsinfo.nfilesfailed }}</span></a> {% endif %}

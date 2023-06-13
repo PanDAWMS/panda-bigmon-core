@@ -40,12 +40,20 @@ def is_debug_mode(job):
     :param job: dict
     :return: bool
     """
-    if ('specialhandling' in job and not job['specialhandling'] is None and 'debug' in job['specialhandling']) or (
-            'commandtopilot' in job and job['commandtopilot'] is not None and len(job['commandtopilot']) > 0 and job['commandtopilot'] != 'tobekilled'
-    ):
-        return True
-    else:
-        return False
+    is_debug = False
+
+    to_enable_debug_mode_sh = ['debug','dm']
+
+    if ('specialhandling' in job and job['specialhandling'] is not None):
+        specialhandling_list = str(job['specialhandling']).split(',')
+        is_debug = any(item in specialhandling_list for item in to_enable_debug_mode_sh)
+
+    if  'commandtopilot' in job and job['commandtopilot'] is not None \
+            and len(job['commandtopilot']) > 0 \
+            and job['commandtopilot'] != 'tobekilled':
+        is_debug = True
+
+    return is_debug
 
 
 def is_job_active(jobststus):
