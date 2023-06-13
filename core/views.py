@@ -4294,8 +4294,21 @@ def taskList(request):
 
     if 'ATLAS' in settings.DEPLOYMENT:
         query, extra_str = extend_view_deft(request, query, extra_str)
+    if any(['idds' in p for p in request.session['requestParams']]):
+        try:
+            from core.iDDS.utils import extend_view_idds
+            query, extra_str = extend_view_idds(request, query, extra_str)
+        except ImportError:
+            _logger.exception('Failed to import iDDS utils')
+        else:
+            _logger.exception('Failed to extend query with idds related parameters')
 
-    # if jeditaskid list in query is too long -> put it in tmp table and remove time limit
+    # remove time limit if jeditaskid in query
+    if 'modificationtime__castdate__range' in query and (
+            'jeditaskid__in' in query or 'jeditaskid in' in extra_str.lower()):
+        del query['modificationtime__castdate__range']
+
+    # if jeditaskid list in query is too long -> put it in tmp table
     if 'jeditaskid__in' in query and len(query['jeditaskid__in']) > settings.DB_N_MAX_IN_QUERY:
         tmp_table_name = get_tmp_table_name()
         transaction_key = insert_to_temp_table(query['jeditaskid__in'])
@@ -4304,8 +4317,6 @@ def taskList(request):
             transaction_key
         )
         del query['jeditaskid__in']
-        if 'modificationtime__castdate__range' in query:
-            del query['modificationtime__castdate__range']
 
     listTasks = []
     if 'statenotupdated' in request.session['requestParams']:
@@ -4775,29 +4786,6 @@ def getErrorSummaryForEvents(request):
     response = render(request, 'eventsErrorSummary.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
-
-
-def getBrokerageLog(request):
-    iquery = {}
-    iquery['type'] = 'prod_brokerage'
-    iquery['name'] = 'panda.mon.jedi'
-    if 'taskid' in request.session['requestParams']:
-        iquery['message__startswith'] = request.session['requestParams']['taskid']
-    if 'jeditaskid' in request.session['requestParams']:
-        iquery['message__icontains'] = "jeditaskid=%s" % request.session['requestParams']['jeditaskid']
-    if 'hours' not in request.session['requestParams']:
-        hours = 72
-    else:
-        hours = int(request.session['requestParams']['hours'])
-    startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = timezone.now().strftime(settings.DATETIME_FORMAT)
-    iquery['bintime__range'] = [startdate, enddate]
-    records = Pandalog.objects.filter(**iquery).order_by('bintime').reverse()[:request.session['JOB_LIMIT']].values()
-    sites = {}
-    for record in records:
-        message = records['message']
-        print(message)
 
 
 def taskprofileplot(request):
@@ -5392,8 +5380,6 @@ def taskInfo(request, jeditaskid=0):
         if jeditaskid in dataset_locality and ds['datasetid'] in dataset_locality[jeditaskid]:
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
-
-    # getBrokerageLog(request)
 
     # get sum of hs06sec grouped by status
     # creating a jquery with timewindow
@@ -8158,8 +8144,16 @@ def getPayloadLog(request):
 
     pilot_logs_index = settings.ES_INDEX_PILOT_LOGS
 
-    payloadlog, job_running_flag, total = get_payloadlog(id, connection, pilot_logs_index, start=start_var, length=length_var, mode=mode,
-                                                         sort=sort, search_string=search_string)
+    payloadlog, job_running_flag, total = get_payloadlog(
+        id,
+        connection,
+        pilot_logs_index,
+        start=start_var,
+        length=length_var,
+        mode=mode,
+        sort=sort,
+        search_string=search_string
+    )
 
     log_content['payloadlog'] = payloadlog
     log_content['flag'] = job_running_flag

@@ -101,7 +101,7 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     where (c.relation_type=0 or c.relation_type is null) and {condition} order by r.request_id desc
     """
     cur = connections[connection_name].cursor()
-    _logger.info('!!! Using connection named: {}, vendor: {}, host: {}, port: {}, user: {} \n Query: {}'.format(
+    _logger.debug('!!! Using connection named: {}, vendor: {}, host: {}, port: {}, user: {} \n Query: {}'.format(
         connection_name, db, connections[connection_name].settings_dict['HOST'],
         connections[connection_name].settings_dict['PORT'], connections[connection_name].settings_dict['USER'], sql
     ))
