@@ -2,6 +2,7 @@ import logging
 from core.iDDS.useconstants import SubstitleValue
 from core.iDDS.rawsqlquery import getWorkFlowProgressItemized
 from core.libs.exlib import lower_dicts_in_list
+from core.libs.task import get_datasets_for_tasklist
 import pandas as pd
 
 _logger = logging.getLogger('bigpandamon')
@@ -68,8 +69,10 @@ def get_workflow_progress_data(request_params, **kwargs):
             "CREATED_AT":workflow_group[8],"TOTAL_TASKS":0,
             "TASKS_STATUSES":{},
             "TASKS_LINKS":{},
-            "REMAINING_FILES":0,
             "PROCESSED_FILES":0,
+            "REMAINING_FILES":0,
+            "UNRELEASED_FILES":0,
+            "RELEASED_FILES":0,
             "PROCESSING_FILES":0,
             "TOTAL_FILES":0,
             "TASKS_LINKS_ALL":''})
@@ -85,10 +88,24 @@ def get_workflow_progress_data(request_params, **kwargs):
             len(workflow["TASKS_LINKS_ALL"]) > 0 else \
             workflow_group[10].replace('.0','')
         workflow["TASKS_LINKS"][processing_status_name] = workflow_group[10].replace('.0','')
-        workflow['PROCESSED_FILES'] += workflow_group[6]
+        workflow['RELEASED_FILES'] += workflow_group[6]
         workflow['PROCESSING_FILES'] += workflow_group[5]
         workflow['TOTAL_FILES'] += workflow_group[7]
+        workflow['UNRELEASED_FILES'] = workflow['TOTAL_FILES'] - workflow['RELEASED_FILES']
+
+        tasks = workflow_group[10].split("|")
+        if 'nan' in tasks:
+            tasks.remove('nan')
+        tasks = [{'jeditaskid': int(task)} for task in tasks]
+        tasks = get_datasets_for_tasklist(tasks)
+        for task in tasks:
+            for ds in task['datasets']:
+                if "input" in ds['type'] and ds['masterid'] is None:
+                    workflow['PROCESSED_FILES'] += ds["nfilesfinished"]
+                    workflow['PROCESSED_FILES'] += ds["nfilesfailed"]
+                    #workflow['PROCESSED_FILES'] += ds["nfilesmissing"]
         workflow['REMAINING_FILES'] = workflow['TOTAL_FILES'] - workflow['PROCESSED_FILES']
+
     workflows = lower_dicts_in_list(list(workflows.values()))
     return workflows
 

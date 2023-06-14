@@ -53,9 +53,11 @@
             <th>Created At</th>
             <th>Total tasks</th>
             <th>Tasks</th>
-            <th>Remaining files</th>
+	    <th>Total files</th>
+            <th>Released files</th>
+            <th>Unreleased files</th>
             <th>Processed files</th>
-            <th>Total files</th>
+            <th>Remaining files</th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -127,9 +129,11 @@ var requests_table = $('#requests_table').DataTable({
            }
         },
 
-        { data: "remaining_files", title: "remaining files", className: "num" },
-        { data: "processed_files", title: "released files", className: "num" },
         { data: "total_files", title: "total files", className: "num" },
+        { data: "released_files", title: "released files", className: "num" },
+        { data: "unreleased_files", title: "unreleased files", className: "num" },
+        { data: "processed_files", title: "processed files", className: "num" },
+        { data: "remaining_files", title: "remaining files", className: "num" },
     ],
     data: preprocData(iDDSrequests),
     selectable: true,
