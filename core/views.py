@@ -81,7 +81,7 @@ from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_
 from core.libs.eventservice import event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
-    get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data, \
+    get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist, get_task_name_by_taskid
 from core.libs.task import get_dataset_locality, is_event_service_task, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, \
@@ -5385,10 +5385,10 @@ def taskInfo(request, jeditaskid=0):
     # creating a jquery with timewindow
     jquery = copy.deepcopy(query)
     jquery['modificationtime__castdate__range'] = get_task_timewindow(taskrec, format_out='str')
-    if settings.DEPLOYMENT != 'POSTGRES':
-        hs06sSum = get_hs06s_summary_for_task(jquery)
+    if 'ATLAS' in settings.DEPLOYMENT:
+        job_metrics_sum = get_job_metrics_summary_for_task(jquery)
     else:
-        hs06sSum = {}
+        job_metrics_sum = {}
     _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
 
     eventssummary = []
@@ -5472,10 +5472,13 @@ def taskInfo(request, jeditaskid=0):
         elif taskrec['cloud'] == 'WORLD':
             taskrec['destination'] = taskrec['nucleus']
 
-        if hs06sSum:
-            taskrec['totevprochs06'] = int(hs06sSum['finished']) if 'finished' in hs06sSum else None
-            taskrec['failedevprochs06'] = int(hs06sSum['failed']) if 'failed' in hs06sSum else None
-            taskrec['currenttotevhs06'] = int(hs06sSum['total']) if 'total' in hs06sSum else None
+        if job_metrics_sum:
+            taskrec['totevprochs06'] = int(job_metrics_sum['hs06sec']['finished']) if 'hs06sec' in job_metrics_sum else None
+            taskrec['failedevprochs06'] = int(job_metrics_sum['hs06sec']['failed']) if 'hs06sec' in job_metrics_sum else None
+            taskrec['currenttotevhs06'] = int(job_metrics_sum['hs06sec']['total']) if 'hs06sec' in job_metrics_sum else None
+
+            if 'gco2_global' in job_metrics_sum:
+                taskrec.update({'gco2_global_'+k: float(v) for k, v in job_metrics_sum['gco2_global'].items()})
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
