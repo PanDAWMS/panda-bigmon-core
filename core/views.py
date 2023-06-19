@@ -77,7 +77,7 @@ from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, get
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
-from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, dictfetchall
+from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, dictfetchall, round_to_n_digits
 from core.libs.eventservice import event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
@@ -5478,7 +5478,9 @@ def taskInfo(request, jeditaskid=0):
             taskrec['currenttotevhs06'] = int(job_metrics_sum['hs06sec']['total']) if 'hs06sec' in job_metrics_sum else None
 
             if 'gco2_global' in job_metrics_sum:
-                taskrec.update({'gco2_global_'+k: float(v) for k, v in job_metrics_sum['gco2_global'].items()})
+                taskrec.update({
+                    'gco2_global_'+k: int(round_to_n_digits(float(v), method='floor')) if v > 1 else round_to_n_digits(float(v), n=1, method='floor') for k, v in job_metrics_sum['gco2_global'].items()
+                })
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
