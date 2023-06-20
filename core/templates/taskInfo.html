@@ -217,7 +217,7 @@
             <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
         {% endif %}
         {% if 'gco2_global_total' in task %}
-          <td>{{ task.gco2_global_total }} <br><span class="done">{{ task.gco2_global_finished }}</span><br><span class="failed">{{ task.gco2_global_failed }}</span></td>
+          <td>{{ task.gco2_global_total|intcomma }} <br><span class="done">{{ task.gco2_global_finished|intcomma }}</span><br><span class="failed">{{ task.gco2_global_failed|intcomma }}</span></td>
         {% endif %}
       </tr>
     </tbody>
