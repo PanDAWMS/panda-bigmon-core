@@ -102,6 +102,12 @@
         {% if task.ticketid %}
             <th>Tracker</th>
         {% endif %}
+        {% if 'gco2_global_total' in task %}
+          <th>gCO<sub>2</sub> total <span class="bp-tooltip left"><i class="fi-info"></i>
+            <span class="bp-tooltip tooltip-text">Estimated CO<sub>2</sub> emission in grams, based on the weighted average of regional electricity sources for ATLAS Grid computing</span></span>
+            <br><span class="done">done</span><br><span class="failed">failed</span>
+          </th>
+        {% endif %}
       </tr>
       <tr>
         <td>
@@ -209,6 +215,9 @@
         {% endif %}
         {% if task.ticketid %}
             <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
+        {% endif %}
+        {% if 'gco2_global_total' in task %}
+          <td>{{ task.gco2_global_total|intcomma }} <br><span class="done">{{ task.gco2_global_finished|intcomma }}</span><br><span class="failed">{{ task.gco2_global_failed|intcomma }}</span></td>
         {% endif %}
       </tr>
     </tbody>

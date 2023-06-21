@@ -157,7 +157,12 @@ class PandaJob(models.Model):
     memoryleakx2 = models.BigIntegerField(null=True, db_column='memory_leak_x2', blank=True)
     container_name = models.CharField(max_length=765, db_column='container_name', blank=True)
     hs06sec = models.BigIntegerField(null=True, db_column='hs06sec', blank=True)  # Field name made lowercase.
-    eventservice = models.IntegerField(null=True, db_column='eventservice', blank=True)  # Field name made lowercase.
+    eventservice = models.IntegerField(null=True, db_column='eventservice', blank=True)
+    job_label = models.CharField(max_length=20, db_column='job_label', blank=True)
+    meancorecount = models.BigIntegerField(null=True, db_column='meancorecount', blank=True)
+    gco2_regional = models.BigIntegerField(null=True, db_column='gco2_regional', blank=True)
+    gco2_global = models.BigIntegerField(null=True, db_column='gco2_global', blank=True)
+    cpu_architecture_level = models.CharField(max_length=20, db_column='cpu_architecture_level', blank=True)
 
     def __str__(self):
         return 'PanDA:' + str(self.pandaid)
@@ -315,7 +320,8 @@ class PandaJobArch(models.Model):
     eventservice = models.IntegerField(null=True, db_column='eventservice', blank=True)  # Field name made lowercase.
     hs06 = models.BigIntegerField(null=True, db_column='hs06', blank=True)  # Field name made lowercase.
     hs06sec = models.BigIntegerField(null=True, db_column='hs06sec', blank=True)  # Field name made lowercase.
-    maxpss = models.BigIntegerField(null=True, db_column='maxpss', blank=True)  # Field name made lowercase.
+    maxpss = models.BigIntegerField(null=True, db_column='maxpss', blank=True)
+
 
     class Meta:
         abstract = True

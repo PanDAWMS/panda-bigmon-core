@@ -49,6 +49,11 @@ def prepareSQLQueryParameters(request_params, **kwargs):
     if 'db' in kwargs:
         db = kwargs['db']
 
+    if 'days' in request_params:
+        days = int(request_params['days'])
+    else:
+        days = 7
+
     sqlpar, condition = {}, " (1=1)  "
     request_params = {key: value for key, value in request_params.items() if key in ['requestid', 'username', 'status']}
     # statuses are numbers in DB, need to translate using constants classes from iDDS
@@ -56,7 +61,7 @@ def prepareSQLQueryParameters(request_params, **kwargs):
     dict_for_subst = {key: request_params.get(key) for key in query_fields_for_subst if key in request_params}
     query_params_substituted = subtitleValue.replaceInverseKeys('requests', dict_for_subst)
 
-    sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*90)).strftime(settings.DATETIME_FORMAT)
+    sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*days)).strftime(settings.DATETIME_FORMAT)
     condition += 'and r.created_at > {} '.format(bind_var('starttime', db))
 
     for key in query_params_substituted.keys():
@@ -101,7 +106,7 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     where (c.relation_type=0 or c.relation_type is null) and {condition} order by r.request_id desc
     """
     cur = connections[connection_name].cursor()
-    _logger.info('!!! Using connection named: {}, vendor: {}, host: {}, port: {}, user: {} \n Query: {}'.format(
+    _logger.debug('!!! Using connection named: {}, vendor: {}, host: {}, port: {}, user: {} \n Query: {}'.format(
         connection_name, db, connections[connection_name].settings_dict['HOST'],
         connections[connection_name].settings_dict['PORT'], connections[connection_name].settings_dict['USER'], sql
     ))

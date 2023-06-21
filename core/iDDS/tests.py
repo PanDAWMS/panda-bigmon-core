@@ -88,7 +88,7 @@ class BPIddsTest(unittest.TestCase):
     # DAG graph
     def test_idds_daggraph(self):
         self.assertIsInstance(self.test_data['request_id'], int)
-        response = self.client.get('/idds/daggraph/?requestid={}&{}'.format(
+        response = self.client.get('/idds/daggraph/?idds_request_id={}&{}'.format(
             self.test_data['request_id'],
             self.timestamp_str
         ))

@@ -218,12 +218,16 @@
           <br><a href="{{ request.session.urls_cut.nosorturl }}sortby=pctfinished"><span class='finished'>finish&nbsp;%</span></a>
           <a href="{{ request.session.urls_cut.nosorturl }}sortby=pctfailed"><span class='failed'>fail&nbsp;%</span></a>
         </th>
-        <th>Events total / <a href="{{ request.session.urls_cut.nosorturl }}sortby=totevrem">remaining</a></th>
+        {% if viewParams.MON_VO == 'ATLAS' %}
+          <th>Events total / <a href="{{ request.session.urls_cut.nosorturl }}sortby=totevrem">remaining</a></th>
+        {% endif %}
         <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=creationdate-asc">Created</a></th>
         <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=time-descending">Modified</a></th>
         <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=statetime-descending">State changed</a></th>
         <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=priority">Priority</a></th>
-        <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=nucleus">Nucleus</a></th>
+        {% if viewParams.MON_VO == 'ATLAS' %}
+          <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=nucleus">Nucleus</a></th>
+        {% endif %}
     </tr>
     {% for task in tasks %}
       <tr>
@@ -269,18 +273,22 @@
           {% if task.dsinfo.nfiles >= 0 %}{{ task.dsinfo.nfiles|intcomma }}{% endif %}
           {% if task.dsinfo.nfilesmissing > 0 %}<br><span class="lost">+{{ task.dsinfo.nfilesmissing|intcomma }} lost</span>{% endif %}
           {% if task.dsinfo.nfilesfinished > 0 %}
-            <br><span class='finished'>{{ task.dsinfo.pctfinished }}% &nbsp; {{ task.dsinfo.nfilesfinished|intcomma }}</span>
+            <br><span class='finished nowrap'>{{ task.dsinfo.pctfinished }}% &nbsp; {{ task.dsinfo.nfilesfinished|intcomma }}</span>
           {% endif %}
           {% if task.dsinfo.nfilesfailed > 0 %}
               <br><a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">
-              <span class='failed'>{{ task.dsinfo.pctfailed }}% &nbsp; {{ task.dsinfo.nfilesfailed|intcomma }}</span>{% endif %}</a>
+              <span class='failed nowrap'>{{ task.dsinfo.pctfailed }}% &nbsp; {{ task.dsinfo.nfilesfailed|intcomma }}</span>{% endif %}</a>
         </td>
-        <td><font size=-1>{% if task.neventsTot > 0 %} {{ task.neventsTot|intcomma }} / {{ task.neventsRemaining|intcomma }} {% endif %}</font></td>
+        {% if viewParams.MON_VO == 'ATLAS' %}
+          <td><font size=-1>{% if task.neventsTot > 0 %} {{ task.neventsTot|intcomma }} / {{ task.neventsRemaining|intcomma }} {% endif %}</font></td>
+        {% endif %}
         <td><font size=-1>{{ task.creationdate }}</font></td>
         <td><font size=-1>{{ task.modificationtime }}</font></td>
         <td><font size=-1>{{ task.statechangetime }}</font></td>
         <td>{{ task.taskpriority }}</td>
-        <td>{{ task.nucleus }}</td>
+        {% if viewParams.MON_VO == 'ATLAS' %}
+          <td>{{ task.nucleus }}</td>
+        {% endif %}
       </tr>
     {% endfor %}
   </table>

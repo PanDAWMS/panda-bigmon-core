@@ -697,9 +697,16 @@ def humanize_task_params(taskparams):
     return taskparams_list, jobparams_list
 
 
-def get_hs06s_summary_for_task(query):
-    """"""
-    hs06sSum = {'finished': 0, 'failed': 0, 'total': 0}
+def get_job_metrics_summary_for_task(query):
+    """
+    Calculate sum of job metrics for a task, e.g. HS06s, gCO2
+    :param query: dict
+    :return:
+    """
+    metric_list = ['hs06sec', 'gco2_global']
+    metrics = {}
+    for m in metric_list:
+        metrics[m] = {'finished': 0, 'failed': 0, 'total': 0}
 
     hquery = copy.deepcopy(query)
     hquery['jobstatus__in'] = ('finished', 'failed')
@@ -709,20 +716,20 @@ def get_hs06s_summary_for_task(query):
         hs06sec_sum = []
         # getting jobs. Can not use the .annotate() as there can be duplicates
         jobs = []
-        jvalues = ('pandaid', 'jobstatus', 'hs06sec')
+        jvalues = ['pandaid', 'jobstatus', ] + metric_list
         jobs.extend(Jobsarchived4.objects.filter(**hquery).values(*jvalues))
         jobs.extend(Jobsarchived.objects.filter(**hquery).values(*jvalues))
         jobs = drop_duplicates(jobs)
 
         for job in jobs:
-            hs06sSum['total'] += job['hs06sec'] if job['hs06sec'] is not None else 0
-            if job['jobstatus'] == 'finished':
-                hs06sSum['finished'] += job['hs06sec'] if job['hs06sec'] is not None else 0
-            elif job['jobstatus'] == 'failed':
-                hs06sSum['failed'] += job['hs06sec'] if job['hs06sec'] is not None else 0
+            for m in metric_list:
+                metrics[m]['total'] += job[m] if m in job and job[m] is not None else 0
+                if job['jobstatus'] == 'finished':
+                    metrics[m]['finished'] += job[m] if m in job and job[m] is not None else 0
+                elif job['jobstatus'] == 'failed':
+                    metrics[m]['failed'] += job[m] if m in job and job[m] is not None else 0
 
-
-        # getting data from ATLARC DB
+        # getting data from ATLARC DB, only hs06s
         pj_models = get_pandajob_arch_models_by_year(query['modificationtime__castdate__range'])
         if len(pj_models) > 0:
             for pjm in pj_models:
@@ -733,14 +740,14 @@ def get_hs06s_summary_for_task(query):
 
         if len(hs06sec_sum) > 0:
             for hs in hs06sec_sum:
-                hs06sSum['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                metrics['hs06sec']['total'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
                 if hs['jobstatus'] == 'finished':
-                    hs06sSum['finished'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                    metrics['hs06sec']['finished'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
                 elif hs['jobstatus'] == 'failed':
-                    hs06sSum['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
+                    metrics['hs06sec']['failed'] += hs['hs06secsum'] if hs['hs06secsum'] is not None else 0
 
 
-    return hs06sSum
+    return metrics
 
 
 def get_task_age(task, **kwargs):

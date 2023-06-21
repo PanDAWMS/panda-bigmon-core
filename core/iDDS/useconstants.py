@@ -30,9 +30,9 @@ class SubstitleValue:
 
 
         elif objName == 'transforms':
-            if field == 'transform_id_fk__status':
+            if field == 'transform_id_fk__status' or field == 'status':
                 klassname = TransformStatus
-            elif field == 'transform_id_fk__transform_type':
+            elif field == 'transform_id_fk__transform_type' or field == 'type':
                 klassname = TransformType
 
         elif objName == 'collections':
@@ -78,4 +78,7 @@ class SubstitleValue:
         if objName == 'requests':
             for k,v in value.items():
                 replacement[k] = RequestStatus[v].value
+        elif objName == 'transform':
+            for k,v in value.items():
+                replacement[k] = TransformStatus[v].value
         return replacement
