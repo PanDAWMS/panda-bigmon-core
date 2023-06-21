@@ -186,7 +186,7 @@ def wfprogress(request):
         iDDSrequests = get_workflow_progress_data(request.session['requestParams'], **kwargs)
     except Exception as e:
         iDDSrequests = []
-        _logger.exception('Failed to load iDDS requests from DB: \n{}'.format(e))
+        _logger.exception('Internal Server Error: Failed to load iDDS requests from DB: \n{}'.format(e))
 
     iDDSsummary = prepare_requests_summary(iDDSrequests)
     if is_json_request(request):
