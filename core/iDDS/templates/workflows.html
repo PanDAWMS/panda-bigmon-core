@@ -23,46 +23,55 @@
 
 {% block body %}
 
-{% if iDDSrequests|length > 2 %}
-    <table>
-    <tr class='tablesection'><th colspan=20><a name="tasks"></a> Workflows attribute summary</th></tr>
-    {% for attribute, occurences in iDDSsummary.items %}
-    <tr><th> {{ attribute }} ({{ occurences|length }}) </th><td>
-    <div class="comment more">
-    {% for property, count  in occurences.items %}
-    <span {% if attribute == 'status' %} class='{{ property|lower }} item' {% else %} class="item" {% endif %}> {{ property }} </span>
-        <a href="{% url 'workflowprogressitems' %}?{{attribute}}={{property}}">({{ count }})</a>
-    {% endfor %}
-    </div></td></tr>
-    {% endfor %}
+{% if iDDSrequests|length > 0 %}
+<table class="bp-table secondary">
+<thead>
+  <tr><th colspan=2>Workflows attribute summary</th></tr>
+</thead>
+<tbody>
+  {% for attribute, occurences in iDDSsummary.items %}
+  <tr>
+    <th> {{ attribute }} ({{ occurences|length }}) </th>
+    <td>
+      <div class="comment more">
+      {% for property, count  in occurences.items %}
+        <span class="item">
+          <span {% if attribute == 'status' %} class="{{ property|lower }}" {% endif %}>{{ property }}</span>
+          <a href="{% url 'workflowprogressitems' %}?{{attribute}}={{property}}">({{ count }})</a>
+        </span>
+      {% endfor %}
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+</table>
+
+<div class="card bp-container-simple secondary">
+  <div class="card-divider">
+    <p>Requests:</p>
+  </div>
+  <div class="card-section">
+    <table id="requests_table" class="data-table hover" >
+      <thead><tr>
+        <th>Request ID</th>
+        <th>Username</th>
+        <th>Request Status</th>
+        <th>Plot</th>
+        <th>WorkFlow Name</th>
+        <th>Created At</th>
+        <th>Total tasks</th>
+        <th>Tasks</th>
+        <th>Total files</th>
+        <th>Released files</th>
+        <th>Unreleased files</th>
+        <th>Processed files</th>
+        <th>Remaining files</th>
+      </tr></thead>
+      <tbody></tbody>
     </table>
-
-
-    <div class="card bp-container-simple">
-      <div class="card-divider">
-        <p>Requests:</p>
-      </div>
-      <div class="card-section">
-        <table id="requests_table" class="display data-table" >
-          <thead><tr>
-            <th>Request ID</th>
-            <th>Username</th>
-            <th>Request Status</th>
-            <th>Plot</th>
-            <th>WorkFlow Name</th>
-            <th>Created At</th>
-            <th>Total tasks</th>
-            <th>Tasks</th>
-	    <th>Total files</th>
-            <th>Released files</th>
-            <th>Unreleased files</th>
-            <th>Processed files</th>
-            <th>Remaining files</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+  </div>
+</div>
 {% else %}
   <div class="card bp-container-simple info">
     <div class="card-divider"><p>No iDDS requests found.</p></div>
@@ -93,7 +102,7 @@ var requests_table = $('#requests_table').DataTable({
     columns: [
         { data: "request_id", title: "request id", className: "num" },
         { data: "username", title: "username" },
-        { data: "r_status", title: "workflow status" },
+        { data: "r_status", title: "workflow status", className: "state" },
         { data: "request_id", title: "graph",
             render: function(data, type, row, meta) {
                 return '<a target=blank href = "' + '{% url "daggraph" %}' +'?idds_request_id='+row['request_id']+'">'+'plot'+'</a>';
@@ -106,10 +115,10 @@ var requests_table = $('#requests_table').DataTable({
         },
         { data: "created_at", title: "created on (UTC)" },
         { data: "total_tasks", title: "total tasks", className: "num"},
-        { data: "tasks_links", title: "tasks",
+        { data: "tasks_statuses", title: "tasks",
            render: function(data, type, row, meta) {
-            retVal = ''
-            for (var key in row['tasks_links']) {
+            let retVal = ''
+            for (let key in row['tasks_statuses']) {
 
                 switch(key) {
                   case 'Finished':
@@ -122,13 +131,12 @@ var requests_table = $('#requests_table').DataTable({
                     retVal += '<a target=blank href = "{% url "taskList" %}?idds_request_id='+row['request_id']+'&idds_transform_status=Running'+'"><span class="running">'+key+'('+row['tasks_statuses'][key]+')'+'</span></a> ';
                     break;
                   default:
-                    retVal += '<span class="registered">'+key+'('+row['tasks_statuses'][key]+')'+'</span> ';
+                    retVal += '<span class="'+key.toLowerCase()+'">'+key+'('+row['tasks_statuses'][key]+')'+'</span> ';
                 }
             }
             return retVal;
            }
         },
-
         { data: "total_files", title: "total files", className: "num" },
         { data: "released_files", title: "released files", className: "num" },
         { data: "unreleased_files", title: "unreleased files", className: "num" },
