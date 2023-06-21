@@ -93,7 +93,7 @@ def get_workflow_progress_data(request_params, **kwargs):
         workflow['TOTAL_FILES'] += workflow_group[7]
         workflow['UNRELEASED_FILES'] = workflow['TOTAL_FILES'] - workflow['RELEASED_FILES']
 
-        tasks = workflow_group[10].split("|")
+        tasks = workflow_group[10].replace('.0','').split("|")
         if 'nan' in tasks:
             tasks.remove('nan')
         tasks = [{'jeditaskid': int(task)} for task in tasks]
