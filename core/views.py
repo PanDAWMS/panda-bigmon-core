@@ -77,11 +77,11 @@ from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, get
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
-from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, dictfetchall
+from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, dictfetchall, round_to_n_digits
 from core.libs.eventservice import event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
-    get_task_params, humanize_task_params, get_hs06s_summary_for_task, cleanTaskList, get_task_flow_data, \
+    get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist, get_task_name_by_taskid
 from core.libs.task import get_dataset_locality, is_event_service_task, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, \
@@ -4294,8 +4294,21 @@ def taskList(request):
 
     if 'ATLAS' in settings.DEPLOYMENT:
         query, extra_str = extend_view_deft(request, query, extra_str)
+    if any(['idds' in p for p in request.session['requestParams']]):
+        try:
+            from core.iDDS.utils import extend_view_idds
+            query, extra_str = extend_view_idds(request, query, extra_str)
+        except ImportError:
+            _logger.exception('Failed to import iDDS utils')
+        else:
+            _logger.exception('Failed to extend query with idds related parameters')
 
-    # if jeditaskid list in query is too long -> put it in tmp table and remove time limit
+    # remove time limit if jeditaskid in query
+    if 'modificationtime__castdate__range' in query and (
+            'jeditaskid__in' in query or 'jeditaskid in' in extra_str.lower()):
+        del query['modificationtime__castdate__range']
+
+    # if jeditaskid list in query is too long -> put it in tmp table
     if 'jeditaskid__in' in query and len(query['jeditaskid__in']) > settings.DB_N_MAX_IN_QUERY:
         tmp_table_name = get_tmp_table_name()
         transaction_key = insert_to_temp_table(query['jeditaskid__in'])
@@ -4304,8 +4317,6 @@ def taskList(request):
             transaction_key
         )
         del query['jeditaskid__in']
-        if 'modificationtime__castdate__range' in query:
-            del query['modificationtime__castdate__range']
 
     listTasks = []
     if 'statenotupdated' in request.session['requestParams']:
@@ -4775,29 +4786,6 @@ def getErrorSummaryForEvents(request):
     response = render(request, 'eventsErrorSummary.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
-
-
-def getBrokerageLog(request):
-    iquery = {}
-    iquery['type'] = 'prod_brokerage'
-    iquery['name'] = 'panda.mon.jedi'
-    if 'taskid' in request.session['requestParams']:
-        iquery['message__startswith'] = request.session['requestParams']['taskid']
-    if 'jeditaskid' in request.session['requestParams']:
-        iquery['message__icontains'] = "jeditaskid=%s" % request.session['requestParams']['jeditaskid']
-    if 'hours' not in request.session['requestParams']:
-        hours = 72
-    else:
-        hours = int(request.session['requestParams']['hours'])
-    startdate = timezone.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = timezone.now().strftime(settings.DATETIME_FORMAT)
-    iquery['bintime__range'] = [startdate, enddate]
-    records = Pandalog.objects.filter(**iquery).order_by('bintime').reverse()[:request.session['JOB_LIMIT']].values()
-    sites = {}
-    for record in records:
-        message = records['message']
-        print(message)
 
 
 def taskprofileplot(request):
@@ -5393,16 +5381,14 @@ def taskInfo(request, jeditaskid=0):
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
-    # getBrokerageLog(request)
-
     # get sum of hs06sec grouped by status
     # creating a jquery with timewindow
     jquery = copy.deepcopy(query)
     jquery['modificationtime__castdate__range'] = get_task_timewindow(taskrec, format_out='str')
-    if settings.DEPLOYMENT != 'POSTGRES':
-        hs06sSum = get_hs06s_summary_for_task(jquery)
+    if 'ATLAS' in settings.DEPLOYMENT:
+        job_metrics_sum = get_job_metrics_summary_for_task(jquery)
     else:
-        hs06sSum = {}
+        job_metrics_sum = {}
     _logger.info("Loaded sum of hs06sec grouped by status: {}".format(time.time() - request.session['req_init_time']))
 
     eventssummary = []
@@ -5486,10 +5472,15 @@ def taskInfo(request, jeditaskid=0):
         elif taskrec['cloud'] == 'WORLD':
             taskrec['destination'] = taskrec['nucleus']
 
-        if hs06sSum:
-            taskrec['totevprochs06'] = int(hs06sSum['finished']) if 'finished' in hs06sSum else None
-            taskrec['failedevprochs06'] = int(hs06sSum['failed']) if 'failed' in hs06sSum else None
-            taskrec['currenttotevhs06'] = int(hs06sSum['total']) if 'total' in hs06sSum else None
+        if job_metrics_sum:
+            taskrec['totevprochs06'] = int(job_metrics_sum['hs06sec']['finished']) if 'hs06sec' in job_metrics_sum else None
+            taskrec['failedevprochs06'] = int(job_metrics_sum['hs06sec']['failed']) if 'hs06sec' in job_metrics_sum else None
+            taskrec['currenttotevhs06'] = int(job_metrics_sum['hs06sec']['total']) if 'hs06sec' in job_metrics_sum else None
+
+            if 'gco2_global' in job_metrics_sum:
+                taskrec.update({
+                    'gco2_global_'+k: int(round_to_n_digits(float(v), method='floor')) if v > 1 else round_to_n_digits(float(v), n=1, method='floor') for k, v in job_metrics_sum['gco2_global'].items()
+                })
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
@@ -8158,8 +8149,16 @@ def getPayloadLog(request):
 
     pilot_logs_index = settings.ES_INDEX_PILOT_LOGS
 
-    payloadlog, job_running_flag, total = get_payloadlog(id, connection, pilot_logs_index, start=start_var, length=length_var, mode=mode,
-                                                         sort=sort, search_string=search_string)
+    payloadlog, job_running_flag, total = get_payloadlog(
+        id,
+        connection,
+        pilot_logs_index,
+        start=start_var,
+        length=length_var,
+        mode=mode,
+        sort=sort,
+        search_string=search_string
+    )
 
     log_content['payloadlog'] = payloadlog
     log_content['flag'] = job_running_flag
