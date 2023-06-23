@@ -109,6 +109,12 @@ li.news{padding:0px; margin-left: 0em; text-indent: -.4em;}
 .inputN{width:2em}
 .input4{width:4em}
 
+
+.strikethrough {
+  text-decoration: line-through;
+  text-decoration-thickness: 0.1rem;
+}
+
 .row {
   max-width: 100%;
 }

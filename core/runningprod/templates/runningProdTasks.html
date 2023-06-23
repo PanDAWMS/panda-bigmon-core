@@ -3,7 +3,7 @@
 {% load static %}
 {% load common_tags %}
 {% block page_title %} {% if requestParams.preset %}{{ requestParams.preset }} production {% else %}Production{% endif %}  tasks{% endblock %}
-{% block subtitle %}Running production task list
+{% block subtitle %}<span {% if load_ended_tasks %}class="strikethrough"{% endif %}>Running</span> production tasks{{ viewParams.selection|safe }}
 {% endblock %}
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
@@ -296,6 +296,8 @@
 <script>
 var plots_dict = {{ plots | safe }};
 var charts = {};
+var requestParams = {{ requestParams | safe }};
+
 $(document).ready(function () {
 
   Object.keys(plots_dict).forEach(pgroup => {
@@ -545,7 +547,18 @@ $(document).ready(function () {
       if (jumbo.checked) jumboQ = "jumbo="+jumbo.value;
 
       if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1) || (hpcsitesQ.length > 1) || (esQ.length > 1) || (jumboQ.length > 1)) {
-          query += "?";
+          if ('days' in requestParams ) {
+            query += "?days=" + requestParams.days + '&';
+          }
+          else if ('hours' in requestParams ) {
+            query += "?hours=" + requestParams.hours + '&';
+          }
+          else if ('date_from' in requestParams && 'date_to' in requestParams ) {
+            query += "?date_from=" + requestParams.date_from + '&date_to=' + requestParams.date_to + '&';
+          }
+          else {
+            query += "?";
+          }
           if (presetQ.length > 1) {
               query += presetQ+"&";
           }

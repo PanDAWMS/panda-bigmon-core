@@ -609,21 +609,18 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     else:
         request.session['noenddate'] = False
 
-    if request.path.startswith('/running'):
-        query = {}
+    if not endtime__castdate__range:
+        query = {
+            'modificationtime__castdate__range': [
+                startdate.strftime(settings.DATETIME_FORMAT),
+                enddate.strftime(settings.DATETIME_FORMAT)]
+        }
     else:
-        if not endtime__castdate__range:
-            query = {
-                'modificationtime__castdate__range': [
-                    startdate.strftime(settings.DATETIME_FORMAT),
-                    enddate.strftime(settings.DATETIME_FORMAT)]
-            }
-        else:
-            query = {
-                'endtime__castdate__range': [
-                    endtime__castdate__range[0],
-                    endtime__castdate__range[1]]
-            }
+        query = {
+            'endtime__castdate__range': [
+                endtime__castdate__range[0],
+                endtime__castdate__range[1]]
+        }
 
     # add min/max values to session
     request.session['TFIRST'] = startdate
@@ -829,8 +826,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         query['superstatus__in'] = values
                     elif param == 'reqid':
                         val = escape_input(request.session['requestParams'][param])
-                        if val.find('|') >= 0:
-                            values = val.split('|')
+                        if '|' in val or ',' in val:
+                            values = val.split('|') if '|' in val else val.split(',')
                             values = [int(val) for val in values]
                             query['reqid__in'] = values
                         else:

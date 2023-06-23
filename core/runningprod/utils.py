@@ -28,6 +28,9 @@ def updateView(request, query, exquery, wild_card_str):
     query = copy.deepcopy(query)
     exquery = copy.deepcopy(exquery)
 
+    if 'modificationtime__castdate__range' in query:
+        query['creationdate__castdate__range'] = query['modificationtime__castdate__range']
+        del query['modificationtime__castdate__range']
     if 'workinggroup' in query and 'preset' in request.session['requestParams'] and \
             request.session['requestParams']['preset'] == 'MC' and ',' in query['workinggroup']:
         #     excludeWGList = list(str(wg[1:]) for wg in request.session['requestParams']['workinggroup'].split(','))

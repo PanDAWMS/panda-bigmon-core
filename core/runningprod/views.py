@@ -1,12 +1,11 @@
 import random
 import json
 import copy
+import time
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from django.utils import timezone
-from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.utils.cache import patch_response_headers
@@ -24,6 +23,7 @@ from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsBy
 from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
 
 from django.conf import settings
+import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -47,15 +47,6 @@ def runningProdTasks(request):
         response = render(request, 'runningProdTasks.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
-    xurl = request.get_full_path()
-    if xurl.find('?') > 0:
-        xurl += '&'
-    else:
-        xurl += '?'
-    nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-    nohashtagurl = removeParam(xurl, 'hashtags', mode='extensible')
-    exquery = {}
 
     productiontype = ''
     if 'preset' in request.session['requestParams']:
@@ -81,47 +72,41 @@ def runningProdTasks(request):
             if 'processingtype' not in request.session['requestParams']:
                 request.session['requestParams']['processingtype'] = 'reprocessing'
 
-    tquery, wildCardExtension, LAST_N_HOURS_MAX = setupView(
+    exquery = {}
+    tquery_timelimited, extra_str, _ = setupView(
         request,
-        hours=0,
+        hours=24*7, # default 7 days if no limit in request and applies only if show_ended_tasks activated
         limit=9999999,
         querytype='task',
         wildCardExt=True)
-    tquery, exquery, wildCardExtension = updateView(request, tquery, exquery, wildCardExtension)
+    tquery_timelimited, exquery, extra_str = updateView(request, tquery_timelimited, exquery, extra_str)
 
     load_ended_tasks = False
-    if 'days' in request.session['requestParams'] and ((
-            'show_ended_tasks' in request.session['requestParams'] and request.session['requestParams']['show_ended_tasks'] == 'true') or (
-                 'eventservice' in tquery and tquery['eventservice'] == 1)):
+    if len(list(set(request.session['requestParams'].keys()) & set(const.TIME_LIMIT_OPTIONS))) > 0 or (
+        'eventservice' in tquery_timelimited and tquery_timelimited['eventservice'] == 1):
         load_ended_tasks = True
-
-        tquery_timelimited = copy.deepcopy(tquery)
-
-        # add time window selection for query from Frozen* model
-        days = int(request.session['requestParams']['days'])
-        tquery_timelimited['modificationtime__castdate__range'] = [
-            (timezone.now() - timedelta(days=days)).strftime(settings.DATETIME_FORMAT),
-            timezone.now().strftime(settings.DATETIME_FORMAT)
-        ]
-
-        if "((UPPER(status)  LIKE UPPER('all')))" in wildCardExtension:
-            wildCardExtension = wildCardExtension.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
-
-    if 'sortby' in request.session['requestParams'] and '-' in request.session['requestParams']['sortby']:
-        sortby = request.session['requestParams']['sortby']
+        request.session['viewParams']['selection'] = ', ended tasks limited by creation time from {} to {}'.format(
+            tquery_timelimited['creationdate__castdate__range'][0],
+            tquery_timelimited['creationdate__castdate__range'][1]
+        )
+        if "((UPPER(status)  LIKE UPPER('all')))" in extra_str:
+            extra_str = extra_str.replace("((UPPER(status)  LIKE UPPER('all')))", "(1=1)")
     else:
-        sortby = 'creationdate-desc'
-    oquery = '-' + sortby.split('-')[0] if sortby.split('-')[1].startswith('d') else sortby.split('-')[0]
+        request.session['viewParams']['selection'] = ''
+
+        # remove time limit
+    tquery = copy.deepcopy(tquery_timelimited)
+    if 'creationdate__castdate__range' in tquery:
+        del tquery['creationdate__castdate__range']
 
     tasks = []
+    tasks.extend(
+        RunningProdTasksModel.objects.filter(**tquery).extra(where=[extra_str]).exclude(**exquery).values())
+    _logger.debug("Got running tasks, N={} : {}".format(len(tasks), time.time() - request.session['req_init_time']))
     if load_ended_tasks:
-        tasks.extend(RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(
-            **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
-        tasks.extend(FrozenProdTasksModel.objects.filter(**tquery_timelimited).extra(where=[wildCardExtension]).exclude(
-            **exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery)[:])
-    else:
-        tasks.extend(RunningProdTasksModel.objects.filter(**tquery).extra(where=[wildCardExtension]).exclude(**exquery).values().annotate(nonetoend=Count(sortby.split('-')[0])).order_by('-nonetoend', oquery))
-
+        tasks.extend(
+            FrozenProdTasksModel.objects.filter(**tquery_timelimited).extra(where=[extra_str]).exclude(**exquery).values())
+        _logger.debug("Got frozen tasks, N={} : {}".format(len(tasks), time.time() - request.session['req_init_time']))
     qtime = datetime.now()
     task_list = [t for t in tasks]
     ntasks = len(tasks)
@@ -141,11 +126,13 @@ def runningProdTasks(request):
         'aslots': sum([t['aslots'] for t in task_list]),
         'ntasks': len(task_list),
     }
+    _logger.debug("Summary prepared : {}".format(time.time() - request.session['req_init_time']))
 
     # get gCO2 from ES
     gco2_sum = None
     try:
         gco2_sum = get_gco2_sum_for_tasklist(task_list=[t['jeditaskid'] for t in task_list])
+        _logger.debug("Got CO2 summary: {}".format(time.time() - request.session['req_init_time']))
     except Exception as ex:
         _logger.exception('Internal Server Error: failed to get gCO2 values from ES with: {}'.format(str(ex)))
     if gco2_sum and 'total' in gco2_sum:
@@ -155,10 +142,6 @@ def runningProdTasks(request):
         }
     else:
         gsum['gco2_sum'] = {}
-
-    # putting list of tasks to cache separately for dataTables plugin
-    transactionKey = random.randrange(100000000)
-    setCacheEntry(request, transactionKey, json.dumps(task_list, cls=DateEncoder), 60 * 30, isData=True)
 
     if is_json_request(request):
         if 'snap' in request.session['requestParams'] and len(request.session['requestParams']) == 2:
@@ -172,14 +155,24 @@ def runningProdTasks(request):
         dump = json.dumps(task_list, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
+        # putting list of tasks to cache separately for dataTables plugin
+        transactionKey = random.randrange(100000000)
+        setCacheEntry(request, transactionKey, json.dumps(task_list, cls=DateEncoder), 60 * 30, isData=True)
+
+        xurl = request.get_full_path()
+        if xurl.find('?') > 0:
+            xurl += '&'
+        else:
+            xurl += '?'
+        nohashtagurl = removeParam(xurl, 'hashtags', mode='extensible')
+
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
+            'load_ended_tasks': load_ended_tasks,
             'xurl': xurl,
-            'nosorturl': nosorturl,
             'nohashtagurl': nohashtagurl,
-            'sortby': sortby,
             'built': datetime.now().strftime("%H:%M:%S"),
             'transKey': transactionKey,
             'qtime': qtime,
@@ -189,6 +182,7 @@ def runningProdTasks(request):
             'plots': plots_dict,
         }
         response = render(request, 'runningProdTasks.html', data, content_type='text/html')
+        _logger.debug("Template rendered: {}".format(time.time() - request.session['req_init_time']))
         setCacheEntry(request, "runningProdTasks", json.dumps(data, cls=DateEncoder), 60 * 20)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
