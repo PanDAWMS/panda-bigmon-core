@@ -51,8 +51,7 @@ def get_es_credentials(instance):
 
     return es_host, es_user, es_password
 
-def create_es_connection(instance='es-atlas', timeout=2000, max_retries=10,
-                         retry_on_timeout=True):
+def create_es_connection(instance='es-atlas', timeout=2000, max_retries=10, retry_on_timeout=True):
     """
     Create a connection to ElasticSearch cluster
     """
@@ -218,7 +217,7 @@ def get_split_rule_info(es_conn, jeditaskid):
     Get split rule entries from ATLAS Elastic
     :param es_conn: connection to the ATLAS Elastic
     :param jeditaskid: unique task ID
-    :return: split rule messagees
+    :return: split rule messages
     """
     split_rules = []
     jedi_logs_index = settings.ES_INDEX_JEDI_LOGS
@@ -235,3 +234,34 @@ def get_split_rule_info(es_conn, jeditaskid):
         split_rules.append('\t'.join(str_values))
 
     return split_rules
+
+
+def get_gco2_sum_for_tasklist(task_list):
+    """
+    Getting sum of gCO2 for list of tasks from ES-ATLAS
+    :param: tasks_list: list of jeditaskid
+    :return: gco2_sum
+    """
+    gco2_sum = {'total': 0, 'finished': 0, 'failed': 0}
+    es_jobs_index = 'atlas_jobs_archived*'
+    es_conn = create_es_connection(instance='es-atlas')
+
+    s = Search(using=es_conn, index=es_jobs_index).query("terms", jeditaskid=[str(t) for t in task_list])
+
+    s.filter('range', **{
+        '@timestamp': {'gte': 'now-1y', 'lte': 'now'}
+    }).query("terms", jeditaskid=task_list)
+
+    s.aggs.bucket('jobstatus', 'terms', field='jobstatus.keyword') \
+        .metric('sum_gco2global', 'sum', field='gco2global') \
+        .metric('sum_gco2regional', 'sum', field='gco2regional')
+
+    response = s.execute()
+
+    for js in response.aggregations['jobstatus']:
+        if js['key'] in gco2_sum:
+            gco2_sum[js['key']] += js['sum_gco2global']['value']
+
+    gco2_sum['total'] = gco2_sum['finished'] + gco2_sum['failed']
+
+    return gco2_sum

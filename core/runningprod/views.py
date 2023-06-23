@@ -1,6 +1,7 @@
 import random
 import json
 import copy
+import logging
 
 from datetime import datetime, timedelta
 
@@ -11,7 +12,9 @@ from django.shortcuts import render, redirect
 from django.utils.cache import patch_response_headers
 
 from core.libs.cache import getCacheEntry, setCacheEntry
+from core.libs.exlib import round_to_n_digits, convert_grams
 from core.libs.task import task_summary_dict
+from core.libs.elasticsearch import get_gco2_sum_for_tasklist
 from core.oauth.utils import login_customrequired
 from core.libs.DateEncoder import DateEncoder
 from core.views import initRequest, setupView
@@ -22,6 +25,7 @@ from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsMo
 
 from django.conf import settings
 
+_logger = logging.getLogger('bigpandamon')
 
 @login_customrequired
 def runningProdTasks(request):
@@ -135,8 +139,22 @@ def runningProdTasks(request):
     gsum = {
         'nevents': sum([t['nevents'] for t in task_list]),
         'aslots': sum([t['aslots'] for t in task_list]),
-        'ntasks': len(task_list)
+        'ntasks': len(task_list),
     }
+
+    # get gCO2 from ES
+    gco2_sum = None
+    try:
+        gco2_sum = get_gco2_sum_for_tasklist(task_list=[t['jeditaskid'] for t in task_list])
+    except Exception as ex:
+        _logger.exception('Internal Server Error: failed to get gCO2 values from ES with: {}'.format(str(ex)))
+    if gco2_sum and 'total' in gco2_sum:
+        _, unit =  convert_grams(gco2_sum['total'], output_unit='auto')
+        gsum['gco2_sum'] = {
+            k: {'unit':unit, 'value': round_to_n_digits(convert_grams(v, output_unit=unit)[0], n=0)} for k,v in gco2_sum.items()
+        }
+    else:
+        gsum['gco2_sum'] = {}
 
     # putting list of tasks to cache separately for dataTables plugin
     transactionKey = random.randrange(100000000)

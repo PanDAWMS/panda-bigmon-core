@@ -392,6 +392,42 @@ def convert_epoch_to_datetime(timestamp):
     return output
 
 
+def convert_grams(n_grams, output_unit='auto'):
+    """
+    Convert grams to kg, tonne etc. If output_unit is "auto", return value and selected unit
+    :param n_grams: int
+    :param output_unit: str
+    :return: output
+    :return: output_unit
+    """
+    output = float(0)
+    if (isinstance(n_grams, int) or isinstance(n_grams, float)) and n_grams > 0:
+        n_grams = float(n_grams)
+        multipliers_dict = {
+            'pg': float(1000000000000),
+            'ng': float(1000000000),
+            'µg': float(1000000),
+            'mg': float(1000),
+            'g': float(1),
+            'kg': float(1.0/1000),
+            't': float(1.0/1000000),
+            'Mt': float(1.0/1000000000),
+            'Gt': float(1.0/1000000000000),
+        }
+        if output_unit in multipliers_dict.keys():
+            output = n_grams*multipliers_dict[output_unit]
+        elif output_unit == 'auto':
+            for unit, mp in multipliers_dict.items():
+                if 1.0 <= n_grams * mp < 1000.0:
+                    output = n_grams * mp
+                    output_unit = unit
+                    break
+    else:
+        output_unit = 'g'
+
+    return output, output_unit
+
+
 def split_into_intervals(input_data, **kwargs):
     """
     Split numeric values list into intervals for sumd
@@ -645,6 +681,9 @@ def round_to_n_digits(x, n=0, method='normal'):
         x = math.ceil(x * factor) / factor
     elif method == 'floor':
         x = math.floor(x * factor) / factor
+
+    if n == 0:
+        x = int(x)
 
     return x
 

@@ -224,7 +224,11 @@
 <div id="nEventsLineChart" class="row d3splot" style="display: none; margin: 0"></div>
 
 <table id = 'tasklist' class="data-table nowrap">
-<caption>{{ gsum.ntasks }} tasks listed</caption>
+<caption>{{ gsum.ntasks }} task{% if gsum.ntasks > 1 %}s{% endif %} listed.
+  {% if gsum.gco2_sum|length > 0 %}Estimated CO<sub>2</sub> emission in total: {{ gsum.gco2_sum.total.value }} {{ gsum.gco2_sum.total.unit }},
+    including <span class="broken">{{ gsum.gco2_sum.failed.value }} {{ gsum.gco2_sum.failed.unit }}</span> by failed jobs.
+  {% endif %}
+</caption>
 <thead>
 <tr>
   <th>Campaign</th>
