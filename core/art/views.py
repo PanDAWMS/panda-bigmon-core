@@ -21,6 +21,7 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, complete_request, removeParam
 from core.views import initRequest, extensibleURL
 from core.libs.DateEncoder import DateEncoder
+from core.libs.datetimestrings import parse_datetime
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result, analize_test_subresults
@@ -1243,6 +1244,13 @@ def registerARTTest(request):
     if 'jeditaskid' in job:
         jeditaskid = job['jeditaskid']
 
+    # extract datetime from str nightly time
+    nightly_tag_date = None
+    try:
+        nightly_tag_date = parse_datetime(nightly_tag)
+    except:
+        _logger.exception('Failed to parse date from nightly_tag')
+
     ### table columns:
     # pandaid
     # testname
@@ -1253,24 +1261,28 @@ def registerARTTest(request):
     # nightly_tag
     # jeditaskid
     # extrainfo
+    # created
+    # nightly_tag_date
 
     ### Check whether the pandaid has been registered already
     if ARTTests.objects.filter(pandaid=pandaid).count() == 0:
 
         ## INSERT ROW
         try:
-            insertRow = ARTTests.objects.create(pandaid=pandaid,
-                                                jeditaskid=jeditaskid,
-                                                testname=testname,
-                                                nightly_release_short=nightly_release_short,
-                                                nightly_tag=nightly_tag,
-                                                nightly_tag_display=nightly_tag_display,
-                                                project=project,
-                                                platform=platform,
-                                                package=package,
-                                                extrainfo=json.dumps(extra_info),
-                                                created=datetime.utcnow()
-                                                )
+            insertRow = ARTTests.objects.create(
+                pandaid=pandaid,
+                jeditaskid=jeditaskid,
+                testname=testname,
+                nightly_release_short=nightly_release_short,
+                nightly_tag=nightly_tag,
+                nightly_tag_display=nightly_tag_display,
+                project=project,
+                platform=platform,
+                package=package,
+                extrainfo=json.dumps(extra_info),
+                created=datetime.utcnow(),
+                nightly_tag_date=nightly_tag_date
+            )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
             _logger.info(data['message'] + str(request.session['requestParams']))
