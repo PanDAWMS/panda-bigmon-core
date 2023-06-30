@@ -1,12 +1,16 @@
 {% extends "_base_core.html" %}
 {% load static %}{% load common_tags %}
 {% block page_title %}ART nightly tests{% endblock %}
+
 {% block css_page %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
   <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
   <!-- Load c3.css -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 {% endblock %}
 {% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
   <!-- Load d3.js and c3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
@@ -39,74 +43,96 @@
 {% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
 {% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
 
-{% if artpackages|length > 0 %}
-
-<div class="row collapse">
-  <div class="columns">
-    <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
-      {% for pname,pack in artpackages.items %}
-      <li class="accordion-art-item is-active" data-accordion-item>
-        <a href="#" class="accordion-art-title">{{ pname }}</a>
-        <div class="accordion-art-content" data-tab-content >
-          <table class="no-border">
-              <tr>
-                  <th class="cell" ></th>
-                  {% for ntag in ntaglist %}
-                      {% for tags,files in pack.items %}
-                        {% if tags == ntag %}
-                            <th class="header left-aligned">{{ files.ntag_hf }}</th>
-                        {% endif %}
-                      {% endfor %}
-                  {% endfor %}
-              </tr>
-              <tr>
-                  <td class="cell-left">
-                      {% if requestParams.view and requestParams.view == 'packages' %}
-                        <a class="link-in-table" href="{%  url "artTasks" %}?package={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d" }}&view={{ requestParams.view }}">All {% if requestParams.branch %}selected{% endif %} branches</a>
-                      {% else %}
-                        <a class="link-in-table" href="{%  url "artTasks" %}?branch={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d"}}&view={{ requestParams.view }}">All {% if requestParams.package %}selected{% endif %} packages</a>
-                      {% endif %}</td>
-                  {% for ntag in ntaglist %}
-                      {% for tags,files in pack.items %}
-                          {% if tags == ntag %}
-                              <td class="cell">
-                                {% if files.finished > 0 or files.failed > 0 or files.active > 0 or files.succeeded > 0 %}
-                                    <div class="clickable">
-                                        <div class="active">{{ files.active }}</div>
-                                        <div class="succeeded">{{ files.succeeded }}</div>
-                                        <div class="finished">{{ files.finished }}</div>
-                                        <div class="failed">{{ files.failed }}</div>
-                                        <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% if requestParams.branch  %}&branch={{ requestParams.branch }}{% endif %}{% else %}?branch={{ pname }}{% if requestParams.package  %}&package={{ requestParams.package }}{% endif %}{% endif %}&ntag={{ tags }}"></a>
-                                    </div>
-                                {% else %}
-                                    <div class="nodata">
-                                        ---
-                                    </div>
-                                {% endif %}
-                              </td>
-                          {% endif %}
-                      {% endfor %}
-                  {% endfor %}
-              </tr>
-          </table>
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
+{% if artoverview|length > 0 %}
+<div class="card bp-container-simple secondary">
+  <div class="card-divider">
+    <p>Tests results per {% if requestParams.view and requestParams.view == 'branches' %}branch{% else %}package{% endif %}:</p>
+  </div>
+  <div class="card-section">
+    <table id="art_table" class="data-table" >
+      <thead></thead>
+      <tbody></tbody>
+    </table>
   </div>
 </div>
-
 {% else %}
-
-<p></p>
 <div class="callout alert" data-closable>
   <h5>No tests were found for provided selection parameters!</h5>
     <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
         <span aria-hidden="true">&times;</span>
   </button>
 </div>
-
 {% endif %}
+
+
+{#{% if artpackages|length > 0 %}#}
+{##}
+{#<div class="row collapse">#}
+{#  <div class="columns">#}
+{#    <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">#}
+{#      {% for pname,pack in artpackages.items %}#}
+{#      <li class="accordion-art-item is-active" data-accordion-item>#}
+{#        <a href="#" class="accordion-art-title">{{ pname }}</a>#}
+{#        <div class="accordion-art-content" data-tab-content >#}
+{#          <table class="no-border">#}
+{#              <tr>#}
+{#                  <th class="cell" ></th>#}
+{#                  {% for ntag in ntaglist %}#}
+{#                      {% for tags,files in pack.items %}#}
+{#                        {% if tags == ntag %}#}
+{#                            <th class="header left-aligned">{{ files.ntag_hf }}</th>#}
+{#                        {% endif %}#}
+{#                      {% endfor %}#}
+{#                  {% endfor %}#}
+{#              </tr>#}
+{#              <tr>#}
+{#                  <td class="cell-left">#}
+{#                      {% if requestParams.view and requestParams.view == 'packages' %}#}
+{#                        <a class="link-in-table" href="{%  url "artTasks" %}?package={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d" }}&view={{ requestParams.view }}">All {% if requestParams.branch %}selected{% endif %} branches</a>#}
+{#                      {% else %}#}
+{#                        <a class="link-in-table" href="{%  url "artTasks" %}?branch={{ pname }}&ntag_from={{ requestParams.ntag_from|date:"Y-m-d" }}&ntag_to={{ requestParams.ntag_to|date:"Y-m-d"}}&view={{ requestParams.view }}">All {% if requestParams.package %}selected{% endif %} packages</a>#}
+{#                      {% endif %}</td>#}
+{#                  {% for ntag in ntaglist %}#}
+{#                      {% for tags,files in pack.items %}#}
+{#                          {% if tags == ntag %}#}
+{#                              <td class="cell">#}
+{#                                {% if files.finished > 0 or files.failed > 0 or files.active > 0 or files.succeeded > 0 %}#}
+{#                                    <div class="clickable">#}
+{#                                        <div class="active">{{ files.active }}</div>#}
+{#                                        <div class="succeeded">{{ files.succeeded }}</div>#}
+{#                                        <div class="finished">{{ files.finished }}</div>#}
+{#                                        <div class="failed">{{ files.failed }}</div>#}
+{#                                        <a href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}{% if requestParams.branch  %}&branch={{ requestParams.branch }}{% endif %}{% else %}?branch={{ pname }}{% if requestParams.package  %}&package={{ requestParams.package }}{% endif %}{% endif %}&ntag={{ tags }}"></a>#}
+{#                                    </div>#}
+{#                                {% else %}#}
+{#                                    <div class="nodata">#}
+{#                                        ---#}
+{#                                    </div>#}
+{#                                {% endif %}#}
+{#                              </td>#}
+{#                          {% endif %}#}
+{#                      {% endfor %}#}
+{#                  {% endfor %}#}
+{#              </tr>#}
+{#          </table>#}
+{#        </div>#}
+{#      </li>#}
+{#      {% endfor %}#}
+{#    </ul>#}
+{#  </div>#}
+{#</div>#}
+{##}
+{#{% else %}#}
+{##}
+{#<p></p>#}
+{#<div class="callout alert" data-closable>#}
+{#  <h5>No tests were found for provided selection parameters!</h5>#}
+{#    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>#}
+{#        <span aria-hidden="true">&times;</span>#}
+{#  </button>#}
+{#</div>#}
+{##}
+{#{% endif %}#}
 
 {% endblock %}
 
@@ -117,7 +143,48 @@
 
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
-<script>
+<script type="text/javascript">
+var table_data=JSON.parse(JSON.stringify({{ artoverview | safe }}));
+var table_title= table_data.shift()
+var art_tasks_link_base = '{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={% else %}?branch={% endif %}'
+var columns = []
+columns.push({
+  title: table_title[0],
+  render: function (data, type, row, meta) {return '<a target=blank href="' + art_tasks_link_base + data + '">' + data + '</a>'}
+})
+for (let i=1; i<table_data[0].length; i++) {
+  columns.push({
+    title: table_title[i],
+    render: function (data, type, row, meta) {
+      if (data.active+data.succeeded+data.finished+data.failed == 0) {
+        return '<div class="nodata">---</div> '
+      }
+      else {
+        return '<div class="clickable"><div class="active">' + data.active + '</div>' +
+          '<div class="succeeded">' + data.succeeded + '</div>' +
+          '<div class="finished">' + data.finished + '</div>' +
+          '<div class="failed">' + data.failed + '</div>' +
+          '<a target="_blank" href="'+ art_tasks_link_base + row[0] + '&ntag=' + data.ntag +'"></a>' +
+          '</div>';
+        }
+      }
+  })
+}
+
+var art_table = $('#art_table').DataTable({
+  lengthChange: false,
+  paging: false,
+  bFilter: false,
+  scrollX: true,
+  order: [[0, "asc"]],
+  columns: columns,
+  data: table_data,
+  selectable: true,
+  select: {
+      style: 'single'
+  },
+});
+
 app.controller('artOverviewController', function($scope, $sce) {
   $scope.art = {
     plot: {
@@ -190,4 +257,6 @@ app.controller('artOverviewController', function($scope, $sce) {
 
 });
 </script>
+
+
 {% endblock %}

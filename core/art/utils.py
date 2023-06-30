@@ -1,7 +1,8 @@
 """
 Created by Tatiana Korchuganova on 04.10.2019
 """
-
+import logging
+import time
 from datetime import datetime, timedelta
 
 from django.db.models.functions import Substr
@@ -10,6 +11,7 @@ from core.libs.sqlcustom import preprocess_wild_card_string
 from core.art.modelsART import ARTTests
 
 artdateformat = '%Y-%m-%d'
+_logger = logging.getLogger('bigpandamon')
 
 
 def setupView(request, querytype='task'):
@@ -95,10 +97,10 @@ def setupView(request, querytype='task'):
     if 'nlastnightlies' in request.session['requestParams']:
         nlastnightlies = int(request.session['requestParams']['nlastnightlies'])
         datelist = find_last_n_nightlies(request, nlastnightlies)
+        _logger.debug('Got n last nightly tags: {}'.format(time.time() - request.session['req_init_time']))
         if len(datelist) == 0:
-            startdate = datetime.strptime('2017-05-03', artdateformat)
+            startdate = datetime.strptime('2017-05-03', artdateformat) # this is the first ART test
             enddate = datetime.now()
-
 
     if not 'ntag' in request.session['requestParams']:
         if 'ntags' in request.session['requestParams'] or 'nlastnightlies' in request.session['requestParams']:
