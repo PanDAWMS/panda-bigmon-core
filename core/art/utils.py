@@ -10,6 +10,8 @@ from django.db.models.functions import Substr
 from core.libs.sqlcustom import preprocess_wild_card_string
 from core.art.modelsART import ARTTests
 
+
+import core.art.constants as art_const
 artdateformat = '%Y-%m-%d'
 _logger = logging.getLogger('bigpandamon')
 
@@ -105,16 +107,19 @@ def setupView(request, querytype='task'):
     if not 'ntag' in request.session['requestParams']:
         if 'ntags' in request.session['requestParams'] or 'nlastnightlies' in request.session['requestParams']:
             if len(datelist) > 0:
-                request.session['requestParams']['ntags'] = datelist
+                # request.session['requestParams']['ntags'] = datelist
                 startdate = min(datelist)
                 enddate = max(datelist)
-            request.session['requestParams']['ntag_from'] = startdate
-            request.session['requestParams']['ntag_to'] = enddate
-        else:
-            request.session['requestParams']['ntag_from'] = startdate
-            request.session['requestParams']['ntag_to'] = enddate
+
+
+    # view params will be shown at page top
+    if 'ntag' in request.session['requestParams']:
+        request.session['viewParams']['ntag'] = startdate.strftime(art_const.DATETIME_FORMAT['humanized'])
+    elif 'ntag_full' in request.session['requestParams']:
+        request.session['viewParams']['ntag_full'] = request.session['requestParams']['ntag_full']
     else:
-        request.session['requestParams']['ntag'] = startdate
+        request.session['viewParams']['ntag_from'] = startdate.strftime(art_const.DATETIME_FORMAT['humanized'])
+        request.session['viewParams']['ntag_to'] = enddate.strftime(art_const.DATETIME_FORMAT['humanized'])
 
     # Process and prepare a query as a string
     querystr = ''

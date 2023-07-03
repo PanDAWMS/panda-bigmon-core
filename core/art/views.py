@@ -127,10 +127,10 @@ def artOverview(request):
                     except:
                         pass
                 if len(ntags) > 1 and 'requestParams' in data:
-                    data['requestParams']['ntag_from'] = min(ntags)
-                    data['requestParams']['ntag_to'] = max(ntags)
+                    data['viewParams']['ntag_from'] = min(ntags)
+                    data['viewParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
-                    data['requestParams']['ntag'] = ntags[0]
+                    data['viewParams']['ntag'] = ntags[0]
         response = render(request, 'artOverview.html', data, content_type='text/html')
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -213,6 +213,7 @@ def artOverview(request):
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
+        # dict -> list for datatable
         art_overview = [[ao[0]] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist] ]
         art_overview.extend([[k,]+[j for i, j in v.items()] for k, v in artpackagesdict.items()])
         xurl = extensibleURL(request)
@@ -266,10 +267,10 @@ def artTasks(request):
                     except:
                         pass
                 if len(ntags) > 1 and 'requestParams' in data:
-                    data['requestParams']['ntag_from'] = min(ntags)
-                    data['requestParams']['ntag_to'] = max(ntags)
+                    data['viewParams']['ntag_from'] = min(ntags)
+                    data['viewParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
-                    data['requestParams']['ntag'] = ntags[0]
+                    data['viewParams']['ntag'] = ntags[0]
         response = render(request, 'artTasks.html', data, content_type='text/html')
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -352,12 +353,27 @@ def artTasks(request):
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
+        art_tasks = [[ao[0], ao[1]] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist] ]
+        for ao0, ao0_dict in arttasksdict.items():
+            for ao1, ao1_dict in ao0_dict.items():
+                tmp_nightlies = []
+                for n, v in ao1_dict.items():
+                    tmp = []
+                    for s, results in v.items():
+                        if s != 'ntag_hf':
+                            res_dict = results
+                            res_dict['ntag_time'] = s[-5:]
+                            res_dict['ntag_full'] = s
+                            tmp.append(res_dict)
+                    tmp_nightlies.append(tmp)
+                art_tasks.append([ao0, ao1] + tmp_nightlies)
+
         data = {
             'request': request,
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
-            'arttasks': arttasksdict,
+            'arttasks': art_tasks,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(art_const.DATETIME_FORMAT['default']) for ntag in ntagslist],
         }
@@ -401,10 +417,10 @@ def artJobs(request):
                     except:
                         pass
                 if len(ntags) > 1 and 'requestParams' in data:
-                    data['requestParams']['ntag_from'] = min(ntags)
-                    data['requestParams']['ntag_to'] = max(ntags)
+                    data['viewParams']['ntag_from'] = min(ntags)
+                    data['viewParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
-                    data['requestParams']['ntag'] = ntags[0]
+                    data['viewParams']['ntag'] = ntags[0]
         response = render(request, 'artJobs.html', data, content_type='text/html')
         _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
         request = complete_request(request)
@@ -734,10 +750,10 @@ def artStability(request):
                     except:
                         pass
                 if len(ntags) > 1 and 'requestParams' in data:
-                    data['requestParams']['ntag_from'] = min(ntags)
-                    data['requestParams']['ntag_to'] = max(ntags)
+                    data['viewParams']['ntag_from'] = min(ntags)
+                    data['viewParams']['ntag_to'] = max(ntags)
                 elif len(ntags) == 1:
-                    data['requestParams']['ntag'] = ntags[0]
+                    data['viewParams']['ntag'] = ntags[0]
         response = render(request, 'artStability.html', data, content_type='text/html')
         _logger.info('Rendered template with data from cache: {}s'.format(time.time()-request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -1323,7 +1339,8 @@ def sendArtReport(request):
     elif 'ntag_to' not in request.session['requestParams']:
         valid = False
         errorMessage = 'No ntag provided!'
-    elif request.session['requestParams']['ntag_from'] != (datetime.now() - timedelta(days=1)).strftime(art_const.DATETIME_FORMAT['default']) or request.session['requestParams']['ntag_to'] != datetime.now().strftime(art_const.DATETIME_FORMAT['default']):
+    elif request.session['requestParams']['ntag_from'] != (datetime.now() - timedelta(days=1)).strftime(art_const.DATETIME_FORMAT['default']) \
+            or request.session['requestParams']['ntag_to'] != datetime.now().strftime(art_const.DATETIME_FORMAT['default']):
         valid = False
         errorMessage = 'Provided ntag is not valid'
     if not valid:
@@ -1348,7 +1365,7 @@ def sendArtReport(request):
     artjobsdictpackage = {}
     for job in jobs:
         nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
-        if nightly_tag_time > request.session['requestParams']['ntag_from'] + timedelta(hours=20):
+        if nightly_tag_time > query['ntag_from'] + timedelta(hours=20):
             if job['package'] not in artjobsdictpackage.keys():
                 artjobsdictpackage[job['package']] = {}
                 artjobsdictpackage[job['package']]['branch'] = job['branch']

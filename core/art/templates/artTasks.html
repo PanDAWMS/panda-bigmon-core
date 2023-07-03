@@ -2,7 +2,13 @@
 {% load static %}{% load common_tags %}
 {% block page_title %}ART nightly tests{% endblock %}
 {% block css_page %}
-    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 {% endblock %}
 {% block subtitle %}ART nightly tasks {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
@@ -17,9 +23,36 @@
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
-{% if requestParams.ntag %}<b>Listed tests are for builds done on {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
-{% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
-{% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
+{% if viewParams.ntag %}<b>Listed tests are for builds done on {{ viewParams.ntag }}</b> <br>{% endif %}
+{% if viewParams.ntag_full %}<b>Listed tests are for the following build: {{ viewParams.ntag_full }}</b> <br>{% endif %}
+{% if viewParams.ntag_from %}<b>Listed tests are for builds done from {{ viewParams.ntag_from }}</b>{% endif %}
+{% if viewParams.ntag_to %}<b>to {{ viewParams.ntag_to }}</b> <br>{% endif %}
+
+
+
+{% if arttasks|length > 0 %}
+<div class="card bp-container-simple secondary">
+  <div class="card-divider">
+    <p>Tests results per {% if requestParams.view and requestParams.view == 'branches' %}branch{% else %}package{% endif %}:</p>
+  </div>
+  <div class="card-section">
+    <table id="art_table" class="data-table" >
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="callout alert" data-closable>
+  <h5>No tests were found for provided selection parameters!</h5>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
+
+
 
 {% if arttasks|length > 0 %}
 
@@ -110,4 +143,75 @@
 {% block help %}
     <a name="help"></a>
     {% include "artHelp.html" %}
+{% endblock %}
+
+
+
+{% block js_body_page %}
+<script type="text/javascript">
+var table_data=JSON.parse(JSON.stringify({{ arttasks | safe }}));
+var table_title= table_data.shift()
+var request_params = {{ requestParams|safe }};
+var art_jobs_link_base = '{% url 'artJobs' %}?' + Object.keys(request_params).reduce((res, key) => res + key + '=' + request_params[key] + '&' , '');
+var columns = []
+columns.push({
+  title: table_title[0],
+  render: function (data, type, row, meta) {return '<a target=blank href="' + art_jobs_link_base + table_title[0] + '=' + data + '">' + data + '</a>'}
+})
+columns.push({
+  title: table_title[1],
+  render: function (data, type, row, meta) {return '<a target=blank href="' + art_jobs_link_base + table_title[1] + '=' + data + '">' + data + '</a>'}
+})
+for (let i=2; i<table_data[0].length; i++) {
+  columns.push({
+    title: table_title[i],
+    className: 'state',
+    render: function (data, type, row, meta) {
+      if (type === 'sort') {
+        return (data.length > 0) ? data[0].failed : -1;
+      }
+      else {
+        let result = '';
+        if (data.length === 0) {
+          result += '---';
+        }
+        else {
+          data.forEach(item => {
+            if (item.active+item.succeeded+item.finished+item.failed == 0) {
+              result += '---<br>'
+            }
+            else {
+              result += '<div class="with-ntagfull"><div class="clickable"><div class="active">' + item.active + '</div>' +
+                '<div class="succeeded">' + item.succeeded + '</div>' +
+                '<div class="finished">' + item.finished + '</div>' +
+                '<div class="failed">' + item.failed + '</div>' +
+                '<a target="_blank" href="'+ '{% url 'artJobs' %}?' + table_title[0] + '=' + row[0] + '&' + table_title[1] + '=' + row[1]  + '&ntag_full=' + item.ntag_full +'"></a></div>' +
+                '<b>' + item.ntag_time +  '</b></div><br>' ;
+            }
+          })
+        }
+        result = (result.endsWith('<br>')) ? result.slice(0, -4) : result ;
+        return result
+        }
+      }
+  })
+}
+
+let columnDefs =  [{"type": "num-html", "targets": [...Array(table_title.length).keys()].slice(2) }];
+
+var art_table = $('#art_table').DataTable({
+  lengthChange: false,
+  paging: false,
+  bFilter: false,
+  scrollX: true,
+  order: [[0, "asc"], [1, "asc"]],
+  columnDefs: columnDefs,
+  columns: columns,
+  data: table_data,
+  selectable: true,
+  select: {
+      style: 'single'
+  },
+});
+</script>
 {% endblock %}

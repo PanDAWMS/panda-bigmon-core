@@ -36,12 +36,12 @@
 
 </div>
 
-
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
-{% if requestParams.ntag %}<b>Listed tests are for builds done on {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
-{% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
-{% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
+{% if viewParams.ntag %}<b>Listed tests are for builds done on {{ viewParams.ntag }}</b> <br>{% endif %}
+{% if viewParams.ntag_full %}<b>Listed tests are for the following build: {{ viewParams.ntag_full }}</b> <br>{% endif %}
+{% if viewParams.ntag_from %}<b>Listed tests are for builds done from {{ viewParams.ntag_from }}</b>{% endif %}
+{% if viewParams.ntag_to %}<b>to {{ viewParams.ntag_to }}</b> <br>{% endif %}
 
 {% if artoverview|length > 0 %}
 <div class="card bp-container-simple secondary">
@@ -74,13 +74,14 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script type="text/javascript">
-var table_data=JSON.parse(JSON.stringify({{ artoverview | safe }}));
-var table_title= table_data.shift()
-var art_tasks_link_base = '{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={% else %}?branch={% endif %}'
+var table_data = JSON.parse(JSON.stringify({{ artoverview | safe }}));
+var table_title = table_data.shift()
+var request_params = {{ requestParams|safe }};
+var art_tasks_link_base = '{% url 'artTasks' %}?' + Object.keys(request_params).reduce((res, key) => res + key + '=' + request_params[key] + '&' , '');
 var columns = []
 columns.push({
   title: table_title[0],
-  render: function (data, type, row, meta) {return '<a target=blank href="' + art_tasks_link_base + data + '">' + data + '</a>'}
+  render: function (data, type, row, meta) {return '<a target=blank href="' + art_tasks_link_base + table_title[0] + '=' + data + '">' + data + '</a>'}
 })
 for (let i=1; i<table_data[0].length; i++) {
   columns.push({
@@ -106,7 +107,7 @@ var art_table = $('#art_table').DataTable({
   paging: false,
   bFilter: false,
   scrollX: true,
-  order: [[0, "asc"]],
+  order: [[0, "desc"]],
   columns: columns,
   data: table_data,
   selectable: true,

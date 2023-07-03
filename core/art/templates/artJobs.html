@@ -25,10 +25,10 @@
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
-{% if requestParams.ntag %}<b>Listed tests are for builds done on {{ requestParams.ntag|date:"d b Y" }}</b> <br>{% endif %}
-{% if requestParams.ntag_from %}<b>Listed tests are for builds done from {{ requestParams.ntag_from|date:"d b Y" }}</b>{% endif %}
-{% if requestParams.ntag_to %}<b>to {{ requestParams.ntag_to|date:"d b Y" }}</b> <br>{% endif %}
-{% if requestParams.ntag_full %}<b>Nightly tag is {{ requestParams.ntag_full }}</b> <br>{% endif %}
+{% if viewParams.ntag %}<b>Listed tests are for builds done on {{ viewParams.ntag }}</b> <br>{% endif %}
+{% if viewParams.ntag_full %}<b>Listed tests are for the following build: {{ viewParams.ntag_full }}</b> <br>{% endif %}
+{% if viewParams.ntag_from %}<b>Listed tests are for builds done from {{ viewParams.ntag_from }}</b>{% endif %}
+{% if viewParams.ntag_to %}<b>to {{ viewParams.ntag_to }}</b> <br>{% endif %}
 {% if requestParams.ntag_full or gitlabids|length == 1 %}<b>Gitlab ID: <a class="bluelink" target="_blank" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b>{% endif %}
 {% if requestParams.package and artjobs.values|length == 1 %} {% if reportto.jira|length == 1 or reportto.mail|length == 1 %}<b>Report an issue to responsible,
     {% if reportto.jira|length == 1 %} JIRA: {% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %} {% endif %}
