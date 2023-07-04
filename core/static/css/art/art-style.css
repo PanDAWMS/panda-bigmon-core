@@ -1,8 +1,3 @@
-.row {
-    max-width: 100%;
-    margin-bottom: 1rem;
-}
-
 /* ART Main Menu styles */
 /* --------------------------------------------------------------------------------------------------- */
 fieldset.artmenu {
@@ -57,7 +52,7 @@ fieldset.artmenu li.input-group button.hollow.alert {
 }
 
 .with-ntagfull {
-    margin: auto;
+    /*margin: auto;*/
     background-color: transparent;
     max-width: 165px; /*120 px for status boxes +45px for cut ntag  */
     display: inline-flex;

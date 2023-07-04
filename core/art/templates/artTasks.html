@@ -19,7 +19,7 @@
 {% else %}
     <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
 {% endif %}
-    <br>
+<br>
 
 {% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
 {% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
@@ -27,8 +27,6 @@
 {% if viewParams.ntag_full %}<b>Listed tests are for the following build: {{ viewParams.ntag_full }}</b> <br>{% endif %}
 {% if viewParams.ntag_from %}<b>Listed tests are for builds done from {{ viewParams.ntag_from }}</b>{% endif %}
 {% if viewParams.ntag_to %}<b>to {{ viewParams.ntag_to }}</b> <br>{% endif %}
-
-
 
 {% if arttasks|length > 0 %}
 <div class="card bp-container-simple secondary">
@@ -51,93 +49,6 @@
 </div>
 {% endif %}
 
-
-
-
-{% if arttasks|length > 0 %}
-
-<div class="row collapse">
-  <div class="columns">
-    <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">
-      {% for pname,pack in arttasks.items %}
-      <li class="accordion-art-item is-active" data-accordion-item>
-        <a href="#" class="accordion-art-title">{{ pname }}</a>
-        <div class="accordion-art-content" data-tab-content >
-          <table class="no-border">
-              <tr>
-                  <th class="cell" ></th>
-                  {% for brname,tags in pack.items %}
-                      {% if forloop.first %}
-                          {% for ntag in ntaglist %}
-                              {% for ntname,tasks in tags.items %}
-                                {% if ntname == ntag %}
-                                    <th class="header left-aligned">{{ tasks.ntag_hf }}</th>
-                                {% endif %}
-                              {% endfor %}
-                          {% endfor %}
-                      {% endif %}
-                  {% endfor %}
-              </tr>
-              {% for brname,tags in pack.items %}
-                  <tr>
-                      <td class="cell-left"><a class="blacklink" href="{% url 'artTasks' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntags={% for ntg in ntaglist %}{{ ntg }}{% if not forloop.last %},{% endif %}{% endfor %}">{{ brname }}</a></td>
-                      {% for ntag in ntaglist %}
-                          {% for ntname,ntfulldict in tags.items %}
-                              {% if ntname == ntag %}
-                                  <td class="cell-left">
-                                    {% if ntfulldict|length > 1 %}
-                                        {% for ntfull, files in ntfulldict.items %}
-                                          {% if ntname in ntfull %}
-                                            {% if files.finished > 0 or files.active > 0 or files.failed > 0 or files.succeeded > 0 %}
-                                              <div class="with-ntagfull">
-                                                <div class="clickable">
-                                                    <div class="active">{{ files.active }}</div>
-                                                    <div class="succeeded">{{ files.succeeded }}</div>
-                                                    <div class="finished">{{ files.finished }}</div>
-                                                    <div class="failed">{{ files.failed }}</div>
-                                                    <a href="{% url 'artJobs' %}{% if requestParams.view and requestParams.view == 'packages' %}?package={{ pname }}&branch={{ brname }}{% else %}?package={{ brname }}&branch={{ pname }}{% endif %}&ntag_full={{ ntfull }}&view={{ requestParams.view }}"></a>
-                                                </div>
-                                                   <b>{{ ntfull|get_time }}</b>
-                                              </div>
-                                              {% if not forloop.last %}<br>{% endif %}
-                                            {% else %}
-                                                <div class="nodata">
-                                                    ---
-                                                </div>
-                                            {% endif %}
-                                          {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        <div class="nodata">
-                                            ---
-                                        </div>
-                                    {% endif %}
-                                  </td>
-                              {% endif %}
-                          {% endfor %}
-                      {% endfor %}
-                  </tr>
-              {% endfor %}
-          </table>
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-</div>
-
-{% else %}
-
-<p></p>
-<div class="callout alert" data-closable>
-  <h5>No tests were found for provided selection parameters!</h5>
-    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-        <span aria-hidden="true">&times;</span>
-  </button>
-</div>
-
-{% endif %}
-
 {% endblock %}
 
 {% block help %}
@@ -149,69 +60,76 @@
 
 {% block js_body_page %}
 <script type="text/javascript">
-var table_data=JSON.parse(JSON.stringify({{ arttasks | safe }}));
-var table_title= table_data.shift()
-var request_params = {{ requestParams|safe }};
-var art_jobs_link_base = '{% url 'artJobs' %}?' + Object.keys(request_params).reduce((res, key) => res + key + '=' + request_params[key] + '&' , '');
+const table_data=JSON.parse(JSON.stringify({{ arttasks | safe }}));
+const table_title= table_data.shift()
+const request_params = {{ requestParams|safe }};
+const link_tail = '?' + Object.keys(request_params).reduce((res, key) => res + key + '=' + request_params[key] + '&' , '');
 var columns = []
-columns.push({
-  title: table_title[0],
-  render: function (data, type, row, meta) {return '<a target=blank href="' + art_jobs_link_base + table_title[0] + '=' + data + '">' + data + '</a>'}
-})
-columns.push({
-  title: table_title[1],
-  render: function (data, type, row, meta) {return '<a target=blank href="' + art_jobs_link_base + table_title[1] + '=' + data + '">' + data + '</a>'}
-})
-for (let i=2; i<table_data[0].length; i++) {
-  columns.push({
-    title: table_title[i],
-    className: 'state',
-    render: function (data, type, row, meta) {
-      if (type === 'sort') {
-        return (data.length > 0) ? data[0].failed : -1;
+for (let i=0; i<table_data[0].length; i++) {
+  if (i <= 1) {
+    columns.push({
+      title: table_title[i].charAt(0).toUpperCase() + table_title[i].slice(1),
+      className: 'nowrap',
+      render: function (data, type, row, meta) {
+        return '<a target=blank href="{% url 'artTasks' %}?' + Object.keys(request_params).reduce((res, key) => (key !== table_title[i]) ? res + key + '=' + request_params[key] + '&' : res , '') + table_title[i] + '=' + data + '">' + data + '</a>'
       }
-      else {
-        let result = '';
-        if (data.length === 0) {
-          result += '---';
+    })
+  }
+  else {
+    columns.push({
+      title: table_title[i],
+      className: 'state',
+      render: function (data, type, row, meta) {
+        if (type === 'sort') {
+          return (data.length > 0) ? data[0].failed : -1;
         }
         else {
-          data.forEach(item => {
-            if (item.active+item.succeeded+item.finished+item.failed == 0) {
-              result += '---<br>'
-            }
-            else {
-              result += '<div class="with-ntagfull"><div class="clickable"><div class="active">' + item.active + '</div>' +
-                '<div class="succeeded">' + item.succeeded + '</div>' +
-                '<div class="finished">' + item.finished + '</div>' +
-                '<div class="failed">' + item.failed + '</div>' +
-                '<a target="_blank" href="'+ '{% url 'artJobs' %}?' + table_title[0] + '=' + row[0] + '&' + table_title[1] + '=' + row[1]  + '&ntag_full=' + item.ntag_full +'"></a></div>' +
-                '<b>' + item.ntag_time +  '</b></div><br>' ;
-            }
-          })
+          let result = '';
+          if (data.length === 0) {
+            result += '---';
+          }
+          else {
+            data.forEach(item => {
+              if (item.active+item.succeeded+item.finished+item.failed == 0) {
+                result += '---<br>'
+              }
+              else {
+                result += '<div class="with-ntagfull"><div class="clickable"><div class="active">' + item.active + '</div>' +
+                  '<div class="succeeded">' + item.succeeded + '</div>' +
+                  '<div class="finished">' + item.finished + '</div>' +
+                  '<div class="failed">' + item.failed + '</div>' +
+                  '<a target="_blank" href="'+ '{% url 'artJobs' %}?' + table_title[0] + '=' + row[0] + '&' + table_title[1] + '=' + row[1]  + '&ntag_full=' + item.ntag_full +'"></a></div>' +
+                  '<span>' + item.ntag_time +  '</span></div><br>' ;
+              }
+            })
+          }
+          result = (result.endsWith('<br>')) ? result.slice(0, -4) : result ;
+          return result
+          }
         }
-        result = (result.endsWith('<br>')) ? result.slice(0, -4) : result ;
-        return result
-        }
-      }
-  })
+    })
+  }
 }
 
 let columnDefs =  [{"type": "num-html", "targets": [...Array(table_title.length).keys()].slice(2) }];
 
 var art_table = $('#art_table').DataTable({
-  lengthChange: false,
-  paging: false,
-  bFilter: false,
+  lengthChange: true,
+  lengthMenu: [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]],
+  paging: true,
+  bFilter: true,
   scrollX: true,
   order: [[0, "asc"], [1, "asc"]],
   columnDefs: columnDefs,
   columns: columns,
   data: table_data,
-  selectable: true,
-  select: {
-      style: 'single'
-  },
 });
+if (table_data.map(x => x[0]).every( (val, i, arr) => val === arr[0] )) {
+  art_table.columns( [0,] ).visible( false );
+}
+else if (table_data.map(x => x[1]).every( (val, i, arr) => val === arr[0] )) {
+  art_table.columns( [1,] ).visible( false );
+}
+
 </script>
 {% endblock %}

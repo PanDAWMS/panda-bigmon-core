@@ -11,6 +11,7 @@
 {% block js_head_page_library %}
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
   <!-- Load d3.js and c3.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
@@ -87,20 +88,27 @@ for (let i=1; i<table_data[0].length; i++) {
   columns.push({
     title: table_title[i],
     render: function (data, type, row, meta) {
-      if (data.active+data.succeeded+data.finished+data.failed == 0) {
-        return '<div class="nodata">---</div> '
+      if (type === 'sort') {
+        return (data.active + data.succeeded + data.finished + data.failed > 0) ? data.failed : -1;
       }
       else {
-        return '<div class="clickable"><div class="active">' + data.active + '</div>' +
-          '<div class="succeeded">' + data.succeeded + '</div>' +
-          '<div class="finished">' + data.finished + '</div>' +
-          '<div class="failed">' + data.failed + '</div>' +
-          '<a target="_blank" href="'+ art_tasks_link_base + row[0] + '&ntag=' + data.ntag +'"></a>' +
-          '</div>';
+        if (data.active + data.succeeded + data.finished + data.failed == 0) {
+          return '<div class="nodata">---</div> '
+        }
+        else {
+          return '<div class="clickable"><div class="active">' + data.active + '</div>' +
+            '<div class="succeeded">' + data.succeeded + '</div>' +
+            '<div class="finished">' + data.finished + '</div>' +
+            '<div class="failed">' + data.failed + '</div>' +
+            '<a target="_blank" href="' + art_tasks_link_base + row[0] + '&ntag=' + data.ntag + '"></a>' +
+            '</div>';
         }
       }
+    }
   })
 }
+
+let columnDefs =  [{"type": "num-html", "targets": [...Array(table_title.length).keys()].slice(1) }];
 
 var art_table = $('#art_table').DataTable({
   lengthChange: false,
@@ -108,12 +116,9 @@ var art_table = $('#art_table').DataTable({
   bFilter: false,
   scrollX: true,
   order: [[0, "desc"]],
+  columnDefs: columnDefs,
   columns: columns,
   data: table_data,
-  selectable: true,
-  select: {
-      style: 'single'
-  },
 });
 
 app.controller('artOverviewController', function($scope, $sce) {
