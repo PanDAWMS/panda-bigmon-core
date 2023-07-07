@@ -435,6 +435,9 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
             elif job['eventservice'] == 5:
                 job['eventservice'] = 'cojumbo'
                 job['jobinfo'] = 'Cojumbo job. '
+            elif job['eventservice'] == 6:
+                job['eventservice'] = 'finegrained'
+                job['jobinfo'] = 'Fine grained processing job. '
 
             if 'taskbuffererrordiag' in job and job['taskbuffererrordiag'] is None:
                 job['taskbuffererrordiag'] = ''
