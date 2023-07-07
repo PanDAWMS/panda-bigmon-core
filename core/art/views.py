@@ -29,6 +29,7 @@ from core.common.models import Filestable4, FilestableArch
 from core.reports.models import ReportEmails
 from core.libs.error import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
+from core.libs.exlib import convert_sec
 from core.pandajob.models import CombinedWaitActDefArch4
 
 from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test
@@ -288,7 +289,7 @@ def artTasks(request):
     cur.execute(query_raw)
     tasks_raw = cur.fetchall()
     cur.close()
-
+    _logger.info("Got ART tests: {}".format(time.time() - request.session['req_init_time']))
     art_job_names = ['package', 'branch', 'ntag', 'nightly_tag', 'pandaid', 'testname', 
                      'task_id', 'jobstatus', 'result', 'attemptmark']
     jobs = [dict(zip(art_job_names, row)) for row in tasks_raw]
@@ -333,17 +334,13 @@ def artTasks(request):
             if job['task_id'] not in jeditaskids[job[ao[0]]][job[ao[1]]]:
                 jeditaskids[job[ao[0]]][job[ao[1]]].append(job['task_id'])
 
-    jeditaskids = {}
-
     for ao0, ao0_dict in art_jobs_dict.items():
         for ao1, ao1_dict in ao0_dict.items():
             for ntag, tests in ao1_dict.items():
                 for test, job_states in tests.items():
                     if len(job_states) > 0:
                         arttasksdict[ao0][ao1][ntag[:-5]][ntag][get_result_for_multijob_test(job_states)] += 1
-
-    xurl = extensibleURL(request)
-    noviewurl = removeParam(xurl, 'view', mode='extensible')
+    _logger.info("Prepared summary: {}".format(time.time() - request.session['req_init_time']))
 
     if is_json_request(request):
         data = {
@@ -353,6 +350,9 @@ def artTasks(request):
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
+        xurl = extensibleURL(request)
+        noviewurl = removeParam(xurl, 'view', mode='extensible')
+        # convert dict to list for datatable
         art_tasks = [[ao[0], ao[1]] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist] ]
         for ao0, ao0_dict in arttasksdict.items():
             for ao1, ao1_dict in ao0_dict.items():
@@ -379,6 +379,7 @@ def artTasks(request):
         }
         setCacheEntry(request, "artTasks", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
         response = render(request, 'artTasks.html', data, content_type='text/html')
+        _logger.info("Rendered template: {}".format(time.time() - request.session['req_init_time']))
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -543,7 +544,7 @@ def artJobs(request):
                 jobdict['inputfileid'] = job['inputfileid']
                 if job['jobstatus'] in ('finished', 'failed'):
                     try:
-                        jobdict['duration'] = job['endtime'] - job['starttime']
+                        jobdict['duration'] = convert_sec((job['endtime'] - job['starttime']).total_seconds(), out_unit='str')
                     except:
                         jobdict['duration'] = '---'
                 else:
@@ -617,6 +618,21 @@ def artJobs(request):
         dump = json.dumps(data, cls=DateEncoder)
         return HttpResponse(dump, content_type='application/json')
     else:
+        # transform to list for datatable
+        art_jobs = [[ao[0], ao[1], 'test name'] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist]]
+        for ao0, ao0_dict in artjobsdict.items():
+            for ao1, ao1_dict in ao0_dict.items():
+                for t, t_dict in ao1_dict.items():
+                    tmp_list = [ao0, ao1, t,]
+                    for ntag, jobs in t_dict.items():
+                        tmp_list.append(
+                            [{
+                                k: v for k, v in j.items() if v is not None
+                            } for j in sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']), reverse=True)]
+                        )
+                    art_jobs.append(tmp_list)
+
+
         # transform dict of tests to list of test and sort alphabetically
         artjobslist = {}
         for i, idict in artjobsdict.items():
@@ -658,6 +674,7 @@ def artJobs(request):
             'outputcontainers': outputcontainers,
             'reportto': reportTo,
             'linktoplots': linktoplots,
+            'art_jobs': art_jobs,
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
         response = render(request, 'artJobs.html', data, content_type='text/html')

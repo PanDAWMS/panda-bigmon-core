@@ -63,7 +63,11 @@
 const table_data=JSON.parse(JSON.stringify({{ arttasks | safe }}));
 const table_title= table_data.shift()
 const request_params = {{ requestParams|safe }};
-const link_tail = '?' + Object.keys(request_params).reduce((res, key) => res + key + '=' + request_params[key] + '&' , '');
+const is_show_ntag_time = [false, false,]
+for (let i=2; i<table_title.length; i++) {
+    is_show_ntag_time.push(!table_data.map(x => x[i]).every( (val) => (val.length <= 1) || ((val.length > 1) && val.every( (item, i, arr) => item.ntag_time === arr[0].ntag_time ))  ))
+}
+
 var columns = []
 for (let i=0; i<table_data[0].length; i++) {
   if (i <= 1) {
@@ -94,12 +98,13 @@ for (let i=0; i<table_data[0].length; i++) {
                 result += '---<br>'
               }
               else {
+                let ntag_time = (is_show_ntag_time[i]) ? item.ntag_time : '';
                 result += '<div class="with-ntagfull"><div class="clickable"><div class="active">' + item.active + '</div>' +
                   '<div class="succeeded">' + item.succeeded + '</div>' +
                   '<div class="finished">' + item.finished + '</div>' +
                   '<div class="failed">' + item.failed + '</div>' +
                   '<a target="_blank" href="'+ '{% url 'artJobs' %}?' + table_title[0] + '=' + row[0] + '&' + table_title[1] + '=' + row[1]  + '&ntag_full=' + item.ntag_full +'"></a></div>' +
-                  '<span>' + item.ntag_time +  '</span></div><br>' ;
+                  ntag_time +  '</div><br>' ;
               }
             })
           }

@@ -2,7 +2,13 @@
 {% load static %}{% load common_tags %}
 {% block page_title %}ART nightly tests{% endblock %}
 {% block css_page %}
-    <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
 {% endblock %}
 {% block subtitle %}ART nightly tests {{ viewParams.selection|safe }}{% endblock %}
 {% block body %}
@@ -34,6 +40,30 @@
     {% if reportto.jira|length == 1 %} JIRA: {% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %} {% endif %}
     {% if reportto.mail|length == 1 %} ,  {% with reportmail=reportto.mail %}{% for email in reportmail %} <a href="mailto:{{ email }} ">email</a> {% endfor %} {% endwith %} {% endif %}
 </b>{% endif %} {% endif %}
+
+
+{% if art_jobs|length > 0 %}
+<div class="card bp-container-simple secondary">
+  <div class="card-divider">
+    <p>Tests results per {% if requestParams.view and requestParams.view == 'branches' %}branch{% else %}package{% endif %}:</p>
+  </div>
+  <div class="card-section">
+    <table id="art_table" class="data-table" >
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="callout alert" data-closable>
+  <h5>No tests were found for provided selection parameters!</h5>
+    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+{% endif %}
+
+
 
 {% if artjobs|length > 0 %}
 
@@ -217,7 +247,6 @@
         <span aria-hidden="true">&times;</span>
   </button>
 </div>
-
 {% endif %}
 
 {% endblock %}
@@ -234,6 +263,98 @@ function toggleShowHide(divID, linkID) {
         document.getElementById(linkID).innerHTML = 'Hide output container';
     }
 }
+
+const table_data = {{ art_jobs | safe }};
+const table_title = table_data.shift()
+const request_params = {{ requestParams|safe }};
+
+const is_show_ntag_time = [false, false, false,]
+for (let i=3; i<table_title.length; i++) {
+    is_show_ntag_time.push(!table_data.map(x => x[i]).every( (val) => (val.length <= 1) || ((val.length > 1) && val.every( (item, i, arr) => item.ntagtime === arr[0].ntagtime ))  ))
+}
+
+var columns = []
+for (let i=0; i<table_data[0].length; i++) {
+  if (i <= 1) {
+    columns.push({
+      title: table_title[i].charAt(0).toUpperCase() + table_title[i].slice(1),
+      className: 'nowrap',
+      render: function (data, type, row, meta) {
+        return '<a target=blank href="{% url 'artTasks' %}?' + Object.keys(request_params).reduce((res, key) => (key !== table_title[i]) ? res + key + '=' + request_params[key] + '&' : res , '') + table_title[i] + '=' + data + '">' + data + '</a>'
+      }
+    })
+  }
+  else if (i === 2) {
+    columns.push({
+      title: table_title[i].charAt(0).toUpperCase() + table_title[i].slice(1),
+      className: 'nowrap',
+      render: function (data, type, row, meta) {
+        return data
+      }
+    })
+  }
+  else {
+    columns.push({
+      title: table_title[i],
+      render: function (data, type, row, meta) {
+        if (type === 'sort') {
+          return (data.length > 0) ? data[0].finalresult : '-'
+        }
+        else {
+          let result = '';
+          if (data.length === 0) {
+            result += '---';
+          }
+          else {
+            data.forEach(item => {
+              if (!item.jobstatus) {
+                result += '---<br>'
+              }
+              else {
+                let ntag_time = (is_show_ntag_time[i]) ? item.ntagtime : '';
+                result += '<div class="with-link-to-logs">' +
+                  '<div class="clickable">' +
+                    '<div class="' + item.finalresult + '_job">' + item.finalresult + '</div>' +
+                    '<a href="{% url 'jobInfo' %}?pandaid=' + item.origpandaid + '">' + item.origpandaid + '</a>'+
+                  '</div>' +
+                  '<div class="extra-links">' +
+                    ntag_time +
+                    '<span class="tarindex tooltip-left">' + item.tarindex + '<span class="tooltip-text">Index of tar file</span></span>' +
+                    '<span class="attempt tooltip-left">' + item.attemptnr + '/' + item.maxattempt + '<span class="tooltip-text">Attempt number / max attempts</span></span>' +
+                    '<a class="blacklink" target="_blank" href="{% url "filebrowser" %}?pandaid=' + item.origpandaid + '"><i class="fi-link tooltip-left"><span class="tooltip-text">Link to logs of last attempt</span></i></a>' +
+                  '</div>' +
+                '</div>';
+              }
+            })
+          }
+          result = (result.endsWith('<br>')) ? result.slice(0, -4) : result ;
+          return result
+        }
+      }
+    })
+  }
+}
+
+let columnDefs =  [];
+
+var art_table = $('#art_table').DataTable({
+  lengthChange: true,
+  lengthMenu: [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]],
+  paging: true,
+  bFilter: true,
+  scrollX: true,
+  order: [[0, "asc"], [1, "asc"]],
+  columnDefs: columnDefs,
+  columns: columns,
+  data: table_data,
+});
+if (table_data.map(x => x[0]).every( (val, i, arr) => val === arr[0] ) && request_params[table_title[0]].indexOf(',') < 0) {
+  art_table.columns( [0,] ).visible( false );
+}
+else if (table_data.map(x => x[1]).every( (val, i, arr) => val === arr[0] ) && request_params[table_title[1]].indexOf(',') < 0 ) {
+  art_table.columns( [1,] ).visible( false );
+}
+
 </script>
 {% endblock %}
 
