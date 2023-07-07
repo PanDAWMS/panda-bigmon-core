@@ -421,23 +421,11 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
 
         job['jobinfo'] = ''
         if is_event_service(job):
-            if job['eventservice'] == 1:
-                job['eventservice'] = 'eventservice'
-                job['jobinfo'] = 'Event service job. '
-            elif job['eventservice'] == 2:
-                job['eventservice'] = 'esmerge'
-                job['jobinfo'] = 'Event service merge job. '
-            elif job['eventservice'] == 3:
-                job['eventservice'] = 'clone'
-            elif job['eventservice'] == 4:
-                job['eventservice'] = 'jumbo'
-                job['jobinfo'] = 'Jumbo job. '
-            elif job['eventservice'] == 5:
-                job['eventservice'] = 'cojumbo'
-                job['jobinfo'] = 'Cojumbo job. '
-            elif job['eventservice'] == 6:
-                job['eventservice'] = 'finegrained'
-                job['jobinfo'] = 'Fine grained processing job. '
+            for es_i, es_type in const.EVENT_SERVICE_JOB_TYPES.items():
+                if job['eventservice'] == es_i:
+                    job['eventservice'] = es_type
+                    if es_i in const.EVENT_SERVICE_JOB_DESCRIPTION:
+                        job['jobinfo'] = '{}. '.format(const.EVENT_SERVICE_JOB_DESCRIPTION[es_i])
 
             if 'taskbuffererrordiag' in job and job['taskbuffererrordiag'] is None:
                 job['taskbuffererrordiag'] = ''

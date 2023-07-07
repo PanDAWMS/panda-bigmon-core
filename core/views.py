@@ -926,14 +926,11 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         values = val.split('|') if '|' in val else val.split(',')
                         query['jobstatus__in'] = values
                     elif param == 'eventservice':
+                        # transform desc to type index for query
                         if '|' in request.session['requestParams'][param]:
                             paramsstr = request.session['requestParams'][param]
-                            paramsstr = paramsstr.replace('eventservice', '1')
-                            paramsstr = paramsstr.replace('esmerge', '2')
-                            paramsstr = paramsstr.replace('clone', '3')
-                            paramsstr = paramsstr.replace('jumbo', '4')
-                            paramsstr = paramsstr.replace('cojumbo', '5')
-                            paramsstr = paramsstr.replace('finegrained', '6')
+                            for es_i, es_desc in const.EVENT_SERVICE_JOB_TYPES.items():
+                                paramsstr = paramsstr.replace(es_desc, str(es_i))
                             paramvalues = paramsstr.split('|')
                             try:
                                 paramvalues = [int(p) for p in paramvalues]
@@ -942,25 +939,17 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['eventservice__in'] = paramvalues
                         else:
                             param_val = request.session['requestParams'][param]
-                            if param_val == 'esmerge' or param_val == '2':
-                                query['eventservice'] = 2
-                            elif param_val == 'clone' or param_val == '3':
-                                query['eventservice'] = 3
-                            elif param_val == 'jumbo' or param_val == '4':
-                                query['eventservice'] = 4
-                            elif param_val == 'cojumbo' or param_val == '5':
-                                query['eventservice'] = 5
-                            elif param_val == 'finegrained' or param_val == '6':
-                                query['eventservice'] = 6
-                            elif param_val == 'eventservice' or param_val == '1':
-                                query['eventservice'] = 1
+                            for es_i, es_desc in const.EVENT_SERVICE_JOB_TYPES.items():
+                                if param_val == es_desc or param_val == str(es_i):
+                                    query['eventservice'] = es_i
+                            if  param_val == 'eventservice' or param_val == '1':
                                 extraQueryString += " AND not specialhandling like \'%%sc:%%\' "
                             elif param_val == 'not2':
                                 extraQueryString += ' AND (eventservice != 2) '
                             elif param_val == 'all':
                                 query['eventservice__isnull'] = False
                                 continue
-                            else:
+                            if not any([k.startswith('eventservice') for k in query.keys()]):
                                 query['eventservice__isnull'] = True
                     elif param == 'corecount' and request.session['requestParams'][param] == '1':
                         extraQueryString += ' AND (corecount = 1 or corecount is NULL) '
