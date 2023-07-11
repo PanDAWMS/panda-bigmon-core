@@ -939,8 +939,10 @@ function operationjob_token(pandaID, action, params) {
                 type: "POST",
                 cache: false,
                 success: function(result) {
+                    const res_obj = JSON.parse(result);
                     let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
                     window.location = notimestampurl + 'timestamp=' + d;
+                    alert(res_obj['text'])
                 }});
     } else {
         // Do nothing!

@@ -1,0 +1,37 @@
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Workflow Information:</p></div>
+<div class="card-section">
+
+<p>
+Note that the number of workflows retrieved from the database is limited for performance reasons. By default it gets workflows in the last 7 days. 
+  If you need to increase the period, specify <code>&days=N</code> on the URL, but use carefully, the load on the DB is heavy for big time windows.
+</p>
+
+<h1>Workflow status</h1>
+<p>
+<ul>
+  <li> <b class='finished'>Finished</b>: All tasks in the workflow have finished successfully. If tranform type is StageIn, this status is the staging status.
+  <li> <b class='failed'>Failed</b>: All tasks in the workflow have failed. If tranform type is StageIn, this status is the staging status.
+  <li> <b class='subfinished'>Subfinished</b>: The workflow has both finished and failed tasks. If tranform type is StageIn, this status is the staging status.
+  <li> <b class='cancelled'>Cancelled</b>: The workflow is cancelled. If tranform type is StageIn, this status is the staging status.
+</ul>
+</p>
+
+<h1>Columns of files</h1>
+<p>
+  files: primary input or pseudo input datasets
+</p>
+
+<p>
+<ul>
+  <li> <b class='registered'>total files</b>: total number of primary input or pseudo input files
+  <li> <b class='ready'>released files</b>: number of files released to PanDA by iDDS
+  <li> <b class='pending'>unreleased files</b>: number of files unreleased to PanDA by iDDS 
+  <li> <b class='finished'>finished files</b>: percentage of files PanDA has processed successfully
+  <li> <b class='failed'>failed files</b>: percentage of files PanDA has failed to process
+</ul>
+</p>
+
+</div>
+</div>
+
