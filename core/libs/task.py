@@ -655,6 +655,10 @@ def get_task_params(jeditaskid):
     except ValueError:
         pass
 
+    # protection against surrogates
+    if 'cliParams' in taskparams:
+        taskparams['cliParams'] =taskparams['cliParams'].encode('utf-8', 'replace').decode("utf-8", 'surrogateescape')
+
     return taskparams
 
 

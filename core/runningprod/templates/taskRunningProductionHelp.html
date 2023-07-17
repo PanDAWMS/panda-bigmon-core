@@ -2,9 +2,15 @@
 <div class="card-divider"><p>Running production tasks page:</p></div>
 <div class="card-section">
 
-<p><a href="{% url 'runningProdTasks' %}">This page</a> summarizes the status of different productions such as MC, derivation, reprocessing and other. </p>
-<p>Only active tasks are taken into account and shown by default.
-  The plots on the top represents the current status of a production in number of events and allocated slots.</p>
+<p><a href="{% url 'runningProdTasks' %}">This page</a> summarizes the status of running productions such as MC, derivation, reprocessing and other.
+Only active tasks are taken into account and shown by default. If you wish to include ended tasks to selection, add one of supported time range options to URL:
+  <ul>
+    <li><code>&days=N</code> for last N days</li>
+    <li><code>&hours=N</code> for last N hours</li>
+    <li><code>&date_from=YYYY-MM-DD</code> and <code>&date_to=YYYY-MM-DD</code> for custom time range</li>
+  </ul>
+  Please use it with other filters (<code>hashtags</code>, <code>reqid</code>, <code>campaign</code> etc) to decrease number of selected tasks and therefore the load on DB. </p>
+<p>The plots on the top represents the current status of a running production in number of events and allocated slots.</p>
 <p>Use the row of drop-down menus to more narrow selection of tasks by processing type, working group, campaign etc.</p>
 <p>Click on <b><i class="fi fi-plus"></i></b> icon next to Events title of number of events pie charts section to see extra charts.</p>
 <p>Click on <b>show historical trend</b> to see a line plot showing how number of waiting and running events have been changing for last 7 days. </p>
@@ -13,7 +19,5 @@
 <b><i class="fi-link"></i></b> icons are links to corresponding pages in ProdSys2 UI.
 </p>
 
-<p>If you wish to include ended tasks to selection, add <code>&show_ended_tasks=true</code> to URL together with <code>&days=N</code> where <code>N</code> is number of days.
-  Please use it with other filters (<code>hashtags</code>, <code>reqid</code> etc) to decrease number of selected tasks and therefore the load on DB.</p>
 </div>
 </div>

@@ -54,6 +54,7 @@ class ARTTests(models.Model):
     package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)
     extrainfo = models.CharField(max_length=1000, db_column='EXTRA_INFO', null=True, blank=True)
     created = models.DateTimeField(null=True, db_column='CREATED')
+    nightly_tag_date = models.DateTimeField(null=True, db_column='nightly_tag_date')
 
     # subresult = models.OneToOneField('ARTSubResult', related_name='pandaid_sr', on_delete=models.DO_NOTHING, db_column='pandaid')
     class Meta:

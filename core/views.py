@@ -609,21 +609,18 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     else:
         request.session['noenddate'] = False
 
-    if request.path.startswith('/running'):
-        query = {}
+    if not endtime__castdate__range:
+        query = {
+            'modificationtime__castdate__range': [
+                startdate.strftime(settings.DATETIME_FORMAT),
+                enddate.strftime(settings.DATETIME_FORMAT)]
+        }
     else:
-        if not endtime__castdate__range:
-            query = {
-                'modificationtime__castdate__range': [
-                    startdate.strftime(settings.DATETIME_FORMAT),
-                    enddate.strftime(settings.DATETIME_FORMAT)]
-            }
-        else:
-            query = {
-                'endtime__castdate__range': [
-                    endtime__castdate__range[0],
-                    endtime__castdate__range[1]]
-            }
+        query = {
+            'endtime__castdate__range': [
+                endtime__castdate__range[0],
+                endtime__castdate__range[1]]
+        }
 
     # add min/max values to session
     request.session['TFIRST'] = startdate
@@ -829,8 +826,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         query['superstatus__in'] = values
                     elif param == 'reqid':
                         val = escape_input(request.session['requestParams'][param])
-                        if val.find('|') >= 0:
-                            values = val.split('|')
+                        if '|' in val or ',' in val:
+                            values = val.split('|') if '|' in val else val.split(',')
                             values = [int(val) for val in values]
                             query['reqid__in'] = values
                         else:
@@ -934,8 +931,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             paramsstr = paramsstr.replace('eventservice', '1')
                             paramsstr = paramsstr.replace('esmerge', '2')
                             paramsstr = paramsstr.replace('clone', '3')
-                            paramsstr = paramsstr.replace('cojumbo', '5')
                             paramsstr = paramsstr.replace('jumbo', '4')
+                            paramsstr = paramsstr.replace('cojumbo', '5')
+                            paramsstr = paramsstr.replace('finegrained', '6')
                             paramvalues = paramsstr.split('|')
                             try:
                                 paramvalues = [int(p) for p in paramvalues]
@@ -952,6 +950,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                 query['eventservice'] = 4
                             elif param_val == 'cojumbo' or param_val == '5':
                                 query['eventservice'] = 5
+                            elif param_val == 'finegrained' or param_val == '6':
+                                query['eventservice'] = 6
                             elif param_val == 'eventservice' or param_val == '1':
                                 query['eventservice'] = 1
                                 extraQueryString += " AND not specialhandling like \'%%sc:%%\' "

@@ -98,7 +98,7 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     sqlpar, condition = prepareSQLQueryParameters(request_params, db=db)
     sql = f"""
     select r.request_id, r.name as r_name, r.status as r_STATUS, r.created_at as r_created_at, c.total_files, 
-    c.processed_files, c.processing_files, c.transform_id, t.workload_id, p.status as p_status, r.username 
+    c.processed_files, c.processing_files, c.transform_id, t.workload_id, t.transform_type, t.transform_tag, p.status as p_status, r.username 
     from {settings.DB_SCHEMA_IDDS}.requests r 
     left join {settings.DB_SCHEMA_IDDS}.collections c on r.request_id=c.request_id
     left join {settings.DB_SCHEMA_IDDS}.transforms t on t.transform_id=c.transform_id 

@@ -62,11 +62,12 @@
         <th>Created At</th>
         <th>Total tasks</th>
         <th>Tasks</th>
+	<th>Transform Type</th>
         <th>Total files</th>
         <th>Released files</th>
         <th>Unreleased files</th>
-        <th>Processed files</th>
-        <th>Remaining files</th>
+        <th>Finished files</th>
+	<th>Failed files</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -137,11 +138,38 @@ var requests_table = $('#requests_table').DataTable({
             return retVal;
            }
         },
-        { data: "total_files", title: "total files", className: "num" },
+	{ data: "transform_type", title: "transform type", className: "num" },
+        { data: "total_files", title: "total files", className: "num",
+          sDefaultContent: "-",
+          render: function ( data, type, row, meta ) {
+              if (row['transform_type'] == "Processing" && row['transform_tag'] != "lsst") {
+                  return '-';
+              }
+              else {
+                  return row['total_files'];
+              }
+          }
+	},
         { data: "released_files", title: "released files", className: "num" },
         { data: "unreleased_files", title: "unreleased files", className: "num" },
-        { data: "processed_files", title: "processed files", className: "num" },
-        { data: "remaining_files", title: "remaining files", className: "num" },
+	{ data: "finished_files", title: "finished files", className: "num",
+          render: function ( data, type, row, meta ) {
+	      let retVal = '-'
+              if (data > 0) {
+                 retVal = "<span class='finished nowrap'> " + data + "%</span>";
+              }
+	      return retVal;
+          }
+        },
+        { data: "failed_files", title: "failed files", className: "num",
+          render: function ( data, type, row, meta ) {
+	      let retVal = '-'
+              if (data > 0) {
+                 retVal = "<span class='failed nowrap'> " + data + "%</span>";
+              }
+	      return retVal;
+          }
+        },
     ],
     data: preprocData(iDDSrequests),
     selectable: true,
@@ -161,4 +189,8 @@ $(document).ready(function () {
 
 </script>
 
+{% endblock %}
+
+{% block help %}
+{% include "iddsWorkflowHelp.html" %}
 {% endblock %}

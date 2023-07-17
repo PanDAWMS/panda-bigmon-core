@@ -283,3 +283,12 @@ JOB_FIELDS = (
     'commandtopilot',
     'cmtconfig'
 )
+
+TIME_LIMIT_OPTIONS = (
+    'days',
+    'hours',
+    'date_from',
+    'date_to',
+    'earlierthan',
+    'earlierthandays',
+)
