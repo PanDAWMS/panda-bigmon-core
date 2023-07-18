@@ -58,7 +58,7 @@ COPY core ${BIGMON_WSGI_PATH}/pythonpath/core
 COPY docker_asgi/activate_this.py ${BIGMON_VIRTUALENV_PATH}/bin/activate_this.py
 COPY docker_asgi/start-daemon.sh /usr/local/bin/
 COPY docker_asgi/conf.d/*.conf /etc/httpd/conf.d/
-COPY docker_asgi/systemd/daphne.service /etc/systemd/system
+COPY docker_asgi/systemd/daphne.service /etc/systemd/system/daphne.service
 # to work with non-root
 RUN grep -v Listen /etc/httpd/conf/httpd.conf > /etc/httpd/conf/tmp; \
     echo Listen 8080 > /etc/httpd/conf/httpd.conf; \
@@ -68,10 +68,11 @@ RUN chmod 777 ${BIGMON_WSGI_PATH}/logs
 RUN chmod 777 /var/log/httpd
 RUN chmod 777 /etc/grid-security
 RUN chmod 777 /run/httpd
+RUN chmod 777 /etc/systemd/system/daphne.service
 RUN chmod -R 777 /var/cache
 RUN chmod -R 777 ${BIGMON_WSGI_PATH}/config
 RUN chmod -R 777 /etc/httpd/conf.d
-
+RUN chmod -R 777 /etc/systemd/system/daphne.service
 # to be removed for prodiction
 RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
 
