@@ -1,0 +1,13 @@
+[Unit]
+Description=daphne daemon
+After=network.target
+
+[Service]
+Type=simple
+User=atlpan
+WorkingDirectory=/opt/prod/pythonpath
+ExecStart=/opt/prod/bin/python /opt/prod/bin/daphne -b 0.0.0.0 -p 8000 core.asgi:application
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
