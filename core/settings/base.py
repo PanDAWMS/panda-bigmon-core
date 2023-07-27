@@ -9,7 +9,6 @@ except ImportError:
     import os
     SERVER_GATEWAY_INTERFACE = os.environ.get('SERVER_GATEWAY_INTERFACE', 'WSGI')
 
-print(SERVER_GATEWAY_INTERFACE)
 try:
     from core.settings.local import ENABLE_DEBUG_TOOLBAR
 except ImportError:

@@ -43,9 +43,9 @@ def globalshares(request):
         shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
     ordtablerows ={}
     ordtablerows['childlist']=[]
-    level1=''
-    level2=''
-    level3=''
+    level1 = ''
+    level2 = ''
+    level3 = ''
 
     for shareValue in tablerows:
         if len(shareValue['level1'])!=0:
@@ -188,7 +188,7 @@ def resourcesDictToList(hs_distribution_dict):
     pled = 0
     executing = 0
     queued = 0
-    total_hs =0
+    total_hs = 0
     for gshare in hs_distribution_dict.keys():
         for resource in hs_distribution_dict[gshare].keys():
             sum_hs = 0
@@ -206,10 +206,18 @@ def resourcesDictToList(hs_distribution_dict):
     hs_distribution_list = {}
     for gshare in hs_distribution_dict.keys():
         for resource in hs_distribution_dict[gshare].keys():
-            hs_distribution_dict[gshare][resource]['ignore_percent'] =  (hs_distribution_dict[gshare][resource]['ignore']/ignore)* 100
-            hs_distribution_dict[gshare][resource]['executing_percent'] =  (hs_distribution_dict[gshare][resource]['executing'] /executing) * 100
-            hs_distribution_dict[gshare][resource]['queued_percent'] = (hs_distribution_dict[gshare][resource]['queued']/queued) * 100
-
+            if ignore > 0:
+            	hs_distribution_dict[gshare][resource]['ignore_percent'] =  (hs_distribution_dict[gshare][resource]['ignore']/ignore)* 100
+            else:
+                hs_distribution_dict[gshare][resource]['ignore_percent'] = 0
+            if executing > 0:
+            	hs_distribution_dict[gshare][resource]['executing_percent'] =  (hs_distribution_dict[gshare][resource]['executing'] / executing) * 100
+            else:
+                hs_distribution_dict[gshare][resource]['executing_percent'] = 0
+            if queued > 0:
+            	hs_distribution_dict[gshare][resource]['queued_percent'] = (hs_distribution_dict[gshare][resource]['queued']/queued) * 100
+            else:
+                hs_distribution_dict[gshare][resource]['queued_percent'] = 0
             hs_distribution_list.setdefault(str(gshare).lower(),[]).append({'resource':resource, 'pledged':hs_distribution_dict[gshare][resource]['pledged'],
                                      'ignore':hs_distribution_dict[gshare][resource]['ignore'],
                                      'ignore_percent':hs_distribution_dict[gshare][resource]['ignore_percent'],
