@@ -4,6 +4,13 @@ try:
 except ImportError:
     DEBUG = False
 try:
+    from core.settings.local import SERVER_GATEWAY_INTERFACE
+except ImportError:
+    import os
+    SERVER_GATEWAY_INTERFACE = os.environ.get('SERVER_GATEWAY_INTERFACE', 'WSGI')
+
+print(SERVER_GATEWAY_INTERFACE)
+try:
     from core.settings.local import ENABLE_DEBUG_TOOLBAR
 except ImportError:
     ENABLE_DEBUG_TOOLBAR = False
@@ -91,7 +98,6 @@ SOCIAL_AUTH_PIPELINE = (
 # installed apps
 INSTALLED_APPS_DJANGO_FRAMEWORK = (
     # Django framework
-    'daphne',
     'channels',
     'social_django',
     'django.contrib.admin',
@@ -151,9 +157,6 @@ CHANNEL_LAYERS = {
     }
 }
 
-ASGI_APPLICATION = 'core.asgi.application'
-
-
 if len(INSTALLED_APPS_EXTRA) > 0:
     INSTALLED_APPS_BIGPANDAMON_CORE += tuple([str(app_name) for app_name in INSTALLED_APPS_EXTRA])
 
@@ -162,6 +165,10 @@ JS_I18N_APPS = ()
 JS_I18N_APPS_EXCLUDE = INSTALLED_APPS_BIGPANDAMON_CORE
 
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_CORE
+
+if SERVER_GATEWAY_INTERFACE == 'ASGI':
+    INSTALLED_APPS = ('daphne',) + INSTALLED_APPS
+    ASGI_APPLICATION = 'core.asgi.application'
 
 if DEBUG and ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE += (
