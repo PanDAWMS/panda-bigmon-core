@@ -2787,14 +2787,14 @@ def userInfo(request, user=''):
             if request.user.is_authenticated:
                 login = user = request.user.username
                 # replace middle name by wildcard if exists
-                first_name = str(request.user.first_name.replace('\'', '')).title()
+                first_name = str(request.user.first_name.replace('\'', ''))
                 if ' ' in first_name:
                     first_name = first_name.split(' ')[0]
-                last_name = str(request.user.last_name).title()
+                last_name = str(request.user.last_name)
                 userQueryTask = Q(username=login) | (
-                        Q(username__startswith=first_name) & Q(username__endswith=last_name))
+                        Q(username__istartswith=first_name) & Q(username__iendswith=last_name))
                 userQueryJobs = Q(produsername=login) | (
-                        Q(produsername__startswith=first_name) & Q(produsername__endswith=last_name))
+                        Q(produsername__istartswith=first_name) & Q(produsername__iendswith=last_name))
                 is_prepare_history_links = True
 
     if 'days' in request.session['requestParams']:
