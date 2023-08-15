@@ -679,6 +679,9 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table tbody td > a > .bp-tooltip {
     border-bottom: none;
   }
+  .data-table tbody td > a > i.bp-tooltip {
+    border-bottom: 1px dotted;
+  }
   .data-table .num {
     text-align: right !important;
   }

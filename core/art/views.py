@@ -490,7 +490,7 @@ def artJobs(request):
     #     if x.registerArtTest():
     #         print '%i job registered sucessfully out of %i' % (i, len(jobs))
 
-    ntagslist=list(sorted(set([x['ntag'] for x in jobs])))
+    ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
     jeditaskids = list(sorted(set([x['taskid'] for x in jobs])))
 
     testdirectories = {}
@@ -500,7 +500,6 @@ def artJobs(request):
     linktoplots = []
     eos_art_link = 'https://atlas-art-data.web.cern.ch/atlas-art-data/'
     link_prefix = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
-
     artjobsdict={}
 
     for job in jobs:
@@ -548,7 +547,7 @@ def artJobs(request):
                     except:
                         jobdict['duration'] = '---'
                 else:
-                    jobdict['duration'] = str(datetime.now() - job['starttime']).split('.')[0] if job['starttime'] is not None else "---"
+                    jobdict['duration'] = convert_sec((datetime.now() - job['starttime']).total_seconds(), out_unit='str') if job['starttime'] is not None else "---"
                 try:
                     jobdict['tarindex'] = int(re.search('.([0-9]{6}).log.', job['lfn']).group(1))
                 except:
@@ -619,17 +618,31 @@ def artJobs(request):
         return HttpResponse(dump, content_type='application/json')
     else:
         # transform to list for datatable
+        extra_metrics_columns = {
+            'computingsite': 'Site',
+            'duration': 'Duration, d:h:m:s',
+            'cpuconsumptiontime': 'CPU time, s',
+            'maxrss': 'Max RSS, MB',
+            'cpuconsumptionunit': 'CPU type',
+        }
         art_jobs = [[ao[0], ao[1], 'test name'] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist]]
+        if len(ntagslist) == 1:
+            art_jobs[0] += [m_title for  m, m_title in extra_metrics_columns.items()]
         for ao0, ao0_dict in artjobsdict.items():
             for ao1, ao1_dict in ao0_dict.items():
                 for t, t_dict in ao1_dict.items():
                     tmp_list = [ao0, ao1, t,]
                     for ntag, jobs in t_dict.items():
-                        tmp_list.append(
-                            [{
+                        tmp_list.append([
+                            {
                                 k: v for k, v in j.items() if v is not None
-                            } for j in sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']), reverse=True)]
-                        )
+                            } for j in sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']), reverse=True)
+                        ])
+                        if len(t_dict.keys()) == 1:
+                            for m, m_title in extra_metrics_columns.items():
+                                tmp_list.append([
+                                    j[m] for j in sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']), reverse=True)
+                                ])
                     art_jobs.append(tmp_list)
 
 
@@ -641,8 +654,7 @@ def artJobs(request):
                 artjobslist[i][j] = []
                 for t, tdict in jdict.items():
                     for ntg, jobs in tdict.items():
-                        tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']),
-                                                    reverse=True)
+                        tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']), reverse=True)
                     tdict['testname'] = t
                     if len(testdirectories[i][j]) > 0 and 'src' in testdirectories[i][j][0]:
                         if art_view == 'package':
@@ -658,6 +670,12 @@ def artJobs(request):
         linktoplots = set(linktoplots)
         xurl = extensibleURL(request)
         noviewurl = removeParam(xurl, 'view', mode='extensible')
+
+        if len(ntagslist) == 1 or (
+                'extra' in request.session['requestParams'] and request.session['requestParams']['extra'] == 'subresults'):
+            request.session['viewParams']['subresults'] = 1
+        else:
+            request.session['viewParams']['subresults'] = 0
 
         data = {
             'request': request,
@@ -678,6 +696,42 @@ def artJobs(request):
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
         response = render(request, 'artJobs.html', data, content_type='text/html')
+        _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
+        request = complete_request(request)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+        return response
+
+
+@login_customrequired
+def artTest(request, testname=None):
+    """
+    Single test page
+    :param request: request
+    :param testname: str, ART test name
+    :return:
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    if not testname:
+        return JsonResponse({'error': 'No test name provided'}, status=400)
+
+    # process URL params to query params
+    query = setupView(request, 'job')
+    _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
+
+    # get test
+
+
+    if is_json_request(request):
+        data = {}
+        dump = json.dumps(data, cls=DateEncoder)
+        return JsonResponse(dump, content_type='application/json')
+    else:
+        data = {}
+        setCacheEntry(request, "artTest", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
+        response = render(request, 'artTest.html', data, content_type='text/html')
         _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
