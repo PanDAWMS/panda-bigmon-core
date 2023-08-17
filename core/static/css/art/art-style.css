@@ -43,8 +43,6 @@ fieldset.artmenu li.input-group button.hollow.alert {
   border-left: 0;
 }
 
-
-
 /* ART clickable containers */
 /* --------------------------------------------------------------------------------------------------- */
 .flex_column_container {
@@ -64,17 +62,19 @@ fieldset.artmenu li.input-group button.hollow.alert {
     display: inline-flex;
     white-space: normal;
     height: auto;
-    align-self: end;
+}
+.text > .flex_column_container > .with-link-to-logs {
+  margin: auto auto auto 0;
 }
 
 .with-ntagfull {
-    /*margin: auto;*/
     background-color: transparent;
     max-width: 165px; /*120 px for status boxes +45px for cut ntag  */
     display: inline-flex;
 }
 
-/* stats divs*/
+/* stats divs */
+
 .clickable {
   background-color: transparent;
   width: 90px;
@@ -151,7 +151,8 @@ fieldset.artmenu li.input-group button.hollow.alert {
     background: #fadd6e;
   }
 
-/*extra links style*/
+/* extra links style */
+
 .extra-links {
   text-align: left;
   white-space: nowrap;
@@ -187,14 +188,14 @@ fieldset.artmenu li.input-group button.hollow.alert {
     z-index: 2;
     height: 100%;
 }
-  .testsubresultscontainer  ul {
+  .testsubresultscontainer ul {
     list-style: none;
     line-height: 20px;
     padding: 0;
     margin:0;
     display: block;
   }
-  .testsubresultscontainer  ul li {
+  .testsubresultscontainer ul li {
     display:inline-block;
     text-align: center;
     list-style: none;
@@ -211,189 +212,15 @@ fieldset.artmenu li.input-group button.hollow.alert {
 .testsubresultbox.failedtest {
     background-color: #ff7259;
 }
-
-/* Top tooltip for sub-job results */
-
-.tooltiptestresult {
-    position: relative;
-    display: inline-block;
-}
-  .tooltiptestresult .tooltiptext {
-    visibility: hidden;
-    min-width: 120px;
-    max-width: 400px;
-    background-color: #0a0a0a;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 2px;
-    position: absolute;
-    z-index: 100;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -60px;
-    opacity: 0;
-    transition: opacity 0.5s;
-  }
-  .tooltiptestresult .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #0a0a0a transparent transparent transparent;
-  }
-  .tooltiptestresult:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-  }
-
-
-
-
-/* Accordion for pages */
-/* --------------------------------------------------------------------------------------------------- */
-
-.columns .accordion-art-container {
-    padding-left: 0;
-    padding-right: 0;
-}
-.accordion-art {
-  margin-left: 0;
-  background: rgba(53,86,129, 0.8);
-  list-style-type: none; }
-
-.accordion-art-item:first-child > :first-child {
-  border-radius: 0 0 0 0; }
-
-.accordion-art-item:last-child > :last-child {
-  border-radius: 0 0 0 0; }
-
-.accordion-art-title {
-  position: relative;
-  display: block;
-  padding: 1.25rem 1rem;
-  border: 0px solid rgba(53,86,129, 0.8);
-  border-bottom: 0;
-  font-size: 16px;
-  line-height: 1;
-  color: #fefefe !important; }
-  :last-child:not(.is-active) > .accordion-art-title {
-    border-bottom: 1px solid #e6e6e6;
-    border-radius: 0 0 0 0; }
-  .accordion-art-title:hover, .accordion-art-title:focus {
-    background-color: rgba(53,86,129, 0.8); }
-  .accordion-art-title::before {
-    position: absolute;
-    top: 50%;
-    right: 1rem;
-    margin-top: -0.5rem;
-    content: '+'; }
-  .is-active > .accordion-art-title::before {
-    content: '\2013'; }
-
-.accordion-art-content {
-  display: none;
-  padding: 0;
-  border: 1px solid rgba(53,86,129, 0.8);
-  border-bottom: 0;
-  background-color: #fefefe;
-  color: #0a0a0a; }
-  :last-child > .accordion-art-content:last-child {
-    border-bottom: 1px solid rgba(53,86,129, 0.8); }
-
-
-
-.accordion-art-nested {
-  margin-left: 0;
-  background: lightsteelblue;
-  list-style-type: none; }
-
-.accordion-art-nested-item:first-child > :first-child {
-  border-radius: 0 0 0 0; }
-
-.accordion-art-nested-item:last-child > :last-child {
-  border-radius: 0 0 0 0; }
-
-.accordion-art-nested-title {
-  position: relative;
-  display: block;
-  padding: 1rem 0.75rem;
-  border: 0px solid lightsteelblue;
-  border-bottom: 0;
-  font-size: 14px;
-  line-height: 1;
-  color: #fefefe !important; }
-  :last-child:not(.is-active) > .accordion-art-nested-title {
-    border-bottom: 1px solid #e6e6e6;
-    border-radius: 0 0 0 0; }
-  .accordion-art-nested-title:hover, .accordion-art-nested-title:focus {
-    background-color: rgb(147, 174, 210); }
-  .accordion-art-nested-title::before {
-    position: absolute;
-    top: 50%;
-    right: 1rem;
-    margin-top: -0.5rem;
-    content: '+'; }
-  .is-active > .accordion-art-nested-title::before {
-    content: '\2013'; }
-
-.accordion-art-nested-content {
-  display: none;
-  padding: 0;
-  border: 1px solid lightsteelblue;
-  border-bottom: 0;
-  background-color: #fefefe;
-  color: #0a0a0a; }
-  :last-child > .accordion-art-nested-content:last-child {
-    border-bottom: 1px solid lightsteelblue; }
-
-
-
-.no-border {
-    margin-bottom: 0;
-}
-
-.no-border .cell {
-    border: none;
-    white-space: nowrap;
-}
-
-.no-border .cell-left {
-    border: none;
-    text-align: left;
-}
-
-.no-border .header {
-    border: none;
-}
-
-.cell.extra-info {
-  line-height: 1.43rem;
+.testsubresultbox.bp-tooltip:hover  {
+  border-color: #0a0a0a;
 }
 
 .left-aligned {
     text-align: left;
 }
 
-.right-aligned {
-    text-align: right;
-}
-
-.right-aligned-ntag {
-    text-align: right;
-    padding-right: 8rem;
-}
-
-.center-aligned {
-    text-align: center;
-}
-
-.cell.header {
-    background: lightsteelblue;
-}
+/* Style for navigation buttons */
 
 .back-to-home {
   background: rgba(53,86,129, 0.8);
@@ -408,134 +235,20 @@ fieldset.artmenu li.input-group button.hollow.alert {
   font-size: 20px;
 }
 
-.link-in-table {
-    color: #0a0a0a !important;
-}
-.link-in-table:hover, .link-in-table:focus {
-    text-decoration: underline;
-}
-
-/*.to-logs {*/
-/*    width: 15px;*/
-/*    height: 100%;*/
-/*    padding-left: 2px;*/
-/*}*/
-
-/*.tarindex {*/
-/*    width: 35px;*/
-/*    height: 100%;*/
-/*    padding-left: 2px;*/
-/*    text-decoration: underline;*/
-/*    text-decoration-style: dotted;*/
-/*    text-align: center;*/
-/*}*/
-
-/*.tarindex_tooltip {*/
-/*  position: relative;*/
-/*}*/
-/*.tarindex_tooltip:hover {*/
-/*    cursor: hand;*/
-/*    text-decoration:underline;*/
-/*}*/
-/*.tarindex_tooltip:after {*/
-/*    content: 'index of tar file';*/
-/*    display:none;*/
-/*    width: 100px;*/
-/*    background-color: black;*/
-/*    color: #fff;*/
-/*    text-align: center;*/
-/*    border-radius: 6px;*/
-/*    padding: 5px 0;*/
-/*    position: absolute;*/
-/*    z-index: 1;*/
-/*    top: -5px;*/
-/*    left: 110%;*/
-/*}*/
-/*.tarindex_tooltip:before {*/
-/*    content: '';*/
-/*    position: absolute;*/
-/*    display:none;*/
-/*    top: 50%;*/
-/*    right: -10%;*/
-/*    margin-top: -5px;*/
-/*    border-width: 5px;*/
-/*    border-style: solid;*/
-/*    border-color: transparent black transparent transparent;*/
-/*}*/
-/*.tarindex_tooltip:hover:before {*/
-/*   display: inline-block;*/
-/*}*/
-/*.tarindex_tooltip:hover:after {*/
-/*   display: inline-block;*/
-/*}*/
-
-/*.attempt {*/
-/*    width: 35px;*/
-/*    height: 100%;*/
-/*    padding-left: 2px;*/
-/*    text-decoration: underline;*/
-/*    text-decoration-style: dotted;*/
-/*    text-align: center;*/
-/*}*/
-
-/*.attempt_tooltip {*/
-/*  position: relative;*/
-/*}*/
-/*.attempt_tooltip:hover {*/
-/*    cursor: hand;*/
-/*    text-decoration:underline;*/
-/*}*/
-/*.attempt_tooltip:after {*/
-/*    content: 'attempt number / max attempts';*/
-/*    display:none;*/
-/*    width: 100px;*/
-/*    background-color: black;*/
-/*    color: #fff;*/
-/*    text-align: center;*/
-/*    border-radius: 6px;*/
-/*    padding: 5px 0;*/
-/*    position: absolute;*/
-/*    z-index: 1;*/
-/*    top: -5px;*/
-/*    left: 110%;*/
-/*}*/
-/*.attempt_tooltip:before {*/
-/*    content: '';*/
-/*    position: absolute;*/
-/*    display:none;*/
-/*    top: 50%;*/
-/*    right: -10%;*/
-/*    margin-top: -5px;*/
-/*    border-width: 5px;*/
-/*    border-style: solid;*/
-/*    border-color: transparent black transparent transparent;*/
-/*}*/
-/*.attempt_tooltip:hover:before {*/
-/*   display: inline-block;*/
-/*}*/
-/*.attempt_tooltip:hover:after {*/
-/*   display: inline-block;*/
-/*}*/
-
-
-
-
 /* Style for extra information about tests */
+a {
+  color: #49668d;
+}
+
 
 .bluelink {
     color: rgba(53,86,129, 0.8) !important;
 }
-
 .redlink {
     color: firebrick !important;
 }
-
 .greylink {
     color: grey !important;
-}
-
-.test-extra-info {
-    display: none;
 }
 
 .art-legend {
@@ -550,8 +263,6 @@ fieldset.artmenu li.input-group button.hollow.alert {
     font-size: 14px;
     font-weight: bold;
 }
-
-
 
 .na_fill {color:black;  background-color:#fefefe}
 .active_fill {color:black;  background-color:#E6F0F6}

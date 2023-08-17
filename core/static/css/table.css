@@ -647,7 +647,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table tbody td.nowrap {
     white-space: nowrap;
   }
-  .data-table td > a {
+  .data-table td  a {
     color: #272727 !important;
     font-weight: bold;
   }

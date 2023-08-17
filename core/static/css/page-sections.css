@@ -206,9 +206,19 @@ hr {
     max-width: 100%;
 }
 
+div.bp-selected-params {
+  margin-bottom: 0.7rem;
+}
+
 div.bp-selected-params p {
-  font-size: inherit;
+  font-size: 0.875rem;
   margin-bottom: 0;
+}
+
+div.bp-selected-params a {
+  color: #0a0a0a;
+  font-weight: bold;
+  border-bottom: 1px dotted;
 }
 
 .callout {

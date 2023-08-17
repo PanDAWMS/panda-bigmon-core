@@ -1,6 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}{% load common_tags %}
-{% block page_title %}ART nightly tests{% endblock %}
+{% block page_title %}ART jobs{% endblock %}
 {% block css_page %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
   <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
@@ -14,32 +14,30 @@
 {% block body %}
 
 <a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
-{% if requestParams.view and requestParams.view == 'branches' %}
-    <a href="{{ noviewurl }}view=packages" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to packages view</a>
-{% else %}
-    <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
-{% endif %}
 
+{% if taskids|length > 0 and taskids|length < 10 %}
 <div style="float: right">
   {% if taskids|length == 1 %}
     <a href="{% url 'taskInfo' taskids.0 %}#jobsconsumptionplots" class="button back-to-home"><i class="fi-graph-bar"></i> Show job consumption plots</a>
-  {% elif taskids|length >= 0 and taskids|length < 50 %}
+  {% elif taskids|length < 10 %}
     <a href="{% url 'jobList' %}?jeditaskid={% for id in taskids %}{{ id }}{% if not forloop.last %}|{% endif %}{% endfor %}" class="button back-to-home">PanDA job list</a>
   {% endif %}
 </div>
-<br>
+{% endif %}
 
-{% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
-{% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
-{% if viewParams.ntag %}<b>Listed tests are for builds done on {{ viewParams.ntag }}</b> <br>{% endif %}
-{% if viewParams.ntag_full %}<b>Listed tests are for the following build: {{ viewParams.ntag_full }}</b> <br>{% endif %}
-{% if viewParams.ntag_from %}<b>Listed tests are for builds done from {{ viewParams.ntag_from }}</b>{% endif %}
-{% if viewParams.ntag_to %}<b>to {{ viewParams.ntag_to }}</b> <br>{% endif %}
-{% if requestParams.ntag_full or gitlabids|length == 1 %}<b>Gitlab ID: <a class="bluelink" target="_blank" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b>{% endif %}
-{% if requestParams.package and artjobs.values|length == 1 %} {% if reportto.jira|length == 1 or reportto.mail|length == 1 %}<b>Report an issue to responsible,
-    {% if reportto.jira|length == 1 %} JIRA: {% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %} {% endif %}
-    {% if reportto.mail|length == 1 %} ,  {% with reportmail=reportto.mail %}{% for email in reportmail %} <a href="mailto:{{ email }} ">email</a> {% endfor %} {% endwith %} {% endif %}
-</b>{% endif %} {% endif %}
+<div class="bp-selected-params">
+  {% if requestParams.package %}<p>Package: <b><a href="{% url 'artTasks' %}?package={{ requestParams.package }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.package }}</a></b></p>{% endif %}
+  {% if requestParams.branch %}<p>Branch: <b><a href="{% url 'artTasks' %}?branch={{ requestParams.branch }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.branch }}</a></b></p>{% endif %}
+  {% if viewParams.ntag %}<p><b>Listed tests are for builds done on {{ viewParams.ntag }}</b></p>{% endif %}
+  {% if viewParams.ntag_full %}<p>Listed tests are for the build done at: <b>{{ viewParams.ntag_full }}</b></p>{% endif %}
+  {% if viewParams.ntag_from %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
+  {% if viewParams.ntag_to %}<p>to <b>{{ viewParams.ntag_to }}</b></p>{% endif %}
+  {% if requestParams.ntag_full or gitlabids|length == 1 %}<p>Gitlab ID: <b><a target="_blank" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b></p>{% endif %}
+  {% if requestParams.package and artjobs.values|length == 1 %} {% if reportto.jira|length == 1 or reportto.mail|length == 1 %}<p>Report an issue to responsible,
+      {% if reportto.jira|length == 1 %} JIRA: <b>{% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %}</b> {% endif %}
+      {% if reportto.mail|length == 1 %} ,  <b>{% with reportmail=reportto.mail %}{% for email in reportmail %} <a href="mailto:{{ email }} ">email</a> {% endfor %} {% endwith %} {% endif %}
+  </b></p>{% endif %} {% endif %}
+</div>
 
 
 {% if art_jobs|length > 0 %}
@@ -63,206 +61,10 @@
 </div>
 {% endif %}
 
-
-
-{#{% if artjobs|length > 0 %}#}
-{##}
-{#<div class="row">#}
-{#  <div class="columns accordion-art-container">#}
-{#    <ul class="accordion-art" data-accordion data-allow-all-closed="true" data-multi-expand="true">#}
-{#      {% for pname,pack in artjobs.items %}#}
-{#      <li class="accordion-art-item is-active" data-accordion-item>#}
-{#        <a href="#" class="accordion-art-title">{{ pname }}</a>#}
-{#        <div class="accordion-art-content" data-tab-content >#}
-{#          <ul class="accordion-art-nested" data-accordion data-allow-all-closed="true" data-multi-expand="true">#}
-{#            {% for brname, tests in pack.items %}#}
-{#                <li class='accordion-art-nested-item is-active' data-accordion-item>#}
-{#                  <a href="#" class="accordion-art-nested-title">{{ brname }}</a>#}
-{#                  <div class="accordion-art-nested-content" data-tab-content >#}
-{#                    <div class="table-scroll" style="width: 100% !important;">#}
-{#                      <table class="no-border" style="width: 100% !important;">#}
-{#                          <tr>#}
-{#                              <th class="cell" >#}
-{#                                  {% if ntaglist|length == 1 %}#}
-{#                                    <a id="link-{{ pname|remove_dot }}-{{ brname|remove_dot }}" class="bluelink" onclick="toggleShowHide('row-{{ pname|remove_dot }}-{{ brname|remove_dot }}', 'link-{{ pname|remove_dot }}-{{ brname|remove_dot }}')">Show output container</a>#}
-{#                                  {% endif %}#}
-{#                              </th>#}
-{#                              {% for test in tests %}#}
-{#                                  {% if forloop.first %}#}
-{#                                      {% for ntag in ntaglist %}#}
-{#                                          {% for ntname,status in test.items %}#}
-{#                                              {% if ntname == ntag %}#}
-{#                                                <th class="header right-aligned-ntag">#}
-{#                                                    <a class="blacklink" href="{% url 'artJobs' %}?ntag={{ ntag }}{% if requestParams.view and requestParams.view == 'branches' %}&package={{ brname }}&branch={{ pname }}{% else %}&package={{ pname }}&branch={{ brname }}{% endif %}">{{ status.ntag_hf }}</a>#}
-{#                                                </th>#}
-{#                                                {% if ntaglist|length == 1 %}#}
-{#                                                    <th class="header left-aligned">Computing site</th>#}
-{#                                                    <th class="header right-aligned">Duration, h:m:s</th>#}
-{#                                                    <th class="header right-aligned">CPU time, s</th>#}
-{#                                                    <th class="header right-aligned">MaxRSS, MB</th>#}
-{#                                                    <th class="header left-aligned">CPU type</th>#}
-{#                                                {% endif %}#}
-{#                                              {% endif %}#}
-{#                                          {% endfor %}#}
-{#                                      {% endfor %}#}
-{#                                  {% endif %}#}
-{#                                {% endfor %}#}
-{#                          </tr>#}
-{#                          {% if ntaglist|length == 1 %}#}
-{#                              <tr class="test-extra-info" id="row-{{ pname|remove_dot }}-{{ brname|remove_dot }}" >#}
-{#                                  <td colspan="10">#}
-{#                                    Output container(s):#}
-{#                                      {% for poc, brdict in outputcontainers.items %}#}
-{#                                          {% if poc == pname %}#}
-{#                                              {% for broc, ocs in brdict.items %}#}
-{#                                                  {% if broc == brname %}#}
-{#                                                      {% for oc in ocs %}#}
-{#                                                            {{ oc }} {% if not forloop.last %},<br>{% endif %}#}
-{#                                                      {% endfor %}#}
-{#                                                  {% endif %}#}
-{#                                              {% endfor %}#}
-{#                                          {% endif %}#}
-{#                                      {% endfor %}<br>#}
-{#                                    Test directory:#}
-{#                                      {% for ptd, brdict in testdirectories.items %}#}
-{#                                          {% if ptd == pname %}#}
-{#                                              {% for brtd, tdirs in brdict.items %}#}
-{#                                                  {% if brtd == brname %}#}
-{#                                                      {% for tdir in tdirs %}#}
-{#                                                            {{ tdir }} {% if not forloop.last %},<br>{% endif %}#}
-{#                                                      {% endfor %}#}
-{#                                                  {% endif %}#}
-{#                                              {% endfor %}#}
-{#                                          {% endif %}#}
-{#                                      {% endfor %}#}
-{#                                  </td>#}
-{#                              </tr>#}
-{#                          {% endif %}#}
-{#                          {% for test in tests %}#}
-{#                              <tr>#}
-{#                              <td class="cell-left">#}
-{#                                  {% if test.gitlablink %}#}
-{#                                    <a href="{{ test.gitlablink }}" class="blacklink hover">{{ test.testname }}</a>#}
-{#                                  {% else %}#}
-{#                                    {{ test.testname }}#}
-{#                                  {% endif %}#}
-{#                              </td>#}
-{#                              {% for ntag in ntaglist %}#}
-{#                                  {% for ntname,jobs in test.items  %}#}
-{#                                    {% if ntname == ntag %}#}
-{#                                      <td class="cell">#}
-{#                                        {% if jobs.jobs|length > 0 %}#}
-{#                                            {% for job in jobs.jobs %}#}
-{#                                                {% if job.jobstatus %}#}
-{#                                                    <div class="with-link-to-logs">#}
-{#                                                      {% if ntaglist|length == 1 or requestParams.extra == 'subresults' %}#}
-{#                                                        <div class="testsubresultscontainer">#}
-{#                                                            <ul>{% for r in job.subresults %}<li class="testsubresultbox {% if r.result > 0 %}failed{% else %}finished{% endif %}test tooltiptestresult" {% if r.name|length > 0 or r.result > 0 %}style="text-decoration: underline"{% endif %}>{{ forloop.counter }}<span class="tooltiptext">{% if r.name|length > 1 %} {{ r.name }}:{% endif %}{{ r.result }}</span></li>{% endfor %}</ul>#}
-{#                                                        </div>#}
-{#                                                      {% endif %}#}
-{#                                                      <div class="clickable {% if ntaglist|length != 1 %} nosubresults {% endif %}">#}
-{#                                                          <div {% if job.finalresult == 'succeeded' and job.subresults == None %} class="finished_job" {% elif job.finalresult == 'failed' or job.finalresult == 'finished' or job.finalresult == 'succeeded' %} class="{{ job.finalresult }}_job" {% else %} class="active_job" {% endif %} > {{ job.finalresult }}</div>#}
-{#                                                          <a href="{% url 'jobInfo' %}?pandaid={{ job.origpandaid }}">{{ job.origpandaid }}</a>#}
-{#                                                      </div>#}
-{#                                                      <div class="extra-links">#}
-{#                                                          <b>   {{ job.ntagtime }}</b>#}
-{#                                                          <span class="tarindex tooltip-upper"> {{ job.tarindex }}<span class="tooltip-text">Index of tar file</span></span>#}
-{#                                                          <span class="attempt tooltip-upper"> {{ job.attemptnr }}/{{ job.maxattempt }}<span class="tooltip-text">Attempt number / max attempts</span></span>#}
-{#                                                          <a  class="to-logs blacklink" target="_blank" href="{% url "filebrowser" %}?{% if job.guid %}guid={{job.guid}}&{% endif %}lfn={{job.lfn}}&site={{job.computingsite}}&scope={{job.scope}}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of last attempt</span></i></a>#}
-{#                                                          {% if job.linktopreviousattemptlogs %}#}
-{#                                                              <a  class="to-logs greylink" target="_blank" href="{% url "filebrowser" %}{{ job.linktopreviousattemptlogs }}"><i class="fi-link tooltip-upper"><span class="tooltip-text">Link to logs of previous attempt</span></i></a>#}
-{#                                                          {% endif %}#}
-{#                                                          {% if job.finalresult != 'active' %}#}
-{#                                                              <a  class="to-logs blacklink" target="_blank" href="{{job.eoslink}}"><i class="fi-clipboard tooltip-upper"><span class="tooltip-text">Link to EOS copy area</span></i></a>#}
-{#                                                          {% endif %}#}
-{#                                                          {% if job.finalresult != 'active' and job.htmllink %}#}
-{#                                                              <a  class="to-logs blacklink" target="_blank" href="{{job.htmllink}}"><i class="fi-graph-bar tooltip-upper"><span class="tooltip-text">Link to result HTML</span></i></a>#}
-{#                                                          {% endif %}#}
-{#                                                      </div>#}
-{#                                                    </div>#}
-{#                                                    {% if jobs.jobs|length > 1 %} <br> {% endif %}#}
-{#                                                {% else %}#}
-{#                                                    <div class="nodata">#}
-{#                                                        ---#}
-{#                                                    </div>#}
-{#                                                {% endif %}#}
-{#                                            {% endfor %}#}
-{#                                        {% else %}#}
-{#                                            <div class="nodata">#}
-{#                                                ---#}
-{#                                            </div>#}
-{#                                        {% endif %}#}
-{#                                      </td>#}
-{#                                      {% if ntaglist|length == 1 %}#}
-{#                                          <td class="cell extra-info left-aligned">#}
-{#                                            {% for job in jobs.jobs %}#}
-{#                                              <div><a class="bluelink" href="{% url 'siteInfo' job.computingsite  %}"><b>{{ job.computingsite }}</b></a></div>#}
-{#                                            {% endfor %}#}
-{#                                          </td>#}
-{#                                          <td class="cell extra-info right-aligned">#}
-{#                                             {% for job in jobs.jobs %}#}
-{#                                              {{ job.duration }}<br>#}
-{#                                            {% endfor %}#}
-{#                                          </td>#}
-{#                                          <td class="cell extra-info right-aligned">#}
-{#                                            {% for job in jobs.jobs %}#}
-{#                                              {{ job.cpuconsumptiontime }}<br>#}
-{#                                            {% endfor %}#}
-{#                                          </td>#}
-{#                                          <td class="cell extra-info right-aligned">#}
-{#                                            {% for job in jobs.jobs %}#}
-{#                                              {{ job.maxrss }}<br>#}
-{#                                            {% endfor %}#}
-{#                                          </td>#}
-{#                                          <td class="cell extra-info left-aligned">#}
-{#                                            {% for job in jobs.jobs %}#}
-{#                                              {{ job.cpuconsumptionunit }}<br>#}
-{#                                            {% endfor %}#}
-{#                                          </td>#}
-{#                                      {% endif %}#}
-{#                                    {% endif %}#}
-{#                                  {%  endfor %}#}
-{#                              {% endfor %}#}
-{#                              </tr>#}
-{#                          {% endfor %}#}
-{#                      </table>#}
-{#                    </div>#}
-{#                  </div>#}
-{#                </li>#}
-{#            {% endfor %}#}
-{#          </ul>#}
-{#        </div>#}
-{#      </li>#}
-{#      {% endfor %}#}
-{#    </ul>#}
-{#  </div>#}
-{#</div>#}
-{##}
-{#{% else %}#}
-{##}
-{#<p></p>#}
-{#<div class="callout alert" data-closable>#}
-{#  <h5>No tests were found for provided selection parameters!</h5>#}
-{#    <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>#}
-{#        <span aria-hidden="true">&times;</span>#}
-{#  </button>#}
-{#</div>#}
-{#{% endif %}#}
-
 {% endblock %}
 
 {% block js_body_page %}
 <script type="text/javascript">
-function toggleShowHide(divID, linkID) {
-    if ($("#" + divID).is(':visible')){
-        $("#" + divID).hide();
-        document.getElementById(linkID).innerHTML = 'Show output container';
-    }
-    else {
-        $('#'+divID).show();
-        document.getElementById(linkID).innerHTML = 'Hide output container';
-    }
-}
 
 const table_data = {{ art_jobs | safe }};
 const table_title = table_data.shift()
@@ -291,17 +93,19 @@ for (let i=0; i<table_data[0].length; i++) {
   else if (i === 2) {
     columns.push({
       title: table_title[i].charAt(0).toUpperCase() + table_title[i].slice(1),
-      className: 'nowrap',
+      className: 'text nowrap icons1',
       render: function (data, type, row, meta) {
-        console.log(row)
-        return (row[3].constructor === Array && row[3].length > 0) ? '<a href="' + row[3][0].gitlablink + '"><span class="bp-tooltip right">' + data + '<span class="tooltip-text">See test in Gitlab</span></span</a>': data
+        let result = '';
+        result += '<a href="{% url 'artTest' %}' + data + '/"><span class="bp-tooltip right">' + data + '<span class="tooltip-text">Test overview</span></span></a>\n '
+        {#result += '  <a target="_blanc" href="' + '' + '"><span class="bp-tooltip right"><img src="/static/images/gitlab-logo-black.png" width=12 height=12><span class="tooltip-text">See test in Gitlab</span></span></a>';#}
+        return result
       }
     })
   }
   else if (/^([0-9]{1,2}\s[a-zA-Z]{3,4}\s[0-9]{4})$/.test(table_title[i])) {
     columns.push({
       title: table_title[i],
-      className: '',
+      className: (view_params.subresults === 0) ? 'text':'',
       render: function (data, type, row, meta) {
         if (type === 'sort') {
           return (data.length > 0) ? data[0].finalresult : '-'
@@ -320,6 +124,7 @@ for (let i=0; i<table_data[0].length; i++) {
               else {
                 let ntag_time = (is_show_ntag_time[i]) ? item.ntagtime : '';
                 let subresults = '';
+                let tarindex = (item.tarindex) ? '<span class="tarindex bp-tooltip left">' + item.tarindex + '<span class="tooltip-text">Index of tar file</span></span>': '' ;
                 let link_eos = '';
                 let link_previous_attempt_logs = '';
                 let link_html = '';
@@ -327,14 +132,8 @@ for (let i=0; i<table_data[0].length; i++) {
                   subresults += '<div class="testsubresultscontainer"><ul>';
                   for (let s=0; s<item.subresults.length; s++) {
                     let r = item.subresults[s];
-                    subresults += '<li class="testsubresultbox bp-tooltip left';
-                    subresults += (r.result > 0) ? ' failedtest' : ' finishedtest';
-                    subresults += '"> ';
-                    subresults += s;
-                    subresults += '<span class="tooltip-text">'
-                    subresults += (r.name.length > 1) ? r.name + ':' : '';
-                    subresults += r.result;
-                    subresults += '</span></li>'
+                    subresults += '<li class="testsubresultbox bp-tooltip left' + `${(r.result > 0) ? ' failedtest' : ' finishedtest'}` + '"> ' +
+                      s + `<span class="tooltip-text">${(r.name.length > 1) ? r.name + ':' : ''}` + r.result + '</span></li>';
                   }
                   subresults += '</ul></div>'
                 }
@@ -344,7 +143,7 @@ for (let i=0; i<table_data[0].length; i++) {
                 if (item.finalresult !== 'active') {
                   link_eos = '<a  class="to-logs blacklink" target="_blank" href="' + item.eoslink + '"><i class="fi-clipboard bp-tooltip left"><span class="tooltip-text">Link to EOS copy area</span></i></a>'
                 }
-                if (item.finalresult != 'active' && item.htmllink) {
+                if (item.finalresult !== 'active' && item.htmllink) {
                   link_html = '<a  class="to-logs blacklink" target="_blank" href="' + item.htmllink + '"><i class="fi-graph-bar bp-tooltip left"><span class="tooltip-text">Link to result HTML</span></i></a>'
                 }
                 result += '<div class="with-link-to-logs">' + subresults +
@@ -353,8 +152,7 @@ for (let i=0; i<table_data[0].length; i++) {
                     '<a href="{% url 'jobInfo' %}?pandaid=' + item.origpandaid + '">' + item.origpandaid + '</a>'+
                   '</div>' +
                   '<div class="extra-links">' +
-                    ntag_time +
-                    '<span class="tarindex bp-tooltip left">' + item.tarindex + '<span class="tooltip-text">Index of tar file</span></span>' +
+                    ntag_time + tarindex +
                     '<span class="attempt bp-tooltip left">' + item.attemptnr + '/' + item.maxattempt + '<span class="tooltip-text">Attempt number / max attempts</span></span>' +
                     '<a class="blacklink" target="_blank" href="{% url "filebrowser" %}?pandaid=' + item.origpandaid + '"><i class="fi-link bp-tooltip left"><span class="tooltip-text">Link to logs of last attempt</span></i></a>' +
                     link_previous_attempt_logs +
@@ -384,7 +182,12 @@ for (let i=0; i<table_data[0].length; i++) {
           else {
             result = '<div class="flex_column_container">';
             data.forEach(item => {
-              result += '<span>' + item + '</span>'
+              if (table_title[i] === 'Site') {
+                result += '<a href="{% url 'siteInfo' %}' + item + '/">' + item + '</a>';
+              }
+              else {
+                result += '<span>' + item + '</span>';
+              }
             })
             result += '</div>';
         }
@@ -410,7 +213,7 @@ var art_table = $('#art_table').DataTable({
 if (table_data.map(x => x[0]).every( (val, i, arr) => val === arr[0] ) && request_params[table_title[0]].indexOf(',') < 0) {
   art_table.columns( [0,] ).visible( false );
 }
-else if (table_data.map(x => x[1]).every( (val, i, arr) => val === arr[0] ) && request_params[table_title[1]].indexOf(',') < 0 ) {
+if (table_data.map(x => x[1]).every( (val, i, arr) => val === arr[0] ) && request_params[table_title[1]].indexOf(',') < 0) {
   art_table.columns( [1,] ).visible( false );
 }
 
@@ -419,6 +222,6 @@ else if (table_data.map(x => x[1]).every( (val, i, arr) => val === arr[0] ) && r
 
 
 {% block help %}
-    <a name="help"></a>
-    {% include "artHelp.html" %}
+  <a name="help"></a>
+  {% include "artHelp.html" %}
 {% endblock %}

@@ -1,6 +1,6 @@
 {% extends "_base_core.html" %}
 {% load static %}{% load common_tags %}
-{% block page_title %}ART nightly tests{% endblock %}
+{% block page_title %}ART overview{% endblock %}
 
 {% block css_page %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
@@ -31,18 +31,20 @@
   <a class="button back-to-home" ng-click="art.plot.toggle()">Show results plot</a>
 </div>
 <br>
-<div id="plot" class="ng-hide" ng-hide="art.plot.is_hidden" >
+<div id="plot" class="ng-hide" ng-hide="art.plot.is_hidden">
   <p ng-bind-html="art.plot.message"></p>
 </div>
 
 </div>
 
-{% if requestParams.package %}<b>Package: {{ requestParams.package }}</b> <br>{% endif %}
-{% if requestParams.branch %}<b>Branch: {{ requestParams.branch }}</b> <br>{% endif %}
-{% if viewParams.ntag %}<b>Listed tests are for builds done on {{ viewParams.ntag }}</b> <br>{% endif %}
-{% if viewParams.ntag_full %}<b>Listed tests are for the following build: {{ viewParams.ntag_full }}</b> <br>{% endif %}
-{% if viewParams.ntag_from %}<b>Listed tests are for builds done from {{ viewParams.ntag_from }}</b>{% endif %}
-{% if viewParams.ntag_to %}<b>to {{ viewParams.ntag_to }}</b> <br>{% endif %}
+<div class="bp-selected-params">
+  {% if requestParams.package %}<p>Package: <b>{{ requestParams.package }}</b> </p>{% endif %}
+  {% if requestParams.branch %}<p>Branch: <b>{{ requestParams.branch }}</b> </p>{% endif %}
+  {% if viewParams.ntag %}<p>Listed tests are for builds done on <b>{{ viewParams.ntag }}</b> </p>{% endif %}
+  {% if viewParams.ntag_full %}<p>Listed tests are for the following build: <b>{{ viewParams.ntag_full }}</b> </p>{% endif %}
+  {% if viewParams.ntag_from %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
+  {% if viewParams.ntag_to %}<p>to <b>{{ viewParams.ntag_to }}</b> </p>{% endif %}
+</div>
 
 {% if artoverview|length > 0 %}
 <div class="card bp-container-simple secondary">
@@ -78,15 +80,16 @@
 var table_data = JSON.parse(JSON.stringify({{ artoverview | safe }}));
 var table_title = table_data.shift()
 var request_params = {{ requestParams|safe }};
-var art_tasks_link_base = '{% url 'artTasks' %}?' + Object.keys(request_params).reduce((res, key) => res + key + '=' + request_params[key] + '&' , '');
+var ao1 = (table_title[0] === 'package') ? 'branch' : 'package';
 var columns = []
 columns.push({
   title: table_title[0],
-  render: function (data, type, row, meta) {return '<a target=blank href="' + art_tasks_link_base + table_title[0] + '=' + data + '">' + data + '</a>'}
+  render: function (data, type, row, meta) {
+    return '<a href="{% url 'artTasks' %}?' + table_title[0] + '=' + row[0] + '&' + Object.keys(request_params).reduce((res, key) => (key !== table_title[0]) ? res + key + '=' + request_params[key] + '&' : res , '') + '">' + data + '</a>'}
 })
 for (let i=1; i<table_data[0].length; i++) {
   columns.push({
-    title: table_title[i],
+    title: table_title[i].charAt(0).toUpperCase() + table_title[i].slice(1),
     render: function (data, type, row, meta) {
       if (type === 'sort') {
         return (data.active + data.succeeded + data.finished + data.failed > 0) ? data.failed : -1;
@@ -100,13 +103,15 @@ for (let i=1; i<table_data[0].length; i++) {
             '<div class="succeeded">' + data.succeeded + '</div>' +
             '<div class="finished">' + data.finished + '</div>' +
             '<div class="failed">' + data.failed + '</div>' +
-            '<a target="_blank" href="' + art_tasks_link_base + row[0] + '&ntag=' + data.ntag + '"></a>' +
+            '<a target="_blank" href="{% url 'artTasks' %}?' + table_title[0] + '=' + row[0] + '&ntag=' + data.ntag + `${(ao1 in request_params) ? '&' + ao1 + '=' + request_params[ao1] : ''}` + '"></a>' +
             '</div>';
         }
       }
     }
   })
 }
+
+console.log(ao1, request_params)
 
 let columnDefs =  [{"type": "num-html", "targets": [...Array(table_title.length).keys()].slice(1) }];
 
