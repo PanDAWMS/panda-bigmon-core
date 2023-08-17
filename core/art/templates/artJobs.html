@@ -31,7 +31,7 @@
   {% if viewParams.ntag %}<p><b>Listed tests are for builds done on {{ viewParams.ntag }}</b></p>{% endif %}
   {% if viewParams.ntag_full %}<p>Listed tests are for the build done at: <b>{{ viewParams.ntag_full }}</b></p>{% endif %}
   {% if viewParams.ntag_from %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
-  {% if viewParams.ntag_to %}<p>to <b>{{ viewParams.ntag_to }}</b></p>{% endif %}
+  {% if viewParams.ntag_to %}to <b>{{ viewParams.ntag_to }}</b></p>{% endif %}
   {% if requestParams.ntag_full or gitlabids|length == 1 %}<p>Gitlab ID: <b><a target="_blank" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b></p>{% endif %}
   {% if requestParams.package and artjobs.values|length == 1 %} {% if reportto.jira|length == 1 or reportto.mail|length == 1 %}<p>Report an issue to responsible,
       {% if reportto.jira|length == 1 %} JIRA: <b>{% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %}</b> {% endif %}

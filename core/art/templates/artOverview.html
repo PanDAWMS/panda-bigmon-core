@@ -43,7 +43,7 @@
   {% if viewParams.ntag %}<p>Listed tests are for builds done on <b>{{ viewParams.ntag }}</b> </p>{% endif %}
   {% if viewParams.ntag_full %}<p>Listed tests are for the following build: <b>{{ viewParams.ntag_full }}</b> </p>{% endif %}
   {% if viewParams.ntag_from %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
-  {% if viewParams.ntag_to %}<p>to <b>{{ viewParams.ntag_to }}</b> </p>{% endif %}
+  {% if viewParams.ntag_to %}to <b>{{ viewParams.ntag_to }}</b>{% endif %}
 </div>
 
 {% if artoverview|length > 0 %}
