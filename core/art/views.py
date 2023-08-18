@@ -766,15 +766,16 @@ def art_last_successful_test(request):
 
     last_success_test = {}
     tests = []
-    tests.extend(ARTTests.objects.filter(**query).values('pandaid', 'nightly_tag', 'subresult__subresult').order_by('-pandaid'))
+    tests.extend(ARTTests.objects.filter(**query).values('pandaid', 'nightly_tag', 'artsubresult__subresult').order_by('-pandaid'))
 
     for t in tests:
-        subresults_dict_tmp = json.loads(t['subresult__subresult'])
-        if 'result' in subresults_dict_tmp and len(subresults_dict_tmp['result']) > 0:
-            if analize_test_subresults(subresults_dict_tmp['result']) < 1:
+        if t['artsubresult__subresult'] is not None and len(t['artsubresult__subresult']) > 0:
+            subresults_dict_tmp = json.loads(t['artsubresult__subresult'])
+            if 'result' in subresults_dict_tmp and len(subresults_dict_tmp['result']) > 0:
+                if analize_test_subresults(subresults_dict_tmp['result']) < 1:
+                    last_success_test[t['pandaid']] = t['nightly_tag']
+            elif 'exit_code' in subresults_dict_tmp and subresults_dict_tmp['exit_code'] == 0:
                 last_success_test[t['pandaid']] = t['nightly_tag']
-        elif 'exit_code' in subresults_dict_tmp and subresults_dict_tmp['exit_code'] == 0:
-            last_success_test[t['pandaid']] = t['nightly_tag']
 
         if len(last_success_test) > 0:
             break
@@ -1379,9 +1380,9 @@ def registerARTTest(request):
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
             _logger.info(data['message'] + str(request.session['requestParams']))
-        except:
-            data = {'exit_code': 0, 'message': "Provided pandaid is already registered (pk violated)"}
-            _logger.error(data['message'] + str(request.session['requestParams']))
+        except Exception as e:
+            data = {'exit_code': 0, 'message': "Failed to register test, can not save the row to DB"}
+            _logger.error('{}\n{}\n{}'.format(data['message'], str(e), str(request.session['requestParams'])))
     else:
         data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
