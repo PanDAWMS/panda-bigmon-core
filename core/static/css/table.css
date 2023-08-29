@@ -360,6 +360,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   border: 1px solid #5e789a;
   border-collapse: collapse;
   border-spacing: 0;
+  line-height: 1.3;
 }
   .bp-table thead {
     border: solid 1px #5e789a;
@@ -392,9 +393,16 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     border: none;
     padding: 0.3rem 0.7rem;
   }
+  .bp-table tbody tr th.highlighted {
+    background-color: #e6e6e6;
+  }
   .bp-table tbody td a {
     color: #355681;
     font-weight: bold;
+  }
+  .bp-table tbody tr td ol, .bp-table tbody tr td ul {
+    line-height: 1.2;
+    margin-bottom: 0;
   }
   .bp-table tbody tr td .item {
     margin-right: 0.7rem;
@@ -419,6 +427,15 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .bp-table tbody tr > th.nowrap, .bp-table tbody tr > th.nowrap > a,
     .bp-table tbody tr > td.nowrap, .bp-table tbody tr > td.nowrap > a {
       white-space: nowrap;
+  }
+  .bp-table thead th.state, .bp-table tbody td.state {
+    text-align: center;
+  }
+  .bp-table thead th.text, .bp-table tbody td.text {
+    text-align: left;
+  }
+  .bp-table thead th.num, .bp-table tbody td.num {
+    text-align: right;
   }
 
 .bp-table.secondary {

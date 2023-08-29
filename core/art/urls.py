@@ -12,14 +12,13 @@ urlpatterns = [
     re_path(r'^art/jobs/$', art_views.artJobs, name='artJobs'),
     re_path(r'^art/stability/$', art_views.artStability, name='artStability'),
     re_path(r'^art/errors/$', art_views.artErrors, name='artErrors'),
-    re_path(r'^art/job/(?P<testname>.*)/$', art_views.artTest, name='artTest'),
+    re_path(r'^art/test/(?P<testname>.*)/$', art_views.artTest, name='artTest'),
+    re_path(r'^art/test/$', art_views.artTest, name='artTest'),
 
     re_path(r'^art/updatejoblist/$', art_views.updateARTJobList),
     re_path(r'^art/loadsubresults/$', art_views.loadSubResults),
     re_path(r'^art/registerarttest/$', art_views.registerARTTest),
     re_path(r'^art/sendartreport/$', art_views.sendArtReport),
     re_path(r'^art/senddevartreport/$', art_views.sendDevArtReport),
-
-    re_path(r'^api/art/lastsuccess/$', art_views.art_last_successful_test),
 
     ]

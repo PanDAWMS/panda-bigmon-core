@@ -135,6 +135,10 @@ fieldset.artmenu li.input-group button.hollow.alert {
     background: #fadd6e;
   }
 
+[class$="_job"] {
+  font-weight: bold;
+}
+
   .done_job {
     background: #73e889;
   }
@@ -216,6 +220,13 @@ fieldset.artmenu li.input-group button.hollow.alert {
   border-color: #0a0a0a;
 }
 
+.subresult_finished {
+  color: #50a25f;
+}
+.subresult_failed {
+  color: #cc5b47;
+}
+
 .left-aligned {
     text-align: left;
 }
@@ -226,6 +237,7 @@ fieldset.artmenu li.input-group button.hollow.alert {
   background: rgba(53,86,129, 0.8);
   color: #fefefe !important;
   font-size: 14px;
+  margin: 0 0 0.7rem 0;
 }
 .back-to-home:hover, .back-to-home:focus {
     background-color: rgba(53,86,129, 0.8);
@@ -236,10 +248,10 @@ fieldset.artmenu li.input-group button.hollow.alert {
 }
 
 /* Style for extra information about tests */
-a {
-  color: #49668d;
+a.away {
+  border-bottom: 1px dotted;
+  font-weight: bold;
 }
-
 
 .bluelink {
     color: rgba(53,86,129, 0.8) !important;

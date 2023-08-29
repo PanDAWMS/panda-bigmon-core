@@ -18,10 +18,10 @@
 <div class="bp-selected-params">
   {% if requestParams.package %}<p>Package: <b><a href="{% url 'artOverview' %}?package={{ requestParams.package }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.package }}</a></b></p>{% endif %}
   {% if requestParams.branch %}<p>Branch: <b><a href="{% url 'artOverview' %}?branch={{ requestParams.branch }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.branch }}</a></b></p>{% endif %}
-  {% if viewParams.ntag %}<p><b>Listed tests are for builds done on {{ viewParams.ntag }}</b> <br>{% endif %}
-  {% if viewParams.ntag_full %}<p><b>Listed tests are for the following build: {{ viewParams.ntag_full }}</b> <br>{% endif %}
-  {% if viewParams.ntag_from %}<p><b>Listed tests are for builds done from {{ viewParams.ntag_from }}</b>{% endif %}
-  {% if viewParams.ntag_to %}<b>to {{ viewParams.ntag_to }}</b></p>{% endif %}
+  {% if viewParams.ntag %}<p>Listed tests are for builds done on <b>{{ viewParams.ntag }}</b> </p>{% endif %}
+  {% if viewParams.ntag_full %}<p>Listed tests are for the following build: <b>{{ viewParams.ntag_full }}</b> </p>{% endif %}
+  {% if viewParams.ntag_from %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
+  {% if viewParams.ntag_to %}to <b>{{ viewParams.ntag_to }}</b></p>{% endif %}
 </div>
 
 {% if arttasks|length > 0 %}

@@ -1,0 +1,113 @@
+{% extends "_base_core.html" %}
+{% load static %}{% load common_tags %}
+{% block page_title %}ART test {% if art_test.testname  %}{{ art_test.testname }}{% endif %}{% endblock %}
+{% block css_page %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+  <link rel="stylesheet" href="{% static "css/art/art-style.css" %}?{% cache_bust "css/art/art-style.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+{% block subtitle %}ART test {{ viewParams.selection|safe }}{% endblock %}
+{% block body %}
+
+<a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
+
+{% if test|length > 0 %}
+
+<div class="table-scroll">
+<table class="bp-table secondary unstriped">
+<thead>
+<tr>
+  <th colspan="20">Test:</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+	<th>Name</th>
+  <th>Gitlab</th>
+  <th>Package</th>
+	<th>Description</th>
+</tr>
+<tr>
+	<td><a href="{% url 'artTest' %}/{{ test.testname }}/">{{ test.testname }}</a></td>
+  <td><a target="_blank" href="{{ test.gitlab }}"><img src="{% static 'images/gitlab-logo-black.png' %}" width=12 height=12></a></td>
+	<td><a href="{% url 'artTasks' %}?package={{ test.package }}" class="bp-tooltip upper">{{ test.package }}<span class="tooltip-text">See overview for the package</span></a></td>
+  <td>{{ test.description }}</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+<table class="bp-table secondary unstriped">
+<thead>
+<tr>
+  <th colspan="100%">Last test run{% if branches|length > 1 %} per branch{% endif %}:</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <th>Nightly</th>
+  <th>PanDA ID</th>
+  <th>Attempt</th>
+  <th class="state">Status</th>
+  <th>Sub-step name : exit code</th>
+  <th>Logs</th>
+  <th>Site</th>
+  <th>Duration</th>
+  <th class="num">Max PSS/core [GB]</th>
+  <th class="num">CPU time [s]</th>
+  <th>CPU</th>
+</tr>
+{% for branch in branches %}
+  <tr>
+    <th class="highlighted" colspan="100%">{{ branch.0.branch }} {% if branch.0.lst != None and branch.0.lst|length > 0 %}, last success on <a href="{% url 'artTest' %}{{ test.testname }}/?ntag_full={{ branch.0.lst.nightly_tag }}">{{ branch.0.lst.nightly_tag }}</a>{% elif branch.0.lst != None and branch.0.lst|length == 0 %}, no succeeded test in history{% endif %}</th>
+  </tr>
+  {% for j in branch.1 %}
+    <tr>
+      <td>{{ j.nightly_tag }}</td>
+      <td><a href="{% url 'jobInfo' %}/{{ j.pandaid }}/">{{ j.pandaid }}</a></td>
+      <td>{{ j.attemptnr }}</td>
+      <td class="state {{ j.finalresult }}_job">{{ j.finalresult }}</td>
+      <td>{% if j.subresults %}<ol>{% for r in j.subresults %}<li class="nowrap subresult_{% if r.result == 0 %}finished{% else %}failed{% endif %}">{{ r.name }} : {{ r.result }}</li>{% endfor %}</ol>{% else %}-{% endif %}</td>
+      <td class="nowrap">
+        <a class="bp-tooltip upper" href="{% url 'filebrowser' %}?pandaid={{ j.pandaid }}"><i class="fi-link"></i><span class="tooltip-text">PanDA job logs</span></a>
+        {% if j.eos %} <a class="bp-tooltip upper away" href="{{ j.eos }}"><i class="fi-clipboard"></i><span class="tooltip-text">EOS directory</span></a>{% endif %}
+        {% if j.htmllink %} <a class="bp-tooltip upper away" href="{{ j.htmllink }}"><i class="fi-graph-bar"></i><span class="tooltip-text">Result HTML</span></a>{% endif %}
+      </td>
+      <td><a href="{% url 'siteInfo' %}{{ j.computingsite }}/">{{ j.computingsite }}</a></td>
+      <td>{{ j.duration_str }}</td>
+      <td class="num">{{ j.maxpss_per_core_gb }}</td>
+      <td class="num">{{ j.cpuconsumptiontime }}</td>
+      <td>{{ j.cputype }}</td>
+    </tr>
+  {% endfor %}
+{% endfor %}
+</tbody>
+</table>
+
+{% else %}
+  <div class="callout alert" data-closable>
+    <h5>No tests were found for provided selection parameters!</h5>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block js_body_page %}
+<script type="text/javascript">
+
+const request_params = {{ requestParams|safe }};
+const view_params = {{ viewParams|safe }};
+
+</script>
+{% endblock %}
+
+
+{% block help %}
+  <a name="help"></a>
+  {% include "artHelp.html" %}
+{% endblock %}

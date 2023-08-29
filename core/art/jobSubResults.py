@@ -210,7 +210,7 @@ def get_final_result(job):
     except:
         pass
     try:
-        extraParamsDict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else []
+        extraParamsDict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else None
     except:
         pass
     try:

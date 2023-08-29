@@ -1,15 +1,19 @@
 """
 Created by Tatiana Korchuganova on 04.10.2019
 """
+import copy
 import logging
 import time
+import json
 from datetime import datetime, timedelta
 
 from django.db.models.functions import Substr
 
 from core.libs.sqlcustom import preprocess_wild_card_string
 from core.art.modelsART import ARTTests
+from core.art.jobSubResults import analize_test_subresults
 
+from core.libs.job import get_job_list
 
 import core.art.constants as art_const
 artdateformat = '%Y-%m-%d'
@@ -58,18 +62,10 @@ def setupView(request, querytype='task'):
         except:
             del request.session['requestParams']['ntag_full']
 
-    if request.path == '/art/updatejoblist/':
-        ndaysdefault = 30
-        ndaysmax = 30
-    elif request.path == '/art/stability/':
-        ndaysdefault = 8
-        ndaysmax = 15
-    elif request.path == '/art/errors/':
-        ndaysdefault = 1
-        ndaysmax = 6
-    else:
-        ndaysmax = 6
-        ndaysdefault = 6
+    art_view = str(request.path).split('/')[2]
+    ndaysmax = art_const.N_DAYS_MAX[art_view] if art_view in art_const.N_DAYS_MAX else art_const.N_DAYS_MAX['other']
+    ndaysdefault = art_const.N_DAYS_DEFAULT[art_view] if art_view in art_const.N_DAYS_DEFAULT else art_const.N_DAYS_DEFAULT['other']
+
     if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
         enddate = startdate + timedelta(days=ndaysdefault)
     elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
@@ -174,6 +170,24 @@ def setupView(request, querytype='task'):
             query['ntag__range'] = [startdate.strftime(artdateformat), enddate.strftime(artdateformat)]
         else:
             query['ntag__in'] = [ntag.strftime(artdateformat) for ntag in datelist]
+    elif querytype == 'test':
+        if 'ntag_full' in request.session['requestParams']:
+            query['nightly_tag'] = request.session['requestParams']['ntag_full']
+        elif 'ntag' in request.session['requestParams']:
+            query['nightly_tag_date__range'] = [startdate, startdate + timedelta(days=1) - timedelta(seconds=1)]
+        else:
+            datelist = find_last_n_nightlies(request, 1)
+            query['nightly_tag_date__range'] = [datelist[0], datelist[0] + timedelta(days=1) - timedelta(seconds=1)]
+            _logger.debug('Got n last nightly tags: {}'.format(time.time() - request.session['req_init_time']))
+        art_tests_str_fields = copy.deepcopy(
+            [f.name for f in ARTTests._meta.get_fields() if not f.is_relation and 'String' in f.description])
+        for p, v in request.session['requestParams'].items():
+            if p == 'branch':
+                query['nightly_release_short'], query['project'], query['platform'] = v.split('/')
+                continue
+            for f in art_tests_str_fields:
+                if p == f:
+                    query[f] = v
 
     return query
 
@@ -200,6 +214,8 @@ def find_last_n_nightlies(request, limit=7):
         if querystr.endswith(', '):
             querystr = querystr[:len(querystr) - 2]
         querystr += ')'
+    if 'testname' in request.session['requestParams']:
+        nquery['testname'] = request.session['requestParams']['testname']
     ndates = ARTTests.objects.filter(**nquery).extra(where=[querystr]).annotate(ndate=Substr('nightly_tag_display', 1, 10)).values('ndate').order_by('-ndate').distinct()[:limit]
 
     datelist = []
@@ -211,6 +227,42 @@ def find_last_n_nightlies(request, limit=7):
             pass
 
     return datelist
+
+
+def find_last_successful_test(testname, branch):
+    """
+    :param testname:
+    :param branch:
+    :return:
+    """
+    last_successful_test = {}
+    query = {
+        'testname': testname,
+        'nightly_release_short': (branch.split('/'))[0],
+        'project': (branch.split('/'))[1],
+        'platform': (branch.split('/'))[2]
+    }
+    tests = []
+    tests.extend(ARTTests.objects.filter(**query).values('pandaid', 'nightly_tag', 'artsubresult__subresult').order_by('-pandaid'))
+
+    for t in tests:
+        if t['artsubresult__subresult'] is not None and len(t['artsubresult__subresult']) > 0:
+            subresults_dict_tmp = json.loads(t['artsubresult__subresult'])
+            if 'result' in subresults_dict_tmp and len(subresults_dict_tmp['result']) > 0:
+                if analize_test_subresults(subresults_dict_tmp['result']) < 1:
+                    last_successful_test = t
+            elif 'exit_code' in subresults_dict_tmp and subresults_dict_tmp['exit_code'] == 0:
+                last_successful_test = t
+            else:
+                # get job status
+                jobs = get_job_list({'pandaid': t['pandaid']})
+                if len(jobs) > 0 and 'jobstatus' in jobs[0] and jobs[0]['jobstatus'] == 'finished':
+                    last_successful_test = t
+
+        if len(last_successful_test) > 0:
+            break
+
+    return last_successful_test
 
 
 def getjflag(job):
@@ -232,6 +284,18 @@ def get_result_for_multijob_test(states):
     result = list(state_dict.keys())[result_index] if result_index < len(state_dict) else None
 
     return result
+
+
+def concat_branch(job):
+    """
+    Concat branch from 3 params from ART_TESTS table
+    :param job:
+    :return:
+    """
+    branch = None
+    if 'nightly_release_short' in job and 'project' in job and 'platform' in job:
+        branch = '{}/{}/{}'.format(job['nightly_release_short'], job['project'], job['platform'])
+    return branch
 
 
 def remove_duplicates(jobs):

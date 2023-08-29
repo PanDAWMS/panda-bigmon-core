@@ -20,19 +20,20 @@ from django.db.models import Value as V, F
 from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, complete_request, removeParam
 from core.views import initRequest, extensibleURL
-from core.libs.DateEncoder import DateEncoder
-from core.libs.datetimestrings import parse_datetime
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
-from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result, analize_test_subresults
+from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
 from core.common.models import Filestable4, FilestableArch
 from core.reports.models import ReportEmails
+from core.libs.DateEncoder import DateEncoder
+from core.libs.datetimestrings import parse_datetime
+from core.libs.job import get_job_list, get_job_walltime
 from core.libs.error import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
-from core.libs.exlib import convert_sec
+from core.libs.exlib import convert_sec, convert_bytes, round_to_n_digits
 from core.pandajob.models import CombinedWaitActDefArch4
 
-from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test
+from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test, concat_branch, find_last_successful_test
 
 from django.conf import settings
 import core.art.constants as art_const
@@ -529,6 +530,7 @@ def artJobs(request):
                 jobdict = {}
                 jobdict['jobstatus'] = job['jobstatus']
                 jobdict['origpandaid'] = job['pandaid']
+                jobdict['ntag'] = job['nightly_tag']
                 jobdict['ntagtime'] = job['nightly_tag'][-5:]
                 jobdict['computingsite'] = job['computingsite']
                 jobdict['guid'] = job['guid']
@@ -715,74 +717,122 @@ def artTest(request, testname=None):
         return response
 
     if not testname:
-        return JsonResponse({'error': 'No test name provided'}, status=400)
+        if 'testname' in request.session['requestParams']:
+            testname = request.session['requestParams']['testname']
+        else:
+            return JsonResponse({'error': 'No test name provided'}, status=400)
+    else:
+        request.session['requestParams']['testname'] = testname
+
+    art_test = {}
+    art_branches = {}
 
     # process URL params to query params
-    query = setupView(request, 'job')
+    query = setupView(request, 'test')
     _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
 
     # get test
+    art_jobs = []
+    values = [f.name for f in ARTTests._meta.get_fields() if not f.is_relation]
+    art_jobs.extend(ARTTests.objects.filter(**query).values(*values, result=F('artsubresult__subresult')))
 
+    if len(art_jobs) > 0:
+        # get info for PanDA jobs
+        jquery = {
+            'pandaid__in': [j['pandaid'] for j in art_jobs],
+            'jeditaskid__in': [j['jeditaskid'] for j in art_jobs],
+        }
+        panda_jobs = get_job_list(
+            jquery,
+            values=['cpuconsumptionunit',]
+        )
+        panda_jobs = {j['pandaid']: j for j in panda_jobs}
+
+        # combine info from ART and PanDA
+        for job in art_jobs:
+            pid = job['pandaid']
+            job['eos'] = '{}{}/{}/{}/{}/'.format(
+                art_const.EOS_PREFIX, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
+            if len(job['extrainfo']) > 0:
+                try:
+                    extrainfo_json = json.loads(job['extrainfo'])
+                    job.update(extrainfo_json)
+                except:
+                    pass
+            if 'html' in job and job['html']:
+                if job['html'].startswith('http'):
+                    job['htmllink'] = '{}{}/{}/{}/{}'.format(
+                        job['html'], concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
+                else:
+                    job['htmllink'] = '{}/{}/'.format('eos',job['html'])
+
+            if pid in panda_jobs:
+                job['jobstatus'] = panda_jobs[pid]['jobstatus']
+                job['attemptnr'] = panda_jobs[pid]['attemptnr']
+                job['computingsite'] = panda_jobs[pid]['computingsite']
+                job['cpuconsumptiontime'] = panda_jobs[pid]['cpuconsumptiontime']
+                job['cputype'] = panda_jobs[pid]['cpuconsumptionunit']
+                if 'actualcorecount' in panda_jobs[pid] and panda_jobs[pid]['actualcorecount'] is not None \
+                        and panda_jobs[pid]['actualcorecount'] > 0 and isinstance(panda_jobs[pid]['maxpss'], int):
+                    job['maxpss_per_core_gb'] = round_to_n_digits(1.0*convert_bytes(
+                            1000*panda_jobs[pid]['maxpss'], output_unit='GB')/panda_jobs[pid]['actualcorecount'],
+                        n=2, method='ceil'
+                    )
+                job['duration_str'] = convert_sec(get_job_walltime(panda_jobs[pid]), out_unit='str')
+
+                finalresult, extrainfo = get_final_result(job)
+                job['finalresult'] = finalresult
+                job.update(extrainfo)
+
+        # prepare data for template
+        art_test['testname'] =  testname
+        art_test['package'] = art_jobs[0]['package']
+        descriptions = list(set([j['description'] for j in art_jobs if 'description' in j and j['description']]))
+        art_test['description'] = descriptions[0] if len(descriptions) > 0 else ''
+
+        for job in art_jobs:
+            branch = concat_branch(job)
+            if branch not in art_branches:
+                art_branches[branch] = {'jobs': []}
+            if 'gitlab' not in art_test and 'testdirectory' in job and job['testdirectory']:
+                art_test['gitlab'] = 'https://gitlab.cern.ch/atlas/athena/blob/main/{}/{}'.format(
+                    job['testdirectory'].split('src')[1], testname
+                )
+            art_branches[branch]['jobs'].append(job)
+
+    # if failed test, find last successful one
+    if 'ntag' not in request.session['requestParams'] and 'ntag_full' not in request.session['requestParams']:
+        for b, data in art_branches.items():
+            if 'succeeded' not in set([j['finalresult'] for j in data['jobs']]):
+                art_branches[b]['lst'] = find_last_successful_test(testname, b)
 
     if is_json_request(request):
-        data = {}
-        dump = json.dumps(data, cls=DateEncoder)
-        return JsonResponse(dump, content_type='application/json')
+        data = {
+            'art_test': art_test,
+        }
+        return JsonResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
-        data = {}
+        art_branches = sorted(
+            [[
+                {'branch': b, 'lst': data['lst'] if 'lst' in data else None},
+                sorted(data['jobs'], key=lambda x:x['pandaid'])
+            ] for b, data in art_branches.items()],
+            key=lambda x: x[0]['branch'],
+            reverse=True)
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'test': art_test,
+            'branches': art_branches,
+        }
         setCacheEntry(request, "artTest", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
         response = render(request, 'artTest.html', data, content_type='text/html')
         _logger.info('Rendered template: {}s'.format(time.time() - request.session['req_init_time']))
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
-
-@never_cache
-def art_last_successful_test(request):
-    """
-    Find the last successful ART test
-    :param request:
-    :return:
-    """
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    data = {'errors': []}
-    query = {}
-    expected_params = ['package', 'branch', 'testname']
-    for p in expected_params:
-        if p in request.session['requestParams']:
-            if p == 'branch':
-                query.update(dict(zip(['nightly_release_short', 'project', 'platform'],
-                                 request.session['requestParams'][p].split('/'))))
-            else:
-                query[p] = request.session['requestParams'][p]
-        else:
-            data['errors'].append('Missed expected parameter: {}'.format(p))
-    if len(data['errors']) > 0:
-        return HttpResponse(data, status=400, content_type='application/json')
-
-    last_success_test = {}
-    tests = []
-    tests.extend(ARTTests.objects.filter(**query).values('pandaid', 'nightly_tag', 'artsubresult__subresult').order_by('-pandaid'))
-
-    for t in tests:
-        if t['artsubresult__subresult'] is not None and len(t['artsubresult__subresult']) > 0:
-            subresults_dict_tmp = json.loads(t['artsubresult__subresult'])
-            if 'result' in subresults_dict_tmp and len(subresults_dict_tmp['result']) > 0:
-                if analize_test_subresults(subresults_dict_tmp['result']) < 1:
-                    last_success_test[t['pandaid']] = t['nightly_tag']
-            elif 'exit_code' in subresults_dict_tmp and subresults_dict_tmp['exit_code'] == 0:
-                last_success_test[t['pandaid']] = t['nightly_tag']
-
-        if len(last_success_test) > 0:
-            break
-
-
-    data['test'] = last_success_test
-    return JsonResponse(data)
 
 
 @login_customrequired
