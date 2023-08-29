@@ -1,0 +1,69 @@
+{% extends "_base_core.html" %}
+{% load humanize %}
+{% load static %}
+{% load common_tags %}
+
+{% block page_title %}Test terminal page{% endblock %}
+{% block title %}PanDA monitor{% endblock %}
+{% block subtitle %} {{ viewParams.selection|safe }} {% endblock %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
+  <link rel="stylesheet" href="{% static 'css/jquery.terminal.min.css' %}"/>
+{% endblock %}
+
+{% block css_page %}
+{% endblock %}
+
+{% block js_head_page_library %}
+    <script src="{% static 'js/jquery.terminal.min.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+    <div id="web-terminal"></div>
+{% endblock %}
+
+{% block js_body_page %}
+       <script>
+            console.log(window.location.host);
+            console.log(window.location.hostname);
+            console.log(window.location.protocol);
+            if (window.location.protocol != "https:") {
+                web_socket_protocol = 'ws://';
+                web_socket_host = web_socket_protocol + window.location.host
+            }
+            else {
+                web_socket_protocol = 'wss://';
+                web_socket_host = web_socket_protocol + window.location.hostname
+            }
+            var socket = new WebSocket(web_socket_host +'/ws/kafka_messages/');
+            var terminal = $('#web-terminal').terminal(
+                    function(command, term) {
+                        if (command == 'help') {
+                            term.echo('Help command');
+                        }
+                        if (command == 'start') {
+                        }
+                    },
+                    {
+                        greetings: 'Welcome to BigPanDA Web Terminal. Created using jQuery terminal v2.52.2',
+                        name: 'RealTimeLogs',
+                        height: 600,
+                        prompt: '> ',
+                        onInit: function(term) {
+                            term.pause();
+                            {#term.echo('The last 50 messages from payload log')#}
+                        socket.onmessage = function(event) {
+                            var data = JSON.parse(event.data);
+                            term.echo(data.message)
+                        }
+                        },
+                        keypress: function(e, term) {
+                            if (e.which == 100 && e.ctrlKey) {
+                                stop = true;
+                                term.resume();
+                                return false;
+                            }
+                        }
+                    });
+        </script>
+{% endblock %}

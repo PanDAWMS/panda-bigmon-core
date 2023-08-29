@@ -931,8 +931,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             paramsstr = paramsstr.replace('eventservice', '1')
                             paramsstr = paramsstr.replace('esmerge', '2')
                             paramsstr = paramsstr.replace('clone', '3')
-                            paramsstr = paramsstr.replace('cojumbo', '5')
                             paramsstr = paramsstr.replace('jumbo', '4')
+                            paramsstr = paramsstr.replace('cojumbo', '5')
+                            paramsstr = paramsstr.replace('finegrained', '6')
                             paramvalues = paramsstr.split('|')
                             try:
                                 paramvalues = [int(p) for p in paramvalues]
@@ -949,6 +950,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                                 query['eventservice'] = 4
                             elif param_val == 'cojumbo' or param_val == '5':
                                 query['eventservice'] = 5
+                            elif param_val == 'finegrained' or param_val == '6':
+                                query['eventservice'] = 6
                             elif param_val == 'eventservice' or param_val == '1':
                                 query['eventservice'] = 1
                                 extraQueryString += " AND not specialhandling like \'%%sc:%%\' "

@@ -1,7 +1,7 @@
 import logging
 from core.iDDS.useconstants import SubstitleValue
 from core.iDDS.rawsqlquery import getWorkFlowProgressItemized
-from core.libs.exlib import lower_dicts_in_list
+from core.libs.exlib import lower_dicts_in_list, round_to_n_digits
 from core.libs.task import get_datasets_for_tasklist
 import pandas as pd
 
@@ -11,6 +11,14 @@ CACHE_TIMEOUT = 20
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 subtitleValue = SubstitleValue()
+
+def percentile(x, ndigits=0, rmethod='normal'):
+    result = round_to_n_digits(x*100, n=ndigits, method=rmethod)
+    if (x > 0 and x < 0.01) or (x > 0.99 and x < 1):
+        while int(list(str(result))[-1]) == 0:
+            ndigits += 1
+            result = round_to_n_digits(x*100, n=ndigits, method=rmethod)
+    return result
 
 
 def prepare_requests_summary(workflows):
@@ -115,8 +123,8 @@ def get_workflow_progress_data(request_params, **kwargs):
 
     # convert PROCESSED_FILES to percentage
     for run, workflow in workflows.items():
-        workflow['FINISHED_FILES'] = round(100 * workflow['FINISHED_FILES'] / workflow['TOTAL_JEDI_FILES'], 1) if workflow['TOTAL_JEDI_FILES'] else 0
-        workflow['FAILED_FILES'] = round(100 * workflow['FAILED_FILES'] / workflow['TOTAL_JEDI_FILES'], 1) if workflow['TOTAL_JEDI_FILES'] else 0
+        workflow['FINISHED_FILES'] = percentile(workflow['FINISHED_FILES'] / workflow['TOTAL_JEDI_FILES']) if workflow['TOTAL_JEDI_FILES'] else 0
+        workflow['FAILED_FILES'] = percentile(workflow['FAILED_FILES'] / workflow['TOTAL_JEDI_FILES']) if workflow['TOTAL_JEDI_FILES'] else 0
         workflows[run] = workflow
 
     workflows = lower_dicts_in_list(list(workflows.values()))

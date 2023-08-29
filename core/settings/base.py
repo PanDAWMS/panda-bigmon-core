@@ -4,6 +4,12 @@ try:
 except ImportError:
     DEBUG = False
 try:
+    from core.settings.local import SERVER_GATEWAY_INTERFACE
+except ImportError:
+    import os
+    SERVER_GATEWAY_INTERFACE = os.environ.get('SERVER_GATEWAY_INTERFACE', 'WSGI')
+
+try:
     from core.settings.local import ENABLE_DEBUG_TOOLBAR
 except ImportError:
     ENABLE_DEBUG_TOOLBAR = False
@@ -91,6 +97,7 @@ SOCIAL_AUTH_PIPELINE = (
 # installed apps
 INSTALLED_APPS_DJANGO_FRAMEWORK = (
     # Django framework
+    'channels',
     'social_django',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -105,7 +112,7 @@ INSTALLED_APPS_DJANGO_PLUGINS = (
     # Django plugins
     'rest_framework',
     'django_datatables_view',
-    'django_extensions',
+    'django_extensions'
 )
 COMMON_INSTALLED_APPS = \
     INSTALLED_APPS_DJANGO_FRAMEWORK + \
@@ -139,8 +146,15 @@ INSTALLED_APPS_EXTRA = [
     "core.oi",
     "core.reports",
     "core.runningprod",
-    "core.panda_client"
+    "core.panda_client",
+    "core.kafka"
 ]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 if len(INSTALLED_APPS_EXTRA) > 0:
     INSTALLED_APPS_BIGPANDAMON_CORE += tuple([str(app_name) for app_name in INSTALLED_APPS_EXTRA])
@@ -150,6 +164,10 @@ JS_I18N_APPS = ()
 JS_I18N_APPS_EXCLUDE = INSTALLED_APPS_BIGPANDAMON_CORE
 
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_CORE
+
+if SERVER_GATEWAY_INTERFACE == 'ASGI':
+    INSTALLED_APPS = ('daphne',) + INSTALLED_APPS
+    ASGI_APPLICATION = 'core.asgi.application'
 
 if DEBUG and ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE += (
