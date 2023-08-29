@@ -25,7 +25,8 @@ class ARTResults(models.Model):
 
 
 class ARTSubResult(models.Model):
-    pandaid = models.BigIntegerField(db_column='PANDAID', primary_key=True)
+    pandaid = models.OneToOneField('ARTTests',
+        related_name='artsubresult', on_delete=models.DO_NOTHING, db_column='pandaid', primary_key=True)
     subresult = models.CharField(max_length=4000, db_column='SUBRESULT_JSON', null=True)
     result = models.TextField(db_column='RESULT_JSON', blank=True)
 
@@ -56,6 +57,5 @@ class ARTTests(models.Model):
     created = models.DateTimeField(null=True, db_column='CREATED')
     nightly_tag_date = models.DateTimeField(null=True, db_column='nightly_tag_date')
 
-    # subresult = models.OneToOneField('ARTSubResult', related_name='pandaid_sr', on_delete=models.DO_NOTHING, db_column='pandaid')
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."ART_TESTS"'

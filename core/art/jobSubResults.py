@@ -103,8 +103,10 @@ def save_subresults(subResultsDict):
     with transaction.atomic():
         for pandaid, data in subResultsDict.items():
             try:
-                row = ARTSubResult(pandaid=pandaid,
-                                   subresult=data)
+                row = ARTSubResult(
+                    pandaid=ARTTests.objects.get(pandaid=pandaid),
+                    subresult=data
+                )
                 row.save()
             except DatabaseError as e:
                 _logger_error.error(e)
@@ -208,7 +210,7 @@ def get_final_result(job):
     except:
         pass
     try:
-        extraParamsDict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else []
+        extraParamsDict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else None
     except:
         pass
     try:

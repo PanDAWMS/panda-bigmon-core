@@ -1,10 +1,11 @@
-.row {
-    max-width: 100%;
-    margin-bottom: 1rem;
-}
-
 /* ART Main Menu styles */
 /* --------------------------------------------------------------------------------------------------- */
+*, *:after, *:before {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
 fieldset.artmenu {
     margin: 0 0.3rem;
     padding: 0 0.5rem;
@@ -42,455 +43,141 @@ fieldset.artmenu li.input-group button.hollow.alert {
   border-left: 0;
 }
 
-
-
 /* ART clickable containers */
 /* --------------------------------------------------------------------------------------------------- */
+.flex_column_container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+  .flex_column_container > span {
+    align-self: start;
+    line-height: 23px;
+  }
 
 .with-link-to-logs {
-    margin: auto;
+    margin: auto 0 auto auto;
     background-color: transparent;
     max-width: 500px; /*250 px for status box with tar index and link to logs, +250px for sub results  */
     display: inline-flex;
     white-space: normal;
-    line-height: 1.43rem;
+    height: auto;
+}
+.text > .flex_column_container > .with-link-to-logs {
+  margin: auto auto auto 0;
 }
 
 .with-ntagfull {
-    margin: auto;
     background-color: transparent;
     max-width: 165px; /*120 px for status boxes +45px for cut ntag  */
     display: inline-flex;
 }
 
+/* stats divs */
 
-/* stats divs*/
 .clickable {
-    background-color: transparent;
-    width: 110px;
-    line-height: 21px;
-    position: relative;
-    font-size: 0;
-    border: 1px solid #dbdbdb;
+  background-color: transparent;
+  width: 90px;
+  position: relative;
+  font-size: 0;
+  border: 1px solid #dbdbdb;
 }
-
-.clickable.nosubresults {
+  .clickable.nosubresults {
     margin: auto;
-}
-
-.clickable a {
+  }
+  .clickable a {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    border: 1px solid transparent;
-}
+  }
   .clickable a:hover {
-      border-color: black;
+      border: 1px solid black;
   }
 
-.clickable .done {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 25%;
-  display: inline-block;
-  background: #3adb76;
-  color: black;
-  font-size: 14px;
+  .clickable > [class$="_job"] {
+    text-align: center;
+    vertical-align: middle;
+    height: 100%;
+    width: 100%;
+    display: inline-block;
+    color: black;
+    font-size: 0.875rem;
+    font-weight: bold;
+  }
+
+  .clickable .done, .clickable .succeeded, .clickable .failed, .clickable .active, .clickable .finished {
+    text-align: center;
+    vertical-align: middle;
+    height: 100%;
+    width: 25%;
+    display: inline-block;
+    color: black;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .clickable .done {
+    background: #73e889;
+    /*#3adb76;*/
+  }
+  .clickable .succeeded {
+    background: #73e889;
+  }
+  .clickable .failed {
+    background: #ff7259;
+  }
+  .clickable .active {
+    background: #78b0f3;
+  }
+  .clickable .finished {
+    background: #fadd6e;
+  }
+
+[class$="_job"] {
   font-weight: bold;
 }
 
-.clickable .succeeded {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 25%;
-  display: inline-block;
-  background: #3adb76;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
+  .done_job {
+    background: #73e889;
+  }
+  .succeeded_job {
+    background: #73e889;
+  }
+  .active_job {
+    background: #78b0f3;
+  }
+  .failed_job {
+    background: #ff7259;
+  }
+  .finished_job {
+    background: #fadd6e;
+  }
 
+/* extra links style */
 
-}
-.clickable .failed {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 25%;
-  display: inline-block;
-  background: tomato;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-}
-.clickable .active {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 25%;
-  display: inline-block;
-  background: cornflowerblue;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-}
-.clickable .finished {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 25%;
-  display: inline-block;
-  background: #FADA5E;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.clickable .done_job {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 100%;
-  display: inline-block;
-  background: #3adb76;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-  border-color: #3adb76;
-}
-
-.clickable .succeeded_job {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 100%;
-  display: inline-block;
-  background: #3adb76;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-  border-color: #3adb76;
-}
-
-.clickable .active_job {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 100%;
-  display: inline-block;
-  background: cornflowerblue;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-  border-color: cornflowerblue;
-}
-.clickable .failed_job {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 100%;
-  display: inline-block;
-  background: tomato;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-  border-color: tomato;
-}
-.clickable .finished_job {
-  text-align: center;
-  vertical-align: middle;
-  height: 100%;
-  width: 100%;
-  display: inline-block;
-  background: #FADA5E;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-/*extra links style*/
 .extra-links {
-    width: 190px;
-    text-align: left;
+  text-align: left;
+  white-space: nowrap;
+  height: 22px;
+}
+.extra-links > span, .extra-links > a {
+  margin-left: 0.3rem;
+}
+.extra-links > span.bp-tooltip {
+  border-bottom: 1px dotted;
 }
 
 .nodata {
-    text-align: left;
-    margin-left: 30px;
-    background-color: transparent;
-    max-width: 380px;
-    height: 21px;
-    position: relative;
-    font-size: 14px;
-}
-
-/* Accordion for pages */
-/* --------------------------------------------------------------------------------------------------- */
-
-.columns .accordion-art-container {
-    padding-left: 0;
-    padding-right: 0;
-}
-.accordion-art {
-  margin-left: 0;
-  background: rgba(53,86,129, 0.8);
-  list-style-type: none; }
-
-.accordion-art-item:first-child > :first-child {
-  border-radius: 0 0 0 0; }
-
-.accordion-art-item:last-child > :last-child {
-  border-radius: 0 0 0 0; }
-
-.accordion-art-title {
+  text-align: left;
+  margin-left: 30px;
+  background-color: transparent;
+  max-width: 380px;
+  height: 21px;
   position: relative;
-  display: block;
-  padding: 1.25rem 1rem;
-  border: 0px solid rgba(53,86,129, 0.8);
-  border-bottom: 0;
-  font-size: 16px;
-  line-height: 1;
-  color: #fefefe !important; }
-  :last-child:not(.is-active) > .accordion-art-title {
-    border-bottom: 1px solid #e6e6e6;
-    border-radius: 0 0 0 0; }
-  .accordion-art-title:hover, .accordion-art-title:focus {
-    background-color: rgba(53,86,129, 0.8); }
-  .accordion-art-title::before {
-    position: absolute;
-    top: 50%;
-    right: 1rem;
-    margin-top: -0.5rem;
-    content: '+'; }
-  .is-active > .accordion-art-title::before {
-    content: '\2013'; }
-
-.accordion-art-content {
-  display: none;
-  padding: 0;
-  border: 1px solid rgba(53,86,129, 0.8);
-  border-bottom: 0;
-  background-color: #fefefe;
-  color: #0a0a0a; }
-  :last-child > .accordion-art-content:last-child {
-    border-bottom: 1px solid rgba(53,86,129, 0.8); }
-
-
-
-.accordion-art-nested {
-  margin-left: 0;
-  background: lightsteelblue;
-  list-style-type: none; }
-
-.accordion-art-nested-item:first-child > :first-child {
-  border-radius: 0 0 0 0; }
-
-.accordion-art-nested-item:last-child > :last-child {
-  border-radius: 0 0 0 0; }
-
-.accordion-art-nested-title {
-  position: relative;
-  display: block;
-  padding: 1rem 0.75rem;
-  border: 0px solid lightsteelblue;
-  border-bottom: 0;
-  font-size: 14px;
-  line-height: 1;
-  color: #fefefe !important; }
-  :last-child:not(.is-active) > .accordion-art-nested-title {
-    border-bottom: 1px solid #e6e6e6;
-    border-radius: 0 0 0 0; }
-  .accordion-art-nested-title:hover, .accordion-art-nested-title:focus {
-    background-color: rgb(147, 174, 210); }
-  .accordion-art-nested-title::before {
-    position: absolute;
-    top: 50%;
-    right: 1rem;
-    margin-top: -0.5rem;
-    content: '+'; }
-  .is-active > .accordion-art-nested-title::before {
-    content: '\2013'; }
-
-.accordion-art-nested-content {
-  display: none;
-  padding: 0;
-  border: 1px solid lightsteelblue;
-  border-bottom: 0;
-  background-color: #fefefe;
-  color: #0a0a0a; }
-  :last-child > .accordion-art-nested-content:last-child {
-    border-bottom: 1px solid lightsteelblue; }
-
-
-
-.no-border {
-    margin-bottom: 0;
-}
-
-.no-border .cell {
-    border: none;
-    white-space: nowrap;
-}
-
-.no-border .cell-left {
-    border: none;
-    text-align: left;
-}
-
-.no-border .header {
-    border: none;
-}
-
-.cell.extra-info {
-  line-height: 1.43rem;
-}
-
-.left-aligned {
-    text-align: left;
-}
-
-.right-aligned {
-    text-align: right;
-}
-
-.right-aligned-ntag {
-    text-align: right;
-    padding-right: 8rem;
-}
-
-.center-aligned {
-    text-align: center;
-}
-
-.cell.header {
-    background: lightsteelblue;
-}
-
-.back-to-home {
-  background: rgba(53,86,129, 0.8);
-  color: #fefefe !important;
   font-size: 14px;
 }
-.back-to-home:hover, .back-to-home:focus {
-    background-color: rgba(53,86,129, 0.8);
-    color: #fefefe; }
-
-.back-to-home > i {
-  font-size: 20px;
-}
-
-.link-in-table {
-    color: #0a0a0a !important;
-}
-.link-in-table:hover, .link-in-table:focus {
-    text-decoration: underline;
-}
-
-.to-logs {
-    width: 15px;
-    height: 100%;
-    padding-left: 2px;
-}
-
-.tarindex {
-    width: 35px;
-    height: 100%;
-    padding-left: 2px;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-align: center;
-}
-
-.tarindex_tooltip {
-  position: relative;
-}
-.tarindex_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.tarindex_tooltip:after {
-    content: 'index of tar file';
-    display:none;
-    width: 100px;
-    background-color: black;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 0;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.tarindex_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.tarindex_tooltip:hover:before {
-   display: inline-block;
-}
-.tarindex_tooltip:hover:after {
-   display: inline-block;
-}
-
-.attempt {
-    width: 35px;
-    height: 100%;
-    padding-left: 2px;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-align: center;
-}
-
-.attempt_tooltip {
-  position: relative;
-}
-.attempt_tooltip:hover {
-    cursor: hand;
-    text-decoration:underline;
-}
-.attempt_tooltip:after {
-    content: 'attempt number / max attempts';
-    display:none;
-    width: 100px;
-    background-color: black;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 0;
-    position: absolute;
-    z-index: 1;
-    top: -5px;
-    left: 110%;
-}
-.attempt_tooltip:before {
-    content: '';
-    position: absolute;
-    display:none;
-    top: 50%;
-    right: -10%;
-    margin-top: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent black transparent transparent;
-}
-.attempt_tooltip:hover:before {
-   display: inline-block;
-}
-.attempt_tooltip:hover:after {
-   display: inline-block;
-}
-
 
 /* test sub results traffic lights */
 /* --------------------------------------------------------------------------------------------------- */
@@ -505,91 +192,75 @@ fieldset.artmenu li.input-group button.hollow.alert {
     z-index: 2;
     height: 100%;
 }
-
-.testsubresultscontainer  ul {
+  .testsubresultscontainer ul {
     list-style: none;
     line-height: 20px;
     padding: 0;
     margin:0;
     display: block;
-}
-
-.testsubresultscontainer  ul li {
+  }
+  .testsubresultscontainer ul li {
     display:inline-block;
     text-align: center;
     list-style: none;
-}
+  }
+
 .testsubresultbox {
-    width: 20px;
+    width: 22px;
+    height: 22px;
     border: 1px solid #dbdbdb;
 }
-
 .testsubresultbox.finishedtest {
-    background-color: #3adb76;
+    background-color: #73e889;
 }
-
 .testsubresultbox.failedtest {
-    background-color: tomato;
+    background-color: #ff7259;
+}
+.testsubresultbox.bp-tooltip:hover  {
+  border-color: #0a0a0a;
 }
 
-/* Top tooltip for sub-job results */
-
-.tooltiptestresult {
-    position: relative;
-    display: inline-block;
+.subresult_finished {
+  color: #50a25f;
+}
+.subresult_failed {
+  color: #cc5b47;
 }
 
-.tooltiptestresult .tooltiptext {
-    visibility: hidden;
-    min-width: 120px;
-    max-width: 400px;
-    background-color: #0a0a0a;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 2px;
-    position: absolute;
-    z-index: 100;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -60px;
-    opacity: 0;
-    transition: opacity 0.5s;
+.left-aligned {
+    text-align: left;
 }
 
-.tooltiptestresult .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #0a0a0a transparent transparent transparent;
-}
+/* Style for navigation buttons */
 
-.tooltiptestresult:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
+.back-to-home {
+  background: rgba(53,86,129, 0.8);
+  color: #fefefe !important;
+  font-size: 14px;
+  margin: 0 0 0.7rem 0;
 }
+.back-to-home:hover, .back-to-home:focus {
+    background-color: rgba(53,86,129, 0.8);
+    color: #fefefe; }
 
+.back-to-home > i {
+  font-size: 20px;
+}
 
 /* Style for extra information about tests */
+a.away {
+  border-bottom: 1px dotted;
+  font-weight: bold;
+}
 
 .bluelink {
     color: rgba(53,86,129, 0.8) !important;
 }
-
 .redlink {
     color: firebrick !important;
 }
-
 .greylink {
     color: grey !important;
-}
-
-.test-extra-info {
-    display: none;
 }
 
 .art-legend {
@@ -603,26 +274,6 @@ fieldset.artmenu li.input-group button.hollow.alert {
     color: #222222;
     font-size: 14px;
     font-weight: bold;
-}
-
-.finished_job {
-    background: #FADA5E;
-}
-
-.done_job {
-    background: #3adb76;
-}
-
-.succeeded_job {
-    background: #3adb76;
-}
-
-.failed_job {
-    background: tomato;
-}
-
-.active_job {
-    background: cornflowerblue;
 }
 
 .na_fill {color:black;  background-color:#fefefe}
