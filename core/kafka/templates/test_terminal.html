@@ -24,19 +24,24 @@
 
 {% block js_body_page %}
        <script>
-           {% if request %}
-                ws_host = '{{ request.get_host }}';
+           {% if request.META %}
+                ws_host = '{{ request.META.SERVER_NAME}}';
+           {% if request.META.SERVER_PORT %}
+                ws_port = ':{{ request.META.SERVER_PORT }}';
            {% else %}
-               ws_host = ''
-               console.log('Request is empty')
+               ws_port = '';
+           {% endif %}
+           {% else %}
+               ws_host = '';
+               console.log('Request is empty');
            {% endif %}
             if (window.location.protocol != "https:") {
                 web_socket_protocol = 'ws://';
-                web_socket_host = web_socket_protocol + ws_host;
+                web_socket_host = web_socket_protocol + ws_host + ws_port;
             }
             else {
                 web_socket_protocol = 'wss://';
-                web_socket_host = web_socket_protocol + window.location.host;
+                web_socket_host = web_socket_protocol + ws_host + ws_port;
             }
             console.log(web_socket_host);
             var socket = new WebSocket(web_socket_host +'/ws/kafka_messages/');
