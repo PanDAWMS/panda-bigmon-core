@@ -76,6 +76,22 @@ for (let i=3; i<table_title.length; i++) {
     is_show_ntag_time.push(!table_data.map(x => x[i]).every( (val) => (val.length <= 1) || ((val.length > 1) && val.every( (item, i, arr) => item.ntagtime === arr[0].ntagtime ))  ))
 }
 
+let lengthMenu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]];
+let iDisplayLength = lengthMenu[0][0];
+if ('display_limit' in request_params) {
+    let display_limit = parseInt(request_params.display_limit);
+    if (lengthMenu[0].findIndex((x) => x === display_limit) > 0) {
+      iDisplayLength = display_limit;
+    }
+    else {
+      let lengthMenuNew = lengthMenu[0].slice(0, -1);
+      lengthMenuNew.push(display_limit);
+      lengthMenuNew.sort();
+      lengthMenu = [[...lengthMenuNew, ...[-1]], [...lengthMenuNew, ...['All']]];
+      iDisplayLength = display_limit;
+    }
+  }
+
 var columns = []
 for (let i=0; i<table_data[0].length; i++) {
   if (i <= 1) {
@@ -96,7 +112,7 @@ for (let i=0; i<table_data[0].length; i++) {
       className: 'text nowrap icons1',
       render: function (data, type, row, meta) {
         let result = '';
-        result += '<a href="{% url 'artTest' %}' + data + '/?branch=' + row[table_title.indexOf('branch')] + '"><span class="bp-tooltip right">' + data + '<span class="tooltip-text">Test overview</span></span></a>';
+        result += '<a href="{% url 'artTest' %}'+ row[table_title.indexOf('package')] + '/' + data + '/?branch=' + row[table_title.indexOf('branch')] + '"><span class="bp-tooltip right">' + data + '<span class="tooltip-text">Test overview</span></span></a>';
         return result
       }
     })
@@ -148,7 +164,7 @@ for (let i=0; i<table_data[0].length; i++) {
                 result += '<div class="with-link-to-logs">' + subresults +
                   '<div class="clickable">' +
                     '<div class="' + item.finalresult + '_job">' + item.finalresult + '</div>' +
-                    '<a href="{% url 'artTest' %}' + row[2] + '/?ntag_full=' + item.ntag + '&branch=' + row[table_title.indexOf('branch')] + '">' + '</a>' +
+                    '<a href="{% url 'artTest' %}' + row[table_title.indexOf('package')] + '/' + row[2] + '/?ntag_full=' + item.ntag + '&branch=' + row[table_title.indexOf('branch')] + '">' + '</a>' +
                   '</div>' +
                   '<div class="extra-links">' +
                     ntag_time + tarindex +
@@ -200,7 +216,8 @@ let columnDefs =  [];
 
 var art_table = $('#art_table').DataTable({
   lengthChange: true,
-  lengthMenu: [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]],
+  lengthMenu: lengthMenu,
+  iDisplayLength: iDisplayLength,
   paging: true,
   bFilter: true,
   scrollX: true,

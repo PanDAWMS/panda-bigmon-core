@@ -177,7 +177,8 @@ def setupView(request, querytype='task'):
             query['nightly_tag_date__range'] = [startdate, startdate + timedelta(days=1) - timedelta(seconds=1)]
         else:
             datelist = find_last_n_nightlies(request, 1)
-            query['nightly_tag_date__range'] = [datelist[0], datelist[0] + timedelta(days=1) - timedelta(seconds=1)]
+            if len(datelist) > 0:
+                query['nightly_tag_date__range'] = [datelist[0], datelist[0] + timedelta(days=1) - timedelta(seconds=1)]
             _logger.debug('Got n last nightly tags: {}'.format(time.time() - request.session['req_init_time']))
         art_tests_str_fields = copy.deepcopy(
             [f.name for f in ARTTests._meta.get_fields() if not f.is_relation and 'String' in f.description])

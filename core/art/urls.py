@@ -12,7 +12,7 @@ urlpatterns = [
     re_path(r'^art/jobs/$', art_views.artJobs, name='artJobs'),
     re_path(r'^art/stability/$', art_views.artStability, name='artStability'),
     re_path(r'^art/errors/$', art_views.artErrors, name='artErrors'),
-    re_path(r'^art/test/(?P<testname>.*)/$', art_views.artTest, name='artTest'),
+    re_path(r'^art/test/(?P<package>.*)/(?P<testname>.*)/$', art_views.artTest, name='artTest'),
     re_path(r'^art/test/$', art_views.artTest, name='artTest'),
 
     re_path(r'^art/updatejoblist/$', art_views.updateARTJobList),

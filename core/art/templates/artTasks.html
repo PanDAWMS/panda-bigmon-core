@@ -63,6 +63,21 @@ const is_show_ntag_time = [false, false,]
 for (let i=2; i<table_title.length; i++) {
     is_show_ntag_time.push(!table_data.map(x => x[i]).every( (val) => (val.length <= 1) || ((val.length > 1) && val.every( (item, i, arr) => item.ntag_time === arr[0].ntag_time ))  ))
 }
+let lengthMenu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]];
+let iDisplayLength = lengthMenu[0][0];
+if ('display_limit' in request_params) {
+    let display_limit = parseInt(request_params.display_limit);
+    if (lengthMenu[0].findIndex((x) => x === display_limit) > 0) {
+      iDisplayLength = display_limit;
+    }
+    else {
+      let lengthMenuNew = lengthMenu[0].slice(0, -1);
+      lengthMenuNew.push(display_limit);
+      lengthMenuNew.sort();
+      lengthMenu = [[...lengthMenuNew, ...[-1]], [...lengthMenuNew, ...['All']]];
+      iDisplayLength = display_limit;
+    }
+  }
 
 var columns = []
 for (let i=0; i<table_data[0].length; i++) {
@@ -116,7 +131,8 @@ let columnDefs =  [{"type": "num-html", "targets": [...Array(table_title.length)
 
 var art_table = $('#art_table').DataTable({
   lengthChange: true,
-  lengthMenu: [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]],
+  lengthMenu: lengthMenu,
+  iDisplayLength: iDisplayLength,
   paging: true,
   bFilter: true,
   scrollX: true,
