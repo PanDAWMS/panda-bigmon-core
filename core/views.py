@@ -124,10 +124,11 @@ lock = Lock()
 DateTimeField.register_lookup(CastDate)
 
 try:
-    hostname = subprocess.getoutput('hostname')
-    if hostname.find('.') > 0:
-        hostname = hostname[:hostname.find('.')]
+    full_hostname = subprocess.getoutput('hostname')
+    if full_hostname.find('.') > 0:
+        hostname = full_hostname[:full_hostname.find('.')]
 except:
+    full_hostname = ''
     hostname = ''
 
 cloudList = ['CA', 'CERN', 'DE', 'ES', 'FR', 'IT', 'ND', 'NL', 'RU', 'TW', 'UK', 'US']
@@ -214,7 +215,7 @@ def get_renderedrow(context, **kwargs):
 
 
 def initRequest(request, callselfmon=True):
-    global VOMODE, ENV, hostname
+    global VOMODE, ENV, hostname, full_hostname
     ENV = {}
     VOMODE = ''
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
@@ -290,6 +291,7 @@ def initRequest(request, callselfmon=True):
 
     if len(hostname) > 0:
         request.session['hostname'] = hostname
+        request.session['full_hostname'] = full_hostname
 
     # self monitor
     if callselfmon:
