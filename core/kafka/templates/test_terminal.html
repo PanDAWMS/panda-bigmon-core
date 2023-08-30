@@ -26,11 +26,11 @@
        <script>
            {% if request.META %}
                 ws_host = '{{ request.META.SERVER_NAME}}';
-                 {% if request.META.SERVER_PORT %}
-                    ws_port = ':{{ request.META.SERVER_PORT }}';
-                 {% else %}
-                     ws_port = '';
-                 {% endif %}
+           {% if request.META.SERVER_PORT %}
+                ws_port = ':{{ request.META.SERVER_PORT }}';
+           {% else %}
+               ws_port = '';
+           {% endif %}
            {% else %}
                ws_host = '';
                console.log('Request is empty');
