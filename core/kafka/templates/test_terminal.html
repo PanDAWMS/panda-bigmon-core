@@ -24,16 +24,14 @@
 
 {% block js_body_page %}
        <script>
-            console.log(window.location.host);
-            console.log(window.location.hostname);
-            console.log(window.location.protocol);
+
             if (window.location.protocol != "https:") {
                 web_socket_protocol = 'ws://';
-                web_socket_host = web_socket_protocol + window.location.host
+                web_socket_host = web_socket_protocol + '127.0.0.1'
             }
             else {
                 web_socket_protocol = 'wss://';
-                web_socket_host = web_socket_protocol + window.location.hostname
+                web_socket_host = web_socket_protocol + '127.0.0.1'
             }
             var socket = new WebSocket(web_socket_host +'/ws/kafka_messages/');
             var terminal = $('#web-terminal').terminal(
