@@ -30,18 +30,13 @@
                ws_host = '';
                console.log('Hostname is not defined');
            {% endif %}
-           {% if request.META.SERVER_PORT %}
-                ws_port = ':{{ request.META.SERVER_PORT }}';
-           {% else %}
-               ws_port = '';
-           {% endif %}
             if (window.location.protocol != "https:") {
                 web_socket_protocol = 'ws://';
-                web_socket_host = web_socket_protocol + ws_host + ws_port;
+                web_socket_host = web_socket_protocol + ws_host;
             }
             else {
                 web_socket_protocol = 'wss://';
-                web_socket_host = web_socket_protocol + ws_host + ws_port;
+                web_socket_host = web_socket_protocol + ws_host;
             }
             console.log(web_socket_host);
             var socket = new WebSocket(web_socket_host +'/ws/kafka_messages/');
