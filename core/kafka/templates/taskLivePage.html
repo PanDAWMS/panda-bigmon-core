@@ -25,7 +25,7 @@
 {% block js_body_page %}
        <script>
            {% if request.session.full_hostname %}
-                ws_host = '{{ request.session.full_hostname }}';
+                ws_host = '{{ request.session.full_hostname }}:8002';
            {% else %}
                ws_host = '';
                console.log('Hostname is not defined');

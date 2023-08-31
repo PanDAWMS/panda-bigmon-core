@@ -2,9 +2,11 @@
 # URL patterns for kafka application
 # """
 
-from django.urls import path
-from core.kafka.views import index
+from django.urls import path, re_path
+from core.kafka.views import testTerminal, taskLivePage
+
 
 urlpatterns = [
-    path('test_terminal/', index),
+    re_path(r'^test_terminal/', testTerminal, name='test_terminal'),
+    re_path(r'^live/task/(.*)/$', taskLivePage, name='task_livepage'),
 ]

@@ -1,10 +1,15 @@
 
-from core.kafka.config import initConsumer
-from confluent_kafka import KafkaError
+from django.conf import settings
 from django.shortcuts import render
 from core.oauth.utils import login_customrequired
 from core.views import initRequest
+from django.http import HttpResponse, JsonResponse
+
 @login_customrequired
-def index(request):
+def testTerminal(request,):
     valid, response = initRequest(request)
-    return render(request, 'test_terminal.html', context={'text':'Test terminal'})
+    return render(request, 'testTerminal.html', context={'text':'Test terminal'})
+@login_customrequired
+def taskLivePage(request,):
+    valid, response = initRequest(request)
+    return render(request, 'taskLivePage.html', context={'text':'Test terminal'})
