@@ -3141,10 +3141,12 @@ def userDashApi(request, agg=None):
                     t['job_' + metric] = metrics[metric]['group_by'][t['jeditaskid']]
                 else:
                     t['job_' + metric] = ''
-            if 'dsinfo' in t and len(t['dsinfo']) > 0 and 'nfilesmissing' in t['dsinfo'] and t['dsinfo'][
-                'nfilesmissing'] and t['dsinfo']['nfilesmissing'] > 0:
-                t['errordialog'] = '{} files is missing and is not included for processing'.format(
-                    t['dsinfo']['nfilesmissing']) + t['errordialog']
+            if 'dsinfo' in t and len(t['dsinfo']) > 0 and 'nfilesmissing' in t['dsinfo'] and \
+                    t['dsinfo']['nfilesmissing'] and t['dsinfo']['nfilesmissing'] > 0:
+                t['errordialog'] = '{} files is missing and is not included for processing. {}'.format(
+                    t['dsinfo']['nfilesmissing'],
+                    t['errordialog'] if t['errordialog'] is not None else ''
+                )
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
                 link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
                 link_logs_base = '/filebrowser/?'
