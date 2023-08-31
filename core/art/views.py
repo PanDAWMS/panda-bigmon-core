@@ -1498,7 +1498,8 @@ def sendArtReport(request):
     artjobsdictpackage = {}
     for job in jobs:
         nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
-        if nightly_tag_time > query['ntag_from'] + timedelta(hours=20):
+        ntag_from = datetime.strptime(query['ntag_from'], '%Y-%m-%d') if isinstance(query['ntag_from'], str) else query['ntag_from']
+        if nightly_tag_time > ntag_from + timedelta(hours=20):
             if job['package'] not in artjobsdictpackage.keys():
                 artjobsdictpackage[job['package']] = {}
                 artjobsdictpackage[job['package']]['branch'] = job['branch']
