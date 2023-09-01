@@ -5,17 +5,17 @@ RUN echo -e '[epel]\n\
 name=Extra Packages for Enterprise Linux 9 [HEAD]\n\
 baseurl=http://linuxsoft.cern.ch/epel/9/Everything/x86_64\n\
 enabled=1\n\
-gpgcheck=1\n\
+gpgcheck=0\n\
 gpgkey=http://linuxsoft.cern.ch/epel/RPM-GPG-KEY-EPEL-9\n\
 exclude=collectd*,libcollectd*,mcollective,perl-Authen-Krb5,perl-Collectd,puppet,python*collectd_systemd*,koji*,python*koji*\n\
-priority=20\n\
-[root@aipanda196 ~]# cat /etc/yum-puppet.repos.d/carepo.repo\n\
-[carepo]\n\
+priority=20\' >> /etc/yum.repos.d/epel.repo
+
+RUN echo -e '[carepo]\n\
 name=IGTF CA Repository\n\
 baseurl=https://linuxsoft.cern.ch/mirror/repository.egi.eu/sw/production/cas/1/current/\n\
 enabled=1\n\
-gpgcheck=1\n\
-gpgkey=https://linuxsoft.cern.ch/mirror/repository.egi.eu/GPG-KEY-EUGridPMA-RPM-3\' >> /etc/yum.repos.d/epel.repo
+gpgcheck=0\n\
+gpgkey=https://linuxsoft.cern.ch/mirror/repository.egi.eu/GPG-KEY-EUGridPMA-RPM-3\' >> /etc/yum.repos.d/carepo.repo
 
 ENV BIGMON_VIRTUALENV_PATH /opt/prod
 ENV BIGMON_WSGI_PATH /opt/prod
@@ -23,7 +23,7 @@ ENV BIGMON_WSGI_PATH /opt/prod
 RUN yum -y update
 
 RUN yum install -y httpd.x86_64 gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
-        python3 python3-devel less git httpd.x86_64 gridsite mod_ssl.x86_64 ca-policy-egi-core \
+        python3 python3-devel less git httpd.x86_64 gridsite mod_ssl.x86_64 ca-policy-egi-core  \
         httpd-devel.x86_64 wget net-tools sudo \
         openssl-devel bzip2-devel libffi-devel\
         httpd-devel gcc-c++ make zlib-devel zlib postgresql postgresql-devel python-devel \
@@ -90,7 +90,6 @@ RUN chmod -R 777 /etc/systemd/system/daphne.service
 RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
 
 ENTRYPOINT ["start-daemon.sh"]
-
 
 STOPSIGNAL SIGINT
 
