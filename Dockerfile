@@ -1,24 +1,37 @@
 FROM gitlab-registry.cern.ch/linuxsupport/alma9-base:latest
 MAINTAINER PanDA team
 
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+RUN echo -e '[epel]\n\
+name=Extra Packages for Enterprise Linux 9 [HEAD]\n\
+baseurl=http://linuxsoft.cern.ch/epel/9/Everything/x86_64\n\
+enabled=1\n\
+gpgcheck=1\n\
+gpgkey=http://linuxsoft.cern.ch/epel/RPM-GPG-KEY-EPEL-9\n\
+exclude=collectd*,libcollectd*,mcollective,perl-Authen-Krb5,perl-Collectd,puppet,python*collectd_systemd*,koji*,python*koji*\n\
+priority=20\n\
+[root@aipanda196 ~]# cat /etc/yum-puppet.repos.d/carepo.repo\n\
+[carepo]\n\
+name=IGTF CA Repository\n\
+baseurl=https://linuxsoft.cern.ch/mirror/repository.egi.eu/sw/production/cas/1/current/\n\
+enabled=1\n\
+gpgcheck=1\n\
+gpgkey=https://linuxsoft.cern.ch/mirror/repository.egi.eu/GPG-KEY-EUGridPMA-RPM-3\' >> /etc/yum.repos.d/epel.repo
 
 ENV BIGMON_VIRTUALENV_PATH /opt/prod
 ENV BIGMON_WSGI_PATH /opt/prod
 
-
 RUN yum -y update
 
-RUN yum install -y httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
-        python3 python3-devel less git httpd.x86_64 conda gridsite mod_ssl.x86_64 ca-policy-egi-core \
+RUN yum install -y httpd.x86_64 gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
+        python3 python3-devel less git httpd.x86_64 gridsite mod_ssl.x86_64 ca-policy-egi-core \
         httpd-devel.x86_64 wget net-tools sudo \
         openssl-devel bzip2-devel libffi-devel\
         httpd-devel gcc-c++ make zlib-devel zlib postgresql postgresql-devel python-devel \
         https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm \
         https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient-tnsnames.ora-1.4.4-1.el7.cern.noarch.rpm \
-    yum clean all && rm -rf /var/cache/yum
+        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient-tnsnames.ora-1.4.4-1.el7.cern.noarch.rpm
+
+RUN yum clean all && rm -rf /var/cache/yum
 
 # install python3.10
 RUN wget https://www.python.org/ftp/python/3.10.7/Python-3.10.7.tgz -P /tmp/ &&  tar -xzvf /tmp/Python-3.10.7.tgz -C /tmp && cd /tmp/Python-3.10.7 && ./configure --enable-optimizations --enable-shared && make -j4 && make altinstall
