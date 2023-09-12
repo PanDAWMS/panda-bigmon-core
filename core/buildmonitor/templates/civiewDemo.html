@@ -60,20 +60,45 @@ var cidisplayTable = $('#CISummary').dataTable({
 "rowCallback": function( row, data, displayIndex ) {
                  var v0=($('td:eq(0)',row).text().split("-"))[1];
                  var v0I = parseInt(v0, 10);
-                 var v0F = 0.5;
-                 if ( v0I > 20000 && v0I < 30000 ) { v0F = (v0I - 18000)/11000;}
-                 else if ( v0I >= 30000 && v0I < 40000 ) { v0F = (v0I - 28000)/11000;}
-                 else if ( v0I >= 40000 && v0I < 42000 ) { v0F = (v0I - 38000)/11000;}
-                 else if ( v0I >= 42000 && v0I < 44000 ) { v0F = (v0I - 40000)/11000;}
-                 else if ( v0I >= 44000 && v0I < 46000 ) { v0F = (v0I - 42000)/11000;}
-                 else if ( v0I >= 46000 && v0I < 48000 ) { v0F = (v0I - 44000)/11000;}
-                 else if ( v0I >= 48000 && v0I < 52000 ) { v0F = (v0I - 46000)/11000;}
-                 else if ( v0I >= 52000 && v0I < 56000 ) { v0F = (v0I - 50000)/11000;}
-                 else if ( v0I >= 56000 && v0I < 60000 ) { v0F = (v0I - 54000)/11000;}
-                 else if ( v0I >= 60000 && v0I < 64000 ) { v0F = (v0I - 58000)/11000;}
-                 else if ( v0I >= 64000 && v0I < 68000 ) { v0F = (v0I - 62000)/11000;}
-                 else if ( v0I >= 68000 ) { v0F = (v0I - 66000)/11000;}
-                 var hexV0 = '#F'+Math.floor(v0F*1048575).toString(16);
+                 function hslToHex(h, s, l) {
+                     l /= 100;
+                     const a = s * Math.min(l, 1 - l) / 100;
+                     const f = n => {
+                         const k = (n + h / 30) % 12;
+                         const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                         return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
+                     };
+                 return `#${f(0)}${f(8)}${f(4)}`;
+                 }
+                 var v_start = v0I - Math.floor(v0I/100000)*100000;
+                 var v_1000 = v_start - Math.floor(v_start/1000)*1000;
+                 var digit_3 = Math.floor(v_1000/100); var v_100 = v_1000 - digit_3*100;
+                 var digit_2 = Math.floor(v_100/10); var digit_1 = v_100 - digit_2*10;
+                 var greige='#CCC3B9'; var g_r=204; var g_g=195; var g_b=185; var g_h=32; var g_s=16; var g_l=76;
+                 var corn_blue='#6495ED'; var c_r=100; var c_g=149; var c_b=219; var c_h=219; var c_s=79; var c_l=66;
+                 var purple='#9678d8'; var p_r=149; var p_g=120; var p_b=215; var p_h=258; var p_s=64; var p_l=66;
+                 var yellow='#faca0a'; var y_r=250; var y_g=202; var y_b=10; var y_h=48; var y_s=96; var y_l=51;
+                 var prim_h = p_h; var prim_s = p_s; var prim_l = p_l;
+                 var seco_h = g_h; var seco_s = g_s; var seco_l = g_l;
+                 var acce_h = prim_h - 210; var acce_s = 95; var acce_l = 50;
+                 var bckg_h = prim_h; var bckg_s = prim_s; var bckg_l = prim_l;
+                 if ( digit_1 >= 0 &&  digit_1 <= 5 ) {
+                     bckg_h = prim_h + (-2 + digit_1) * 20 + (-3 + digit_2) * 5;
+                     bckg_s = prim_s + (-2 + digit_3) * 3;
+                     bckg_l = prim_l + 10 + (-3 + digit_2) * 2;
+                 } else if (digit_1 >= 6 &&  digit_1 <= 8) {
+                     bckg_h = seco_h + (-7 + digit_3) * 15;
+                     bckg_s = seco_s + (-2 + digit_2)*5;
+                     bckg_l = seco_l + 14 + (-7 + digit_1)*7;
+                } else {
+                     bckg_h = acce_h + (-5 + digit_2)*5;
+                     bckg_s = acce_s - 10 + (-7 + digit_3)*3;
+                     bckg_l = acce_l + 15 + (-1 + digit_2)*2;
+                 }
+                 if ( bckg_h < 0 ) { bckg_h = bckg_h + 360; }; if ( bckg_h > 360 ) { bckg_h = bckg_h - 360; };
+                 if ( bckg_s < 5 ) { bckg_s = 5; }; if ( bckg_s > 95 ) { bckg_s = 95; };
+                 if ( bckg_l < 5 ) { bckg_l = 5; }; if ( bckg_l > 95 ) { bckg_l = 95; };
+                 var hexV0 = hslToHex(bckg_h,bckg_s,bckg_l);
                  $('td:eq(0)', row).css("background-color", hexV0).css("border", "1px solid rgb(197, 219, 236)");
                  var v9=($('td:eq(9)',row).text().split(" "))[0];
                  var v11=($('td:eq(11)',row).text().split(" "))[0];
