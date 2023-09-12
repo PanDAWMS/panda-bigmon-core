@@ -17,8 +17,8 @@ enabled=1\n\
 gpgcheck=0\n\
 gpgkey=https://linuxsoft.cern.ch/mirror/repository.egi.eu/GPG-KEY-EUGridPMA-RPM-3\' >> /etc/yum.repos.d/carepo.repo
 
-ENV BIGMON_VIRTUALENV_PATH /opt/prod
-ENV BIGMON_WSGI_PATH /opt/prod
+ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
+ENV BIGMON_WSGI_PATH /opt/bigmon
 
 RUN yum -y update
 
@@ -43,7 +43,7 @@ RUN adduser atlpan
 RUN groupadd zp
 RUN usermod -a -G zp atlpan
 
-RUN pip3.10 install --upgrade pip virtualenv && cd /opt && virtualenv --python=/usr/local/bin/python3.10 prod
+RUN pip3.10 install --upgrade pip virtualenv && cd /opt && virtualenv --python=/usr/local/bin/python3.10 bigmon
 
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptools
 
