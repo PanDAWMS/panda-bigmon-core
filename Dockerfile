@@ -18,7 +18,7 @@ gpgcheck=0\n\
 gpgkey=https://linuxsoft.cern.ch/mirror/repository.egi.eu/GPG-KEY-EUGridPMA-RPM-3\' >> /etc/yum.repos.d/carepo.repo
 
 ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
-ENV BIGMON_WSGI_PATH /opt/bigmon
+ENV BIGMON_WSGI_PATH /data/bigmon
 
 RUN yum -y update
 
