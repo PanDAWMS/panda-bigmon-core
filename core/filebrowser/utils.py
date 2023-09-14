@@ -3,15 +3,18 @@
     
 """
 import subprocess
-import json
 import logging
 import os
 import re
 import time
 import shutil
-from django.conf import settings
 from datetime import datetime
-
+from django.conf import settings
+from core.filebrowser.ObjectStoreWrapper import ObjectStore
+from core.common.models import Filestable4, FilestableArch
+from core.libs.job import get_job_list
+from core.libs.exlib import convert_bytes
+from core.schedresource.utils import get_panda_queues
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
@@ -156,6 +159,16 @@ def is_directory_exist(logdir):
         return False
 
 
+def is_file_exist(path):
+    """
+        check if folder exists
+    """
+    if os.path.isfile(path):
+        return True
+    else:
+        return False
+
+
 def unpack_file(fname):
     """
         unpack_file
@@ -176,12 +189,12 @@ def unpack_file(fname):
     return status, errtxt
 
 
-def list_file_directory(logdir, limit=1000):
+def list_file_directory(logdir, limit=1000, log_provider='rucio'):
     """
         list_file_directory
         
     """
-    #_logger.error("list_file_directory started - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
+    _logger.debug("list_file_directory started - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
 
     files = []
     err = ''
@@ -199,28 +212,31 @@ def list_file_directory(logdir, limit=1000):
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
 
-    if len(filelist) > 0:
-        for entry in filelist:
-            if entry.startswith('tarball'):
-                tardir = entry
-                continue
-    if not len(tardir):
-        err = "Problem with tarball, could not find expected tarball directory. "
-        _logger.warning('{} (got {}).'.format(err, logdir))
-        # try to show any xml, json and txt files that are not in tarball directory
-        filtered_filelist = []
+    if log_provider == 'rucio':
+        # looking for tarball directory
         if len(filelist) > 0:
             for entry in filelist:
-                if entry.endswith('.xml') or entry.endswith('.json') or entry.endswith('.txt'):
-                    filtered_filelist.append(entry)
-        if len(filtered_filelist) == 0:
-            err += ' Tried to look for files in top dir, but found nothing'
-            _logger.error('{} (got {}).'.format(err, logdir))
-            _logger.debug('Contents of untared log file: \n {}'.format(filelist))
-            return files, err, tardir
-        else:
-            err += "However, a few files has been found in a topdir, so showing them."
-            _logger.info('A few files found in a topdir, will show them to user')
+                if entry.startswith('tarball'):
+                    tardir = entry
+                    continue
+
+        if not len(tardir):
+            err = "Problem with tarball, could not find expected tarball directory. "
+            _logger.warning('{} (got {}).'.format(err, logdir))
+            # try to show any xml, json and txt files that are not in tarball directory
+            filtered_filelist = []
+            if len(filelist) > 0:
+                for entry in filelist:
+                    if entry.endswith('.xml') or entry.endswith('.json') or entry.endswith('.txt'):
+                        filtered_filelist.append(entry)
+            if len(filtered_filelist) == 0:
+                err += ' Tried to look for files in top dir, but found nothing'
+                _logger.error('{} (got {}).'.format(err, logdir))
+                _logger.debug('Contents of untared log file: \n {}'.format(filelist))
+                return files, err, tardir
+            else:
+                err += "However, a few files has been found in a topdir, so showing them."
+                _logger.info('A few files found in a topdir, will show them to user')
 
     # Now list the contents of the tarball directory:
     try:
@@ -228,12 +244,12 @@ def list_file_directory(logdir, limit=1000):
         dobrake = False
         _logger.debug('Walking through directory:')
         for walk_root, walk_dirs, walk_files in os.walk(os.path.join(logdir, tardir), followlinks=False):
-            #_logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
+            _logger.debug("walk - {}".format(os.path.join(logdir, tardir)))
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
                 if len(contents) > limit:
                     dobrake = True
-                    _logger.debug('Number of files added to contents reached the limit : {}'.format(limit))
+                    _logger.info('Number of files added to contents reached the limit : {}'.format(limit))
                     break
             if dobrake:
                 break
@@ -267,16 +283,10 @@ def list_file_directory(logdir, limit=1000):
                     f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f) + '/')
                     f_content['dirname'] = f_content['dirname'][:-1] if f_content['dirname'].endswith('/') else f_content['dirname']
             files.append(f_content)
-            _logger.debug('Files to be shown: \n {}'.format(files))
+        _logger.debug('Files to be shown: \n {}'.format(files))
     except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
-
-    ### sort the files - no need since DataTable plugin applied
-    # files = sorted(files, key=lambda x: (str(x['dirname']).lower(), str(x['name']).lower()))
-
-    #_logger.error("list_file_directory finished - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
-
 
     if status != 0:
         return files, output, tardir
@@ -284,69 +294,217 @@ def list_file_directory(logdir, limit=1000):
         return files, err, tardir
 
 
-def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
-
+def get_rucio_file(scope, lfn, guid, unpack=True, listfiles=True, limit=1000):
+    """
+    Get logs with rucio
+    :param scope: str
+    :param lfn: str
+    :param guid: str
+    :param unpack: boolean
+    :param listfiles: boolean
+    :param limit: int - number of files to be listed and return in files
+    :return: files: list - log files in local directory
+    :return: errtxt: str -  error message
+    :return: urlbase: str - base path for links to files
+    :return: tardir: str - name of directory in unpacked tar
+    """
     errtxt = ''
     files = []
+    _logger.debug("get_rucio_file start - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
-    #_logger.error("get_rucio_file step1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+    # logdir
+    logdir = '{}/{}'.format(get_fullpath_filebrowser_directory(), guid.lower())
+    fname = '{}:{}'.format(scope, lfn)
+    fpath = '{}/{}/{}'.format(logdir, scope, lfn)
 
-    ### logdir
-    logdir = get_fullpath_filebrowser_directory() + '/' + guid.lower()
-    #### basename for the file
-    #base = os.path.basename(lfn)
-    fname = '%s:%s' % (scope, lfn)
-    fpath = '%s/%s/%s' % (logdir, scope, lfn)
-
-    ### create directory for files of guid
+    # create directory for files of guid
     dir, err = create_directory(fpath)
     if not len(err):
         errtxt += err
 
-    ### get command to copy file
+    # get command to copy file
     cmd = 'export RUCIO_ACCOUNT=%s; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase; source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh -3;source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_rucio_account(),get_x509_proxy(),logdir,scope,lfn)
 
     if not len(cmd):
         _logger.warning('Command to fetch the file is empty!')
 
-    ### download the file
+    # download the file
     status, err = execute_cmd(cmd)
     if status != 0:
         msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
         _logger.error(msg)
         errtxt += msg
 
-    #_logger.error("get_rucio_file step2 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
+    _logger.debug("get_rucio_file step2 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
     if unpack:
-        ### untar the file
+        # untar the file
         status, err = unpack_file(fpath)
         if status != 0:
             msg = 'File unpacking failed for file [%s].' % (fname)
             _logger.error('{} File path is {}.'.format(msg, fpath))
             errtxt = '\n '.join([errtxt, msg])
 
-    #_logger.error("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
+    _logger.debug("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
     tardir = ''
     files = ''
     if listfiles:
-        ### list the files
+        # list the files
         files, err, tardir = list_file_directory(dir, limit)
         if len(err):
             msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
             _logger.error(msg)
             errtxt = '\n'.join([errtxt, msg])
 
-    ### urlbase
-    urlbase = get_filebrowser_directory() +'/'+ guid.lower()+'/'+scope
+    # urlbase
+    urlbase = '{}/{}/{}/'.format(get_filebrowser_directory(), guid.lower(), scope)
 
-    #_logger.error("get_rucio_file step3 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+    _logger.debug("get_rucio_file step3 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
-    ### return list of files
+    # return list of files
     return files, errtxt, urlbase, tardir
+
+
+def get_s3_file(pandaid, computingsite):
+    """
+    Getting logs from s3 ObjectStore
+    :param pandaid: int
+    :param computingsite: str
+    :return: files: list - log files in local directory
+    :return: err_txt: str -  error message
+    :return: url_base: str - base path for links to files
+    """
+    err_txt = ''
+    files = []
+
+    s3 = ObjectStore()
+    s3.init_resource()
+
+    local_dir = '{}/{}'.format(get_fullpath_filebrowser_directory(), s3.get_folder_path(pandaid, computingsite))
+    dirprefix = '{}/{}'.format(get_filebrowser_directory(), s3.get_folder_path(pandaid, computingsite))
+    if not is_directory_exist(local_dir):
+        dir, err = create_directory(local_dir)
+        if len(err) > 0:
+            err_txt += 'Failed to create local directory to copy logs to it. '
+
+    error_download = s3.download_folder(
+        s3_folder=s3.get_folder_path(pandaid, computingsite),
+        local_dir=local_dir
+    )
+    if error_download:
+        err_txt += error_download
+
+    # list the files
+    files, err, tardir = list_file_directory(local_dir, limit=100, log_provider='s3')
+    if len(err):
+        msg = 'File listing failed for dir [{}]: [{}].'.format(local_dir, err)
+        _logger.error(msg)
+
+    return files, err_txt, dirprefix, local_dir
+
+
+def get_job_log_file_properties(pandaid=None, lfn=None, fileid=None):
+    """
+    Get log tarball file properties for PanDA job
+    :param pandaid: int
+    :param lfn: str
+    :param fileid: int
+    :return: scope: str
+    :return: lfn: str
+    :return: guid: str
+    :return: fsize_mb: float
+    """
+    scope = None
+    lfn = None
+    guid = None
+    fsize_mb = 0
+
+    if not pandaid and not lfn and not fileid:
+        _logger.debug('No params provided to get file properties')
+        return scope, lfn, guid, pandaid, fsize_mb
+
+    query = {
+        'type': 'log',
+    }
+    if pandaid:
+        query['pandaid'] = pandaid
+    if lfn:
+        query['lfn'] = lfn
+    if fileid:
+        query['fileid'] = fileid
+
+    values = ['pandaid', 'guid', 'scope', 'lfn', 'fsize']
+    file_properties = []
+    file_properties.extend(Filestable4.objects.filter(**query).values(*values))
+    if len(file_properties) == 0:
+        file_properties.extend(FilestableArch.objects.filter(**query).values(*values))
+
+    if len(file_properties):
+        file_properties = file_properties[0]
+        try:
+            guid = file_properties['guid']
+        except:
+            pass
+        try:
+            lfn = file_properties['lfn']
+        except:
+            pass
+        try:
+            scope = file_properties['scope']
+        except:
+            pass
+        if not pandaid:
+            try:
+                pandaid = file_properties['scope']
+            except:
+                pass
+        try:
+            fsize_mb = round(convert_bytes(int(file_properties['fsize']), output_unit='MB'))
+        except:
+            pass
+
+    return scope, lfn, guid, pandaid, fsize_mb
+
+
+def get_job_computingsite(pandaid):
+    """
+    Get computing site where job run
+    :param pandaid: int
+    :return: computingsite: str or None
+    """
+    computingsite = None
+    joblist = get_job_list(query={"pandaid": pandaid})
+    if joblist and len(joblist) > 0:
+        computingsite = joblist[0].get('computingsite')
+    return  computingsite
+
+
+def get_log_provider(pandaid=None):
+    """
+    Figure out log provider for a job depending on settings.
+    The default one is rucio. Also s3 object store is supported.
+    In case it is 'cric', we get it from PanDA queues config.
+    :param pandaid: int - optional
+    :return:
+    """
+    log_provider = 'rucio'
+    if hasattr(settings, 'LOGS_PROVIDER'):
+        if settings.LOGS_PROVIDER == 'cric':
+            # check cric config for computingsite
+            if pandaid:
+                computingsite = get_job_computingsite(pandaid)
+                pqs = get_panda_queues()
+                if computingsite in pqs and 'acopytools' in pqs[computingsite] and 'pw' in pqs[computingsite]['acopytools']:
+                    pw = pqs[computingsite]['acopytools']['pw'][0]
+                    if pw in ('rucio', 's3', 'gs'):
+                        log_provider = pw
+        else:
+            log_provider = settings.LOGS_PROVIDER
+    else:
+        log_provider = 'rucio'
+
+    return log_provider
 
 
 def remove_folder(guid):
@@ -362,3 +520,48 @@ def remove_folder(guid):
         _logger.error(msg)
 
     return logdir
+
+
+def get_job_log_file_path(pandaid, filename=''):
+    """
+    Download log tarball of a job and return path to a local copy of a file
+    If the directIO is enabled for prmon, return the remote location
+    :param pandaid:
+    :param filename: str, if empty the function return path to tarball folder
+    :return: file_path: str or None
+    """
+    file_path = None
+    files = []
+    tarball_path = ''
+    tardir = ''
+    log_provider = get_log_provider(pandaid=pandaid)
+
+    if log_provider == 'gs' and settings.PRMON_LOGS_DIRECTIO_LOCATION :
+        computingsite = get_job_computingsite(pandaid)
+        return settings.PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name=computingsite, panda_id=pandaid) + '/' + filename
+
+    if log_provider == 's3':
+        computingsite = get_job_computingsite(pandaid)
+        files, errtxt, dirprefix, tarball_path = get_s3_file(pandaid, computingsite)
+        tardir = ''
+    elif log_provider == 'rucio':
+        scope, lfn, guid, _, _ = get_job_log_file_properties(pandaid)
+        if guid and lfn and scope:
+            # check if files are already available in common CEPH storage
+            tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/'
+            files, err, tardir = list_file_directory(tarball_path, 100)
+            _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
+            if len(files) == 0 and len(err) > 0:
+                # download tarball
+                _logger.debug('log tarball has not been downloaded, so downloading it now')
+                files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
+                _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
+
+    if type(files) is list and len(files) > 0 and len(filename) > 0:
+        for f in files:
+            if f['name'] == filename:
+                file_path = os.path.join(tarball_path, tardir , filename)
+                continue
+
+    _logger.debug('Final path of {} file: {}'.format(filename, file_path))
+    return file_path

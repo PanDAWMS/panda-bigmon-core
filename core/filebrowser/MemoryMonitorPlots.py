@@ -14,12 +14,11 @@ from core.pandajob.models import Jobsarchived4, Jobsarchived
 from core.oauth.utils import login_customrequired
 from core.views import initRequest
 from core.libs.datetimestrings import parse_datetime
-from core.filebrowser.views import get_job_log_file_path
+from core.filebrowser.utils import get_job_log_file_path
 
 from django.conf import settings
 
-_logger = logging.getLogger('bigpandamon')
-filebrowserURL = "http://bigpanda.cern.ch/filebrowser/" #This is deployment specific because memory monitoring is intended to work in ATLAS
+_logger = logging.getLogger('bigpandamon-filebrowser')
 
 
 @login_customrequired
@@ -259,11 +258,13 @@ def getPrMonPlotsData(request, pandaid=-1):
     # get memory_monitor_output.txt file
     if pandaid > 0:
         mmo_path = get_job_log_file_path(pandaid, 'memory_monitor_output.txt')
-
         # check if the file exists
         if mmo_path is not None and (os.path.exists(mmo_path) or settings.PRMON_LOGS_DIRECTIO_LOCATION):
             # load the data from file
-            raw_data = pd.read_csv(mmo_path, delim_whitespace=True)
+            try:
+                raw_data = pd.read_csv(mmo_path, delim_whitespace=True)
+            except Exception as ex:
+                _logger.exception('Failed to open memory output file with {}'.format(ex))
             # get memory_monitor_summary.json
             mms_path = get_job_log_file_path(pandaid, 'memory_monitor_summary.json')
             if mms_path is not None and os.path.exists(mms_path):
@@ -272,13 +273,14 @@ def getPrMonPlotsData(request, pandaid=-1):
                         sum_data = json.load(json_file)
                     except Exception as e:
                         _logger.exception('Failed to load json from memory_monitor_summary.json file\n{}'.format(e))
-            # get payload steps
-            pso_path = get_job_log_file_path(pandaid, 'payload.stdout')
-            if pso_path is not None and os.path.exists(pso_path):
-                try:
-                    payload_steps = get_payload_steps(pso_path)
-                except Exception as e:
-                    _logger.exception("Error in getting athena info\n{}".format(e))
+            if 'ATLAS' in settings.DEPLOYMENT:
+                # get payload steps
+                pso_path = get_job_log_file_path(pandaid, 'payload.stdout')
+                if pso_path is not None and os.path.exists(pso_path):
+                    try:
+                        payload_steps = get_payload_steps(pso_path)
+                    except Exception as e:
+                        _logger.exception("Error in getting athena info\n{}".format(e))
         else:
             msg = """No memory monitor output file found in a job log tarball. 
                      It can happen if a job failed and logs were not saved 
@@ -348,7 +350,7 @@ def getPrMonPlotsData(request, pandaid=-1):
         # replace NaN values by 0
         raw_data = raw_data.fillna(0)
         raw_data['wtime_min'] = raw_data['wtime']/60
-        raw_data['wtime_min'] = raw_data['wtime_min'].round(0)
+        raw_data['wtime_min'] = raw_data['wtime_min'].round(1)
 
         for pname, pdet in plots_details.items():
             plots_data[pname] = {'data': [['x']], 'details': pdet}
