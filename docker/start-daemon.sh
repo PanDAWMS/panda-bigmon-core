@@ -2,8 +2,6 @@
 
 BIGMON_SERVICE=$1
 
-ln -fs /data/bigmon/config/*-httpd.conf /etc/httpd/conf.d/
-
 if [ -f /etc/grid-security/hostkey.pem ]; then
     echo "host certificate is already created."
 elif [ -f /opt/bigmon/etc/cert/hostkey.pem ]; then
@@ -30,7 +28,9 @@ if [ ! -f /etc/grid-security/chain.pem ]; then
 fi
 
 if [ "${BIGMON_SERVICE}" == "all" ]; then
-  echo "starting bigmon http service"
+  echo "Starting daphne service"
+  source ${BIGMON_VIRTUALENV_PATH}/bin/activate && cd ${BIGMON_WSGI_PATH} && daphne core.asgi:application --port 8000
+  echo "Starting bigmon http service"
   /usr/sbin/httpd
 else
   exec "$@"
