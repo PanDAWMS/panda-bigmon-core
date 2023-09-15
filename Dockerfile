@@ -52,7 +52,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptool
 
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  channels pyOpenSSL daphne confluent_kafka futures psycopg2-binary \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
-    beautifulsoup4 boto bz2file cachetools certifi cffi chardet click codegen cryptography cx-Oracle cycler \
+    beautifulsoup4 boto3 bz2file cachetools certifi cffi chardet click codegen cryptography cx-Oracle cycler \
     dataclasses datefinder decorator defusedxml Django docopt dogpile.cache ecdsa \
     elasticsearch elasticsearch-dsl enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
     humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
