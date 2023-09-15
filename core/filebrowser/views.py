@@ -16,7 +16,6 @@ from core.views import initRequest
 from core.libs.exlib import convert_bytes
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.utils import is_json_request
-from datetime import datetime
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
