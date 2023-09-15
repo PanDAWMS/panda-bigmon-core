@@ -358,7 +358,7 @@ LOGGING = {
             'level': 'ERROR',
         },
         'bigpandamon-filebrowser': {
-            'handlers': ['logfile-filebrowser', 'logfile-error', 'console'],
+            'handlers': ['logfile-filebrowser', 'logfile-error', 'logfile-info', 'console'],
             'level': LOG_LEVEL,
         },
         'panda.client': {

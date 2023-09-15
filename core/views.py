@@ -2286,7 +2286,12 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             inputfiles.append(
                 {'jeditaskid': file['jeditaskid'], 'datasetid': file['datasetid'], 'fileid': file['fileid']})
 
-    if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
+    # get log provider
+    request.session['viewParams']['log_provider'] = get_log_provider(pandaid)
+
+    if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid'] and not (
+        request.session['viewParams']['log_provider'] == 's3' and 's3' in job['pilotid']
+    ):
         stdout = job['pilotid'].split('|')[0]
         if stdout.endswith('pilotlog.txt'):
             stdlog = stdout.replace('pilotlog.txt', 'payload.stdout')
@@ -2304,8 +2309,16 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
     else:
         stdout = stderr = stdlog = stdjdl = None
 
-    # get log provider
-    request.session['viewParams']['log_provider'] = get_log_provider(pandaid)
+    prmon_logs = {}
+    if settings.PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed') and (
+        request.session['viewParams']['log_provider'] == 'gs'
+    ):
+        prmon_logs['prmon_summary'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
+            queue_name=job.get('computingsite'),
+            panda_id=pandaid) + '/memory_monitor_summary.json'
+        prmon_logs['prmon_details'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
+            queue_name=job.get('computingsite'),
+            panda_id=pandaid) + '/memory_monitor_output.txt'
 
     # Check for object store based log
     oslogpath = None
@@ -2462,15 +2475,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 f[fp] = f[fp].strftime(settings.DATETIME_FORMAT)
             if fpv is None:
                 f[fp] = ''
-
-    prmon_logs = {}
-    if settings.PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed'):
-        prmon_logs['prmon_summary'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
-            queue_name=job.get('computingsite'),
-            panda_id=pandaid) + '/memory_monitor_summary.json'
-        prmon_logs['prmon_details'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
-            queue_name=job.get('computingsite'),
-            panda_id=pandaid) + '/memory_monitor_output.txt'
 
     if not is_json_request(request):
         del request.session['TFIRST']

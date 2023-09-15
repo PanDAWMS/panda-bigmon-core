@@ -503,7 +503,7 @@ def get_log_provider(pandaid=None):
             log_provider = settings.LOGS_PROVIDER
     else:
         log_provider = 'rucio'
-
+    _logger.info('Log provider is {}'.format(log_provider))
     return log_provider
 
 
