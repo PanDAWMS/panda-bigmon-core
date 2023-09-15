@@ -62,6 +62,7 @@ from core.common.models import JediWorkQueue
 from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.ruciowrapper import ruciowrapper
+from core.filebrowser.utils import get_log_provider
 
 from django.conf import settings
 
@@ -2295,7 +2296,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             stderr = stdout.replace('.out', '.err')
             stdlog = stdout.replace('.out', '.log')
             stdjdl = stdout.replace('.out', '.jdl')
-            stdlog = stdout.replace('.out', '.log')
     elif len(job['harvesterInfo']) > 0 and 'batchlog' in job['harvesterInfo'] and job['harvesterInfo']['batchlog']:
         stdlog = job['harvesterInfo']['batchlog']
         stderr = stdlog.replace('.log', '.err')
@@ -2303,6 +2303,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         stdjdl = stdlog.replace('.log', '.jdl')
     else:
         stdout = stderr = stdlog = stdjdl = None
+
+    # get log provider
+    request.session['viewParams']['log_provider'] = get_log_provider(pandaid)
 
     # Check for object store based log
     oslogpath = None
@@ -3143,10 +3146,12 @@ def userDashApi(request, agg=None):
                     t['job_' + metric] = metrics[metric]['group_by'][t['jeditaskid']]
                 else:
                     t['job_' + metric] = ''
-            if 'dsinfo' in t and len(t['dsinfo']) > 0 and 'nfilesmissing' in t['dsinfo'] and t['dsinfo'][
-                'nfilesmissing'] and t['dsinfo']['nfilesmissing'] > 0:
-                t['errordialog'] = '{} files is missing and is not included for processing'.format(
-                    t['dsinfo']['nfilesmissing']) + t['errordialog']
+            if 'dsinfo' in t and len(t['dsinfo']) > 0 and 'nfilesmissing' in t['dsinfo'] and \
+                    t['dsinfo']['nfilesmissing'] and t['dsinfo']['nfilesmissing'] > 0:
+                t['errordialog'] = '{} files is missing and is not included for processing. {}'.format(
+                    t['dsinfo']['nfilesmissing'],
+                    t['errordialog'] if t['errordialog'] is not None else ''
+                )
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
                 link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
                 link_logs_base = '/filebrowser/?'

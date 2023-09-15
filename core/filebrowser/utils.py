@@ -3,15 +3,18 @@
     
 """
 import subprocess
-import json
 import logging
 import os
 import re
 import time
 import shutil
-from django.conf import settings
 from datetime import datetime
-
+from django.conf import settings
+from core.filebrowser.ObjectStoreWrapper import ObjectStore
+from core.common.models import Filestable4, FilestableArch
+from core.libs.job import get_job_list
+from core.libs.exlib import convert_bytes
+from core.schedresource.utils import get_panda_queues
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
@@ -107,424 +110,6 @@ def get_rucio_rest_api_server_host():
                 "https://voatlasrucio-server-prod.cern.ch")
 
 
-def get_my_settings():
-    """
-        get_my_settings()
-        
-        Get environment settings for the filebrowser.
-        
-    """
-    my_settings = {}
-
-    ### RUCIO_ACCOUNT="atlpan"
-    my_settings['RUCIO_ACCOUNT'] = get_rucio_account()
-
-    ### Rucio redirect host
-    my_settings['RUCIO_REDIRECT_HOST'] = get_rucio_redirect_host()
-
-    ### Rucio REST API Auth host
-    my_settings['RUCIO_AUTH_HOST'] = get_rucio_rest_api_auth_host()
-
-    ### Rucio REST API server host
-    my_settings['RUCIO_SERVER_HOST'] = get_rucio_rest_api_server_host()
-
-    my_settings['X509_USER_PROXY'] = get_x509_proxy()
-
-    ### CAPATH
-    my_settings['CAPATH'] = get_capath()
-
-    return my_settings
-
-
-def get_rucio_oauth_token():
-    """
-        get_rucio_oauth_token ... get Rucio OAuth Token
-        
-        return: the Rucio OAuth token
-    """
-    ### init the Rucio OAuth Token
-    rucioToken = ''
-
-    ### assemble the curl command
-    cmd = ' curl -s -i -H "X-Rucio-Account: %(rucio_account)s" --cacert %(proxy)s --cert %(proxy)s --capath %(capath)s -X GET %(rucio_api_host)s/auth/x509_proxy ' \
-        % {
-           'rucio_account': get_rucio_account(), \
-           'proxy': get_x509_proxy(), \
-           'capath': get_capath(), \
-           'rucio_api_host': get_rucio_rest_api_auth_host() \
-         }
-    cmd += ' | grep "X-Rucio-Auth-Token: " | sed -e "s#X-Rucio-Auth-Token: ##g" '
-    _logger.info('get_rucio_oauth_token: cmd=(%s)' % cmd)
-
-    ### get the curl command output
-    status, output = subprocess.getstatusoutput(cmd)
-
-    ### get the rucioToken
-    rucioToken = output.rstrip()
-
-    ### return the Rucio OAuth Token
-    return rucioToken
-
-
-def get_rucio_metalink_file(rucioToken, lfn, scope):
-    """
-        get_rucio_metalink_file ... get Rucio metalink file with replicas of the lfn
-        @params
-            rucioToken ... Rucio OAuth Token
-            lfn ... file name, e.g. log.blahblah.tgz
-            scope ... Rucio scope, e.g. "user", or "data13_8tev"
-        
-        returns: content of Rucio metalink file as json string 
-    """
-    ### get the metalink file for scope:lfn
-    cmd = ' RUCIO_TOKEN="%(rucio_token)s" ;  curl -s --cacert %(proxy)s --capath %(capath)s  -H "X-Rucio-Auth-Token: $RUCIO_TOKEN"  -H "Accept: application/x-json-stream"  -X GET \'%(rucio_api_host)s/replicas/%(scope)s/%(lfn)s\' ' % \
-        { \
-            'rucio_api_host': get_rucio_rest_api_server_host(), \
-            'proxy': get_x509_proxy(), \
-            'capath': get_capath(), \
-            'rucio_token': rucioToken, \
-            'lfn': lfn, \
-            'scope': scope, \
-        }
-
-    ### get the metalink file
-    status, output = subprocess.getstatusoutput(cmd)
-
-    ### return the Rucio metalink file
-    return output
-
-
-def get_surls_from_rucio_metalink_file(metalink):
-    """
-        get_surls_from_rucio_metalink_file ... get SURLs from Rucio metalink file
-        @params
-            metalink
-        
-        returns: list of SURLs
-    """
-    surls = []
-
-    ### read data from metalink file
-    data = {}
-    try:
-        data = json.loads('%s' % (metalink))
-    except:
-        _logger.error('get_surls_from_rucio_metalink_file: cannot load data from metalink file. Exiting.')
-        return surls
-
-    ### get rses node with surls
-    rses = {}
-    try:
-        rses = data['rses']
-    except:
-        _logger.error('get_surls_from_rucio_metalink_file: cannot get rses node from metalink data. Exiting.')
-        return surls
-
-    ### collect list of surls from rses nodes
-    for rse in rses:
-        rseSurls = []
-        try:
-            rseSurls = rses[rse]
-        except:
-            _logger.warning('get_surls_from_rucio_metalink_file: cannot get SURLs for rse %s. Continue.' % rse)
-        surls.extend(rseSurls)
-
-    ### return list of surls
-    return surls
-
-
-def get_rucio_pfns_from_guids_with_rucio_metalink_file(guids, site, lfns, scopes):
-    """ 
-        get_rucio_pfns_from_guids_with_rucio_metalink_file 
-            ... Get the Rucio replica dictionary from Rucio metalink file
-        @params
-            guids ... list of GUIDs
-            site ... PanDA schedresource (siteID)
-            lfns ... list of LFNs
-            scopes ... list of scopes for the LFNs
-        
-        returns: list of PFNs
-    """
-
-    # FORMAT: { guid1: {'surls': [surl1, ..], 'lfn':LFN, 'fsize':FSIZE, 'checksum':CHECKSUM}, ..}
-    # where e.g. LFN='mc10_7TeV:ESD.321628._005210.pool.root.1', FSIZE=110359950 (long integer), CHECKSUM='ad:7bfc5de9'
-    # surl1='srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data/atlas/atlasdatadisk/rucio/mc12_8TeV/cf/8f/EVNT.01365724._000001.pool.root.1'
-    # guid1='28FB7AE9-2234-F644-962A-17EA1D279AA7'
-
-    errtxt = ''
-    pfnlist = []
-
-    ### make sure RUCIO_ACCOUNT is in environment
-    rucioAccount = get_rucio_account()
-
-    ### make sure X509_USER_PROXY is in environment
-    X509Proxy = get_x509_proxy()
-
-    ### get Rucio OAuth token
-    rucioOAuthToken = get_rucio_oauth_token()
-
-    for lfn in lfns:
-        ### get scope
-        scope = 'ERROR_failed-to-determine-scope'
-        try:
-            scope = scopes[0]
-        except:
-            _logger.warning('get_rucio_pfns_from_guids_with_rucio_metalink_file: failed to determine scope. Using scope=' % (scope))
-
-        ### get the metalink file for each lfn
-        metalink = get_rucio_metalink_file(rucioOAuthToken, lfn, scope)
-
-        ### get list of surls from the metalink file
-        surls = get_surls_from_rucio_metalink_file(metalink)
-
-        ### add surls to pfnlist
-        if len(surls):
-            pfnlist.extend(surls)
-
-    ### make pfnlist unique
-    try:
-        pfnlist = list(set(pfnlist))
-    except:
-        _logger.warning('get_rucio_pfns_from_guids_with_rucio_metalink_file: failed to make pfnlist unique')
-
-    return pfnlist, errtxt
-
-
-def get_rucio_redirect_url(lfn, scope):
-    """
-        get_rucio_redirect_url: assemble Rucio redirect URL 
-        @params: lfn ... one filename
-                        e.g. user.gangarbt.62544955._2108356106.log.tgz
-                  scope ... scope of the file with lfn
-                        e.g. user.gangarbt, or valid1
-        
-        returns: the Rucio redirect URL
-    """
-    redirectUrl = ''
-    ### compose the redirecURL
-    redirectUrl = '%(redirecthost)s/redirect/%(scope)s/%(filename)s%(suffix)s' % \
-            {\
-                'redirecthost': get_rucio_redirect_host(), \
-                'scope': scope, \
-                'filename': lfn, \
-                'suffix': '' \
-            }
-    _logger.info('get_rucio_redirect_url: redirectUrl=(%s)' % redirectUrl)
-    ### return the redirectURL
-    return redirectUrl
-
-
-def get_location_from_rucio_redirect_output(output):
-    """
-        getLocationFromRucioRedirectOutput 
-            output ... output of e.g. curl -i --silent --capath /etc/grid-security/certificates --cacert /data/atlpan/x509up_u25606 --cert /data/atlpan/x509up_u25606 https://voatlasrucio-redirect-prod-01.cern.ch/redirect/user.kkrizka/user.kkrizka.016447._2112520451.log.tgz
-            
-    """
-    surl = ''
-    ### get lines of the output
-    lines = output.split('\n')
-    stopProcessing = False
-    for line in lines:
-        if line.startswith('Location:') and not stopProcessing:
-            stopProcessing = True
-            words = line.split()
-            try:
-                surl = words[1]
-            except:
-                _logger.error('get_location_from_rucio_redirect_output: Cannot get surl from curl output.')
-    return surl
-
-
-def get_rucio_redirect_response(redirectUrl):
-    """
-        get_rucio_redirect_response: get response of Rucio redirect 
-        @params: redirectUrl ... one URL
-            e.g. https://voatlasrucio-redirect-prod-01.cern.ch/redirect/user.gangarbt/user.gangarbt.62544955._2108356106.log.tgz
-        
-    """
-    if len(redirectUrl) < 1:
-        return ''
-    surl = ''
-    ### command
-    cmd = " curl -i --silent --capath %(capath)s --cacert %(x509proxy)s --cert %(x509proxy)s %(url)s " % \
-        {\
-            'capath': get_capath(), \
-            'x509proxy': get_x509_proxy(), \
-            'url': redirectUrl \
-         }
-    _logger.info('get_rucio_redirect_response: cmd=(%s)' % cmd)
-    status, output = subprocess.getstatusoutput(cmd)
-    surl = get_location_from_rucio_redirect_output(output)
-    return surl
-
-
-def get_rucio_pfns_from_guids_with_rucio_redirect(guids, site, lfns, scopes):
-    """ 
-        get_rucio_pfns_from_guids_with_rucio_redirect
-        ... Get the Rucio replica dictionary from Rucio redirect
-    """
-
-    # FORMAT: { guid1: {'surls': [surl1, ..], 'lfn':LFN, 'fsize':FSIZE, 'checksum':CHECKSUM}, ..}
-    # where e.g. LFN='mc10_7TeV:ESD.321628._005210.pool.root.1', FSIZE=110359950 (long integer), CHECKSUM='ad:7bfc5de9'
-    # surl1='srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data/atlas/atlasdatadisk/rucio/mc12_8TeV/cf/8f/EVNT.01365724._000001.pool.root.1'
-    # guid1='28FB7AE9-2234-F644-962A-17EA1D279AA7'
-
-    errtxt = ''
-    pfnlist = []
-
-    ### make sure RUCIO_ACCOUNT is in environment
-    get_rucio_account()
-    ### make sure X509_USER_PROXY is in environment
-    get_x509_proxy()
-
-    for lfn in lfns:
-        surl = ''
-        ### get scope
-        scope = 'ERROR_failed-to-determine-scope'
-        try:
-            scope = scopes[0]
-        except:
-            _logger.warning('get_rucio_pfns_from_guids_with_rucio_redirect: failed to determine scope. Using scope=' % (scope))
-        ### get Rucio redirect URL
-        redirectUrl = get_rucio_redirect_url(lfn, scope)
-        ### get pfnlist
-        if len(redirectUrl) > 0:
-            surl = get_rucio_redirect_response(redirectUrl)
-        ### add surl to pfnlist
-        if len(surl) > 0:
-            pfnlist.append(surl)
-
-    return pfnlist, errtxt
-
-
-def get_rucio_pfns_from_guids_with_dq2client(guids, site, lfns, scopes):
-    """ 
-        get_rucio_pfns_from_guids_with_dq2client
-        ... Get the Rucio replica dictionary from DQ2/Rucio client
-    """
-
-    # FORMAT: { guid1: {'surls': [surl1, ..], 'lfn':LFN, 'fsize':FSIZE, 'checksum':CHECKSUM}, ..}
-    # where e.g. LFN='mc10_7TeV:ESD.321628._005210.pool.root.1', FSIZE=110359950 (long integer), CHECKSUM='ad:7bfc5de9'
-    # surl1='srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data/atlas/atlasdatadisk/rucio/mc12_8TeV/cf/8f/EVNT.01365724._000001.pool.root.1'
-    # guid1='28FB7AE9-2234-F644-962A-17EA1D279AA7'
-
-    fileDictionary = {}
-    if len(guids) != len(lfns):
-        return None
-
-    for i in xrange(len(guids)):
-        lfn = lfns[i]
-        ### get scope
-        scope = 'ERROR_failed-to-determine-scope'
-        try:
-            scope = scopes[0]
-        except:
-            _logger.warning('WARNING: get_rucio_pfns_from_guids_with_dq2client: failed to determine scope. Using scope=' % (scope))
-        fileDictionary[guids[i]] = '%s:%s' % (scope, lfn)
-
-    dictionaryReplicas = {}
-    errtxt = ''
-    pfnlist = []
-
-    ### make sure RUCIO_ACCOUNT is in environment
-    get_rucio_account()
-    ### make sure X509_USER_PROXY is in environment
-    get_x509_proxy()
-
-    try:
-        from dq2.filecatalog import create_file_catalog
-        from dq2.filecatalog.FileCatalogException import FileCatalogException
-        from dq2.filecatalog.FileCatalogUnavailable import FileCatalogUnavailable
-
-    except:
-        msg = "Failed to lookup your file! Unfortunately, import of the dq2 modules failed."
-        _logger.error(msg)
-        errtxt += msg
-    else:
-        try:
-            cat = self.getRucioCatalogHost(site)
-            catalog = create_file_catalog(cat)
-            catalog.connect()
-            dictionaryReplicas = catalog.bulkFindReplicas(fileDictionary)
-            catalog.disconnect()
-        except:
-            msg = "Failed to lookup your file! " + \
-                "The catalog was not configured properly with the input " + \
-                "data you provided: guid=%s site=%s lfn=%s scope=%s. " % \
-                (guids, site, lfns, scopes)
-            _logger.error(msg)
-            errtxt += msg
-            msg = "Please note that scope, lfn, and guid are compulsory parameters! "
-            _logger.error(msg)
-            errtxt += msg
-
-    for g in dictionaryReplicas.keys():
-        try:
-            pfnList = dictionaryReplicas[g]['surls']
-            pfnlist.extend(pfnList)
-        except:
-            msg = "Failed to lookup your file! Cannot extract surls for RucioDictionaryReplica of guid:%s" % (g)
-            _logger.error(msg)
-            errtxt += msg
-
-    return pfnlist, errtxt
-
-
-def get_rucio_pfns_from_guids(guids, site, lfns, scopes):
-    """ 
-        Get the Rucio replica dictionary 
-            from Rucio metalink file
-            or
-            from Rucio redirector
-            or
-            from DQ2/Rucio client 
-    """
-    pfnlist = []
-    errtxt = ''
-
-    ### get pfnlist from Rucio metalink file
-    try:
-        pfnlist, errtxt = get_rucio_pfns_from_guids_with_rucio_metalink_file(guids, site, lfns, scopes)
-    except:
-        _logger.error('Failed to get PFNS from metalink file: guids=%s, site=%s, lfns=%s, scopes=%s' \
-                      % (guids, site, lfns, scopes))
-    ### pfnlist from Rucio metalink file not empty, return it
-    if len(pfnlist) > 0:
-        return pfnlist, errtxt
-
-    ### get pfnlist from Rucio redirector
-    try:
-        pfnlist, errtxt = get_rucio_pfns_from_guids_with_rucio_redirect(guids, site, lfns, scopes)
-    except:
-        _logger.error('Failed to get PFNS from redirect: guids=%s, site=%s, lfns=%s, scopes=%s' \
-                      % (guids, site, lfns, scopes))
-    ### pfnlist from Rucio redirector not empty, return it
-    if len(pfnlist) > 0:
-        return pfnlist, errtxt
-
-    ### get pfnlist from DQ2/Rucio client
-    try:
-        pfnlist, errtxt = get_rucio_pfns_from_guids_with_dq2client(guids, site, lfns, scopes)
-    except:
-        _logger.error('Failed to get PFNS from DQ2 client: guids=%s, site=%s, lfns=%s, scopes=%s' \
-                      % (guids, site, lfns, scopes))
-    ### pfnlist from DQ2/Rucio client not empty, return it
-    if len(pfnlist) > 0:
-        return pfnlist, errtxt
-
-#    errtxt += 'You are out of luck today, file not found. ' \
-#            + 'Used search parameters: ' \
-#            + 'site=' + str(site) + ' ' \
-#            + 'guids=' + str(guids) + ' ' \
-#            + 'lfns=' + str(lfns) + ' ' \
-#            + 'scopes=' + str(scopes) + ' ' \
-#            + errtxt
-    errtxt = 'You are out of luck today, file lookup failed. ' + \
-        'We have tried three different ways to find your file, unfortunately with no joy.'
-
-    ### default return
-    return pfnlist, errtxt
-
 
 def execute_cmd(cmd):
     """
@@ -564,74 +149,24 @@ def create_directory(fname):
     return logdir, errtxt
 
 
-def get_copycmd(fname, guid):
+def is_directory_exist(logdir):
     """
-        get_copycmd
-        
-        returns command string to be executed
+        check if folder exists
     """
-    ### command to execute to fetch the file
-    cmd = ''
-    copycmd = ''
-    ### logdir
-    logdir = get_fullpath_filebrowser_directory() + '/' + guid.lower()
-    ### Virtual Organisation
-    vo = get_filebrowser_vo()
-    ### basename for the file
-    base = os.path.basename(fname)
+    if os.path.exists(os.path.dirname(logdir)):
+        return True
+    else:
+        return False
 
-    # Do we already have this logfile? Have a look for the tarball. If it is not there, then
-    # we get it before we do anything else
-#    if (not os.path.isfile("%s/%s" % (logdir, base))): #FIXME
-    if True:
-        # We don't have this tarball, let's go get it from the grid
-        if (fname.startswith('srm:')):
-            # See: http://ppewww.ph.gla.ac.uk/~fergusjk/howtolcg.html
-            # This should cover 99% of all cases now
-            # Some US sites are not in the BDII, so we need to construct the full SURL with endpoint
-            # If the LFC entry has SFN in it then it must have the full SURL:
-            if fname.find('SFN=') >= 0:
-                copycmd += """lcg-cp  -b -T srmv2 -V %(vo)s '%(file)s' "file:///$PWD/%(base)s" """ % {'vo' : vo, 'file' : fname, 'base' : base }
-            else:
-                copycmd += """lcg-cp  -T srmv2 -V %(vo)s '%(file)s' "file:///$PWD/%(base)s" """ % {'vo' : vo, 'file' : fname, 'base' : base }
 
-        elif  (fname.startswith('https:') and re.search('/rucio/', fname)):
-            ### e.g.: https://lapp-se01.in2p3.fr:443/dpm/in2p3.fr/home/atlas/atlasscratchdisk/rucio/user/kkrizka/51/2a/user.kkrizka.016447._2112520451.log.tgz
-            copycmd += " curl -s -L -O --cacert %(proxy)s --capath %(capath)s --cert %(proxy)s %(url)s " % \
-                {
-                    'proxy': get_x509_proxy(), \
-                    'capath': get_capath(), \
-                    'url': fname, \
-                }
-        #download xrootd file
-        elif fname.startswith('root:'):
-             copycmd += 'gfal-copy "%s" file://$PWD/%s' % (fname, base)        
-        # For non-SRM SURLS this will probably require debugging for CERN...
-        elif fname.startswith('/pnfs/usatlas.bnl.gov'):
-            ## replacing dccp with srmcp ##
-            copycmd += 'srmcp -globus_tcp_port_range=20000,50000 "srm://dcsrm.%s:8443%s" file:///$PWD/%s' \
-                % (fname.split('/', 3)[2], fname, base)
-        elif fname.startswith('/pnfs/uchicago.edu'):
-            copycmd += 'globus-url-copy "gsiftp://uct2-dc1.uchicago.edu%s" "file://$PWD/%s"' % (fname, base)
-        elif fname.startswith('/pnfs/iu.edu'):
-            copycmd += 'globus-url-copy "gsiftp://iut2-dc1.iu.edu%s" "file://$PWD/%s"' % (fname, base)
-        elif fname.startswith('/pnfs/aglt2.org/atlasproddisk') or fname.startswith('/pnfs/aglt2.org/atlasuserdisk'):
-            copycmd += 'globus-url-copy "gsiftp://umfs07.aglt2.org:2811%s" "file://$PWD/%s"' % (fname, base)
-        elif fname.startswith('dcap:'):
-            ## replacing dccp with srmcp ##
-            copycmd += 'srmcp -globus_tcp_port_range=20000,50000 "srm://dcsrm.%s:8443%s" file:///$PWD/%s' \
-                % (fname.split('/', 3)[2], fname, base)
-        else:
-            # Copy command of last resort...
-            copycmd += 'globus-url-copy "%s" file://$PWD/%s' % (fname, base)
-
-        # Now exectute the tarball fetcher...
-        cmd = '%s ; %s ; cd %s; %s' % (\
-                ' export X509_USER_PROXY=' + get_x509_proxy() + ' ', \
-                ' export LCG_GFAL_INFOSYS=lcg-bdii.cern.ch:2170 ', \
-                logdir, copycmd)
-    
-    return cmd
+def is_file_exist(path):
+    """
+        check if folder exists
+    """
+    if os.path.isfile(path):
+        return True
+    else:
+        return False
 
 
 def unpack_file(fname):
@@ -654,12 +189,12 @@ def unpack_file(fname):
     return status, errtxt
 
 
-def list_file_directory(logdir, limit=1000):
+def list_file_directory(logdir, limit=1000, log_provider='rucio'):
     """
         list_file_directory
         
     """
-    #_logger.error("list_file_directory started - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
+    _logger.debug("list_file_directory started - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
 
     files = []
     err = ''
@@ -677,28 +212,31 @@ def list_file_directory(logdir, limit=1000):
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
 
-    if len(filelist) > 0:
-        for entry in filelist:
-            if entry.startswith('tarball'):
-                tardir = entry
-                continue
-    if not len(tardir):
-        err = "Problem with tarball, could not find expected tarball directory. "
-        _logger.warning('{} (got {}).'.format(err, logdir))
-        # try to show any xml, json and txt files that are not in tarball directory
-        filtered_filelist = []
+    if log_provider == 'rucio':
+        # looking for tarball directory
         if len(filelist) > 0:
             for entry in filelist:
-                if entry.endswith('.xml') or entry.endswith('.json') or entry.endswith('.txt'):
-                    filtered_filelist.append(entry)
-        if len(filtered_filelist) == 0:
-            err += ' Tried to look for files in top dir, but found nothing'
-            _logger.error('{} (got {}).'.format(err, logdir))
-            _logger.debug('Contents of untared log file: \n {}'.format(filelist))
-            return files, err, tardir
-        else:
-            err += "However, a few files has been found in a topdir, so showing them."
-            _logger.info('A few files found in a topdir, will show them to user')
+                if entry.startswith('tarball'):
+                    tardir = entry
+                    continue
+
+        if not len(tardir):
+            err = "Problem with tarball, could not find expected tarball directory. "
+            _logger.warning('{} (got {}).'.format(err, logdir))
+            # try to show any xml, json and txt files that are not in tarball directory
+            filtered_filelist = []
+            if len(filelist) > 0:
+                for entry in filelist:
+                    if entry.endswith('.xml') or entry.endswith('.json') or entry.endswith('.txt'):
+                        filtered_filelist.append(entry)
+            if len(filtered_filelist) == 0:
+                err += ' Tried to look for files in top dir, but found nothing'
+                _logger.error('{} (got {}).'.format(err, logdir))
+                _logger.debug('Contents of untared log file: \n {}'.format(filelist))
+                return files, err, tardir
+            else:
+                err += "However, a few files has been found in a topdir, so showing them."
+                _logger.info('A few files found in a topdir, will show them to user')
 
     # Now list the contents of the tarball directory:
     try:
@@ -706,12 +244,12 @@ def list_file_directory(logdir, limit=1000):
         dobrake = False
         _logger.debug('Walking through directory:')
         for walk_root, walk_dirs, walk_files in os.walk(os.path.join(logdir, tardir), followlinks=False):
-            #_logger.error("walk - " + datetime.now().strftime("%H:%M:%S") + "  " + os.path.join(logdir, tardir))
+            _logger.debug("walk - {}".format(os.path.join(logdir, tardir)))
             for name in walk_files:
                 contents.append(os.path.join(walk_root, name))
                 if len(contents) > limit:
                     dobrake = True
-                    _logger.debug('Number of files added to contents reached the limit : {}'.format(limit))
+                    _logger.info('Number of files added to contents reached the limit : {}'.format(limit))
                     break
             if dobrake:
                 break
@@ -745,16 +283,10 @@ def list_file_directory(logdir, limit=1000):
                     f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f) + '/')
                     f_content['dirname'] = f_content['dirname'][:-1] if f_content['dirname'].endswith('/') else f_content['dirname']
             files.append(f_content)
-            _logger.debug('Files to be shown: \n {}'.format(files))
+        _logger.debug('Files to be shown: \n {}'.format(files))
     except OSError as errMsg:
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
-
-    ### sort the files - no need since DataTable plugin applied
-    # files = sorted(files, key=lambda x: (str(x['dirname']).lower(), str(x['name']).lower()))
-
-    #_logger.error("list_file_directory finished - " + datetime.now().strftime("%H:%M:%S") + "  " + logdir)
-
 
     if status != 0:
         return files, output, tardir
@@ -762,121 +294,217 @@ def list_file_directory(logdir, limit=1000):
         return files, err, tardir
 
 
-def fetch_file(pfn, guid, unpack=True, listfiles=True):
+def get_rucio_file(scope, lfn, guid, unpack=True, listfiles=True, limit=1000):
     """
-        fetch_file
-            ... Download the file with pfn.
-        
-        returns: local path to the file
+    Get logs with rucio
+    :param scope: str
+    :param lfn: str
+    :param guid: str
+    :param unpack: boolean
+    :param listfiles: boolean
+    :param limit: int - number of files to be listed and return in files
+    :return: files: list - log files in local directory
+    :return: errtxt: str -  error message
+    :return: urlbase: str - base path for links to files
+    :return: tardir: str - name of directory in unpacked tar
     """
     errtxt = ''
     files = []
+    _logger.debug("get_rucio_file start - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
-    ### get the filename
-    fname = get_filename(pfn, guid)
+    # logdir
+    logdir = '{}/{}'.format(get_fullpath_filebrowser_directory(), guid.lower())
+    fname = '{}:{}'.format(scope, lfn)
+    fpath = '{}/{}/{}'.format(logdir, scope, lfn)
 
-    ### create directory for files of guid
-    dir, err = create_directory(fname)
-    if not len(err):
-        errtxt += err
-
-    ### get command to copy file
-    cmd = get_copycmd(pfn, guid)
-    if not len(cmd):
-        _logger.warning('Command to fetch the file is empty!')
-
-    ### download the file
-    status, err = execute_cmd(cmd)
-    if status != 0:
-        msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
-        _logger.error(msg)
-        errtxt += msg
-
-    if unpack:
-        ### untar the file
-        status, err = unpack_file(fname)
-        if status != 0:
-            msg = 'File unpacking failed for file [%s].' % (fname)
-            _logger.error(msg)
-
-    tardir = ''
-    files = ''
-    if listfiles:
-        ### list the files
-        files, err, tardir = list_file_directory(dir)
-        if len(err):
-            msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
-            _logger.error(msg)
-
-    ### urlbase
-    urlbase = get_filebrowser_directory() + '/' + guid.lower()
-
-    ### return list of files
-    return files, errtxt, urlbase, tardir
-
-def get_rucio_file(scope,lfn, guid, unpack=True, listfiles=True, limit=1000):
-
-    errtxt = ''
-    files = []
-
-    #_logger.error("get_rucio_file step1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
-    ### logdir
-    logdir = get_fullpath_filebrowser_directory() + '/' + guid.lower()
-    #### basename for the file
-    #base = os.path.basename(lfn)
-    fname = '%s:%s' % (scope, lfn)
-    fpath = '%s/%s/%s' % (logdir, scope, lfn)
-
-    ### create directory for files of guid
+    # create directory for files of guid
     dir, err = create_directory(fpath)
     if not len(err):
         errtxt += err
 
-    ### get command to copy file
+    # get command to copy file
     cmd = 'export RUCIO_ACCOUNT=%s; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase; source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh -3;source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_rucio_account(),get_x509_proxy(),logdir,scope,lfn)
 
     if not len(cmd):
         _logger.warning('Command to fetch the file is empty!')
 
-    ### download the file
+    # download the file
     status, err = execute_cmd(cmd)
     if status != 0:
         msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
         _logger.error(msg)
         errtxt += msg
 
-    #_logger.error("get_rucio_file step2 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
+    _logger.debug("get_rucio_file step2 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
     if unpack:
-        ### untar the file
+        # untar the file
         status, err = unpack_file(fpath)
         if status != 0:
             msg = 'File unpacking failed for file [%s].' % (fname)
             _logger.error('{} File path is {}.'.format(msg, fpath))
             errtxt = '\n '.join([errtxt, msg])
 
-    #_logger.error("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
+    _logger.debug("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
     tardir = ''
     files = ''
     if listfiles:
-        ### list the files
+        # list the files
         files, err, tardir = list_file_directory(dir, limit)
         if len(err):
             msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
             _logger.error(msg)
             errtxt = '\n'.join([errtxt, msg])
 
-    ### urlbase
-    urlbase = get_filebrowser_directory() +'/'+ guid.lower()+'/'+scope
+    # urlbase
+    urlbase = '{}/{}/{}/'.format(get_filebrowser_directory(), guid.lower(), scope)
 
-    #_logger.error("get_rucio_file step3 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+    _logger.debug("get_rucio_file step3 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
-    ### return list of files
+    # return list of files
     return files, errtxt, urlbase, tardir
+
+
+def get_s3_file(pandaid, computingsite):
+    """
+    Getting logs from s3 ObjectStore
+    :param pandaid: int
+    :param computingsite: str
+    :return: files: list - log files in local directory
+    :return: err_txt: str -  error message
+    :return: url_base: str - base path for links to files
+    """
+    err_txt = ''
+    files = []
+
+    s3 = ObjectStore()
+    s3.init_resource()
+
+    local_dir = '{}/{}'.format(get_fullpath_filebrowser_directory(), s3.get_folder_path(pandaid, computingsite))
+    dirprefix = '{}/{}'.format(get_filebrowser_directory(), s3.get_folder_path(pandaid, computingsite))
+    if not is_directory_exist(local_dir):
+        dir, err = create_directory(local_dir)
+        if len(err) > 0:
+            err_txt += 'Failed to create local directory to copy logs to it. '
+
+    error_download = s3.download_folder(
+        s3_folder=s3.get_folder_path(pandaid, computingsite),
+        local_dir=local_dir
+    )
+    if error_download:
+        err_txt += error_download
+
+    # list the files
+    files, err, tardir = list_file_directory(local_dir, limit=100, log_provider='s3')
+    if len(err):
+        msg = 'File listing failed for dir [{}]: [{}].'.format(local_dir, err)
+        _logger.error(msg)
+
+    return files, err_txt, dirprefix, local_dir
+
+
+def get_job_log_file_properties(pandaid=None, lfn=None, fileid=None):
+    """
+    Get log tarball file properties for PanDA job
+    :param pandaid: int
+    :param lfn: str
+    :param fileid: int
+    :return: scope: str
+    :return: lfn: str
+    :return: guid: str
+    :return: fsize_mb: float
+    """
+    scope = None
+    lfn = None
+    guid = None
+    fsize_mb = 0
+
+    if not pandaid and not lfn and not fileid:
+        _logger.debug('No params provided to get file properties')
+        return scope, lfn, guid, pandaid, fsize_mb
+
+    query = {
+        'type': 'log',
+    }
+    if pandaid:
+        query['pandaid'] = pandaid
+    if lfn:
+        query['lfn'] = lfn
+    if fileid:
+        query['fileid'] = fileid
+
+    values = ['pandaid', 'guid', 'scope', 'lfn', 'fsize']
+    file_properties = []
+    file_properties.extend(Filestable4.objects.filter(**query).values(*values))
+    if len(file_properties) == 0:
+        file_properties.extend(FilestableArch.objects.filter(**query).values(*values))
+
+    if len(file_properties):
+        file_properties = file_properties[0]
+        try:
+            guid = file_properties['guid']
+        except:
+            pass
+        try:
+            lfn = file_properties['lfn']
+        except:
+            pass
+        try:
+            scope = file_properties['scope']
+        except:
+            pass
+        if not pandaid:
+            try:
+                pandaid = file_properties['scope']
+            except:
+                pass
+        try:
+            fsize_mb = round(convert_bytes(int(file_properties['fsize']), output_unit='MB'))
+        except:
+            pass
+
+    return scope, lfn, guid, pandaid, fsize_mb
+
+
+def get_job_computingsite(pandaid):
+    """
+    Get computing site where job run
+    :param pandaid: int
+    :return: computingsite: str or None
+    """
+    computingsite = None
+    joblist = get_job_list(query={"pandaid": pandaid})
+    if joblist and len(joblist) > 0:
+        computingsite = joblist[0].get('computingsite')
+    return  computingsite
+
+
+def get_log_provider(pandaid=None):
+    """
+    Figure out log provider for a job depending on settings.
+    The default one is rucio. Also s3 object store is supported.
+    In case it is 'cric', we get it from PanDA queues config.
+    :param pandaid: int - optional
+    :return:
+    """
+    log_provider = 'rucio'
+    if hasattr(settings, 'LOGS_PROVIDER'):
+        if settings.LOGS_PROVIDER == 'cric':
+            # check cric config for computingsite
+            if pandaid:
+                computingsite = get_job_computingsite(pandaid)
+                pqs = get_panda_queues()
+                if computingsite in pqs and 'acopytools' in pqs[computingsite] and 'pw' in pqs[computingsite]['acopytools']:
+                    pw = pqs[computingsite]['acopytools']['pw'][0]
+                    if pw in ('rucio', 's3', 'gs'):
+                        log_provider = pw
+        else:
+            log_provider = settings.LOGS_PROVIDER
+    else:
+        log_provider = 'rucio'
+
+    return log_provider
 
 
 def remove_folder(guid):
@@ -892,3 +520,48 @@ def remove_folder(guid):
         _logger.error(msg)
 
     return logdir
+
+
+def get_job_log_file_path(pandaid, filename=''):
+    """
+    Download log tarball of a job and return path to a local copy of a file
+    If the directIO is enabled for prmon, return the remote location
+    :param pandaid:
+    :param filename: str, if empty the function return path to tarball folder
+    :return: file_path: str or None
+    """
+    file_path = None
+    files = []
+    tarball_path = ''
+    tardir = ''
+    log_provider = get_log_provider(pandaid=pandaid)
+
+    if log_provider == 'gs' and settings.PRMON_LOGS_DIRECTIO_LOCATION :
+        computingsite = get_job_computingsite(pandaid)
+        return settings.PRMON_LOGS_DIRECTIO_LOCATION.format(queue_name=computingsite, panda_id=pandaid) + '/' + filename
+
+    if log_provider == 's3':
+        computingsite = get_job_computingsite(pandaid)
+        files, errtxt, dirprefix, tarball_path = get_s3_file(pandaid, computingsite)
+        tardir = ''
+    elif log_provider == 'rucio':
+        scope, lfn, guid, _, _ = get_job_log_file_properties(pandaid)
+        if guid and lfn and scope:
+            # check if files are already available in common CEPH storage
+            tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/'
+            files, err, tardir = list_file_directory(tarball_path, 100)
+            _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
+            if len(files) == 0 and len(err) > 0:
+                # download tarball
+                _logger.debug('log tarball has not been downloaded, so downloading it now')
+                files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
+                _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
+
+    if type(files) is list and len(files) > 0 and len(filename) > 0:
+        for f in files:
+            if f['name'] == filename:
+                file_path = os.path.join(tarball_path, tardir , filename)
+                continue
+
+    _logger.debug('Final path of {} file: {}'.format(filename, file_path))
+    return file_path

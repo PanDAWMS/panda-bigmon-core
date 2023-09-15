@@ -10,18 +10,29 @@
 
 from __future__ import unicode_literals
 
-from ..pandajob.columns_config import COLUMNS, ORDER_COLUMNS, COL_TITLES, FILTERS
-
 import json
-from django.core.exceptions import ObjectDoesNotExist
+import os
+
 from django.db import connections
 from django.utils import timezone
 from django.db import models
 from django.conf import settings
+from distutils.version import LooseVersion
 
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \
                                  'primaryColumns', 'secondaryColumns', \
                                  'columnTitles', 'filterFields',)
+
+
+class PandaDBVersion(models.Model):
+    """Version of PanDA DB"""
+    component = models.CharField(db_column='component', max_length=100, primary_key=True)
+    major = models.IntegerField(db_column='major')
+    minor = models.IntegerField(db_column='minor')
+    patch = models.IntegerField(db_column='patch')
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."pandadb_version"'
+        app_label = 'panda'
 
 
 class Cloudconfig(models.Model):
@@ -356,6 +367,9 @@ class JediTasksBase(models.Model):
 
 
 class JediTasks(JediTasksBase):
+
+    if LooseVersion(os.environ.get('PANDADB_VERSION', '0.0.0')) > LooseVersion('0.0.16'):
+        realmodificationtime = models.DateTimeField(db_column='realmodificationtime')
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_tasks"'
         app_label = 'jedi'
@@ -655,12 +669,12 @@ class Users(models.Model):
 
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."users"'
-        allColumns = COLUMNS['ActiveUsers-all']
-        primaryColumns = ['name']
-        secondaryColumns = []
-        orderColumns = ORDER_COLUMNS['ActiveUsers-all']
-        columnTitles = COL_TITLES['ActiveUsers-all']
-        filterFields = FILTERS['ActiveUsers-all']
+        # allColumns = COLUMNS['ActiveUsers-all']
+        # primaryColumns = ['name']
+        # secondaryColumns = []
+        # orderColumns = ORDER_COLUMNS['ActiveUsers-all']
+        # columnTitles = COL_TITLES['ActiveUsers-all']
+        # filterFields = FILTERS['ActiveUsers-all']
 
     def __str__(self):
         return 'User: ' + str(self.name) + '[' + str(self.status) + ']'
