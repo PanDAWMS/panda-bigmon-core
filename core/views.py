@@ -62,6 +62,7 @@ from core.common.models import JediWorkQueue
 from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.ruciowrapper import ruciowrapper
+from core.filebrowser.utils import get_log_provider
 
 from django.conf import settings
 
@@ -2293,7 +2294,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             stderr = stdout.replace('.out', '.err')
             stdlog = stdout.replace('.out', '.log')
             stdjdl = stdout.replace('.out', '.jdl')
-            stdlog = stdout.replace('.out', '.log')
     elif len(job['harvesterInfo']) > 0 and 'batchlog' in job['harvesterInfo'] and job['harvesterInfo']['batchlog']:
         stdlog = job['harvesterInfo']['batchlog']
         stderr = stdlog.replace('.log', '.err')
@@ -2301,6 +2301,9 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         stdjdl = stdlog.replace('.log', '.jdl')
     else:
         stdout = stderr = stdlog = stdjdl = None
+
+    # get log provider
+    request.session['viewParams']['log_provider'] = get_log_provider(pandaid)
 
     # Check for object store based log
     oslogpath = None
