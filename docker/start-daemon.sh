@@ -2,8 +2,6 @@
 
 BIGMON_SERVICE=$1
 
-ln -fs /opt/bigmon/config/*-httpd.conf /etc/httpd/conf.d/
-
 if [ -f /etc/grid-security/hostkey.pem ]; then
     echo "host certificate is already created."
 elif [ -f /opt/bigmon/etc/cert/hostkey.pem ]; then
