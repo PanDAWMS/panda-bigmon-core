@@ -5,9 +5,11 @@ After=network.target
 [Service]
 Type=simple
 User=atlpan
-WorkingDirectory=/opt/prod/pythonpath
-ExecStart=/opt/prod/bin/python /opt/prod/bin/daphne -b 0.0.0.0 -p 8000 core.asgi:application
+WorkingDirectory=/data/bigmon/
+ExecStart=/opt/bigmon/bin/python /opt/bigmon/bin/daphne -b 0.0.0.0 -p 8000 core.asgi:application
 Restart=always
+Autostart=true
+Autorestart=true
 StandardOutput=file:/var/log/daphne.log
 StandardError=file:/var/log/daphne_error.log
 
