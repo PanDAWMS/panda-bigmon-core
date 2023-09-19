@@ -26,7 +26,7 @@ ENV BIGMON_WSGI_PATH /data/bigmon
 RUN yum -y update
 
 RUN yum install -y python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
-        python3 python3-devel less git httpd.x86_64 gridsite mod_ssl.x86_64 ca-policy-egi-core \
+        python3 python3-devel less git ca-policy-egi-core \
         httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch wget net-tools sudo \
         http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-basic-19.3.0.0.0-2.x86_64.rpm \
         http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-devel-19.3.0.0.0-1.x86_64.rpm \
@@ -80,6 +80,7 @@ COPY core ${BIGMON_WSGI_PATH}/core
 COPY docker/activate_this.py ${BIGMON_VIRTUALENV_PATH}/bin/activate_this.py
 COPY docker/start-daemon.sh /usr/local/bin/
 COPY docker/conf.d/*.conf /etc/httpd/conf.d/
+COPY docker/systemd/daphne.service /etc/systemd/system/daphne.service
 
 # symlinks to allow late customization
 RUN ln -fs ${BIGMON_WSGI_PATH}/config/local.py ${BIGMON_WSGI_PATH}/core/settings/local.py
