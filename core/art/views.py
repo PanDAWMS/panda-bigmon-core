@@ -1174,7 +1174,7 @@ def loadSubResults(request):
     :return:
     """
     # limit to N minutes to avoid timeouts
-    N_MINUTES = 10
+    N_MINUTES = 5
     starttime = datetime.now()
 
     # number of concurrent download requests to Rucio
@@ -1197,50 +1197,11 @@ def loadSubResults(request):
 
         # Loading subresults from logs
         if len(ids) > 0:
-            query = {}
-            query['type'] = 'log'
-            query['pandaid__in'] = [id['pandaid'] for id in ids]
-            file_properties = []
-            try:
-                file_properties = Filestable4.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status', 'fileid')
-            except:
-                pass
-            if len(file_properties) == 0:
-                try:
-                    file_properties.extend(FilestableArch.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status', 'fileid'))
-                except:
-                    pass
-
-            # Getting ART tests params to provide a destination path for logs copying
-            aquery = {'pandaid__in': [id['pandaid'] for id in ids]}
-            values = ('pandaid', 'nightly_tag', 'package', 'nightly_release_short', 'project', 'platform', 'testname')
-            art_test = list(ARTTests.objects.filter(**aquery).values(*values))
-            art_test_dst = {}
-            for t in art_test:
-                if t['package'] in ('Tier0ChainTests', 'TrfTestsART'):
-                    art_test_dst[t['pandaid']] = '/'.join([
-                        t['nightly_tag'][:10],
-                        t['package'],
-                        t['nightly_release_short'],
-                        t['project'],
-                        t['platform'],
-                        t['testname'],
-                    ])
-
-            # Forming url params to single str for request to filebrowser
-            url_params = []
-            if len(file_properties):
-                for filei in file_properties:
-                    url_params_file = 'guid={}&lfn={}&scope={}&fileid={}&pandaid={}'.format(
-                        filei['guid'], filei['lfn'], filei['scope'], str(filei['fileid']), str(filei['pandaid']))
-                    if filei['pandaid'] in art_test_dst:
-                        url_params_file += '&dst={}'.format(art_test_dst[filei['pandaid']])
-                    url_params.append(url_params_file)
 
             # Loading subresults in parallel and collecting to list of dictionaries
             pool = multiprocessing.Pool(processes=N_ROWS)
             try:
-                sub_results = pool.map(subresults_getter, url_params)
+                sub_results = pool.map(subresults_getter, [id['pandaid'] for id in ids])
             except:
                 print('Exception was caught while mapping pool requests responses for next files {}'.format(str(url_params)))
                 sub_results = []
