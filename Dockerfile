@@ -22,10 +22,11 @@ RUN ln -s /usr/bin/python3 /usr/bin/python && \
 
 ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
 ENV BIGMON_WSGI_PATH /data/bigmon
+ENV DJANGO_SETTINGS_MODULE core.settings
 
 RUN yum -y update
 
-RUN yum install -y python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
+RUN yum install -y nano python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
         python3 python3-devel less git ca-policy-egi-core \
         httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch wget net-tools sudo \
         http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-basic-19.3.0.0.0-2.x86_64.rpm \
@@ -90,6 +91,7 @@ RUN grep -v Listen /etc/httpd/conf/httpd.conf > /etc/httpd/conf/tmp; \
     echo Listen 8080 > /etc/httpd/conf/httpd.conf; \
     cat /etc/httpd/conf/tmp >> /etc/httpd/conf/httpd.conf; \
     rm /etc/httpd/conf/tmp
+
 RUN chmod 777 ${BIGMON_WSGI_PATH}/logs
 RUN chmod 777 /var/log/httpd
 RUN chmod 777 /etc/grid-security
