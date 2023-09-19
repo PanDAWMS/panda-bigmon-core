@@ -30,8 +30,8 @@ fi
 if [ "${BIGMON_SERVICE}" == "all" ]; then
   echo "Starting bigmon http service"
   /usr/sbin/httpd
-  echo "Starting daphne service"
-  source ${BIGMON_VIRTUALENV_PATH}/bin/activate && cd ${BIGMON_WSGI_PATH} && daphne core.asgi:application -b 0.0.0.0 -p 8000
+  #echo "Starting daphne service"
+  #source ${BIGMON_VIRTUALENV_PATH}/bin/activate && cd ${BIGMON_WSGI_PATH} && daphne core.asgi:application -b 0.0.0.0 -p 8000
 else
   exec "$@"
 fi
