@@ -198,13 +198,17 @@ def list_file_directory(logdir, limit=1000, log_provider='rucio'):
 
     files = []
     err = ''
+    tardir = ''
 
-    cmd = " ls -l %s " % (logdir)
+    cmd = " ls -l {} ".format(logdir)
     status, output = execute_cmd(cmd)
+    if status != 0:
+        err += 'Failed "{}" with: \n{} '.format(cmd, output)
+        _logger.info(err)
+        return files, err, tardir
 
     # Process the tarball contents
     # First find the basename for the tarball files
-    tardir = ''
     filelist = []
     try:
         filelist = os.listdir(logdir)
@@ -222,7 +226,7 @@ def list_file_directory(logdir, limit=1000, log_provider='rucio'):
 
         if not len(tardir):
             err = "Problem with tarball, could not find expected tarball directory. "
-            _logger.warning('{} (got {}).'.format(err, logdir))
+            _logger.info('{} (got {}).'.format(err, logdir))
             # try to show any xml, json and txt files that are not in tarball directory
             filtered_filelist = []
             if len(filelist) > 0:
@@ -288,10 +292,7 @@ def list_file_directory(logdir, limit=1000, log_provider='rucio'):
         msg = "Error in filesystem call:" + str(errMsg)
         _logger.error(msg)
 
-    if status != 0:
-        return files, output, tardir
-    else:
-        return files, err, tardir
+    return files, err, tardir
 
 
 def get_rucio_file(scope, lfn, guid, unpack=True, listfiles=True, limit=1000):

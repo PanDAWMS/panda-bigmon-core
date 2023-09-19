@@ -1203,7 +1203,8 @@ def loadSubResults(request):
             try:
                 sub_results = pool.map(subresults_getter, [id['pandaid'] for id in ids])
             except:
-                print('Exception was caught while mapping pool requests responses for next files {}'.format(str(url_params)))
+                _logger.exception(
+                    'Exception was caught while mapping pool requests responses for next pandaid(s): {}'.format(ids))
                 sub_results = []
             pool.close()
             pool.join()
