@@ -16,9 +16,9 @@ from django.core.asgi import get_asgi_application
 
 _logger = logging.getLogger('bigpandamon')
 
-DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
+DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', None)
 
-if DEPLOYMENT == 'ORACLE_ATLAS':
+if DEPLOYMENT != None:
 
     try:
         from core.settings.config import VIRTUALENV_PATH, ASGI_PATH

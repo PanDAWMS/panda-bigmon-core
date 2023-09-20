@@ -94,14 +94,14 @@ def get_most_recent_git_tag():
     """
     git_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-#    try:
-#        git_tag = str(
-#            subprocess.check_output(
-#                ['git', '--git-dir={}/.git'.format(git_path), 'describe', '--tags'],
-#                stderr=subprocess.STDOUT)
-#        ).strip('\'b\\n')
-#    except subprocess.CalledProcessError as exc_info:
-#        _logger.exception('Failed to get latest tag from git repo\n{}'.format(str(exc_info.output)))
-#        git_tag = 'N/A'
+    try:
+        git_tag = str(
+            subprocess.check_output(
+                ['git', '--git-dir={}/.git'.format(git_path), 'describe', '--tags'],
+                stderr=subprocess.STDOUT)
+        ).strip('\'b\\n')
+    except subprocess.CalledProcessError as exc_info:
+        _logger.exception('Failed to get latest tag from git repo\n{}'.format(str(exc_info.output)))
+        git_tag = 'N/A'
 
-    return 'N/A'
+    return git_tag
