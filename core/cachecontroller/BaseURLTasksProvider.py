@@ -2,12 +2,10 @@ import urllib.request as urllibr
 from urllib.error import HTTPError
 import socket
 from BaseTasksProvider import BaseTasksProvider
-import queue
 import time, json
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
-from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIME_OUT_FOR_QUERY, NUMBER_OF_ITEMS_TO_DRAIN, \
-    EXECUTION_CAP_FOR_MAINMENUURLS, BASE_URL, TIMEOUT_WHEN_DB_LOADED
+from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIME_OUT_FOR_QUERY, BASE_URL, TIMEOUT_WHEN_DB_LOADED
 
 
 class BaseURLTasksProvider(BaseTasksProvider):
@@ -68,7 +66,10 @@ class BaseURLTasksProvider(BaseTasksProvider):
                     else:
                         failedFetch = True
             else:
-                #We postpone the job if DB is oveloaded
+                # We postpone the job if DB is overloaded
+                self.logger.warning('DB is overloaded with {} active sessions, postpone the job for {}s'.format(
+                    numsess, TIMEOUT_WHEN_DB_LOADED
+                ))
                 time.sleep(TIMEOUT_WHEN_DB_LOADED)
                 return (None, None, None, jobtofetch)  # Operation did not performe due to DB overload
             return (time.time() - start, timeout, failedFetch, jobtofetch)

@@ -31,7 +31,10 @@ class BaseTasksProvider(object):
             cursor.close()
         except:
             pass
-        self.logger.debug("Number of DB sessions:" + str(totalSessionCount))
+        self.logger.debug("Number of DB sessions: {} active and {} in total".format(
+            str(totalActiveSessionCount),
+            str(totalSessionCount)
+        ))
         if totalActiveSessionCount is None:
             totalActiveSessionCount = 0
             self.logger.debug("Reset number of active sessions to: " + str(totalActiveSessionCount))
