@@ -305,11 +305,12 @@ def get_rucio_file(scope, lfn, guid, unpack=True, listfiles=True, limit=1000):
     :param listfiles: boolean
     :param limit: int - number of files to be listed and return in files
     :return: files: list - log files in local directory
-    :return: errtxt: str -  error message
+    :return: err_txt: str -  error message
     :return: urlbase: str - base path for links to files
     :return: tardir: str - name of directory in unpacked tar
     """
-    errtxt = ''
+    err_txt = ''
+    tardir = ''
     files = []
     _logger.debug("get_rucio_file start - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
@@ -317,15 +318,16 @@ def get_rucio_file(scope, lfn, guid, unpack=True, listfiles=True, limit=1000):
     logdir = '{}/{}'.format(get_fullpath_filebrowser_directory(), guid.lower())
     fname = '{}:{}'.format(scope, lfn)
     fpath = '{}/{}/{}'.format(logdir, scope, lfn)
+    # urlbase
+    urlbase = '{}/{}/{}/'.format(get_filebrowser_directory(), guid.lower(), scope)
 
     # create directory for files of guid
     dir, err = create_directory(fpath)
-    if not len(err):
-        errtxt += err
+    if len(err) > 0:
+        err_txt += err
 
     # get command to copy file
     cmd = 'export RUCIO_ACCOUNT=%s; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase; source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh -3;source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_rucio_account(),get_x509_proxy(),logdir,scope,lfn)
-
     if not len(cmd):
         _logger.warning('Command to fetch the file is empty!')
 
@@ -334,37 +336,32 @@ def get_rucio_file(scope, lfn, guid, unpack=True, listfiles=True, limit=1000):
     if status != 0:
         msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
         _logger.error(msg)
-        errtxt += msg
+        if 'No valid proxy present' in err or 'certificate expired' in err:
+            _logger.error("Internal Server Error: x509 proxy expired, can not connect to rucio")
+        err_txt += '\n '.join([err_txt, msg])
+    _logger.debug("get_rucio_file rucio download - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
-    _logger.debug("get_rucio_file step2 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
-    if unpack:
+    if unpack and len(err_txt) == 0:
         # untar the file
         status, err = unpack_file(fpath)
         if status != 0:
             msg = 'File unpacking failed for file [%s].' % (fname)
             _logger.error('{} File path is {}.'.format(msg, fpath))
-            errtxt = '\n '.join([errtxt, msg])
+            err_txt = '\n '.join([err_txt, msg])
+        _logger.debug("get_rucio_file untar - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
-    _logger.debug("get_rucio_file step2-1 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
-    tardir = ''
-    files = ''
-    if listfiles:
+    if listfiles and len(err_txt) == 0:
         # list the files
         files, err, tardir = list_file_directory(dir, limit)
         if len(err):
             msg = 'File listing failed for file [%s]: [%s].' % (fname, err)
             _logger.error(msg)
-            errtxt = '\n'.join([errtxt, msg])
+            err_txt = '\n'.join([err_txt, msg])
+        _logger.debug("get_rucio_file files listed - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
-    # urlbase
-    urlbase = '{}/{}/{}/'.format(get_filebrowser_directory(), guid.lower(), scope)
+    _logger.debug("get_rucio_file finished - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
 
-    _logger.debug("get_rucio_file step3 - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
-    # return list of files
-    return files, errtxt, urlbase, tardir
+    return files, err_txt, urlbase, tardir
 
 
 def get_s3_file(pandaid, computingsite):
