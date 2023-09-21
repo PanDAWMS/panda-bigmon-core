@@ -1173,18 +1173,17 @@ def loadSubResults(request):
     :param request: HTTP request
     :return:
     """
-    # limit to N minutes to avoid timeouts
-    N_MINUTES = 5
     starttime = datetime.now()
-
+    # limit to N rows to avoid timeouts
+    N_ROWS_MAX = 100
     # number of concurrent download requests to Rucio
     N_ROWS = 1
 
-    ids = []
     cur = connection.cursor()
     cur.autocommit = True
     is_queue_empty = False
-    while not is_queue_empty or datetime.now() < starttime + timedelta(minutes=N_MINUTES):
+    n_rows_so_far = 0
+    while not is_queue_empty and n_rows_so_far < N_ROWS_MAX:
 
         # Locking first N rows
         lock_time = lock_nqueuedjobs(cur, N_ROWS)
@@ -1228,16 +1227,21 @@ def loadSubResults(request):
         else:
             is_queue_empty = True
 
+        n_rows_so_far += N_ROWS
+
     # clear queue in case there are locked jobs of previously crashed requests
     clear_queue(cur)
     cur.close()
 
+    count = ARTResultsQueue.objects.count()
+    if not isinstance(count, int):
+        count = 0
     data = {
         'strt': starttime,
         'endt': datetime.now(),
-        'queue_len': len(ids),
+        'queue_len': count,
     }
-    _logger.info('ART queue length is: {}'.format(len(ids)))
+    _logger.info('ART sub-step results queue: {} rows done, rest: {}'.format(n_rows_so_far, count))
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
