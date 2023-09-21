@@ -203,11 +203,7 @@ def index(request):
             'totalLogSize': totalLogSize,
             'nfiles': len(files),
         }
-        status = 200
-        # return 500 if most probably there were issue   
-        if 'download' in errors and errors['download'] and len(errors['download']) > 0:
-            status = 500
-        response = render(request, 'filebrowser/filebrowser_index.html', data, RequestContext(request), status=status)
+        response = render(request, 'filebrowser/filebrowser_index.html', data, RequestContext(request))
         _logger.debug('Rendered template - {}'.format(time.time() - request.session['req_init_time']))
         return response
     else:
