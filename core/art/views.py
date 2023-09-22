@@ -1175,15 +1175,15 @@ def loadSubResults(request):
     """
     starttime = datetime.now()
     # limit to N rows to avoid timeouts
-    N_ROWS_MAX = 100
+    N_CYCLES = 100
     # number of concurrent download requests to Rucio
-    N_ROWS = 1
+    N_ROWS = 2
 
     cur = connection.cursor()
     cur.autocommit = True
     is_queue_empty = False
     n_rows_so_far = 0
-    while not is_queue_empty and n_rows_so_far < N_ROWS_MAX:
+    while not is_queue_empty and n_rows_so_far < N_CYCLES * N_ROWS:
 
         # Locking first N rows
         lock_time = lock_nqueuedjobs(cur, N_ROWS)
