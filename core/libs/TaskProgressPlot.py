@@ -125,23 +125,32 @@ class TaskProgressPlot:
         else:
             None
 
-    def get_raw_task_profile_full(self, taskid):
+
+    def get_raw_task_profile_full(self, taskid, jobstatus=None, category=None):
         """
         A method to form a non ES task profile
         :param taskid:
+        :param jobstatus: list
+        :param category: list
         :return:
         """
+        if jobstatus is None:
+            jobstatus = ['finished', 'failed', 'closed', 'cancelled']
+        if category is None:
+            category = ['build', 'run', 'merge']
         jobs = []
         jquery = {
             'jeditaskid': taskid,
-            'jobstatus__in': ['finished', 'failed', 'closed', 'cancelled'],
         }
+        if len(jobstatus) > 0:
+            jquery['jobstatus__in'] = jobstatus
         jvalues = ('pandaid', 'processingtype', 'transformation', 'nevents', 'jobstatus',
                     'starttime', 'creationtime', 'endtime',)
         jobs.extend(Jobsarchived4.objects.filter(**jquery).values(*jvalues))
         jobs.extend(Jobsarchived.objects.filter(**jquery).values(*jvalues))
         jobs = drop_duplicates(jobs)
         jobs = add_job_category(jobs)
+        jobs = [j for j in jobs if j['category'] in category]
         jobs = sorted(jobs, key=lambda x: x['endtime'])
 
         # overwrite nevents to 0 for unfinished and build/merge jobs

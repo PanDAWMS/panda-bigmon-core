@@ -4902,24 +4902,15 @@ def taskProfileData(request, jeditaskid=0):
     # get raw profile data
     if jeditaskid > 0:
         task_profile = TaskProgressPlot()
-        task_profile_dict = task_profile.get_raw_task_profile_full(taskid=jeditaskid)
+        task_profile_dict = task_profile.get_raw_task_profile_full(
+            taskid=jeditaskid,
+            jobstatus=request_job_states,
+            category=request_job_types
+        )
     else:
         msg = 'Not valid jeditaskid provided: {}'.format(jeditaskid)
         _logger.exception(msg)
         response = HttpResponse(json.dumps(msg), status=400)
-
-    # filter raw data corresponding to request params
-    if request_job_types is not None and len(request_job_types) > 0:
-        for jt, values in task_profile_dict.items():
-            if jt not in request_job_types:
-                task_profile_dict[jt] = []
-    if request_job_states is not None and len(request_job_states) > 0:
-        for jt, values in task_profile_dict.items():
-            temp = []
-            for v in values:
-                if v['jobstatus'] in request_job_states:
-                    temp.append(v)
-            task_profile_dict[jt] = temp
 
     # convert raw data to format acceptable by chart.js library
     job_time_names = ['end', 'start', 'creation']
