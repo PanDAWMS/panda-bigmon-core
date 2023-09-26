@@ -20,7 +20,7 @@ from threading import Thread, Lock
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, unquote_plus
 from elasticsearch_dsl import Search
 
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, UnreadablePostError
 from django.shortcuts import render, redirect
 from django.template import RequestContext
 from django.db.models import Count, Sum, F, Value, FloatField, Q, DateTimeField
@@ -341,6 +341,16 @@ def initRequest(request, callselfmon=True):
 
     allowedemptyparams = ('json', 'snap', 'dt', 'dialogs', 'pandaids', 'workersstats', 'keephtml')
     if request.method == 'POST':
+        # check of POST request complete
+        try:
+            len(request.POST)
+        except UnreadablePostError:
+            _logger.exception("Something wrong with POST request, returning 400")
+            return JsonResponse({'error': 'Failed to read request body'}, status=400)
+        except Exception as ex:
+            _logger.exception("Exception thrown while trying get length of request body \n{}".format(ex))
+            return JsonResponse({'error': 'Failed to read request body'}, status=400)
+
         if len(request.POST) > 0:
             for p in request.POST:
                 if p in ('csrfmiddlewaretoken',): continue
