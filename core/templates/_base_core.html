@@ -36,12 +36,12 @@
 <!-- Included JS library Files -->
 {% block js_head %}
   {% block js_head_site_library %}
-    <script src="{% static 'js/jquery/jquery-3.6.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery/jquery.min.js' %}"></script>
     <script src="{% static 'js/vendor/what-input.js' %}"></script>
     <script src="{% static 'js/vendor/foundation.min.js' %}"></script>
     <script src="{% static 'js/foundation-datepicker/js/foundation-datepicker.min.js' %}"></script>
     <script src="{% static 'js/jquery-ui/jquery-ui.js' %}"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="{% static 'js/angular/angular.min.js' %}"></script>
   {% endblock %}
   {% block js_head_page_library %}{% endblock %}
   {% block js_head_site %}

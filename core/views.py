@@ -62,6 +62,7 @@ from core.common.models import JediWorkQueue
 from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.ruciowrapper import ruciowrapper
+from core.filebrowser.utils import get_log_provider
 
 from django.conf import settings
 
@@ -2285,7 +2286,12 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             inputfiles.append(
                 {'jeditaskid': file['jeditaskid'], 'datasetid': file['datasetid'], 'fileid': file['fileid']})
 
-    if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
+    # get log provider
+    request.session['viewParams']['log_provider'] = get_log_provider(pandaid)
+
+    if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid'] and not (
+        request.session['viewParams']['log_provider'] == 's3' and 's3' in job['pilotid']
+    ):
         stdout = job['pilotid'].split('|')[0]
         if stdout.endswith('pilotlog.txt'):
             stdlog = stdout.replace('pilotlog.txt', 'payload.stdout')
@@ -2295,7 +2301,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             stderr = stdout.replace('.out', '.err')
             stdlog = stdout.replace('.out', '.log')
             stdjdl = stdout.replace('.out', '.jdl')
-            stdlog = stdout.replace('.out', '.log')
     elif len(job['harvesterInfo']) > 0 and 'batchlog' in job['harvesterInfo'] and job['harvesterInfo']['batchlog']:
         stdlog = job['harvesterInfo']['batchlog']
         stderr = stdlog.replace('.log', '.err')
@@ -2303,6 +2308,17 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         stdjdl = stdlog.replace('.log', '.jdl')
     else:
         stdout = stderr = stdlog = stdjdl = None
+
+    prmon_logs = {}
+    if settings.PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed') and (
+        request.session['viewParams']['log_provider'] == 'gs'
+    ):
+        prmon_logs['prmon_summary'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
+            queue_name=job.get('computingsite'),
+            panda_id=pandaid) + '/memory_monitor_summary.json'
+        prmon_logs['prmon_details'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
+            queue_name=job.get('computingsite'),
+            panda_id=pandaid) + '/memory_monitor_output.txt'
 
     # Check for object store based log
     oslogpath = None
@@ -2459,15 +2475,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 f[fp] = f[fp].strftime(settings.DATETIME_FORMAT)
             if fpv is None:
                 f[fp] = ''
-
-    prmon_logs = {}
-    if settings.PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed'):
-        prmon_logs['prmon_summary'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
-            queue_name=job.get('computingsite'),
-            panda_id=pandaid) + '/memory_monitor_summary.json'
-        prmon_logs['prmon_details'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
-            queue_name=job.get('computingsite'),
-            panda_id=pandaid) + '/memory_monitor_output.txt'
 
     if not is_json_request(request):
         del request.session['TFIRST']
@@ -3143,10 +3150,12 @@ def userDashApi(request, agg=None):
                     t['job_' + metric] = metrics[metric]['group_by'][t['jeditaskid']]
                 else:
                     t['job_' + metric] = ''
-            if 'dsinfo' in t and len(t['dsinfo']) > 0 and 'nfilesmissing' in t['dsinfo'] and t['dsinfo'][
-                'nfilesmissing'] and t['dsinfo']['nfilesmissing'] > 0:
-                t['errordialog'] = '{} files is missing and is not included for processing'.format(
-                    t['dsinfo']['nfilesmissing']) + t['errordialog']
+            if 'dsinfo' in t and len(t['dsinfo']) > 0 and 'nfilesmissing' in t['dsinfo'] and \
+                    t['dsinfo']['nfilesmissing'] and t['dsinfo']['nfilesmissing'] > 0:
+                t['errordialog'] = '{} files is missing and is not included for processing. {}'.format(
+                    t['dsinfo']['nfilesmissing'],
+                    t['errordialog'] if t['errordialog'] is not None else ''
+                )
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
                 link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
                 link_logs_base = '/filebrowser/?'

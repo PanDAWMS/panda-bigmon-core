@@ -255,7 +255,7 @@ def get_job_list(query, **kwargs):
 
     if 'jeditaskid' in query or 'jeditaskid__in' in query or 'jeditaskid' in extra_str or (
         'modificationtime__castdate__range' in query and query['modificationtime__castdate__range'][0] < (
-            datetime.now() - timedelta(days=3))) or (len(jobs) == 0 and ('pandaid' in query or 'pandaid__in' in query)):
+            datetime.now() - timedelta(days=3))) or (len(jobs) == 0 and 'pandaid' in query):
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
     # drop duplicate jobs

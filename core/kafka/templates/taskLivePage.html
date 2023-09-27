@@ -3,71 +3,151 @@
 {% load static %}
 {% load common_tags %}
 
-{% block page_title %}Test terminal page{% endblock %}
+{% block page_title %}Task live page dashboard{% endblock %}
 {% block title %}PanDA monitor{% endblock %}
 {% block subtitle %} {{ viewParams.selection|safe }} {% endblock %}
 {% block css_page_library %}
-  <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-  <link rel="stylesheet" href="{% static 'css/jquery.terminal.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/jquery.terminal.min.css' %}"/>
 {% endblock %}
 
 {% block css_page %}
 {% endblock %}
 
 {% block js_head_page_library %}
-    <script src="{% static 'js/jquery.terminal.min.js' %}"></script>
+    <script src="{% static 'js/plots/chart.umd.min.js' %}"></script>
+    <script src="{% static 'js/terminal/jquery.terminal.min.js' %}"></script>
 {% endblock %}
 
 {% block body %}
     <div id="web-terminal"></div>
+    <hr/>
+
+    <canvas id="dynamic-chart"></canvas>
 {% endblock %}
 
 {% block js_body_page %}
-       <script>
-           {% if request.session.full_hostname %}
-                ws_host = '{{ request.session.full_hostname }}:8002';
-           {% else %}
-               ws_host = '';
-               console.log('Hostname is not defined');
-           {% endif %}
-            if (window.location.protocol != "https:") {
-                web_socket_protocol = 'ws://';
-                web_socket_host = web_socket_protocol + ws_host;
-            }
-            else {
-                web_socket_protocol = 'wss://';
-                web_socket_host = web_socket_protocol + ws_host;
-            }
-            console.log(web_socket_host);
-            var socket = new WebSocket(web_socket_host +'/ws/kafka_messages/');
-            var terminal = $('#web-terminal').terminal(
-                    function(command, term) {
-                        if (command == 'help') {
-                            term.echo('Help command');
-                        }
-                        if (command == 'start') {
+    <script>
+        {% if request.session.full_hostname %}
+            ws_host = '{{ request.session.full_hostname }}:8002';
+        {% else %}
+            ws_host = '';
+            console.log('Hostname is not defined');
+        {% endif %}
+        if (window.location.protocol != "https:") {
+            web_socket_protocol = 'ws://';
+            web_socket_host = web_socket_protocol + ws_host;
+        } else {
+            web_socket_protocol = 'wss://';
+            web_socket_host = web_socket_protocol + ws_host;
+        }
+
+        console.log(web_socket_host);
+        var socket = new WebSocket(web_socket_host + '/ws/kafka_messages/{{ db_source|safe }}/{{ jeditaskid|safe }}/');
+
+        $(document).ready(function () {
+            var labelColors = {
+                'pending': 'rgba(222, 185, 0, 1)',
+                'defined': 'rgba(33, 116, 187, 1)',
+                'waiting': 'rgba(222, 185, 0, 1)',
+                'assigned': 'rgba(9, 153, 153, 1)',
+                'throttled': 'rgba(255, 153, 51, 1)',
+                'activated': 'rgba(59, 142, 103, 1)',
+                'sent': 'rgba(222, 185, 0, 1)',
+                'starting': 'rgba(47, 209, 71, 1)',
+                'running': 'rgba(52, 169, 52, 1)',
+                'holding': 'rgba(255, 153, 51, 1)',
+                'transferring': 'rgba(52, 169, 52, 1)',
+                'merging': 'rgba(52, 169, 52, 1)',
+                'finished': 'rgba(32, 127, 32, 1)',
+                'failed': 'rgba(255, 0, 0, 1)',
+                'cancelled': 'rgba(230, 115, 0, 1)',
+                'closed': 'rgba(74, 74, 74, 1)'
+            };
+            var ctx = document.getElementById('dynamic-chart').getContext('2d');
+
+            var myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {},
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
                         }
                     },
-                    {
-                        greetings: 'Welcome to BigPanDA Web Terminal. Created using jQuery terminal v2.52.2',
-                        name: 'RealTimeLogs',
-                        height: 600,
-                        prompt: '> ',
-                        onInit: function(term) {
-                            term.pause();
-                            {#term.echo('The last 50 messages from payload log')#}
-                        socket.onmessage = function(event) {
-                            var data = JSON.parse(event.data);
-                            term.echo(data.message)
-                        }
-                        },
-                        keypress: function(e, term) {
-                            if (e.which == 100 && e.ctrlKey) {
-                                stop = true;
-                                term.resume();
-                                return false;
+                    plugins: {
+                        legend: {
+                            onClick: function (e, legendItem) {
+                                const index = legendItem.index;
+                                const chart = this.chart;
+
+                                chart.getDatasetMeta(0).data[index].hidden = !chart.getDatasetMeta(0).data[index].hidden;
+
+                            },
+                            labels: {
+                                generateLabels: function (chart) {
+                                    const labels = chart.data.labels;
+                                    const dataset = chart.data.datasets[0];
+                                    const legendItems = [];
+
+                                    for (let i = 0; i < labels.length; i++) {
+                                        const label = labels[i];
+                                        const count = dataset.data[i];
+                                        const labelText = `${label} (${count})`;
+
+                                        legendItems.push({
+                                            text: labelText,
+                                            fillStyle: labelColors[labels[i]],
+                                            lineWidth: 1,
+                                            index: i
+                                        });
+                                    }
+                                    return legendItems;
+                                }
                             }
                         }
-                    });
-        </script>
+                    }
+                },
+
+            });
+            socket.onmessage = function (event) {
+                var message = JSON.parse(event.data);
+
+                if (message['type'] == 'terminal') {
+                    $('#web-terminal').terminal().echo(JSON.stringify(message['message']));
+                }
+                if (message['type'] == 'metrics') {
+					myChart.data = message['statuses_data'];
+
+                    myChart.update();
+                }
+            };
+
+            var terminal = $('#web-terminal').terminal(
+                function (command, term) {
+                    if (command == 'help') {
+                        term.echo('Help command');
+                    }
+                    if (command == 'start') {
+                    }
+                },
+                {
+                    greetings: 'Welcome to BigPanDA Web Terminal. Created using jQuery terminal',
+                    name: 'RealTimeLogs',
+                    height: 600,
+                    prompt: '> ',
+                    onInit: function (term) {
+
+                    },
+                    keypress: function (e, term) {
+                        if (e.which == 100 && e.ctrlKey) {
+                            stop = true;
+                            term.resume();
+                            return false;
+                        }
+                    }
+                });
+
+        });
+
+    </script>
 {% endblock %}
