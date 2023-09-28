@@ -22,7 +22,6 @@ from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
-from core.common.models import Filestable4, FilestableArch
 from core.reports.models import ReportEmails
 from core.libs.DateEncoder import DateEncoder
 from core.libs.datetimestrings import parse_datetime
@@ -65,8 +64,7 @@ def art(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    tquery = {}
-    tquery['platform__endswith'] = 'opt'
+    tquery = {'platform__endswith': 'opt'}
 
     # limit results by N days
     N_DAYS_LIMIT = 90
@@ -1177,7 +1175,7 @@ def loadSubResults(request):
     # limit to N rows to avoid timeouts
     N_CYCLES = 100
     # number of concurrent download requests to Rucio
-    N_ROWS = 2
+    N_ROWS = 1
 
     cur = connection.cursor()
     cur.autocommit = True
