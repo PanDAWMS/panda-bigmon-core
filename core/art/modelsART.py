@@ -28,7 +28,6 @@ class ARTSubResult(models.Model):
     pandaid = models.OneToOneField('ARTTests',
         related_name='artsubresult', on_delete=models.DO_NOTHING, db_column='pandaid', primary_key=True)
     subresult = models.CharField(max_length=4000, db_column='SUBRESULT_JSON', null=True)
-    result = models.TextField(db_column='RESULT_JSON', blank=True)
 
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."ART_SUBRESULT"'
