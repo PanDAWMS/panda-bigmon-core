@@ -346,10 +346,10 @@ def initRequest(request, callselfmon=True):
             len(request.POST)
         except UnreadablePostError:
             _logger.exception("Something wrong with POST request, returning 400")
-            return JsonResponse({'error': 'Failed to read request body'}, status=400)
+            return False, JsonResponse({'error': 'Failed to read request body'}, status=400)
         except Exception as ex:
             _logger.exception("Exception thrown while trying get length of request body \n{}".format(ex))
-            return JsonResponse({'error': 'Failed to read request body'}, status=400)
+            return False, JsonResponse({'error': 'Failed to read request body'}, status=400)
 
         if len(request.POST) > 0:
             for p in request.POST:
