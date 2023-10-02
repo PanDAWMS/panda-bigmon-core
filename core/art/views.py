@@ -1173,7 +1173,7 @@ def loadSubResults(request):
     """
     starttime = datetime.now()
     # limit to N rows to avoid timeouts
-    N_CYCLES = 500
+    N_CYCLES = 200
     # number of concurrent download requests to Rucio
     N_ROWS = 1
 
