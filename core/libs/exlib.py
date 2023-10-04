@@ -585,3 +585,50 @@ def getPilotCounts(view):
             pilotd[site]['time'] = r['lastmod']
 
     return pilotd
+
+
+def get_file_info(job_list, **kwargs):
+    """
+    Enrich job_list dicts by file information. By default: filename (lfn) and size
+    :param job_list: list of dicts
+    :return: job_list
+    """
+    file_info = []
+    fquery = {}
+    if 'type' in kwargs and kwargs['type']:
+        fquery['type'] = kwargs['type']
+    is_archive = False
+    if 'is_archive' in kwargs and kwargs['is_archive']:
+        is_archive = kwargs['is_archive']
+    fvalues = ('pandaid', 'type', 'lfn', 'fsize')
+
+    pandaids = []
+    if len(job_list) > 0:
+        pandaids.extend([job['pandaid'] for job in job_list if 'pandaid' in job and job['pandaid']])
+
+    if len(pandaids) > 0:
+        tk = insert_to_temp_table(pandaids)
+        extra = "pandaid in (select ID from {} where TRANSACTIONKEY = {})".format(get_tmp_table_name(), tk)
+
+        file_info.extend(Filestable4.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
+
+        if is_archive:
+            file_info.extend(FilestableArch.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
+
+    file_info_dict = {}
+    if len(file_info) > 0:
+        for file in file_info:
+            if file['pandaid'] not in file_info_dict:
+                file_info_dict[file['pandaid']] = []
+            file_info_dict[file['pandaid']].append(file)
+
+        for job in job_list:
+            if job['pandaid'] in file_info_dict:
+                for file in file_info_dict[job['pandaid']]:
+                    if file['type'] + 'filename' not in job:
+                        job[file['type'] + 'filename'] = ''
+                        job[file['type'] + 'filesize'] = 0
+                    job[file['type'] + 'filename'] += file['lfn'] + ','
+                    job[file['type'] + 'filesize'] += file['fsize'] if isinstance(file['fsize'], int) else 0
+
+    return job_list
