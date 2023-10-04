@@ -53,131 +53,6 @@ def getDataSetsForATask(taskid, type=None):
     return ret
 
 
-def fileList(jobs):
-    newjobs = []
-    if (len(jobs)>0):
-        pandaIDQ = []
-        query = {}
-        datasetsFromFileTable = []
-        JediDatasetContentsTable=[]
-        JediDatasetsTable=[]
-        datasetIDQ =set()
-        for job in jobs:
-            pandaIDQ.append(job['pandaid'])
-        query['pandaid__in'] = pandaIDQ
-        pandaLFN = {}
-        datasetsFromFileTable.extend(
-            Filestable4.objects.filter(**query).extra(where=["TYPE like %s"], params=["input"]).values())
-        if len(datasetsFromFileTable) == 0:
-            datasetsFromFileTable.extend(
-                FilestableArch.objects.filter(**query).extra(where=["TYPE like %s"], params=["input"]).values())
-        for dataset in datasetsFromFileTable:
-            datasetIDQ.add(dataset['datasetid'])
-            pandaLFN.setdefault(dataset['pandaid'],[]).append(dataset['lfn'])
-
-        query['datasetid__in'] = list(datasetIDQ)
-        extra_str = "datasetid in (select datasetid from {}.jedi_datasets where masterid is null)".format(
-            settings.DB_SCHEMA_PANDA
-        )
-        JediDatasetContentsTable.extend(JediDatasetContents.objects.filter(**query).extra(where=[extra_str]).values())
-        njob = {}
-        for jds in JediDatasetContentsTable:
-            if jds['pandaid'] not in njob:
-                njob[jds['pandaid']] = {}
-                if jds['nevents'] == None:
-                    njob[jds['pandaid']]['nevents'] = 0
-                else:
-                    if jds['endevent']!=None and jds['startevent']!=None:
-                        njob[jds['pandaid']]['nevents'] = int(jds['endevent'])+1-int(jds['startevent'])
-                    else:
-                        njob[jds['pandaid']]['nevents'] = int(jds['nevents'])
-                if jds['type'] == 'input':
-                    njob[jds['pandaid']]['ninputs'] = []
-                    njob[jds['pandaid']]['ninputs'].append(jds['lfn'])
-            else:
-                if jds['endevent'] != None and jds['startevent'] != None:
-                    njob[jds['pandaid']]['nevents'] += int(jds['endevent']) + 1 - int(jds['startevent'])
-                else:
-                    if jds['nevents'] != None:
-                        njob[jds['pandaid']]['nevents'] += int(jds['nevents'])
-                    else:
-                        njob[jds['pandaid']]['nevents'] += 0
-                if jds['type'] =='input':
-                    njob[jds['pandaid']]['ninputs'].append(jds['lfn'])
-        listpandaidsDS = njob.keys()
-        listpandaidsF4 = pandaLFN.keys()
-        for job in jobs:
-            if job['pandaid'] in listpandaidsDS:
-                job['nevents'] = njob[job['pandaid']]['nevents']
-                if 'ninputs' in njob[job['pandaid']]:
-                    job['ninputs'] = len(njob[job['pandaid']]['ninputs'])
-                else:
-                    job['ninputs'] = 0
-                    if job['processingtype'] == 'pmerge':
-                        if len(job['jobinfo']) == 0:
-                            job['jobinfo'] = 'Pmerge job'
-                        else:
-                            job['jobinfo'] += 'Pmerge job'
-            else:
-                if job['pandaid'] in listpandaidsF4:
-                    job['ninputs'] = len(pandaLFN[job['pandaid']])
-                else: job['ninputs'] = 0
-            if job['pandaid'] in listpandaidsF4 and 'ninputs' not in job:
-                 job['ninputs'] = len(pandaLFN[job['pandaid']])
-            if job['nevents'] != 0 and 'ninputs' not in job and job['pandaid'] in listpandaidsF4:
-                job['ninputs'] = len(pandaLFN[job['pandaid']])
-
-    newjobs = jobs
-    return newjobs
-
-
-def get_file_info(job_list, **kwargs):
-    """
-    Enrich job_list dicts by file information. By default: filename (lfn) and size
-    :param job_list: list of dicts
-    :return: job_list
-    """
-    file_info = []
-    fquery = {}
-    if 'type' in kwargs and kwargs['type']:
-        fquery['type'] = kwargs['type']
-    is_archive = False
-    if 'is_archive' in kwargs and kwargs['is_archive']:
-        is_archive = kwargs['is_archive']
-    fvalues = ('pandaid', 'type', 'lfn', 'fsize')
-
-    pandaids = []
-    if len(job_list) > 0:
-        pandaids.extend([job['pandaid'] for job in job_list if 'pandaid' in job and job['pandaid']])
-
-    if len(pandaids) > 0:
-        tk = insert_to_temp_table(pandaids)
-        extra = "pandaid in (select ID from {} where TRANSACTIONKEY = {})".format(get_tmp_table_name(), tk)
-
-        file_info.extend(Filestable4.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
-
-        if is_archive:
-            file_info.extend(FilestableArch.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
-
-    file_info_dict = {}
-    if len(file_info) > 0:
-        for file in file_info:
-            if file['pandaid'] not in file_info_dict:
-                file_info_dict[file['pandaid']] = []
-            file_info_dict[file['pandaid']].append(file)
-
-        for job in job_list:
-            if job['pandaid'] in file_info_dict:
-                for file in file_info_dict[job['pandaid']]:
-                    if file['type'] + 'filename' not in job:
-                        job[file['type'] + 'filename'] = ''
-                        job[file['type'] + 'filesize'] = 0
-                    job[file['type'] + 'filename'] += file['lfn'] + ','
-                    job[file['type'] + 'filesize'] += file['fsize'] if isinstance(file['fsize'], int) else 0
-
-    return job_list
-
-
 def insert_to_temp_table(list_of_items, transactionKey = -1):
     """Inserting to temp table
     :param list_of_items
@@ -710,3 +585,50 @@ def getPilotCounts(view):
             pilotd[site]['time'] = r['lastmod']
 
     return pilotd
+
+
+def get_file_info(job_list, **kwargs):
+    """
+    Enrich job_list dicts by file information. By default: filename (lfn) and size
+    :param job_list: list of dicts
+    :return: job_list
+    """
+    file_info = []
+    fquery = {}
+    if 'type' in kwargs and kwargs['type']:
+        fquery['type'] = kwargs['type']
+    is_archive = False
+    if 'is_archive' in kwargs and kwargs['is_archive']:
+        is_archive = kwargs['is_archive']
+    fvalues = ('pandaid', 'type', 'lfn', 'fsize')
+
+    pandaids = []
+    if len(job_list) > 0:
+        pandaids.extend([job['pandaid'] for job in job_list if 'pandaid' in job and job['pandaid']])
+
+    if len(pandaids) > 0:
+        tk = insert_to_temp_table(pandaids)
+        extra = "pandaid in (select ID from {} where TRANSACTIONKEY = {})".format(get_tmp_table_name(), tk)
+
+        file_info.extend(Filestable4.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
+
+        if is_archive:
+            file_info.extend(FilestableArch.objects.filter(**fquery).extra(where=[extra]).values(*fvalues))
+
+    file_info_dict = {}
+    if len(file_info) > 0:
+        for file in file_info:
+            if file['pandaid'] not in file_info_dict:
+                file_info_dict[file['pandaid']] = []
+            file_info_dict[file['pandaid']].append(file)
+
+        for job in job_list:
+            if job['pandaid'] in file_info_dict:
+                for file in file_info_dict[job['pandaid']]:
+                    if file['type'] + 'filename' not in job:
+                        job[file['type'] + 'filename'] = ''
+                        job[file['type'] + 'filesize'] = 0
+                    job[file['type'] + 'filename'] += file['lfn'] + ','
+                    job[file['type'] + 'filesize'] += file['fsize'] if isinstance(file['fsize'], int) else 0
+
+    return job_list

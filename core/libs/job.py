@@ -10,13 +10,14 @@ import re
 from core.libs.exlib import convert_bytes
 from datetime import datetime, timedelta
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
-from core.common.models import JediJobRetryHistory
+from core.common.models import JediJobRetryHistory, Filestable4, FilestableArch, JediDatasetContents
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, drop_duplicates, convert_sec
 from core.libs.datetimestrings import parse_datetime
 from core.libs.jobmetadata import addJobMetadata
 from core.libs.error import errorInfo, get_job_error_desc
 from core.schedresource.utils import get_pq_clouds
 
+from django.conf import settings
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -641,3 +642,74 @@ def getSequentialRetries_ESupstream(pandaid, jobsetid, jeditaskid, countOfInvoca
                 outlist.append(row)
                 added_keys.add(lookup)
     return outlist
+
+
+def add_files_info_to_jobs(jobs):
+    """
+    Get files info for list of jobs, i.e. ninputfiles, nevents, name of log file
+    :param jobs: list of dicts
+    :return: jobs: list of dicts with extra key-value pairs added
+    """
+    # collect info from filestable where files for each attempt of a job is stored
+    files_list = []
+    fquery = {
+        'pandaid__in': [j['pandaid'] for j in jobs],
+        'type__in': ['input', 'log']
+    }
+    fvalues = ('pandaid', 'fileid', 'datasetid', 'lfn', 'type', 'scope')
+    files_list.extend(Filestable4.objects.filter(**fquery).values(*fvalues))
+    if len(set([f['pandaid'] for f in files_list])) < len(jobs):
+        files_list.extend(FilestableArch.objects.filter(**fquery).values(*fvalues))
+    files_list = drop_duplicates(files_list, id='fileid')
+
+    files_per_job = {}
+    for f in files_list:
+        if f['pandaid'] not in files_per_job:
+            files_per_job[f['pandaid']] = {
+                'lfn_list': [],
+                'log_dids': []
+            }
+        if f['type'] == 'input' and f['lfn'] not in files_per_job[f['pandaid']]['lfn_list']:
+            files_per_job[f['pandaid']]['lfn_list'].append(f['lfn'])
+        elif f['type'] == 'log':
+            files_per_job[f['pandaid']]['log_dids'].append({'scope': f['scope'], 'name': f['lfn']})
+
+    # getting info from dataset contents, where only last attempt is kept
+    dataset_contents_list = []
+    dcquery = {
+        'datasetid__in': list(set([f['datasetid'] for f in files_list if f['type'] == 'input'])),
+    }
+    # only primary input
+    extra_str = "datasetid in (select datasetid from {}.jedi_datasets where masterid is null)".format(
+        settings.DB_SCHEMA_PANDA
+    )
+    dataset_contents_list.extend(JediDatasetContents.objects.filter(**dcquery).extra(where=[extra_str]).values())
+
+    dc_per_job = {}
+    for jds in dataset_contents_list:
+        if jds['pandaid'] not in dc_per_job:
+            dc_per_job[jds['pandaid']] = {
+                'nevents': 0,
+                'lfn_list': [],
+            }
+        if jds['endevent'] is not None and jds['startevent'] is not None:
+            dc_per_job[jds['pandaid']]['nevents'] = int(jds['endevent']) + 1 - int(jds['startevent'])
+        else:
+            dc_per_job[jds['pandaid']]['nevents'] = int(jds['nevents']) if jds['nevents'] is not None else 0
+        if jds['type'] == 'input':
+            dc_per_job[jds['pandaid']]['lfn_list'].append(jds['lfn'])
+
+    # adding collected info to jobs
+    for j in jobs:
+        if j['pandaid'] in  dc_per_job:
+            j['ninputs'] = len(dc_per_job[j['pandaid']]['lfn_list'])
+            j['nevents'] = dc_per_job[j['pandaid']]['nevents']
+        elif j['pandaid'] in files_per_job:
+            j['ninputs'] = len(files_per_job[j['pandaid']]['lfn_list'])
+        else:
+            j['ninputs'] = 0
+
+        if j['pandaid'] in files_per_job and len(files_per_job[j['pandaid']]['log_dids']) > 0:
+            j['log_did'] = files_per_job[j['pandaid']]['log_dids'][0]
+
+    return jobs

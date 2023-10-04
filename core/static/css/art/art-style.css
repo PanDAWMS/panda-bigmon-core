@@ -82,6 +82,9 @@ fieldset.artmenu li.input-group button.hollow.alert {
   font-size: 0;
   border: 1px solid #dbdbdb;
 }
+  .clickable.traffic-lights {
+    width: 120px;
+  }
   .clickable.nosubresults {
     margin: auto;
   }

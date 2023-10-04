@@ -39,6 +39,13 @@ Note that the number of records retrieved from each table of the database is lim
   You can also use <code>date_from=2020-10-01&amp;date_to=2020-10-03</code>.
 </p>
 
+<p>
+  If you want to see which jobs actually have logs available, add <code>extra=checklogs</code> to the URL.
+  You will see "Logs are available <b>here</b>" in the "Job info" column, where <b>here</b> is a link to them.
+  This feature checks only listed jobs which is cut to 100 by default.
+  Please use it carefully for small selection of jobs to avoid timeouts.
+</p>
+
 
 <h1>API</h1>
 <p>

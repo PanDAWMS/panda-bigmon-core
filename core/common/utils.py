@@ -1,19 +1,15 @@
 """ 
 utils
-
 """
 import logging
 import pytz
 from itertools import islice, chain
-#from ..settings import STATIC_URL, ENV
-#from settings import STATIC_URL, FILTER_UI_ENV
-#from django.conf.settings import STATIC_URL, FILTER_UI_ENV
 from django.conf import settings
-#.settings import STATIC_URL, FILTER_UI_ENV
 import datetime
-
 import traceback
 import sys
+
+# from core.common.models import PandaDBVersion
 
 try:
     from settings import URL_PATH_PREFIX
@@ -21,8 +17,20 @@ except ImportError:
     URL_PATH_PREFIX = None
 MINDATETIME = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-#_logger = logging.getLogger(__name__)
 _logger = logging.getLogger('bigpandamon')
+
+
+# def get_panda_db_version(component='JEDI'):
+#     """
+#     Get version of PanDA DB
+#     :param component: str
+#     :return: version
+#     """
+#     version = '0.0.0'
+#     data = PandaDBVersion.objects.get(component='JEDI')
+#     if data and len(data) > 0:
+#         version = '{}.{}.{}'.format(data[0]['major'], data[0]['minor'], data[0]['patch'])
+#     return version
 
 
 def getPrefix(request):

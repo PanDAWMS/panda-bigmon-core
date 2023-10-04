@@ -130,6 +130,14 @@ aws = {
     "AWS_SECRET_KEY_ATLAS" : ""
 }
 
+# Object Store settings in case it is used as storage for job logs
+OBJECTSTORE = {
+    "hostname": "",
+    "port": 0,
+    "access_key": "",
+    "secret_key": "",
+}
+
 # debug mode
 DEBUG = False
 
