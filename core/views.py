@@ -89,7 +89,8 @@ from core.libs.task import get_dataset_locality, is_event_service_task, \
     wg_task_summary, tasks_not_updated
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
     job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, job_state_count, \
-    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode, clean_job_list
+    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode, clean_job_list, \
+    add_files_info_to_jobs
 from core.libs.eventservice import job_suppression
 from core.libs.jobmetadata import addJobMetadata
 from core.libs.error import errorInfo, getErrorDescription, get_job_error_desc
@@ -1660,11 +1661,7 @@ def jobList(request, mode=None, param=None):
     if not is_json_request(request):
         # Here we're getting extended data for list of jobs to be shown
         jobsToShow = jobs[:njobsmax]
-        from core.libs import exlib
-        try:
-            jobsToShow = exlib.fileList(jobsToShow)
-        except Exception as e:
-            _logger.error(e)
+        jobsToShow = add_files_info_to_jobs(jobsToShow)
         _logger.debug(
             'Got file info for list of jobs to be shown: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -1675,6 +1672,28 @@ def jobList(request, mode=None, param=None):
                 job['computingsitestatus'] = pq_dict[job['computingsite']]['status']
                 job['computingsitecomment'] = pq_dict[job['computingsite']]['comment']
         _logger.debug('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
+
+        # checking if log file replica available
+        if 'ATLAS' in settings.DEPLOYMENT and (
+                'extra' in request.session['requestParams'] and 'checklogs' in request.session['requestParams']['extra']):
+            dids = [j['log_did'] for j in jobsToShow if 'log_did' in j]
+            replicas = None
+            try:
+                from core.filebrowser.ruciowrapper import ruciowrapper
+                rucio_client = ruciowrapper()
+                replicas = rucio_client.list_file_replicas(dids)
+            except:
+                _logger.warning('Can not check log existence')
+            if replicas:
+                for j in jobs:
+                    if 'log_did' in j and 'name' in j['log_did']:
+                        if j['log_did']['name'] in replicas:
+                            j['is_log_available'] = 1
+                        else:
+                            j['is_log_available'] = -1
+                    else:
+                        j['is_log_available'] = 0
+            _logger.debug('Checked logs existence via Rucio: {}'.format(time.time() - request.session['req_init_time']))
 
         # closing thread for counting total jobs in DB without limiting number of rows selection
         if thread is not None:
@@ -5637,8 +5656,6 @@ def taskInfo(request, jeditaskid=0):
             data['task'].update(metrics)
             setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
             response = render(request, 'taskInfo.html', data, content_type='text/html')
-
-
 
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
