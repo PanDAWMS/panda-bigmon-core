@@ -1,4 +1,4 @@
-from rucio.client import Client, downloadclient
+from rucio.client import Client, downloadclient, replicaclient
 import logging
 from core.common.models import RucioAccounts
 from django.utils import timezone
@@ -78,6 +78,28 @@ class ruciowrapper(object):
             _logger.info('List of replicas got from Rucio for dids:\n {}\n {}'.format(dids, replicas))
 
             return replicas
+        else:
+            _logger.warning('Failed to initiate Rucio client, so it is impossible to get list of replicas for dids')
+            return None
+
+    def list_file_replicas(self, dids):
+        """
+        :param dids: list of dicts {'scope': scope, 'name': name}
+        :return: replicas_dict: dict with list of RSEs, e.g. {name: [rse1, rse2,], }
+        """
+        replicas_dict = {}
+        if self.client is not None:
+            try:
+                raw_data = self.client.list_replicas(dids=dids)
+                replicas = list(raw_data)
+            except Exception as e:
+                replicas = []
+                _logger.exception('Failed to get list of replicas:\n {}'.format(e))
+            _logger.debug('List of replicas got from Rucio for dids:\n {}\n {}'.format(dids, replicas))
+            if len(replicas) > 0:
+                for r in replicas:
+                    replicas_dict[r['name']] = [rse for rse, state in r['states'].items() if state == 'AVAILABLE']
+            return replicas_dict
         else:
             _logger.warning('Failed to initiate Rucio client, so it is impossible to get list of replicas for dids')
             return None
