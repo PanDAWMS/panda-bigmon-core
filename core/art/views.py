@@ -22,7 +22,6 @@ from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
-from core.common.models import Filestable4, FilestableArch
 from core.reports.models import ReportEmails
 from core.libs.DateEncoder import DateEncoder
 from core.libs.datetimestrings import parse_datetime
@@ -65,8 +64,7 @@ def art(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    tquery = {}
-    tquery['platform__endswith'] = 'opt'
+    tquery = {'platform__endswith': 'opt'}
 
     # limit results by N days
     N_DAYS_LIMIT = 90
@@ -1173,18 +1171,17 @@ def loadSubResults(request):
     :param request: HTTP request
     :return:
     """
-    # limit to N minutes to avoid timeouts
-    N_MINUTES = 10
     starttime = datetime.now()
-
+    # limit to N rows to avoid timeouts
+    N_CYCLES = 200
     # number of concurrent download requests to Rucio
     N_ROWS = 1
 
-    ids = []
     cur = connection.cursor()
     cur.autocommit = True
     is_queue_empty = False
-    while not is_queue_empty or datetime.now() < starttime + timedelta(minutes=N_MINUTES):
+    n_rows_so_far = 0
+    while not is_queue_empty and n_rows_so_far < N_CYCLES * N_ROWS:
 
         # Locking first N rows
         lock_time = lock_nqueuedjobs(cur, N_ROWS)
@@ -1197,52 +1194,14 @@ def loadSubResults(request):
 
         # Loading subresults from logs
         if len(ids) > 0:
-            query = {}
-            query['type'] = 'log'
-            query['pandaid__in'] = [id['pandaid'] for id in ids]
-            file_properties = []
-            try:
-                file_properties = Filestable4.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status', 'fileid')
-            except:
-                pass
-            if len(file_properties) == 0:
-                try:
-                    file_properties.extend(FilestableArch.objects.filter(**query).values('pandaid', 'guid', 'scope', 'lfn', 'destinationse', 'status', 'fileid'))
-                except:
-                    pass
-
-            # Getting ART tests params to provide a destination path for logs copying
-            aquery = {'pandaid__in': [id['pandaid'] for id in ids]}
-            values = ('pandaid', 'nightly_tag', 'package', 'nightly_release_short', 'project', 'platform', 'testname')
-            art_test = list(ARTTests.objects.filter(**aquery).values(*values))
-            art_test_dst = {}
-            for t in art_test:
-                if t['package'] in ('Tier0ChainTests', 'TrfTestsART'):
-                    art_test_dst[t['pandaid']] = '/'.join([
-                        t['nightly_tag'][:10],
-                        t['package'],
-                        t['nightly_release_short'],
-                        t['project'],
-                        t['platform'],
-                        t['testname'],
-                    ])
-
-            # Forming url params to single str for request to filebrowser
-            url_params = []
-            if len(file_properties):
-                for filei in file_properties:
-                    url_params_file = 'guid={}&lfn={}&scope={}&fileid={}&pandaid={}'.format(
-                        filei['guid'], filei['lfn'], filei['scope'], str(filei['fileid']), str(filei['pandaid']))
-                    if filei['pandaid'] in art_test_dst:
-                        url_params_file += '&dst={}'.format(art_test_dst[filei['pandaid']])
-                    url_params.append(url_params_file)
 
             # Loading subresults in parallel and collecting to list of dictionaries
             pool = multiprocessing.Pool(processes=N_ROWS)
             try:
-                sub_results = pool.map(subresults_getter, url_params)
+                sub_results = pool.map(subresults_getter, [id['pandaid'] for id in ids])
             except:
-                print('Exception was caught while mapping pool requests responses for next files {}'.format(str(url_params)))
+                _logger.exception(
+                    'Exception was caught while mapping pool requests responses for next pandaid(s): {}'.format(ids))
                 sub_results = []
             pool.close()
             pool.join()
@@ -1266,16 +1225,21 @@ def loadSubResults(request):
         else:
             is_queue_empty = True
 
+        n_rows_so_far += N_ROWS
+
     # clear queue in case there are locked jobs of previously crashed requests
     clear_queue(cur)
     cur.close()
 
+    count = ARTResultsQueue.objects.count()
+    if not isinstance(count, int):
+        count = 0
     data = {
         'strt': starttime,
         'endt': datetime.now(),
-        'queue_len': len(ids),
+        'queue_len': count,
     }
-    _logger.info('ART queue length is: {}'.format(len(ids)))
+    _logger.info('ART sub-step results queue: {} rows done, rest: {}'.format(n_rows_so_far, count))
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 

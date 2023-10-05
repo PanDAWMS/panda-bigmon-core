@@ -20,7 +20,7 @@ from threading import Thread, Lock
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, unquote_plus
 from elasticsearch_dsl import Search
 
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, UnreadablePostError
 from django.shortcuts import render, redirect
 from django.template import RequestContext
 from django.db.models import Count, Sum, F, Value, FloatField, Q, DateTimeField
@@ -62,6 +62,7 @@ from core.common.models import JediWorkQueue
 from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.ruciowrapper import ruciowrapper
+from core.filebrowser.utils import get_log_provider
 
 from django.conf import settings
 
@@ -88,7 +89,8 @@ from core.libs.task import get_dataset_locality, is_event_service_task, \
     wg_task_summary, tasks_not_updated
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
     job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, job_state_count, \
-    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode, clean_job_list
+    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode, clean_job_list, \
+    add_files_info_to_jobs
 from core.libs.eventservice import job_suppression
 from core.libs.jobmetadata import addJobMetadata
 from core.libs.error import errorInfo, getErrorDescription, get_job_error_desc
@@ -342,6 +344,16 @@ def initRequest(request, callselfmon=True):
 
     allowedemptyparams = ('json', 'snap', 'dt', 'dialogs', 'pandaids', 'workersstats', 'keephtml')
     if request.method == 'POST':
+        # check of POST request complete
+        try:
+            len(request.POST)
+        except UnreadablePostError:
+            _logger.exception("Something wrong with POST request, returning 400")
+            return False, JsonResponse({'error': 'Failed to read request body'}, status=400)
+        except Exception as ex:
+            _logger.exception("Exception thrown while trying get length of request body \n{}".format(ex))
+            return False, JsonResponse({'error': 'Failed to read request body'}, status=400)
+
         if len(request.POST) > 0:
             for p in request.POST:
                 if p in ('csrfmiddlewaretoken',): continue
@@ -1651,11 +1663,7 @@ def jobList(request, mode=None, param=None):
     if not is_json_request(request):
         # Here we're getting extended data for list of jobs to be shown
         jobsToShow = jobs[:njobsmax]
-        from core.libs import exlib
-        try:
-            jobsToShow = exlib.fileList(jobsToShow)
-        except Exception as e:
-            _logger.error(e)
+        jobsToShow = add_files_info_to_jobs(jobsToShow)
         _logger.debug(
             'Got file info for list of jobs to be shown: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -1666,6 +1674,28 @@ def jobList(request, mode=None, param=None):
                 job['computingsitestatus'] = pq_dict[job['computingsite']]['status']
                 job['computingsitecomment'] = pq_dict[job['computingsite']]['comment']
         _logger.debug('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
+
+        # checking if log file replica available
+        if 'ATLAS' in settings.DEPLOYMENT and (
+                'extra' in request.session['requestParams'] and 'checklogs' in request.session['requestParams']['extra']):
+            dids = [j['log_did'] for j in jobsToShow if 'log_did' in j]
+            replicas = None
+            try:
+                from core.filebrowser.ruciowrapper import ruciowrapper
+                rucio_client = ruciowrapper()
+                replicas = rucio_client.list_file_replicas(dids)
+            except:
+                _logger.warning('Can not check log existence')
+            if replicas:
+                for j in jobs:
+                    if 'log_did' in j and 'name' in j['log_did']:
+                        if j['log_did']['name'] in replicas:
+                            j['is_log_available'] = 1
+                        else:
+                            j['is_log_available'] = -1
+                    else:
+                        j['is_log_available'] = 0
+            _logger.debug('Checked logs existence via Rucio: {}'.format(time.time() - request.session['req_init_time']))
 
         # closing thread for counting total jobs in DB without limiting number of rows selection
         if thread is not None:
@@ -2287,7 +2317,12 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             inputfiles.append(
                 {'jeditaskid': file['jeditaskid'], 'datasetid': file['datasetid'], 'fileid': file['fileid']})
 
-    if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid']:
+    # get log provider
+    request.session['viewParams']['log_provider'] = get_log_provider(pandaid)
+
+    if 'pilotid' in job and job['pilotid'] and job['pilotid'].startswith('http') and '{' not in job['pilotid'] and not (
+        request.session['viewParams']['log_provider'] == 's3' and 's3' in job['pilotid']
+    ):
         stdout = job['pilotid'].split('|')[0]
         if stdout.endswith('pilotlog.txt'):
             stdlog = stdout.replace('pilotlog.txt', 'payload.stdout')
@@ -2297,7 +2332,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             stderr = stdout.replace('.out', '.err')
             stdlog = stdout.replace('.out', '.log')
             stdjdl = stdout.replace('.out', '.jdl')
-            stdlog = stdout.replace('.out', '.log')
     elif len(job['harvesterInfo']) > 0 and 'batchlog' in job['harvesterInfo'] and job['harvesterInfo']['batchlog']:
         stdlog = job['harvesterInfo']['batchlog']
         stderr = stdlog.replace('.log', '.err')
@@ -2305,6 +2339,17 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         stdjdl = stdlog.replace('.log', '.jdl')
     else:
         stdout = stderr = stdlog = stdjdl = None
+
+    prmon_logs = {}
+    if settings.PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed') and (
+        request.session['viewParams']['log_provider'] == 'gs'
+    ):
+        prmon_logs['prmon_summary'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
+            queue_name=job.get('computingsite'),
+            panda_id=pandaid) + '/memory_monitor_summary.json'
+        prmon_logs['prmon_details'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
+            queue_name=job.get('computingsite'),
+            panda_id=pandaid) + '/memory_monitor_output.txt'
 
     # Check for object store based log
     oslogpath = None
@@ -2461,15 +2506,6 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
                 f[fp] = f[fp].strftime(settings.DATETIME_FORMAT)
             if fpv is None:
                 f[fp] = ''
-
-    prmon_logs = {}
-    if settings.PRMON_LOGS_DIRECTIO_LOCATION and job.get('jobstatus') in ('finished', 'failed'):
-        prmon_logs['prmon_summary'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
-            queue_name=job.get('computingsite'),
-            panda_id=pandaid) + '/memory_monitor_summary.json'
-        prmon_logs['prmon_details'] = settings.PRMON_LOGS_DIRECTIO_LOCATION.format(
-            queue_name=job.get('computingsite'),
-            panda_id=pandaid) + '/memory_monitor_output.txt'
 
     if not is_json_request(request):
         del request.session['TFIRST']
@@ -3145,10 +3181,12 @@ def userDashApi(request, agg=None):
                     t['job_' + metric] = metrics[metric]['group_by'][t['jeditaskid']]
                 else:
                     t['job_' + metric] = ''
-            if 'dsinfo' in t and len(t['dsinfo']) > 0 and 'nfilesmissing' in t['dsinfo'] and t['dsinfo'][
-                'nfilesmissing'] and t['dsinfo']['nfilesmissing'] > 0:
-                t['errordialog'] = '{} files is missing and is not included for processing'.format(
-                    t['dsinfo']['nfilesmissing']) + t['errordialog']
+            if 'dsinfo' in t and len(t['dsinfo']) > 0 and 'nfilesmissing' in t['dsinfo'] and \
+                    t['dsinfo']['nfilesmissing'] and t['dsinfo']['nfilesmissing'] > 0:
+                t['errordialog'] = '{} files is missing and is not included for processing. {}'.format(
+                    t['dsinfo']['nfilesmissing'],
+                    t['errordialog'] if t['errordialog'] is not None else ''
+                )
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
                 link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
                 link_logs_base = '/filebrowser/?'
@@ -4895,24 +4933,15 @@ def taskProfileData(request, jeditaskid=0):
     # get raw profile data
     if jeditaskid > 0:
         task_profile = TaskProgressPlot()
-        task_profile_dict = task_profile.get_raw_task_profile_full(taskid=jeditaskid)
+        task_profile_dict = task_profile.get_raw_task_profile_full(
+            taskid=jeditaskid,
+            jobstatus=request_job_states,
+            category=request_job_types
+        )
     else:
         msg = 'Not valid jeditaskid provided: {}'.format(jeditaskid)
         _logger.exception(msg)
         response = HttpResponse(json.dumps(msg), status=400)
-
-    # filter raw data corresponding to request params
-    if request_job_types is not None and len(request_job_types) > 0:
-        for jt, values in task_profile_dict.items():
-            if jt not in request_job_types:
-                task_profile_dict[jt] = []
-    if request_job_states is not None and len(request_job_states) > 0:
-        for jt, values in task_profile_dict.items():
-            temp = []
-            for v in values:
-                if v['jobstatus'] in request_job_states:
-                    temp.append(v)
-            task_profile_dict[jt] = temp
 
     # convert raw data to format acceptable by chart.js library
     job_time_names = ['end', 'start', 'creation']
@@ -5629,8 +5658,6 @@ def taskInfo(request, jeditaskid=0):
             data['task'].update(metrics)
             setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
             response = render(request, 'taskInfo.html', data, content_type='text/html')
-
-
 
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)

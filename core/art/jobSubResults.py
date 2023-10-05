@@ -1,82 +1,44 @@
 
 import os
 import shutil
-import urllib3, json, math
+import json, math
 import numpy as np
-from datetime import datetime
-from core.art.modelsART import ARTSubResult, ARTTests
-from django.db import transaction, DatabaseError
-from django.conf import settings
 import logging
+from datetime import datetime
+
+from django.db import transaction, DatabaseError
+from core.art.modelsART import ARTSubResult, ARTTests
+from core.filebrowser.utils import get_job_log_file_path
+
+from django.conf import settings
 
 _logger_error = logging.getLogger('bigpandamon-error')
 _logger = logging.getLogger('bigpandamon')
 
 
-def subresults_getter(url_params_str):
+def subresults_getter(pandaid):
     """
-    A function for getting ART jobs sub results in multithreading mode
+    Getting ART report json avoiding HTTP calls to filebrowser
+    :param pandaid: int
     :return: dictionary with sub-results
     """
-    base_url = "http://bigpanda.cern.ch"
-    fb_url = base_url + "/filebrowser/"
+    filename = 'artReport.json'
     subresults_dict = {}
 
-    url_params_dict = {pair.split('=')[0]: pair.split('=')[1] for pair in url_params_str.split('&')}
-    url_params_dict['json'] = 1
-
-    dst_postfix = None
-    if 'dst' in url_params_dict:
-        dst_postfix = url_params_dict['dst'] + '/'
-        try:
-            del url_params_dict['dst']
-        except:
-            _logger.exception('Failed to remove dst from url params dict')
-
-    try:
-        pandaid = int(url_params_dict['pandaid'])
-    except:
-        _logger.exception('Exception was caught while transforming pandaid from str to int.')
-        raise
-
-    http = urllib3.PoolManager()
-    resp = http.request('GET', fb_url, fields=url_params_dict, timeout=300)
-    if resp and resp.status == 200 and len(resp.data) > 0:
-        try:
-            data = json.loads(resp.data)
-            tardir = data['tardir']
-            MEDIA_URL = data['MEDIA_URL']
-            dirprefix = data['dirprefix']
-            files = data['files']
-            files = [f for f in files if 'artReport.json' in f['name']]
-        except:
-            _logger.exception('Exception was caught while seeking artReport.json in logs for PanDA job: {}'.format(str(pandaid)))
-            return {pandaid: subresults_dict}
-    elif resp and resp.status == 429:
-        _logger.info('Too many requests to filebrowser, return None for now, will try in next loop. PanDA job : {}'.format(str(pandaid)))
-        return {pandaid: None}
+    # get path of log file
+    path_json = get_job_log_file_path(pandaid=pandaid, filename=filename)
+    if path_json is not None and os.path.exists(path_json):
+        with open(path_json) as json_file:
+            try:
+                data_json = json.load(json_file)
+            except Exception as e:
+                _logger.exception('Failed to read {} file\n{}'.format(filename, e))
+                return {pandaid: subresults_dict}
     else:
-        _logger.exception('Exception was caught while downloading logs using Rucio for PanDA job: {}'.format(str(pandaid)))
         return {pandaid: subresults_dict}
 
-    if len(files) > 0:
-        media_path = base_url + MEDIA_URL + dirprefix + "/" + tardir
-        for f in files:
-            url = media_path + "/" + f['name']
-            response = http.request('GET', url)
-            data = json.loads(response.data)
-
-        # copy logs for further analysis by ISP tool
-        try:
-            copy_payload_log_for_analysis(dirprefix + "/" + tardir, dst_postfix)
-        except:
-            _logger.exception('Copying of payload logs failed')
-    else:
-        _logger.error('No artReport.json file found in log tarball for PanDA job: {}'.format(str(pandaid)))
-        return {pandaid: subresults_dict}
-
-    if isinstance(data, dict) and 'art' in data:
-        subresults_dict = data['art']
+    if isinstance(data_json, dict) and 'art' in data_json:
+        subresults_dict = data_json['art']
 
     # protection of json format change from list to list of dicts
     if 'result' in subresults_dict and isinstance(subresults_dict['result'], list):
@@ -87,7 +49,6 @@ def subresults_getter(url_params_str):
             else:
                 resultlist.append({'name': r['name'] if 'name' in r else '', 'result': r['result'] if 'result' in r else r})
             subresults_dict['result'] = resultlist
-
     _logger.info('ART Results for {} is {}'.format(str(pandaid), str(subresults_dict)))
 
     return {pandaid: subresults_dict}

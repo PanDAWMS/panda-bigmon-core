@@ -78,7 +78,7 @@ TEMPLATES = [
         'DIRS': [
             join(dirname(core.__file__), 'templates'),
             join(dirname(admin.__file__), 'templates'),
-            join(dirname(core.filebrowser.__file__), 'templates'),
+            # join(dirname(core.filebrowser.__file__), 'templates'),
         ],
         'OPTIONS': {
             'context_processors': [
@@ -146,6 +146,7 @@ if DEPLOYMENT == 'ORACLE_ATLAS':
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
     IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
     RUCIO_UI_URL = 'https://rucio-ui.cern.ch/'
+    LOGS_PROVIDER = 'rucio'
 elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA = 'doma_pandabigmon'
     DB_SCHEMA_PANDA = 'doma_panda'
@@ -156,6 +157,7 @@ elif DEPLOYMENT == 'POSTGRES':
     CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json')
     IDDS_HOST = os.environ.get('IDDS_HOST', 'https://iddsserver.cern.ch:443/idds')
     RUCIO_UI_URL = os.environ.get('RUCIO_UI_URL', '')
+    LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'cric')
     PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
                                                   "https://storage.googleapis.com/drp-us-central1-logging"
                                                   "/logs/{queue_name}/PandaJob_{panda_id}")
@@ -169,6 +171,7 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     CRIC_API_URL = 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json'
     IDDS_HOST = 'https://aipanda015.cern.ch:443/idds'
     RUCIO_UI_URL = os.environ.get('RUCIO_UI_URL', '')
+    LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'cric')
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
@@ -355,7 +358,7 @@ LOGGING = {
             'level': 'ERROR',
         },
         'bigpandamon-filebrowser': {
-            'handlers': ['logfile-filebrowser', 'logfile-error'],
+            'handlers': ['logfile-filebrowser', 'logfile-error', 'logfile-info', 'console'],
             'level': LOG_LEVEL,
         },
         'panda.client': {

@@ -38,17 +38,17 @@ class SQLAggregator(BaseTasksProvider):
         for days in (1, 7):
             current_time = datetime.utcnow()
             start_time = current_time - timedelta(days=days)
-            tables = ('ATLAS_PANDA.JOBSACTIVE4', 'ATLAS_PANDA.JOBSARCHIVED4', 'ATLAS_PANDAARCH.JOBSARCHIVED')
-            for t in tables:  # For each table get the info from Database
+            # For each table get the info from database
+            tables = ('atlas_panda.jobsactive4', 'atlas_panda.jobsarchived4', 'atlas_pandaarch.jobsarchived')
+            for t in tables:
                 try:
-                    # utils.initDB(t)
                     query = """
-                    SELECT prodUserName, SUM(cpuconsumptiontime) as cpuconsumptiontime, workinggroup 
-                    FROM {} 
-                    WHERE modificationTime > :start_time 
-                        AND (prodsourcelabel = 'user' OR prodsourcelabel = 'panda') 
-                        AND jobstatus != 'cancelled' 
-                    GROUP BY workinggroup, produsername""".format(t)
+                    select produsername, sum(cpuconsumptiontime) as cpuconsumptiontime, workinggroup 
+                    from {} 
+                    where statechangetime > :start_time 
+                        and (prodsourcelabel = 'user' or prodsourcelabel = 'panda') 
+                        and jobstatus != 'cancelled' 
+                    group by workinggroup, produsername""".format(t)
                     cursor.execute(query, {'start_time': start_time})
                     rows = cursor.fetchall()
                     self.logger.info("Got {} rows from {}".format(len(list(rows)), t))
