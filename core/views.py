@@ -1676,7 +1676,7 @@ def jobList(request, mode=None, param=None):
         _logger.debug('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
 
         # checking if log file replica available
-        if 'ATLAS' in settings.DEPLOYMENT and (
+        if settings.LOGS_PROVIDER == 'rucio' and (
                 'extra' in request.session['requestParams'] and 'checklogs' in request.session['requestParams']['extra']):
             dids = [j['log_did'] for j in jobsToShow if 'log_did' in j]
             replicas = None
