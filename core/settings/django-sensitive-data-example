@@ -124,18 +124,13 @@ OC_TOKEN = ""
 OC_ENDPOINT = ""
 OC_NAMESPACE = ""
 
-# AWS
-aws = {
-    "AWS_ACCESS_KEY_ATLAS" : "",
-    "AWS_SECRET_KEY_ATLAS" : ""
-}
-
 # Object Store settings in case it is used as storage for job logs
-OBJECTSTORE = {
+OBJECT_STORE = {
     "hostname": "",
-    "port": 0,
+    "port": 443,
     "access_key": "",
     "secret_key": "",
+    "bucket_name": "",
 }
 
 # debug mode

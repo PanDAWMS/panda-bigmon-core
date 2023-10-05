@@ -146,7 +146,7 @@ if DEPLOYMENT == 'ORACLE_ATLAS':
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
     IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
     RUCIO_UI_URL = 'https://rucio-ui.cern.ch/'
-    LOGS_PROVIDER = 'rucio'
+    LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'rucio')
 elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA = 'doma_pandabigmon'
     DB_SCHEMA_PANDA = 'doma_panda'
@@ -157,7 +157,7 @@ elif DEPLOYMENT == 'POSTGRES':
     CRIC_API_URL = os.environ.get('CRIC_API_URL', 'https://datalake-cric.cern.ch/api/atlas/pandaqueue/query/?json')
     IDDS_HOST = os.environ.get('IDDS_HOST', 'https://iddsserver.cern.ch:443/idds')
     RUCIO_UI_URL = os.environ.get('RUCIO_UI_URL', '')
-    LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'cric')
+    LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'rucio')
     PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
                                                   "https://storage.googleapis.com/drp-us-central1-logging"
                                                   "/logs/{queue_name}/PandaJob_{panda_id}")

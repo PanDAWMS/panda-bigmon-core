@@ -24,7 +24,7 @@ class ObjectStore(object):
 
         if hasattr(settings, 'OBJECT_STORE'):
             self.host_name = settings.OBJECT_STORE['host_name'] if 'host_name' in settings.OBJECT_STORE else None
-            self.port = settings.OBJECT_STORE['port'] if 'port' in settings.OBJECT_STORE else None
+            self.port = settings.OBJECT_STORE['port'] if 'port' in settings.OBJECT_STORE else 443
             self.bucket_name = settings.OBJECT_STORE['bucket_name'] if 'bucket_name' in settings.OBJECT_STORE else None
             self._access_key = settings.OBJECT_STORE['access_key'] if 'access_key' in settings.OBJECT_STORE else None
             self._secret_key = settings.OBJECT_STORE['secret_key'] if 'secret_key' in settings.OBJECT_STORE else None
