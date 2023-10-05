@@ -129,6 +129,8 @@ try:
     full_hostname = subprocess.getoutput('hostname')
     if full_hostname.find('.') > 0:
         hostname = full_hostname[:full_hostname.find('.')]
+    else:
+        hostname = full_hostname
 except:
     full_hostname = ''
     hostname = ''
