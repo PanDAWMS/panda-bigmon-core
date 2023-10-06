@@ -448,9 +448,15 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
                     "lt": "now/d"
                 }}).\
         query("match", data__event_type='transfer-failed').\
+        query("prefix", data__reason='STAGING').\
         query('terms', data__src_endpoint=sources)
-    if s.count() > 0:
-        return True, stuck_files
+    res = list([h['data'] for h in s.scan()])
+    if len(res) > 0:
+        # filter files having failures with error message starting with "STAGING"
+        file_names = set([r['name'] for r in res])
+        stuck_files = [f for f in stuck_files if f in file_names]
+        if len(stuck_files) > 0:
+            return True, stuck_files
     return False, stuck_files
 
 
