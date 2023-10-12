@@ -1686,7 +1686,7 @@ def jobList(request, mode=None, param=None):
                 replicas = rucio_client.list_file_replicas(dids)
             except:
                 _logger.warning('Can not check log existence')
-            if replicas:
+            if replicas is not None:
                 for j in jobs:
                     if 'log_did' in j and 'name' in j['log_did']:
                         if j['log_did']['name'] in replicas:
