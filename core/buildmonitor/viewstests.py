@@ -1,17 +1,17 @@
-from django.shortcuts import render, redirect
-from datetime import datetime
-from core.views import initRequest
-from django.db import connection, transaction
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
-import json,re
-from collections import defaultdict
-from operator import itemgetter, attrgetter
-from core.libs.DateEncoder import DateEncoder
+import json, re
 
+from django.shortcuts import render
+from core.views import initRequest
+from django.db import connection
+from django.http import JsonResponse
+from core.libs.DateEncoder import DateEncoder
+from core.utils import is_json_request
 
 def testviewDemo(request):
     valid, response = initRequest(request)
+    if not valid:
+        return response
+
     if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
@@ -103,44 +103,70 @@ title="N/A" class="ui-icon ui-icon-cancel">ICON20</span></div>'
         cmmnt='ATLAS CI %s, release %s, platform %s (on %s)<BR><span style="font-size:  smaller">%s</span>' % ( nname, relextend, arname, host, sComm )
     else:
         cmmnt='ATLAS nightly %s, release %s, platform %s (on %s)' % ( nname, relextend, arname, host)
-#  HEADERS
-#  1. RES
-#  2. PROJECT
-#  3. Test name#file 
-#  4. Optional or Required
-#  5. Container
-#  6. Time
+
+    header = [
+        'RES',
+        'PROJECT',
+        'Test name',
+        'Optional or Required',
+        'Container',
+        'Time',
+    ]
     i=0
     rows_s = []
     for row in reslt1:
-      i+=1
-      if i > 10000: break
-      result=row[0]
-      proj=row[1]
-      nameln=row[2]
-      category='Required'
-      if row[3] == 'OptionalTests': category='Optional'
-      container=row[5]
-      ttime=row[6]
-      fname=row[7]
-      excess_flag=row[9]
-      i_result=di_res.get(str(result),result)
-      if i_result == None or i_result == "None" :
-          i_result=radiooff_icon;
-      elif CI_flag:
+        i+=1
+        if i > 10000:
+            break
+        result=row[0]
+        proj=row[1]
+        nameln=row[2]
+        category='Required'
+        if row[3] == 'OptionalTests':
+            category='Optional'
+        container=row[5]
+        ttime=row[6]
+        fname=row[7]
+        excess_flag=row[9]
+        i_result=di_res.get(str(result),result)
+        if i_result == None or i_result == "None" :
+            i_result=radiooff_icon
+        elif CI_flag:
           exc_result=di_excess.get(str(excess_flag),excess_flag)
           if exc_result == None or exc_result == "None":
-              exc_result = blank_icon;
+              exc_result = blank_icon
           if exc_result == cancel_icon:
               i_result = exc_result
           else:
               i_result=i_result+blank_icon+exc_result
-      nameln1=nameln
-      if fname != None and fname != '':
+        nameln1=nameln
+        if fname != None and fname != '':
           nameln1=re.sub(fname+'#','',nameln,1)
-      row_cand=[i_result,proj,nameln1,category,container,ttime]
-      rows_s.append(row_cand)
-    data={"nightly": nname, "rel": relname, "ar": arname, "proj": pjname, "cicon": cancel_icon, "nicon": note_icon, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
-    return render(request,'testviewDemo.html', data, content_type='text/html')
+        row_cand=[i_result,proj,nameln1,category,container,ttime]
+        rows_s.append(row_cand)
+
+    if is_json_request(request):
+        data = {
+            "nightly": nname,
+            "rel": relname,
+            "ar": arname,
+            "proj": pjname,
+            'rows_s': [header, ] + rows_s if len(rows_s) > 0 else []
+        }
+        return JsonResponse(data, encoder=DateEncoder, safe=False)
+    else:
+        data = {
+            'request': request,
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'],
+            "nightly": nname,
+            "rel": relname,
+            "ar": arname,
+            "proj": pjname,
+            "cicon": cancel_icon,
+            "nicon": note_icon,
+            'rows_s': json.dumps(rows_s, cls=DateEncoder)
+        }
+        return render(request,'testviewDemo.html', data, content_type='text/html')
 
 
