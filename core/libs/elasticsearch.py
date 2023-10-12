@@ -293,18 +293,15 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
     response = s.scan()
     for hit in response:
         hit_dict = hit.to_dict()
-        # if hit_dict['status'] not in jobs_info_status_dict:
-        #     jobs_info_status_dict[hit_dict['status']] = set()
-        #
-        #     jobs_info_status_dict[hit_dict['status']].add(hit_dict['jobid'])
-        # else:
-        #     jobs_info_status_dict[hit_dict['status']].add(hit_dict['jobid'])
+
         if not hit_dict['jobid'] in jobs_info_status_dict:
             jobs_info_status_dict[hit_dict['jobid']] = {}
 
         jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {'timestamp': hit_dict['timestamp'],
                                                                         'message_id': hit_dict['message_id'],
-                                                                        'status': hit_dict['status']}
+                                                                        'status': hit_dict['status'],
+                                                                        'time': hit_dict['@timestamp']
+                                                                        }
 
         task_message_list.append(hit_dict)
         task_message_ids_list.append(hit_dict['message_id'])
@@ -326,7 +323,7 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
             else:
                 job_nevents = 0
 
-            jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {'message_id': hit_dict['message_id'], 'job_inputfilebytes': job_inputfilebytes, 'job_hs06sec': job_hs06sec, 'status': hit_dict['status'], 'job_nevents': job_nevents, 'timestamp':hit_dict['timestamp']}
+            jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {'message_id': hit_dict['message_id'], 'job_inputfilebytes': job_inputfilebytes, 'job_hs06sec': job_hs06sec, 'status': hit_dict['status'], 'job_nevents': job_nevents, 'time':hit_dict['@timestamp'],'timestamp':hit_dict['timestamp']}
 
         fields_list = list(hit_dict.keys())
         for field in fields_list:

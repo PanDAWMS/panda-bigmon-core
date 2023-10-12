@@ -1,4 +1,4 @@
-from core.kafka.consumers import TaskLogsConsumer
+from core.kafka.consumer import TaskLogsConsumer
 from django.urls import re_path, path
 
 ws_urlpatterns = [

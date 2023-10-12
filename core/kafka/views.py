@@ -36,5 +36,6 @@ def taskLivePage(request, jeditaskid):
     #     data['archived_messages'] = archived_messages
     # else:
     #     data['archived_messages'] = 0
+
     data['archived_messages'] = 0
     return render(request, 'taskLivePage.html', data, content_type='text/html')
