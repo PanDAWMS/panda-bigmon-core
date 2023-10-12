@@ -200,7 +200,7 @@ def civiewDemo(request):
             "nightly": nname,
             "rel": rname,
             "project": pjname,
-            'rows_s': [header,] + rows_s
+            'rows_s': [header, ] + rows_s if len(rows_s) > 0 else []
         }
         return JsonResponse(data, encoder=DateEncoder, safe=False)
     else:
