@@ -22,11 +22,12 @@ RUN ln -s /usr/bin/python3 /usr/bin/python && \
 
 ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
 ENV BIGMON_WSGI_PATH /data/bigmon
+ENV DJANGO_SETTINGS_MODULE core.settings
 
 RUN yum -y update
 
-RUN yum install -y python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
-        python3 python3-devel less git httpd.x86_64 conda gridsite mod_ssl.x86_64 ca-policy-egi-core \
+RUN yum install -y nano python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
+        python3 python3-devel less git ca-policy-egi-core \
         httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch wget net-tools sudo \
         http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-basic-19.3.0.0.0-2.x86_64.rpm \
         http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-devel-19.3.0.0.0-1.x86_64.rpm \
@@ -50,7 +51,7 @@ RUN python3 -m venv ${BIGMON_VIRTUALENV_PATH} --system-site-packages
 
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptools
 
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  channels pyOpenSSL daphne confluent_kafka futures psycopg2-binary \
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade channels pyOpenSSL daphne python-dotenv pyrebase4 confluent_kafka futures psycopg2-binary \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
     beautifulsoup4 boto3 bz2file cachetools certifi cffi chardet click codegen cryptography cx-Oracle cycler \
     dataclasses datefinder decorator defusedxml Django docopt dogpile.cache ecdsa \
@@ -58,7 +59,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  channels
     humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
     Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
     olefile openshift packaging pandas paramiko patterns pep8 Pillow pip pluggy prettytable progressbar2 psutil \
-    psycopg2 py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyparsing pytest \
+    py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyparsing pytest \
     python-dateutil python-magic python-openid python-social-auth python-string-utils python-utils python3-openid \
     pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
     schedule scikit-learn scipy six sklearn  social-auth-core soupsieve sqlparse \
@@ -90,15 +91,16 @@ RUN grep -v Listen /etc/httpd/conf/httpd.conf > /etc/httpd/conf/tmp; \
     echo Listen 8080 > /etc/httpd/conf/httpd.conf; \
     cat /etc/httpd/conf/tmp >> /etc/httpd/conf/httpd.conf; \
     rm /etc/httpd/conf/tmp
+
 RUN chmod 777 ${BIGMON_WSGI_PATH}/logs
 RUN chmod 777 /var/log/httpd
 RUN chmod 777 /etc/grid-security
 RUN chmod 777 /run/httpd
-RUN chmod 777 /etc/systemd/system/daphne.service
+
 RUN chmod -R 777 /var/cache
 RUN chmod -R 777 ${BIGMON_WSGI_PATH}/config
 RUN chmod -R 777 /etc/httpd/conf.d
-RUN chmod -R 777 /etc/systemd/system/daphne.service
+
 # to be removed for prodiction
 RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
 
