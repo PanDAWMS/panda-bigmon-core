@@ -41,6 +41,7 @@ def get_workflow_progress_data(request_params, **kwargs):
     workflows_semi_grouped = []
     if not workflows_items.empty:
         workflows_items.USERNAME.fillna(value='', inplace=True)
+        workflows_items.R_NAME.fillna(value='', inplace=True)
         workflows_items.WORKLOAD_ID = workflows_items.WORKLOAD_ID.astype('Int64')
         # workflows_items.PROCESSING_FILES.fillna(value=0, inplace=True)
         workflows_pd = workflows_items.astype({"R_CREATED_AT":str}).groupby(
@@ -56,7 +57,6 @@ def get_workflow_progress_data(request_params, **kwargs):
         ).reset_index()
         # fill NAN with 0 for N files
         workflows_pd.TOTAL_FILES.fillna(value=0, inplace=True)
-        workflows_items.R_NAME.fillna(value='', inplace=True)
         workflows_pd.PROCESSING_FILES_SUM.fillna(value=0, inplace=True)
         workflows_pd.PROCESSED_FILES_SUM.fillna(value=0, inplace=True)
         workflows_pd.P_STATUS.fillna(value=0, inplace=True)
