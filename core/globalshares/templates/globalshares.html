@@ -45,7 +45,7 @@
         <div class="column medium-4" id="pieChartGS_level1"></div>
         <div class="column medium-8">
           <fieldset class="inline-input">
-            <legend>Accounted resource types for Actual HS06:</legend>
+            <legend>Accounted resource types for Actual HS23:</legend>
             <label ng-repeat="rt in gs.selection.resourceType">
               <input type="checkbox" ng-model="rt.selected" ng-change="gs.update('level1')">{$ rt.name $}</label>
           </fieldset>
@@ -58,7 +58,7 @@
         <div class="column medium-4" id="pieChartGS_level2"></div>
         <div class="column medium-8">
           <fieldset class="inline-input">
-            <legend>Accounted resource types for Actual HS06:</legend>
+            <legend>Accounted resource types for Actual HS23:</legend>
             <label ng-repeat="rt in gs.selection.resourceType">
               <input type="checkbox" ng-model="rt.selected" ng-change="gs.update('level2')">{$ rt.name $}</label>
           </fieldset>
@@ -71,7 +71,7 @@
         <div class="column medium-4" id="pieChartGS_level3"></div>
         <div class="column medium-8">
           <fieldset class="inline-input">
-            <legend>Accounted resource types for Actual HS06:</legend>
+            <legend>Accounted resource types for Actual HS23:</legend>
             <label ng-repeat="rt in gs.selection.resourceType">
               <input type="checkbox" ng-model="rt.selected" ng-change="gs.update('level3')">{$ rt.name $}</label>
           </fieldset>
@@ -87,10 +87,10 @@
         <th>L1 Share</th>
         <th>L2 Share</th>
         <th>L3 Share</th>
-        <th class="num">Actual HS06</th>
-        <th class="num">Target HS06</th>
-        <th class="num">HS06 ratio</th>
-        <th class="num">Queued HS06</th>
+        <th class="num">Actual HS23</th>
+        <th class="num">Target HS23</th>
+        <th class="num">HS23 ratio</th>
+        <th class="num">Queued HS23</th>
         <th class="num">Actual share</th>
         <th class="num">Target share</th>
     </tr>
@@ -162,8 +162,8 @@
           <th>Core count</th>
           <th>Job status</th>
           <th>COUNT</th>
-          <th>HS06</th>
-          <th>HS06/COUNT</th>
+          <th>HS23</th>
+          <th>HS23/COUNT</th>
         </tr>
         </thead>
         <tbody></tbody>
@@ -237,7 +237,7 @@
             </span>
           </th>
           <th>COUNT</th>
-          <th>HS06</th>
+          <th>HS23</th>
         </tr>
         </thead>
         <tbody></tbody>
@@ -258,10 +258,10 @@
         <thead>
         <tr>
           <th>Resource</th>
-          <th>Actual HS06</th>
-          <th>Queued HS06</th>
-          <th>Other HS06</th>
-          <th>Total HS06</th>
+          <th>Actual HS23</th>
+          <th>Queued HS23</th>
+          <th>Other HS23</th>
+          <th>Total HS23</th>
         </tr>
         </thead>
         <tbody></tbody>
@@ -282,10 +282,10 @@
         <thead>
         <tr>
           <th>Core</th>
-          <th>Actual HS06</th>
-          <th>Queued HS06</th>
-          <th>Other HS06</th>
-          <th>Total HS06</th>
+          <th>Actual HS23</th>
+          <th>Queued HS23</th>
+          <th>Other HS23</th>
+          <th>Total HS23</th>
         </tr>
         </thead>
         <tbody></tbody>
@@ -306,10 +306,10 @@
         <thead>
         <tr>
           <th>Policy</th>
-          <th>Actual HS06</th>
-          <th>Queued HS06</th>
-          <th>Other HS06</th>
-          <th>Total HS06</th>
+          <th>Actual HS23</th>
+          <th>Queued HS23</th>
+          <th>Other HS23</th>
+          <th>Total HS23</th>
         </tr>
         </thead>
         <tbody></tbody>
@@ -358,7 +358,7 @@
           options: {
             colors: 'gs',
             size: [getWidth()*8/12-40,20*gsPlotData['level3'].pieChartActualHS06.length-20],
-            labels: ['', 'HS06']
+            labels: ['', 'HS23']
           },
           data: []
         }
@@ -417,8 +417,8 @@
         $scope.gs.fillPieChartData();
         $scope.gs.updateResources();
         $scope.gs.getSplitData();
-        $scope.gs.charts.pie.chart = draw_donut($scope.gs.charts.pie.data, "pieChartGS_" + $scope.gs.selection.tab, 'Actual HS06', $scope.gs.charts.pie.options);
-        $scope.gs.charts.barSplit.chart = draw_bar_cat($scope.gs.charts.barSplit.data, 'barChartGSSplit_' + $scope.gs.selection.tab, 'Actual VS Target HS06', $scope.gs.charts.barSplit.options);
+        $scope.gs.charts.pie.chart = draw_donut($scope.gs.charts.pie.data, "pieChartGS_" + $scope.gs.selection.tab, 'Actual HS23', $scope.gs.charts.pie.options);
+        $scope.gs.charts.barSplit.chart = draw_bar_cat($scope.gs.charts.barSplit.data, 'barChartGSSplit_' + $scope.gs.selection.tab, 'Actual VS Target HS23', $scope.gs.charts.barSplit.options);
       };
 
       $scope.gs.enable_panel($scope.gs.selection.tab);
@@ -793,7 +793,7 @@
       if ( ! $.fn.DataTable.isDataTable( '#resources' ) ) {
         let dt = getData('resources');
         let plot_data = Array.from(Object.keys(dt.resourceList), k=>[`${k}`, dt.resourceList[k]]);
-        draw_donut(plot_data, "pieChartResources", 'Actual HS06');
+        draw_donut(plot_data, "pieChartResources", 'Actual HS23');
         $('#resources').dataTable({
           //"bRetrieve": true,
           "retrieve": true,
@@ -845,7 +845,7 @@
       if ( ! $.fn.DataTable.isDataTable( '#cores' ) ) {
         let dt = getData('cores');
         let plot_data = Array.from(Object.keys(dt.coresList), k=>[`${k}`, dt.coresList[k]]);
-        draw_donut(plot_data, "pieChartCores", 'Actual HS06');
+        draw_donut(plot_data, "pieChartCores", 'Actual HS23');
         $('#cores').dataTable({
           //"bRetrieve": true,
           "retrieve": true,
@@ -897,7 +897,7 @@
       if ( ! $.fn.DataTable.isDataTable( '#fairsharepolicy' ) ) {
         let dt = getData('fairshares');
         let plot_data = Array.from(Object.keys(dt.policyList), k=>[`${k}`, dt.policyList[k]]);
-        draw_donut(plot_data, "pieChartPolicy", 'Actual HS06');
+        draw_donut(plot_data, "pieChartPolicy", 'Actual HS23');
         $('#fairsharepolicy').dataTable({
           //"bRetrieve": true,
           "retrieve": true,

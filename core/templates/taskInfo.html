@@ -17,7 +17,7 @@
   <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
 {% endblock %}
 
-{% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <b>{{ task.taskname }}</b>{% endblock %}
+{% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <span class="hide-for-small-only"><b>{{ task.taskname }}</b></span>{% endblock %}
 
 {% block body %}
 
@@ -52,13 +52,6 @@
         {% if task.idds_info and task.idds_info.task_type == 'hpo' %}
             <th class="num"> HP points
               <br><span class='finished'>finished</span></th>
-            {% if task.dsinfo %}
-              <th class="num">HS06*sec
-                <br><span class="closed">Expected</span>
-                <br> Total<br><span class='done'>done</span>
-                <br> <span class='failed'>failed</span>
-              </th>
-            {% endif %}
         {% else %}
           {% if task.dsinfo %}
             <th class="num"> N input files
@@ -79,12 +72,15 @@
                 <br> total
               </th>
             {% endif %}
-            <th class="num">HS06*sec
-                <br> <span class="closed">Expected</span>
-                <br> Total<br><span class='done'>done</span>
-                <br> <span class='failed'>failed</span>
-            </th>
           {% endif %}
+        {% endif %}
+        {% if task.dsinfo and 'hs23s_humanized' in task %}
+          <th class="num">HS23s
+            <br> <span class="closed">Expected</span>
+            <br> Total
+            <br><span class='done'>done</span>
+            <br> <span class='failed'>failed</span>
+          </th>
         {% endif %}
         <th>Time stamps:
           <br><span class="defined">created</span>
@@ -103,7 +99,7 @@
             <th>Tracker</th>
         {% endif %}
         {% if 'gco2_global_humanized' in task and 'total' in task.gco2_global_humanized %}
-          <th>CO<sub>2</sub><a class="bp-tooltip left blacklink" target="_blank" href="https://panda-wms.readthedocs.io/en/latest/advanced/carbon_footprint.html"><i class="fi-info"></i>
+          <th>CO<sub>2</sub> <a class="bp-tooltip left blacklink" target="_blank" href="https://panda-wms.readthedocs.io/en/latest/advanced/carbon_footprint.html"><i class="fi-info"></i>
             <span class="bp-tooltip tooltip-text">Estimated CO<sub>2</sub> emission, based on the weighted average of regional electricity sources for ATLAS Grid computing, click to read in more detail</span></a>
             total<br><span class="done">done</span><br><span class="failed">failed</span>
           </th>
@@ -164,14 +160,6 @@
               <br><span class='finished'><span>{$ iddsjson.out_total_files $}</span> (<span>{$ iddsjson.pctprocessed $}</span>%) </span>
             </div>
           </td>
-
-          {% if task.dsinfo %}
-            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06|intcomma }}{% else %}&mdash;{% endif %}</span>
-              <br>{{ task.currenttotevhs06|intcomma }}
-              <br><span class='finished'>{{ task.totevprochs06|intcomma }}</span>
-              <br><span class='failed'>{{ task.failedevprochs06|intcomma }}</span>
-            </td>
-          {% endif %}
         {% else %}
           {% if task.dsinfo %}
             <td class="num"> {{ task.dsinfo.nfiles|intcomma }}
@@ -197,12 +185,15 @@
                 <br> {% if task.resimevents_sum %}{{ task.resimevents_sum|intcomma }}{% else %}-{% endif %}
               </td>
             {% endif %}
-            <td class="num"> <span class="closed">{% if task.totevhs06 %}{{ task.totevhs06|intcomma }}{% else %}&mdash;{% endif %}</span>
-              <br>{{ task.currenttotevhs06|intcomma }}
-              <br><span class='finished'>{{ task.totevprochs06|intcomma }}</span>
-              <br><span class='failed'>{{ task.failedevprochs06|intcomma }}</span>
-            </td>
           {% endif %}
+        {% endif %}
+        {% if task.dsinfo and 'hs23s_humanized' in task %}
+          <td class="num">
+            <span class="closed">{% if task.hs23s_humanized.expected.value %}{{ task.hs23s_humanized.expected.value|intcomma }}{{ task.hs23s_humanized.expected.unit }}{% else %}&mdash;{% endif %}</span>
+            <br>{{ task.hs23s_humanized.total.value|intcomma }}{{ task.hs23s_humanized.total.unit }}
+            <br><span class='finished'>{{ task.hs23s_humanized.finished.value|intcomma }}{{ task.hs23s_humanized.finished.unit }}</span>
+            <br><span class='failed'>{{ task.hs23s_humanized.failed.value|intcomma }}{{ task.hs23s_humanized.failed.unit }}</span>
+          </td>
         {% endif %}
         <td>{% if task.creationdate %}<span class="defined">{{ task.creationdate }}</span>{% else %}&mdash;{% endif %}
           <br>{% if task.modificationtime %}<span class="closed">{{ task.modificationtime }}</span>{% else %}&mdash;{% endif %}
@@ -217,9 +208,9 @@
             <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
         {% endif %}
         {% if 'gco2_global_humanized' in task and 'total' in task.gco2_global_humanized %}
-          <td>{{ task.gco2_global_humanized.total.value|intcomma }} {{ task.gco2_global_humanized.total.unit }}
-            <br><span class="done">{{ task.gco2_global_humanized.finished.value|intcomma }} {{ task.gco2_global_humanized.finished.unit }}</span>
-            <br><span class="failed">{{ task.gco2_global_humanized.failed.value|intcomma }} {{ task.gco2_global_humanized.failed.unit }}</span></td>
+          <td>{{ task.gco2_global_humanized.total.value|intcomma }}{{ task.gco2_global_humanized.total.unit }}
+            <br><span class="done">{{ task.gco2_global_humanized.finished.value|intcomma }}{{ task.gco2_global_humanized.finished.unit }}</span>
+            <br><span class="failed">{{ task.gco2_global_humanized.failed.value|intcomma }}{{ task.gco2_global_humanized.failed.unit }}</span></td>
         {% endif %}
       </tr>
     </tbody>
@@ -436,6 +427,7 @@
   {% endif %}
 
   {% if jobscoutids|length > 0 %}
+    <div class="table-scroll">
     <table class="fresh-table unstriped">
       <tbody>
         <tr>
@@ -450,6 +442,7 @@
         </tr>
       </tbody>
     </table>
+    </div>
   {% endif %}
 
   {% if warning.memoryleaksuspicion %}

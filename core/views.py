@@ -77,8 +77,9 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall
-from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, convert_grams
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
+from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, \
+    convert_grams
 from core.libs.eventservice import event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
@@ -5563,8 +5564,30 @@ def taskInfo(request, jeditaskid=0):
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
-
+        # prepare data for template
         taskparams, jobparams = humanize_task_params(taskparams)
+        if job_metrics_sum:
+            if 'hs06sec' in job_metrics_sum:
+                taskrec['hs23s_humanized'] = {
+                    k: dict(zip(
+                        ('value', 'unit'),
+                        (round_to_n_digits(convert_to_si_prefix(v)[0], n=1), convert_to_si_prefix(v)[1])
+                    )) for k, v in job_metrics_sum['hs06sec'].items()
+                }
+                if 'totevhs06' in taskrec:
+                    taskrec['hs23s_humanized']['expected'] = dict(zip(('value', 'unit'), (round_to_n_digits(
+                        convert_to_si_prefix(taskrec['totevhs06'])[0], n=1), convert_to_si_prefix(taskrec['totevhs06'])[1])))
+                else:
+                    taskrec['hs23s_humanized']['expected'] = '-'
+            if 'gco2_global' in job_metrics_sum:
+                taskrec['gco2_global_humanized'] = {}
+                for k, v in job_metrics_sum['gco2_global'].items():
+                    cv, unit = convert_grams(float(v), output_unit='auto')
+                    taskrec['gco2_global_humanized'][k] = {'unit': unit, 'value': round_to_n_digits(cv, n=0)}
+                taskrec.update({
+                    'gco2_global_' + k: int(v) for k, v in job_metrics_sum['gco2_global'].items()
+                })
+
         furl = request.get_full_path()
         nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
 
