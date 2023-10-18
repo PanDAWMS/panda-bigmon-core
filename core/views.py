@@ -5523,14 +5523,6 @@ def taskInfo(request, jeditaskid=0):
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
-            try:
-                connection = create_es_connection()
-                split_rule = get_split_rule_info(connection, jeditaskid)
-                if len(split_rule) > 0:
-                    info['split_rule'] = {}
-                    info['split_rule']['messages'] = split_rule
-            except Exception as e:
-                _logger.exception('Failed to get split rule info for task from elasticSearch with:\n{}'.format(e))
 
     # datetime type -> str in order to avoid encoding errors in template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
@@ -5564,29 +5556,41 @@ def taskInfo(request, jeditaskid=0):
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
+        # get split rule changes from ES-atlas (we do it only for rendered templates)
+        if 'ATLAS' in settings.DEPLOYMENT:
+            try:
+                connection = create_es_connection()
+                split_rule = get_split_rule_info(connection, jeditaskid)
+                if len(split_rule) > 0:
+                    info['split_rule'] = {}
+                    info['split_rule']['messages'] = split_rule
+            except Exception as e:
+                _logger.exception('Failed to get split rule info for task from elasticSearch with:\n{}'.format(e))
+
+            if job_metrics_sum:
+                if 'hs06sec' in job_metrics_sum:
+                    taskrec['hs23s_humanized'] = {
+                        k: dict(zip(
+                            ('value', 'unit'),
+                            (round_to_n_digits(convert_to_si_prefix(v)[0], n=1), convert_to_si_prefix(v)[1])
+                        )) for k, v in job_metrics_sum['hs06sec'].items()
+                    }
+                    if 'totevhs06' in taskrec:
+                        taskrec['hs23s_humanized']['expected'] = dict(zip(('value', 'unit'), (round_to_n_digits(
+                            convert_to_si_prefix(taskrec['totevhs06'])[0], n=1), convert_to_si_prefix(taskrec['totevhs06'])[1])))
+                    else:
+                        taskrec['hs23s_humanized']['expected'] = '-'
+                if 'gco2_global' in job_metrics_sum:
+                    taskrec['gco2_global_humanized'] = {}
+                    for k, v in job_metrics_sum['gco2_global'].items():
+                        cv, unit = convert_grams(float(v), output_unit='auto')
+                        taskrec['gco2_global_humanized'][k] = {'unit': unit, 'value': round_to_n_digits(cv, n=0)}
+                    taskrec.update({
+                        'gco2_global_' + k: int(v) for k, v in job_metrics_sum['gco2_global'].items()
+                    })
+
         # prepare data for template
         taskparams, jobparams = humanize_task_params(taskparams)
-        if job_metrics_sum:
-            if 'hs06sec' in job_metrics_sum:
-                taskrec['hs23s_humanized'] = {
-                    k: dict(zip(
-                        ('value', 'unit'),
-                        (round_to_n_digits(convert_to_si_prefix(v)[0], n=1), convert_to_si_prefix(v)[1])
-                    )) for k, v in job_metrics_sum['hs06sec'].items()
-                }
-                if 'totevhs06' in taskrec:
-                    taskrec['hs23s_humanized']['expected'] = dict(zip(('value', 'unit'), (round_to_n_digits(
-                        convert_to_si_prefix(taskrec['totevhs06'])[0], n=1), convert_to_si_prefix(taskrec['totevhs06'])[1])))
-                else:
-                    taskrec['hs23s_humanized']['expected'] = '-'
-            if 'gco2_global' in job_metrics_sum:
-                taskrec['gco2_global_humanized'] = {}
-                for k, v in job_metrics_sum['gco2_global'].items():
-                    cv, unit = convert_grams(float(v), output_unit='auto')
-                    taskrec['gco2_global_humanized'][k] = {'unit': unit, 'value': round_to_n_digits(cv, n=0)}
-                taskrec.update({
-                    'gco2_global_' + k: int(v) for k, v in job_metrics_sum['gco2_global'].items()
-                })
 
         furl = request.get_full_path()
         nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
