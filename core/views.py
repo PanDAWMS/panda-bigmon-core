@@ -77,8 +77,8 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
-from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, dictfetchall, round_to_n_digits
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall
+from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, convert_grams
 from core.libs.eventservice import event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
@@ -5511,8 +5511,12 @@ def taskInfo(request, jeditaskid=0):
             taskrec['currenttotevhs06'] = int(job_metrics_sum['hs06sec']['total']) if 'hs06sec' in job_metrics_sum else None
 
             if 'gco2_global' in job_metrics_sum:
+                taskrec['gco2_global_humanized'] = {}
+                for k, v in job_metrics_sum['gco2_global'].items():
+                    cv, unit = convert_grams(float(v), output_unit='auto')
+                    taskrec['gco2_global_humanized'][k] = {'unit': unit, 'value': round_to_n_digits(cv, n=0, method='floor')}
                 taskrec.update({
-                    'gco2_global_'+k: int(round_to_n_digits(float(v), method='floor')) if v > 1 else round_to_n_digits(float(v), n=1, method='floor') for k, v in job_metrics_sum['gco2_global'].items()
+                    'gco2_global_' + k: int(v) for k, v in job_metrics_sum['gco2_global'].items()
                 })
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
@@ -5567,9 +5571,8 @@ def taskInfo(request, jeditaskid=0):
         # decide on data caching time [seconds]
         cacheexpiration = 60 * 20  # second/minute * minutes
         if taskrec and 'status' in taskrec and taskrec['status'] in const.TASK_STATES_FINAL and (
-                'dsinfo' in taskrec and 'nfiles' in taskrec['dsinfo'] and isinstance(taskrec['dsinfo']['nfiles'],
-                                                                                     int) and taskrec['dsinfo'][
-                    'nfiles'] > 10000):
+                'dsinfo' in taskrec and 'nfiles' in taskrec['dsinfo'] and (
+                    isinstance(taskrec['dsinfo']['nfiles'], int) and taskrec['dsinfo']['nfiles'] > 10000)):
             cacheexpiration = 3600 * 24 * 31  # we store such data a month
 
         user_expert = is_expert(request)

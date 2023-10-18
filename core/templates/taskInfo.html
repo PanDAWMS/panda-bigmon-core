@@ -102,10 +102,10 @@
         {% if task.ticketid %}
             <th>Tracker</th>
         {% endif %}
-        {% if 'gco2_global_total' in task %}
-          <th>gCO<sub>2</sub> total <a class="bp-tooltip left blacklink" target="_blank" href="https://panda-wms.readthedocs.io/en/latest/advanced/carbon_footprint.html"><i class="fi-info"></i>
-            <span class="bp-tooltip tooltip-text">Estimated CO<sub>2</sub> emission in grams, based on the weighted average of regional electricity sources for ATLAS Grid computing, click to read in more detail</span></a>
-            <br><span class="done">done</span><br><span class="failed">failed</span>
+        {% if 'gco2_global_humanized' in task and 'total' in task.gco2_global_humanized %}
+          <th>CO<sub>2</sub><a class="bp-tooltip left blacklink" target="_blank" href="https://panda-wms.readthedocs.io/en/latest/advanced/carbon_footprint.html"><i class="fi-info"></i>
+            <span class="bp-tooltip tooltip-text">Estimated CO<sub>2</sub> emission, based on the weighted average of regional electricity sources for ATLAS Grid computing, click to read in more detail</span></a>
+            total<br><span class="done">done</span><br><span class="failed">failed</span>
           </th>
         {% endif %}
       </tr>
@@ -216,8 +216,10 @@
         {% if task.ticketid %}
             <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
         {% endif %}
-        {% if 'gco2_global_total' in task %}
-          <td>{{ task.gco2_global_total|intcomma }} <br><span class="done">{{ task.gco2_global_finished|intcomma }}</span><br><span class="failed">{{ task.gco2_global_failed|intcomma }}</span></td>
+        {% if 'gco2_global_humanized' in task and 'total' in task.gco2_global_humanized %}
+          <td>{{ task.gco2_global_humanized.total.value|intcomma }} {{ task.gco2_global_humanized.total.unit }}
+            <br><span class="done">{{ task.gco2_global_humanized.finished.value|intcomma }} {{ task.gco2_global_humanized.finished.unit }}</span>
+            <br><span class="failed">{{ task.gco2_global_humanized.failed.value|intcomma }} {{ task.gco2_global_humanized.failed.unit }}</span></td>
         {% endif %}
       </tr>
     </tbody>
