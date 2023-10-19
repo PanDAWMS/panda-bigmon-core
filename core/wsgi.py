@@ -16,6 +16,7 @@ import site
 import logging
 from os.path import join, pardir, abspath, dirname, split
 from django.core.wsgi import get_wsgi_application
+
 _logger = logging.getLogger('bigpandamon')
 
 try:
@@ -60,7 +61,10 @@ except:
     _logger.exception("Failed to run load_dotenv()")
 
 # Activate your virtual env
-activate_env = os.path.expanduser(virtualenvPath + '/bin/activate_this.py')
-exec(open(activate_env).read(), dict(__file__=activate_env))
+try:
+    activate_env = os.path.expanduser(virtualenvPath + '/bin/activate_this.py')
+    exec(open(activate_env).read(), dict(__file__=activate_env))
+except:
+    _logger.exception("Virtual env is not activated")
 
 application = get_wsgi_application()

@@ -896,10 +896,12 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
         font-weight: bold;
         border: solid 1px #d3deed;}
     .fresh-table tbody td {
-        border: solid 1px #e9e9e9;}
+        border: solid 1px #e9e9e9;
+        padding: 0.5rem;}
     .fresh-table tbody th {
         border: solid 1px #dbdbdb;
-        background-color: #f1f1f1;}
+        background-color: #f1f1f1;
+        padding: 0.5rem;}
     .fresh-table tbody td.bold {
         font-weight: bold;}
     .fresh-table tbody td a {

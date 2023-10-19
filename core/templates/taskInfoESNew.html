@@ -52,7 +52,7 @@
           {% if task.dsinfo %}
               <th> N input events <br> <span class='finished'>processed</span><br> <span class='finished'>used</span></th>
               <th> N output events </th>
-              <th style="white-space: nowrap">HS06*sec
+              <th style="white-space: nowrap">HS23s
                 <br> <span class="closed">Expected</span>
                 <br> Total
                 <br><span class='done'>done</span>
@@ -118,7 +118,7 @@
                   <span class='finished'>{{ task.totevproc_evst | intcomma }} ({{ task.pcttotevproc_evst|floatformat }}%)</span><br>
                   <span class='finished'>{{ task.totevproc | intcomma }} ({{ task.pctfinished|floatformat }}%)</span></td>
               <td> {{ task.totevoutput | intcomma }} </td>
-              <td class="num"> <span class="closed">{{ task.totevhs06 | intcomma }}</span>
+              <td class="num"><span class="closed">{{ task.totevhs06 | intcomma }}</span>
                   <br>{{ task.currenttotevhs06 | intcomma }}
                   <br><span class='finished'>{{ task.totevprochs06 | intcomma }}</span>
                   <br><span class='failed'>{{ task.failedevprochs06 | intcomma }}</span></td>
