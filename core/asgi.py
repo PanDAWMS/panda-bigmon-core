@@ -3,13 +3,10 @@ import sys
 import site
 import logging
 
-from os.path import abspath, dirname, split
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from core.kafka.routing import ws_urlpatterns
-from os.path import join, pardir, abspath, dirname, split
 
-from django.core.asgi import get_asgi_application
+from os.path import join, pardir, abspath, dirname, split
 
 # Initialize Django ASGI application early to ensure the AppRegistry
 # is populated before importing code that may import ORM models.
@@ -60,6 +57,12 @@ except:
 # Activate your virtual env
 activate_env = os.path.expanduser(virtualenvPath + '/bin/activate_this.py')
 exec(open(activate_env).read(), dict(__file__=activate_env))
+
+import django
+django.setup()
+
+from django.core.asgi import get_asgi_application
+from core.kafka.routing import ws_urlpatterns
 
 application = ProtocolTypeRouter({
   'http': get_asgi_application(),
