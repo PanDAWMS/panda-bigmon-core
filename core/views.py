@@ -77,8 +77,9 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table
-from core.libs.exlib import is_timestamp, get_file_info, convert_bytes, convert_hs06, dictfetchall, round_to_n_digits
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
+from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, \
+    convert_grams
 from core.libs.eventservice import event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
@@ -5511,21 +5512,17 @@ def taskInfo(request, jeditaskid=0):
             taskrec['currenttotevhs06'] = int(job_metrics_sum['hs06sec']['total']) if 'hs06sec' in job_metrics_sum else None
 
             if 'gco2_global' in job_metrics_sum:
+                taskrec['gco2_global_humanized'] = {}
+                for k, v in job_metrics_sum['gco2_global'].items():
+                    cv, unit = convert_grams(float(v), output_unit='auto')
+                    taskrec['gco2_global_humanized'][k] = {'unit': unit, 'value': round_to_n_digits(cv, n=0, method='floor')}
                 taskrec.update({
-                    'gco2_global_'+k: int(round_to_n_digits(float(v), method='floor')) if v > 1 else round_to_n_digits(float(v), n=1, method='floor') for k, v in job_metrics_sum['gco2_global'].items()
+                    'gco2_global_' + k: int(v) for k, v in job_metrics_sum['gco2_global'].items()
                 })
 
         taskrec['brokerage'] = 'prod_brokerage' if taskrec['tasktype'] == 'prod' else 'analy_brokerage'
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
             taskrec['slice'] = get_prod_slice_by_taskid(jeditaskid) if taskrec['tasktype'] == 'prod' else None
-            try:
-                connection = create_es_connection()
-                split_rule = get_split_rule_info(connection, jeditaskid)
-                if len(split_rule) > 0:
-                    info['split_rule'] = {}
-                    info['split_rule']['messages'] = split_rule
-            except Exception as e:
-                _logger.exception('Failed to get split rule info for task from elasticSearch with:\n{}'.format(e))
 
     # datetime type -> str in order to avoid encoding errors in template
     datetime_task_param_names = ['creationdate', 'modificationtime', 'starttime', 'statechangetime', 'ttcrequested']
@@ -5559,17 +5556,50 @@ def taskInfo(request, jeditaskid=0):
         }
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     else:
+        # get split rule changes from ES-atlas (we do it only for rendered templates)
+        if 'ATLAS' in settings.DEPLOYMENT:
+            try:
+                connection = create_es_connection()
+                split_rule = get_split_rule_info(connection, jeditaskid)
+                if len(split_rule) > 0:
+                    info['split_rule'] = {}
+                    info['split_rule']['messages'] = split_rule
+            except Exception as e:
+                _logger.exception('Failed to get split rule info for task from elasticSearch with:\n{}'.format(e))
 
+            if job_metrics_sum:
+                if 'hs06sec' in job_metrics_sum:
+                    taskrec['hs23s_humanized'] = {
+                        k: dict(zip(
+                            ('value', 'unit'),
+                            (round_to_n_digits(convert_to_si_prefix(v)[0], n=1), convert_to_si_prefix(v)[1])
+                        )) for k, v in job_metrics_sum['hs06sec'].items()
+                    }
+                    if 'totevhs06' in taskrec:
+                        taskrec['hs23s_humanized']['expected'] = dict(zip(('value', 'unit'), (round_to_n_digits(
+                            convert_to_si_prefix(taskrec['totevhs06'])[0], n=1), convert_to_si_prefix(taskrec['totevhs06'])[1])))
+                    else:
+                        taskrec['hs23s_humanized']['expected'] = '-'
+                if 'gco2_global' in job_metrics_sum:
+                    taskrec['gco2_global_humanized'] = {}
+                    for k, v in job_metrics_sum['gco2_global'].items():
+                        cv, unit = convert_grams(float(v), output_unit='auto')
+                        taskrec['gco2_global_humanized'][k] = {'unit': unit, 'value': round_to_n_digits(cv, n=0)}
+                    taskrec.update({
+                        'gco2_global_' + k: int(v) for k, v in job_metrics_sum['gco2_global'].items()
+                    })
+
+        # prepare data for template
         taskparams, jobparams = humanize_task_params(taskparams)
+
         furl = request.get_full_path()
         nomodeurl = extensibleURL(request, removeParam(furl, 'mode'))
 
         # decide on data caching time [seconds]
         cacheexpiration = 60 * 20  # second/minute * minutes
         if taskrec and 'status' in taskrec and taskrec['status'] in const.TASK_STATES_FINAL and (
-                'dsinfo' in taskrec and 'nfiles' in taskrec['dsinfo'] and isinstance(taskrec['dsinfo']['nfiles'],
-                                                                                     int) and taskrec['dsinfo'][
-                    'nfiles'] > 10000):
+                'dsinfo' in taskrec and 'nfiles' in taskrec['dsinfo'] and (
+                    isinstance(taskrec['dsinfo']['nfiles'], int) and taskrec['dsinfo']['nfiles'] > 10000)):
             cacheexpiration = 3600 * 24 * 31  # we store such data a month
 
         user_expert = is_expert(request)

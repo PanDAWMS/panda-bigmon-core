@@ -136,10 +136,10 @@ def runningProdTasks(request):
     except Exception as ex:
         _logger.exception('Internal Server Error: failed to get gCO2 values from ES with: {}'.format(str(ex)))
     if gco2_sum and 'total' in gco2_sum:
-        _, unit =  convert_grams(gco2_sum['total'], output_unit='auto')
-        gsum['gco2_sum'] = {
-            k: {'unit':unit, 'value': round_to_n_digits(convert_grams(v, output_unit=unit)[0], n=0)} for k,v in gco2_sum.items()
-        }
+        gsum['gco2_sum'] = {}
+        for k, v in gco2_sum.items():
+            cv, unit = convert_grams(float(v), output_unit='auto')
+            gsum['gco2_sum'][k] = {'unit': unit, 'value': round_to_n_digits(cv, n=0, method='floor')}
     else:
         gsum['gco2_sum'] = {}
 

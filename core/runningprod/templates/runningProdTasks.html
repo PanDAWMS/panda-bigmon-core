@@ -225,7 +225,10 @@
 
 <table id = 'tasklist' class="data-table nowrap">
 <caption>{{ gsum.ntasks }} task{% if gsum.ntasks > 1 %}s{% endif %} listed.
-  {% if gsum.gco2_sum|length > 0 %}Estimated CO<sub>2</sub> emission in total: {{ gsum.gco2_sum.total.value }} {{ gsum.gco2_sum.total.unit }},
+  {% if gsum.gco2_sum|length > 0 %}
+    Estimated CO<sub>2</sub>  emission <a class="bp-tooltip left blacklink" target="_blank" href="https://panda-wms.readthedocs.io/en/latest/advanced/carbon_footprint.html"><i class="fi-info"></i>
+            <span class="bp-tooltip tooltip-text">see explanation of how it is calculated</span></a>
+    in total: {{ gsum.gco2_sum.total.value }} {{ gsum.gco2_sum.total.unit }},
     including <span class="broken">{{ gsum.gco2_sum.failed.value }} {{ gsum.gco2_sum.failed.unit }}</span> by failed jobs.
   {% endif %}
 </caption>

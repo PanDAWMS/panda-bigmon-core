@@ -303,6 +303,48 @@ def convert_grams(n_grams, output_unit='auto'):
     return output, output_unit
 
 
+def convert_to_si_prefix(input_value, output_unit='auto'):
+    """
+    Convert value to desired SI prefix. If output_unit is "auto", rounds to significant figures and
+    :param input_value: int or float
+    :param output_unit: str - SI prefix: G, M, k, m, µ, ... or "auto"
+    :return: output: float
+    :return: output_unit: str
+    """
+    output = float(0)
+    if (isinstance(input_value, int) or isinstance(input_value, float)) and input_value > 0:
+        input_value = float(input_value)
+        multipliers_dict = {
+            'a': float(1000000000000000000),
+            'f': float(1000000000000000),
+            'p': float(1000000000000),
+            'n': float(1000000000),
+            'µ': float(1000000),
+            'm': float(1000),
+            '': float(1),
+            'k': float(1.0 / 1000),
+            'M': float(1.0 / 1000000),
+            'G': float(1.0 / 1000000000),
+            'T': float(1.0 / 1000000000000),
+            'P': float(1.0 / 1000000000000000),
+            'E': float(1.0 / 1000000000000000000),
+        }
+        if output_unit in multipliers_dict:
+            output = input_value * multipliers_dict[output_unit]
+        elif output_unit == 'auto':
+            for unit, mp in multipliers_dict.items():
+                if 1.0 <= input_value * mp < 1000.0:
+                    output = input_value * mp
+                    output_unit = unit
+                    break
+    else:
+        output_unit = ''
+
+    return output, output_unit
+
+
+
+
 def split_into_intervals(input_data, **kwargs):
     """
     Split numeric values list into intervals for sumd
