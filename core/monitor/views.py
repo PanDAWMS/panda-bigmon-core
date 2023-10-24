@@ -2,6 +2,7 @@ import json
 import logging
 import pickle
 import collections
+import time
 from datetime import datetime, timedelta
 
 from django.http import HttpResponse
@@ -10,54 +11,47 @@ from django.views.decorators.cache import never_cache
 from core.monitor.modelsMonitor import AtlasDBA
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.DateEncoder import DateEncoder
-from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.views import initRequest
 
-from django.conf import settings as djangosettings
+from django.conf import settings
 
+_logger_err = logging.getLogger('bigpandamon-error')
 
 @never_cache
 def monitorJson(request):
-    if djangosettings.DEPLOYMENT == 'ORACLE_ATLAS':
-
-        notcachedRemoteAddress = ['188.184.185.129', '188.185.80.72', '188.185.165.248', '188.184.116.46']
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        if ip in notcachedRemoteAddress:
-            valid, response = initRequest(request)
-            test = False
-            if 'test' in request.GET:
-                test = True
-            totalSessionCount = 0
-            totalActiveSessionCount = 0
-            sesslist = ('num_active_sess','num_sess','machine','program')
-            sessions = AtlasDBA.objects.filter().values(*sesslist)
-            for session in sessions:
-                totalSessionCount += session['num_sess']
-                totalActiveSessionCount += session['num_active_sess']
-            if totalSessionCount >= 50 or test:
-                logger = logging.getLogger('bigpandamon-error')
-                message = 'Internal Server Error: ' + 'Attention!!! Total session count: ' + str(totalSessionCount) + ' Total active session count: ' + str (totalActiveSessionCount)
-                logger.error(message)
-            data = list(sessions)
-            response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-            return response
-        return HttpResponse(json.dumps({'message': 'Forbidden!'}), status=403, content_type='text/html')
-    else:
-        response = HttpResponse(json.dumps([], cls=DateEncoder), content_type='application/json')
-        return response
-
-
-def testip(request):
+    """
+    Return a JSON with service metrics
+    :param request:
+    :return:
+    """
+    valid, response = initRequest(request)
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    # if x_forwarded_for:
-    #     ip = x_forwarded_for.split(',')[0]
-    # else:
-    #     ip = request.META.get('REMOTE_ADDR')
-    return HttpResponse(json.dumps(x_forwarded_for, cls=DateTimeEncoder), content_type='application/json')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+
+    if ip not in settings.CACHING_CRAWLER_HOSTS:
+        return HttpResponse(json.dumps({'message': 'Forbidden!'}), status=403, content_type='application/json')
+
+    db_sessions = {}
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
+        db_sessions['total'] = 0
+        db_sessions['active'] = 0
+        sessions = AtlasDBA.objects.filter().values('num_active_sess', 'num_sess','machine', 'program')
+        for session in sessions:
+            db_sessions['total'] += session['num_sess']
+            db_sessions['active'] += session['num_active_sess']
+        if db_sessions['total'] >= 50 or db_sessions['active'] >= 20:
+            message = f"Internal Server Error: Attention!!! Total session count: {db_sessions['total']} Total active session count: {db_sessions['active']}"
+            _logger_err.error(message)
+
+    data = {
+        'db_sessions': db_sessions,
+        'response_time': time.time() - request.session['req_init_time'],
+    }
+    response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+    return response
 
 
 def serverStatusHealth(request):
@@ -68,21 +62,16 @@ def serverStatusHealth(request):
     WSGIDaemonProcess: inactivity-timeout=60 (this is for nginx health) restart-interval=14400 (the last one is for guarging from blocking requests)
 
     Nginx: https://www.nginx.com/resources/admin-guide/http-health-check/
-
-
     match server_ok {
         status 200;
         header Content-Type = text/html;
         body ~ "Normal operation";
     }
-
-
     location / {
         proxy_pass http://backend;
         health_check match=server_ok uri=/serverstatushealth/ interval=600 fails=10000 passes=1;
     }
-
-    Then healthping = 10 min,
+    Then healthping = 10 min
     """
 
     initRequest(request)
@@ -114,7 +103,7 @@ def serverStatusHealth(request):
     else:
         data = json.loads(data)
         q = pickle.loads(data['q'])
-        lastupdate = datetime.strptime(data['lastupdate'], djangosettings.defaultDatetimeFormat)
+        lastupdate = datetime.strptime(data['lastupdate'], settings.defaultDatetimeFormat)
 
     # end of test filling
 
@@ -130,7 +119,7 @@ def serverStatusHealth(request):
             data = {}
             q.append(currenthost)
             data['q'] = pickle.dumps(q)
-            data['lastupdate'] = datetime.now().strftime(djangosettings.defaultDatetimeFormat)
+            data['lastupdate'] = datetime.now().strftime(settings.defaultDatetimeFormat)
             setCacheEntry(request, "StatusHealth", json.dumps(data, cls=DateEncoder), 60 * 60)
             return HttpResponse("Normal operation", content_type='text/html')
 
