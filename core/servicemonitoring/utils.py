@@ -37,20 +37,64 @@ def disk_info(disk=''):
 
 
 def make_db_connection(cfg):
+
     try:
-        dbuser = cfg.get('pandadb', 'login')
-        dbpasswd = cfg.get('pandadb', 'password')
-        description = cfg.get('pandadb', 'description')
+        from core import settings
+        dbaccess = settings.local.dbaccess['default']
     except:
+        dbaccess = None
+        _logger.info("Failed to get credentials for DB connection from bigpanda settings")
+
+    if dbaccess:
+        db_user = dbaccess['USER']
+        db_passwd = dbaccess['PASSWORD']
+        db_description = f"""(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=adcr-s.cern.ch)(PORT=10121))(LOAD_BALANCE=on)
+            (ENABLE=BROKEN)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME={dbaccess['NAME']}.cern.ch)))"""
+    elif cfg.has_section('pandadb') and all([cfg.has_option('pandadb', x) for x in ('login', 'password', 'description')]):
+        db_user = cfg.get('pandadb', 'login')
+        db_passwd = cfg.get('pandadb', 'password')
+        db_description = cfg.get('pandadb', 'description')
+    else:
+        db_user, db_passwd, db_description = None, None, None
         _logger.error('Settings for Oracle connection not found')
-        return None
+
+    if db_user and db_passwd and db_description:
+        try:
+            connection = cx_Oracle.connect(db_user, db_passwd, db_description)
+            _logger.debug('DB connection established. "{0}" "{1}"'.format(db_user, db_description))
+            return connection
+        except Exception as ex:
+            _logger.error(ex)
+
+    return None
+
+
+
+def db_sessions(connection, hostname='all'):
+    """
+    Get DB sessions info using special ATLAS_DBA view
+    :return: N active sessions, N total sessions
+    """
+    n_active_sessions = None
+    n_sessions = None
+
+    where_clause = ''
+    if hostname != 'all':
+        where_clause = f" where machine like '%%{hostname}%%'"
+    query = f"select sum(num_active_sess), sum(num_sess) from atlas_dba.count_pandamon_sessions {where_clause}"
+
+    cursor = connection.cursor()
     try:
-        connection = cx_Oracle.connect(dbuser, dbpasswd, description)
-        _logger.debug('DB connection established. "{0}" "{1}"'.format(dbuser, description))
-        return connection
+        cursor.execute(query)
+        for row in cursor:
+            n_active_sessions = row[0]
+            n_sessions = row[1]
+            break
     except Exception as ex:
-        _logger.error(ex)
-        return None
+        _logger.exception(f"Failed to execute query with {ex}")
+    cursor.close()
+    _logger.info(f"Got sessions counts for {hostname} host(s): active={n_active_sessions}, total={n_sessions}")
+    return n_active_sessions, n_sessions
 
 
 def logstash_configs(cfg):

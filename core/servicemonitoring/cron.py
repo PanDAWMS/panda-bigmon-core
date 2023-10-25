@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime
 
 from utils import get_settings_path, servers_configs, monit_sls_configs, cpu_info, memory_info, disk_info, volume_use, \
-    process_availability, subprocess_availability, DateTimeEncoder, send_data
+    process_availability, subprocess_availability, DateTimeEncoder, send_data, make_db_connection, db_sessions
 from sls_document import SlsDocument
 from logger import ServiceLogger
 
@@ -87,6 +87,19 @@ def main():
                     dict_metrics[subprocess + '_info'] = proc_avail_info
                 except Exception as ex:
                     _logger.error(ex)
+
+        if metrics and 'dbsession' in metrics:
+            conn = None
+            try:
+                conn = make_db_connection(settings_path)
+                n_active_sessions, n_sessions = db_sessions(connection=conn, hostname=hostname)
+                if n_active_sessions is not None and n_sessions is not None:
+                    dict_metrics['db_n_active_sessions'] = n_active_sessions
+                    dict_metrics['db_n_sessions'] = n_sessions
+            except Exception as ex:
+                _logger.error(ex)
+            if conn:
+                conn.close()
 
         # send metrics to logstash
         dict_metrics['creation_time'] = datetime.utcnow()
