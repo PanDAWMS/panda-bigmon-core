@@ -3,6 +3,7 @@ import ipaddress
 import re
 import json
 import psutil
+import subprocess
 from datetime import timedelta, datetime
 
 from django.utils import timezone
@@ -57,6 +58,7 @@ class DDOSMiddleware(object):
         except:
             _logger.exception('Can not get full path of request')
 
+        # we limit number of requests per hour for a set of IPs
         # check if remote is a valid IP address
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for is None:
@@ -81,23 +83,29 @@ class DDOSMiddleware(object):
         except:
             x_referer = ''
 
-        # we limit number of requests per hour for a set of IPs
+        try:
+            hostname = subprocess.getoutput('hostname')
+        except:
+            hostname = request.META.get('HTTP_HOST')
+
         try:
             useragent = request.META.get('HTTP_USER_AGENT')
         except:
             useragent = None
 
         cursor = connection.cursor()
+        # get number of sessions
         dbtotalsess, dbactivesess = 0, 0
-        # try:
-        #     cursor.execute("SELECT SUM(NUM_ACTIVE_SESS), SUM(NUM_SESS) FROM ATLAS_DBA.COUNT_PANDAMON_SESSIONS")
-        #     rows = cursor.fetchall()
-        #     for row in rows:
-        #         dbactivesess = row[0]
-        #         dbtotalsess = row[1]
-        #         break
-        # except:
-        #     _logger.warning('Failed to get connections number from ATLAS_DBA')
+        # if settings.DEPLOYMENT == 'ATLAS_ORACLE':
+            # try:
+            #     cursor.execute("SELECT SUM(NUM_ACTIVE_SESS), SUM(NUM_SESS) FROM ATLAS_DBA.COUNT_PANDAMON_SESSIONS")
+            #     rows = cursor.fetchall()
+            #     for row in rows:
+            #         dbactivesess = row[0]
+            #         dbtotalsess = row[1]
+            #         break
+            # except:
+            #     _logger.warning('Failed to get connections number from ATLAS_DBA')
 
         if settings.DEPLOYMENT == 'POSTGRES':
             sqlRequest = f"SELECT nextval('{settings.DB_SCHEMA}.\"all_requests_seq\"') as my_req_token;"
@@ -111,7 +119,7 @@ class DDOSMiddleware(object):
 
         reqs = AllRequests(
             id=requestToken,
-            server=request.META.get('HTTP_HOST'),
+            server=hostname,
             remote=x_forwarded_for,
             qtime=timezone.now(),
             url=request.META.get('QUERY_STRING'),
