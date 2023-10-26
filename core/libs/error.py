@@ -52,7 +52,7 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False, **kwarg
         errorCodes = get_job_error_desc()
 
     if 'metastruct' in job:
-        if type(job['metastruct']) is np.unicode:
+        if type(job['metastruct']) is str:
             try:
                 meta = json.loads(job['metastruct'])
             except:

@@ -1,0 +1,13 @@
+[logstash]
+auth: %TEIGI__logstash_metrics_login__%,%TEIGI__logstash_metrics_password__%
+url: aipanda013.cern.ch
+port: 31311
+[monitsls]
+host: monit-metrics
+port: 10012
+service: PandaBigMon
+[othersettings]
+metrics: cpu,memory,disk,volume,process,dbsession
+disk: data
+process: httpd
+volume: cephfs
