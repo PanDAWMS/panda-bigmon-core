@@ -11,7 +11,7 @@ class SlsDocument:
         self.info = {}
         self.data = {}
         self.id = None
-        self.producer = 'bigpanda'
+        self.producer = 'atlaspandabigmon'
 
     def set_id(self, id_info):
         self.id = id_info
