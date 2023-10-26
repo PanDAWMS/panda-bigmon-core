@@ -86,6 +86,8 @@ def create_es_connection(instance='es-atlas', timeout=2000, max_retries=10, retr
         _logger.error(ex)
     return None
 
+def get_date(item):
+    return datetime.strptime(item['@timestamp'],  '%Y-%m-%dT%H:%M:%S.%fZ')
 
 def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort='asc', search_string=''):
     """
@@ -235,7 +237,6 @@ def get_split_rule_info(es_conn, jeditaskid):
 
     return split_rules
 
-
 def get_gco2_sum_for_tasklist(task_list):
     """
     Getting sum of gCO2 for list of tasks from ES-ATLAS
@@ -265,3 +266,70 @@ def get_gco2_sum_for_tasklist(task_list):
     gco2_sum['total'] = gco2_sum['finished'] + gco2_sum['failed']
 
     return gco2_sum
+
+def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
+
+    task_message_list = []
+    task_message_ids_list = []
+    task_message_dict = {}
+
+    jobs_info_status_dict = {}
+
+    full_index_name = db_source + '_tasks_status_log*'
+
+    es_conn = create_es_connection(instance=es_instance)
+
+    s = Search(using=es_conn, index=full_index_name)
+
+    fields_list = ['@timestamp','db_source', 'inputs', 'job_hs06sec', 'job_inputfilebytes', 'job_nevents', 'job_ninputdatafiles',
+                  'job_ninputfiles', 'job_noutputdatafiles', 'job_outputfilebytes', 'jobid', 'message_id', 'msg_type', 'status',
+                  'taskid','timestamp']
+
+    s = s.source(fields_list)
+    s = s.filter('term', taskid='{0}'.format(jeditaskid))
+    q = Q("match", msg_type='job_status')
+    s = s.query(q)
+
+    response = s.scan()
+    for hit in response:
+        hit_dict = hit.to_dict()
+
+        if not hit_dict['jobid'] in jobs_info_status_dict:
+            jobs_info_status_dict[hit_dict['jobid']] = {}
+
+        jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {'timestamp': hit_dict['timestamp'],
+                                                                        'message_id': hit_dict['message_id'],
+                                                                        'status': hit_dict['status'],
+                                                                        'time': hit_dict['@timestamp']
+                                                                        }
+
+        task_message_list.append(hit_dict)
+        task_message_ids_list.append(hit_dict['message_id'])
+        task_message_dict[hit_dict['message_id']] = hit_dict
+
+        if hit_dict['status'] in ('finished', 'failed', 'closed', 'cancelled'):
+            if 'job_inputfilebytes' in hit_dict and hit_dict['job_inputfilebytes'] != 'NULL':
+                job_inputfilebytes = hit['job_inputfilebytes']
+            else:
+                job_inputfilebytes = 0
+
+            if 'job_hs06sec' in hit_dict and hit_dict['job_hs06sec'] != 'NULL':
+                job_hs06sec = hit['job_hs06sec']
+            else:
+                job_hs06sec = 0
+
+            if 'job_nevents' in hit_dict and hit_dict['job_nevents'] != 'NULL':
+                job_nevents = hit['job_nevents']
+            else:
+                job_nevents = 0
+
+            jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {'message_id': hit_dict['message_id'], 'job_inputfilebytes': job_inputfilebytes, 'job_hs06sec': job_hs06sec, 'status': hit_dict['status'], 'job_nevents': job_nevents, 'time':hit_dict['@timestamp'],'timestamp':hit_dict['timestamp']}
+
+        fields_list = list(hit_dict.keys())
+        for field in fields_list:
+            if hit_dict[field] is None:
+                hit_dict[field] = "None"
+
+    task_message_list = sorted(task_message_list, key=get_date)
+
+    return task_message_list, task_message_ids_list, jobs_info_status_dict

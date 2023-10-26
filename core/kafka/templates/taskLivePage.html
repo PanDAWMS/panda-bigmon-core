@@ -3,71 +3,384 @@
 {% load static %}
 {% load common_tags %}
 
-{% block page_title %}Test terminal page{% endblock %}
+{% block page_title %}Task live page dashboard{% endblock %}
 {% block title %}PanDA monitor{% endblock %}
 {% block subtitle %} {{ viewParams.selection|safe }} {% endblock %}
 {% block css_page_library %}
-  <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
-  <link rel="stylesheet" href="{% static 'css/jquery.terminal.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/jquery.terminal.min.css' %}"/>
 {% endblock %}
 
 {% block css_page %}
+    <style>
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        .chart-container {
+            flex: 3;
+            max-width: 75%;
+            height: 600px;
+        }
+
+        .sidebar {
+            flex: 1;
+            max-width: 25%;
+            padding: 10px;
+        }
+
+        #jobs_dropdown,
+        #job_status_history {
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        #job_status_history {
+            overflow: auto;
+            max-height: 600px;
+            width: 100%;
+        }
+
+        #job_status_history td:first-child {
+            width: 25%;
+        }
+
+        #job_status_history td:nth-child(2) {
+            width: 75%;
+        }
+
+        .pie-chart-container {
+            display: flex;
+            width: 100%;
+            height: 500px;
+        }
+
+        .pie-chart-container canvas {
+            flex: 1;
+            max-width: calc(100% / 3);
+            height: auto;
+            padding: 10px;
+        }
+    </style>
 {% endblock %}
 
 {% block js_head_page_library %}
-    <script src="{% static 'js/jquery.terminal.min.js' %}"></script>
+    <script src="{% static 'js/plots/chart.umd.min.js' %}"></script>
+    <script src="{% static 'js/terminal/jquery.terminal.min.js' %}"></script>
 {% endblock %}
 
 {% block body %}
+    <div class="container">
+        <div class="chart-container">
+            <canvas id="dynamic-chart"></canvas>
+        </div>
+        <div class="sidebar">
+            <select id="jobs_dropdown">
+                <option value="">Select job from list</option>
+            </select>
+            <table id="job_status_history">
+                <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Job Status</th>
+                    <th>Duration</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div class="pie-chart-container">
+        <canvas id="pie-chart-job_hs06sec"></canvas>
+        <canvas id="pie-chart-job_inputfilebytes"></canvas>
+        <canvas id="pie-chart-job_nevents"></canvas>
+    </div>
+    <br/>
     <div id="web-terminal"></div>
 {% endblock %}
 
 {% block js_body_page %}
-       <script>
-           {% if request.session.full_hostname %}
-                ws_host = '{{ request.session.full_hostname }}:8002';
-           {% else %}
-               ws_host = '';
-               console.log('Hostname is not defined');
-           {% endif %}
+    <script>
+        $(document).ready(function () {
+
+            {% if request.session.full_hostname %}
+                ws_host = '{{ request.session.full_hostname }}';
+            {% else %}
+                ws_host = '';
+                console.log('Hostname is not defined');
+            {% endif %}
             if (window.location.protocol != "https:") {
                 web_socket_protocol = 'ws://';
                 web_socket_host = web_socket_protocol + ws_host;
-            }
-            else {
+            } else {
                 web_socket_protocol = 'wss://';
                 web_socket_host = web_socket_protocol + ws_host;
             }
+
             console.log(web_socket_host);
-            var socket = new WebSocket(web_socket_host +'/ws/kafka_messages/');
-            var terminal = $('#web-terminal').terminal(
-                    function(command, term) {
-                        if (command == 'help') {
-                            term.echo('Help command');
-                        }
-                        if (command == 'start') {
+            var socket = new WebSocket(web_socket_host + '/ws/kafka_messages/{{ db_source|safe }}/{{ jeditaskid|safe }}/');
+            var dropdown = document.getElementById('jobs_dropdown');
+            var table = document.getElementById("job_status_history");
+
+            var labelColors = {
+                'pending': 'rgba(222, 185, 0, 1)',
+                'defined': 'rgba(33, 116, 187, 1)',
+                'waiting': 'rgba(222, 185, 0, 1)',
+                'assigned': 'rgba(9, 153, 153, 1)',
+                'throttled': 'rgba(255, 153, 51, 1)',
+                'activated': 'rgba(59, 142, 103, 1)',
+                'sent': 'rgba(222, 185, 0, 1)',
+                'starting': 'rgba(47, 209, 71, 1)',
+                'running': 'rgba(52, 169, 52, 1)',
+                'holding': 'rgba(255, 153, 51, 1)',
+                'transferring': 'rgba(52, 169, 52, 1)',
+                'merging': 'rgba(52, 169, 52, 1)',
+                'finished': 'rgba(32, 127, 32, 1)',
+                'failed': 'rgba(255, 0, 0, 1)',
+                'cancelled': 'rgba(230, 115, 0, 1)',
+                'closed': 'rgba(74, 74, 74, 1)'
+            };
+
+            var ctx = document.getElementById('dynamic-chart').getContext('2d');
+
+            var mainChart = new Chart(ctx, {
+                type: 'bar',
+                data: {},
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
                         }
                     },
-                    {
-                        greetings: 'Welcome to BigPanDA Web Terminal. Created using jQuery terminal v2.52.2',
-                        name: 'RealTimeLogs',
-                        height: 600,
-                        prompt: '> ',
-                        onInit: function(term) {
-                            term.pause();
-                            {#term.echo('The last 50 messages from payload log')#}
-                        socket.onmessage = function(event) {
-                            var data = JSON.parse(event.data);
-                            term.echo(data.message)
-                        }
-                        },
-                        keypress: function(e, term) {
-                            if (e.which == 100 && e.ctrlKey) {
-                                stop = true;
-                                term.resume();
-                                return false;
+                    plugins: {
+                       title: {
+                            display: true,
+                            text: 'N jobs by status'
+                       },
+                        legend: {
+                            onClick: function (e, legendItem) {
+                                const index = legendItem.index;
+                                const chart = this.chart;
+                                chart.getDatasetMeta(0).data[index].hidden = !chart.getDatasetMeta(0).data[index].hidden;
+                            },
+                            labels: {
+                                generateLabels: function (chart) {
+                                    const labels = chart.data.labels;
+                                    const dataset = chart.data.datasets[0];
+                                    const legendItems = [];
+
+                                    for (let i = 0; i < labels.length; i++) {
+                                        const label = labels[i];
+                                        const count = dataset.data[i];
+                                        const labelText = `${label} (${count})`;
+
+                                        legendItems.push({
+                                            text: labelText,
+                                            fillStyle: labelColors[labels[i]],
+                                            lineWidth: 1,
+                                            index: i
+                                        });
+                                    }
+                                    return legendItems;
+                                }
                             }
                         }
-                    });
-        </script>
+                    }
+                },
+            });
+            socket.onmessage = function (event) {
+                var message = JSON.parse(event.data);
+
+                switch (message['type']) {
+                    case 'terminal':
+                        $('#web-terminal').terminal().echo(JSON.stringify(message['message']));
+                        break;
+                    case 'metrics':
+                        mainChart.data = message['chart_js_statuses_data'];
+                        mainChart.update();
+
+                        updatePieChart('pie-chart-job_hs06sec', message['chart_js_job_hs06sec'], 'hs06sec');
+                        updatePieChart('pie-chart-job_inputfilebytes', message['chart_js_job_inputfilebytes'], 'inputfilebytes');
+                        updatePieChart('pie-chart-job_nevents', message['chart_js_job_nevents'], 'nevents');
+
+                        break;
+                    case 'jobs_list':
+                        var jobs_dict = message['message'];
+                        var dropdown = document.getElementById('jobs_dropdown');
+
+                        dropdown.innerHTML = '<option value="">Select job from list</option>';
+
+                        jobs_dict.forEach(option => {
+                            var optionElement = document.createElement('option');
+                            optionElement.value = option;
+                            optionElement.textContent = option;
+                            dropdown.appendChild(optionElement);
+                        });
+                        break;
+                    case 'job_status_history':
+                        var statusMap = new Map();
+                        var job_hist = message['message'];
+
+                        for (var status in job_hist) {
+                            statusMap.set(job_hist[status].timestamp, {
+                                status: status,
+                                time: job_hist[status].time
+                            });
+                        }
+
+                        var thead = document.createElement("thead");
+                        var headerRow = thead.insertRow();
+                        var headerTimestampCell = document.createElement("th");
+                        headerTimestampCell.innerHTML = 'Timestamp';
+                        headerRow.appendChild(headerTimestampCell);
+                        var headerJobStatusCell = document.createElement("th");
+                        headerJobStatusCell.innerHTML = 'Job Status';
+                        headerRow.appendChild(headerJobStatusCell);
+                        var headerDurationCell = document.createElement("th");
+                        headerDurationCell.innerHTML = 'Duration';
+                        headerRow.appendChild(headerDurationCell);
+
+                        table.innerHTML = "";
+
+                        var sortedStatuses = Array.from(statusMap.keys()).sort();
+
+                        sortedStatuses.forEach(function (timestamp, index, array) {
+                            var statusData = statusMap.get(timestamp);
+                            var row = table.insertRow();
+                            var timestampCell = row.insertCell(0);
+                            var jobStatusCell = row.insertCell(1);
+                            var durationCell = row.insertCell(2);
+
+                            timestampCell.innerHTML = (statusData.time).replace('T', ' ');
+                            jobStatusCell.innerHTML = statusData.status;
+
+                            if (labelColors.hasOwnProperty(statusData.status)) {
+                                jobStatusCell.style.backgroundColor = labelColors[statusData.status];
+                                jobStatusCell.style.color = 'white';
+                            }
+
+                            if (index < array.length - 1) {
+
+                                var nextTimestamp = array[index + 1];
+
+                                var currentTime = new Date(statusData.time);
+                                var nextTime = new Date(nextTimestamp * 1000);
+
+                                var currentTimeStamp = currentTime.getTime();
+                                var nextTimeStamp = nextTime.getTime();
+
+                                var durationInMilliseconds = Math.abs(nextTimeStamp - currentTimeStamp)
+
+                                var hours = Math.floor(durationInMilliseconds / 3600000);
+                                var minutes = Math.floor((durationInMilliseconds % 3600000) / 60000);
+                                var seconds = Math.floor((durationInMilliseconds % 60000) / 1000);
+                                var milliseconds = durationInMilliseconds % 1000;
+
+                                var formattedHours = String(hours).padStart(2, '0');
+
+                                var formattedDuration = formattedHours + ':' +
+                                    String(minutes).padStart(2, '0') + ':' +
+                                    String(seconds).padStart(2, '0') + '.' +
+                                    String(milliseconds).padStart(3, '0');
+
+                                durationCell.innerHTML = formattedDuration;
+
+                            } else {
+                                durationCell.innerHTML = '-';
+                            }
+                        });
+                        table.appendChild(thead);
+                        break;
+                    default:
+                }
+            };
+
+            socket.onclose = function (e) {
+                console.error('Socket closed unexpectedly');
+            };
+
+            var terminal = $('#web-terminal').terminal(
+                function (command, term) {
+                    switch (command) {
+                        case 'help':
+                            term.echo('Help command');
+                            break;
+                        case 'start':
+                            break;
+                        case 'hist':
+                            socket.send(JSON.stringify({
+                                'type': 'print_hist'
+                            }));
+                            term.echo('Command History:');
+                            break;
+                        default:
+                            term.echo('Command not recognized: ' + command);
+                    }
+                },
+                {
+                    greetings: 'Welcome to BigPanDA Web Terminal. Created using jQuery terminal',
+                    name: 'RealTimeLogs',
+                    height: 600,
+                    prompt: '> ',
+                    enabled: false,
+                    onInit: function (term) {
+                        term.echo('Terminal initialized');
+                    },
+                    keypress: function (e, term) {
+                        if (e.which == 100 && e.ctrlKey) {
+                            stop = true;
+                            term.resume();
+                            return false;
+                        }
+                    }
+                });
+            dropdown.addEventListener('change', function () {
+                var selectedValue = dropdown.value;
+                if (selectedValue) {
+                    socket.send(JSON.stringify({'type': 'get_job_history', 'pandaid': selectedValue}));
+                }
+            });
+            window.addEventListener('beforeunload', function (event) {
+                socket.send(JSON.stringify({
+                    'type': 'close_connection'
+                }));
+            });
+            function updatePieChart(canvasId, data, title) {
+                const chart = Chart.getChart(canvasId);
+
+                if (chart) {
+                    chart.data = data;
+                    chart.update();
+                } else {
+                    createPieChart(canvasId, data, title);
+                }
+            }
+
+            function createPieChart(canvasId, data, title) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                return new Chart(ctx, {
+                    type: 'pie',
+                    data: data,
+                    options: {
+                        maintainAspectRatio: false,
+                         plugins: {
+                        title: {
+                            display: true,
+                            text: title
+                        }
+                    }
+                    }
+                });
+            }
+        });
+    </script>
 {% endblock %}
