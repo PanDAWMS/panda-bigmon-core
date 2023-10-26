@@ -142,7 +142,6 @@ INSTALLED_APPS_EXTRA = [
     "core.harvester",
     "core.iDDS",
     "core.mlflowdynamic",
-    "core.monitor",
     "core.oi",
     "core.reports",
     "core.runningprod",
