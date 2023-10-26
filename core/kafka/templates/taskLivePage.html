@@ -22,17 +22,12 @@
         .chart-container {
             flex: 3;
             max-width: 75%;
-            height: 1000px;
-            display: flex;
-            align-items: center;
+            height: 600px;
         }
 
         .sidebar {
             flex: 1;
-            width: 25%;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+            max-width: 25%;
             padding: 10px;
         }
 
@@ -58,21 +53,19 @@
         }
 
         .pie-chart-container {
-            flex: 1;
             display: flex;
-            justify-content: space-around;
-            align-items: flex-start;
-            flex-wrap: wrap;
+            width: 100%;
+            height: 500px;
         }
 
         .pie-chart-container canvas {
-            width: 300px;
-            height: 300px;
-            margin: 10px;
+            flex: 1;
+            max-width: calc(100% / 3);
+            height: auto;
+            padding: 10px;
         }
     </style>
 {% endblock %}
-
 
 {% block js_head_page_library %}
     <script src="{% static 'js/plots/chart.umd.min.js' %}"></script>
@@ -80,11 +73,6 @@
 {% endblock %}
 
 {% block body %}
-    <div class="row">
-    <div>
-        <div id="web-terminal"></div>
-    </div>
-   </div>
     <div class="container">
         <div class="chart-container">
             <canvas id="dynamic-chart"></canvas>
@@ -106,13 +94,16 @@
                 </tbody>
             </table>
         </div>
-        <hr/>
-        <div class="pie-chart-container">
-            <canvas id="pie-chart-1"></canvas>
-            <canvas id="pie-chart-2"></canvas>
-            <canvas id="pie-chart-3"></canvas>
-        </div>
+
     </div>
+
+    <div class="pie-chart-container">
+        <canvas id="pie-chart-job_hs06sec"></canvas>
+        <canvas id="pie-chart-job_inputfilebytes"></canvas>
+        <canvas id="pie-chart-job_nevents"></canvas>
+    </div>
+    <br/>
+    <div id="web-terminal"></div>
 {% endblock %}
 
 {% block js_body_page %}
@@ -156,20 +147,25 @@
                 'cancelled': 'rgba(230, 115, 0, 1)',
                 'closed': 'rgba(74, 74, 74, 1)'
             };
+
             var ctx = document.getElementById('dynamic-chart').getContext('2d');
 
-            var myChart = new Chart(ctx, {
+            var mainChart = new Chart(ctx, {
                 type: 'bar',
                 data: {},
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
                         y: {
                             beginAtZero: true,
-                            responsive: true,
-                            maintainAspectRatio: false,
                         }
                     },
                     plugins: {
+                       title: {
+                            display: true,
+                            text: 'N jobs by status'
+                       },
                         legend: {
                             onClick: function (e, legendItem) {
                                 const index = legendItem.index;
@@ -209,8 +205,13 @@
                         $('#web-terminal').terminal().echo(JSON.stringify(message['message']));
                         break;
                     case 'metrics':
-                        myChart.data = message['statuses_data'];
-                        myChart.update();
+                        mainChart.data = message['chart_js_statuses_data'];
+                        mainChart.update();
+
+                        updatePieChart('pie-chart-job_hs06sec', message['chart_js_job_hs06sec'], 'hs06sec');
+                        updatePieChart('pie-chart-job_inputfilebytes', message['chart_js_job_inputfilebytes'], 'inputfilebytes');
+                        updatePieChart('pie-chart-job_nevents', message['chart_js_job_nevents'], 'nevents');
+
                         break;
                     case 'jobs_list':
                         var jobs_dict = message['message'];
@@ -330,6 +331,7 @@
                     name: 'RealTimeLogs',
                     height: 600,
                     prompt: '> ',
+                    enabled: false,
                     onInit: function (term) {
                         term.echo('Terminal initialized');
                     },
@@ -352,6 +354,33 @@
                     'type': 'close_connection'
                 }));
             });
+            function updatePieChart(canvasId, data, title) {
+                const chart = Chart.getChart(canvasId);
+
+                if (chart) {
+                    chart.data = data;
+                    chart.update();
+                } else {
+                    createPieChart(canvasId, data, title);
+                }
+            }
+
+            function createPieChart(canvasId, data, title) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                return new Chart(ctx, {
+                    type: 'pie',
+                    data: data,
+                    options: {
+                        maintainAspectRatio: false,
+                         plugins: {
+                        title: {
+                            display: true,
+                            text: title
+                        }
+                    }
+                    }
+                });
+            }
         });
     </script>
 {% endblock %}

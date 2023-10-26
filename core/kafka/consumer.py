@@ -1,33 +1,12 @@
 import json, asyncio
+import random
 
+from datetime import datetime
 from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
 from core.kafka.config import initConsumer
 from core.libs.elasticsearch import get_es_task_status_log
-
-
+from core.kafka.utils import fixed_statuses, prepare_data_for_pie_chart, prepare_data_for_main_chart
 class TaskLogsConsumer(AsyncWebsocketConsumer):
-    fixed_statuses = ['pending', 'defined', 'waiting', 'assigned', 'throttled',
-                      'activated', 'sent', 'starting', 'running', 'holding',
-                      'transferring', 'merging', 'finished', 'failed', 'cancelled', 'closed']
-
-    status_colors = {
-        'pending': 'rgba(222, 185, 0, 1)',
-        'defined': 'rgba(33, 116, 187, 1)',
-        'waiting': 'rgba(222, 185, 0, 1)',
-        'assigned': 'rgba(9, 153, 153, 1)',
-        'throttled': 'rgba(255, 153, 51, 1)',
-        'activated': 'rgba(59, 142, 103, 1)',
-        'sent': 'rgba(222, 185, 0, 1)',
-        'starting': 'rgba(47, 209, 71, 1)',
-        'running': 'rgba(52, 169, 52, 1)',
-        'holding': 'rgba(255, 153, 51, 1)',
-        'transferring': 'rgba(52, 169, 52, 1)',
-        'merging': 'rgba(52, 169, 52, 1)',
-        'finished': 'rgba(32, 127, 32, 1)',
-        'failed': 'rgba(255, 0, 0, 1)',
-        'cancelled': 'rgba(230, 115, 0, 1)',
-        'closed': 'rgba(74, 74, 74, 1)'
-    }
     async def connect(self):
         #self.active_tasks_by_user = {}
 
@@ -46,10 +25,13 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
 
         self.archived_messages, self.message_ids, self.jobs_info_status_dict = get_es_task_status_log(db_source=db_source,
                                                                                        jeditaskid=jeditaskid)
+        if len(self.jobs_info_status_dict) > 1:
+            hist_agg_data = await self.aggregated_data(self.jobs_info_status_dict)
 
-        await self.send(text_data=json.dumps({
-            'type': 'terminal', 'message': f'Information about this task contains {len(self.message_ids)} entries in ElasticSearch storage. To display them please print "hist" command'
-        }))
+            await self.send(text_data=json.dumps({
+                'type': 'terminal',
+                'message': hist_agg_data
+            }))
 
         self.consumer = initConsumer(client, jeditaskid)
         # self.active_tasks_by_user[user].append(kafka_task)
@@ -76,39 +58,24 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
             while True:
                 message = await loop.run_in_executor(None, self.consumer.poll, 1.0)
                 if message is None:
-                    # Dynamic testing
-                    # import random
-                    # statuses = ['pending', 'defined', 'waiting', 'assigned', 'throttled',
-                    #             'activated', 'sent', 'starting', 'running', 'holding',
-                    #             'transferring', 'merging', 'finished', 'failed', 'cancelled', 'closed']
-                    #
-                    #
-                    # random_key = random.randint(10000000, 99999999)
-                    #
-                    # random_status = random.choice(statuses)
-                    #
-                    # random_job_hs06sec = random.randint(0, 100)
-                    # random_job_inputfilebytes = random.randint(0, 10000)
-                    # random_job_nevents = random.randint(0, 1000)
-                    # jobs_dict[random_key] = {'job_hs06sec': 0, 'job_inputfilebytes': 0, 'job_nevents': 0,
-                    #                        'message_id': 'd699e53ea941a4f116eefb1900d9a2eda49b3c91',
-                    #                        'status': random_status, 'timestamp': 1696942835}
-                    # await self.send_metrics(jobs_dict)
                     continue
-
 
                 message_dict = json.loads(message.value())
 
                 is_message_meets_conditions = await self.message_filter(jeditaskid, message_dict)
 
                 if (is_message_meets_conditions):
-                    jobs_dict[message_dict['jobid']] = message_dict
-                    # sends metrics for plots
-                    await self.send_metrics(jobs_dict)
-                    # sends messages to the terminal
-                    await self.send(text_data=json.dumps({'type': 'terminal', 'message': message_dict}))
+                    if message_dict['msg_type'] == 'task_status':
+                        await self.send(text_data=json.dumps({'type': 'terminal', 'message': message.value()}))
+                    else:
+                        jobs_dict[message_dict['jobid']] = message_dict
+                        # sends metrics for plots
+                        await self.send_metrics(jobs_dict)
+                        # sends messages to the terminal
+                        agg_data = await self.aggregated_data(self.jobs_info_status_dict)
+                        await self.send_agg_data_to_terminal(agg_data)
 
-                    await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': jobs_dict.keys()}))
+                        await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': jobs_dict.keys()}))
 
                 print('Received message: {}'.format(message.value().decode('utf-8')))
 
@@ -137,36 +104,100 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
     async def send_metrics(self, jobs_dict):
         try:
 
-            status_count = {status: 0 for status in self.fixed_statuses}
+            status_count = {status: 0 for status in fixed_statuses}
 
             metric_sum = {
-                'job_inputfilebytes': 0,
-                'job_hs06sec': 0,
-                'job_nevents': 0
+                'job_hs06sec': {},
+                'job_inputfilebytes': {},
+                'job_nevents': {}
             }
 
             for key, value in jobs_dict.items():
-                if value['status'] in ('failed, finished', 'cancelled', 'closed'):
-                    metric_sum['job_inputfilebytes'] += value['job_inputfilebytes']
-                    metric_sum['job_hs06sec'] += value['job_hs06sec']
-                    metric_sum['job_nevents'] += value['job_nevents']
+                status = value['status']
+                # ('failed, finished', 'cancelled', 'closed')
+                if status in ('failed', 'finished', 'cancelled', 'closed'):
+                    if status not in metric_sum['job_hs06sec']:
+                        metric_sum['job_hs06sec'][status] = 0
+                    if status not in metric_sum['job_inputfilebytes']:
+                        metric_sum['job_inputfilebytes'][status] = 0
+                    if status not in metric_sum['job_nevents']:
+                        metric_sum['job_nevents'][status] = 0
+
+                    metric_sum['job_hs06sec'][status] += value['job_hs06sec']
+                    metric_sum['job_inputfilebytes'][status] += value['job_inputfilebytes']
+                    metric_sum['job_nevents'][status] += value['job_nevents']
 
                 if value['status'] in status_count:
                     status_count[value['status']] += 1
 
-            chart_js_dict = {
-                'labels':  self.fixed_statuses,
-                'datasets': [
-                    {
-                        'data': [status_count[status] for status in  self.fixed_statuses],
-                        'backgroundColor': [self.status_colors[status] for status in self.fixed_statuses],
-                        'borderColor': [self.status_colors[status] for status in self.fixed_statuses],
-                    }
-                ]
-            }
-            await self.send(text_data=json.dumps({'type': 'metrics', 'metric_sum': metric_sum,
-                                                  'statuses_data': chart_js_dict}))
+            chart_js_statuses_dict = prepare_data_for_main_chart(status_count)
+            chart_js_job_hs06sec = prepare_data_for_pie_chart(metric_sum['job_hs06sec'])
+            chart_js_job_inputfilebytes = prepare_data_for_pie_chart(metric_sum['job_inputfilebytes'])
+            chart_js_job_nevents = prepare_data_for_pie_chart(metric_sum['job_nevents'])
+
+            await self.send(text_data=json.dumps({'type': 'metrics',
+                                                  'chart_js_job_hs06sec':chart_js_job_hs06sec,
+                                                  'chart_js_job_inputfilebytes': chart_js_job_inputfilebytes,
+                                                  'chart_js_job_nevents': chart_js_job_nevents,
+                                                  'chart_js_statuses_data': chart_js_statuses_dict}))
             return True
         except Exception as ex:
             print(ex)
             return False
+    async def aggregated_data(self, jobs_dict):
+
+        tmp_results = {}
+        if len(jobs_dict) > 0:
+            for key, value in jobs_dict.items():
+                last_status = None
+
+                for status, info in value.items():
+                    if last_status is None or info['timestamp'] > value[last_status]['timestamp']:
+                        last_status = status
+
+                if last_status:
+                    tmp_results[key] = last_status
+
+            status_counts = {}
+            for status in tmp_results.values():
+                if status in status_counts:
+                    status_counts[status] += 1
+                else:
+                    status_counts[status] = 1
+
+            int_metrics_sum = {
+                'job_hs06sec': 0,
+                'job_inputfilebytes': 0,
+                'job_nevents': 0
+            }
+            for value in jobs_dict.values():
+                for status, info in value.items():
+                    for metric in int_metrics_sum:
+                        if metric in info:
+                            int_metrics_sum[metric] += info[metric]
+
+            time_list = [info['timestamp'] for value in jobs_dict.values() for info in value.values()]
+            min_time = min(time_list)
+            max_time = max(time_list)
+            duration = max_time - min_time
+
+            results = {
+                'n_jobs': status_counts,
+                'min_time': str(datetime.fromtimestamp(min_time)),
+                'max_time': str(datetime.fromtimestamp(max_time)),
+                'duration': duration,
+                'metrics_sum': int_metrics_sum
+            }
+        else:
+            results = {
+                'n_jobs': None,
+                'min_time': None,
+                'max_time': None,
+                'duration': None,
+                'metrics_sum': None
+            }
+        return results
+
+    async def send_real_time_agg_data(self, agg_data):
+        asyncio.sleep(30)
+        self.send(text_data=json.dumps({'type': 'terminal', 'message': agg_data}))
