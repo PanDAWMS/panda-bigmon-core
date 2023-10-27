@@ -14,8 +14,8 @@ from os.path import join, pardir, abspath, dirname, split
 _logger = logging.getLogger('bigpandamon')
 
 DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', None)
-
-if DEPLOYMENT != None:
+#TODO remove this after testing
+if False:
 
     try:
         from core.settings.config import VIRTUALENV_PATH, ASGI_PATH
