@@ -5,6 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=atlpan
+Environment="DJANGO_SETTINGS_MODULE=core.settings"
 WorkingDirectory=/data/bigmon/
 ExecStart=/opt/bigmon/bin/python /opt/bigmon/bin/daphne -b 0.0.0.0 -p 8000 core.asgi:application
 Restart=always
