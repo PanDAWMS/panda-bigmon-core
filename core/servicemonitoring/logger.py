@@ -12,7 +12,7 @@ class ServiceLogger:
         except ImportError:
             dir_logs = '/tmp/'
 
-        self.dirpath = dir_logs
+        self.dirpath = dir_logs + '/' if not dir_logs.endswith('/') else dir_logs
         self.logger = self.__get_logger(loglevel, name)
 
     # private method
