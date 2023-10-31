@@ -8,15 +8,13 @@ from core.libs.elasticsearch import get_es_task_status_log
 from core.kafka.utils import fixed_statuses, prepare_data_for_pie_chart, prepare_data_for_main_chart
 class TaskLogsConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        #self.active_tasks_by_user = {}
-
         await self.accept()
         await self.send(text_data=json.dumps({
             'type': 'terminal', 'message': 'You have successfully connected to KAFKA! New messages for the tasks will appear automatically below'
         }))
 
         client = self.scope['client']
-        
+
         #user = self.scope['user']
         #self.active_tasks_by_user[user] = []
 
@@ -45,10 +43,12 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
     async def kafka_consumer(self,  jeditaskid):
         loop = asyncio.get_running_loop()
         try:
+            main_jobs_dict = self.jobs_info_status_dict
             jobs_dict = {}
 
-            for key, value in self.jobs_info_status_dict.items():
+            for key, value in main_jobs_dict.items():
                 jobs_dict[key] = max(value.values(), key=lambda item: item['timestamp'])
+
             jobs_list = list(jobs_dict.keys())
 
             await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': jobs_list}))
@@ -72,11 +72,17 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                     else:
                         try:
                             jobs_dict[message_dict['jobid']] = message_dict
+                            if message_dict['jobid'] not in main_jobs_dict:
+                                main_jobs_dict[message_dict['jobid']] = {}
+
+                            main_jobs_dict[message_dict['jobid']][message_dict['status']] = {}
+                            main_jobs_dict[message_dict['jobid']][message_dict['status']] = message_dict
+
                             # sends metrics for plots
                             await self.send_real_time_plots_data(jobs_dict)
                             # await self.send_metrics(jobs_dict)
                             # sends messages to the terminal
-                            agg_data = await self.aggregated_data(self.jobs_info_status_dict)
+                            agg_data = await self.aggregated_data(main_jobs_dict)
                             await self.send_real_time_agg_data(agg_data)
                         except Exception as ex:
                             print(ex)
@@ -129,7 +135,7 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                     if type(value['job_inputfilebytes']) is int:
                         metric_sum['job_inputfilebytes'][status] += value['job_inputfilebytes']
                     if type(value['job_nevents']) is int:
-                    	metric_sum['job_nevents'][status] += value['job_nevents']
+                        metric_sum['job_nevents'][status] += value['job_nevents']
 
                 if value['status'] in status_count:
                     status_count[value['status']] += 1
@@ -149,65 +155,69 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
             print(ex)
             return False
     async def aggregated_data(self, jobs_dict):
+        try:
+            tmp_results = {}
+            if len(jobs_dict) > 0:
+                for key, value in jobs_dict.items():
+                    last_status = None
 
-        tmp_results = {}
-        if len(jobs_dict) > 0:
-            for key, value in jobs_dict.items():
-                last_status = None
+                    for status, info in value.items():
+                        if last_status is None or info['timestamp'] > value[last_status]['timestamp']:
+                            last_status = status
 
-                for status, info in value.items():
-                    if last_status is None or info['timestamp'] > value[last_status]['timestamp']:
-                        last_status = status
+                    if last_status:
+                        tmp_results[key] = last_status
 
-                if last_status:
-                    tmp_results[key] = last_status
+                status_counts = {}
+                for status in tmp_results.values():
+                    if status in status_counts:
+                        status_counts[status] += 1
+                    else:
+                        status_counts[status] = 1
 
-            status_counts = {}
-            for status in tmp_results.values():
-                if status in status_counts:
-                    status_counts[status] += 1
-                else:
-                    status_counts[status] = 1
+                int_metrics_sum = {
+                    'job_hs06sec': 0,
+                    'job_inputfilebytes': 0,
+                    'job_nevents': 0
+                }
+                for value in jobs_dict.values():
+                    for status, info in value.items():
+                        for metric in int_metrics_sum:
+                            if metric in info:
+                                if type(info[metric]) is int:
+                                    int_metrics_sum[metric] += info[metric]
 
-            int_metrics_sum = {
-                'job_hs06sec': 0,
-                'job_inputfilebytes': 0,
-                'job_nevents': 0
-            }
-            for value in jobs_dict.values():
-                for status, info in value.items():
-                    for metric in int_metrics_sum:
-                        if metric in info:
-                            int_metrics_sum[metric] += info[metric]
+                time_list = [info['timestamp'] for value in jobs_dict.values() for info in value.values()]
+                min_time = min(time_list)
+                max_time = max(time_list)
+                duration = max_time - min_time
 
-            time_list = [info['timestamp'] for value in jobs_dict.values() for info in value.values()]
-            min_time = min(time_list)
-            max_time = max(time_list)
-            duration = max_time - min_time
-
-            results = {
-                'n_jobs': status_counts,
-                'min_time': str(datetime.fromtimestamp(min_time)),
-                'max_time': str(datetime.fromtimestamp(max_time)),
-                'duration': duration,
-                'metrics_sum': int_metrics_sum
-            }
-        else:
-            results = {
-                'n_jobs': None,
-                'min_time': None,
-                'max_time': None,
-                'duration': None,
-                'metrics_sum': None
-            }
+                results = {
+                    'n_jobs': status_counts,
+                    'min_time': str(datetime.fromtimestamp(min_time)),
+                    'max_time': str(datetime.fromtimestamp(max_time)),
+                    'duration': duration,
+                    'metrics_sum': int_metrics_sum
+                }
+            else:
+                results = {
+                    'n_jobs': None,
+                    'min_time': None,
+                    'max_time': None,
+                    'duration': None,
+                    'metrics_sum': None
+                }
+        except Exception as ex:
+            print(ex)
+            results = None
         return results
 
     async def send_real_time_agg_data(self, agg_data):
-        await asyncio.sleep(30)
+        await asyncio.sleep(10)
         await self.send(text_data=json.dumps({'type': 'terminal', 'message': agg_data}))
 
     async def send_real_time_plots_data(self, jobs_dict):
-        await asyncio.sleep(10)
+        await asyncio.sleep(2)
         await self.send_metrics(jobs_dict)
         await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': list(jobs_dict.keys())}))
 
