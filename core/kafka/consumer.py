@@ -8,15 +8,13 @@ from core.libs.elasticsearch import get_es_task_status_log
 from core.kafka.utils import fixed_statuses, prepare_data_for_pie_chart, prepare_data_for_main_chart
 class TaskLogsConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        #self.active_tasks_by_user = {}
-
         await self.accept()
         await self.send(text_data=json.dumps({
             'type': 'terminal', 'message': 'You have successfully connected to KAFKA! New messages for the tasks will appear automatically below'
         }))
 
         client = self.scope['client']
-        
+
         #user = self.scope['user']
         #self.active_tasks_by_user[user] = []
 
@@ -45,10 +43,12 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
     async def kafka_consumer(self,  jeditaskid):
         loop = asyncio.get_running_loop()
         try:
+            main_jobs_dict = self.jobs_info_status_dict
             jobs_dict = {}
 
-            for key, value in self.jobs_info_status_dict.items():
+            for key, value in main_jobs_dict.items():
                 jobs_dict[key] = max(value.values(), key=lambda item: item['timestamp'])
+
             jobs_list = list(jobs_dict.keys())
 
             await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': jobs_list}))
@@ -72,11 +72,17 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                     else:
                         try:
                             jobs_dict[message_dict['jobid']] = message_dict
+                            if message_dict['jobid'] not in main_jobs_dict:
+                                main_jobs_dict[message_dict['jobid']] = {}
+
+                            main_jobs_dict[message_dict['jobid']][message_dict['status']] = {}
+                            main_jobs_dict[message_dict['jobid']][message_dict['status']] = message_dict
+
                             # sends metrics for plots
                             await self.send_real_time_plots_data(jobs_dict)
                             # await self.send_metrics(jobs_dict)
                             # sends messages to the terminal
-                            agg_data = await self.aggregated_data(self.jobs_info_status_dict)
+                            agg_data = await self.aggregated_data(main_jobs_dict)
                             await self.send_real_time_agg_data(agg_data)
                         except Exception as ex:
                             print(ex)
@@ -129,7 +135,7 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                     if type(value['job_inputfilebytes']) is int:
                         metric_sum['job_inputfilebytes'][status] += value['job_inputfilebytes']
                     if type(value['job_nevents']) is int:
-                    	metric_sum['job_nevents'][status] += value['job_nevents']
+                        metric_sum['job_nevents'][status] += value['job_nevents']
 
                 if value['status'] in status_count:
                     status_count[value['status']] += 1
@@ -203,11 +209,11 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
         return results
 
     async def send_real_time_agg_data(self, agg_data):
-        await asyncio.sleep(30)
+        await asyncio.sleep(10)
         await self.send(text_data=json.dumps({'type': 'terminal', 'message': agg_data}))
 
     async def send_real_time_plots_data(self, jobs_dict):
-        await asyncio.sleep(10)
+        await asyncio.sleep(2)
         await self.send_metrics(jobs_dict)
         await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': list(jobs_dict.keys())}))
 

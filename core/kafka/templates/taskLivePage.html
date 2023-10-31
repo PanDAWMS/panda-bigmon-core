@@ -64,6 +64,17 @@
             height: auto;
             padding: 10px;
         }
+
+        .hidden {
+            display: none;
+        }
+        .toggle-icon {
+            cursor: pointer;
+            font-size: 2em;
+            color: grey;
+            text-align: left;
+            margin: 10px;
+        }
     </style>
 {% endblock %}
 
@@ -96,13 +107,14 @@
         </div>
 
     </div>
-
-    <div class="pie-chart-container">
-        <canvas id="pie-chart-job_hs06sec"></canvas>
-        <canvas id="pie-chart-job_inputfilebytes"></canvas>
-        <canvas id="pie-chart-job_nevents"></canvas>
+     <div id="toggle-icon" class="toggle-icon">+</div>
+    <div id="pie-chart-tab" class="hidden">
+        <div class="pie-chart-container">
+            <canvas id="pie-chart-job_hs06sec"></canvas>
+            <canvas id="pie-chart-job_inputfilebytes"></canvas>
+            <canvas id="pie-chart-job_nevents"></canvas>
+        </div>
     </div>
-    <br/>
     <div id="web-terminal"></div>
 {% endblock %}
 
@@ -162,10 +174,10 @@
                         }
                     },
                     plugins: {
-                       title: {
+                        title: {
                             display: true,
                             text: 'N jobs by status'
-                       },
+                        },
                         legend: {
                             onClick: function (e, legendItem) {
                                 const index = legendItem.index;
@@ -354,6 +366,7 @@
                     'type': 'close_connection'
                 }));
             });
+
             function updatePieChart(canvasId, data, title) {
                 const chart = Chart.getChart(canvasId);
 
@@ -362,6 +375,9 @@
                     chart.update();
                 } else {
                     createPieChart(canvasId, data, title);
+                }
+                if (data.datasets[0].data.some(value => value !== 0)) {
+                    document.getElementById('pie-chart-tab').classList.remove('hidden');
                 }
             }
 
@@ -372,15 +388,29 @@
                     data: data,
                     options: {
                         maintainAspectRatio: false,
-                         plugins: {
-                        title: {
-                            display: true,
-                            text: title
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: title
+                            }
                         }
                     }
-                    }
                 });
+
+                if (data.datasets[0].data.some(value => value !== 0)) {
+                    document.getElementById('pie-chart-tab').classList.remove('hidden');
+                }
             }
+                        document.getElementById('toggle-icon').addEventListener('click', function() {
+                var tab = document.getElementById('pie-chart-tab');
+                if (tab.classList.contains('hidden')) {
+                    tab.classList.remove('hidden');
+                    this.textContent = '-';
+                } else {
+                    tab.classList.add('hidden');
+                    this.textContent = '+';
+                }
+            });
         });
     </script>
 {% endblock %}
