@@ -16,8 +16,8 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
         }))
 
         client = self.scope['client']
-        user = self.scope['user']
-
+        
+        #user = self.scope['user']
         #self.active_tasks_by_user[user] = []
 
         jeditaskid = int(self.scope['url_route']['kwargs']['jeditaskid'])
@@ -56,7 +56,6 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
             await self.send_metrics(jobs_dict)
 
             while True:
-                await self.send_real_time_agg_data(None)
                 message = await loop.run_in_executor(None, self.consumer.poll, 1.0)
                 if message is None:
                     continue
