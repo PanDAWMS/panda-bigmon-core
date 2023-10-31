@@ -155,57 +155,61 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
             print(ex)
             return False
     async def aggregated_data(self, jobs_dict):
+        try:
+            tmp_results = {}
+            if len(jobs_dict) > 0:
+                for key, value in jobs_dict.items():
+                    last_status = None
 
-        tmp_results = {}
-        if len(jobs_dict) > 0:
-            for key, value in jobs_dict.items():
-                last_status = None
+                    for status, info in value.items():
+                        if last_status is None or info['timestamp'] > value[last_status]['timestamp']:
+                            last_status = status
 
-                for status, info in value.items():
-                    if last_status is None or info['timestamp'] > value[last_status]['timestamp']:
-                        last_status = status
+                    if last_status:
+                        tmp_results[key] = last_status
 
-                if last_status:
-                    tmp_results[key] = last_status
+                status_counts = {}
+                for status in tmp_results.values():
+                    if status in status_counts:
+                        status_counts[status] += 1
+                    else:
+                        status_counts[status] = 1
 
-            status_counts = {}
-            for status in tmp_results.values():
-                if status in status_counts:
-                    status_counts[status] += 1
-                else:
-                    status_counts[status] = 1
+                int_metrics_sum = {
+                    'job_hs06sec': 0,
+                    'job_inputfilebytes': 0,
+                    'job_nevents': 0
+                }
+                for value in jobs_dict.values():
+                    for status, info in value.items():
+                        for metric in int_metrics_sum:
+                            if metric in info:
+                                if type(info[metric]) is int:
+                                    int_metrics_sum[metric] += info[metric]
 
-            int_metrics_sum = {
-                'job_hs06sec': 0,
-                'job_inputfilebytes': 0,
-                'job_nevents': 0
-            }
-            for value in jobs_dict.values():
-                for status, info in value.items():
-                    for metric in int_metrics_sum:
-                        if metric in info:
-                            int_metrics_sum[metric] += info[metric]
+                time_list = [info['timestamp'] for value in jobs_dict.values() for info in value.values()]
+                min_time = min(time_list)
+                max_time = max(time_list)
+                duration = max_time - min_time
 
-            time_list = [info['timestamp'] for value in jobs_dict.values() for info in value.values()]
-            min_time = min(time_list)
-            max_time = max(time_list)
-            duration = max_time - min_time
-
-            results = {
-                'n_jobs': status_counts,
-                'min_time': str(datetime.fromtimestamp(min_time)),
-                'max_time': str(datetime.fromtimestamp(max_time)),
-                'duration': duration,
-                'metrics_sum': int_metrics_sum
-            }
-        else:
-            results = {
-                'n_jobs': None,
-                'min_time': None,
-                'max_time': None,
-                'duration': None,
-                'metrics_sum': None
-            }
+                results = {
+                    'n_jobs': status_counts,
+                    'min_time': str(datetime.fromtimestamp(min_time)),
+                    'max_time': str(datetime.fromtimestamp(max_time)),
+                    'duration': duration,
+                    'metrics_sum': int_metrics_sum
+                }
+            else:
+                results = {
+                    'n_jobs': None,
+                    'min_time': None,
+                    'max_time': None,
+                    'duration': None,
+                    'metrics_sum': None
+                }
+        except Exception as ex:
+            print(ex)
+            results = None
         return results
 
     async def send_real_time_agg_data(self, agg_data):
