@@ -16,8 +16,8 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
         }))
 
         client = self.scope['client']
-        user = self.scope['user']
-
+        
+        #user = self.scope['user']
         #self.active_tasks_by_user[user] = []
 
         jeditaskid = int(self.scope['url_route']['kwargs']['jeditaskid'])
@@ -51,7 +51,7 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                 jobs_dict[key] = max(value.values(), key=lambda item: item['timestamp'])
             jobs_list = list(jobs_dict.keys())
 
-            await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': jobs_list }))
+            await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': jobs_list}))
 
             await self.send_metrics(jobs_dict)
 
@@ -59,6 +59,8 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                 message = await loop.run_in_executor(None, self.consumer.poll, 1.0)
                 if message is None:
                     continue
+
+                print('Received message: {}'.format(message.value().decode('utf-8')))
 
                 message_dict = json.loads(message.value())
 
@@ -68,17 +70,16 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                     if message_dict['msg_type'] == 'task_status':
                         await self.send(text_data=json.dumps({'type': 'terminal', 'message': message.value()}))
                     else:
-                        jobs_dict[message_dict['jobid']] = message_dict
-                        # sends metrics for plots
-                        await self.send_metrics(jobs_dict)
-                        # sends messages to the terminal
-                        agg_data = await self.aggregated_data(self.jobs_info_status_dict)
-                        await self.send_agg_data_to_terminal(agg_data)
-
-                        await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': jobs_dict.keys()}))
-
-                print('Received message: {}'.format(message.value().decode('utf-8')))
-
+                        try:
+                            jobs_dict[message_dict['jobid']] = message_dict
+                            # sends metrics for plots
+                            await self.send_real_time_plots_data(jobs_dict)
+                            # await self.send_metrics(jobs_dict)
+                            # sends messages to the terminal
+                            agg_data = await self.aggregated_data(self.jobs_info_status_dict)
+                            await self.send_real_time_agg_data(agg_data)
+                        except Exception as ex:
+                            print(ex)
         except Exception as ex:
             print(ex)
 
@@ -123,9 +124,12 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                     if status not in metric_sum['job_nevents']:
                         metric_sum['job_nevents'][status] = 0
 
-                    metric_sum['job_hs06sec'][status] += value['job_hs06sec']
-                    metric_sum['job_inputfilebytes'][status] += value['job_inputfilebytes']
-                    metric_sum['job_nevents'][status] += value['job_nevents']
+                    if type(value['job_hs06sec']) is int:
+                        metric_sum['job_hs06sec'][status] += value['job_hs06sec']
+                    if type(value['job_inputfilebytes']) is int:
+                        metric_sum['job_inputfilebytes'][status] += value['job_inputfilebytes']
+                    if type(value['job_nevents']) is int:
+                    	metric_sum['job_nevents'][status] += value['job_nevents']
 
                 if value['status'] in status_count:
                     status_count[value['status']] += 1
@@ -199,5 +203,11 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
         return results
 
     async def send_real_time_agg_data(self, agg_data):
-        asyncio.sleep(30)
-        self.send(text_data=json.dumps({'type': 'terminal', 'message': agg_data}))
+        await asyncio.sleep(30)
+        await self.send(text_data=json.dumps({'type': 'terminal', 'message': agg_data}))
+
+    async def send_real_time_plots_data(self, jobs_dict):
+        await asyncio.sleep(10)
+        await self.send_metrics(jobs_dict)
+        await self.send(text_data=json.dumps({'type': 'jobs_list', 'message': list(jobs_dict.keys())}))
+

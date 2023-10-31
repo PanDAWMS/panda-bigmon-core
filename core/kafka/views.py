@@ -20,6 +20,7 @@ def taskLivePage(request, jeditaskid):
         db_source = 'atlas'
     elif settings.DEPLOYMENT == 'ORACLE_DOMA':
         db_source = 'doma'
+        request.session['full_hostname'] = 'panda-doma.cern.ch'
 
     data = {
         'db_source': db_source,
