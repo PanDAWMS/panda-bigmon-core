@@ -1,0 +1,14 @@
+{% extends "_base_core.html" %}
+
+{% block page_title %}{{ title_tab }}{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA</a>{% endblock %}
+{% block subtitle %}{{ subtitle }}{% endblock %}
+{% block body %}
+<div class="callout alert large">
+  <h5>This page is decommissioned!</h5>
+  {% if message %}
+    <p>{{ message }}</p>
+  {% endif %}
+  <p>If you think this page was useful, please contact us via any option listed on the bottom right of the page.</p>
+</div>
+{% endblock %}
