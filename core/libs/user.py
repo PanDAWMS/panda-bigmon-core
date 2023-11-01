@@ -3,7 +3,7 @@ Created by Tatiana Korchuganova on 18.11.2020
 """
 import logging
 
-from core.libs.exlib import build_stack_histogram
+from core.libs.exlib import build_stack_histogram, convert_grams, round_to_n_digits
 from core.common.models import Users
 
 from django.conf import settings
@@ -150,6 +150,16 @@ def humanize_metrics(metrics):
             'unit': '',
             'class': ['neutral',],
         },
+        'gco2': {
+            'title': 'Estimated CO2 total',
+            'unit': '',
+            'class': ['neutral', ],
+        },
+        'gco2_loss': {
+            'title': 'Estimated CO2 by failed jobs',
+            'unit': '',
+            'class': ['neutral', ],
+        },
         'cpua7': {
             'title': 'Personal CPU hours for last 7 days',
             'unit': '',
@@ -200,6 +210,9 @@ def humanize_metrics(metrics):
                 metric_defs[md]['value'] = round(metrics[md], 2)
             elif 'efficiency' in md:
                 metric_defs[md]['value'] = round(metrics[md] * 100., 2)
+            elif 'co2' in md:
+                metric_defs[md]['value'], metric_defs[md]['unit'] = convert_grams(metrics[md], output_unit='auto')
+                metric_defs[md]['value'] = round_to_n_digits(metric_defs[md]['value'], n=0, method='floor')
             else:
                 metric_defs[md]['value'] = metrics[md]
 

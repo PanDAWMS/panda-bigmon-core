@@ -232,7 +232,7 @@ def get_job_list(query, **kwargs):
         'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid',
         'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite',
         'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr',
-        'processingtype', 'transformation', 'creationtime', 'diskio'
+        'processingtype', 'transformation', 'creationtime', 'diskio', 'gco2_global'
     ]
     if 'values' in kwargs:
         values.extend(kwargs['values'])
@@ -249,10 +249,8 @@ def get_job_list(query, **kwargs):
         extra_str += " AND jeditaskid in (select ID from {} where TRANSACTIONKEY={})".format(tmp_table_name, tk_taskids)
         del query['jeditaskid__in']
 
-    jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[extra_str]).values(*values))
-    jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[extra_str]).values(*values))
-    jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[extra_str]).values(*values))
-    jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[extra_str]).values(*values))
+    for job_table in (Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4):
+        jobs.extend(job_table.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
     if 'jeditaskid' in query or 'jeditaskid__in' in query or 'jeditaskid' in extra_str or (
         'modificationtime__castdate__range' in query and query['modificationtime__castdate__range'][0] < (
@@ -308,6 +306,8 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
         'walltime_loss': {'total': [], 'group_by': {}, 'agg': 'sum'},
         'cputime_loss': {'total': [], 'group_by': {}, 'agg': 'sum'},
         'running_slots': {'total': [], 'group_by': {}, 'agg': 'sum'},
+        'gco2': {'total': [], 'group_by': {}, 'agg': 'sum'},
+        'gco2_loss': {'total': [], 'group_by': {}, 'agg': 'sum'},
     }
 
     # calc metrics
@@ -319,6 +319,9 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
             # protection if cpuconsumptiontime is decimal in non Oracle DBs
             if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
                 job['cpuconsumptiontime'] = float(job['cpuconsumptiontime'])
+            if 'gco2_global' in job:
+                job['gco2'] = float(job['gco2_global']) if job['gco2_global'] is not None else 0
+                job['gco2_loss'] = float(job['gco2']) if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
 
             if job['category'] == 'run':
                 if 'maxpss' in job and job['maxpss'] and isinstance(job['maxpss'], int) and (
