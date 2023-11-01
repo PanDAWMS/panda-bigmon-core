@@ -1,11 +1,12 @@
 import json, urllib3
 from datetime import datetime, timedelta
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from core.oauth.utils import login_customrequired
 from core.views import initRequest
+from core.utils import is_json_request
 from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.datetimestrings import parse_datetime
@@ -38,10 +39,23 @@ def formatError(json):
 @login_customrequired
 def jbhome(request):
 
+    if is_json_request(request):
+        response = JsonResponse({"error": "decommissioned"}, status=410)
+    else:
+        data = {
+            'request': request,
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'],
+            'title': 'Jobs Buster',
+            'subtitle': 'Jobs Buster',
+            'message': 'It was decided to decommission the JobsBuster view.',
+        }
+        response = render(request, '_decommissioned.html', data, content_type='text/html')
+    return response
+
     valid, response = initRequest(request)
     if not valid:
         return response
-
     # Here we try to get cached data
     data = getCacheEntry(request, "jobProblem")
     data = None
