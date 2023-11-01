@@ -129,13 +129,15 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                         metric_sum['job_inputfilebytes'][status] = 0
                     if status not in metric_sum['job_nevents']:
                         metric_sum['job_nevents'][status] = 0
-
-                    if type(value['job_hs06sec']) is int:
-                        metric_sum['job_hs06sec'][status] += value['job_hs06sec']
-                    if type(value['job_inputfilebytes']) is int:
-                        metric_sum['job_inputfilebytes'][status] += value['job_inputfilebytes']
-                    if type(value['job_nevents']) is int:
-                        metric_sum['job_nevents'][status] += value['job_nevents']
+                    try:
+                        if type(value['job_hs06sec']) is int:
+                            metric_sum['job_hs06sec'][status] += value['job_hs06sec']
+                        if type(value['job_inputfilebytes']) is int:
+                            metric_sum['job_inputfilebytes'][status] += value['job_inputfilebytes']
+                        if type(value['job_nevents']) is int:
+                            metric_sum['job_nevents'][status] += value['job_nevents']
+                    except:
+                        print('{0} {1}'.format(str(key), str(value)))
 
                 if value['status'] in status_count:
                     status_count[value['status']] += 1
@@ -184,9 +186,11 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                     for status, info in value.items():
                         for metric in int_metrics_sum:
                             if metric in info:
-                                if type(info[metric]) is int:
-                                    int_metrics_sum[metric] += info[metric]
-
+                                try:
+                                    if type(info[metric]) is int:
+                                        int_metrics_sum[metric] += info[metric]
+                                except:
+                                    print('{0} {1}'.format(metric, info[metric]))
                 time_list = [info['timestamp'] for value in jobs_dict.values() for info in value.values()]
                 min_time = min(time_list)
                 max_time = max(time_list)
@@ -209,7 +213,6 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                 }
         except Exception as ex:
             print(ex)
-            results = None
         return results
 
     async def send_real_time_agg_data(self, agg_data):
