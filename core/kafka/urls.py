@@ -8,5 +8,5 @@ from core.kafka.views import testTerminal, taskLivePage
 
 urlpatterns = [
     re_path(r'^test_terminal/', testTerminal, name='test_terminal'),
-    re_path(r'^live/task/(.*)/$', taskLivePage, name='task_livepage'),
+    re_path(r'^live/task/(?P<jeditaskid>.*)/$', taskLivePage, name='task_livepage'),
 ]

@@ -3,13 +3,10 @@ import sys
 import site
 import logging
 
-from os.path import abspath, dirname, split
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from core.kafka.routing import ws_urlpatterns
-from os.path import join, pardir, abspath, dirname, split
 
-from django.core.asgi import get_asgi_application
+from os.path import join, pardir, abspath, dirname, split
 
 # Initialize Django ASGI application early to ensure the AppRegistry
 # is populated before importing code that may import ORM models.
@@ -17,8 +14,8 @@ from django.core.asgi import get_asgi_application
 _logger = logging.getLogger('bigpandamon')
 
 DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', None)
-
-if DEPLOYMENT != None:
+#TODO remove this after testing
+if False:
 
     try:
         from core.settings.config import VIRTUALENV_PATH, ASGI_PATH
@@ -67,6 +64,12 @@ if DEPLOYMENT != None:
         exec(open(activate_env).read(), dict(__file__=activate_env))
     except:
         _logger.exception("Virtual env is not activated")
+
+import django
+django.setup()
+
+from django.core.asgi import get_asgi_application
+from core.kafka.routing import ws_urlpatterns
 
 application = ProtocolTypeRouter({
   'http': get_asgi_application(),

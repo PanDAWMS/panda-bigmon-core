@@ -52,7 +52,7 @@ def removeParam(urlquery, parname, mode='complete'):
     """Remove a parameter from current query"""
     urlquery = urlquery.replace('&&', '&')
     urlquery = urlquery.replace('?&', '?')
-    pstr = '.*[\&\?]({}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
+    pstr = '.*({}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
     pat = re.compile(pstr)
     mat = pat.match(urlquery)
     if mat:
@@ -92,7 +92,7 @@ def get_most_recent_git_tag():
     Getting recent git tag to show which version is running
     :return: git_tag
     """
-    git_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    git_path = os.getcwd()
 
     try:
         git_tag = str(

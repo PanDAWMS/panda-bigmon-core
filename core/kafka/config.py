@@ -13,12 +13,11 @@ from django.conf import settings
 
 from confluent_kafka import Consumer
 
-def initConsumer(client):
+def initConsumer(client, jeditaskid):
     group = " ".join(str(x) for x in client)
-    print(group)
+    group = group + str(jeditaskid)
     group_id = hashlib.sha1(group.encode()).hexdigest()
-    print(group_id)
-    # settings.ES.get('esHost', None)
+
     BOOTSTRAP_SERVERS = ",".join(
         map(lambda x: x + ":9093"
             , sorted([
