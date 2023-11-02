@@ -42,6 +42,7 @@ def jbhome(request):
     if is_json_request(request):
         response = JsonResponse({"error": "decommissioned"}, status=410)
     else:
+        valid, response = initRequest(request)
         data = {
             'request': request,
             'requestParams': request.session['requestParams'],
