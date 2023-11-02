@@ -217,6 +217,18 @@
   </table>
   </div>
 
+  {% if warning.submission %}
+    <div class="callout warning" data-closable>
+      <h5><i class="fi-alert"></i> Warning! Some options used in this task submission command are concerning!</h5>
+      {% for w, message in warning.submission.items %}
+        <p> {{ message|safe }}</p>
+      {% endfor %}
+      <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+  {% endif %}
+
   {% if task.errordialog %}
     <div class="card bp-container-simple warning">
       {% if logtxt %}
@@ -365,8 +377,8 @@
       <div class="callout warning" data-closable>
         <h5>Warning! </h5>
         <p>{{ warning.dropmode }}</p>
-          <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
-              <span aria-hidden="true">&times;</span>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+          <span aria-hidden="true">&times;</span>
         </button>
       </div>
   {% endif %}
@@ -374,7 +386,7 @@
       <div class="callout warning" data-closable>
         <h5>Warning! </h5>
         <p>{{ warning.archive }}</p>
-          <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
+        <button class="close-button small" aria-label="Dismiss alert" type="button" data-close>
               <span aria-hidden="true">&times;</span>
         </button>
       </div>
