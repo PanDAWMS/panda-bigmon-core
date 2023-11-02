@@ -88,6 +88,7 @@ from core.libs.task import input_summary_for_task, datasets_for_task, \
 from core.libs.task import get_dataset_locality, is_event_service_task, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, \
     wg_task_summary, tasks_not_updated
+from core.libs.taskparams import analyse_task_submission_options
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
     job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, job_state_count, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode, clean_job_list, \
@@ -5356,6 +5357,10 @@ def taskInfo(request, jeditaskid=0):
     # get task params
     taskparams = get_task_params(jeditaskid)
     _logger.info('Got task info: {}'.format(time.time() - request.session['req_init_time']))
+
+    # analyse cliParams -> warnings
+    if 'cliParams' in taskparams:
+        warning['submission'] = analyse_task_submission_options(taskparams['cliParams'])
 
     # load logtxt
     logtxt = None

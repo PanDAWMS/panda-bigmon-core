@@ -48,6 +48,7 @@ def jbhome(request):
             'viewParams': request.session['viewParams'],
             'title': 'Jobs Buster',
             'subtitle': 'Jobs Buster',
+            'built': datetime.now().strftime("%H:%M:%S"),
             'message': 'It was decided to decommission the JobsBuster view.',
         }
         response = render(request, '_decommissioned.html', data, content_type='text/html')
