@@ -215,7 +215,7 @@
   {#        <a href="#terminalpayloadlog" onclick="terminalTogglePayloadLog()"> Real-time log (terminal)</a>#}
     {% endif %}
 
-    {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging'  or job.jobstatus == 'transferring' %}
+    {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging'  or job.jobstatus == 'transferring'  or job.jobstatus == 'cancelled' %}
       {% if logfile.lfn %}
         {% if viewParams.log_provider == 'rucio' or viewParams.log_provider == 's3' %}
           <a href="{% url 'filebrowser' %}?pandaid={{ pandaid }}">Log files</a>
