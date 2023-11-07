@@ -97,6 +97,37 @@ def db_sessions(connection, hostname='all'):
     return n_active_sessions, n_sessions
 
 
+def is_any_requests_lately(connection, hostname="all", n_last_minutes=10):
+    """
+    Check if any requests  came to nodes
+    :param connection: cx_oracle connection
+    :param hostname: str
+    :param n_last_minutes: int
+    :return:
+    """
+    n_requests, duration_median = None, None
+    where_clause = f" where qtime > CAST(sys_extract_utc(SYSTIMESTAMP) AS DATE) - interval '{n_last_minutes}' minute "
+    if hostname != 'all':
+        where_clause += f" and server like '%%{hostname}%%'"
+    query = f"""
+        select count(id) as n, 
+            median(extract(minute from (rtime-qtime))*60 + extract(second from (rtime-qtime))) as duration_median 
+        from atlas_pandabigmon.all_requests_daily {where_clause}
+    """
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        for row in cursor:
+            n_requests = row[0]
+            duration_median = row[1]
+            break
+    except Exception as ex:
+        _logger.exception(f"Failed to execute query \n{query} \nwith {ex}")
+    cursor.close()
+    _logger.info(f"Got N requests for {hostname} host(s): n={n_requests}, median TTR={n_requests}")
+    return n_requests, duration_median
+
+
 def logstash_configs(cfg):
     try:
         url = cfg.get('logstash', 'url')
@@ -204,6 +235,39 @@ def subprocess_availability(subprocess_name):
     except:
         pass
     return availability, avail_info
+
+
+def service_availability(metrics:dict) -> tuple[str, str]:
+    """
+    Check metrics and return service status as a number from 0 to 100 as str and its description
+    :param metrics: dict - previously collected metrics
+    :return: availability: str - a number from 0 to 100
+    :return: availability_desc: str - description
+    """
+    process = 'httpd'
+
+    if process in metrics:
+        availability = int(metrics[process])
+        availability_desc = metrics[process + '_info']
+    else:
+        availability = 0
+        availability_desc = f"{process} process not found"
+        return str(availability), availability_desc
+
+    if 'requests_last_10min_count' in metrics and metrics['requests_last_10min_count'] is not None:
+        if metrics['requests_last_10min_count'] == 0:
+            availability = 0
+            availability_desc += ', no requests processed in last 10 minutes'
+            return str(availability), availability_desc
+        elif metrics['requests_last_10min_count'] <= 10:
+            availability -= 50
+            availability_desc += ', low number of requests processed lately'
+    if 'requests_last_10min_duration_median' in metrics and metrics['requests_last_10min_duration_median'] is not None:
+        if metrics['requests_last_10min_duration_median'] > 5:
+            availability -= 20
+            availability_desc += ', median TTR is more than 5 sec'
+
+    return str(availability), availability_desc
 
 
 def send_data(data, settings):
