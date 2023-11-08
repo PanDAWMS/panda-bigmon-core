@@ -1,3 +1,8 @@
+"""
+Install:
+schedule
+"""
+
 import schedule
 import time
 import threading
@@ -44,7 +49,6 @@ stageProgressCollector = DataCarouselPrestageCollector()
 mlFlowCleanUp = MLFlowCleanup()
 
 
-
 def run_threaded(job_func):
     job_thread = threading.Thread(target=job_func)
     job_thread.daemon = True
@@ -69,10 +73,3 @@ schedule.every(10).minutes.do(run_threaded, mlFlowCleanUp.execute)
 while 1:
     schedule.run_pending()
     time.sleep(1)
-
-
-
-"""
-Install:
-schedule
-"""

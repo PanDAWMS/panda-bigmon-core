@@ -8,7 +8,8 @@ import numpy as np
 from datetime import datetime
 
 from utils import get_settings_path, servers_configs, monit_sls_configs, cpu_info, memory_info, disk_info, volume_use, \
-    process_availability, subprocess_availability, DateTimeEncoder, send_data, make_db_connection, db_sessions
+    process_availability, subprocess_availability, DateTimeEncoder, send_data, service_availability, \
+    make_db_connection, db_sessions, is_any_requests_lately
 from sls_document import SlsDocument
 from logger import ServiceLogger
 
@@ -88,7 +89,7 @@ def main():
                 except Exception as ex:
                     _logger.error(ex)
 
-        if metrics and 'dbsession' in metrics:
+        if metrics and 'dbsession' in metrics or 'dbrequest':
             conn = None
             try:
                 conn = make_db_connection(settings_path)
@@ -96,6 +97,11 @@ def main():
                 if n_active_sessions is not None and n_sessions is not None:
                     dict_metrics['db_n_active_sessions'] = n_active_sessions
                     dict_metrics['db_n_sessions'] = n_sessions
+                n_requests_last_n_minutes, request_duration_median = is_any_requests_lately(
+                    connection=conn, hostname=hostname, n_last_minutes=10)
+                if n_requests_last_n_minutes is not None:
+                    dict_metrics['requests_last_10min_count'] = n_requests_last_n_minutes
+                    dict_metrics['requests_last_10min_duration_median'] = request_duration_median
             except Exception as ex:
                 _logger.error(ex)
             if conn:
@@ -117,12 +123,9 @@ def main():
             sls_doc.set_id(f'{service_name}_{hostname}')
             sls_doc.set_avail_info(service_name)
 
-            if 'process' in metrics and len(metrics['process']) > 0 and metrics['process'][0] in dict_metrics:
-                sls_doc.set_status(dict_metrics[metrics['process'][0]])
-                sls_doc.set_avail_desc(dict_metrics[metrics['process'][0] + "_info"])
-            else:
-                sls_doc.set_status("N/A")
-                sls_doc.set_avail_desc("httpd process not found")
+            status, desc = service_availability(dict_metrics)
+            sls_doc.set_status(status)
+            sls_doc.set_avail_desc(desc)
 
             sls_doc.send_document(collector_endpoint=f'http://{monit_host}:{monit_port}')
         else:
