@@ -41,11 +41,11 @@
 </table>
 </div>
 
-
+<div class="table-scroll">
 <table class="bp-table secondary unstriped">
 <thead>
 <tr>
-  <th colspan="100%">Last test run{% if branches|length > 1 %} per branch{% endif %}:</th>
+  <th colspan="100%">{% if "ntag_full" not in viewParams %}Last test run{% else %}Test run on {{ viewParams.ntag_full }}{% endif %}{% if branches|length > 1 %} per branch{% endif %}:</th>
 </tr>
 </thead>
 <tbody>
@@ -61,6 +61,7 @@
   <th class="num">Max PSS/core [GB]</th>
   <th class="num">CPU time [s]</th>
   <th>CPU</th>
+  <th>PanDA job error</th>
 </tr>
 {% for branch in branches %}
   <tr>
@@ -83,11 +84,13 @@
       <td class="num">{% if j.maxpss_per_core_gb %}{{ j.maxpss_per_core_gb }}{% else %}-{% endif %}</td>
       <td class="num">{% if j.cpuconsumptiontime %}{{ j.cpuconsumptiontime }}{% else %}-{% endif %}</td>
       <td>{{ j.cputype }}</td>
+      <td class="alert">{% if j.errorinfo %}{{ j.errorinfo|safe }}{% else %}-{% endif %}</td>
     </tr>
   {% endfor %}
 {% endfor %}
 </tbody>
 </table>
+</div>
 
 {% else %}
   <div class="callout alert" data-closable>

@@ -148,6 +148,20 @@ def add_job_category(jobs):
     return jobs
 
 
+def add_error_info(jobs):
+    """
+    Transform error-related fields to errorinfo str
+    :param jobs: list of dicts
+    :return: jobs: list of dicts
+    """
+
+    errorCodes = get_job_error_desc()
+    for job in jobs:
+        job['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
+
+    return jobs
+
+
 def parse_job_pilottiming(pilottiming_str):
     """
     Parsing pilot timing str into dict
@@ -224,9 +238,14 @@ def job_state_count(jobs):
 
 
 def get_job_list(query, **kwargs):
-
-    MAX_ENTRIES__IN = 100
-
+    """
+    Get list of jobs
+    :param query: Django ORM query object for jobs* models
+    :keyword: values: list - list of extra fields to be queried
+    :keyword: error_info: bool - if True, to add error-related fields
+    :keyword: extra_str: str - custom where clause for query
+    :return: jobs: list of dicts - jobs
+    """
     jobs = []
     values = [
         'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid',
@@ -236,23 +255,37 @@ def get_job_list(query, **kwargs):
     ]
     if 'values' in kwargs:
         values.extend(kwargs['values'])
-        values = set(values)
+    if 'error_info' in kwargs and kwargs['error_info']:
+        for c in const.JOB_ERROR_CATEGORIES:
+            if c['name'] in ('sup', ):
+                continue
+            values.append(c['error'])
+            if c['diag'] is not None:
+                values.append(c['diag'])
+    values = set(values)
 
     extra_str = "(1=1)"
     if 'extra_str' in kwargs and kwargs['extra_str'] != '':
         extra_str = kwargs['extra_str']
 
-    if 'jeditaskid__in' in query and len(query['jeditaskid__in']) > MAX_ENTRIES__IN:
-        # insert taskids to temp DB table
-        tmp_table_name = get_tmp_table_name()
-        tk_taskids = insert_to_temp_table(query['jeditaskid__in'])
-        extra_str += " AND jeditaskid in (select ID from {} where TRANSACTIONKEY={})".format(tmp_table_name, tk_taskids)
-        del query['jeditaskid__in']
+    id_in_params = []
+    if 'pandaid__in' in query:
+        id_in_params.append('pandaid')
+    if 'jeditaskid__in' in query:
+        id_in_params.append('jeditaskid')
+    for idp in id_in_params:
+        if len(query[idp + "__in"]) > settings.DB_N_MAX_IN_QUERY:
+            # insert ids to temp DB table & add where join to query
+            tmp_table_name = get_tmp_table_name()
+            tks = insert_to_temp_table(query[idp + '__in'])
+            extra_str += f" AND {idp} in (select ID from {tmp_table_name} where TRANSACTIONKEY={tks})"
+            del query[idp + '__in']
 
     for job_table in (Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4):
         jobs.extend(job_table.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
     if 'jeditaskid' in query or 'jeditaskid__in' in query or 'jeditaskid' in extra_str or (
+        'pandaid' in query or 'pandaid__in' in query or 'pandaid' in extra_str) or  (
         'modificationtime__castdate__range' in query and query['modificationtime__castdate__range'][0] < (
             datetime.now() - timedelta(days=3))) or (len(jobs) == 0 and 'pandaid' in query):
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_str]).values(*values))
@@ -262,6 +295,10 @@ def get_job_list(query, **kwargs):
 
     # add job category
     jobs = add_job_category(jobs)
+
+    # add error info
+    if 'error_info' in kwargs and kwargs['error_info']:
+        jobs = add_error_info(jobs)
 
     return jobs
 
