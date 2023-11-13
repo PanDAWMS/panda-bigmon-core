@@ -245,6 +245,7 @@ def service_availability(metrics:dict) -> tuple[str, str]:
     :return: availability_desc: str - description
     """
     process = 'httpd'
+    threshold_ttr = 10
 
     if process in metrics:
         availability = int(metrics[process])
@@ -263,9 +264,9 @@ def service_availability(metrics:dict) -> tuple[str, str]:
             availability -= 50
             availability_desc += ', low number of requests processed lately'
     if 'requests_last_10min_duration_median' in metrics and metrics['requests_last_10min_duration_median'] is not None:
-        if metrics['requests_last_10min_duration_median'] > 5:
+        if metrics['requests_last_10min_duration_median'] > threshold_ttr:
             availability -= 20
-            availability_desc += ', median TTR is more than 5 sec'
+            availability_desc += f', median TTR is more than {threshold_ttr} sec'
 
     return str(availability), availability_desc
 

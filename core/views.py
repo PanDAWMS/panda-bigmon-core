@@ -3142,13 +3142,8 @@ def userDashApi(request, agg=None):
         jquery = {
             'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
         }
-        err_fields = [
-            'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag',
-            'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
-            'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
-            'produsername'
-        ]
-        jobs = get_job_list(jquery, values=err_fields)
+
+        jobs = get_job_list(jquery, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
         errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, False, flist=[], sortby='count')

@@ -747,14 +747,9 @@ def artTest(request, package=None, testname=None):
             # get info for PanDA jobs
             jquery = {
                 'pandaid__in': [j['pandaid'] for j in art_jobs],
-                'jeditaskid__in': [j['jeditaskid'] for j in art_jobs],
             }
-            panda_jobs = get_job_list(
-                jquery,
-                values=['cpuconsumptionunit',]
-            )
+            panda_jobs = get_job_list(jquery, values=['cpuconsumptionunit',], error_info=True)
             panda_jobs = {j['pandaid']: j for j in panda_jobs}
-
             # combine info from ART and PanDA
             for job in art_jobs:
                 pid = job['pandaid']
@@ -786,6 +781,7 @@ def artTest(request, package=None, testname=None):
                             n=2, method='ceil'
                         )
                     job['duration_str'] = convert_sec(get_job_walltime(panda_jobs[pid]), out_unit='str')
+                    job['errorinfo'] = panda_jobs[pid]['errorinfo']
 
                     finalresult, extrainfo = get_final_result(job)
                     job['finalresult'] = finalresult
