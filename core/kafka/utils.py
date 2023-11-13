@@ -24,6 +24,7 @@ status_colors = {
 def prepare_data_for_main_chart(data):
     labels = fixed_statuses
     values = [data[status] for status in fixed_statuses]
+
     return {
         'labels': labels,
         'datasets': [
