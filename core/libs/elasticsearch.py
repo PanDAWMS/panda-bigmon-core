@@ -269,11 +269,11 @@ def get_gco2_sum_for_tasklist(task_list):
 
 def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
 
-    task_message_list = []
     task_message_ids_list = []
     task_message_dict = {}
 
     jobs_info_status_dict = {}
+    task_info_status_dict = {}
 
     full_index_name = db_source + '_tasks_status_log*'
 
@@ -291,19 +291,19 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
     s = s.query(q)
 
     response = s.scan()
+
     for hit in response:
         hit_dict = hit.to_dict()
-
         if not hit_dict['jobid'] in jobs_info_status_dict:
             jobs_info_status_dict[hit_dict['jobid']] = {}
 
-        jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {'timestamp': hit_dict['timestamp'],
-                                                                        'message_id': hit_dict['message_id'],
-                                                                        'status': hit_dict['status'],
-                                                                        'time': hit_dict['@timestamp']
-                                                                        }
+        jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {
+                                                                            'timestamp': hit_dict['timestamp'],
+                                                                            'message_id': hit_dict['message_id'],
+                                                                            'status': hit_dict['status'],
+                                                                            'time': hit_dict['@timestamp']
+                                                                            }
 
-        task_message_list.append(hit_dict)
         task_message_ids_list.append(hit_dict['message_id'])
         task_message_dict[hit_dict['message_id']] = hit_dict
 
@@ -330,6 +330,18 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
             if hit_dict[field] is None:
                 hit_dict[field] = "None"
 
-    task_message_list = sorted(task_message_list, key=get_date)
+    task_info_conn = Search(using=es_conn, index=full_index_name)
+    task_info_conn = task_info_conn.filter('term', taskid='{0}'.format(jeditaskid))
+    task_info_conn.aggs.bucket('status', 'terms', field='status.keyword', size=1000) \
+        .metric('timestamp', 'max', field='timestamp') \
+        .metric('time', 'max', field='@timestamp')
 
-    return task_message_list, task_message_ids_list, jobs_info_status_dict
+    q = Q("match", msg_type='task_status')
+    task_info_conn = task_info_conn.query(q)
+
+    task_info_conn = task_info_conn.execute()
+
+    for hit in task_info_conn.aggregations.status:
+        task_info_status_dict[hit['key']] = int(hit['time']['value'])
+
+    return task_message_ids_list, jobs_info_status_dict, task_info_status_dict

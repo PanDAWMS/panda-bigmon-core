@@ -13,9 +13,9 @@ from django.conf import settings
 
 from confluent_kafka import Consumer
 
-def initConsumer(client, jeditaskid):
+def initConsumer(client, user, jeditaskid):
     group = " ".join(str(x) for x in client)
-    group = group + str(jeditaskid)
+    group = group + str(jeditaskid) + str(user)
     group_id = hashlib.sha1(group.encode()).hexdigest()
 
     BOOTSTRAP_SERVERS = ",".join(
