@@ -251,14 +251,12 @@ def get_job_list(query, **kwargs):
         'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid',
         'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite',
         'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr',
-        'processingtype', 'transformation', 'creationtime', 'diskio', 'gco2_global'
+        'processingtype', 'transformation', 'creationtime', 'diskio', 'gco2_global', 'produsername'
     ]
     if 'values' in kwargs:
         values.extend(kwargs['values'])
     if 'error_info' in kwargs and kwargs['error_info']:
         for c in const.JOB_ERROR_CATEGORIES:
-            if c['name'] in ('sup', ):
-                continue
             values.append(c['error'])
             if c['diag'] is not None:
                 values.append(c['diag'])
