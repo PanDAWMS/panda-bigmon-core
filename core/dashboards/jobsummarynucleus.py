@@ -6,7 +6,7 @@ import copy
 import logging
 
 from django.db import connection
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.db.utils import DatabaseError
 from django.conf import settings
 
@@ -149,22 +149,31 @@ def get_world_hs06_summary(query, **kwargs):
     else:
         extra = '(1=1)'
 
-    extra += """ 
-        AND modificationtime > TO_DATE(\'\'{0}\'\',\'\'{2}\'\') 
-        AND modificationtime < TO_DATE(\'\'{1}\'\',\'\'{2}\'\')
-        """.format(
-            query['modificationtime__castdate__range'][0],
-            query['modificationtime__castdate__range'][1],
-            'YYYY-MM-DD HH24:MI:SS'
-    )
+    extra += f""" 
+        AND j.modificationtime > TO_DATE('{query['modificationtime__castdate__range'][0]}','YYYY-MM-DD HH24:MI:SS') 
+        AND j.modificationtime < TO_DATE('{query['modificationtime__castdate__range'][1]}','YYYY-MM-DD HH24:MI:SS')
+    """
+    if 'nucleus' in extra:
+        extra = extra.replace('nucleus', 't.nucleus')
+        extra = extra.replace("''", "'")
 
+    query_str = f"""
+    select nucleus, computingsite, sum(hs_used), sum(hs_failed) from (
+        select j.computingsite, t.nucleus, j.hs06sec as hs_used,
+            case when j.jobstatus = 'failed' then j.hs06sec else 0 end as hs_failed  
+        from {settings.DB_SCHEMA_PANDA}.jobsarchived4 j, {settings.DB_SCHEMA_PANDA}.jedi_tasks t
+        where j.jeditaskid = t.jeditaskid and j.jobstatus in ('failed', 'finished') and t.cloud='WORLD' and {extra}
+    )
+    group by nucleus, computingsite
+    """
+    
     try:
         cur = connection.cursor()
-        cur.execute("select * from table({}.geths06ssummary('{}'))".format(settings.DB_SCHEMA, extra))
+        cur.execute(query_str)
         hspersite = cur.fetchall()
         cur.close()
     except DatabaseError:
-        _logger.exception('Internal Server Error! Failed to get HS06s summary from GETHS06SSUMMARY SQL function')
+        _logger.exception('Internal Server Error! Failed to get HS06s summary for world view')
         raise
 
     keys = ['nucleus', 'computingsite', 'hs06s_used', 'hs06s_failed']
