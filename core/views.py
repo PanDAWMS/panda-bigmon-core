@@ -3192,13 +3192,13 @@ def userDashApi(request, agg=None):
                     ' [{}]'.format(err['error']),
                     ' "{}"'.format(err['diag']),
                     ' <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(link_logs_base, err['example_pandaid'])
-                    ] for err in errs_by_task_dict[t['jeditaskid']]['errorlist']
+                    ] for err in errs_by_task_dict[t['jeditaskid']]['errorlist'] if len(err['diag']) > 0
                 ][:2]
                 t['top_errors'] = '<br>'.join(
                     ['<a href="{}{}={}">{}</a> [{}] "{}" <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(
                         link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag'],
                         link_logs_base, err['example_pandaid'],
-                    ) for err in errs_by_task_dict[t['jeditaskid']]['errorlist']][:2])
+                    ) for err in errs_by_task_dict[t['jeditaskid']]['errorlist'] if len(err['diag']) > 0][:2])
             else:
                 t['top_errors'] = -1
         _logger.info('Jobs metrics added to tasks: {}'.format(time.time() - request.session['req_init_time']))
@@ -3225,11 +3225,10 @@ def userDashApi(request, agg=None):
                     task[tp] = 'false'
 
         task_list_table_headers = [
-            'jeditaskid', 'reqid', 'creationdate', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished',
-            'nfilesfailed', 'pctfinished',
-            'superstatus', 'status', 'duration_days',
-            'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
+            'jeditaskid', 'reqid', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished',
+            'nfilesfailed', 'pctfinished', 'status', 'duration_days',
             'errordialog', 'job_failed', 'top_errors_list',
+            'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
         ]
         tasks_to_show = []
         for t in tasks:
