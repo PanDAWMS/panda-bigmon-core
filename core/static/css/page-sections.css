@@ -284,14 +284,23 @@ a.bp-button {
   text-align: center;
   text-decoration: none;
   background-color: #5e789a;
+  border: 1px solid #5e789a;
   color: #fefefe;
   padding: 0.875rem;
   margin: 0.5rem 0.5rem 0.5rem 0;
   line-height: 1;
+
 }
   a.bp-button:hover {
     background-color: #272727;
+    border: 1px solid #272727;
   }
+
+a.bp-button.inverted:hover {
+  background-color: #fefefe;
+  color: #272727;
+  border: 1px solid #5e789a;
+}
 
 .bp-button.kill {
   display: inline-block;
