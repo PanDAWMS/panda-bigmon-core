@@ -8,12 +8,12 @@ It is possible to retrieve data in json format via curl so that it can be used p
   Do not use web page scraping; if you need info, ask how to get it.
   An example curl command is as follows; it takes the same url parameters as the browser version.</p>
 <p><b>If you are using lxplus:</b></p>
-  <code>cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt</code><br>
+  <code>auth-get-sso-cookie -u https://bigpanda.cern.ch/oauth/login/cernoidc/ -o bigpanda.cookie.txt</code><br>
   <code>curl -b bigpanda.cookie.txt -H 'Accept: application/json' -H 'Content-Type: application/json' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"
 </code>
 
 <p><b>If you are retrieving JSON outside of CERN:</b></p>
-  <code>ssh username@lxplus.cern.ch "cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;"</code><br>
+  <code>ssh username@lxplus.cern.ch "auth-get-sso-cookie -u https://bigpanda.cern.ch/oauth/login/cernoidc/ -o bigpanda.cookie.txt;"</code><br>
   <code>ssh username@lxplus.cern.ch 'curl -b ~/bigpanda.cookie.txt -H '"'"'Accept: application/json'"'"' -H '"'"'Content-Type: application/json'"'"' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"'</code>
 
 <p>The first command performs SSO authentication, the second delivers needed information. You may reuse single cookie until it get expired.
