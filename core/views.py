@@ -3185,7 +3185,7 @@ def userDashApi(request, agg=None):
                     t['errordialog'] if t['errordialog'] is not None else ''
                 )
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
-                link_jobs_base = '/jobs/?mode=nodrop&jeditaskid={}&'.format(t['jeditaskid'])
+                link_jobs_base = '/jobs/?mode=nodrop&jobstatus=failed&jeditaskid={}&'.format(t['jeditaskid'])
                 link_logs_base = '/filebrowser/?'
                 t['top_errors_list'] = [[
                     '<a href="{}{}={}">{}</a>'.format(link_jobs_base, err['codename'], err['codeval'], err['count']),

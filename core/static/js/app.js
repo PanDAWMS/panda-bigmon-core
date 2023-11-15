@@ -63,7 +63,8 @@ function getScreenCategory(width) {
   let breakpoints = {
     small: [0, 640],
     medium: [640, 1280],
-    large: [1280, 99999],
+    large: [1280, 1920],
+    xlarge: [1920, 99999]
   };
   for (const item in breakpoints) {
     if (width >= breakpoints[item][0] && width < breakpoints[item][1]) {

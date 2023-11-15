@@ -5,7 +5,10 @@ function ellipsisCustom(d, type, cutoff, wordbreak, escapeHtml, customTooltip, t
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;')
+            .replace(/\./g, '.<wbr>')
+            .replace(/\_/g, '_<wbr>')
+            .replace(/\//g, '/<wbr>');
     };
 
     // Order, search and type get the original data

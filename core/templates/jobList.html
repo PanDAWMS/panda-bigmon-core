@@ -246,7 +246,9 @@
 
 {% if viewParams.MON_VO == 'ATLAS' %}
  <a class="bp-button" target="_blank" href="https://prodtask-dev.cern.ch/prodjob/{{ xurl|slice:"6:" }}">Prodsys Jobs Handling</a>
- <a></a>
+  {% if 'jobstatus' in requestParams and 'failed' in requestParams.jobstatus %}
+    <a class="bp-button inverted {% if 'extra' in requestParams and 'checklogs' in requestParams.extra %}disabled{% endif %}" href="{{ xurl }}extra=checklogs">Check logs availability <span class="bp-tooltip upper"><i class="fi-info"></i><span class="tooltip-text">Show if logs are available for the list of jobs below. It will be indicated in the "Job info" column, once the page is reloaded.</span></span></a>
+  {% endif %}
 {% endif %}
 
 <div class="table-scroll">
