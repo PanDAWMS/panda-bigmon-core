@@ -36,7 +36,7 @@ function ellipsisCustom(d, type, cutoff, wordbreak, escapeHtml, customTooltip, t
     }
     var output = ''
     if (customTooltip) {
-      output = '<div class="bp-tooltip ' + tooltipDirection + '">' + shortened + '&#8230;<span class="tooltip-text">' + esc(d) + '</span></div>'
+      output = '<div class="bp-tooltip long ' + tooltipDirection + '">' + shortened + '&#8230;<span class="tooltip-text">' + esc(d) + '</span></div>'
     }
     else {
       output = '<span class="ellipsis" title="' + esc(d) + '">' + shortened + '&#8230;</span>'

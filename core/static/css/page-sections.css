@@ -702,6 +702,10 @@ a.close-x-sign:hover {
     .bp-tooltip .tooltip-text:hover {
       display: none;
     }
+    .bp-tooltip.long .tooltip-text {
+      min-width: 300px;
+      max-width: 600px;
+    }
     .bp-tooltip.upper .tooltip-text {
       bottom: 100%;
       left: 50%;
