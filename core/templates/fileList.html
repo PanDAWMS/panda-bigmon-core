@@ -50,7 +50,8 @@ Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
         <th>File ID</th>
         <th>Type</th>
         <th>Size [MB]</th>
-        <th>N events</th>
+        <th>N events total</th>
+        <th>N events allocated</th>
         <th>Task ID</th>
         <th>PanDA ID</th>
         <th>Status</th>
@@ -144,6 +145,13 @@ function fileListTable(extraparams) {
 
             },
             {
+                "data": "end_start_nevents",
+                sDefaultContent: "---",
+                className: 'num',
+                render: $.fn.dataTable.render.number( ',', '.')
+
+            },
+            {
                 "data": "jeditaskid",
                 sDefaultContent: "",
                 "render": function(data, type, full) {
@@ -211,8 +219,8 @@ function fileListTable(extraparams) {
 
         ],
         "createdRow": function ( row, data, index ) {
-            $('td', row).eq(7).addClass(data['status'] + '_fill');
-            $('td', row).eq(8).addClass(data['procstatus'] + '_fill');
+            $('td', row).eq(8).addClass(data['status'] + '_fill');
+            $('td', row).eq(9).addClass(data['procstatus'] + '_fill');
         }
       });
     }

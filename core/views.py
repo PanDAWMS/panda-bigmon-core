@@ -1445,7 +1445,9 @@ def jobList(request, mode=None, param=None):
         jobs.extend(Jobsactive4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         jobs.extend(Jobswaiting4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
+
         listJobs = [Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4]
+
         if not noarchjobs:
             queryFrozenStates = []
             if 'jobstatus' in request.session['requestParams']:
@@ -7431,6 +7433,10 @@ def loadFileList(request, datasetid=-1):
             f['ruciolink'] = ''
         f['creationdatecut'] = f['creationdate'].strftime('%Y-%m-%d')
         f['creationdate'] = f['creationdate'].strftime(settings.DATETIME_FORMAT)
+        if f['endevent'] is not None and f['startevent'] is not None:
+            f['end_start_nevents'] = int(f['endevent']) + 1 - int(f['startevent'])
+        else:
+            f['end_start_nevents'] = int(f['nevents']) if f['nevents'] is not None else 0
 
     dump = json.dumps(files, cls=DateEncoder)
     return HttpResponse(dump, content_type='application/json')
