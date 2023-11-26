@@ -22,7 +22,7 @@
         .chart-container {
             flex: 3;
             max-width: 75%;
-            height: 600px;
+            height: 750px;
         }
 
         .sidebar {
@@ -70,7 +70,7 @@
         }
         .toggle-icon {
             cursor: pointer;
-            font-size: 2em;
+            font-size: 1em;
             color: grey;
             text-align: left;
             margin: 10px;
@@ -119,9 +119,13 @@
                 </tbody>
             </table>
         </div>
-
     </div>
-     <div id="toggle-icon" class="toggle-icon">+</div>
+    <div id="toggle-icon-errors" class="toggle-icon">+ Jobs Errors Stats</div>
+    <div id="error-report-tab" class="hidden">
+        <div id="web-errors-terminal"></div> <br/>
+    </div>
+
+    <div id="toggle-icon-metrics" class="toggle-icon">+ Jobs Metrics</div>
     <div id="pie-chart-tab" class="hidden">
         <div class="pie-chart-container">
             <canvas id="pie-chart-job_hs06sec"></canvas>
@@ -129,6 +133,7 @@
             <canvas id="pie-chart-job_nevents"></canvas>
         </div>
     </div>
+
     <div id="web-terminal"></div>
 {% endblock %}
 
@@ -229,20 +234,35 @@
                 var message = JSON.parse(event.data);
 
                 switch (message['type']) {
-                    case 'terminal':
-                        $('#web-terminal').terminal().echo(JSON.stringify(message['message']));
+                    case 'web-terminal':
+                        web_terminal.echo(JSON.stringify(message['web-terminal']));
                         break;
-                    case 'metrics':
-                        mainChart.data = message['chart_js_statuses_data'];
+                    case 'web-errors-terminal':
+                        var jsonData = message['web-errors-terminal'];
+                        if (jsonData.length > 1) {
+                            var messageText = jsonData.map(function(obj) {
+        							return JSON.stringify(obj);
+                            }).join('\n');
+    						web_errors_terminal.echo(messageText);
+                    	}
+                        else {
+                            web_errors_terminal.echo(JSON.stringify(jsonData));
+                        }
+                        break;
+
+                    case 'jobs_metrics':
+                        var metrics = message['jobs_metrics']
+
+                        mainChart.data = metrics['chart_js_statuses_data'];
                         mainChart.update();
 
-                        updatePieChart('pie-chart-job_hs06sec', message['chart_js_job_hs06sec'], 'hs06sec');
-                        updatePieChart('pie-chart-job_inputfilebytes', message['chart_js_job_inputfilebytes'], 'inputfilebytes');
-                        updatePieChart('pie-chart-job_nevents', message['chart_js_job_nevents'], 'nevents');
+                        updatePieChart('pie-chart-job_hs06sec', metrics['chart_js_job_hs06sec'], 'hs06sec');
+                        updatePieChart('pie-chart-job_inputfilebytes', metrics['chart_js_job_inputfilebytes'], 'inputfilebytes');
+                        updatePieChart('pie-chart-job_nevents', metrics['chart_js_job_nevents'], 'nevents');
 
                         break;
                     case 'jobs_list':
-                        var jobs_dict = message['message'];
+                        var jobs_dict = message['jobs_list'];
                         var dropdown = document.getElementById('jobs_dropdown');
 
                         dropdown.innerHTML = '<option value="">Select job from list</option>';
@@ -256,7 +276,7 @@
                         break;
                     case 'job_status_history':
                         var statusMap = new Map();
-                        var job_hist = message['message'];
+                        var job_hist = message['job_status_history'];
 
                         for (var status in job_hist) {
                             statusMap.set(job_hist[status].timestamp, {
@@ -333,7 +353,7 @@
                         break;
                     case 'task_status':
                         var statusMap = new Map();
-                        var task_hist = message['message'];
+                        var task_hist = message['task_status'];
 
                         for (var status in task_hist) {
                             var timestamp = task_hist[status];
@@ -415,6 +435,7 @@
 
                         task_status_table.appendChild(thead);
                         break;
+
                     default:
                         break;
                 }
@@ -424,7 +445,7 @@
                 console.error('Socket closed unexpectedly');
             };
 
-            var terminal = $('#web-terminal').terminal(
+            var web_terminal = $('#web-terminal').terminal(
                 function (command, term) {
                     switch (command) {
                         case 'help':
@@ -445,6 +466,35 @@
                 {
                     greetings: 'Welcome to BigPanDA Web Terminal. Created using jQuery terminal',
                     name: 'RealTimeLogs',
+                    height: 600,
+                    prompt: '> ',
+                    enabled: false,
+                    onInit: function (term) {
+                        term.echo('Terminal initialized');
+                    },
+                    keypress: function (e, term) {
+                        if (e.which == 100 && e.ctrlKey) {
+                            stop = true;
+                            term.resume();
+                            return false;
+                        }
+                    }
+                });
+            var web_errors_terminal = $('#web-errors-terminal').terminal(
+                function (command, term) {
+                    switch (command) {
+                        case 'help':
+                            term.echo('Help command');
+
+                            break;
+                        default:
+                            term.echo('Command not recognized: ' + command);
+                            break;
+                    }
+                },
+                {
+                    greetings: 'It shows the last error messages for the task',
+                    name: 'RealTimeErrorsLogs',
                     height: 600,
                     prompt: '> ',
                     enabled: false,
@@ -505,14 +555,24 @@
                     document.getElementById('pie-chart-tab').classList.remove('hidden');
                 }
             }
-                        document.getElementById('toggle-icon').addEventListener('click', function() {
-                var tab = document.getElementById('pie-chart-tab');
-                if (tab.classList.contains('hidden')) {
-                    tab.classList.remove('hidden');
-                    this.textContent = '-';
+            document.getElementById('toggle-icon-metrics').addEventListener('click', function() {
+                var pie_chart_tab = document.getElementById('pie-chart-tab');
+                if (pie_chart_tab.classList.contains('hidden')) {
+                    pie_chart_tab.classList.remove('hidden');
+                    this.textContent = '- Jobs Metrics';
                 } else {
-                    tab.classList.add('hidden');
-                    this.textContent = '+';
+                    pie_chart_tab.classList.add('hidden');
+                    this.textContent = '+ Jobs Metrics';
+                }
+                });
+            document.getElementById('toggle-icon-errors').addEventListener('click', function() {
+                var error_report_tab = document.getElementById('error-report-tab');
+                if (error_report_tab.classList.contains('hidden')) {
+                    error_report_tab.classList.remove('hidden');
+                    this.textContent = '- Jobs Errors Stats';
+                } else {
+                    error_report_tab.classList.add('hidden');
+                    this.textContent = '+ Jobs Errors Stats';
                 }
             });
         });
