@@ -273,6 +273,7 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
     task_message_dict = {}
 
     jobs_info_status_dict = {}
+    jobs_info_errors_dict = {}
     task_info_status_dict = {}
 
     full_index_name = db_source + '_tasks_status_log*'
@@ -283,7 +284,15 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
 
     fields_list = ['@timestamp','db_source', 'inputs', 'job_hs06sec', 'job_inputfilebytes', 'job_nevents', 'job_ninputdatafiles',
                   'job_ninputfiles', 'job_noutputdatafiles', 'job_outputfilebytes', 'jobid', 'message_id', 'msg_type', 'status',
+                   'computingsite',
                   'taskid','timestamp']
+    errors_diag_fields_list = ['brokerageerrordiag', 'ddmerrordiag', 'exeerrordiag', 'jobdispatchererrordiag',
+                   'piloterrordiag', 'superrordiag', 'taskbuffererrordiag']
+    errors_code_fields_list = ['brokerageerrorcode', 'ddmerrorcode', 'exeerrorcode', 'jobdispatchererrorcode',
+                   'piloterrorcode', 'superrorcode', 'taskbuffererrorcode']
+
+    fields_list += errors_diag_fields_list
+    fields_list += errors_code_fields_list
 
     s = s.source(fields_list)
     s = s.filter('term', taskid='{0}'.format(jeditaskid))
@@ -302,12 +311,28 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
                                                                             'message_id': hit_dict['message_id'],
                                                                             'status': hit_dict['status'],
                                                                             'time': hit_dict['@timestamp']
-                                                                            }
+                                                                        }
 
         task_message_ids_list.append(hit_dict['message_id'])
         task_message_dict[hit_dict['message_id']] = hit_dict
 
         if hit_dict['status'] in ('finished', 'failed', 'closed', 'cancelled'):
+            if hit_dict['status'] in ('failed', 'closed', 'cancelled'):
+                if hit_dict['jobid'] not in jobs_info_errors_dict:
+                    jobs_info_errors_dict[hit_dict['jobid']] = {}
+                    jobs_info_errors_dict[hit_dict['jobid']]['errors'] = []
+                for field in errors_diag_fields_list:
+                    if hit_dict[field] != 'NULL':
+                        error_field = field.replace("diag", "")
+                        error_code_field = field.replace("diag", "code")
+
+                        jobs_info_errors_dict[hit_dict['jobid']]['errors'].append({
+                            'timestamp': hit_dict['@timestamp'],
+                            'error_type': error_field,
+                            'code': hit_dict.get(error_code_field, "None"),
+                            'text': hit_dict.get(field, "None")
+                            })
+
             if 'job_inputfilebytes' in hit_dict and hit_dict['job_inputfilebytes'] != 'NULL':
                 job_inputfilebytes = hit['job_inputfilebytes']
             else:
@@ -323,7 +348,11 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
             else:
                 job_nevents = 0
 
-            jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {'message_id': hit_dict['message_id'], 'job_inputfilebytes': job_inputfilebytes, 'job_hs06sec': job_hs06sec, 'status': hit_dict['status'], 'job_nevents': job_nevents, 'time':hit_dict['@timestamp'],'timestamp':hit_dict['timestamp']}
+            jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {
+                'message_id': hit_dict['message_id'], 'job_inputfilebytes': job_inputfilebytes,
+                'job_hs06sec': job_hs06sec, 'status': hit_dict['status'], 'job_nevents': job_nevents,
+                'time': hit_dict['@timestamp'],'timestamp':hit_dict['timestamp']
+            }
 
         fields_list = list(hit_dict.keys())
         for field in fields_list:
@@ -344,4 +373,4 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
     for hit in task_info_conn.aggregations.status:
         task_info_status_dict[hit['key']] = int(hit['time']['value'])
 
-    return task_message_ids_list, jobs_info_status_dict, task_info_status_dict
+    return task_message_ids_list, task_info_status_dict, jobs_info_status_dict, jobs_info_errors_dict
