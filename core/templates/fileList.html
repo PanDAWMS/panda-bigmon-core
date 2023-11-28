@@ -25,7 +25,7 @@ Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
 {% if nfilestotal != nfilesunique %}, whereas number of unique file names is <b>{{ nfilesunique }}</b> {% endif %}
 <p>
 {% if nfilestotal > 1000 %}
-    <div id="nlistedfiles" style="display: inline; font-weight: bold"> 1000 </div> event chunks listed below. If you want to see more, please input the desire number and press Reload button.
+    <div id="nlistedfiles" style="display: inline; font-weight: bold"> 1000 </div> event chunks listed below. If you want to see more, please input the desired number and press Reload button.
     <div class="row" style="max-width: 100%; font-size: 0.85rem; margin-top: 0.5rem">
       <div class="small-12 medium-3 columns" style="padding-left: 0">
         <div class="input-group">
@@ -58,6 +58,8 @@ Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
         <th>Processing status</th>
         <th>Attempt</th>
         <th>Max attempts</th>
+        <th>Failed attempts so far</th>
+        <th>Max failed attempts</th>
         <th>RAM count [MB]</th>
         <th>Created</th>
         <th>Lumi block</th>
@@ -184,9 +186,35 @@ function fileListTable(extraparams) {
                 "data": "attemptnr",
                 sDefaultContent: "",
                 className: 'num',
+                "render": function(data, type, full) {
+                    if (data && data > 0) {
+                        return '<a href = "{% url 'jobList' %}?mode=nodrop&jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '&fileid=' + full['fileid'] + '">' + full['attemptnr'] + '</a>'
+                    }
+                    else {
+                        return data
+                    }
+                }
             },
             {
                 "data": "maxattempt",
+                sDefaultContent: "",
+                className: 'num',
+            },
+            {
+                "data": "failedattempt",
+                sDefaultContent: "",
+                className: 'num',
+                "render": function(data, type, full) {
+                    if (data && data > 0) {
+                        return '<a href = "{% url 'jobList' %}?mode=nodrop&jobstatus=failed&jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] + '&fileid=' + full['fileid'] + '">' + full['failedattempt'] + '</a>'
+                    }
+                    else {
+                        return data
+                    }
+                }
+            },
+            {
+                "data": "maxfailure",
                 sDefaultContent: "",
                 className: 'num',
             },

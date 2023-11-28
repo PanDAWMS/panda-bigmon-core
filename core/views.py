@@ -7344,8 +7344,7 @@ def fileList(request):
 
     del request.session['TFIRST']
     del request.session['TLAST']
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         xurl = extensibleURL(request)
         data = {
             'request': request,
@@ -7400,13 +7399,12 @@ def loadFileList(request, datasetid=-1):
         query['pandaid__in'] = pandaids
 
     # JEDITASKID, DATASETID, FILEID
+    fvalues = ('fileid', 'dispatchdblock', 'scope', 'destinationdblock')
     files_ft.extend(
-        Filestable4.objects.filter(**query).extra(where=[extra_str]).values('fileid', 'dispatchdblock', 'scope',
-                                                                            'destinationdblock'))
+        Filestable4.objects.filter(**query).extra(where=[extra_str]).values(*fvalues))
     if len(files_ft) == 0:
         files_ft.extend(
-            FilestableArch.objects.filter(**query).extra(where=[extra_str]).values('fileid', 'dispatchdblock', 'scope',
-                                                                                   'destinationdblock'))
+            FilestableArch.objects.filter(**query).extra(where=[extra_str]).values(*fvalues))
     if len(files_ft) > 0:
         for f in files_ft:
             files_ft_dict[f['fileid']] = f
