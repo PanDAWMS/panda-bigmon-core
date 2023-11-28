@@ -571,22 +571,16 @@ def getSequentialRetries(pandaid, jeditaskid, countOfInvocations):
         newretries.extend(retries)
         for retry in retries:
             if retry['relationtype'] in ['merge', 'retry']:
-                jsquery = {}
-                jsquery['jeditaskid'] = jeditaskid
-                jsquery['pandaid'] = retry['oldpandaid']
+                jsquery = {'jeditaskid': jeditaskid, 'pandaid': retry['oldpandaid']}
                 values = ['pandaid', 'jobstatus', 'jeditaskid']
                 jsjobs = []
-                jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
-                jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-                jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
-                jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
-                jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
+                for jt in (Jobsdefined4, Jobsactive4, Jobswaiting4, Jobsarchived4, Jobsarchived):
+                    jsjobs.extend(jt.objects.filter(**jsquery).values(*values))
                 for job in jsjobs:
-                    if job['jobstatus'] == 'failed':
-                        for retry in newretries:
-                            if (retry['oldpandaid'] == job['pandaid']):
-                                retry['relationtype'] = 'retry'
-                        newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations))
+                    for retry in newretries:
+                        if retry['oldpandaid'] == job['pandaid']:
+                            retry['relationtype'] = 'retry'
+                    newretries.extend(getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations))
 
     outlist = []
     added_keys = set()

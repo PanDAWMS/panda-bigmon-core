@@ -274,6 +274,8 @@ class JediJobRetryHistory(models.Model):
     newpandaid = models.BigIntegerField(db_column='newpandaid')
     ins_utc_tstamp = models.BigIntegerField(db_column='ins_utc_tstamp', blank=True)
     relationtype = models.CharField(max_length=48, db_column='relationtype')
+    originpandaid = models.BigIntegerField(db_column='originpandaid')
+
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_job_retry_history"'
         unique_together = ('jeditaskid', 'oldpandaid', 'newpandaid')
