@@ -2009,9 +2009,7 @@ def descendentjoberrsinfo(request):
     jobs.extend(Jobsarchived.objects.filter(**query).values())
     jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
 
-    errors = {}
-    for job in jobs:
-        errors[job['pandaid']] = job['errorinfo']
+    errors = {job['pandaid']: job['errorinfo'] for job in jobs if job['jobstatus'] == 'failed'}
 
     response = render(request, 'jobDescentErrors.html', {'errors': errors}, content_type='text/html')
     request = complete_request(request)
