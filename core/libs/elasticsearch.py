@@ -11,6 +11,7 @@ from core.pandajob.models import Jobsactive4
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from django.conf import settings
 from urllib.parse import urlparse
+from itertools import zip_longest
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -247,21 +248,25 @@ def get_gco2_sum_for_tasklist(task_list):
     es_jobs_index = 'atlas_jobs_archived*'
     es_conn = create_es_connection(instance='es-atlas')
 
-    s = Search(using=es_conn, index=es_jobs_index).query("terms", jeditaskid=[str(t) for t in task_list])
+    chunk_size = 50000
+    task_list_chunks = list(chunks(task_list, chunk_size))
 
-    s.filter('range', **{
-        '@timestamp': {'gte': 'now-1y', 'lte': 'now'}
-    }).query("terms", jeditaskid=task_list)
+    for chunk in task_list_chunks:
+        s = Search(using=es_conn, index=es_jobs_index)
 
-    s.aggs.bucket('jobstatus', 'terms', field='jobstatus.keyword') \
-        .metric('sum_gco2global', 'sum', field='gco2global') \
-        .metric('sum_gco2regional', 'sum', field='gco2regional')
+        s.filter('range', **{
+            '@timestamp': {'gte': 'now-1y', 'lte': 'now'}
+        }).query("terms", jeditaskid=chunk)
 
-    response = s.execute()
+        s.aggs.bucket('jobstatus', 'terms', field='jobstatus.keyword') \
+            .metric('sum_gco2global', 'sum', field='gco2global') \
+            .metric('sum_gco2regional', 'sum', field='gco2regional')
 
-    for js in response.aggregations['jobstatus']:
-        if js['key'] in gco2_sum:
-            gco2_sum[js['key']] += js['sum_gco2global']['value']
+        response = s.execute()
+
+        for js in response.aggregations['jobstatus']:
+            if js['key'] in gco2_sum:
+                gco2_sum[js['key']] += js['sum_gco2global']['value']
 
     gco2_sum['total'] = gco2_sum['finished'] + gco2_sum['failed']
 
@@ -374,3 +379,8 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
         task_info_status_dict[hit['key']] = int(hit['time']['value'])
 
     return task_message_ids_list, task_info_status_dict, jobs_info_status_dict, jobs_info_errors_dict
+
+def chunks(iterable, chunk_size):
+    """Split an iterable into chunks of the specified size."""
+    args = [iter(iterable)] * chunk_size
+    return zip_longest(*args, fillvalue=None)
