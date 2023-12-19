@@ -300,6 +300,7 @@
 var plots_dict = {{ plots | safe }};
 var charts = {};
 var requestParams = {{ requestParams | safe }};
+var ntasks = {{ gsum.ntasks | safe }};
 
 $(document).ready(function () {
 
@@ -368,13 +369,13 @@ $(document).ready(function () {
 
   var preset = {{ productiontype|safe }};
   if (preset === 'MC') {
-      taskListMCTable();
+      taskListMCTable(ntasks);
   }
   else if (preset === 'DPD') {
-      taskListDPDTable();
+      taskListDPDTable(ntasks);
   }
   else if (preset === 'DATA') {
-      taskListDataTable();
+      taskListDataTable(ntasks);
   }
   else {
       taskListTable();
@@ -591,11 +592,12 @@ $(document).ready(function () {
       window.location = query;
   }
 
-  function taskListMCTable() {
+  function taskListMCTable(ntasks) {
+
     $('#tasklist').dataTable({
       //"bRetrieve": true,
-      "iDisplayLength": -1,
-      "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+      "iDisplayLength": (ntasks < 1000) ? -1 :  1000,
+      "lengthMenu": [[20, 50, 100, 1000, -1], [20, 50, 100, 1000,  "All"]],
       "paging": true,
       "scrollX": true,
       "aaSorting": [[17,'desc']],
@@ -855,10 +857,11 @@ $(document).ready(function () {
     });
   }
 
-  function taskListDPDTable() {
+  function taskListDPDTable(ntasks) {
     $('#tasklist').dataTable({
       //"bRetrieve": true,
-      "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+      "iDisplayLength": (ntasks < 1000) ? -1 :  1000,
+      "lengthMenu": [[20, 50, 100, 1000, -1], [20, 50, 100, 1000,  "All"]],
       "paging": true,
       "scrollX": true,
       "aaSorting": [[16,'desc']],
@@ -1084,10 +1087,11 @@ $(document).ready(function () {
     })
   }
 
-  function taskListDataTable() {
+  function taskListDataTable(ntasks) {
     $('#tasklist').dataTable({
       //"bRetrieve": true,
-      "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+      "iDisplayLength": (ntasks < 1000) ? -1 :  1000,
+      "lengthMenu": [[20, 50, 100, 1000, -1], [20, 50, 100, 1000,  "All"]],
       "paging": true,
       "scrollX": true,
       "aaSorting": [[15,'desc']],
@@ -1317,10 +1321,11 @@ $(document).ready(function () {
     })
   }
 
-  function taskListTable() {
+  function taskListTable(ntasks) {
     $('#tasklist').dataTable({
       //"bRetrieve": true,
-      "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+      "iDisplayLength": (ntasks < 1000) ? -1 :  1000,
+      "lengthMenu": [[20, 50, 100, 1000, -1], [20, 50, 100, 1000,  "All"]],
       "paging": true,
       "scrollX": true,
       "aaSorting": [[15,'desc']],
