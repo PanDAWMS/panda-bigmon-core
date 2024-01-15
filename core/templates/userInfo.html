@@ -4,7 +4,7 @@
 {% block subtitle %}PanDA user <b>{{ user }}</b>{{ viewParams.selection|safe }}{% endblock %}
 {% block extra_js %}
     <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
-    <script type="text/javascript">
+    <script nonce={{request.csp_nonce}}>
 
     $(document).ready(function() {
 	    $(".comment").shorten();

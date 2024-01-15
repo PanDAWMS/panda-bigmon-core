@@ -52,7 +52,7 @@
 
 {% block js_body_page %}
 
-<script>
+<script nonce={{request.csp_nonce}}>
 $(document).ready(function () {
     {% if events_progress_wrap %}
         var json_ev = JSON.stringify({{ events_progress_wrap.events_progress | safe }});

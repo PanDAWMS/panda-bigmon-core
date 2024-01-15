@@ -111,7 +111,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce={{request.csp_nonce}}>
 var available_report_types = {{ available_reports|safe }};
 var user_email = '{{ request.user.email|safe }}';
 app.

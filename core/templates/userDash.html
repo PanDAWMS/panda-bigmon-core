@@ -116,7 +116,7 @@
 
 
 
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
   var plot_data = {{ plots|safe }};
   var metrics = {{ metrics|safe }};

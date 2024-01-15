@@ -14,7 +14,7 @@
 {#    <script src="{% static 'js/foundation/foundation.topbar.js' %}"></script>#}
     <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js"%}"></script>
     <link rel="stylesheet" href="{% static "css/loading.css"%}">
-    <script type="text/javascript">
+    <script nonce={{request.csp_nonce}}>
 
         function preventDefault(e) {
             e.preventDefault();

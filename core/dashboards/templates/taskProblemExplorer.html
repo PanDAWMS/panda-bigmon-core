@@ -67,7 +67,7 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 
-<script>
+<script nonce={{request.csp_nonce}}>
 var plot_data = {{ plots|safe }};
 var tasks = {{ tasks|safe }};
 var task_errors = {{ error_summary_table|safe }};

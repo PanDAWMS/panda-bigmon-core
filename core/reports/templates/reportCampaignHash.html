@@ -220,7 +220,7 @@
     <br>(**) All current tasks
     <br>(***) Tasks submitted during last 24 hours
 
-    <script type="text/javascript">
+    <script nonce={{request.csp_nonce}}>
     function toggleDetailDisplay(className) {
        el = document.getElementsByClassName(className)
        for (i=0; i<el.length; i++) {

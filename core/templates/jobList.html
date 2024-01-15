@@ -364,7 +364,7 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 
 {% block js_body_page %}
 <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1.1','packages':['sankey','corechart']}]}"></script>
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
 var err_list_data = {{ errsByMessage|safe }};
 var errorMessagesListDataTable;

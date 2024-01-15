@@ -91,7 +91,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-<script>
+<script nonce={{request.csp_nonce}}>
 
 function searchResults() {
     var packageStr=getParamStr("package");

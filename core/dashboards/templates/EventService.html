@@ -162,7 +162,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce={{request.csp_nonce}}>
 
 var select_params = {{ selectParams | safe }};
 var request_params = {{ requestParams | safe }};

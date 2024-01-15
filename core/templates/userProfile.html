@@ -83,7 +83,7 @@
 
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-chart.js' %}?{% cache_bust "js/draw-plots-chart.js" %}"></script>
-<script>
+<script nonce={{request.csp_nonce}}>
 var username = '{{ username }}';
 var request_params = {{ requestParams | safe }};
 app.controller('taskProfileController', ['$scope', '$http', function($scope, $http) {

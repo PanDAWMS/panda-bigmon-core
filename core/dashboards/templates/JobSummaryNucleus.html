@@ -116,7 +116,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce={{request.csp_nonce}}>
 
 var request_params = {{ requestParams | safe }};
 var err_threshold = 15;

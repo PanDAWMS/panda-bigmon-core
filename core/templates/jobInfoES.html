@@ -441,7 +441,7 @@
 
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
 
 $(document).ready(function () {

@@ -222,7 +222,7 @@
   <p>No workers found. Check the filters in the URL or increase time range using <code>&hours=N</code> parameter.</p>
 {% endif %}
 
-<script>
+<script nonce={{request.csp_nonce}}>
 
 $(document).ready(function () {
   $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 200});

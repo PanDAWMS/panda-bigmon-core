@@ -716,7 +716,7 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-<script>
+<script nonce={{request.csp_nonce}}>
 var MON_VO = '{{ viewParams.MON_VO|safe }}';
 var jeditaskid = {{ jeditaskid | safe }};
 google.charts.load('current', {'packages':['sankey']});

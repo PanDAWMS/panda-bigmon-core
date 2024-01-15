@@ -23,7 +23,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-       <script>
+       <script nonce={{request.csp_nonce}}>
            {% if request.session.full_hostname %}
                 ws_host = '{{ request.session.full_hostname }}:8002';
            {% else %}

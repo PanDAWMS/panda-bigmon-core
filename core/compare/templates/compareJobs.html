@@ -61,7 +61,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
     {% if request.session.urls_cut.notimerangeurl %}
         var notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
     {% else %}

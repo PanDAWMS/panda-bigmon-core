@@ -74,7 +74,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-<script>
+<script nonce={{request.csp_nonce}}>
 var artaggrorder = {{ artaggrorder|safe }};
 var data_raw = {{ artjobsdiff|safe }};
 app.controller('artStabilityController', ['$scope', '$timeout', function($scope, $timeout) {

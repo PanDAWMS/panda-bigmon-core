@@ -20,7 +20,7 @@
 
 {% if reqHist %}
 
-    <script type="text/javascript">
+    <script nonce={{request.csp_nonce}}>
       google.setOnLoadCallback(drawChart);
       function drawChart() {
         var data = google.visualization.arrayToDataTable([
@@ -47,7 +47,7 @@
 
 {% if drHist %}
 
-    <script type="text/javascript">
+    <script nonce={{request.csp_nonce}}>
       google.setOnLoadCallback(drawChart);
       function drawChart() {
         var data = google.visualization.arrayToDataTable([

@@ -11,7 +11,7 @@
     <script src="{% static 'js/cytoscape-dagre.js' %}"></script>
     <script src="{% static 'js/cytoscape-node-html-label.min.js' %}"></script>
     <link href="{% static 'css/dagvisualization.css' %}" rel="stylesheet"/>
-    <script>
+    <script nonce={{request.csp_nonce}}>
         window.addEventListener('DOMContentLoaded', function () {
             var cy = window.cy = cytoscape({
                 container: document.getElementById('cy'), // container to render in

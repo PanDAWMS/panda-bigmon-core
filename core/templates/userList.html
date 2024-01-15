@@ -116,7 +116,7 @@ Summary usage statistics not yet available.
 
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 $(document).ready(function () {
     var users_list = {{ userdb|safe }};
     buildUsersTable(users_list);

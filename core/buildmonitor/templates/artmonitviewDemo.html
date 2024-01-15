@@ -39,7 +39,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
 var json=JSON.stringify({{ resltART | safe }});
 

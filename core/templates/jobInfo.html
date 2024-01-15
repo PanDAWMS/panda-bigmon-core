@@ -233,7 +233,7 @@
         {% if stdjdl %}
           <a href='{{stdjdl}}'>Pilot job jdl</a>
         {% endif %}
-        <script>
+        <script nonce={{request.csp_nonce}}>
           logLinksArray[logLinksArray.length] ='{{stdout}}'
           logLinksArray[logLinksArray.length] ='{{stderr}}'
           logLinksArray[logLinksArray.length] ='{{stdlog}}'
@@ -246,13 +246,13 @@
         {% endif %}
         {% if job.jobstatus == 'closed' %}
           <td><a href='{{stdout}}'>Pilot ID</a></td>
-          <script>
+          <script nonce={{request.csp_nonce}}>
             logLinksArray[logLinksArray.length] ='{{stdout}}'
           </script>
         {% endif %}
         {% if viewParams.MON_VO == 'ATLAS' %}
           <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))">Action logger (Kibana)</a>
-          <script>
+          <script nonce={{request.csp_nonce}}>
               logLinksArray[logLinksArray.length] ="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}"
               logLinksArray[logLinksArray.length] ="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))"
 
@@ -478,7 +478,7 @@
 
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
 
 $(document).ready(function () {

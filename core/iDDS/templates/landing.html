@@ -171,7 +171,7 @@
 
 {% block js_body_page %}
 
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
 var requests_summary_table = $('#requests_summary_table').DataTable(
     {

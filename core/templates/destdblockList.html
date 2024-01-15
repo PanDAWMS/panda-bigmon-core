@@ -47,7 +47,7 @@
 {% include "googleFlowDiagram.html" with struct=flowstruct %}
 {% endif %}
 
-<script type="text/javascript">    
+<script nonce={{request.csp_nonce}}>
 function toggleDetailDisplay(className) {                                                                                                                                                                                    
    el = document.getElementsByClassName(className)
    for (i=0; i<el.length; i++) {   

@@ -76,7 +76,7 @@
 
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 var table_data = JSON.parse(JSON.stringify({{ artoverview | safe }}));
 var table_title = table_data.shift()
 var request_params = {{ requestParams|safe }};

@@ -170,7 +170,7 @@
 
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
   app.controller('jobConsumptionPlotsController', function($scope, $http, $sce) {
     $scope.tasklist = {};

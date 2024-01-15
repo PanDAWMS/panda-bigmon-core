@@ -26,7 +26,7 @@
 {% block js_body_page %}
 
   <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
-  <script>
+  <script nonce={{request.csp_nonce}}>
       var jc_plot_data = {{ plotsDict|safe }};
       app.controller('jobConsumptionPlotsController', function($scope) {
         $scope.taskinfo = {};

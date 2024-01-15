@@ -68,7 +68,7 @@
 
 {% block js_body_page %}
 <script src="{% static 'js/hideCells.js' %}"></script>
-<script>
+<script nonce={{request.csp_nonce}}>
     app.service('Service', ['$http', service])
         .controller('dataviewctrl', ['$scope', 'Service',controller]);
 

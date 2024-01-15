@@ -39,7 +39,7 @@ No datasets matching search were found. Check the URL parameters and be aware th
 {% endblock %}
 
 {% block js_body_page %}
-<script>
+<script nonce={{request.csp_nonce}}>
   $(document).ready(function () {
       var datasets = {{ datasets|safe }};
       var dsTable = datasetListTable(datasets);

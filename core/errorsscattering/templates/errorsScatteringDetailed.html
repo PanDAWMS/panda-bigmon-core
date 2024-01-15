@@ -334,7 +334,7 @@
   </div>
 </div>
 
-<script>
+<script nonce={{request.csp_nonce}}>
 function expandTable(table_column_id, legend_column_id) {
     var table = $('#'+table_column_id);
         table.toggleClass('small-10');

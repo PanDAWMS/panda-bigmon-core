@@ -296,7 +296,7 @@
 <script src="{% static 'js/d3jsplot.js' %}"></script>
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 
-<script>
+<script nonce={{request.csp_nonce}}>
 var plots_dict = {{ plots | safe }};
 var charts = {};
 var requestParams = {{ requestParams | safe }};

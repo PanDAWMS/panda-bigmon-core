@@ -40,7 +40,7 @@
 </table>
 
 
-<script>
+<script nonce={{request.csp_nonce}}>
 function searchJedi() {
     input = document.getElementById("jediTaskID0").value;
     if (input){
