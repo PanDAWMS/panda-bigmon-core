@@ -207,8 +207,9 @@ STATIC_URL = URL_PATH_PREFIX + STATIC_URL_BASE
 
 CSP_DEFAULT_SRC = ("'self'", "https://cdnjs.cloudflare.com", "'unsafe-eval'")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https:")
-CSP_CONNECT_SRC = ("'self'",)
+CSP_CONNECT_SRC = ("'self'", "https:")
 CSP_IMG_SRC = ("'self'", "https:", "http:", "data:", )
+CSP_FRAME_SRC = ("'self'", "https://*.cern.ch")
 
 
 FILTER_UI_ENV = {

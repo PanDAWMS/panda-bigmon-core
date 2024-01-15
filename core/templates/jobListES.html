@@ -62,7 +62,7 @@
 {% if ndrops > 0 %}
 <table width=900><tr><td class='highlightcell'>
 <b>{{ ndrops }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
-<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('retries');"><br>Click to show/hide dropped jobs</a>
+<a id="button-toggle-retries"><br>Click to show/hide dropped jobs</a>
 
 <div class="retries" style="display:none">
 <font size=-1>
@@ -81,7 +81,7 @@
 <table width=900><tr><td class='highlightcell'>
 <b style="font-size: 24px">New drop algorithm</b><br/><br/>
 <b>{{ newndrop_test }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
-<a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('newretries');"><br>Click to show/hide dropped jobs</a>
+<a id="button-toggle-new-retries"><br>Click to show/hide dropped jobs</a>
 
 <div class="newretries" style="display:none">
 <font size=-1>
@@ -103,7 +103,7 @@
 {% if difDropList_test > 0 %}
      <br/><br/>
     Difference between old and new drop algorithm.
-    <a style="cursor: pointer;" onclick="javascript:toggleDetailDisplay('difretries');"><br>Click to show/hide difference dropped jobs</a>
+    <a id="button-toggle-retries-diff"><br>Click to show/hide difference dropped jobs</a>
     <div class="difretries" style="display:none">
 <font size=-1>
 {% for pandaID in difDropList_test %}
@@ -289,7 +289,7 @@ Sort by
 		    {% endif %}
             {% if request.user.is_tester %}
               <div class="button-group bp-comparison">
-                <a class="button {% if job.pandaid in clist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')"><span class="tooltip-right">{% if job.pandaid in clist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if job.pandaid in clist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
+                <a class="button {% if job.pandaid in clist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}"><span class="tooltip-right">{% if job.pandaid in clist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if job.pandaid in clist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
                 <a class="button" href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
               </div>
             {% endif %}
@@ -337,6 +337,15 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 var err_list_data = {{ errsByMessage|safe }};
 var errorMessagesListDataTable;
 var errorCountListTableData;
+
+if (document.getElementById("button-toggle-retries")) {document.getElementById("button-toggle-retries").addEventListener("click", toggleDetailDisplay.bind(null, 'retries'));}
+if (document.getElementById("button-toggle-new-retries")) {document.getElementById("button-toggle-new-retries").addEventListener("click", toggleDetailDisplay.bind(null, 'newretries'));}
+if (document.getElementById("button-toggle-retries-diff")) {document.getElementById("button-toggle-retries-diff").addEventListener("click", toggleDetailDisplay.bind(null, 'difretries'));}
+
+var pandaids = {{ pandaids|safe }};
+pandaids.forEach((id) => {
+  document.getElementById("comparisonbutton"+id).addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton" + id, id));
+})
 
 function toggleDetailDisplay(className) {
    el = document.getElementsByClassName(className)

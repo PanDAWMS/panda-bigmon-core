@@ -83,7 +83,7 @@
   
   
 <div id="div-plot">
-    <a href="#plots" class="button bluebutton" onclick="togglePlots();"><span class="tooltip-right">Show jobs consumption plots<span class="tooltip-text">It might be slow if number of tasks in current selection is big.</span></span></a>
+    <a href="#plots" class="button bluebutton" id="button-toggle-plots"><span class="tooltip-right">Show jobs consumption plots<span class="tooltip-text">It might be slow if number of tasks in current selection is big.</span></span></a>
 </div>
 
 
@@ -152,7 +152,7 @@
         <td> {{task.estaskstr}}
 
            <div id="div-{{ task.jeditaskid }}">
-                <a onclick="javascript:loadESData('{{ task.jeditaskid }}');">Show</a>
+                <a id="button-tasks-es">Show</a>
             </div>
         </td>
 		<td><font size=-1>{{ task.creationdate }}</font></td>
@@ -171,7 +171,8 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script nonce={{request.csp_nonce}}>
-
+  document.getElementById("button-toggle-plots").addEventListener("click", togglePlots);
+  document.getElementById("button-tasks-es").addEventListener("click", loadESData.bind(null, '{{ jeditaskid }}'));
   app.controller('jobConsumptionPlotsController', function($scope, $http, $sce) {
     $scope.tasklist = {};
     $scope.tasklist.jc_plots = {

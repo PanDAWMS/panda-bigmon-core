@@ -60,7 +60,7 @@
     {% if request.user.is_tester %}
       <br>
       <div class="button-group bp-comparison">
-        <a class="button {% if isincomparisonlist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')"><span class="tooltip-right">{% if isincomparisonlist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if isincomparisonlist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
+        <a class="button {% if isincomparisonlist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}"><span class="tooltip-right">{% if isincomparisonlist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if isincomparisonlist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
         <a class="button" href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
       </div>
     {% endif %}
@@ -245,7 +245,7 @@
             <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">Pilot records</a>
             {% if viewParams.MON_VO == 'ATLAS' %}
             <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/discover#/?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-10d,to:now))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'jediTaskID:{{job.jeditaskid}}'),sort:!('@timestamp',desc))">Action logger (Kibana)</a>
-            <a href="#" onclick="return openAllLogs();">Open all logs</a>
+            <a href="#" id="button-open-all-logs">Open all logs</a>
             {% endif %}
         {% endif %}
     </div>
@@ -281,12 +281,12 @@
 <div class="bp-dropdown-button">
     <button class="dropdown">Show</button>
     <div   class="dropdown-items">
-        <a onclick="loadJobStatusLog('{{ pandaid }}')">Job status log</a>
+        <a id="button-job-status-log">Job status log</a>
         {% if job.attemptnr > 1 %}
-          <a onclick="loadJobRelationships('{{ pandaid }}', 'upstream')">Upstream jobs (past retries)</a>
+          <a id="button-job-relationships-upstream">Upstream jobs (past retries)</a>
         {% endif %}
-        <a onclick="loadJobRelationships('{{ pandaid }}', 'downstream')">Downstream jobs (further attempts)</a>
-        <a onclick="loadExtendedErrorData('{{ job.jeditaskid }}','{{ job.pandaid }}');">Errors of previous attempts</a>
+        <a id="button-job-relationships-downstream">Downstream jobs (further attempts)</a>
+        <a id="button-extended-error-info">Errors of previous attempts</a>
     </div>
 </div>
 <div class="bp-dropdown-button">
@@ -442,7 +442,14 @@
 
 {% block js_body_page %}
 <script nonce={{request.csp_nonce}}>
+var pandaid = '{{ pandaid }}';
+document.getElementById("button-job-status-log").addEventListener("click", loadJobStatusLog.bind(null, pandaid));
+if (document.getElementById("button-job-relationships-upstream")) {document.getElementById("button-job-relationships-upstream").addEventListener("click", loadJobRelationships.bind(null, pandaid, 'upstream'));}
+document.getElementById("button-job-relationships-downstream").addEventListener("click", loadJobRelationships.bind(null, pandaid, 'downstream'));
+document.getElementById("button-extended-error-info").addEventListener("click", loadExtendedErrorData.bind(null, '{{ job.jeditaskid }}', pandaid));
 
+document.getElementById("comparisonbutton{{ pandaid }}").addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton{{ pandaid }}", '{{ pandaid }}'));
+document.getElementById("button-open-all-logs").addEventListener("click", openAllLogs);
 
 $(document).ready(function () {
     $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
