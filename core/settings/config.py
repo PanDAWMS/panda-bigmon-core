@@ -205,6 +205,12 @@ URL_PATH_PREFIX = ''
 MEDIA_URL = URL_PATH_PREFIX + MEDIA_URL_BASE
 STATIC_URL = URL_PATH_PREFIX + STATIC_URL_BASE
 
+CSP_DEFAULT_SRC = ("'self'", "https://cdnjs.cloudflare.com", "'unsafe-eval'")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https:")
+CSP_CONNECT_SRC = ("'self'",)
+CSP_IMG_SRC = ("'self'", "https:", "http:", "data:", )
+
+
 FILTER_UI_ENV = {
     # default number of days of shown jobs active in last N days
     'DAYS': 30,

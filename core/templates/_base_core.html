@@ -45,15 +45,7 @@
   {% endblock %}
   {% block js_head_page_library %}{% endblock %}
   {% block js_head_site %}
-  <script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-    ga('create', '{% block gacode %}UA-44940804-1{% endblock %}', '{% block gaweb %}pandawms.org{% endblock %}');
-    ga('send', 'pageview');
-
+  <script nonce={{request.csp_nonce}}>
     var app = angular.module('bp-app', []);
     app.config(function ($interpolateProvider) {
       $interpolateProvider.startSymbol('{$');
@@ -87,7 +79,7 @@
 {% block settings-offcanvas %}
 
 {% endblock %}
-  <button type="button" class="save button" onclick="saveSettings()">Save & Reload</button>
+  <button type="button" class="save button" id="button-save-settings">Save & Reload</button>
 </div>
 
 <div class="top-bar stacked-for-large" id="main-menu">
@@ -253,30 +245,10 @@
     <div class="top-bar-right">
       <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
           {% if request.user and request.user.is_authenticated %}
-          <script>
-           function getSelectValue() {
-               var selectedValue = document.getElementById("searchselectid").value;
-               switch (selectedValue) {
-                   case 'site':
-                        $("#searchinputid").autocomplete({
-                            source: "{% url 'getsites' %}",
-                            select: function (event, ui) { //item selected
-                                AutoCompleteSelectHandler(event, ui);
-                            },
-                            minLength: 1,
-                        });
-                        break;
-               }
-           }
-           function AutoCompleteSelectHandler(event, ui)
-           {
-               var selectedObj = ui.item;
-           }
-           </script>
             <li>
             <div class="row collapse searchbox show-for-large">
               <div class="large-7 medium-7 columns">
-                <select id="searchselectid" name="objectstosearch" class="searchselect" onchange="getSelectValue();">
+                <select id="searchselectid" name="objectstosearch" class="searchselect">
                   <option class="searchoption" value="pandaid">Job by ID</option>
                   <option class="searchoption" value="batchid">Jobs for batch ID</option>
                   <option class="searchoption" value="jeditaskid">Task by ID</option>
@@ -300,7 +272,7 @@
               </div>
 
               <div class="large-1 medium-1 columns">
-                <a onclick="bpsearch('searchselectid', 'searchinputid')" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
+                <a id="button-bpsearch" class="button prefix expand searchbutton"><i class="fi-magnifying-glass"></i></a>
               </div>
             </div>
             </li>
@@ -359,13 +331,13 @@
                   <li><span class="li-text loggeduser">{{ request.user.email }}</span>
                   {% if request.user.is_tester %}
                       <li><a href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
-                      <li><a onclick="clearComparisonList('job')">Clear jobs comparison list</a>
+                      <li><a id="button-clear-comparison-list">Clear jobs comparison list</a>
                   {% endif %}
                   <li><a href="{% url 'userInfo' %}">My BigPanDA</a>
                   {% if request.user.is_tester %}
-                      <li><a onclick="denyRights('tester')">Abandon tester rights</a>
+                      <li><a id="button-deny-rights">Abandon tester rights</a>
                   {% else %}
-                      <li><a onclick="grantRights('tester')">Become a tester</a>
+                      <li><a id="button-grant-rights">Become a tester</a>
                   {% endif %}
                   <li><a href="{% url 'logout' %}"><span class="reassign">Logout</span></a>
               </ul>
@@ -454,7 +426,7 @@
 
     <div class="column small-6 medium-3 large-2 right">
         {% if request.session.hostname %}{{ request.session.hostname }} {% endif %} |
-        {% if built != None %} {{ built }}, {% endif %} <a onclick="refreshPage()"> Refresh</a>
+        {% if built != None %} {{ built }}, {% endif %} <a id="button-refresh-page"> Refresh</a>
     </div>
 </div>
 <!-- End sub-title -->
@@ -526,7 +498,22 @@
   {% block js_body_site %}
     <script src="{% static 'js/app.js' %}?{% cache_bust "js/app.js" %}"></script>
     <script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
-    <script>
+    <script nonce={{request.csp_nonce}}>
+
+      document.getElementById("button-save-settings").addEventListener("click", saveSettings);
+      document.getElementById("button-bpsearch").addEventListener("click", bpsearch);
+      if ('{{ request.user.is_tester }}' === 'True') {
+        document.getElementById("button-clear-comparison-list").addEventListener("click", clearComparisonList);
+        document.getElementById("button-deny-rights").addEventListener("click", denyRights);
+      }
+      else {
+        document.getElementById("button-grant-rights").addEventListener("click", grantRights);
+      }
+      document.getElementById("button-refresh-page").addEventListener("click", refreshPage);
+
+      document.getElementById("searchselectid").addEventListener("change", getSelectValue);
+
+
       {% if timerange %}
           var timerange = {{ timerange|safe }};
       {% else %}
@@ -623,13 +610,12 @@
         };
       }]);
 
-
-      function bpsearch(selectid, inputid) {
+      function bpsearch() {
 
           var urlBase= "https://bigpanda.cern.ch";
           var url = "";
-          var searchparam = document.getElementById(selectid);
-          var searchvalue = document.getElementById(inputid);
+          var searchparam = document.getElementById('searchselectid');
+          var searchvalue = document.getElementById('searchinputid');
 
           if (searchparam.value.length > 0) {
               switch (searchparam.value) {
@@ -698,11 +684,12 @@
         window.location = notimestampurl + 'timestamp=' + d;
       }
 
-      function clearComparisonList(object) {
+      function clearComparisonList() {
+          let object_name = 'job';
           var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/clearcomparison/',
-              data: 'object='+object,
+              data: 'object='+object_name,
               async: true,
               cache: false
           }).done(function (response) {
@@ -742,11 +729,11 @@
         }
       }
 
-      function grantRights(type) {
+      function grantRights() {
           var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/grantrights/',
-              data: 'type='+type,
+              data: 'type=tester',
               async: true,
               cache: false
           }).done(function (response) {
@@ -754,11 +741,11 @@
               });
       }
 
-      function denyRights(type) {
+      function denyRights() {
           var newURL = '{{ request.session.notimestampurl|safe }}';
           $.ajax({
               url: '/denyrights/',
-              data: 'type='+type,
+              data: 'type=tester',
               async: true,
               cache: false
           }).done(function (response) {
@@ -785,6 +772,26 @@
               }
           });
       }
+
+      function getSelectValue() {
+      var selectedValue = document.getElementById("searchselectid").value;
+      switch (selectedValue) {
+         case 'site':
+              $("#searchinputid").autocomplete({
+                  source: "{% url 'getsites' %}",
+                  select: function (event, ui) { //item selected
+                      AutoCompleteSelectHandler(event, ui);
+                  },
+                  minLength: 1,
+              });
+              break;
+         }
+      }
+      function AutoCompleteSelectHandler(event, ui)
+      {
+         var selectedObj = ui.item;
+      }
+
     </script>
   {% endblock %}
   {% block js_body_page %}{% endblock %}

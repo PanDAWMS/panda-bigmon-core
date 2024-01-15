@@ -51,6 +51,8 @@ MIDDLEWARE = (
     'django.middleware.cache.FetchFromCacheMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'core.oauth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
+
+    'csp.middleware.CSPMiddleware',
 )
 
 ROOT_URLCONF = 'core.urls'

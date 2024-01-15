@@ -85,36 +85,6 @@
   </li>
 </ul>
 
-{% comment %}
-
-<div class='section'>ATLAS PanDA processing overview from 
-<a href="http://grid.triumf.ca/">TRIUMF</a>
-<a href="http://panglia.triumf.ca">Panglia</a>. 
-Panglia has <a href="http://panglia.triumf.ca/world/generator.php">world</a>, 
-<a href="http://panglia.triumf.ca/cloud/generator.php">cloud</a>,
-<a href="http://panglia.triumf.ca/site/generator.php">site</a>
-plot generators
-</div>
-
-<table border='0'>
-<tr>
-<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=production&amp;SIZE=large'>
-<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=production&amp;SIZE=medium'
-alt='Daily World Production Queues'></a>
-</td>
-<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=analysis&amp;SIZE=large'>
-<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=analysis&amp;SIZE=medium'
-alt='Daily World Analysis Queues'></a>
-</td>
-<td><a target='_blank' href='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=combined&amp;SIZE=large'>
-<img width='100%' src='http://panglia.triumf.ca/world/graph.php?TIME=day&amp;SSTATE=running&amp;VIEW=bysstate&amp;QUEUE=combined&amp;SIZE=medium'
-alt='Daily World Production and Analysis Queues (combined)'></a>
-</td>
-</tr>
-</table>
-
-{% endcomment %}
-
 {% else %}
 
 <p>
@@ -125,7 +95,7 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
 
 {% endif %}
 <p>
-<script>
+<script nonce={{request.csp_nonce}}>
   $(function() {
     $("#site").autocomplete({
       source: "{% url 'getsites' %}",
