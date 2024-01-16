@@ -725,9 +725,9 @@ def add_files_info_to_jobs(jobs):
                 'lfn_list': [],
             }
         if jds['endevent'] is not None and jds['startevent'] is not None:
-            dc_per_job[jds['pandaid']]['nevents'] = int(jds['endevent']) + 1 - int(jds['startevent'])
+            dc_per_job[jds['pandaid']]['nevents'] += int(jds['endevent']) + 1 - int(jds['startevent'])
         else:
-            dc_per_job[jds['pandaid']]['nevents'] = int(jds['nevents']) if jds['nevents'] is not None else 0
+            dc_per_job[jds['pandaid']]['nevents'] += int(jds['nevents']) if jds['nevents'] is not None else 0
         if jds['type'] == 'input':
             dc_per_job[jds['pandaid']]['lfn_list'].append(jds['lfn'])
 

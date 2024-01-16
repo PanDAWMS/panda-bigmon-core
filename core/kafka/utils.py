@@ -21,9 +21,13 @@ status_colors = {
         'closed': 'rgba(74, 74, 74, 1)'
 }
 
+errors_diag_fields_list = ['brokerageerrordiag', 'ddmerrordiag', 'exeerrordiag', 'jobdispatchererrordiag',
+                           'piloterrordiag', 'superrordiag', 'taskbuffererrordiag']
+
 def prepare_data_for_main_chart(data):
     labels = fixed_statuses
     values = [data[status] for status in fixed_statuses]
+
     return {
         'labels': labels,
         'datasets': [
@@ -46,3 +50,36 @@ def prepare_data_for_pie_chart(data):
             }
         ]
     }
+def update_errors_list(job, jobs_info_errors_dict):
+    jobs_info_errors_dict[job['jobid']] = {}
+    jobs_info_errors_dict[job['jobid']]['errors'] = []
+    for field in errors_diag_fields_list:
+        if job[field] != 'NULL':
+            error_field = field.replace("diag", "")
+            error_code_field = field.replace("diag", "code")
+
+            jobs_info_errors_dict[job['jobid']]['errors'].append({
+                'timestamp': job['@timestamp'],
+                'error_type': error_field,
+                'code': job.get(error_code_field, "None"),
+                'text': job.get(field, "None")
+            })
+    return jobs_info_errors_dict
+
+def create_new_errors_list(job):
+    jobs_info_errors_dict = {}
+    jobs_info_errors_dict[job['jobid']] = {}
+    jobs_info_errors_dict[job['jobid']]['errors'] = []
+    for field in errors_diag_fields_list:
+        if job[field] != 'NULL':
+            error_field = field.replace("diag", "")
+            error_code_field = field.replace("diag", "code")
+
+            jobs_info_errors_dict[job['jobid']]['errors'].append({
+                'timestamp': job['@timestamp'],
+                'error_type': error_field,
+                'code': job.get(error_code_field, "None"),
+                'text': job.get(field, "None")
+            })
+
+    return jobs_info_errors_dict
