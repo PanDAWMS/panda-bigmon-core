@@ -147,7 +147,7 @@
                   {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
       </td>
       <td>
-          <a onclick="go()" class="button primary">Go!</a>
+          <a id="button-go" class="button primary">Go!</a>
       </td>
     </tr>
   </tbody>
@@ -162,10 +162,8 @@
 <table class="unstriped stack minimalistic-table">
   <thead>
     <tr>
-      <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a onclick="toggleByID('extraplots', 'plussign')"><i id="plussign" class="fi-plus"></i></a>]
-          {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}
-              , <a id="nEventsTrendLink" onclick="toggleHistoricalTrend('nEventsLineChart', 'nEventsTrendLink')"> show historical trend</a>
-          {% endif %}
+      <th> Events: {{ gsum.nevents | intword }} in total, extra plots [<a id="button-extra-plots"><i id="plussign" class="fi-plus"></i></a>]
+        {% if 'preset' in requestParams or 'processingtype' in requestParams or requestParams|length == 0 %}, <a id="nEventsTrendLink"> show historical trend</a>{% endif %}
       </th>
       <th> Allocated slots: {{ gsum.aslots | intcomma }} in total</th>
       <th class="mid"> Task age</th>
@@ -301,6 +299,10 @@ var plots_dict = {{ plots | safe }};
 var charts = {};
 var requestParams = {{ requestParams | safe }};
 var ntasks = {{ gsum.ntasks | safe }};
+
+document.getElementById("button-go").addEventListener("click", go);
+document.getElementById("button-extra-plots").addEventListener("click", toggleByID.bind(null, 'extraplots', 'plussign'));
+document.getElementById("nEventsTrendLink").addEventListener("click", toggleHistoricalTrend.bind(null, 'nEventsLineChart', 'nEventsTrendLink'));
 
 $(document).ready(function () {
 
