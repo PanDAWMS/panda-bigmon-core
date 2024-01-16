@@ -12,8 +12,8 @@
 {% endblock %}
 {% block body %}
 <div class="float-right">
-    <a id="hideequal" onclick="togglerows('equal', 'hideequal')" class="bluebutton">Hide equal</a>
-    <a id="hidebutton" onclick="toggle('allparams', 'hidebutton')" class="bluebutton">Show all params</a>
+    <a id="hideequal" class="bluebutton">Hide equal</a>
+    <a id="hidebutton" class="bluebutton">Show all params</a>
 </div>
 <p style="clear: both">
 <table class="compare-table unstriped">
@@ -21,7 +21,7 @@
         <tr>
         <th>Main parameters</th>
             {% for pandaid in pandaids %}
-                <th>{{ pandaid }} <a class="close-x-sign" onclick="deletefromcomparison('job','{{ pandaid }}')"><i class="fi-x"></i></a></th>
+                <th>{{ pandaid }} <a class="close-x-sign" id="button-delete-{{ pandaid }}"><i class="fi-x"></i></a></th>
             {% endfor %}
         </tr>
     </thead>
@@ -62,57 +62,66 @@
 
 {% block js_body_page %}
 <script nonce={{request.csp_nonce}}>
-    {% if request.session.urls_cut.notimerangeurl %}
-        var notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
-    {% else %}
-        var notimerangeurl =  window.location.href + '?';
-    {% endif %}
 
-    function toggle(idtotoggle, buttonid){
-        if ($("#" + idtotoggle).is(':visible')){
-            $("#" + idtotoggle).hide();
-            document.getElementById(buttonid).innerHTML='Show all params'}
-        else {
-            $("#" + idtotoggle).show();
-            document.getElementById(buttonid).innerHTML='Hide all params'}
+document.getElementById("hideequal").addEventListener("click", togglerows.bind(null, 'equal', 'hideequal'));
+document.getElementById("hidebutton").addEventListener("click", toggle.bind(null, 'allparams', 'hidebutton'));
+
+var pandaids = {{ pandaids|safe }};
+pandaids.forEach((id) => {
+  document.getElementById("button-delete-"+id).addEventListener("click", deletefromcomparison.bind(null, 'job', id));
+})
+
+{% if request.session.urls_cut.notimerangeurl %}
+    var notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
+{% else %}
+    var notimerangeurl =  window.location.href + '?';
+{% endif %}
+
+function toggle(idtotoggle, buttonid){
+    if ($("#" + idtotoggle).is(':visible')){
+        $("#" + idtotoggle).hide();
+        document.getElementById(buttonid).innerHTML='Show all params'}
+    else {
+        $("#" + idtotoggle).show();
+        document.getElementById(buttonid).innerHTML='Hide all params'}
+}
+
+function deletefromcomparison(object, value) {
+    var currentURL = window.location.href;
+    if (currentURL.indexOf('pandaid=') > -1) {
+        var url = new URL(currentURL);
+        var pandaids = url.searchParams.get("pandaid").split("|");
+        var index = pandaids.indexOf(value);
+        if (index > -1) {
+          pandaids.splice(index, 1);
+        }
+        newURL = url.origin + url.pathname;
+        if (pandaids.length > 0) {
+            newURL += '?pandaid=' + pandaids.join('|')
+        }
+        window.location = newURL;
     }
-
-    function deletefromcomparison(object, value) {
-        var currentURL = window.location.href;
-        if (currentURL.indexOf('pandaid=') > -1) {
-            var url = new URL(currentURL);
-            var pandaids = url.searchParams.get("pandaid").split("|");
-            var index = pandaids.indexOf(value);
-            if (index > -1) {
-              pandaids.splice(index, 1);
-            }
-            newURL = url.origin + url.pathname;
-            if (pandaids.length > 0) {
-                newURL += '?pandaid=' + pandaids.join('|')
-            }
+    else {
+        let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+        var newURL = notimestampurl + 'timestamp=' + d;
+        $.ajax({
+            url: '/deletefromcomparison/',
+            data: 'object=' + object + '&value=' + value,
+            async: true,
+            cache: false
+        }).done(function (response) {
             window.location = newURL;
-        }
-        else {
-            let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
-            var newURL = notimestampurl + 'timestamp=' + d;
-            $.ajax({
-                url: '/deletefromcomparison/',
-                data: 'object=' + object + '&value=' + value,
-                async: true,
-                cache: false
-            }).done(function (response) {
-                window.location = newURL;
-            });
-        }
+        });
     }
+}
 
-    function togglerows(classtotoggle, buttonid){
-        if ($('.'+classtotoggle).is(':visible')){
-            $('.'+classtotoggle).hide();
-            document.getElementById(buttonid).innerHTML='Show equal'}
-        else {
-            $('.'+classtotoggle).show();
-            document.getElementById(buttonid).innerHTML='Hide equal'}
-    }
+function togglerows(classtotoggle, buttonid){
+    if ($('.'+classtotoggle).is(':visible')){
+        $('.'+classtotoggle).hide();
+        document.getElementById(buttonid).innerHTML='Show equal'}
+    else {
+        $('.'+classtotoggle).show();
+        document.getElementById(buttonid).innerHTML='Hide equal'}
+}
 </script>
 {% endblock %}
