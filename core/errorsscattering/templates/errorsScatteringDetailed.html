@@ -4,10 +4,10 @@
 
 {% block page_title %}Errors scattering{% endblock %}
 {% block subtitle %}Errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
-{% block extra_css %}
+{% block css_page_library %}
     <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
 {% endblock %}
-{% block extra_js %}
+{% block js_head_page_library %}
     <script src="{% static 'js/hideCells.js' %}"></script>
     <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
 {% endblock %}
@@ -33,7 +33,7 @@
     {% else %}
         <a href="{% url 'errorsScatteringDetailed' cloud=cloud|safe reqid=reqid%}?scouts=exclude" class="bluebutton">Exclude scouts</a>
     {% endif %}
-    <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscatdetailed', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
+    <a id="hidebutton" class="bluebutton">Hide low statistics cells</a>
 </div>
 
 <br style="clear:both;">
@@ -327,14 +327,19 @@
                 </tr>
             </tbody>
           </table>
-          <button class="close-button" aria-label="Dismiss alert" type="button" data-close style="font-size: 1.5em" onclick="expandTable('errorsscat-table', 'errorsscat-legend')">
+          <button class="close-button" aria-label="Dismiss alert" type="button" data-close style="font-size: 1.5em" id="button-expand-table">
             <span aria-hidden="true">&times;</span>
           </button>
       </div>
   </div>
 </div>
-
+{% endblock %}
+{% block js_body_page %}
 <script nonce={{request.csp_nonce}}>
+
+document.getElementById("hidebutton").addEventListener("click", toggleLowStatsCells.bind(null, 'lowstats', 'errorsscat', 'hidebutton'));
+document.getElementById("button-expand-table").addEventListener("click", expandTable.bind(null, 'errorsscat-table', 'errorsscat-legend'));
+
 function expandTable(table_column_id, legend_column_id) {
     var table = $('#'+table_column_id);
         table.toggleClass('small-10');
