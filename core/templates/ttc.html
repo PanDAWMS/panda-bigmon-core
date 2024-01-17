@@ -50,7 +50,7 @@
 {% endif %}
 </table>
 
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 function toggleDetailDisplay(className) {
    el = document.getElementsByClassName(className)
    for (i=0; i<el.length; i++) {
@@ -67,7 +67,7 @@ function toggleDetailDisplay(className) {
 <p>
 {% if task.percentage >= 0 %}<div class="d3splot" id="taskprofile" style="float:left;display:none"></div>{% endif %}
 
-<script>
+<script nonce={{request.csp_nonce}}>
 var values = {{ progressForBar|safe }};
 if (values.length > 0) {pandamonProgressBarFunc(values,"#progressbar",'Task progress');}
 var profile = {{ profile|safe }};

@@ -73,7 +73,7 @@ No PanDA queue found for specified name.
 {% endblock %}
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 $(document).ready(function () {
   $(".comment").shorten({showChars: 500, minHideChars: 250});
 });

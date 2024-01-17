@@ -42,7 +42,7 @@
             </select>
         </td>
         <td>
-            <a onclick="go()" class="button secondary">Go!</a>
+            <a id="go_button" class="button secondary">Go!</a>
         </td>
     </tr>
   </tbody>
@@ -97,7 +97,8 @@
 {% endblock %}
 
 {% block js_body_page %}
-<script>
+<script nonce={{request.csp_nonce}}>
+document.getElementById("go_button").addEventListener("click", go);
 function go() {
 
 var query = '{% url 'jobProblems' %}';

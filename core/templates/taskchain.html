@@ -28,7 +28,7 @@
         <hr/>
 
 
-    <script>
+    <script nonce={{request.csp_nonce}}>
         var treeData = {{ taskChain|safe }},
                 task = {{ jeditaskid }};
 

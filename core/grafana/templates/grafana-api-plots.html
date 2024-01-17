@@ -24,14 +24,14 @@
   <tbody>
     <tr>
         <td>
-            <select id="group_by" onchange="onSubElementChoice()">
+            <select id="group_by">
                 {% for gb, name in group_by.items %}
                     <option value={{ gb }}{% if gb == requestParams.group_by %} selected="selected" {% endif %}> {{ name }} </option>
                 {% endfor %}
             </select>
         </td>
         <td>
-            <select id="split_series" onchange="onSubElementChoice()">
+            <select id="split_series">
                 <option value="no"{% if not requestParams.split_series or requestParams.split_series == 'no' %} selected="selected" {% endif %}>No</option>
                 {% for ss, name in split_series.items %}
                     <option value={{ ss }}{% if ss == requestParams.split_series %} selected="selected" {% endif %}> {{ name }} </option>
@@ -46,7 +46,7 @@
           </ul>
         </td>
         <td>
-            <a onclick="go()" class="button primary">Go!</a>
+            <a id="button-grafana-go" class="button primary">Go!</a>
         </td>
     </tr>
   </tbody>
@@ -59,7 +59,11 @@
 
 <div class="d3splot" id="plots" style="float:left"></div>
 
-<script>
+<script nonce={{request.csp_nonce}}>
+document.getElementById("button-grafana-go").addEventListener("click", go);
+document.getElementById("group_by").addEventListener("change", onSubElementChoice);
+document.getElementById("split_series").addEventListener("change", onSubElementChoice);
+
 function onSubElementChoice() {
     var warning = document.getElementById ("warning");
     warning.style.display = '';

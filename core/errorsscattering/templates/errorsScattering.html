@@ -5,11 +5,10 @@
 {% block page_title %}Errors scattering{% endblock %}
 {% block subtitle %}Errors scattering <font size=-1>{{ viewParams.selection|safe }}</font> {% endblock %}
 
-
-{% block extra_css %}
+{% block css_page_library %}
     <link rel="stylesheet" type="text/css" href="{% static '/css/wizardstyles.css'%}" />
 {% endblock %}
-{% block extra_js %}
+{% block js_head_page_library %}
     <script src="{% static 'js/hideCells.js' %}"></script>
     <script src="{% static 'js/jquery.floatThead.min.js' %}"></script>
 {% endblock %}
@@ -32,9 +31,9 @@
         <a href="{% url 'errorsScattering'%}?scouts=exclude" class="bluebutton">Exclude scouts</a>
     {% endif %}
     {% if 'lowstatcells' in requestParams and requestParams.lowstatcells == 'hide' %}
-        <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Show low statistics cells</a>
+        <a id="hidebutton" class="bluebutton">Show low statistics cells</a>
     {% else %}
-        <a id="hidebutton" onclick="toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton')" class="bluebutton">Hide low statistics cells</a>
+        <a id="hidebutton" class="bluebutton">Hide low statistics cells</a>
     {% endif %}
 </div>
 
@@ -189,11 +188,14 @@
   </div>
 </div>
 
-<script>
+{% endblock %}
+{% block js_body_page %}
+<script nonce={{request.csp_nonce}}>
 var $table = $('table.floatThead');
 $table.floatThead();
 
 $(document).ready(function () {
+ document.getElementById("hidebutton").addEventListener("click", toggleLowStatsCells.bind(null, 'lowstats', 'errorsscat', 'hidebutton'));
  var lowstats = '{{ requestParams.lowstatcells }}';
  if (lowstats == 'hide') {
      toggleLowStatsCells('lowstats', 'errorsscat', 'hidebutton');
@@ -201,8 +203,6 @@ $(document).ready(function () {
 });
 
 </script>
-
-
 {% endblock %}
 
 {% block help %}

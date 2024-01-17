@@ -42,7 +42,7 @@
     {% if jedi or panda %}
 
         <br/>
-        <script>
+        <script nonce={{request.csp_nonce}}>
             function searchJedi() {
                 input = document.getElementById("jediTaskID0").value;
                 if (input) {
@@ -182,7 +182,7 @@
 
 
 
-        <script type="text/javascript">
+        <script nonce={{request.csp_nonce}}>
 
             $("#tabs").on("tabsactivate", function (event, ui) {
                 $("#tabs-2").empty();

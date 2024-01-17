@@ -187,7 +187,7 @@
 {% block js_body_page %}
   <script src="{% static 'js/hideCells.js' %}"></script>
   <script type="text/javascript" src='https://www.google.com/jsapi?autoload={"modules":[{"name":"visualization","version":"1.1","packages":["sankey","corechart"]}]}'></script>
-  <script type="text/javascript">
+  <script nonce={{request.csp_nonce}}>
   google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
 
   var chart_list = ['submittime', 'submittimefiles', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];

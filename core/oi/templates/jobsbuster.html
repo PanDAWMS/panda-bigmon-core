@@ -105,7 +105,7 @@
 
 {% block js_body_page %}
 
-<script>
+<script nonce={{request.csp_nonce}}>
 $(document).ready(function () {
     var formatRound = d3.format(".3f");
     var tw_c3js = c3.generate({

@@ -23,7 +23,7 @@
 
 {% block js_body_page %}
 <script src="{% static 'js/d3jsplot.js' %}?{% cache_bust "js/d3jsplot.js" %}"></script>
-<script>
+<script nonce={{request.csp_nonce}}>
   var data ={{ plotData|safe }};
   var title = "Nevents";
   var view = '{{ requestParams.view|safe }}';

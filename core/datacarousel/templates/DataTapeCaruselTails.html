@@ -56,7 +56,7 @@
 
 {% block js_body_page %}
     <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
+    <script nonce={{request.csp_nonce}}>
         google.charts.load('current', {packages: ['corechart']});
 
         app.service('Service', ['$http', service]).controller('tails_view_ctrl', ['$scope', '$sce', 'Service', controller]);

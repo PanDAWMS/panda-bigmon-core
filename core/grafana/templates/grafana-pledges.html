@@ -45,7 +45,7 @@
             </td>
         </tr>
     </table>
-    <script>
+    <script nonce={{request.csp_nonce}}>
         var iTableCounter=1;
         var oInnerTable;
         function format (d, table_id) {

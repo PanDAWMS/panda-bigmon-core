@@ -1827,6 +1827,7 @@ def jobList(request, mode=None, param=None):
             'requestString': urlParametrs,
             'built': datetime.now().strftime("%H:%M:%S"),
             'clist': clist,
+            'pandaids': [j['pandaid'] for j in jobsToShow if 'pandaid' in j],
             'warning': warning,
         }
         data.update(getContextVariables(request))

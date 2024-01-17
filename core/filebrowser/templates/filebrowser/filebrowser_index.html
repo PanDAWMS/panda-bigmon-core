@@ -62,7 +62,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-<script>
+<script nonce={{request.csp_nonce}}>
     $(document).ready(function () {
         $.fn.dataTable.moment('YYYY MMM DD HH:mm:ss');
         $('#filelist').DataTable({

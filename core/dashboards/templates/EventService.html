@@ -162,7 +162,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce={{request.csp_nonce}}>
 
 var select_params = {{ selectParams | safe }};
 var request_params = {{ requestParams | safe }};
@@ -270,6 +270,13 @@ $(document).ready(function () {
     var queuesTable = buildQueueSummary(queuesummary, 'queuesummary');
     $('#container_qs').css( 'display', 'block' );
     queuesTable.columns.adjust().draw();
+
+    queuesummary.forEach((row) => {
+    if (document.getElementById("button-popup-"+row[0])) {
+      document.getElementById("button-popup-"+row[0]).addEventListener("click", PopUpGrafana.bind(null, row[0], row[4], row[5], 'jmonit'));
+    }
+    })
+
 });
 
 function buildRegionSummary(data, divid) {
@@ -572,7 +579,7 @@ function buildQueueSummary(data, divid) {
             let es = get_ES_Grafana_param(row[4]);
             let link = '<a href = "{% url 'siteInfo' %}' + row[0] + '/">'+row[0]+'</a>';
             link += ' <a target="_blank" href="https://monit-grafana.cern.ch/d/000000696/job-accounting-historical-data?orgId=17&from=now-24h&to=now&var-bin=1h&var-groupby=gshare&var-country=All&var-federation=All&var-resources=All&var-tier=All&var-cloud=All&var-site=All&var-computingsite=' + row[0] + '&var-nucleus=All&var-cores=All&var-eventservice=' + es + '&var-groups=All&var-inputdatatypes=All&var-inputprojects=All&var-outputproject=All&var-gshare=All&var-resourceserporting=All&var-processingtype=All&var-jobtype=All&var-jobstatus=All&var-error_category=All&var-measurement_suffix=1h&var-measurement_suffix_CQ=1h&var-retention_policy=long&var-division_factor=1&var-hourly_multiplier=1"><div class="tooltip-right"><img src="/static/images/grafana.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Jobs accounting (MONIT Grafana)</span></div></a>\n';
-            link += ' <a onclick=\'PopUpGrafana("' + row[0] + '", "' + row[4] +  '", "' + row[5] +  '", "jmonit")\'><div class="tooltip-right"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Jobs monitoring (rendered Grafana plot)</span></div></a>\n';
+            link += ' <a id="button-popup-'+ row[0] +'"><div class="tooltip-right"><img src="/static/images/grafana-black.png" width=14 height=14 border=0><span class="tooltip-text">Jobs monitoring (rendered Grafana plot)</span></div></a>\n';
             {% if viewParams.MON_VO == 'ATLAS' %}
             link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/f3042400-aa4d-11ea-88a6-cd72c8759873?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))&_a=(description:\'Job%20brokerage\',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,useMargins:!f),query:(language:lucene,query:\'site.keyword:%20%2F'+ row[0] +'%5C%2F.*%2F%20OR%20site.keyword:%20%22' + row[0] +'%22\'),timeRestore:!t,title:jedilogs_jobbrokerage,viewMode:view)"><div class="tooltip-right"><img src="/static/images/kibana-logo.png" width=14 height=14 border=0><span class="tooltip-text">Brokerage actions (Kibana)</span></div></a>\n';
             link += ' <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/dashboards#/view/a312a030-8b0e-11e8-a7e3-ffbb2f24f6b4?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))&_a=(description:\'\',filters:!((\'$state\':(store:appState),meta:(alias:!n,disabled:!f,index:\'006980c0-857a-11ea-9233-1dd73e396ea6\',key:computingsite.keyword,negate:!f,params:(query:' + row[0] + '),type:phrase),query:(match_phrase:(computingsite.keyword:' + row[0] + ')))),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),query:(language:lucene,query:\'\'),timeRestore:!t,title:\'Harvester%20particular%20computingsite\',viewMode:view)" ><div class="tooltip-right"><img src="/static/images/kibana-logo-black.png" width=14 height=14 border=0><span container="body" class="tooltip-text">Harvester particular computingsite dashboard (Kibana)</span> </div></a>';

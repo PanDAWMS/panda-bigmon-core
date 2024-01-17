@@ -80,7 +80,7 @@ No files matching selection were found.
 {% endblock %}
 
 {% block js_body_page %}
-<script>
+<script nonce={{request.csp_nonce}}>
 $(document).ready(function () {
     var extraparams = '{{ extraparams | safe }}';
     fileListTable(extraparams);

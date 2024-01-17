@@ -112,7 +112,7 @@ PanDA file <b>{{ filename }}</b> not found.
 
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
-<script>
+<script nonce={{request.csp_nonce}}>
 
 $(document).ready(function () {
     var file_occ_list = {{ files|safe }};

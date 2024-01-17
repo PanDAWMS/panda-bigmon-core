@@ -64,7 +64,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
 const table_data = {{ art_jobs | safe }};
 const table_title = table_data.shift()

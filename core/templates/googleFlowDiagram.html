@@ -4,7 +4,7 @@
 <div id="sankey_multiple" style="width: 1300px; height: 700px;"></div>
 
 <center>
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 google.setOnLoadCallback(drawFlowChart);
    function drawFlowChart() {
     var flowdata = new google.visualization.DataTable();

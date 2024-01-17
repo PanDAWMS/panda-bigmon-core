@@ -11,7 +11,7 @@
 
     <script type="text/javascript" src="{% static "/js/jquery.shorten.1.0.js" %}"></script>
 
-    <script type="text/javascript">
+    <script nonce={{request.csp_nonce}}>
 
         $(document).ready(function() {
             $(".comment").shorten();

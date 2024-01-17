@@ -207,7 +207,8 @@
     <br>(**) All current tasks
     <br>(***) Tasks submitted during last 24 hours
 
-    <script type="text/javascript">
+    <script nonce={{request.csp_nonce}}>
+    document.getElementById("reportblocklink").addEventListener("click", toggleDetailDisplay.bind(null, 'reportblock'));
     function toggleDetailDisplay(className) {
        el = document.getElementsByClassName(className)
        for (i=0; i<el.length; i++) {
@@ -219,7 +220,7 @@
         });
     </script>
     <p>
-    <a style="cursor: pointer" id="reportblocklink" onclick="javascript:toggleDetailDisplay('reportblock');">Show/hide errors report</a>
+    <a style="cursor: pointer" id="reportblocklink">Show/hide errors report</a>
     <div class="reportblock" style="display:none">
         <table id="{{ hepspecJobs.title }}">
             <tr>

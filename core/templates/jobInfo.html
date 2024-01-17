@@ -61,7 +61,7 @@
     {% if request.user.is_tester %}
       <br>
       <div class="button-group bp-comparison">
-        <a class="button {% if isincomparisonlist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}" onclick="toggleComparisonList('comparisonbutton{{ job.pandaid }}', '{{ job.pandaid }}')"><span class="tooltip-right">{% if isincomparisonlist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if isincomparisonlist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
+        <a class="button {% if isincomparisonlist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}"><span class="tooltip-right">{% if isincomparisonlist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if isincomparisonlist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
         <a class="button" href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
       </div>
     {% endif %}
@@ -210,9 +210,9 @@
 <div class="bp-dropdown-button">
     <button class="dropdown"><span>Logs</span></button>
     <div   class=" dropdown-items">
+    <script nonce={{request.csp_nonce}}>var logLinksArray = [];</script>
     {% if debugmode %}
-        <a href="#payloadlog" onclick="togglePayloadLog()">Real-time log</a>
-  {#        <a href="#terminalpayloadlog" onclick="terminalTogglePayloadLog()"> Real-time log (terminal)</a>#}
+        <a href="#payloadlog" id="button-realtime-payload-log">Real-time log</a>
     {% endif %}
 
     {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging'  or job.jobstatus == 'transferring'  or job.jobstatus == 'cancelled' %}
@@ -233,7 +233,7 @@
         {% if stdjdl %}
           <a href='{{stdjdl}}'>Pilot job jdl</a>
         {% endif %}
-        <script>
+        <script nonce={{request.csp_nonce}}>
           logLinksArray[logLinksArray.length] ='{{stdout}}'
           logLinksArray[logLinksArray.length] ='{{stderr}}'
           logLinksArray[logLinksArray.length] ='{{stdlog}}'
@@ -246,13 +246,13 @@
         {% endif %}
         {% if job.jobstatus == 'closed' %}
           <td><a href='{{stdout}}'>Pilot ID</a></td>
-          <script>
+          <script nonce={{request.csp_nonce}}>
             logLinksArray[logLinksArray.length] ='{{stdout}}'
           </script>
         {% endif %}
         {% if viewParams.MON_VO == 'ATLAS' %}
           <a target="_blank" href="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))">Action logger (Kibana)</a>
-          <script>
+          <script nonce={{request.csp_nonce}}>
               logLinksArray[logLinksArray.length] ="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}"
               logLinksArray[logLinksArray.length] ="https://es-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))"
 
@@ -262,7 +262,7 @@
                   }
               }
           </script>
-          <a href="#" onclick="return openAllLogs();">Open all logs</a>
+          <a href="#" id="button-open-all-logs">Open all logs</a>
         {% endif %}
     {% else %}
       <a class="disabled">No logs available yet</a>
@@ -311,12 +311,12 @@
 <div class="bp-dropdown-button">
     <button class="dropdown">Show</button>
     <div   class="dropdown-items">
-        <a onclick="loadJobStatusLog('{{ pandaid }}')">Job status log</a>
+        <a id="button-job-status-log">Job status log</a>
         {% if job.attemptnr > 1 %}
-          <a onclick="loadJobRelationships('{{ pandaid }}', 'upstream')">Upstream jobs (past retries)</a>
+          <a id="button-job-relationships-upstream">Upstream jobs (past retries)</a>
         {% endif %}
-        <a onclick="loadJobRelationships('{{ pandaid }}', 'downstream')">Downstream jobs (further attempts)</a>
-        <a onclick="loadExtendedErrorData('{{ job.jeditaskid }}','{{ job.pandaid }}');">Errors of previous attempts</a>
+        <a id="button-job-relationships-downstream">Downstream jobs (further attempts)</a>
+        <a id="button-extended-error-info">Errors of previous attempts</a>
     </div>
 </div>
 <div class="bp-dropdown-button">
@@ -339,9 +339,9 @@
       {% if not job.jobstatus in finalstatelist %}
          {% if 'indigoiam' in authtype %}
              {% if debugmode %}
-              <a onclick="javascript:operationjob_token({{ jobid }}, 'setdebugmode', {modeOn:'False'});" class='bp-button command'>Disable Debug mode</a>
+              <a id="button-unset-debug-mode" class='bp-button command'>Disable Debug mode</a>
              {% else %}
-              <a onclick="javascript:operationjob_token({{ jobid }}, 'setdebugmode', {modeOn:'True'});" class='bp-button command'>Enable Debug mode</a>
+              <a id="button-set-debug-mode" class='bp-button command'>Enable Debug mode</a>
              {% endif %}
           {% endif %}
       {% endif %}
@@ -478,8 +478,21 @@
 
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 
+var pandaid = '{{ pandaid }}';
+document.getElementById("comparisonbutton{{ pandaid }}").addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton{{ pandaid }}", '{{ pandaid }}'));
+document.getElementById("button-open-all-logs").addEventListener("click", openAllLogs);
+
+if (document.getElementById("button-realtime-payload-log")) {document.getElementById("button-realtime-payload-log").addEventListener("click", togglePayloadLog);}
+
+document.getElementById("button-job-status-log").addEventListener("click", loadJobStatusLog.bind(null, pandaid));
+if (document.getElementById("button-job-relationships-upstream")) {document.getElementById("button-job-relationships-upstream").addEventListener("click", loadJobRelationships.bind(null, pandaid, 'upstream'));}
+document.getElementById("button-job-relationships-downstream").addEventListener("click", loadJobRelationships.bind(null, pandaid, 'downstream'));
+document.getElementById("button-extended-error-info").addEventListener("click", loadExtendedErrorData.bind(null, '{{ job.jeditaskid }}', pandaid));
+
+if (document.getElementById("button-unset-debug-mode")) {document.getElementById("button-unset-debug-mode").addEventListener("click", operationjob_token.bind(null, pandaid, 'setdebugmode', {modeOn:'False'}));}
+if (document.getElementById("button-set-debug-mode")) {document.getElementById("button-set-debug-mode").addEventListener("click", operationjob_token.bind(null, pandaid, 'setdebugmode', {modeOn:'True'} ));}
 
 $(document).ready(function () {
     $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});

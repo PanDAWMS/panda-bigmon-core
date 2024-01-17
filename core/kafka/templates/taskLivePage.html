@@ -138,7 +138,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-    <script>
+    <script nonce={{request.csp_nonce}}>
         $(document).ready(function () {
 
             {% if request.session.full_hostname %}

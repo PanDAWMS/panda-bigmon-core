@@ -143,12 +143,12 @@
 
 
   <ul class="tabs gs" data-tabs data-active-collapse="true" id="gs-tabs">
-    <li class="tabs-title"><a href="#panel_shares_distribution" onclick="DisplaySharesDistribution()">Shares distribution</a></li>
-    <li class="tabs-title"><a href="#panel_workqeues_occupation" onclick="DisplaySiteworkqueues()">Site workqueues occupation</a></li>
-    <li class="tabs-title"><a href="#panel_detailed_info" onclick="DisplayDetailedInformation()">Detailed information</a></li>
-    <li class="tabs-title"><a href="#panel_resources_summary" onclick="DisplayResources()">Resources summary</a></li>
-    <li class="tabs-title"><a href="#panel_corecount_summary" onclick="DisplayCoreTypes()">Core count summary</a></li>
-    <li class="tabs-title"><a href="#panel_policy_summary" onclick="DisplayFairshareTypes()">Policy summary</a></li>
+    <li class="tabs-title"><a href="#panel_shares_distribution" id="panel_shares_distribution">Shares distribution</a></li>
+    <li class="tabs-title"><a href="#panel_workqeues_occupation" id ="panel_workqeues_occupation">Site workqueues occupation</a></li>
+    <li class="tabs-title"><a href="#panel_detailed_info" id ="panel_detailed_info">Detailed information</a></li>
+    <li class="tabs-title"><a href="#panel_resources_summary" id ="panel_resources_summary">Resources summary</a></li>
+    <li class="tabs-title"><a href="#panel_corecount_summary" id ="panel_corecount_summary">Core count summary</a></li>
+    <li class="tabs-title"><a href="#panel_policy_summary" id ="panel_policy_summary">Policy summary</a></li>
   </ul>
   <div class="tabs-content" data-tabs-content="gs-tabs">
     <div class="tabs-panel" id="panel_shares_distribution">
@@ -334,8 +334,16 @@
 
 {% block js_body_page %}
   <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
-  <script>
+  <script nonce={{request.csp_nonce}}>
     var dt = {};
+
+
+    document.getElementById("panel_shares_distribution").addEventListener("click", DisplaySharesDistribution);
+    document.getElementById("panel_workqeues_occupation").addEventListener("click", DisplaySiteworkqueues);
+    document.getElementById("panel_detailed_info").addEventListener("click", DisplayDetailedInformation);
+    document.getElementById("panel_resources_summary").addEventListener("click", DisplayResources);
+    document.getElementById("panel_corecount_summary").addEventListener("click", DisplayCoreTypes);
+    document.getElementById("panel_policy_summary").addEventListener("click", DisplayFairshareTypes);
 
     var gsPlotData = {{ gsPlotData | safe }};
     app.controller('chartGSController', function($scope, $window) {

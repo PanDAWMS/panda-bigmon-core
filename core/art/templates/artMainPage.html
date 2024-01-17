@@ -44,14 +44,14 @@
                 <span class="input-group-label">From</span>
                 <input class="input-group-field ntag-text" type="text" id="ntag_from">
                 <div class="input-group-button">
-                  <button type="button" class="hollow button alert" onclick="clearInput('ntag_from')"><i class="fi fi-x"></i></button>
+                  <button type="button" class="hollow button alert" id="button-art-clear-ntagfrom"><i class="fi fi-x"></i></button>
                 </div>
               </li>
               <li class="input-group">
                 <span class="input-group-label">To</span>
                 <input class="input-group-field ntag-text" type="text" id="ntag_to">
                 <div class="input-group-button">
-                  <button type="button" class="hollow button alert" onclick="clearInput('ntag_to')"><i class="fi fi-x"></i></button>
+                  <button type="button" class="hollow button alert" id="button-art-clear-ntagto"><i class="fi fi-x"></i></button>
                 </div>
               </li>
           </ul>
@@ -61,9 +61,9 @@
       <fieldset class="fieldset artmenu">
         <legend>Choose view level</legend>
         <ul class="no-bullet">
-            <li class="artmenu-item"><input type="radio" name="view" class="view" value="overview" id="overview" checked onclick="toggleExtraOptions('subresults-option', 'jobs')"><label for="overview">Overview</label></li>
-            <li class="artmenu-item"><input type="radio" name="view" class="view" value="tasks" id="tasks" onclick="toggleExtraOptions('subresults-option', 'jobs')"><label for="tasks">Task</label></li>
-            <li class="artmenu-item"><input type="radio" name="view" class="view" value="jobs" id="jobs" onclick="toggleExtraOptions('subresults-option', 'jobs')"><label for="jobs">Job</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="overview" id="overview" checked ><label for="overview">Overview</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="tasks" id="tasks" ><label for="tasks">Task</label></li>
+            <li class="artmenu-item"><input type="radio" name="view" class="view" value="jobs" id="jobs"><label for="jobs">Job</label></li>
         </ul>
       </fieldset>
       <fieldset class="fieldset artmenu" id="subresults-option" style="display: none">
@@ -75,15 +75,15 @@
       <fieldset class="fieldset artmenu">
         <legend>Choose view</legend>
         <ul class="no-bullet">
-            <li class="artmenu-item"><input type="radio" name="view_agg" class="view_agg" value="packages" id="packages" checked ><label for="overview">Per package</label></li>
-            <li class="artmenu-item"><input type="radio" name="view_agg" class="view_agg" value="branches" id="branches"><label for="jobs">Per branch</label></li>
+            <li class="artmenu-item"><input type="radio" name="view_agg" class="view_agg" value="packages" id="packages" checked ><label for="packages">Per package</label></li>
+            <li class="artmenu-item"><input type="radio" name="view_agg" class="view_agg" value="branches" id="branches"><label for="branches">Per branch</label></li>
         </ul>
       </fieldset>
   </div>
   <div class="large-1 columns">
     <fieldset class="fieldset artmenu">
           <legend>Search</legend>
-          <a onclick="searchResults()" class="button">Show results!</a>
+          <a id="button-show-results" class="button">Show results!</a>
       </fieldset>
   </div>
 </div>
@@ -91,7 +91,14 @@
 {% endblock %}
 
 {% block js_body_page %}
-<script>
+<script nonce={{request.csp_nonce}}>
+toggleExtraOptions('subresults-option', 'jobs')
+document.getElementById("button-art-clear-ntagfrom").addEventListener("click", clearInput.bind(null, 'ntag_from'));
+document.getElementById("button-art-clear-ntagto").addEventListener("click", clearInput.bind(null, 'ntag_to'));
+document.getElementById("overview").addEventListener("click", toggleExtraOptions.bind(null, 'subresults-option', 'jobs'));
+document.getElementById("tasks").addEventListener("click", toggleExtraOptions.bind(null, 'subresults-option', 'jobs'));
+document.getElementById("jobs").addEventListener("click", toggleExtraOptions.bind(null, 'subresults-option', 'jobs'));
+document.getElementById("button-show-results").addEventListener("click", searchResults);
 
 function searchResults() {
     var packageStr=getParamStr("package");

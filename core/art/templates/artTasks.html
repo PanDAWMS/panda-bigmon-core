@@ -55,7 +55,7 @@
 
 
 {% block js_body_page %}
-<script type="text/javascript">
+<script nonce={{request.csp_nonce}}>
 const table_data=JSON.parse(JSON.stringify({{ arttasks | safe }}));
 const table_title= table_data.shift()
 const request_params = {{ requestParams|safe }};

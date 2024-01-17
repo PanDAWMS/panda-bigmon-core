@@ -65,7 +65,7 @@
         </tr>
       </tbody>
     </table>
-{#            <script>#}
+{#            <script nonce={{request.csp_nonce}}>#}
 {#                var progressBarR = $('#runningprogressbar');#}
 {#                var progressBarW = $('#waitingprogressbar');#}
 {#                var ages = {{ ages|safe }};#}
@@ -132,7 +132,7 @@
     <p>No matches to query.</p>
 {% endif %}
 
-<script>
+<script nonce={{request.csp_nonce}}>
 {#    var hereiam = 1;#}
 {#    $(document).ready(function() {#}
 {#        $('#reqlist').DataTable({#}
