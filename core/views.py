@@ -72,7 +72,7 @@ from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
 from core.oauth.utils import login_customrequired, get_auth_provider, is_expert
 
-from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam
+from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
@@ -275,8 +275,20 @@ def initRequest(request, callselfmon=True):
             'errormessage': 'Error appeared while encoding URL!'
         }
         return False, render(request, 'errorPage.html', data, content_type='text/html')
-    request.session['urls_cut']['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
 
+    # if injection -> 400
+    if is_xss(url):
+        data = {
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            "errormessage": "Illegal request",
+        }
+        if not is_json_request(request):
+            return False, render(request, 'errorPage.html', data, content_type='text/html', status=400)
+        else:
+            return False, JsonResponse({'error': data["errormessage"]}, status=400)
+
+    request.session['urls_cut']['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
     notimerangeurl = extensibleURL(request)
     timerange_params = [
         'days', 'hours',
@@ -373,14 +385,6 @@ def initRequest(request, callselfmon=True):
     else:
         for p in request.GET:
             pval = request.GET[p]
-            # if injection
-            if 'script' in pval.lower() and ('</' in pval.lower() or '/>' in pval.lower()):
-                data = {
-                    'viewParams': request.session['viewParams'],
-                    'requestParams': request.session['requestParams'],
-                    "errormessage": "Illegal value '%s' for %s" % (pval, p),
-                }
-                return False, render(request, 'errorPage.html', data, content_type='text/html')
             pval = pval.replace('+', ' ')
             pval = pval.replace("\'", '')
             if p.lower() != 'batchid':  # Special requester exception

@@ -105,3 +105,17 @@ def get_most_recent_git_tag():
         git_tag = 'N/A'
 
     return git_tag
+
+
+def is_xss(val):
+    """
+    Check if str contains XSS suspicious flags
+    :param val: str
+    :return:  bool
+    """
+    val = val.replace('%3C', '<').replace('%3E', '>')
+    if 'script' in val.lower() and ('</' in val.lower() or '/>' in val.lower()):
+        return True
+    else:
+        return False
+
