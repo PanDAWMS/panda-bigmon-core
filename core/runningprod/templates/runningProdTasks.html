@@ -47,7 +47,7 @@
   <tbody>
     <tr>
       <td>
-        <select id="presetChoice" onchange="onPresetChoice()">
+        <select id="presetChoice">
           <option value="MC" {% if requestParams.preset == 'MC' %} selected="selected" {% endif %}>MC</option>
           <option value="DPD" {% if requestParams.preset == 'DPD' %} selected="selected" {% endif %}>DPD</option>
           <option value="DATA" {% if requestParams.preset == 'DATA' %} selected="selected" {% endif %}>DATA</option>
@@ -55,7 +55,7 @@
         </select>
       </td>
       <td>
-        <select id="workinggroup" onchange="onSubElementChoice()">
+        <select id="workinggroup">
           <option value=""  selected="selected" {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}>All</option>
           <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
             {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
@@ -84,7 +84,7 @@
         </select>
       </td>
       <td>
-        <select id="processingtype" onchange="onSubElementChoice()">
+        <select id="processingtype">
           <option value=""  selected="selected"
               {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
           >All</option>
@@ -110,7 +110,7 @@
         </select>
       </td>
       <td>
-        <select id="campaign" onchange="onSubElementChoice()">
+        <select id="campaign">
           <option value=""  selected="selected">All</option>
           <option value="MC*"
             {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
@@ -125,7 +125,7 @@
         </select>
       </td>
       <td>
-        <select id="status" onchange="onSubElementChoice()">
+        <select id="status">
           <option value=""  selected="selected">All</option>
           {% for status in sumd.2.list %}
             <option value={{ status.kname }}
@@ -135,15 +135,15 @@
         </select>
       </td>
       <td>
-        <label><input type="checkbox" id="hpc" name="hpc" value="hpc" onchange="onSubElementChoice()"
+        <label><input type="checkbox" id="hpc" name="hpc" value="hpc"
                   {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
       </td>
       <td>
-        <label><input type="checkbox" id="es" name="es" value="1" onchange="onSubElementChoice()"
+        <label><input type="checkbox" id="es" name="es" value="1"
                   {% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
       </td>
       <td>
-          <label><input type="checkbox" id="jumbo" name="jumbo" value="1" onchange="onSubElementChoice()"
+          <label><input type="checkbox" id="jumbo" name="jumbo" value="1"
                   {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
       </td>
       <td>
@@ -303,6 +303,16 @@ var ntasks = {{ gsum.ntasks | safe }};
 document.getElementById("button-go").addEventListener("click", go);
 document.getElementById("button-extra-plots").addEventListener("click", toggleByID.bind(null, 'extraplots', 'plussign'));
 document.getElementById("nEventsTrendLink").addEventListener("click", toggleHistoricalTrend.bind(null, 'nEventsLineChart', 'nEventsTrendLink'));
+
+document.getElementById("presetChoice").addEventListener("chane", onPresetChoice);
+document.getElementById("workinggroup").addEventListener("change",onSubElementChoice);
+document.getElementById("processingtype").addEventListener("change",onSubElementChoice);
+
+document.getElementById("campaign").addEventListener("chane", onSubElementChoice);
+document.getElementById("status").addEventListener("change",onSubElementChoice);
+document.getElementById("hpc").addEventListener("change",onSubElementChoice);
+document.getElementById("es").addEventListener("chane", onSubElementChoice);
+document.getElementById("jumbo").addEventListener("change",onSubElementChoice);
 
 $(document).ready(function () {
 
