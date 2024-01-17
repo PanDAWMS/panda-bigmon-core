@@ -374,13 +374,17 @@ def initRequest(request, callselfmon=True):
         for p in request.GET:
             pval = request.GET[p]
             # if injection
-            if 'script' in pval.lower() and ('</' in pval.lower() or '/>' in pval.lower()):
+            if 'script' in pval.lower() and ('</' in pval.lower() or '/>' in pval.lower()) or (
+                    'script' in p.lower() and ('</' in p.lower() or '/>' in p.lower())):
                 data = {
                     'viewParams': request.session['viewParams'],
                     'requestParams': request.session['requestParams'],
-                    "errormessage": "Illegal value '%s' for %s" % (pval, p),
+                    "errormessage": "Illegal request",
                 }
-                return False, render(request, 'errorPage.html', data, content_type='text/html')
+                if not is_json_request(request):
+                    return False, render(request, 'errorPage.html', data, content_type='text/html', status=400)
+                else:
+                    return False, JsonResponse({'error': data["errormessage"]}, status=400)
             pval = pval.replace('+', ' ')
             pval = pval.replace("\'", '')
             if p.lower() != 'batchid':  # Special requester exception
