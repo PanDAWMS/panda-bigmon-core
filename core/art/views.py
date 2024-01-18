@@ -67,29 +67,36 @@ def art(request):
     tquery = {'platform__endswith': 'opt'}
 
     # limit results by N days
-    N_DAYS_LIMIT = 90
-    tquery['created__castdate__range'] = [datetime.utcnow() - timedelta(days=N_DAYS_LIMIT), datetime.utcnow()]
+    if 'days' in request.session['requestParams']:
+        n_days_limit = int(request.session['requestParams']['days'])
+    else:
+        n_days_limit = 90
+    tquery['created__castdate__range'] = [datetime.utcnow() - timedelta(days=n_days_limit), datetime.utcnow()]
 
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
     branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
     ntags = ARTTests.objects.values('nightly_tag_display').annotate(nightly_tag_date=Substr('nightly_tag_display', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
 
-    # a workaround for the DF split into a lot of separate packages
-    df_name = 'DerivationFramework'
-    package_list = list(set([p['package'] if not p['package'].startswith(df_name) else df_name + '*' for p in packages]))
+    if not is_json_request(request):
+        # a workaround for the DF split into a lot of separate packages
+        df_name = 'DerivationFramework'
+        package_list = list(set([p['package'] if not p['package'].startswith(df_name) else df_name + '*' for p in packages]))
 
-    data = {
+        data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
             'packages': sorted(package_list, key=str.lower),
             'branches': [b['branch'] for b in branches],
             'ntags': [t['nightly_tag_date'] for t in ntags]
-    }
-    if not is_json_request(request):
+        }
         response = render(request, 'artMainPage.html', data, content_type='text/html')
     else:
-        response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+        data = {
+            'packages': [p['package'] for p in packages],
+            'branches': [b['branch'] for b in branches],
+        }
+        response = JsonResponse(data)
     setCacheEntry(request, "artMain", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
     request = complete_request(request)
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
