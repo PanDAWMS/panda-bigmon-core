@@ -20,9 +20,10 @@ def artmonitviewDemo(request):
     if not valid:
         return response
 
+    n_days_limit = 10
     ts_now = datetime.datetime.now()
     s_tstamp = ''
-    for i in range(10, -1, -1):
+    for i in range(n_days_limit, -1, -1):
         ts = datetime.datetime.now() - datetime.timedelta(days=i)
         ts_f = datetime.datetime.strftime(ts, '%Y-%m-%d')
         if s_tstamp == '':
@@ -31,7 +32,7 @@ def artmonitviewDemo(request):
             s_tstamp = s_tstamp + ',' + str(ts_f)
 
     # getting branches
-    url10 = "https://bigpanda.cern.ch/art/overview/?ntags=" + s_tstamp + "&view=branches&json"
+    url10 = f"https://bigpanda.cern.ch/art/?days={n_days_limit}&json"
     _logger.debug('getting branches from {}'.format(url10))
     n_attempts = 3
     is_success = False
@@ -55,10 +56,8 @@ def artmonitviewDemo(request):
             content_type='text/html'
         )
 
-
     a0 = json.loads(r.text)
-    branch_dict = a0.get('artpackages', {})
-    branch_list = branch_dict.keys()
+    branch_list = a0.get('branches', [])
 
     # getting ART GRID test results per branch
     _logger.debug('Branch list:'.format(branch_list))
