@@ -481,8 +481,8 @@
 <script nonce={{request.csp_nonce}}>
 
 var pandaid = '{{ pandaid }}';
-document.getElementById("comparisonbutton{{ pandaid }}").addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton{{ pandaid }}", '{{ pandaid }}'));
-document.getElementById("button-open-all-logs").addEventListener("click", openAllLogs);
+if (document.getElementById("comparisonbutton{{ pandaid }}")) {document.getElementById("comparisonbutton{{ pandaid }}").addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton{{ pandaid }}", '{{ pandaid }}'));}
+if (document.getElementById("button-open-all-logs")) {document.getElementById("button-open-all-logs").addEventListener("click", openAllLogs);}
 
 if (document.getElementById("button-realtime-payload-log")) {document.getElementById("button-realtime-payload-log").addEventListener("click", togglePayloadLog);}
 
