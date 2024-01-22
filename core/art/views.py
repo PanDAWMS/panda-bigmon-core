@@ -1417,6 +1417,91 @@ def registerARTTest(request):
 
     return HttpResponse(json.dumps(data), status=200, content_type='application/json')
 
+@csrf_exempt
+def upload_test_result(request):
+    """
+    A view to receive and save test result i.e. content of artReport.json.
+    It expects as a POST param:
+        pandaid - int
+        artreport - dict, content of artReport.json
+    E.g.  curl -X POST -d 'pandaid=XXX' -d 'artreport={"art": {}}' http://bigpanda.cern.ch/art/uploadtestresult/?json
+    :param request:
+    :return: HTTP response
+    """
+
+    valid, response = initRequest(request)
+    if not valid:
+        return JsonResponse({'error': "Bad request"}, status=400)
+
+    if 'requestParams' in request.session and 'pandaid' in request.session['requestParams']:
+        pandaid = request.session['requestParams']['pandaid']
+    else:
+        data = {'message': "No valid pandaid provided"}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return JsonResponse(data, status=400)
+
+    if 'requestParams' in request.session and 'artreport' in request.session['requestParams']:
+        art_report = request.session['requestParams']['artreport']
+        try:
+            art_report = json.loads(art_report)
+        except json.JSONDecodeError as e:
+            _logger.exception("Invalid JSON syntax:", e)
+            return JsonResponse({"message": "Invalid JSON syntax of data"}, status=400)
+        if 'art' in art_report:
+            art_report = art_report['art']
+        else:
+            data = {'message': "Wrong format of provided data"}
+            _logger.warning(data['message'] + str(request.session['requestParams']))
+            return JsonResponse(data, status=400)
+    else:
+        data = {'message': "No valid pandaid provided"}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return JsonResponse(data, status=400)
+
+    # check provided pandaid exist, and it is ART test
+    # get test
+    art_jobs = []
+    values = [f.name for f in ARTTests._meta.get_fields() if not f.is_relation]
+    art_jobs.extend(ARTTests.objects.filter(pandaid=pandaid).values(*values, result=F('artsubresult__subresult')))
+    if len(art_jobs) == 0:
+        data = {'message': "Provided pandaid does not exists or it is not ART test "}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return JsonResponse(data, status=400)
+    art_job = art_jobs[0]
+
+    # check if ART results already exist
+    if 'result' in art_job and len(art_job['result']) > 0:
+        data = {'message': "Results for this test is already exist"}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return JsonResponse(data, status=400)
+
+    # check provided data is valid
+    _logger.debug(f"Got the following result for pandaid={pandaid}:\n{art_report}")
+    if art_report and 'panda_id' in art_report and str(art_report['panda_id']) != str(pandaid):
+        data = {'message': "pandaids does not match"}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return JsonResponse(data, status=400)
+    if art_report and 'name' in art_report and 'testname' in art_job and art_report['name'] != art_job['testname']:
+        data = {'message': "test names do not match"}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return JsonResponse(data, status=400)
+
+    # insert subresults to special table
+    sub_results_dict = {
+        pandaid: json.dumps(art_report)
+    }
+    is_saved = save_subresults(sub_results_dict)
+
+    if is_saved:
+        data = {'message': 'Test result has been successfully saved'}
+        _logger.info(f"pandaid: {pandaid}: {data['message']}")
+        response = JsonResponse(data, status=200)
+    else:
+        data = {'message': 'Failed to save test result'}
+        _logger.info(f"pandaid: {pandaid}: {data['message']}")
+        response = JsonResponse(data, status=500)
+    return response
+
 
 def sendArtReport(request):
     """
