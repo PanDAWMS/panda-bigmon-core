@@ -5766,7 +5766,7 @@ def taskchain(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     new_cur = connection.cursor()
-    taskChainSQL = "SELECT * FROM table({}.GETTASKSCHAIN_TEST(%i))".format(settings.DB_SCHEMA, jeditaskid)
+    taskChainSQL = "SELECT * FROM table({}.GETTASKSCHAIN_TEST({}))".format(settings.DB_SCHEMA, jeditaskid)
     new_cur.execute(taskChainSQL)
     taskChain = new_cur.fetchall()
     results = ["".join(map(str, r)) for r in taskChain]
