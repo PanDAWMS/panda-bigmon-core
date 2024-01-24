@@ -144,7 +144,6 @@ INSTALLED_APPS_EXTRA = [
     "core.harvester",
     "core.iDDS",
     "core.mlflowdynamic",
-    "core.oi",
     "core.reports",
     "core.runningprod",
     "core.panda_client",
