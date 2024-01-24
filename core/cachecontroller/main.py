@@ -9,7 +9,7 @@ import threading
 import logging.config
 
 from schedinstances.TextFileURLs import TextFileURLs
-from schedinstances.ArtPackages import ArtPackages
+from schedinstances.ArtPackages import ArtPackages, ArtLoadResults
 from schedinstances.ArtMails import ArtMails, ArtDevMails
 from schedinstances.BigTasks import BigTasks
 from schedinstances.Harvester import Harvester
@@ -37,6 +37,7 @@ infrequentURLS = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
 infrequentURLS.setInputFile("infrequenturls.txt")
 
 artPackages = ArtPackages(EXECUTION_CAP_FOR_MAINMENUURLS)
+artLoadResults = ArtLoadResults(EXECUTION_CAP_FOR_MAINMENUURLS)
 artMails = ArtMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 artDevMails = ArtDevMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 bigTasks = BigTasks(EXECUTION_CAP_FOR_MAINMENUURLS)
@@ -58,7 +59,8 @@ def run_threaded(job_func):
 schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
 schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
 schedule.every(10).minutes.do(run_threaded, harvester.execute)
-schedule.every(10).minutes.do(run_threaded, artPackages.execute)
+schedule.every(15).minutes.do(run_threaded, artPackages.execute)
+schedule.every(5).minutes.do(run_threaded, artLoadResults.execute)
 schedule.every(1).hours.do(run_threaded, artDevMails.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
 # schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)

@@ -13,9 +13,21 @@ class ArtPackages(BaseURLTasksProvider):
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)
-        urlsQueue.put((self.BASIC_PRIORITY, '/art/updatejoblist/?ntag_to=' +
-                       datetime.now().strftime('%Y-%m-%d') + '&ntag_from=' +
-                       (datetime.now() - timedelta(days=self.N_DAYS_WINDOW)).strftime('%Y-%m-%d')))
-        urlsQueue.put((self.BASIC_PRIORITY, '/art/loadsubresults/'))
+        urlsQueue.put((self.BASIC_PRIORITY, '/art/updatejoblist/?ntag_to={}&ntag_from={}'.format(
+            datetime.now().strftime('%Y-%m-%d'),
+            (datetime.now() - timedelta(days=self.N_DAYS_WINDOW)).strftime('%Y-%m-%d')
+        )))
         return urlsQueue
 
+
+class ArtLoadResults(BaseURLTasksProvider):
+
+    BASIC_PRIORITY = 1
+    lock = threading.RLock()
+    logger = logging.getLogger(__name__ + ' ArtLoadSubResults')
+
+    def getpayload(self):
+        self.logger.info("getpayload started")
+        urlsQueue = queue.PriorityQueue(-1)
+        urlsQueue.put((self.BASIC_PRIORITY, '/art/loadsubresults/'))
+        return urlsQueue
