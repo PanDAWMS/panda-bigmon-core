@@ -23,7 +23,7 @@ from django.db import connection
 from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView
-from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime
+from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime, insert_to_temp_table
 from core.libs.elasticsearch import create_es_connection
 from core.schedresource.utils import getCRICSEs
 from core.filebrowser.ruciowrapper import ruciowrapper
@@ -143,15 +143,7 @@ def getStagingData(request):
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = request.session['requestParams']['jeditaskid']
         taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
-        new_cur = connection.cursor()
-        transactionKey = random.randrange(1000000)
-        executionData = []
-        for id in taskl:
-            executionData.append((id, transactionKey))
-
-        query = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
-        new_cur.executemany(query, executionData)
-        connection.commit()
+        transactionKey =  insert_to_temp_table(taskl)
         selection += "and t2.taskid in (SELECT tmp.id FROM %s tmp where transactionkey=%i)"  % (tmpTableName, transactionKey)
     else:
         selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING)"

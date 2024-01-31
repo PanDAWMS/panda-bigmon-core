@@ -153,3 +153,35 @@ def add_event_summary_to_tasklist(tasks, transaction_key=None):
             task['eventsData'] = event_info_dict[task['jeditaskid']]
 
     return tasks
+
+
+def get_event_status_summary(pandaids, eventservicestatelist):
+    """
+    Getting event statuses summary for list of pandaids of ES jobs
+    :param pandaids: list
+    :return: dict of status: nevents
+    """
+    summary = {}
+
+    tmpTableName = get_tmp_table_name()
+
+    transactionKey = insert_to_temp_table(pandaids)
+    new_cur = connection.cursor()
+    new_cur.execute(
+        """
+        select status, count(status) as countstat 
+        from (
+            select /*+ dynamic_sampling(tmp_ids1 0) cardinality(tmp_ids1 10) index_rs_asc(ev jedi_events_pandaid_status_idx) no_index_ffs(ev jedi_events_pk) no_index_ss(ev jedi_events_pk) */ pandaid, status 
+            from {2}.jedi_events ev, {0} 
+            where transactionkey = {1} and  pandaid = id
+        ) t1 
+        group by status""".format(tmpTableName, transactionKey, settings.DB_SCHEMA_PANDA))
+
+    evtable = dictfetchall(new_cur)
+
+
+    for ev in evtable:
+        evstat = eventservicestatelist[ev['STATUS']]
+        summary[evstat] = ev['COUNTSTAT']
+
+    return summary

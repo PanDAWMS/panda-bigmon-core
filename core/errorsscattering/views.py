@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from django.db import connection
 from django.utils.cache import patch_response_headers
 from core.libs.cache import getCacheEntry, setCacheEntry, setCacheData
-from core.libs.exlib import dictfetchall, get_tmp_table_name, create_temporary_table
+from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_table
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
@@ -61,24 +61,17 @@ def errorsScattering(request):
 
     # print ('tasks found %i') % len(tasks)
 
-    random.seed()
     taskListByReq = {}
-    transactionKey = random.randrange(1000000)
-    executionData = []
+    task_ids = []
     for id in tasks:
-        executionData.append((id['jeditaskid'], transactionKey))
+        task_ids.append(id['jeditaskid'])
         # full the list of jeditaskids for each reqid to put into cache for consistentcy with jobList
         if id['reqid'] not in taskListByReq:
             taskListByReq[id['reqid']] = ''
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
-    new_cur = connection.cursor()
     tmpTableName = get_tmp_table_name()
-    if settings.DEPLOYMENT == "POSTGRES":
-        create_temporary_table(new_cur, tmpTableName)
-    ins_query = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
-    new_cur.executemany(ins_query, executionData)
-    connection.commit()
+    transactionKey = insert_to_temp_table(task_ids)
 
     jcondition = '(1=1)'
     if isExcludeScouts:
@@ -106,7 +99,7 @@ def errorsScattering(request):
         where j.allc > 0    
     """.format(settings.DB_SCHEMA_PANDA, tmpTableName, transactionKey, query['modificationtime__castdate__range'][0], jcondition,
                settings.DB_SCHEMA_PANDA_ARCH, settings.DB_SCHEMA_PANDA_META)
-
+    new_cur = connection.cursor()
     new_cur.execute(querystr)
 
     errorsRaw = dictfetchall(new_cur)
@@ -351,23 +344,17 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
     print ('tasks found %i' % (len(tasks)))
 
-    random.seed()
-    tmpTableName = get_tmp_table_name()
-
     taskListByReq = {}
-    transactionKey = random.randrange(1000000)
-    executionData = []
+    task_ids = []
     for id in tasks:
-        executionData.append((id['jeditaskid'], transactionKey))
+        task_ids.append(id['jeditaskid'])
         # full the list of jeditaskids for each reqid to put into cache for consistentcy with jobList
         if id['reqid'] not in taskListByReq:
             taskListByReq[id['reqid']] = ''
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
 
-    new_cur = connection.cursor()
-    insquery = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
-    new_cur.executemany(insquery, executionData)
-    connection.commit()
+    tmpTableName = get_tmp_table_name()
+    transactionKey = insert_to_temp_table(task_ids)
 
     jcondition = '(1=1)'
     if isExcludeScouts:
@@ -405,7 +392,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         settings.DB_SCHEMA_PANDA,
         settings.DB_SCHEMA_PANDA_ARCH
     )
-
+    new_cur = connection.cursor()
     new_cur.execute(querystr)
 
     errorsRaw = dictfetchall(new_cur)
