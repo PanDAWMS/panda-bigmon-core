@@ -364,15 +364,19 @@ No jobs matched the query. You can increase the time depth with a days=N paramet
 var err_list_data = {{ errsByMessage|safe }};
 var errorMessagesListDataTable;
 var errorCountListTableData;
+var pandaids = {{ pandaids|safe }};
 
 if (document.getElementById("button-toggle-retries")) {document.getElementById("button-toggle-retries").addEventListener("click", toggleDetailDisplay.bind(null, 'retries'));}
 if (document.getElementById("button-toggle-new-retries")) {document.getElementById("button-toggle-new-retries").addEventListener("click", toggleDetailDisplay.bind(null, 'newretries'));}
 if (document.getElementById("button-toggle-retries-diff")) {document.getElementById("button-toggle-retries-diff").addEventListener("click", toggleDetailDisplay.bind(null, 'difretries'));}
 
-var pandaids = {{ pandaids|safe }};
-pandaids.forEach((id) => {
-  document.getElementById("comparisonbutton"+id).addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton" + id, id));
-})
+if ('{{ request.user.is_tester }}' === 'True') {
+  pandaids.forEach((id) => {
+    if (document.getElementById("comparisonbutton" + id)) {
+      document.getElementById("comparisonbutton" + id).addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton" + id, id));
+    }
+  })
+}
 
 function toggleDetailDisplay(className) {
    el = document.getElementsByClassName(className)
