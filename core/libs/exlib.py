@@ -76,44 +76,6 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
     return transactionKey
 
 
-def get_event_status_summary(pandaids, eventservicestatelist):
-    """
-    Getting event statuses summary for list of pandaids of ES jobs
-    :param pandaids: list
-    :return: dict of status: nevents
-    """
-    summary = {}
-
-    tmpTableName = get_tmp_table_name()
-
-    transactionKey = random.randrange(1000000)
-
-    new_cur = connection.cursor()
-    executionData = []
-    for id in pandaids:
-        executionData.append((id, transactionKey))
-    query = """insert into """ + tmpTableName + """(id,transactionkey) values (%s, %s)"""
-    new_cur.executemany(query, executionData)
-
-    new_cur.execute(
-        """
-        select status, count(status) as countstat 
-        from (
-            select /*+ dynamic_sampling(tmp_ids1 0) cardinality(tmp_ids1 10) index_rs_asc(ev jedi_events_pandaid_status_idx) no_index_ffs(ev jedi_events_pk) no_index_ss(ev jedi_events_pk) */ pandaid, status 
-            from {2}.jedi_events ev, {0} 
-            where transactionkey = {1} and  pandaid = id
-        ) t1 
-        group by status""".format(tmpTableName, transactionKey, settings.DB_SCHEMA_PANDA))
-
-    evtable = dictfetchall(new_cur)
-
-    for ev in evtable:
-        evstat = eventservicestatelist[ev['STATUS']]
-        summary[evstat] = ev['COUNTSTAT']
-
-    return summary
-
-
 def dictfetchall(cursor, **kwargs):
     "Returns all rows from a cursor as a dict"
     style = 'default'

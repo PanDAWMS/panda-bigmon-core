@@ -7586,14 +7586,8 @@ def g4exceptions(request):
     if 'amitag' in request.session['requestParams']:
 
         tmpTableName = get_tmp_table_name()
-
-        transactionKey = random.randrange(1000000)
+        transactionKey = insert_to_temp_table([job['pandaid'] for job in jobs]) # Backend dependable
         new_cur = connection.cursor()
-        if settings.DEPLOYMENT == "POSTGRES":
-            create_temporary_table(new_cur, tmpTableName)
-        for job in jobs:
-            new_cur.execute("INSERT INTO %s(ID,TRANSACTIONKEY) VALUES (%i,%i)" % (
-                tmpTableName, job['pandaid'], transactionKey))  # Backend dependable
         new_cur.execute("""
             SELECT JOBPARAMETERS, PANDAID 
             FROM {}.JOBPARAMSTABLE 

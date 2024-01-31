@@ -4,7 +4,8 @@ from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarc
     Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021,  Jobsarchived, Jobsarchived4
 from core.libs.datetimestrings import parse_datetime
 from core.libs.job import is_event_service
-from core.libs.exlib import get_event_status_summary, split_into_intervals
+from core.libs.eventservice import get_event_status_summary
+from core.libs.exlib import split_into_intervals
 
 from django.conf import settings
 import core.constants as const
