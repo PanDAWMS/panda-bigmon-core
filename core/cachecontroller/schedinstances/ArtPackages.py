@@ -6,7 +6,7 @@ import logging
 class ArtPackages(BaseURLTasksProvider):
 
     BASIC_PRIORITY = 1
-    N_DAYS_WINDOW = 14
+    N_DAYS_WINDOW = 7
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' ArtPackages')
 
