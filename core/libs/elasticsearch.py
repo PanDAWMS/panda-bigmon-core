@@ -327,7 +327,7 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
                     jobs_info_errors_dict[hit_dict['jobid']] = {}
                     jobs_info_errors_dict[hit_dict['jobid']]['errors'] = []
                 for field in errors_diag_fields_list:
-                    if hit_dict[field] != 'NULL':
+                    if field in hit_dict and hit_dict[field] != 'NULL':
                         error_field = field.replace("diag", "")
                         error_code_field = field.replace("diag", "code")
 
