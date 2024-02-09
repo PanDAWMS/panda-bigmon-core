@@ -1,6 +1,6 @@
 [logstash]
 auth: %TEIGI__logstash_metrics_login__%,%TEIGI__logstash_metrics_password__%
-url: aipanda013.cern.ch
+url: aipanda113.cern.ch
 port: 31311
 [monitsls]
 host: monit-metrics
