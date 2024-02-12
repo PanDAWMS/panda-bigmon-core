@@ -192,12 +192,14 @@ CACHES = {
     "default": {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': f'"{DB_SCHEMA}"."djangocache"',
-        'TIMEOUT': 31536000,
+        'TIMEOUT': 60*60*24*2,  # 48 hours
         'OPTIONS': {
-            'MAX_ENTRIES': 1000000000
-            }
+            'MAX_ENTRIES': 100000000,
+        }
     }
 }
+
+SESSION_COOKIE_AGE = 60*60*24*2  # 48 hours
 
 # URL_PATH_PREFIX for multi-developer apache/wsgi instance
 URL_PATH_PREFIX = ''
@@ -399,9 +401,6 @@ LOGGING = {
         'formatter': 'verbose',
     },
 }
-
-# SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = ['state']
-# SESSION_COOKIE_SECURE = False
 
 ENV = {
     ### Application name
