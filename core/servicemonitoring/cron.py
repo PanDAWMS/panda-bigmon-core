@@ -9,7 +9,7 @@ from datetime import datetime
 
 from utils import get_settings_path, servers_configs, monit_sls_configs, cpu_info, memory_info, disk_info, volume_use, \
     process_availability, subprocess_availability, DateTimeEncoder, send_data, service_availability, \
-    make_db_connection, db_sessions, is_any_requests_lately
+    make_db_connection, db_sessions, db_cache_entries, is_any_requests_lately
 from sls_document import SlsDocument
 from logger import ServiceLogger
 
@@ -89,22 +89,29 @@ def main():
                 except Exception as ex:
                     _logger.error(ex)
 
-        if metrics and 'dbsession' in metrics or 'dbrequest':
+        if metrics and ('dbsession' in metrics or 'dbcache' in metrics or 'dbrequests' in metrics):
             conn = None
             try:
                 conn = make_db_connection(settings_path)
-                n_active_sessions, n_sessions = db_sessions(connection=conn, hostname=hostname)
-                if n_active_sessions is not None and n_sessions is not None:
-                    dict_metrics['db_n_active_sessions'] = n_active_sessions
-                    dict_metrics['db_n_sessions'] = n_sessions
-                n_requests_last_n_minutes, request_duration_median = is_any_requests_lately(
-                    connection=conn, hostname=hostname, n_last_minutes=10)
-                if n_requests_last_n_minutes is not None:
-                    dict_metrics['requests_last_10min_count'] = n_requests_last_n_minutes
-                    dict_metrics['requests_last_10min_duration_median'] = request_duration_median
             except Exception as ex:
                 _logger.error(ex)
+
             if conn:
+                if 'dbsession' in metrics:
+                    n_active_sessions, n_sessions = db_sessions(connection=conn, hostname=hostname)
+                    if n_active_sessions is not None and n_sessions is not None:
+                        dict_metrics['db_n_active_sessions'] = n_active_sessions
+                        dict_metrics['db_n_sessions'] = n_sessions
+                if 'dbrequests' in metrics:
+                    n_requests_last_n_minutes, request_duration_median = is_any_requests_lately(
+                        connection=conn, hostname=hostname, n_last_minutes=10)
+                    if n_requests_last_n_minutes is not None:
+                        dict_metrics['requests_last_10min_count'] = n_requests_last_n_minutes
+                        dict_metrics['requests_last_10min_duration_median'] = request_duration_median
+                if 'dbcache' in metrics:
+                    n_cache_entries = db_cache_entries(connection=conn)
+                    if n_cache_entries is not None:
+                        dict_metrics['n_cache_entries'] = n_cache_entries
                 conn.close()
 
         # send metrics to logstash

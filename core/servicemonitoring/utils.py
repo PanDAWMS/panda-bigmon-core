@@ -97,6 +97,26 @@ def db_sessions(connection, hostname='all'):
     return n_active_sessions, n_sessions
 
 
+def db_cache_entries(connection):
+    """
+    Get number of cache entries in djangocache table
+    :return: N cache entries
+    """
+    n_cache_entries = None
+    query = f"select count(cache_key) from atlas_pandabigmon.djangocache"
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+        for row in cursor:
+            n_cache_entries = row[0]
+            break
+    except Exception as ex:
+        _logger.exception(f"Failed to execute query with {ex}")
+    cursor.close()
+    _logger.info(f"Got number of cache entries, total={n_cache_entries}")
+    return n_cache_entries
+
+
 def is_any_requests_lately(connection, hostname="all", n_last_minutes=10):
     """
     Check if any requests  came to nodes
