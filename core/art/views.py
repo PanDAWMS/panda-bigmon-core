@@ -31,7 +31,8 @@ from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import convert_sec, convert_bytes, round_to_n_digits
 from core.pandajob.models import CombinedWaitActDefArch4
 
-from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test, concat_branch, find_last_successful_test
+from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test, concat_branch, \
+    find_last_successful_test, build_gitlab_link
 
 from django.conf import settings
 import core.art.constants as art_const
@@ -547,6 +548,7 @@ def artJobs(request):
                 jobdict['cpuconsumptiontime'] = job['cpuconsumptiontime'] if job['jobstatus'] in ('finished', 'failed') else '---'
                 jobdict['cpuconsumptionunit'] = job['cpuconsumptionunit'] if job['cpuconsumptionunit'] is not None else '---'
                 jobdict['inputfileid'] = job['inputfileid']
+                jobdict['gitlab'] = build_gitlab_link(job['package'], job['testname'])
                 if job['jobstatus'] in ('finished', 'failed'):
                     try:
                         jobdict['duration'] = convert_sec((job['endtime'] - job['starttime']).total_seconds(), out_unit='str')
@@ -662,13 +664,6 @@ def artJobs(request):
                     for ntg, jobs in tdict.items():
                         tdict[ntg]['jobs'] = sorted(jobs['jobs'], key=lambda x: (x['ntagtime'], x['origpandaid']), reverse=True)
                     tdict['testname'] = t
-                    if len(testdirectories[i][j]) > 0 and 'src' in testdirectories[i][j][0]:
-                        if art_view == 'package':
-                            tdict['gitlablink'] = 'https://gitlab.cern.ch/atlas/athena/blob/' + j.split('/')[0] + \
-                                                  testdirectories[i][j][0].split('src')[1] + '/' + t
-                        else:
-                            tdict['gitlablink'] = 'https://gitlab.cern.ch/atlas/athena/blob/' + i.split('/')[0] + \
-                                                  testdirectories[i][j][0].split('src')[1] + '/' + t
                     artjobslist[i][j].append(tdict)
                 artjobslist[i][j] = sorted(artjobslist[i][j], key=lambda x: x['testname'].lower())
         _logger.info('Converted data from dict to list: {}s'.format(time.time() - request.session['req_init_time']))
@@ -804,10 +799,8 @@ def artTest(request, package=None, testname=None):
                 branch = concat_branch(job)
                 if branch not in art_branches:
                     art_branches[branch] = {'jobs': []}
-                if 'gitlab' not in art_test and 'testdirectory' in job and job['testdirectory']:
-                    art_test['gitlab'] = 'https://gitlab.cern.ch/atlas/athena/blob/main/{}/{}'.format(
-                        job['testdirectory'].split('src')[1], testname
-                    )
+                if 'gitlab' not in art_test:
+                    art_test['gitlab'] = build_gitlab_link(job['package'], testname)
                 art_branches[branch]['jobs'].append(job)
 
             # if failed test, find last successful one
