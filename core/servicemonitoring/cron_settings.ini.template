@@ -7,7 +7,7 @@ host: monit-metrics
 port: 10012
 service: PandaBigMon
 [othersettings]
-metrics: cpu,memory,disk,volume,process,dbsession
+metrics: cpu,memory,disk,volume,process,dbsession,dbcache,dbrequests
 disk: data
 process: httpd
 volume: cephfs

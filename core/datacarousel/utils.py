@@ -309,9 +309,9 @@ def getCachedProgress(se, taskid):
 
 def setCachedProgress(se, taskid, stagestatus, progress):
     progress = pickle.dumps(progress)
-    timeout = 3600 * 2
+    timeout = 3600 * 2  # 2 hours
     if stagestatus == 'done':
-        timeout = 3600 * 24 * 30 * 6
+        timeout = 3600 * 24 * 30 * 2  # 2 months
     cache.set('serialized_staging_progress' + se + "_" + str(taskid), progress, timeout)
 
 
