@@ -271,6 +271,13 @@ def getjflag(job):
     return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
 
 
+def build_gitlab_link(package, testname):
+    if package and len(package) > 0 and testname and len(testname) > 0 and package in art_const.GITLAB_PATH_PER_PACKAGE:
+        gitlab_path = art_const.GITLAB_PATH_PER_PACKAGE[package]
+        return f'https://gitlab.cern.ch/atlas/athena/blob/main/{gitlab_path}/{testname}'
+    else:
+        return None
+
 def get_result_for_multijob_test(states):
     """Return worst final result for a test that has several PanDA jobs"""
     result = None
