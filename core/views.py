@@ -7069,15 +7069,13 @@ def datasetList(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    setupView(request, hours=365 * 24, limit=999999999)
+
+    setupView(request, hours=7 * 24, limit=999999999)
     query = {}
     wild_card_str = '(1=1)'
-
     if 'datasetname' in request.session['requestParams']:
         if ':' in request.session['requestParams']['datasetname']:
-            request.session['requestParams']['datasetname'] = '*' + \
-                                                              request.session['requestParams']['datasetname'].split(
-                                                                  ':')[1]
+            request.session['requestParams']['datasetname'] = '*' + request.session['requestParams']['datasetname'].split(':')[1]
         if '*' in request.session['requestParams']['datasetname']:
             wild_card_str += ' AND ' + preprocess_wild_card_string(
                 request.session['requestParams']['datasetname'],
@@ -7091,9 +7089,14 @@ def datasetList(request):
         query['jeditaskid'] = int(request.session['requestParams']['jeditaskid'])
 
     dsets = []
-    if len(query) > 0 or len(wild_card_str) > 5:
+    message = None
+    if 'containername' in query or 'jeditaskid' in query:
+        status = 200
         dsets.extend(JediDatasets.objects.filter(**query).extra(where=[wild_card_str]).values())
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
+    else:
+        message = 'Neither containername nor jeditaskid provided. At least one of them is required.'
+        status = 400
 
     del request.session['TFIRST']
     del request.session['TLAST']
@@ -7121,13 +7124,14 @@ def datasetList(request):
             'requestParams': request.session['requestParams'],
             'datasets': dsets,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'message': message,
         }
         data.update(getContextVariables(request))
-        response = render(request, 'datasetList.html', data, content_type='text/html')
+        response = render(request, 'datasetList.html', data, content_type='text/html', status=status)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(dsets, cls=DateEncoder), content_type='application/json')
+        return HttpResponse(json.dumps(dsets, cls=DateEncoder), content_type='application/json', status=status)
 
 
 @login_customrequired
