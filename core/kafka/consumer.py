@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
 from core.kafka.config import initConsumer
-from core.libs.elasticsearch import get_es_task_status_log
+from core.libs.elasticsearch import get_os_task_status_log
 from core.kafka.utils import (fixed_statuses, prepare_data_for_pie_chart, prepare_data_for_main_chart,
                               update_errors_list, create_new_errors_list)
 
@@ -29,7 +29,7 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
 
         if jeditaskid not in task_data or is_disable_the_same_data:
             self.message_ids, self.task_info_status_dict, self.jobs_info_status_dict, self.jobs_info_errors_dict =\
-                get_es_task_status_log(db_source=db_source, jeditaskid=jeditaskid)
+                get_os_task_status_log(db_source=db_source, jeditaskid=jeditaskid)
 
             task_data[jeditaskid] = {
                 'message_ids': self.message_ids,

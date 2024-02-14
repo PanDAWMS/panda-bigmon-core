@@ -11,7 +11,7 @@ from core.common.models import JediTasks, JediTaskparams, JediDatasetContents
 from core.libs.dropalgorithm import drop_job_retries
 from core.libs.job import get_job_list, job_state_count
 from core.libs.jobconsumption import job_consumption_plots
-from core.libs.elasticsearch import create_es_connection, upload_data
+from core.libs.elasticsearch import create_os_connection, upload_data
 from core.libs.exlib import count_occurrences
 from core.libs.task import get_datasets_for_tasklist, calculate_dataset_stats
 
@@ -154,11 +154,11 @@ class LargeScaleAthenaTestsReport:
 
     def export_data(self):
         """
-        Export report data to ElasticSearch
+        Export report data to OpenSearch
         :return:
         """
         # prepare data
-        data_es = []
+        data_os = []
         for tid, data in self.data.items():
             dict_tmp = {}
             for pn, pv in data.items():
@@ -166,12 +166,12 @@ class LargeScaleAthenaTestsReport:
                     dict_tmp[pn] = ', '.join(['{} ({})'.format(k, v) for k, v in pv.items()])
                 else:
                     dict_tmp[pn] = pv
-            data_es.append(dict_tmp)
+            data_os.append(dict_tmp)
 
         # upload
         index_name = "atlas_large_scale_athena_tests"
-        connection_es = create_es_connection()
-        result = upload_data(connection_es, index_name, data_es,
+        connection_os = create_os_connection()
+        result = upload_data(connection_os, index_name, data_os,
                              timestamp_param='configuration__release_nightly_date',
                              id_param='jeditaskid')
 

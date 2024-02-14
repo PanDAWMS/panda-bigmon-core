@@ -18,7 +18,7 @@ import hashlib
 from datetime import datetime, timedelta
 from threading import Thread, Lock
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, unquote_plus
-from elasticsearch_dsl import Search
+from opensearchpy import Search
 
 from django.http import HttpResponse, JsonResponse, UnreadablePostError
 from django.shortcuts import render, redirect
@@ -99,7 +99,7 @@ from core.libs.error import errorInfo, getErrorDescription, get_job_error_desc
 from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
-from core.libs.elasticsearch import create_es_connection, get_payloadlog, get_split_rule_info
+from core.libs.elasticsearch import create_os_connection, get_payloadlog, get_split_rule_info
 from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
 from core.libs.datetimestrings import datetime_handler, parse_datetime, stringify_datetime_fields
 from core.libs.jobconsumers import reconstruct_job_consumers
@@ -5563,13 +5563,13 @@ def taskInfo(request, jeditaskid=0):
         # get split rule changes from ES-atlas (we do it only for rendered templates)
         if 'ATLAS' in settings.DEPLOYMENT:
             try:
-                connection = create_es_connection()
+                connection = create_os_connection()
                 split_rule = get_split_rule_info(connection, jeditaskid)
                 if len(split_rule) > 0:
                     info['split_rule'] = {}
                     info['split_rule']['messages'] = split_rule
             except Exception as e:
-                _logger.exception('Failed to get split rule info for task from elasticSearch with:\n{}'.format(e))
+                _logger.exception('Failed to get split rule info for task from opensearch with:\n{}'.format(e))
 
             if job_metrics_sum:
                 if 'hs06sec' in job_metrics_sum:
@@ -6462,11 +6462,11 @@ def esatlasPandaLoggerJson(request):
     if settings.DEPLOYMENT != 'ORACLE_ATLAS':
         return HttpResponse('It does not exist for non ATLAS BipPanDA monitoring system', content_type='text/html')
 
-    es_conn = create_es_connection()
+    os_conn = create_os_connection()
 
-    jedi_logs_index = settings.ES_INDEX_JEDI_LOGS
+    jedi_logs_index = settings.OS_INDEX_JEDI_LOGS
 
-    s = Search(using=es_conn, index=jedi_logs_index)
+    s = Search(using=os_conn, index=jedi_logs_index)
 
     s.aggs.bucket('jediTaskID', 'terms', field='jediTaskID', size=100) \
         .bucket('type', 'terms', field='fields.type.keyword') \
@@ -6503,7 +6503,7 @@ def esatlasPandaLogger(request):
     if settings.DEPLOYMENT != 'ORACLE_ATLAS':
         return HttpResponse('It does not exist for non ATLAS BipPanDA monintoring system', content_type='text/html')
 
-    connection = create_es_connection()
+    connection = create_os_connection()
 
     today = time.strftime("%Y.%m.%d")
 
@@ -6577,8 +6577,8 @@ def esatlasPandaLogger(request):
     }
     jediCat = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6', 'cat7']
 
-    panda_index = settings.ES_INDEX_PANDA_LOGS[:-1]+'-'
-    jedi_index = settings.ES_INDEX_JEDI_LOGS[:-1]+'-'
+    panda_index = settings.OS_INDEX_PANDA_LOGS[:-1]+'-'
+    jedi_index = settings.OS_INDEX_JEDI_LOGS[:-1]+'-'
 
     indices = [panda_index, jedi_index]
 
@@ -7950,7 +7950,7 @@ def getTaskStatusLog(request, jeditaskid=None):
 @never_cache
 def getTaskLogs(request, jeditaskid=None):
     """
-    A view to asynchronously load task logs from ElasticSearch storage
+    A view to asynchronously load task logs from OpenSearch storage
     :param request:
     :param jeditaskid:
     :return: json
@@ -8175,14 +8175,14 @@ def get_hc_tests(request):
 @csrf_exempt
 def getPayloadLog(request):
     """
-    A view to asynchronously load pilot logs from ElasticSearch storage by pandaid or taskid
+    A view to asynchronously load pilot logs from OpenSearch storage by pandaid or taskid
     :param request:
     :param id:
     :return: json
     """
     valid, response = initRequest(request)
 
-    connection = create_es_connection()
+    connection = create_os_connection()
 
     if not valid: return response
 
@@ -8208,7 +8208,7 @@ def getPayloadLog(request):
     else:
         search_string = request.POST['search']
 
-    pilot_logs_index = settings.ES_INDEX_PILOT_LOGS
+    pilot_logs_index = settings.OS_INDEX_PILOT_LOGS
 
     payloadlog, job_running_flag, total = get_payloadlog(
         id,

@@ -14,7 +14,7 @@ import cx_Oracle
 import urllib.request as urllibr
 from sklearn.preprocessing import scale
 from urllib.error import HTTPError
-from elasticsearch_dsl import Search
+from opensearchpy import Search
 
 from django.core.cache import cache
 
@@ -24,7 +24,7 @@ from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView
 from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime, insert_to_temp_table
-from core.libs.elasticsearch import create_es_connection
+from core.libs.elasticsearch import create_os_connection
 from core.schedresource.utils import getCRICSEs
 from core.filebrowser.ruciowrapper import ruciowrapper
 
@@ -428,11 +428,11 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
     if rule_info.get('error') and ('[TAPE SOURCE]' in rule_info.get('error')):
         return True, stuck_files
     # Check in ES that files have failed attempts from tape. Limit to 1000 files, should be enough
-    es_conn = create_es_connection(instance='es-monit', timeout=10000)
+    os_conn = create_os_connection(instance='es-monit', timeout=10000)
     start_time = rule_info.get('created_at', None)
     days_since_start = (datetime.datetime.now() - start_time).days if start_time else settings.DATA_CAROUSEL_MAIL_REPEAT
     sources = list(getCRICSEs().get(rse, []))
-    s = Search(using=es_conn, index='monit_prod_ddm_enr_*').\
+    s = Search(using=os_conn, index='monit_prod_ddm_enr_*').\
         query("terms", data__name=stuck_files[:1000]).\
         query("range", **{
                 "metadata.timestamp": {
@@ -468,11 +468,11 @@ def get_stuck_files_data(rule_id, source_rse):
         # Check rucio claims it's Tape problem:
         rule_info = rucio.client.get_replication_rule(rule_id)
         # Check in ES that files have failed attempts from tape. Limit to 1000 files, should be enough
-        es_conn = create_es_connection(instance='es-monit', timeout=10000)
+        os_conn = create_os_connection(instance='monit-opensearch', timeout=10000)
         start_time = rule_info.get('created_at', None)
         days_since_start = (datetime.datetime.now() - start_time).days if start_time else settings.DATA_CAROUSEL_MAIL_REPEAT
         sources = list(getCRICSEs().get(source_rse, []))
-        s = Search(using=es_conn, index='monit_prod_ddm_enr_*').\
+        s = Search(using=os_conn, index='monit_prod_ddm_enr_*').\
             query("terms", data__name=stuck_files[:1000]).\
             query("range", **{
                     "metadata.timestamp": {
