@@ -32,8 +32,16 @@ class DDOSMiddleware(object):
         '188.184.90.172'  # J..h M......n request
     ]
     excepted_views = [
-        '/grafana/img/', '/payloadlog/', '/statpixel/', '/idds/getiddsfortask/', '/api/dc/staginginfofortask/',
-        '/art/tasks/', '/art/overview/', '/art/'
+        '/grafana/img/',
+        '/payloadlog/',
+        '/statpixel/',
+        '/idds/getiddsfortask/',
+        '/api/dc/staginginfofortask/',
+        '/art/',
+        '/art/overview/',
+        '/art/tasks/',
+        '/art/registerarttest/',
+        '/art/uploadtestresult/',
     ]
     blacklist = ['130.132.21.90', '192.170.227.149']
     maxAllowedJSONRequstesParallel = 1
