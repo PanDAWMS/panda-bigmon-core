@@ -6,7 +6,7 @@ import json
 import re
 
 from datetime import datetime, timedelta
-from elasticsearch_dsl import Search
+from opensearchpy import Search
 
 from django.db import connection
 from django.db.models import Count, Sum
@@ -16,7 +16,7 @@ from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsde
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
 from core.libs.datetimestrings import parse_datetime
-from core.libs.elasticsearch import create_es_connection
+from core.libs.elasticsearch import create_os_connection
 from core.libs.job import drop_duplicates
 from core.pandajob.utils import get_pandajob_arch_models_by_year
 from core.filebrowser.ruciowrapper import ruciowrapper
@@ -895,11 +895,11 @@ def get_logs_by_taskid(jeditaskid):
 
     tasks_logs = []
 
-    es_conn = create_es_connection()
+    os_conn = create_os_connection()
 
-    jedi_logs_index = settings.ES_INDEX_JEDI_LOGS
+    jedi_logs_index = settings.OS_INDEX_JEDI_LOGS
 
-    s = Search(using=es_conn, index=jedi_logs_index)
+    s = Search(using=os_conn, index=jedi_logs_index)
 
     s = s.filter('term', **{'jediTaskID': jeditaskid})
 
@@ -917,9 +917,9 @@ def get_logs_by_taskid(jeditaskid):
                 tasks_logs.append({'jediTaskID': jeditaskid, 'logname': type, 'loglevel': levelname,
                                    'lcount': str(levelnames['doc_count'])})
 
-    panda_logs_index = settings.ES_INDEX_PANDA_LOGS
+    panda_logs_index = settings.OS_INDEX_PANDA_LOGS
 
-    s = Search(using=es_conn, index=panda_logs_index)
+    s = Search(using=os_conn, index=panda_logs_index)
 
     s = s.filter('term', **{'jediTaskID': jeditaskid})
 

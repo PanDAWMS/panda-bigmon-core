@@ -4,8 +4,9 @@ import requests
 from requests.auth import HTTPBasicAuth
 import hashlib
 from datetime import datetime
+from opensearchpy import OpenSearch, Search, Q
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search, Q
+from elasticsearch_dsl import Search as ESearch, Q as EQ
 
 from core.pandajob.models import Jobsactive4
 from core.libs.DateTimeEncoder import DateTimeEncoder
@@ -15,31 +16,31 @@ from itertools import zip_longest
 
 _logger = logging.getLogger('bigpandamon')
 
-def get_es_credentials(instance):
+def get_os_credentials(instance):
     """
     Getting credentials from settings
-    :param instance: str, es-atlas or es-monit
+    :param instance: str, os-atlas or monit-opensearch
     :return:
     """
-    es_host = None
-    es_user = None
-    es_password = None
+    os_host = None
+    os_user = None
+    os_password = None
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         protocol = 'https'
-        if instance == 'es-atlas' and hasattr(settings, 'ES'):
-            es_host = settings.ES.get('esHost', None)
-            es_port = settings.ES.get('esPort', None)
-            es_host = protocol +'://'+ es_host + ':' + es_port + '/es' if es_host else None
-            es_user = settings.ES.get('esUser', None)
-            es_password = settings.ES.get('esPassword', None)
-        elif instance == 'es-monit' and hasattr(settings, 'ES_MONIT'):
-            es_host = settings.ES_MONIT.get('esHost', None)
-            es_port = settings.ES_MONIT.get('esPort', None)
-            es_host = protocol + '://' + es_host + ':' + es_port + '/es' if es_host else None
-            es_user = settings.ES_MONIT.get('esUser', None)
-            es_password = settings.ES_MONIT.get('esPassword', None)
-        if any(i is None for i in (es_host, es_user, es_password)):
-            raise Exception('ES cluster credentials was not found in settings')
+        if instance == 'os-atlas' and hasattr(settings, 'OS'):
+            os_host = settings.OS.get('osHost', None)
+            os_port = settings.OS.get('osPort', None)
+            os_host = protocol +'://' + os_host + ':' + os_port + '/os' if os_host else None
+            os_user = settings.OS.get('osUser', None)
+            os_password = settings.OS.get('osPassword', None)
+        elif instance == 'monit-opensearch' and hasattr(settings, 'MONIT_OPENSEARCH'):
+            os_host = settings.MONIT_OPENSEARCH.get('osHost', None)
+            os_port = settings.MONIT_OPENSEARCH.get('osPort', None)
+            os_host = protocol + '://' + os_host + ':' + os_port + '/es' if os_host else None
+            os_user = settings.MONIT_OPENSEARCH.get('osUser', None)
+            os_password = settings.MONIT_OPENSEARCH.get('osPassword', None)
+        if any(i is None for i in (os_host, os_user, os_password)):
+            raise Exception('OS cluster credentials was not found in settings')
     else:
         if hasattr(settings, 'ES_CLUSTER'):
             es_host = settings.ES_CLUSTER.get('esHost', '')
@@ -49,37 +50,48 @@ def get_es_credentials(instance):
             es_host = es_protocol + '://' + es_host + ':' + es_port + es_path
             es_user = settings.ES_CLUSTER.get('esUser', '')
             es_password = settings.ES_CLUSTER.get('esPassword', '')
+            os_host = es_host
+            os_user = es_user
+            os_password = es_password
 
-    return es_host, es_user, es_password
+    return os_host, os_user, os_password
 
-def create_es_connection(instance='es-atlas', timeout=2000, max_retries=10, retry_on_timeout=True):
+def create_os_connection(instance='os-atlas', timeout=2000, max_retries=10, retry_on_timeout=True):
     """
-    Create a connection to ElasticSearch cluster
+    Create a connection to OpenSearch cluster
     """
-    es_host, es_user, es_password = get_es_credentials(instance)
+    os_host, os_user, os_password = get_os_credentials(instance)
     try:
-        parsed_uri = urlparse(es_host)
+        parsed_uri = urlparse(os_host)
         protocol = '{uri.scheme}'.format(uri=parsed_uri)
 
-        if protocol == 'https':
-            ca_certs = settings.ES_CA_CERT
+        if settings.DEPLOYMENT == 'ORACLE_ATLAS':
+            if protocol == 'https':
+                ca_certs = settings.OS_CA_CERT
 
-            connection = Elasticsearch(
-                [es_host],
-                http_auth=(es_user, es_password),
-                verify_certs=True,
-                timeout=timeout,
-                max_retries=max_retries,
-                retry_on_timeout=retry_on_timeout,
-                ca_certs = ca_certs
-            )
+                connection = OpenSearch(
+                    [os_host],
+                    http_auth=(os_user, os_password),
+                    verify_certs=True,
+                    timeout=timeout,
+                    max_retries=max_retries,
+                    retry_on_timeout=retry_on_timeout,
+                    ca_certs=ca_certs
+                )
+            else:
+                connection = OpenSearch(
+                    [os_host],
+                    http_auth=(os_user, os_password),
+                    timeout=timeout,
+                    max_retries=max_retries,
+                    retry_on_timeout=retry_on_timeout)
         else:
-            connection = Elasticsearch(
-                [es_host],
-                http_auth=(es_user, es_password),
-                timeout=timeout,
-                max_retries=max_retries,
-                retry_on_timeout=retry_on_timeout)
+            connection = Elasticsearch (
+                    [os_host],
+                    http_auth=(os_user, os_password),
+                    timeout=timeout,
+                    max_retries=max_retries,
+                    retry_on_timeout=retry_on_timeout)
 
         return connection
 
@@ -90,9 +102,9 @@ def create_es_connection(instance='es-atlas', timeout=2000, max_retries=10, retr
 def get_date(item):
     return datetime.strptime(item['@timestamp'],  '%Y-%m-%dT%H:%M:%S.%fZ')
 
-def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort='asc', search_string=''):
+def get_payloadlog(id, os_conn, index, start=0, length=50, mode='pandaid', sort='asc', search_string=''):
     """
-    Get pilot logs from ATLAS ElasticSearch storage
+    Get pilot logs from ATLAS OpenSearch storage
     """
     logs_list = []
     query = {}
@@ -101,8 +113,12 @@ def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort=
     flag_running_job = True
 
     end = start + length
-
-    s = Search(using=es_conn, index=index)
+    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
+        s = Search(using=os_conn, index=index)
+        q = Q("multi_match", query=search_string, fields=['level', 'message'])
+    else:
+        s = ESearch(using=os_conn, index=index)
+        q = EQ("multi_match", query=search_string, fields=['level', 'message'])
 
     s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID",
                   "Harvester_WorkerID", "Harvester_ID"])
@@ -117,12 +133,11 @@ def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort=
         else:
             s = s.query('match', PandaJobID='{0}'.format(id)).sort("-@timestamp")
         if search_string != '':
-            q = Q("multi_match", query=search_string, fields=['level', 'message'])
             s = s.query(q)
     elif mode == 'jeditaskid':
         s = s.query('match', TaskID='{0}'.format(id)).sort("@timestamp")
     try:
-        _logger.debug('ElasticSearch query: {0}'.format(str(s.to_dict())))
+        _logger.debug('OpenSearch query: {0}'.format(str(s.to_dict())))
         response = s[start:end].execute()
 
         total = response.hits.total.value
@@ -134,10 +149,10 @@ def get_payloadlog(id, es_conn, index, start=0, length=50, mode='pandaid', sort=
 
     return logs_list, flag_running_job, total
 
-def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', id_param='jeditaskid'):
+def upload_data(os_conn, index_name_base, data, timestamp_param='creationdate', id_param='jeditaskid'):
     """
-    Push data to ElasticSearch cluster
-    :param es_conn: connection to use
+    Push data to OpenSearch cluster
+    :param os_conn: connection to use
     :param index_name_base: name of ES index where data should be written
     :param data: list of dicts
     :param timestamp_param: name of parameter in data dict to be used for ES index creation
@@ -159,9 +174,9 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
     for index_name in index_names:
         while True:
             try:
-                if not es_conn.indices.exists(index=index_name):
+                if not os_conn.indices.exists(index=index_name):
                     _logger.info(f"Creating index: {index_name}")
-                    es_conn.indices.create(index=index_name)
+                    os_conn.indices.create(index=index_name)
                     _logger.info(f"Index created")
                     break
                 else:
@@ -189,15 +204,15 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
     data = ''.join(jsons)
 
     # send data via POST request
-    es_host, es_user, es_password = get_es_credentials(instance='es-atlas')
-    if '/' in es_host:
-        es_host = es_host.split('/')[0]
+    os_host, os_user, os_password = get_os_credentials(instance='os-atlas')
+    if '/' in os_host:
+        es_host = os_host.split('/')[0]
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(
-        f"https://{es_host}/es/_bulk",
+        f"https://{os_host}/щы/_bulk",
         data=data,
         headers=headers,
-        auth=HTTPBasicAuth(es_user, es_password),
+        auth=HTTPBasicAuth(os_user, os_password),
         verify='/etc/pki/tls/certs/ca-bundle.trust.crt',
         timeout=120
     )
@@ -209,23 +224,23 @@ def upload_data(es_conn, index_name_base, data, timestamp_param='creationdate', 
     else:
         result['status'] = 'success'
         result['message'] = "Successfully pushed data to the ES cluster"
-        result['link'] = "https://es-atlas.cern.ch/kibana/goto/c987a191e5fa02605e20e5e6eaa9bc1f?security_tenant=global"
+        result['link'] = "https://os-atlas.cern.ch/kibana/goto/c987a191e5fa02605e20e5e6eaa9bc1f?security_tenant=global"
         _logger.info(result['message'])
 
 
     return result
 
-def get_split_rule_info(es_conn, jeditaskid):
+def get_split_rule_info(os_host, jeditaskid):
     """
     Get split rule entries from ATLAS Elastic
-    :param es_conn: connection to the ATLAS Elastic
+    :param os_host: connection to the ATLAS Elastic
     :param jeditaskid: unique task ID
     :return: split rule messages
     """
     split_rules = []
-    jedi_logs_index = settings.ES_INDEX_JEDI_LOGS
+    jedi_logs_index = settings.OS_INDEX_JEDI_LOGS
 
-    s = Search(using=es_conn, index=jedi_logs_index)
+    s = Search(using=os_host, index=jedi_logs_index)
     s = s.source(['@timestamp', 'message'])
     s = s.filter('term', jediTaskID='{0}'.format(jeditaskid))
     q = Q("match", message='change_split_rule')
@@ -240,19 +255,19 @@ def get_split_rule_info(es_conn, jeditaskid):
 
 def get_gco2_sum_for_tasklist(task_list):
     """
-    Getting sum of gCO2 for list of tasks from ES-ATLAS
+    Getting sum of gCO2 for list of tasks from OS-ATLAS
     :param: tasks_list: list of jeditaskid
     :return: gco2_sum
     """
     gco2_sum = {'total': 0, 'finished': 0, 'failed': 0}
-    es_jobs_index = 'atlas_jobs_archived*'
-    es_conn = create_es_connection(instance='es-atlas')
+    os_jobs_index = 'atlas_jobs_archived*'
+    os_conn = create_os_connection(instance='os-atlas')
 
     chunk_size = 50000
     task_list_chunks = list(chunks(task_list, chunk_size))
 
     for chunk in task_list_chunks:
-        s = Search(using=es_conn, index=es_jobs_index)
+        s = Search(using=os_conn, index=os_jobs_index)
 
         s.filter('range', **{
             '@timestamp': {'gte': 'now-1y', 'lte': 'now'}
@@ -272,7 +287,7 @@ def get_gco2_sum_for_tasklist(task_list):
 
     return gco2_sum
 
-def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
+def get_os_task_status_log(db_source, jeditaskid, os_instance='os-atlas'):
 
     task_message_ids_list = []
     task_message_dict = {}
@@ -283,9 +298,9 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
 
     full_index_name = db_source + '_tasks_status_log*'
 
-    es_conn = create_es_connection(instance=es_instance)
+    os_conn = create_os_connection(instance=os_instance)
 
-    s = Search(using=es_conn, index=full_index_name)
+    s = Search(using=os_conn, index=full_index_name)
 
     fields_list = ['@timestamp','db_source', 'inputs', 'job_hs06sec', 'job_inputfilebytes', 'job_nevents', 'job_ninputdatafiles',
                   'job_ninputfiles', 'job_noutputdatafiles', 'job_outputfilebytes', 'jobid', 'message_id', 'msg_type', 'status',
@@ -364,7 +379,7 @@ def get_es_task_status_log(db_source, jeditaskid, es_instance='es-atlas'):
             if hit_dict[field] is None:
                 hit_dict[field] = "None"
 
-    task_info_conn = Search(using=es_conn, index=full_index_name)
+    task_info_conn = Search(using=os_conn, index=full_index_name)
     task_info_conn = task_info_conn.filter('term', taskid='{0}'.format(jeditaskid))
     task_info_conn.aggs.bucket('status', 'terms', field='status.keyword', size=1000) \
         .metric('timestamp', 'max', field='timestamp') \
