@@ -32,7 +32,7 @@
 
 {% else %}
 
-No datasets matching search were found. Check the URL parameters and be aware that wildcards search is not available in this page.
+{% if message %} {{ message }} {% else %} No datasets matching search were found. {% endif %}
 
 {% endif %}
 
