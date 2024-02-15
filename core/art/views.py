@@ -1441,7 +1441,7 @@ def upload_test_result(request):
         try:
             art_report = json.loads(art_report)
         except json.JSONDecodeError as e:
-            _logger.exception("Invalid JSON syntax:", e)
+            _logger.exception(f"Invalid JSON syntax: {e}")
             return JsonResponse({"message": "Invalid JSON syntax of data"}, status=400)
         if 'art' in art_report:
             art_report = art_report['art']
