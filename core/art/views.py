@@ -1427,7 +1427,7 @@ def upload_test_result(request):
         return JsonResponse({'error': "Bad request"}, status=400)
 
     # log all the req params for debug
-    _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
+    _logger.debug('[ART] uploadtestresults requestParams: ' + str(request.session['requestParams']))
 
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams']:
         pandaid = request.session['requestParams']['pandaid']
