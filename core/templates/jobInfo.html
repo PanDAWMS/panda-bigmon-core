@@ -251,10 +251,10 @@
           </script>
         {% endif %}
         {% if viewParams.MON_VO == 'ATLAS' %}
-          <a target="_blank" href="https://os-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))">Action logger (Kibana)</a>
+          <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover#?_a=(discover:(columns:!(_source),isDirty:!f,sort:!()),metadata:(indexPattern:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_q=(filters:!(),query:(language:lucene,query:'{{ job.pandaid|safe }}'))">PanDA logs (Kibana)</a>
           <script nonce={{request.csp_nonce}}>
               logLinksArray[logLinksArray.length] ="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}"
-              logLinksArray[logLinksArray.length] ="https://os-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-5d%2Fd,mode:relative,to:now))&_a=(columns:!('timeEvent',fields.type,logLevel,message),index:'43ecb650-6c45-11e8-a7e3-ffbb2f24f6b4',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{job.jeditaskid}}')),sort:!('timeEvent',desc))"
+              logLinksArray[logLinksArray.length] ="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(fields.type,logLevel,message,_source),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'jediTaskID:{{ job.jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))"
 
               function openAllLogs() {
                   for (var i = 0; i < logLinksArray.length; i++) {

@@ -244,8 +244,8 @@
 
             <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">Pilot records</a>
             {% if viewParams.MON_VO == 'ATLAS' %}
-            <a target="_blank" href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-10d,to:now))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'jediTaskID:{{job.jeditaskid}}'),sort:!('@timestamp',desc))">Action logger (Kibana)</a>
-            <a href="#" id="button-open-all-logs">Open all logs</a>
+            <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover#?_a=(discover:(columns:!(_source),isDirty:!f,sort:!()),metadata:(indexPattern:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_q=(filters:!(),query:(language:lucene,query:'{{ job.pandaid|safe }}'))">PanDA logs (Kibana)</a>
+           <a href="#" id="button-open-all-logs">Open all logs</a>
             {% endif %}
         {% endif %}
     </div>
