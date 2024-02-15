@@ -1426,8 +1426,8 @@ def upload_test_result(request):
     if not valid:
         return JsonResponse({'error': "Bad request"}, status=400)
 
-    # log all the req params for debug
-    _logger.debug('[ART] uploadtestresults requestParams: ' + str(request.session['requestParams']))
+    # log all the req params
+    _logger.info('[ART] uploadtestresults requestParams: ' + str(request.session['requestParams']))
 
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams']:
         pandaid = request.session['requestParams']['pandaid']
