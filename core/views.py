@@ -274,6 +274,7 @@ def initRequest(request, callselfmon=True):
         data = {
             'errormessage': 'Error appeared while encoding URL!'
         }
+        _logger.exception(data['errormessage'])
         return False, render(request, 'errorPage.html', data, content_type='text/html')
 
     # if injection -> 400
@@ -283,6 +284,7 @@ def initRequest(request, callselfmon=True):
             'requestParams': request.session['requestParams'],
             "errormessage": "Illegal request",
         }
+        _logger.error(data['errormessage'])
         if not is_json_request(request):
             return False, render(request, 'errorPage.html', data, content_type='text/html', status=400)
         else:
@@ -419,6 +421,7 @@ def initRequest(request, callselfmon=True):
                         'requestParams': request.session['requestParams'],
                         "errormessage": "Illegal value '%s' for %s" % (pval, p),
                     }
+                    _logger.exception(data['errormessage'])
                     return False, render(request, 'errorPage.html', data, content_type='text/html')
             if p.lower() in ('date_from', 'date_to'):
                 try:
@@ -430,6 +433,7 @@ def initRequest(request, callselfmon=True):
                         'requestParams': request.session['requestParams'],
                         "errormessage": "Illegal value '%s' for %s" % (pval, p),
                     }
+                    _logger.exception(data['errormessage'])
                     return False, render(request, 'errorPage.html', data, content_type='text/html')
             if p.lower() not in allowedemptyparams and len(pval) == 0:
                 data = {
@@ -437,6 +441,7 @@ def initRequest(request, callselfmon=True):
                     'requestParams': request.session['requestParams'],
                     "errormessage": "Empty value '%s' for %s" % (pval, p),
                 }
+                _logger.exception(data['errormessage'])
                 return False, render(request, 'errorPage.html', data, content_type='text/html')
             if p.lower() in ('jobname', 'taskname',) and len(pval) > 0 and ('%' in pval or '%s' in pval):
                 data = {
@@ -444,6 +449,7 @@ def initRequest(request, callselfmon=True):
                     'requestParams': request.session['requestParams'],
                     "errormessage": "Use * symbol for pattern search instead of % for {}".format(p),
                 }
+                _logger.exception(data['errormessage'])
                 return False, render(request, 'errorPage.html', data, content_type='text/html')
             request.session['requestParams'][p.lower()] = pval
 
