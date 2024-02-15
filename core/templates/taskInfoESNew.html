@@ -179,16 +179,14 @@
                   <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
               {% endif %}    {% endif %}
           {% if viewParams.MON_VO == 'ATLAS' %}
-          <a target="_blank" href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Task
-              brokerage </a>
-
-          <a target="_blank" href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!(fields.type,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22{% if task.brokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Job
-              brokerage </a>
-
-          <a target="_blank" href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!(fields.type,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'jediTaskID:{{ jeditaskid }}')),sort:!('@timestamp',desc))">Action
-              logger</a>
-          <a target="_blank" href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!(logName,fields.type,logLevel,message),index:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('@timestamp',desc))">Retrial
-              Module logger</a>
+              <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(fields.type,logLevel,message,jediTaskID),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Task
+                  brokerage </a>
+              <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(fields.type,logLevel,message,jediTaskID,_source),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'fields.type:%22{% if task.brokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Job
+                  brokerage </a>
+              <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(fields.type,logLevel,message,_source),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Action
+                  logger </a>
+              <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(logName,fields.type,logLevel,message,_source),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Retrial
+                  Module logger </a>
         {% endif %}
           <a href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}">Error summary</a>
           {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
@@ -220,7 +218,7 @@
           <a id="button-task-scouts">Show scout jobs</a>
           <a id="button-task-inputs">Show task inputs list </a>
           <a id="button-task-event-chunks">Show jobset relationships</a>
-          <a id="button-task-logs" href="#tasklogs">Show task logs from ElasticSearch</a>
+          <a id="button-task-logs" href="#tasklogs">Show task logs from OpenSearch</a>
           {% if eventssummary|length > 0 %}
             <a id="button-task-event-states">Show all events states</a>
           {% endif %}
@@ -474,7 +472,7 @@
     {% if viewParams.MON_VO == 'ATLAS' %}
   <div id="tasklogs" ng-app="taskInfoAppSL" ng-controller="TaskLogsController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="task_logs.is_hidden">
-    <div class="card-divider"><p>Task logs for {{ jeditaskid|safe }} from <a href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:kuery,query:'jediTaskID:{{ jeditaskid|safe }}'),sort:!('@timestamp',desc))" target="_blank">os-atlas</a></p></div>
+    <div class="card-divider"><p>Task logs for {{ jeditaskid|safe }} from <a href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(logName,logLevel,message,_source),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(query:(language:kuery,query:'jediTaskID: {{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))" target="_blank">os-atlas</a></p></div>
     <div class="card-section">
       <table class="data-table left-aligned nowrap" id="tasklogstable">
         <thead></thead>
@@ -850,10 +848,10 @@
                         "render": function (data, type, full, meta) {
                             var link_to_kibana = ''
                             if (full['logname']  == 'recoverlostfiles') {
-                                link_to_kibana = '<a href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + ' (panda log)' + '</a>'
+                                link_to_kibana = '<a href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(logName,logLevel,message,_source),interval:auto,sort:!(!(\'@timestamp\',desc))),metadata:(indexPattern:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',view:discover))&_q=(query:(language:lucene,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))" target="_blank">' + full['logname'] + ' (panda log)' + '</a>'
                             }
                             else {
-                                link_to_kibana = '<a href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['logname'] + '</a>'
+                                link_to_kibana = '<a href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(logName,logLevel,message,_source),interval:auto,sort:!(!(\'@timestamp\',desc))),metadata:(indexPattern:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',view:discover))&_q=(query:(language:lucene,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22\'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))" target="_blank">' + full['logname'] + '</a>'
                             }
                             return link_to_kibana
                         }
@@ -865,12 +863,12 @@
                         "render": function (data, type, full, meta) {
                             var link_to_kibana = ''
                             if (full['logname']  == 'recoverlostfiles') {
-                                link_to_kibana = '<a href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
+                                link_to_kibana = '<a href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(logName,logLevel,message,_source),interval:auto,sort:!(!(\'@timestamp\',desc))),metadata:(indexPattern:\'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc\',view:discover))&_q=(query:(language:lucene,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))" target="_blank">' + full['loglevel'] + ' (panda log)' + '</a>'
                             }
                             else {
-                                link_to_kibana = '<a href="https://os-atlas.cern.ch/kibana/app/discover#/?_g=(refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_a=(columns:!(logName,logLevel,message),index:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',interval:auto,query:(language:kuery,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'),sort:!(\'@timestamp\',desc))" target="_blank">' + full['loglevel'] + '</a>'
+                                link_to_kibana = '<a href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(logName,logLevel,message,_source),interval:auto,sort:!(!(\'@timestamp\',desc))),metadata:(indexPattern:\'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc\',view:discover))&_q=(query:(language:lucene,query:\'jediTaskID:' + full['jediTaskID'] + '%20AND%20fields.type:%22' + full['logname'] + '%22%20AND%20logLevel:%22' + full['loglevel'] + '%22\'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))" target="_blank">' + full['loglevel'] + '</a>'
                             }
-                            return link_to_kibana
+                                return link_to_kibana
                         }
                     },
                     {
