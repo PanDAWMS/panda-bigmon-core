@@ -1421,6 +1421,7 @@ def upload_test_result(request):
     :param request:
     :return: HTTP response
     """
+    _logger.info('[ART] uploadtestresults: GET=' + str(request.GET) + ' POST=' + str(request.GET))
 
     valid, response = initRequest(request)
     if not valid:
