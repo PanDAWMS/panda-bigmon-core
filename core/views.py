@@ -1120,9 +1120,10 @@ def mainPage(request):
         data.update(getContextVariables(request))
         response = render(request, 'core-mainPage.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
     else:
-        return HttpResponse('json', content_type='text/html')
+        response = JsonResponse({})
+    request = complete_request(request)
+    return response
 
 
 def helpPage(request):
