@@ -87,8 +87,8 @@ def complete_request(request, **kwargs):
     _logger.info("Len of session dict after cleaning: {}".format(len(str(request.session._session))))
 
     if is_json_request(request):
-        request.session.set_expiry(settings.SESSION_API_CALL_AGE)
-        _logger.info(f"Set session expiration for API call to {settings.SESSION_API_CALL_AGE}")
+        # request.session.set_expiry(settings.SESSION_API_CALL_AGE)
+        # _logger.info(f"Set session expiration for API call to {settings.SESSION_API_CALL_AGE}")
         _logger.debug(f"cache_key={request.session.cache_key}")
 
     return request
