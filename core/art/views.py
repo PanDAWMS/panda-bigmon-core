@@ -92,15 +92,15 @@ def art(request):
             'ntags': [t['nightly_tag_date'] for t in ntags]
         }
         response = render(request, 'artMainPage.html', data, content_type='text/html')
+        setCacheEntry(request, "artMain", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
+        request = complete_request(request)
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     else:
         data = {
             'packages': [p['package'] for p in packages],
             'branches': [b['branch'] for b in branches],
         }
         response = JsonResponse(data)
-    setCacheEntry(request, "artMain", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
-    request = complete_request(request)
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
