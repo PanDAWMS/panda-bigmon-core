@@ -1421,7 +1421,7 @@ def upload_test_result(request):
     :param request:
     :return: HTTP response
     """
-    _logger.info('[ART] uploadtestresults: GET=' + str(request.GET) + ' POST=' + str(request.GET) + ' body:' + str(request.body))
+    _logger.debug('[ART] uploadtestresults: GET=' + str(request.GET) + ' POST=' + str(request.GET) + ' body:' + str(request.body))
 
     valid, response = initRequest(request)
     if not valid:
@@ -1439,11 +1439,12 @@ def upload_test_result(request):
 
     if 'requestParams' in request.session and 'artreport' in request.session['requestParams']:
         art_report = request.session['requestParams']['artreport']
-        try:
-            art_report = json.loads(art_report)
-        except json.JSONDecodeError as e:
-            _logger.exception(f"Invalid JSON syntax: {e}")
-            return JsonResponse({"message": "Invalid JSON syntax of data"}, status=400)
+        if isinstance(art_report, str):
+            try:
+                art_report = json.loads(art_report)
+            except json.JSONDecodeError as e:
+                _logger.exception(f"Invalid JSON syntax: {e}")
+                return JsonResponse({"message": "Invalid JSON syntax of data"}, status=400)
         if 'art' in art_report:
             art_report = art_report['art']
         else:

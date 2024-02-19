@@ -382,8 +382,11 @@ def initRequest(request, callselfmon=True):
             except Exception as ex:
                 post_params = None
                 _logger.exception('Failed to decode params in body of POST request')
-            if isinstance(post_params, dict) and 'params' in post_params and isinstance(post_params['params'], dict):
-                request.session['requestParams'].update(post_params['params'])
+            if isinstance(post_params, dict):
+                if 'params' in post_params and isinstance(post_params['params'], dict):
+                    request.session['requestParams'].update(post_params['params'])
+                else:
+                    request.session['requestParams'].update(post_params)
     else:
         for p in request.GET:
             pval = request.GET[p]
