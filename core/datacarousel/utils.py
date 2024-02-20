@@ -202,7 +202,7 @@ def getStagingDatasets(timewindow, source):
         tbig.source_rse, tbig.taskid, null as progress_retrieved, null as progress_data 
     from (
         select t1.dataset, t1.status, t1.staged_files, t1.start_time, t1.end_time, t1.rse as rrule, t1.total_files,
-            t1.source_rse, t2.taskid, 
+            t1.source_rse, t2.taskid, t3.status as task_status,
             row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence 
         from {0}.t_dataset_staging t1
         inner join {0}.t_action_staging t2 on t1.dataset_staging_id=t2.dataset_staging_id
@@ -218,7 +218,8 @@ def getStagingDatasets(timewindow, source):
         and to_date('{}','YYYY-mm-dd HH24:MI:SS') 
         or (
             tbig.end_time is null 
-            and not tbig.status in ('done', 'cancelled')
+            and tbig.status not in ('done', 'cancelled', 'canceled')
+            and tbig.task_status not in ('done', 'finished', 'failed', 'aborted')
         )
     )""".format(timewindow[0], timewindow[1])
     cursor = connection.cursor()
