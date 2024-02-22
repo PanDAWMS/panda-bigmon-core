@@ -154,11 +154,25 @@ def getStagingData(request):
 
     if campaign:
         campaignl = [campaign] if ',' not in campaign else [camp for camp in campaign.split(',')]
-        selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
+        if 'Unknown' in campaignl:
+            campaignl.remove('Unknown')
+            if len(campaignl) > 0:
+                selection += " AND (t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ") OR t3.campaign is null)"
+            else:
+                selection += " AND t3.campaign is null"
+        else:
+            selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
 
     if processingtype:
         processingtypel = [processingtype] if ',' not in processingtype else [pt for pt in processingtype.split(',')]
-        selection += " AND t4.processingtype in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
+        if 'analysis' in processingtypel:
+            processingtypel.remove('analysis')
+            if processingtypel and len(processingtypel) > 0:
+                selection += " AND (t4.processingtype in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ") OR t4.tasktype='anal')"
+            else:
+                selection += " AND t4.tasktype='anal'"
+        else:
+            selection += " AND t4.processingtype in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
 
     if not jeditaskid:
         selection += """  

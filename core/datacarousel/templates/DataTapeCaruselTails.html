@@ -55,7 +55,7 @@
 {% endblock %}
 
 {% block js_body_page %}
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="{% static 'js/google-charts-loader.js' %}"></script>
     <script nonce={{request.csp_nonce}}>
         google.charts.load('current', {packages: ['corechart']});
 
