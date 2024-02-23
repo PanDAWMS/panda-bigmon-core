@@ -309,7 +309,7 @@ def parse_jobmetrics(jobs):
     """
     for job in jobs:
         if 'jobmetrics' in job and job['jobmetrics'] and len(job['jobmetrics']) > 0:
-            jobmetrics = {str(jm.split('=')[0]).lower(): jm.split('=')[1] for jm in job['jobmetrics'].split(' ')}
+            jobmetrics = {str(jm.split('=')[0]).lower(): jm.split('=')[1] for jm in job['jobmetrics'].split(' ') if '=' in jm}
             if 'actualcorecount' in jobmetrics:
                 jobmetrics['nprocesses'] = jobmetrics['actualcorecount']
                 del jobmetrics['actualcorecount']
