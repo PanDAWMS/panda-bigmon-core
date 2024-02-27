@@ -30,6 +30,7 @@ from core.libs.error import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import convert_sec, convert_bytes, round_to_n_digits
 from core.pandajob.models import CombinedWaitActDefArch4
+from core.common.models import Filestable4
 
 from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test, concat_branch, \
     find_last_successful_test, build_gitlab_link
@@ -1260,6 +1261,10 @@ def registerARTTest(request):
     nightly_tag = None
     nightly_tag_display = None
     extra_info = {}
+    computingsite = None
+    attemptnr = None
+    tarindex = None
+    inputfileid = None
 
     # log all the req params for debug
     _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
@@ -1335,10 +1340,9 @@ def registerARTTest(request):
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
-    ### Checking if provided pandaid exists in panda db
-    query={}
-    query['pandaid'] = pandaid
-    values = 'pandaid', 'jeditaskid', 'username'
+    # Checking if provided pandaid exists in panda db
+    query = {'pandaid': pandaid}
+    values = ('pandaid', 'jeditaskid', 'username', 'computingsite')
     jobs = []
     jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
     try:
@@ -1348,16 +1352,35 @@ def registerARTTest(request):
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
-    ### Checking whether provided pandaid is art job
+    # Checking whether provided pandaid is art job
     if 'username' in job and job['username'] != 'artprod':
         data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
-    ### Preparing params to register art job
-
+    # Preparing params to register art job
+    if 'computingsite' in job:
+        computingsite = job['computingsite']
     if 'jeditaskid' in job:
         jeditaskid = job['jeditaskid']
+
+        # get files -> extract log tarball name, attempts
+        files = []
+        fquery = {'jeditaskid': jeditaskid, 'pandaid': pandaid, 'type__in': ('pseudo_input', 'input', 'log')}
+        files.extend(Filestable4.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
+        # count of attempts starts from 0, for readability change it to start from 1
+        if len(files) > 0:
+            input_files = [f for f in files if f['type'] in ('pseudo_input', 'input')]
+            if len(input_files) > 0:
+                attemptnr = 1 + max([f['attemptnr'] for f in input_files])
+                inputfileid = max([f['fileid'] for f in input_files])
+            log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
+            if len(log_lfn) > 0:
+                try:
+                    tarindex = int(re.search('.([0-9]{6}).log.', log_lfn[0]).group(1))
+                except:
+                    _logger.info('Failed to extract tarindex from log lfn')
+                    tarindex = None
 
     # extract datetime from str nightly time
     nightly_tag_date = None
@@ -1396,7 +1419,13 @@ def registerARTTest(request):
                 package=package,
                 extrainfo=json.dumps(extra_info),
                 created=datetime.utcnow(),
-                nightly_tag_date=nightly_tag_date
+                nightly_tag_date=nightly_tag_date,
+                attemptnr=attemptnr,
+                maxattempt=2,
+                inputfileid=inputfileid,
+                tarindex=tarindex,
+                computingsite=computingsite,
+                status=art_const.TEST_STATUS_INDEX['active'],
             )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}

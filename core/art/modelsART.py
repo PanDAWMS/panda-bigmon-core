@@ -55,6 +55,11 @@ class ARTTests(models.Model):
     extrainfo = models.CharField(max_length=1000, db_column='EXTRA_INFO', null=True, blank=True)
     created = models.DateTimeField(null=True, db_column='CREATED')
     nightly_tag_date = models.DateTimeField(null=True, db_column='nightly_tag_date')
-
+    computingsite = models.CharField(max_length=128, db_column='computingsite', null=True)
+    inputfileid = models.DecimalField(decimal_places=0, max_digits=10, db_column='inputfileid')
+    tarindex = models.DecimalField(decimal_places=0, max_digits=3, db_column='tarindex')
+    attemptnr = models.DecimalField(decimal_places=0, max_digits=3, db_column='attemptnr')
+    maxattempt = models.DecimalField(decimal_places=0, max_digits=3, db_column='maxattempt')
+    status = models.DecimalField(decimal_places=0, max_digits=3, db_column='status')
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."ART_TESTS"'
