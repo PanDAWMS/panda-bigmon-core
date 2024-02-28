@@ -76,10 +76,11 @@ def globalviewDemo(request):
                 dd[row1[0]][19] += row1[20]
                 dd[row1[0]][20] += row1[21]
     reslt2 = []
-    dict_g = {'CI': 'AA0', '^[\d_\-]*PRODUCTION.*$': 'AA01', '^[\d_\-]*MASTER.*$': 'AA02', '^[\d_\-]*MAIN.*$': 'AA02',
+    dict_g = {'CI': 'AA0', '^[\d_\-]*PRODUCTION.*$': 'AA01', '^[\d_\-]*DEVELOP.*$': 'AA02',
+              '^[\d_\-]*MAIN.*$': 'AA03',
               '^[\d_\-]*ARM.*$': 'AA05', 'LANG': 'AA06', 'CENTOS': 'AA07', 'NEXT': 'AA08', 'LCG': 'AA1', 'BRAN': 'AA2',
               'CONSTR': 'Z1', 'LEGACY': 'B1', 'ANALYSIS': 'B2', 'UPGRADE': 'B3', 'BUG': 'B4', 'GAUDI': 'C0',
-              'DEV': 'C1', 'EXP': 'C2', 'DEV': 'C1', 'OTHER': 'C9', 'TEST': 'Z7', 'TRAIN': 'Z8', 'DOXYGEN': 'Z9'}
+              'EXP': 'C2', 'OTHER': 'C9', 'TEST': 'Z7', 'TRAIN': 'Z8', 'DOXYGEN': 'Z9'}
     for k, v in dd.items():
         ar1 = []
         ar1.append(k)
