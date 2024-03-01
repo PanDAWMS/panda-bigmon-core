@@ -8,6 +8,7 @@ from datetime import datetime
 
 from django.db import transaction, DatabaseError
 from core.art.modelsART import ARTSubResult, ARTTests
+import core.art.constants as const_art
 from core.filebrowser.utils import get_job_log_file_path
 
 from django.conf import settings
@@ -75,16 +76,15 @@ def save_subresults(subResultsDict):
 
     return True
 
-def update_test_status(pandaid, test_subresults):
+def update_test_status(test_subresults):
     """
     A function to update test status in ART_TESTS table depending on sub-step results
-    :param pandaid: int
-    :param test_subresults: dict
+    :param test_subresults: dict in format {'pandaid': pandaid, 'result': subresults}
     :return: True or False
     """
-
+    pandaid = test_subresults['pandaid']
     # get final status to update test record
-    status_index = analize_test_subresults(test_subresults)
+    status_index, _ = get_final_result(test_subresults, output='index')
 
     with transaction.atomic():
         _logger.info(f"Updating status of ART test {pandaid} to {status_index}")
@@ -154,15 +154,18 @@ def clear_queue(cur):
     return True
 
 
-def get_final_result(job):
+def get_final_result(job, output='str'):
     """ A function to determine the real ART test result depending on sub-step results, exitcode and PanDA job state
     0 - succeeded - green
     1 - finished - yellow
     2 - active - blue
     3 - failed - red
+    :param job: dict - should contain 'jobstatus' and 'result' keys
+    :param output: str - 'str' or 'index'
+    :return: final_result: str or int
+    :return: extra_params_dict: dict -
     """
-    finalResultDict = {0: 'succeeded', 1: 'finished', 2: 'active', 3: 'failed'}
-    extraParamsDict = {
+    extra_params_dict = {
         'testexitcode': None,
         'subresults': None,
         'testdirectory': None,
@@ -170,59 +173,71 @@ def get_final_result(job):
         'reportmail': None,
         'description': None,
         'linktoplots': None,
-        }
-    finalresult = ''
-    if job['jobstatus'] == 'finished':
-        finalresult = 0
-    elif job['jobstatus'] in ('failed', 'cancelled'):
-        finalresult = 3
+    }
+
+    # set final result preliminary based on jobstatus
+    if 'jobstatus' in job and job['jobstatus'] == 'finished':
+        final_result = 0
+    elif 'jobstatus' in job and job['jobstatus'] in ('failed', 'cancelled'):
+        final_result = 3
+    elif 'jobstatus' in job:
+        final_result = 2
     else:
-        finalresult = 2
+        final_result = 3
+
+    # load result subdict if it is str
+    if 'result' in job and isinstance(job['result'], str):
+        try:
+            job['result'] = json.loads(job['result'])
+        except:
+            job['result'] = None
+
+    # extract extra params from result subdict
     try:
-        job['result'] = json.loads(job['result'])
-    except:
-        job['result'] = None
-    try:
-        extraParamsDict['testexitcode'] = job['result']['exit_code'] if 'exit_code' in job['result'] else None
-    except:
-        pass
-    try:
-        extraParamsDict['subresults'] = job['result']['result'] if 'result' in job['result'] else None
-    except:
-        pass
-    try:
-        extraParamsDict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else None
+        extra_params_dict['testexitcode'] = job['result']['exit_code'] if 'exit_code' in job['result'] else None
     except:
         pass
     try:
-        extraParamsDict['reportjira'] = job['result']['report-to']['jira'] if 'report-to' in job['result'] and 'jira' in job['result']['report-to'] else None
+        extra_params_dict['subresults'] = job['result']['result'] if 'result' in job['result'] else None
     except:
         pass
     try:
-        extraParamsDict['reportmail'] = job['result']['report-to']['mail'] if 'report-to' in job['result'] and 'mail' in job['result']['report-to'] else None
+        extra_params_dict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else None
     except:
         pass
     try:
-        extraParamsDict['description'] = job['result']['description'] if 'description' in job['result'] else None
+        extra_params_dict['reportjira'] = job['result']['report-to']['jira'] if 'report-to' in job['result'] and 'jira' in job['result']['report-to'] else None
     except:
         pass
     try:
-        extraParamsDict['linktoplots'] = job['result']['url'] if 'url' in job['result'] else None
+        extra_params_dict['reportmail'] = job['result']['report-to']['mail'] if 'report-to' in job['result'] and 'mail' in job['result']['report-to'] else None
+    except:
+        pass
+    try:
+        extra_params_dict['description'] = job['result']['description'] if 'description' in job['result'] else None
+    except:
+        pass
+    try:
+        extra_params_dict['linktoplots'] = job['result']['url'] if 'url' in job['result'] else None
     except:
         pass
 
-    if job['result'] is not None:
+    # analyze result subdict to get final result
+    if 'result' in job['result'] and job['result'] is not None:
         if 'result' in job['result'] and len(job['result']['result']) > 0:
-            finalresult = analize_test_subresults(job['result']['result'])
-            # for r in job['result']['result']:
-            #     if int(r['result']) > 0:
-            #         finalresult = 'failed'
-        elif 'exit_code' in job['result'] and job['result']['exit_code'] > 0:
-            finalresult = 3
+            final_result = analize_test_subresults(job['result']['result'])
+        elif 'exit_code' in job['result']:
+            if job['result']['exit_code'] == 0:
+                final_result = 0
+            else:
+                final_result = 3
 
-    finalresult = finalResultDict[finalresult]
+    # format output
+    if output == 'str':
+        final_result_dict = {v: k for k, v in const_art.TEST_STATUS_INDEX.items()}
+        final_result = final_result_dict[final_result]
 
-    return finalresult, extraParamsDict
+    return final_result, extra_params_dict
 
 
 def analize_test_subresults(subresults):

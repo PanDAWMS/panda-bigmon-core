@@ -21,7 +21,8 @@ from core.utils import is_json_request, complete_request, removeParam
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
-from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
+from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, \
+    get_final_result, update_test_status
 from core.reports.models import ReportEmails
 from core.libs.DateEncoder import DateEncoder
 from core.libs.datetimestrings import parse_datetime
@@ -1500,7 +1501,7 @@ def upload_test_result(request):
     if 'result' in art_job and len(art_job['result']) > 0:
         data = {'message': "Results for this test is already exist"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
-        return JsonResponse(data, status=400)
+        # return JsonResponse(data, status=400)
 
     # check provided data is valid
     _logger.debug(f"Got the following result for pandaid={pandaid}:\n{art_report}")
@@ -1514,10 +1515,12 @@ def upload_test_result(request):
         return JsonResponse(data, status=400)
 
     # insert subresults to special table
-    sub_results_dict = {
-        pandaid: json.dumps(art_report)
-    }
-    is_saved = save_subresults(sub_results_dict)
+    is_saved = save_subresults({pandaid: json.dumps(art_report)})
+
+    # update status of test accordingly
+    is_updated = update_test_status({'pandaid': pandaid, 'result': json.dumps(art_report)})
+    if not is_updated:
+        _logger.warning(f"Failed to update test {pandaid} status, will need to do it loading tarball afterwords")
 
     if is_saved:
         data = {'message': 'Test result has been successfully saved'}
