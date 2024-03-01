@@ -109,7 +109,7 @@ def artOverview(request):
     valid, response = initRequest(request)
     if not valid:
         return HttpResponse(status=401)
-    
+
     # getting aggregation order
     if not 'view' in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
@@ -145,7 +145,7 @@ def artOverview(request):
 
     # process URL params to query params
     query = setupView(request, 'job')
-    
+
     # quering data from dedicated SQL function
     query_raw = """
         SELECT package, branch, ntag, nightly_tag, status, result, pandaid, testname, attemptmark
@@ -296,7 +296,7 @@ def artTasks(request):
     tasks_raw = cur.fetchall()
     cur.close()
     _logger.info("Got ART tests: {}".format(time.time() - request.session['req_init_time']))
-    art_job_names = ['package', 'branch', 'ntag', 'nightly_tag', 'pandaid', 'testname', 
+    art_job_names = ['package', 'branch', 'ntag', 'nightly_tag', 'pandaid', 'testname',
                      'task_id', 'jobstatus', 'result', 'attemptmark']
     jobs = [dict(zip(art_job_names, row)) for row in tasks_raw]
 
@@ -304,7 +304,7 @@ def artTasks(request):
 
     # tasks = ARTTasks.objects.filter(**query).values('package','branch','task_id', 'ntag', 'nfilesfinished', 'nfilesfailed')
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
-    
+
     art_jobs_dict = {}
     arttasksdict = {}
     jeditaskids = {}
