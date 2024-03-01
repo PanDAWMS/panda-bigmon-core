@@ -299,6 +299,14 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
+        'logfile-art': {
+            'level': LOG_LEVEL,
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.art",
+            'maxBytes': LOG_SIZE,
+            'backupCount': 2,
+            'formatter': 'full',
+        },
         'logfile-filebrowser': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.RotatingFileHandler',
@@ -369,6 +377,10 @@ LOGGING = {
         },
         'bigpandamon-filebrowser': {
             'handlers': ['logfile-filebrowser', 'logfile-error', 'logfile-info', 'console'],
+            'level': LOG_LEVEL,
+        },
+        'bigpandamon-art': {
+            'handlers': ['logfile-art', 'logfile-error'],
             'level': LOG_LEVEL,
         },
         'panda.client': {
