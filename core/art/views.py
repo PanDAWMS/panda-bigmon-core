@@ -37,7 +37,7 @@ from core.art.utils import setupView, get_test_diff, remove_duplicates, get_resu
 from django.conf import settings
 import core.art.constants as art_const
 
-_logger = logging.getLogger('bigpandamon')
+_logger = logging.getLogger('bigpandamon-art')
 
 @register.filter(takes_context=True)
 def remove_dot(value):
