@@ -1218,6 +1218,10 @@ def loadSubResults(request):
             # insert subresults to special table
             save_subresults(subResultsDict)
 
+            # updating test status
+            for pandaid, subresults in subResultsDict.items():
+                update_test_status({'pandaid':pandaid, 'result':subresults})
+
             # deleting processed jobs from queue
             delete_queuedjobs(cur, lock_time)
         else:

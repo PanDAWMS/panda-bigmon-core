@@ -186,11 +186,14 @@ def get_final_result(job, output='str'):
         final_result = 3
 
     # load result subdict if it is str
-    if 'result' in job and isinstance(job['result'], str):
-        try:
-            job['result'] = json.loads(job['result'])
-        except:
-            job['result'] = None
+    if 'result' in job:
+        if isinstance(job['result'], str):
+            try:
+                job['result'] = json.loads(job['result'])
+            except:
+                job['result'] = None
+    else:
+        job['result'] = None
 
     # extract extra params from result subdict
     try:
