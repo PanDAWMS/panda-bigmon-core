@@ -75,6 +75,26 @@ def save_subresults(subResultsDict):
 
     return True
 
+def update_test_status(pandaid, test_subresults):
+    """
+    A function to update test status in ART_TESTS table depending on sub-step results
+    :param pandaid: int
+    :param test_subresults: dict
+    :return: True or False
+    """
+
+    # get final status to update test record
+    status_index = analize_test_subresults(test_subresults)
+
+    with transaction.atomic():
+        _logger.info(f"Updating status of ART test {pandaid} to {status_index}")
+        try:
+            ARTTests.objects.filter(pandaid=pandaid).update(status=status_index)
+        except DatabaseError as e:
+            _logger_error.error(e)
+            return False
+
+    return True
 
 def lock_nqueuedjobs(cur, nrows):
     """
