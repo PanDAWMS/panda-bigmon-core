@@ -17,6 +17,7 @@ from django.db import connections
 from django.utils import timezone
 from django.db import models
 from django.conf import settings
+# TODO distutils will be decommission
 from distutils.version import LooseVersion
 
 models.options.DEFAULT_NAMES += ('allColumns', 'orderColumns', \

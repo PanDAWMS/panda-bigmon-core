@@ -32,6 +32,13 @@ N_DAYS_DEFAULT = MappingProxyType({
     'other':  6
 })
 
+TEST_STATUS_INDEX = MappingProxyType({
+    'active': 0,
+    'failed': 1,
+    'finished': 2,
+    'succeeded': 3,
+})
+
 
 # tuples
 TEST_STATUS = (

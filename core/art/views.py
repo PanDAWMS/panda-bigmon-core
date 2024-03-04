@@ -21,7 +21,8 @@ from core.utils import is_json_request, complete_request, removeParam
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue
-from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, get_final_result
+from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, \
+    get_final_result, update_test_status
 from core.reports.models import ReportEmails
 from core.libs.DateEncoder import DateEncoder
 from core.libs.datetimestrings import parse_datetime
@@ -30,6 +31,7 @@ from core.libs.error import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import convert_sec, convert_bytes, round_to_n_digits
 from core.pandajob.models import CombinedWaitActDefArch4
+from core.common.models import Filestable4
 
 from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test, concat_branch, \
     find_last_successful_test, build_gitlab_link
@@ -37,7 +39,7 @@ from core.art.utils import setupView, get_test_diff, remove_duplicates, get_resu
 from django.conf import settings
 import core.art.constants as art_const
 
-_logger = logging.getLogger('bigpandamon')
+_logger = logging.getLogger('bigpandamon-art')
 
 @register.filter(takes_context=True)
 def remove_dot(value):
@@ -1216,6 +1218,10 @@ def loadSubResults(request):
             # insert subresults to special table
             save_subresults(subResultsDict)
 
+            # updating test status
+            for pandaid, subresults in subResultsDict.items():
+                update_test_status({'pandaid':pandaid, 'result':subresults})
+
             # deleting processed jobs from queue
             delete_queuedjobs(cur, lock_time)
         else:
@@ -1260,6 +1266,10 @@ def registerARTTest(request):
     nightly_tag = None
     nightly_tag_display = None
     extra_info = {}
+    computingsite = None
+    attemptnr = None
+    tarindex = None
+    inputfileid = None
 
     # log all the req params for debug
     _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
@@ -1335,10 +1345,9 @@ def registerARTTest(request):
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
-    ### Checking if provided pandaid exists in panda db
-    query={}
-    query['pandaid'] = pandaid
-    values = 'pandaid', 'jeditaskid', 'username'
+    # Checking if provided pandaid exists in panda db
+    query = {'pandaid': pandaid}
+    values = ('pandaid', 'jeditaskid', 'username', 'computingsite')
     jobs = []
     jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
     try:
@@ -1348,16 +1357,35 @@ def registerARTTest(request):
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
-    ### Checking whether provided pandaid is art job
+    # Checking whether provided pandaid is art job
     if 'username' in job and job['username'] != 'artprod':
         data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
-    ### Preparing params to register art job
-
+    # Preparing params to register art job
+    if 'computingsite' in job:
+        computingsite = job['computingsite']
     if 'jeditaskid' in job:
         jeditaskid = job['jeditaskid']
+
+        # get files -> extract log tarball name, attempts
+        files = []
+        fquery = {'jeditaskid': jeditaskid, 'pandaid': pandaid, 'type__in': ('pseudo_input', 'input', 'log')}
+        files.extend(Filestable4.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
+        # count of attempts starts from 0, for readability change it to start from 1
+        if len(files) > 0:
+            input_files = [f for f in files if f['type'] in ('pseudo_input', 'input')]
+            if len(input_files) > 0:
+                attemptnr = 1 + max([f['attemptnr'] for f in input_files])
+                inputfileid = max([f['fileid'] for f in input_files])
+            log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
+            if len(log_lfn) > 0:
+                try:
+                    tarindex = int(re.search('.([0-9]{6}).log.', log_lfn[0]).group(1))
+                except:
+                    _logger.info('Failed to extract tarindex from log lfn')
+                    tarindex = None
 
     # extract datetime from str nightly time
     nightly_tag_date = None
@@ -1366,23 +1394,9 @@ def registerARTTest(request):
     except:
         _logger.exception('Failed to parse date from nightly_tag')
 
-    ### table columns:
-    # pandaid
-    # testname
-    # nightly_release_short
-    # platform
-    # project
-    # package
-    # nightly_tag
-    # jeditaskid
-    # extrainfo
-    # created
-    # nightly_tag_date
-
-    ### Check whether the pandaid has been registered already
+    # Check whether the pandaid has been registered already
     if ARTTests.objects.filter(pandaid=pandaid).count() == 0:
-
-        ## INSERT ROW
+        # INSERT ROW
         try:
             insertRow = ARTTests.objects.create(
                 pandaid=pandaid,
@@ -1396,7 +1410,13 @@ def registerARTTest(request):
                 package=package,
                 extrainfo=json.dumps(extra_info),
                 created=datetime.utcnow(),
-                nightly_tag_date=nightly_tag_date
+                nightly_tag_date=nightly_tag_date,
+                attemptnr=attemptnr,
+                maxattempt=2,
+                inputfileid=inputfileid,
+                tarindex=tarindex,
+                computingsite=computingsite,
+                status=art_const.TEST_STATUS_INDEX['active'],
             )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
@@ -1471,7 +1491,7 @@ def upload_test_result(request):
     if 'result' in art_job and len(art_job['result']) > 0:
         data = {'message': "Results for this test is already exist"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
-        return JsonResponse(data, status=400)
+        # return JsonResponse(data, status=400)
 
     # check provided data is valid
     _logger.debug(f"Got the following result for pandaid={pandaid}:\n{art_report}")
@@ -1485,10 +1505,12 @@ def upload_test_result(request):
         return JsonResponse(data, status=400)
 
     # insert subresults to special table
-    sub_results_dict = {
-        pandaid: json.dumps(art_report)
-    }
-    is_saved = save_subresults(sub_results_dict)
+    is_saved = save_subresults({pandaid: json.dumps(art_report)})
+
+    # update status of test accordingly
+    is_updated = update_test_status({'pandaid': pandaid, 'result': json.dumps(art_report)})
+    if not is_updated:
+        _logger.warning(f"Failed to update test {pandaid} status, will need to do it loading tarball afterwords")
 
     if is_saved:
         data = {'message': 'Test result has been successfully saved'}

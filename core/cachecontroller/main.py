@@ -7,6 +7,7 @@ import schedule
 import time
 import threading
 import logging.config
+from logging.handlers import RotatingFileHandler
 
 from schedinstances.TextFileURLs import TextFileURLs
 from schedinstances.ArtPackages import ArtPackages, ArtLoadResults
@@ -30,7 +31,12 @@ except ImportError:
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 
-logging.basicConfig(level=logging.DEBUG, filename=LOG_PATH, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG,
+    # filename=LOG_PATH,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[RotatingFileHandler(LOG_PATH, maxBytes=100000000, backupCount=10)],
+)
 
 mainMenuURLs = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
 infrequentURLS = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)

@@ -543,17 +543,20 @@ def get_job_log_file_path(pandaid, filename=''):
         files, errtxt, dirprefix, tarball_path = get_s3_file(pandaid, computingsite)
         tardir = ''
     elif log_provider == 'rucio':
-        scope, lfn, guid, _, _ = get_job_log_file_properties(pandaid)
+        scope, lfn, guid, _, fsize_mb = get_job_log_file_properties(pandaid)
         if guid and lfn and scope:
             # check if files are already available in common CEPH storage
             tarball_path = get_fullpath_filebrowser_directory() + '/' + guid.lower() + '/' + scope + '/'
             files, err, tardir = list_file_directory(tarball_path, 100)
             _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
             if len(files) == 0 and len(err) > 0:
-                # download tarball
-                _logger.debug('log tarball has not been downloaded, so downloading it now')
-                files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
-                _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
+                # check size of tarball and download it if it less than 1GB - protection against huge load
+                if fsize_mb and fsize_mb > 1024:
+                    _logger.error('Size of log tarball too big to download')
+                else:
+                    _logger.debug('log tarball has not been downloaded, so downloading it now')
+                    files, errtxt, dirprefix, tardir = get_rucio_file(scope, lfn, guid)
+                    _logger.debug('Got files for dir: {} and tardir: {}. Error message: {}'.format(dirprefix, tardir, errtxt))
 
     if type(files) is list and len(files) > 0 and len(filename) > 0:
         for f in files:

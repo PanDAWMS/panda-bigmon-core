@@ -17,7 +17,7 @@ from core.libs.job import get_job_list
 
 import core.art.constants as art_const
 artdateformat = '%Y-%m-%d'
-_logger = logging.getLogger('bigpandamon')
+_logger = logging.getLogger('bigpandamon-art')
 
 
 def setupView(request, querytype='task'):
