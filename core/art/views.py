@@ -1412,13 +1412,13 @@ def registerARTTest(request):
                 package=package,
                 extrainfo=json.dumps(extra_info),
                 created=datetime.utcnow(),
-                nightly_tag_date=nightly_tag_date
-                # attemptnr=attemptnr,
-                # maxattempt=2,
-                # inputfileid=inputfileid,
-                # tarindex=tarindex,
-                # computingsite=computingsite,
-                # status=art_const.TEST_STATUS_INDEX['active'],
+                nightly_tag_date=nightly_tag_date,
+                attemptnr=attemptnr,
+                maxattempt=2,
+                inputfileid=inputfileid,
+                tarindex=tarindex,
+                computingsite=computingsite,
+                status=art_const.TEST_STATUS_INDEX['active'],
             )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
