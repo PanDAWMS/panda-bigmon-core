@@ -1412,13 +1412,13 @@ def registerARTTest(request):
                 package=package,
                 extrainfo=json.dumps(extra_info),
                 created=datetime.utcnow(),
-                nightly_tag_date=nightly_tag_date,
-                attemptnr=attemptnr,
-                maxattempt=2,
-                inputfileid=inputfileid,
-                tarindex=tarindex,
-                computingsite=computingsite,
-                status=art_const.TEST_STATUS_INDEX['active'],
+                nightly_tag_date=nightly_tag_date
+                # attemptnr=attemptnr,
+                # maxattempt=2,
+                # inputfileid=inputfileid,
+                # tarindex=tarindex,
+                # computingsite=computingsite,
+                # status=art_const.TEST_STATUS_INDEX['active'],
             )
             insertRow.save()
             data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
@@ -1426,23 +1426,6 @@ def registerARTTest(request):
         except Exception as e:
             data = {'exit_code': 0, 'message': "Failed to register test, can not save the row to DB"}
             _logger.error('{}\n{}\n{}'.format(data['message'], str(e), str(request.session['requestParams'])))
-            insertRow = ARTTests.objects.create(
-                pandaid=pandaid,
-                jeditaskid=jeditaskid,
-                testname=testname,
-                nightly_release_short=nightly_release_short,
-                nightly_tag=nightly_tag,
-                nightly_tag_display=nightly_tag_display,
-                project=project,
-                platform=platform,
-                package=package,
-                extrainfo=json.dumps(extra_info),
-                created=datetime.utcnow(),
-                nightly_tag_date=nightly_tag_date
-            )
-            insertRow.save()
-            data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
-            _logger.info('{}\n{}'.format(data['message'], str(request.session['requestParams'])))
     else:
         data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
