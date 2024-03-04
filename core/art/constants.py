@@ -33,10 +33,10 @@ N_DAYS_DEFAULT = MappingProxyType({
 })
 
 TEST_STATUS_INDEX = MappingProxyType({
-    'active': 0,
-    'failed': 1,
-    'finished': 2,
-    'succeeded': 3,
+    'failed': 3,
+    'active': 2,
+    'finished': 1,
+    'succeeded': 0,
 })
 
 
