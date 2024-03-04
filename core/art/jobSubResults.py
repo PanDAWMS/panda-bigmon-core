@@ -13,8 +13,7 @@ from core.filebrowser.utils import get_job_log_file_path
 
 from django.conf import settings
 
-_logger_error = logging.getLogger('bigpandamon-error')
-_logger = logging.getLogger('bigpandamon')
+_logger = logging.getLogger('bigpandamon-art')
 
 
 def subresults_getter(pandaid):
@@ -71,7 +70,7 @@ def save_subresults(subResultsDict):
                 )
                 row.save()
             except DatabaseError as e:
-                _logger_error.error(e)
+                _logger.error(e)
                 return False
 
     return True
@@ -91,7 +90,7 @@ def update_test_status(test_subresults):
         try:
             ARTTests.objects.filter(pandaid=pandaid).update(status=status_index)
         except DatabaseError as e:
-            _logger_error.error(e)
+            _logger.error(e)
             return False
 
     return True
@@ -111,7 +110,7 @@ def lock_nqueuedjobs(cur, nrows):
     try:
         cur.execute(lquery)
     except DatabaseError as e:
-        _logger_error.error(e)
+        _logger.error(e)
         raise
 
     return lock_time
@@ -130,7 +129,7 @@ def delete_queuedjobs(cur, lock_time):
     try:
         cur.execute(dquery)
     except DatabaseError as e:
-        _logger_error.error(e)
+        _logger.error(e)
         raise
 
     return True
@@ -148,7 +147,7 @@ def clear_queue(cur):
     try:
         cur.execute(cquery)
     except DatabaseError as e:
-        _logger_error.error(e)
+        _logger.error(e)
         raise
 
     return True

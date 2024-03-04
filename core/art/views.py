@@ -39,7 +39,7 @@ from core.art.utils import setupView, get_test_diff, remove_duplicates, get_resu
 from django.conf import settings
 import core.art.constants as art_const
 
-_logger = logging.getLogger('bigpandamon')
+_logger = logging.getLogger('bigpandamon-art')
 
 @register.filter(takes_context=True)
 def remove_dot(value):
@@ -1394,23 +1394,9 @@ def registerARTTest(request):
     except:
         _logger.exception('Failed to parse date from nightly_tag')
 
-    ### table columns:
-    # pandaid
-    # testname
-    # nightly_release_short
-    # platform
-    # project
-    # package
-    # nightly_tag
-    # jeditaskid
-    # extrainfo
-    # created
-    # nightly_tag_date
-
-    ### Check whether the pandaid has been registered already
+    # Check whether the pandaid has been registered already
     if ARTTests.objects.filter(pandaid=pandaid).count() == 0:
-
-        ## INSERT ROW
+        # INSERT ROW
         try:
             insertRow = ARTTests.objects.create(
                 pandaid=pandaid,
