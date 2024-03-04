@@ -1,3 +1,4 @@
+import os
 import core
 try:
     from core.settings.local import DEBUG
