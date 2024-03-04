@@ -225,8 +225,8 @@ def get_final_result(job, output='str'):
         pass
 
     # analyze result subdict to get final result
-    if 'result' in job['result'] and job['result'] is not None:
-        if 'result' in job['result'] and len(job['result']['result']) > 0:
+    if 'result' in job and job['result'] and job['result'] is not None:
+        if 'result' in job and job['result'] and len(job['result']['result']) > 0:
             final_result = analize_test_subresults(job['result']['result'])
         elif 'exit_code' in job['result']:
             if job['result']['exit_code'] == 0:
