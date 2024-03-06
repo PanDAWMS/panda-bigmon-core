@@ -13,10 +13,7 @@ class ArtPackages(BaseURLTasksProvider):
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)
-        urlsQueue.put((self.BASIC_PRIORITY, '/art/updatejoblist/?ntag_to={}&ntag_from={}'.format(
-            datetime.now().strftime('%Y-%m-%d'),
-            (datetime.now() - timedelta(days=self.N_DAYS_WINDOW)).strftime('%Y-%m-%d')
-        )))
+        urlsQueue.put((self.BASIC_PRIORITY, f"/art/updatejoblist/?days={self.N_DAYS_WINDOW}"))
         return urlsQueue
 
 
