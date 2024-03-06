@@ -1,6 +1,3 @@
-/workingGroups/
-/dash/analysis/?mode=task
-/dash/production/?mode=task
 /tasks/?display_limit=300
 /tasks/?tasktype=analy&display_limit=300
 /tasks/?tasktype=prod&display_limit=300
@@ -19,6 +16,7 @@
 /errors/?jobtype=analysis&sortby=count&display_limit=20
 /errors/?jobtype=production&sortby=count&display_limit=20
 /errors/?sortby=count&prodsourcelabel=rc_test2
+/errorsscat/
 /users/?sortby=date&view=database
 /users/?sortby=date&view=dynamic
 /sites/
@@ -30,9 +28,8 @@
 /runningprodtasks/?preset=DPD
 /runningprodtasks/?preset=DATA
 /runningprodrequests/
-/bigpandamonitor/
 /art/
-/errorsscat/
+/art/filltable/
 /artmonitview/
 /dash/region/
 /dash/region/?jobtype=analy&splitby=jobtype

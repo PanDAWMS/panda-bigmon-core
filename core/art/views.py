@@ -12,9 +12,10 @@ from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
 from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
-from django.db.models import Value as V, F
+from django.db.models import Value as V, F, Max
 
 from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, complete_request, removeParam
@@ -30,11 +31,11 @@ from core.libs.job import get_job_list, get_job_walltime
 from core.libs.error import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import convert_sec, convert_bytes, round_to_n_digits
-from core.pandajob.models import CombinedWaitActDefArch4
-from core.common.models import Filestable4
+from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
+from core.common.models import Filestable4, FilestableArch
 
 from core.art.utils import setupView, get_test_diff, remove_duplicates, get_result_for_multijob_test, concat_branch, \
-    find_last_successful_test, build_gitlab_link
+    find_last_successful_test, build_gitlab_link, clean_tests_list
 
 from django.conf import settings
 import core.art.constants as art_const
@@ -121,6 +122,13 @@ def artOverview(request):
     else:
         return HttpResponse(status=401)
 
+    if 'version' in request.session['requestParams'] and request.session['requestParams']['version'] == 'old':
+        version = 'old'
+    elif 'version' in request.session['requestParams'] and request.session['requestParams']['version'] == 'new':
+        version = 'new'
+    else:
+        version = 'old'
+
     # Here we try to get cached data
     data = getCacheEntry(request, "artOverview")
     # data = None
@@ -145,24 +153,37 @@ def artOverview(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    # process URL params to query params
-    query = setupView(request, 'job')
-    
-    # quering data from dedicated SQL function
-    query_raw = """
-        SELECT package, branch, ntag, nightly_tag, status, result, pandaid, testname, attemptmark
-        FROM table({}.ARTTESTS_LIGHT('{}','{}','{}')) 
-        """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition'])
-    cur = connection.cursor()
-    cur.execute(query_raw)
-    tasks_raw = cur.fetchall()
-    cur.close()
-    artJobs = ['package', 'branch', 'ntag', 'nightly_tag', 'jobstatus', 'result', 'pandaid', 'testname', 'attemptmark']
-    jobs = [dict(zip(artJobs, row)) for row in tasks_raw]
+    final_result_dict = {v: k for k, v in art_const.TEST_STATUS_INDEX.items()}
+
+    if version == 'old':
+        # process URL params to query params
+        query = setupView(request, 'job')
+
+        # quering data from dedicated SQL function
+        query_raw = """
+            SELECT package, branch, ntag, nightly_tag, status, result, pandaid, testname, attemptmark
+            FROM table({}.ARTTESTS_LIGHT('{}','{}','{}')) 
+            """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition'])
+        cur = connection.cursor()
+        cur.execute(query_raw)
+        tasks_raw = cur.fetchall()
+        cur.close()
+        artJobs = ['package', 'branch', 'ntag', 'nightly_tag', 'jobstatus', 'result', 'pandaid', 'testname', 'attemptmark']
+        jobs = [dict(zip(artJobs, row)) for row in tasks_raw]
+        jobs = remove_duplicates(jobs)
+    else:
+        tests = []
+        # process URL params to query params
+        query = setupView(request, 'test')
+        # getting tests
+        values = ('package', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
+                  'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date')
+        tests.extend(ARTTests.objects.filter(**query).values(*values))
+        # filter out previous attempts, add branch etc
+        jobs = clean_tests_list(tests)
+
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
     _logger.info("Got ART tests: {}".format(time.time() - request.session['req_init_time']))
-
-    jobs = remove_duplicates(jobs)
 
     # temporary dict for agg by both package and branch.
     # This is needed for multi job test cases when we need to count them as one, choosing the worst result across them.
@@ -189,7 +210,10 @@ def artOverview(request):
             if j['testname'] not in art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']]:
                 art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']] = []
 
-            finalresult, extraparams = get_final_result(j)
+            if 'status' in j and isinstance(j['status'], int):
+                finalresult = final_result_dict[j['status']]
+            else:
+                finalresult, _ = get_final_result(j)
             art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']].append(finalresult)
 
     for ao0, ao0_dict in art_jobs_dict.items():
@@ -1678,3 +1702,88 @@ def sendDevArtReport(request):
 
     return HttpResponse(json.dumps({'isSent': isSent}), content_type='application/json')
 
+
+@never_cache
+def fill_table(request):
+    """
+    Fill new columns in art_tests
+    :param request:
+    :return:
+    """
+    start = datetime.now()
+    # get last ntag with empty new fields
+    ntag = None
+    ntags = ARTTests.objects.filter(computingsite__isnull=True,created__lt=(datetime.now() - timedelta(days=2))).aggregate(Max('nightly_tag'))
+    if len(ntags) > 0:
+        ntag = ntags['nightly_tag__max']
+
+    tests_to_update = []
+    if ntag is not None:
+        tests_to_update.extend(ARTTests.objects.filter(nightly_tag=ntag).values('pandaid','nightly_tag', 'artsubresult__subresult' ))
+
+    print(f"Got {len(tests_to_update)} tests to update for ntag={ntag}")
+    i = 0
+    for t in tests_to_update:
+        # Preparing params to fill art_tests
+        i = i+1
+        print(f"/n{i}/{len(tests_to_update)}")
+        computingsite = None
+        attemptnr = None
+        tarindex = None
+        inputfileid = None
+        pandaid = t['pandaid']
+        query = {'pandaid': pandaid}
+        values = ('pandaid', 'jeditaskid', 'jobstatus', 'computingsite')
+        jobs = []
+        jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
+        if len(jobs) == 0:
+            jobs.extend(Jobsarchived.objects.filter(**query).values(*values))
+        job = jobs[0]
+        job['result'] = t['artsubresult__subresult']
+        if 'computingsite' in job:
+            computingsite = job['computingsite']
+        if 'jeditaskid' in job:
+            jeditaskid = job['jeditaskid']
+
+            # get files -> extract log tarball name, attempts
+            files = []
+            fquery = {'jeditaskid': jeditaskid, 'pandaid': pandaid, 'type__in': ('pseudo_input', 'input', 'log')}
+            files.extend(Filestable4.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
+            if len(files) == 0:
+                files.extend(FilestableArch.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
+            # count of attempts starts from 0, for readability change it to start from 1
+            if len(files) > 0:
+                input_files = [f for f in files if f['type'] in ('pseudo_input', 'input')]
+                if len(input_files) > 0:
+                    attemptnr = 1 + max([f['attemptnr'] for f in input_files])
+                    inputfileid = max([f['fileid'] for f in input_files])
+                log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
+                if len(log_lfn) > 0:
+                    try:
+                        tarindex = int(re.search('.([0-9]{6}).log.', log_lfn[0]).group(1))
+                    except:
+                        print('Failed to extract tarindex from log lfn')
+                        tarindex = None
+
+        status_index, _ = get_final_result(job, output='index')
+        print(f"""Got job-related metadata for test {pandaid}: computingsite={computingsite}, tarindex={tarindex}, inputfileid={inputfileid}, attemptnr={attemptnr}, status={status_index}""")
+
+        try:
+            ARTTests.objects.filter(pandaid=pandaid).update(
+                status=status_index,
+                computingsite=computingsite,
+                attemptnr=attemptnr,
+                tarindex=tarindex,
+                inputfileid=inputfileid,
+                maxattempt=2
+            )
+        except Exception as ex:
+            print(f"""Failed to update test {pandaid} with : 
+                status={status_index}, 
+                computingsite={computingsite}, 
+                tarindex={tarindex}, 
+                inputfileid={inputfileid}, 
+                attemptnr={attemptnr}\n{str(ex)}""")
+            return JsonResponse({'message': f"Failed to update info for test {pandaid}"}, status=500)
+
+    return JsonResponse({'message': f"Updated {len(tests_to_update)} tests for ntag={ntag}, it took {(datetime.now()-start).total_seconds()}s"}, status=200)

@@ -22,4 +22,6 @@ urlpatterns = [
     re_path(r'^art/sendartreport/$', art_views.sendArtReport),
     re_path(r'^art/senddevartreport/$', art_views.sendDevArtReport),
 
+    # temporary
+    re_path(r'^art/filltable/$', art_views.fill_table),
     ]
