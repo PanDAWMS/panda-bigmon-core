@@ -1163,20 +1163,26 @@ def updateARTJobList(request):
     if not valid:
         return response
 
-    query = setupView(request, 'job')
+    if 'days' in request.session['requestParams'] and request.session['requestParams']['days']:
+        n_days = request.session['requestParams']['days']
+    else:
+        n_days = 7
+
     starttime = datetime.now()
 
     # Adding to ART_RESULTS_QUEUE jobs with not loaded result json yet
     cur = connection.cursor()
-    cur.execute("""INSERT INTO {0}.art_results_queue
-                    (pandaid, IS_LOCKED, LOCK_TIME)
-                    SELECT pandaid, 0, NULL  FROM table({0}.ARTTESTS_LIGHT('{1}','{2}','{3}'))
-                    WHERE pandaid is not NULL
-                          and attemptmark = 0  
-                          and result is NULL
-                          and status in ('finished', 'failed')
-                          and pandaid not in (select pandaid from {0}.art_results_queue)
-                """.format(settings.DB_SCHEMA, query['ntag_from'], query['ntag_to'], query['strcondition']))
+    cur.execute(f"""
+    insert into {settings.DB_SCHEMA}.art_results_queue
+    (pandaid, is_locked, lock_time)
+    select at.pandaid, 0, null                     
+    from {settings.DB_SCHEMA}.art_tests at, {settings.DB_SCHEMA}.combined_wait_act_def_arch4 j 
+    where at.pandaid = j.pandaid
+        and at.nightly_tag_date > sysdate - {n_days} 
+        and at.pandaid not in (select pandaid from {settings.DB_SCHEMA}.art_subresult ar)
+        and j.jobstatus in ('finished', 'failed', 'cancelled', 'closed')
+        and at.pandaid not in (select pandaid from {settings.DB_SCHEMA}.art_results_queue)
+    """)
     cur.close()
 
     data = {
