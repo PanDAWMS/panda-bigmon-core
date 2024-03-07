@@ -1,4 +1,5 @@
-import getopt, subprocess, re, cx_Oracle, requests, json, psutil
+import getopt, subprocess, re, oracledb, requests, json, psutil
+oracledb.init_oracle_client()
 
 import sys
 from datetime import datetime
@@ -60,7 +61,7 @@ def make_db_connection(cfg):
 
     if db_user and db_passwd and db_description:
         try:
-            connection = cx_Oracle.connect(db_user, db_passwd, db_description)
+            connection = oracledb.connect(db_user, db_passwd, db_description)
             _logger.debug('DB connection established. "{0}" "{1}"'.format(db_user, db_description))
             return connection
         except Exception as ex:

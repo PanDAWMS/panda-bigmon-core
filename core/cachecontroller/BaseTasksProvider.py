@@ -1,8 +1,8 @@
 from core import settings
-import cx_Oracle
 import threading
 import logging
-
+import oracledb
+oracledb.init_oracle_client()
 
 class BaseTasksProvider(object):
     logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ class BaseTasksProvider(object):
     ORACLE_SNAME = settings.local.dbaccess['default']['NAME']
     ORACLE_CONNECTION_URL = "(DESCRIPTION=(ADDRESS= (PROTOCOL=TCP) (HOST=adcr-s.cern.ch) (PORT=10121) ) (LOAD_BALANCE=on)" \
                             "(ENABLE=BROKEN)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME="+ORACLE_SNAME+".cern.ch)))"
-    pool = cx_Oracle.SessionPool(
+    pool = oracledb.SessionPool(
         ORACLE_USERNAME, ORACLE_PWD, ORACLE_CONNECTION_URL, min=1, max=10, increment=1, threaded=True, events=False)
     #lock = threading.RLock() # should be instantiated in a nested class.
     # If instantiated here become the same over all child classes

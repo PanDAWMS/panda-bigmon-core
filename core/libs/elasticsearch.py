@@ -371,7 +371,7 @@ def get_os_task_status_log(db_source, jeditaskid, os_instance='os-atlas'):
             jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {
                 'message_id': hit_dict['message_id'], 'job_inputfilebytes': job_inputfilebytes,
                 'job_hs06sec': job_hs06sec, 'status': hit_dict['status'], 'job_nevents': job_nevents,
-                'time': hit_dict['@timestamp'],'timestamp':hit_dict['timestamp']
+                'time': hit_dict['@timestamp'],'timestamp': hit_dict['timestamp']
             }
 
         fields_list = list(hit_dict.keys())
