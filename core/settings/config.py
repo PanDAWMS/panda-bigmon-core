@@ -199,7 +199,7 @@ CACHES = {
     }
 }
 
-SESSION_COOKIE_AGE = 60*60*24*2  # 48 hours
+SESSION_COOKIE_AGE = 60*60*24  # 24 hours
 SESSION_API_CALL_AGE = 60*30  # 10 minutes
 
 # URL_PATH_PREFIX for multi-developer apache/wsgi instance
