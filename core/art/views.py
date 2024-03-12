@@ -1216,6 +1216,7 @@ def registerARTTest(request):
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     # Preparing params to register art job
+    branch = concat_branch({'nightly_release_short':nightly_release_short, 'project': project, 'platform': platform})
     if 'computingsite' in job:
         computingsite = job['computingsite']
     if 'jeditaskid' in job:
@@ -1267,6 +1268,7 @@ def registerARTTest(request):
                 nightly_tag_display=nightly_tag_display,
                 project=project,
                 platform=platform,
+                branch=branch,
                 package=package,
                 extrainfo=json.dumps(extra_info),
                 created=datetime.utcnow(),
