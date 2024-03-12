@@ -21,7 +21,7 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, complete_request, removeParam
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
-from core.art.modelsART import ARTTests, ARTResultsQueue
+from core.art.modelsART import ARTTests, ARTResultsQueue, ARTSubResult
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, \
     get_final_result, update_test_status
 from core.reports.models import ReportEmails
@@ -1707,6 +1707,46 @@ def sendDevArtReport(request):
                     break
 
     return HttpResponse(json.dumps({'isSent': isSent}), content_type='application/json')
+
+
+@never_cache
+def remove_old_tests(request):
+    """
+    Remove old records in art_tests
+    :param request:
+    :return:
+    """
+    start = datetime.now()
+    message = ''
+    # get max pandaid for tests older than retention policy
+    pandaid_max = None
+    pandaid = ARTTests.objects.filter(created__lte=(datetime.now() - timedelta(days=art_const.RETENTION_PERIOD_DAYS))).aggregate(Max('pandaid'))
+    if len(pandaid) > 0 and pandaid['pandaid__max'] is not None:
+        pandaid_max = int(pandaid['pandaid__max'])
+    else:
+        return JsonResponse({'message': f"No test for deletion found, it took {(datetime.now() - start).total_seconds()}s"}, status=200)
+
+    # delete results and tests older than retention policy
+    try:
+        res = ARTSubResult.objects.filter(pandaid__lte=pandaid_max).delete()
+        _logger.info(f"Deleted {res[0]} test results for tests,  older than {pandaid_max}")
+    except Exception as ex:
+        message += "Failed to delete test results"
+        _logger.exception(f"{message} with:\n{ex}")
+    try:
+        tests = ARTTests.objects.filter(pandaid__lte=pandaid_max).delete()
+        _logger.info(f"Deleted {tests[0]} tests, older than {pandaid_max}")
+    except Exception as ex:
+        message += "Failed to delete tests"
+        _logger.exception(f"{message} with:\n{ex}")
+
+    status = 200
+    if len(message) > 0:
+        status = 500
+    else:
+        message += f"Successfully deleted old records"
+
+    return JsonResponse({'message': f"{message}, it took {(datetime.now()-start).total_seconds()}s"}, status=status)
 
 
 @never_cache
