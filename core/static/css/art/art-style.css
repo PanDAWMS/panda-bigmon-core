@@ -262,7 +262,7 @@ a.away {
 .redlink {
     color: firebrick !important;
 }
-.greylink {
+.data-table td .with-link-to-logs a.greylink {
     color: grey !important;
 }
 

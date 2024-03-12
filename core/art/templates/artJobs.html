@@ -33,14 +33,14 @@
   {% if viewParams.ntag_from %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
   {% if viewParams.ntag_to %}to <b>{{ viewParams.ntag_to }}</b></p>{% endif %}
   {% if requestParams.ntag_full or gitlabids|length == 1 %}<p>Gitlab ID: <b><a target="_blank" href="https://gitlab.cern.ch/art/art-submit/pipelines/{{ gitlabids.0 }}/">{{ gitlabids.0 }}</a></b></p>{% endif %}
-  {% if requestParams.package and artjobs.values|length == 1 %} {% if reportto.jira|length == 1 or reportto.mail|length == 1 %}<p>Report an issue to responsible,
+  {% if requestParams.package and ',' not in requestParams.package %} {% if reportto.jira|length == 1 or reportto.mail|length == 1 %}<p>Report an issue to responsible,
       {% if reportto.jira|length == 1 %} JIRA: <b>{% with reportjira=reportto.jira %}{% for jiraproject, jiralink in reportjira.items %} <a class="redlink" target="_blank" href="{{ jiralink }} ">{{ jiraproject }}</a> {% endfor %} {% endwith %}</b> {% endif %}
       {% if reportto.mail|length == 1 %} ,  <b>{% with reportmail=reportto.mail %}{% for email in reportmail %} <a href="mailto:{{ email }} ">email</a> {% endfor %} {% endwith %} {% endif %}
   </b></p>{% endif %} {% endif %}
 </div>
 
 
-{% if art_jobs|length > 0 %}
+{% if art_jobs|length > 1 %}
 <div class="card bp-container-simple secondary">
   <div class="card-divider">
     <p>Test results:</p>
@@ -133,7 +133,7 @@ for (let i=0; i<table_data[0].length; i++) {
           else {
             result += '<div class="flex_column_container">'
             data.forEach(item => {
-              if (!item.jobstatus) {
+              if (!item.finalresult) {
                 result += '---<br>'
               }
               else {
@@ -154,7 +154,7 @@ for (let i=0; i<table_data[0].length; i++) {
                   subresults += '</ul></div>'
                 }
                 if (item.linktopreviousattemptlogs) {
-                  link_previous_attempt_logs = '<a  class="to-logs greylink" target="_blank" href="{% url "filebrowser" %}' + item.linktopreviousattemptlogs + '"><i class="fi-link bp-tooltip left"><span class="tooltip-text">Link to logs of previous attempt</span></i></a>'
+                  link_previous_attempt_logs = '<a class="to-logs greylink" target="_blank" href="{% url "filebrowser" %}' + item.linktopreviousattemptlogs + '"><i class="fi-link bp-tooltip left"><span class="tooltip-text">Link to logs of previous attempt</span></i></a>'
                 }
                 if (item.finalresult !== 'active') {
                   link_eos = '<a  class="to-logs blacklink" target="_blank" href="' + item.eoslink + '"><i class="fi-clipboard bp-tooltip left"><span class="tooltip-text">Link to EOS copy area</span></i></a>'
@@ -163,7 +163,7 @@ for (let i=0; i<table_data[0].length; i++) {
                   link_html = '<a  class="to-logs blacklink" target="_blank" href="' + item.htmllink + '"><i class="fi-graph-bar bp-tooltip left"><span class="tooltip-text">Link to result HTML</span></i></a>'
                 }
                 if (item.gitlab) {
-                  link_gitlab = '<a  class="to-logs blacklink" target="_blank" href="' + item.gitlab + '"><span class="bp-tooltip"><img src="{% static 'images/gitlab-logo-black.png' %}" width=12 height=12><span class="tooltip-text">Link to test code</span></span></a>'
+                  link_gitlab = '<a  class="to-logs blacklink" target="_blank" href="' + item.gitlab + '"><span class="bp-tooltip left"><img src="{% static 'images/gitlab-logo-black.png' %}" width=12 height=12><span class="tooltip-text">Link to test code</span></span></a>'
                 }
                 result += '<div class="with-link-to-logs">' + subresults +
                   '<div class="clickable">' +
