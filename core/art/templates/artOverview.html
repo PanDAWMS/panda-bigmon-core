@@ -41,6 +41,7 @@
   {% if requestParams.package %}<p>Package: <b>{{ requestParams.package }}</b> </p>{% endif %}
   {% if requestParams.branch %}<p>Branch: <b>{{ requestParams.branch }}</b> </p>{% endif %}
   {% if viewParams.ntag %}<p>Listed tests are for builds done on <b>{{ viewParams.ntag }}</b> </p>{% endif %}
+  {% if viewParams.ntags %}<p>Listed tests are for builds done on <b>{{ viewParams.ntags }}</b> </p>{% endif %}
   {% if viewParams.ntag_full %}<p>Listed tests are for the following build: <b>{{ viewParams.ntag_full }}</b> </p>{% endif %}
   {% if viewParams.ntag_from %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
   {% if viewParams.ntag_to %}to <b>{{ viewParams.ntag_to }}</b>{% endif %}
@@ -81,6 +82,7 @@ var table_data = JSON.parse(JSON.stringify({{ artoverview | safe }}));
 var table_title = table_data.shift()
 var request_params = {{ requestParams|safe }};
 var ao1 = (table_title[0] === 'package') ? 'branch' : 'package';
+var order = (ao1 === 'package') ? [[0, "asc"]] : [[0, "desc"]];
 var columns = []
 columns.push({
   title: table_title[0],
@@ -95,7 +97,7 @@ for (let i=1; i<table_data[0].length; i++) {
         return (data.active + data.succeeded + data.finished + data.failed > 0) ? data.failed : -1;
       }
       else {
-        if (data.active + data.succeeded + data.finished + data.failed == 0) {
+        if (data.active + data.succeeded + data.finished + data.failed === 0) {
           return '<div class="nodata">---</div> '
         }
         else {
@@ -111,8 +113,6 @@ for (let i=1; i<table_data[0].length; i++) {
   })
 }
 
-console.log(ao1, request_params)
-
 let columnDefs =  [{"type": "num-html", "targets": [...Array(table_title.length).keys()].slice(1) }];
 
 var art_table = $('#art_table').DataTable({
@@ -120,7 +120,7 @@ var art_table = $('#art_table').DataTable({
   paging: false,
   bFilter: false,
   scrollX: true,
-  order: [[0, "desc"]],
+  order: order,
   columnDefs: columnDefs,
   columns: columns,
   data: table_data,
