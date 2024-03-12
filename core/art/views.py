@@ -1759,13 +1759,13 @@ def fill_table(request):
     start = datetime.now()
     # get last ntag with empty new fields
     ntag = None
-    ntags = ARTTests.objects.filter(computingsite__isnull=True,created__lt=(datetime.now() - timedelta(days=2))).aggregate(Max('nightly_tag'))
+    ntags = ARTTests.objects.filter(gitlabid__isnull=True,created__lt=(datetime.now() - timedelta(days=2))).aggregate(Max('nightly_tag'))
     if len(ntags) > 0:
         ntag = ntags['nightly_tag__max']
 
     tests_to_update = []
     if ntag is not None:
-        tests_to_update.extend(ARTTests.objects.filter(nightly_tag=ntag).values('pandaid','nightly_tag', 'artsubresult__subresult' ))
+        tests_to_update.extend(ARTTests.objects.filter(nightly_tag=ntag).values('pandaid'))
 
     print(f"Got {len(tests_to_update)} tests to update for ntag={ntag}")
     i = 0
@@ -1773,63 +1773,32 @@ def fill_table(request):
         # Preparing params to fill art_tests
         i = i+1
         print(f"/n{i}/{len(tests_to_update)}")
-        computingsite = None
-        attemptnr = None
-        tarindex = None
-        inputfileid = None
+        gitlabid = None
         pandaid = t['pandaid']
         query = {'pandaid': pandaid}
-        values = ('pandaid', 'jeditaskid', 'jobstatus', 'computingsite')
+        values = ('pandaid', 'jobname')
         jobs = []
         jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
         if len(jobs) == 0:
             jobs.extend(Jobsarchived.objects.filter(**query).values(*values))
         job = jobs[0]
-        job['result'] = t['artsubresult__subresult']
-        if 'computingsite' in job:
-            computingsite = job['computingsite']
-        if 'jeditaskid' in job:
-            jeditaskid = job['jeditaskid']
 
-            # get files -> extract log tarball name, attempts
-            files = []
-            fquery = {'jeditaskid': jeditaskid, 'pandaid': pandaid, 'type__in': ('pseudo_input', 'input', 'log')}
-            files.extend(Filestable4.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
-            if len(files) == 0:
-                files.extend(FilestableArch.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
-            # count of attempts starts from 0, for readability change it to start from 1
-            if len(files) > 0:
-                input_files = [f for f in files if f['type'] in ('pseudo_input', 'input')]
-                if len(input_files) > 0:
-                    attemptnr = 1 + max([f['attemptnr'] for f in input_files])
-                    inputfileid = max([f['fileid'] for f in input_files])
-                log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
-                if len(log_lfn) > 0:
-                    try:
-                        tarindex = int(re.search('.([0-9]{6}).log.', log_lfn[0]).group(1))
-                    except:
-                        print('Failed to extract tarindex from log lfn')
-                        tarindex = None
+        try:
+            gitlabid = int(re.search('.([0-9]{6,8}).', job['jobname']).group(1))
+        except:
+            _logger.info('Failed to extract tarindex from log lfn')
+            gitlabid = None
 
-        status_index, _ = get_final_result(job, output='index')
-        print(f"""Got job-related metadata for test {pandaid}: computingsite={computingsite}, tarindex={tarindex}, inputfileid={inputfileid}, attemptnr={attemptnr}, status={status_index}""")
+
+        print(f"""Got job-related metadata for test {pandaid}: gitlabid={gitlabid}""")
 
         try:
             ARTTests.objects.filter(pandaid=pandaid).update(
-                status=status_index,
-                computingsite=computingsite,
-                attemptnr=attemptnr,
-                tarindex=tarindex,
-                inputfileid=inputfileid,
-                maxattempt=2
+                gitlabid=gitlabid
             )
         except Exception as ex:
             print(f"""Failed to update test {pandaid} with : 
-                status={status_index}, 
-                computingsite={computingsite}, 
-                tarindex={tarindex}, 
-                inputfileid={inputfileid}, 
-                attemptnr={attemptnr}\n{str(ex)}""")
+                gitlabid={gitlabid}\n{str(ex)}""")
             return JsonResponse({'message': f"Failed to update info for test {pandaid}"}, status=500)
 
     return JsonResponse({'message': f"Updated {len(tests_to_update)} tests for ntag={ntag}, it took {(datetime.now()-start).total_seconds()}s"}, status=200)
