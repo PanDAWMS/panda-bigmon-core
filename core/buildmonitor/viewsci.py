@@ -2,6 +2,7 @@ import json, re, os
 
 from django.shortcuts import render
 from core.views import initRequest
+from core.oauth.utils import login_customrequired
 from django.db import connection
 from django.http import JsonResponse
 from django.urls import reverse
@@ -9,6 +10,7 @@ from core.libs.DateEncoder import DateEncoder
 from core.utils import is_json_request
 
 
+@login_customrequired
 def civiewDemo(request):
     """
     CI Builds Summary
