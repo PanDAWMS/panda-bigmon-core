@@ -1300,6 +1300,7 @@ def registerARTTest(request):
     attemptnr = None
     tarindex = None
     inputfileid = None
+    gitlabid = None
 
     # log all the req params for debug
     _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
@@ -1377,7 +1378,7 @@ def registerARTTest(request):
 
     # Checking if provided pandaid exists in panda db
     query = {'pandaid': pandaid}
-    values = ('pandaid', 'jeditaskid', 'username', 'computingsite')
+    values = ('pandaid', 'jeditaskid', 'username', 'computingsite', 'jobname')
     jobs = []
     jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
     try:
@@ -1416,6 +1417,12 @@ def registerARTTest(request):
                 except:
                     _logger.info('Failed to extract tarindex from log lfn')
                     tarindex = None
+    if 'jobname' in job:
+        try:
+            gitlabid = int(re.search('.([0-9]{6,8}).', job['jobname']).group(1))
+        except:
+            _logger.info('Failed to extract tarindex from log lfn')
+            gitlabid = None
     _logger.info(f"""Got job-related metadata for test {pandaid}: 
         computingsite={computingsite}, tarindex={tarindex}, inputfileid={inputfileid}, attemptnr={attemptnr}""")
 
@@ -1447,6 +1454,7 @@ def registerARTTest(request):
                 maxattempt=2,
                 inputfileid=inputfileid,
                 tarindex=tarindex,
+                gitlabid=gitlabid,
                 computingsite=computingsite,
                 status=art_const.TEST_STATUS_INDEX['active'],
             )
