@@ -139,7 +139,7 @@ def artOverview(request):
     # process URL params to query params
     query, extra_str = setupView(request)
     # getting tests
-    values = ('package', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
+    values = ('package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
               'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date')
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values))
     # filter out previous attempts, concat branch etc
@@ -268,7 +268,7 @@ def artTasks(request):
     # process URL params to query params
     query, extra_str = setupView(request)
     # getting tests
-    values = ('package', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
+    values = ('package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
               'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date')
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values))
     # filter out previous attempts, add branch etc
@@ -763,7 +763,7 @@ def artStability(request):
     # getting tests
     tests = []
     values = (
-        'package', 'nightly_release_short', 'platform', 'project', 'nightly_tag_date', 'nightly_tag', 'testname',
+        'package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag_date', 'nightly_tag', 'testname',
         'pandaid', 'jeditaskid', 'inputfileid', 'status'
     )
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values, result=F('artsubresult__subresult')))
@@ -895,7 +895,7 @@ def artErrors(request):
     # getting tests
     tests = []
     values = (
-        'package', 'nightly_release_short', 'platform', 'project', 'nightly_tag_date', 'nightly_tag', 'testname',
+        'package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag_date', 'nightly_tag', 'testname',
         'pandaid', 'jeditaskid', 'inputfileid', 'status'
     )
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values, result=F('artsubresult__subresult')))
@@ -1423,7 +1423,7 @@ def sendArtReport(request):
     # getting tests
     tests = []
     values = (
-        'package', 'nightly_release_short', 'platform', 'project', 'nightly_tag_date', 'nightly_tag', 'testname',
+        'package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag_date', 'nightly_tag', 'testname',
         'pandaid', 'jeditaskid', 'inputfileid', 'status'
     )
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values, result=F('artsubresult__subresult')))

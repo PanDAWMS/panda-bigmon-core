@@ -135,7 +135,6 @@ def getStagingData(request):
 
     data = {}
     tmpTableName = get_tmp_table_name()
-
     new_cur = connection.cursor()
 
     selection = "where 1=1 "
@@ -149,8 +148,12 @@ def getStagingData(request):
         selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING)"
 
     if source:
-        sourcel = [source] if ',' not in source else [SE for SE in source.split(',')]
+        sourcel = [source] if ',' not in source else [rse for rse in source.split(',')]
         selection += " AND t1.SOURCE_RSE in (" + ','.join('\''+str(x)+'\'' for x in sourcel) + ")"
+
+    if destination:
+        destinationl = [destination] if ',' not in destination else [rse for rse in destination.split(',')]
+        selection += " AND t1.DESTINATION_RSE in (" + ','.join('\'' + str(x) + '\'' for x in destinationl) + ")"
 
     if campaign:
         campaignl = [campaign] if ',' not in campaign else [camp for camp in campaign.split(',')]
@@ -186,7 +189,8 @@ def getStagingData(request):
     new_cur.execute(
         """
         select t1.dataset, t1.status, t1.staged_files, t1.start_time, t1.end_time, t1.rse as rse, t1.total_files, 
-            t1.update_time, t1.source_rse, t2.taskid, t3.campaign, t3.pr_id, t1.dataset_bytes, t1.staged_bytes,
+            t1.update_time, t1.source_rse, t1.destination_rse, t1.dataset_bytes, t1.staged_bytes,
+            t2.taskid, t3.campaign, t3.pr_id,
             row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence, 
             (current_timestamp-t1.update_time) as update_time, t4.processingtype, t2.step_action_id 
         from atlas_deft.t_dataset_staging t1
