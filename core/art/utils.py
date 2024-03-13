@@ -108,7 +108,7 @@ def setupView(request):
         request.session['viewParams']['ntag_to'] = enddate.strftime(art_const.DATETIME_FORMAT['humanized'])
 
     # Process and prepare a query as a string
-    query_str = '(1=1)'
+    query_str = '(1=1) '
     if 'ntag_full' in request.session['requestParams']:
         query['nightly_tag'] = request.session['requestParams']['ntag_full']
     elif 'ntag' in request.session['requestParams']:
@@ -130,6 +130,9 @@ def setupView(request):
             continue
         elif p == 'package' and ',' in v:
             query['package__in'] = v.split(',')
+            continue
+        elif p == 'package' and '*' in v:
+            query_str += 'and ' + preprocess_wild_card_string(v, p)
             continue
         for f in art_tests_str_fields:
             if p == f:
