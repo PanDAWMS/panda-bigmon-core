@@ -108,7 +108,7 @@ def setupView(request):
         request.session['viewParams']['ntag_to'] = enddate.strftime(art_const.DATETIME_FORMAT['humanized'])
 
     # Process and prepare a query as a string
-    query_str = '(1=1)'
+    query_str = '(1=1) '
     if 'ntag_full' in request.session['requestParams']:
         query['nightly_tag'] = request.session['requestParams']['ntag_full']
     elif 'ntag' in request.session['requestParams']:
@@ -125,17 +125,14 @@ def setupView(request):
     art_tests_str_fields = copy.deepcopy(
         [f.name for f in ARTTests._meta.get_fields() if not f.is_relation and 'String' in f.description])
     for p, v in request.session['requestParams'].items():
-        if p == 'branch':
-            if ',' in v:
-                branches = v.split(',')
-                query['nightly_release_short__in'] = [b.split('/')[0] for b in branches]
-                query['project__in'] = [b.split('/')[1] for b in branches]
-                query['platform__in'] = [b.split('/')[2] for b in branches]
-            else:
-                query['nightly_release_short'], query['project'], query['platform'] = v.split('/')
+        if p == 'branch' and ',' in v:
+            query['branch__in'] = v.split(',')
             continue
         elif p == 'package' and ',' in v:
             query['package__in'] = v.split(',')
+            continue
+        elif p == 'package' and '*' in v:
+            query_str += 'and ' + preprocess_wild_card_string(v, p)
             continue
         for f in art_tests_str_fields:
             if p == f:
@@ -305,7 +302,7 @@ def get_test_diff(test_a, test_b):
 
 def clean_tests_list(tests, add_link_previous_attempt=False):
     """
-    Dropping previous attempts of tests, leaving only last attempt, adding branch
+    Dropping previous attempts of tests, leaving only last attempt
     :param tests: list of dict
     :param add_link_previous_attempt: bool - add link to previous attempt or not
     :return: tests_filtered: list of dict
@@ -323,7 +320,6 @@ def clean_tests_list(tests, add_link_previous_attempt=False):
         m = f"{t['testname']}{t['nightly_release_short']}{t['project']}{t['platform']}{t['package']}{t['nightly_tag']}{t['jeditaskid']}{t['inputfileid']}"
         if t['pandaid'] == max(tmp_dict[m]):
             t['ntag'] = t['nightly_tag_date'].replace(hour=0, minute=0, second=0, microsecond=0)  # only date is needed
-            t['branch'] = concat_branch(t)
             if add_link_previous_attempt and len(tmp_dict[m]) > 1:
                 t['linktopreviousattemptlogs'] = f"?pandaid={min(tmp_dict[m])}"
             tests_filtered.append(t)

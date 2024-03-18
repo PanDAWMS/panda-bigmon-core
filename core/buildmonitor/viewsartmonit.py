@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from core.views import initRequest
+from core.oauth.utils import login_customrequired
 from django.db import connection
 from django.core.cache import cache
 import requests
@@ -11,6 +12,7 @@ from core.libs.DateEncoder import DateEncoder
 _logger = logging.getLogger('bigpandamon')
 
 
+@login_customrequired
 @never_cache
 def artmonitviewDemo(request):
     # https://bigpanda.cern.ch/art/tasks/?branch=master/Athena/x86_64-centos7-gcc8-opt&ntags=2020-01-22,2020-01-23,2020-01-24,2020-01-25&json
@@ -51,8 +53,10 @@ def artmonitviewDemo(request):
         return render(
             request,
             'artmonitviewDemo.html',
-            {'viewParams': request.session['viewParams'],
-            'resltART': []},
+            {
+                'viewParams': request.session['viewParams'],
+                'resltART': []
+            },
             content_type='text/html'
         )
 
@@ -151,6 +155,9 @@ def artmonitviewDemo(request):
             dict_loc_result[l_branch] = dict_inter
     cache.set('art-local-dict', dict_loc_result, 1800)
 
-    data = {'viewParams': request.session['viewParams'], 'resltART': json.dumps(list2view, cls=DateEncoder)}
+    data = {
+        'viewParams': request.session['viewParams'],
+        'resltART': json.dumps(list2view, cls=DateEncoder)
+    }
 
     return render(request, 'artmonitviewDemo.html', data, content_type='text/html')

@@ -137,7 +137,6 @@ def getStagingData(request):
 
     data = {}
     tmpTableName = get_tmp_table_name()
-
     new_cur = connection.cursor()
 
     selection = "where 1=1 "
@@ -151,8 +150,12 @@ def getStagingData(request):
         selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING)"
 
     if source:
-        sourcel = [source] if ',' not in source else [SE for SE in source.split(',')]
+        sourcel = [source] if ',' not in source else [rse for rse in source.split(',')]
         selection += " AND t1.SOURCE_RSE in (" + ','.join('\''+str(x)+'\'' for x in sourcel) + ")"
+
+    if destination:
+        destinationl = [destination] if ',' not in destination else [rse for rse in destination.split(',')]
+        selection += " AND t1.DESTINATION_RSE in (" + ','.join('\'' + str(x) + '\'' for x in destinationl) + ")"
 
     if campaign:
         campaignl = [campaign] if ',' not in campaign else [camp for camp in campaign.split(',')]
@@ -188,7 +191,8 @@ def getStagingData(request):
     new_cur.execute(
         """
         select t1.dataset, t1.status, t1.staged_files, t1.start_time, t1.end_time, t1.rse as rse, t1.total_files, 
-            t1.update_time, t1.source_rse, t2.taskid, t3.campaign, t3.pr_id, t1.dataset_bytes, t1.staged_bytes,
+            t1.update_time, t1.source_rse, t1.destination_rse, t1.dataset_bytes, t1.staged_bytes,
+            t2.taskid, t3.campaign, t3.pr_id,
             row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence, 
             (current_timestamp-t1.update_time) as update_time, t4.processingtype, t2.step_action_id 
         from atlas_deft.t_dataset_staging t1
@@ -336,11 +340,13 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
     output = {}
     output_table = {}
     basicstat = None
+    is_from_cache = {'yes': 0, 'total': 0}
     _logger.debug('Getting staging progress and identifying outliers for {} RSEs:'.format(len(datasets_dict)))
     for se, datasets in datasets_dict.items():
         _logger.debug('RSE: {}, {} datasets to analyze'.format(se, len(datasets)))
         basicstat = stageStat.get(se, [])
         for ds in datasets:
+            is_from_cache['total'] +=1
             try:
                 progress_info = getCachedProgress(se, ds['TASKID'])
             except:
@@ -352,12 +358,14 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
                 progress_info = getStaginProgress(str(ds['TASKID']))
                 if progress_info:
                     setCachedProgress(se, ds['TASKID'], ds['STATUS'], progress_info)
+            else:
+                is_from_cache['yes'] += 1
             if progress_info and len(progress_info) > 1 and '1970' not in progress_info[1][0]:
                 progress_info = patch_start_time((ds['START_TIME'], progress_info, ds['TOTAL_FILES']))
                 progress_info = transform_into_eq_intervals(progress_info, str(ds['TASKID']))
                 basicstat.append(progress_info)
                 tasks_to_rucio[ds['TASKID']] = ds['RRULE']
-                _logger.debug('Length of progress data: {}, task {}, RSE {}'.format(len(progress_info), ds['TASKID'], se))
+            _logger.debug('Length of progress data: {}, task {}, RSE {}, from cache? {}'.format(len(progress_info), ds['TASKID'], se, is_from_cache))
         if basicstat:
             datamerged = pd.concat([s for s in basicstat], axis=1)
             _logger.debug('Merged data shape: {}'.format(datamerged.shape))

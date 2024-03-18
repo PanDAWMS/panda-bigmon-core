@@ -1,20 +1,19 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from datetime import datetime
 from core.views import initRequest
-from django.db import connection, transaction
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
+from core.oauth.utils import login_customrequired
+from django.db import connection
 from django.urls import reverse
 from django.core.cache import cache
-from pprint import pprint
 import json, re, os
-from collections import defaultdict
-from operator import itemgetter, attrgetter
 from core.libs.DateEncoder import DateEncoder
 
 
+@login_customrequired
 def nviewDemo(request):
     valid, response = initRequest(request)
+    if not valid:
+        return response
     if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:
@@ -124,7 +123,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
           if vext == None or vext == '': vext = '0'
           s_checkout = 'N/A'
           if reslt1[0][14] != None: s_checkout = str(reslt1[0][14])
-          s_config = 'N/A';
+          s_config = 'N/A'
           s_inst = 'N/A'
           if str(vext) != 1: s_config = '0'; s_inst = '0'
           if reslt1[0][12] != None: s_config = str(reslt1[0][12])
@@ -324,6 +323,13 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   row_cand=[rname,t_start,ii_checkout,ii_ext,ii_config,t_build,i_combo_c,ii_cpack,t_test,i_combo_t,local_art_res,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
                   rows_s.append(row_cand)
 
-    data={"nightly": nname, "rel": rname, "platform": ar_sel, "project": pjname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}
+    data = {
+        "nightly": nname,
+        "rel": rname,
+        "platform": ar_sel,
+        "project": pjname,
+        'viewParams': request.session['viewParams'],
+        'rows_s':json.dumps(rows_s, cls=DateEncoder)
+    }
     return render(request,'nviewDemo.html', data, content_type='text/html')
 

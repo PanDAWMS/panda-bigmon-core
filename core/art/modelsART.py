@@ -49,6 +49,7 @@ class ARTTests(models.Model):
     nightly_release_short = models.CharField(max_length=24, db_column='NIGHTLY_RELEASE_SHORT', null=True)
     project = models.CharField(max_length=256, db_column='PROJECT', null=True)
     platform = models.CharField(max_length=150, db_column='PLATFORM', null=True)
+    branch = models.CharField(max_length=256, db_column='branch', null=True)
     nightly_tag = models.CharField(max_length=32, db_column='NIGHTLY_TAG', null=True)
     nightly_tag_display = models.CharField(max_length=32, db_column='NIGHTLY_TAG_DISPLAY', null=True)
     package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)

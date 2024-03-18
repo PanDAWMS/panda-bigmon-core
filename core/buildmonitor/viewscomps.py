@@ -1,17 +1,16 @@
-from django.shortcuts import render, redirect
-from datetime import datetime
+from django.shortcuts import render
 from core.views import initRequest
-from django.db import connection, transaction
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
+from core.oauth.utils import login_customrequired
+from django.db import connection
 import json,re
-from collections import defaultdict
-from operator import itemgetter, attrgetter
 from core.libs.DateEncoder import DateEncoder
 
 
+@login_customrequired
 def compviewDemo(request):
     valid, response = initRequest(request)
+    if not valid:
+        return response
     if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
         nname = request.session['requestParams']['nightly']
     else:

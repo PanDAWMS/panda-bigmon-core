@@ -2,11 +2,13 @@ import json, re
 
 from django.shortcuts import render
 from core.views import initRequest
+from core.oauth.utils import login_customrequired
 from django.db import connection
 from django.http import JsonResponse
 from core.libs.DateEncoder import DateEncoder
 from core.utils import is_json_request
 
+@login_customrequired
 def testviewDemo(request):
     valid, response = initRequest(request)
     if not valid:
