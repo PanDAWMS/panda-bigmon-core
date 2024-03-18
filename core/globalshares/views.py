@@ -71,7 +71,7 @@ def globalshares(request):
     for ordValueLevel1 in sorted(ordtablerows['childlist']):
         for shareValue in tablerows:
             if ordValueLevel1 in shareValue['level1']:
-                ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
+                ord1Short = re.sub(r'\[(.*)\]', '', ordValueLevel1).rstrip().lower()
                 shareValue['level'] = 'level1'
                 shareValue['gshare'] = ord1Short.replace(' ', '_')
                 if len(ordtablerows[ordValueLevel1]['childlist']) == 0:
@@ -91,8 +91,8 @@ def globalshares(request):
             for shareValue in tablerows:
                 if ordValueLevel2 in shareValue['level2']:
                     if len(ordtablerows[ordValueLevel1][ordValueLevel2]['childlist'])==0:
-                        ord1Short = re.sub('\[(.*)\]','',ordValueLevel1).rstrip().lower()
-                        ord2Short = re.sub('\[(.*)\]', '', ordValueLevel2).rstrip().lower()
+                        ord1Short = re.sub(r'\[(.*)\]','',ordValueLevel1).rstrip().lower()
+                        ord2Short = re.sub(r'\[(.*)\]', '', ordValueLevel2).rstrip().lower()
                         link = "?jobtype=%s&display_limit=100&gshare=%s"%(ord1Short,ord2Short)
                         shareValue['link'] = link
                         shareValue['level'] = 'level2'
@@ -106,8 +106,8 @@ def globalshares(request):
                 for shareValue in tablerows:
                     if ordValueLevel3 in shareValue['level3']:
                         if len(ordtablerows[ordValueLevel1][ordValueLevel2]['childlist']) > 0:
-                            ord1Short = re.sub('\[(.*)\]', '', ordValueLevel1).rstrip().lower()
-                            ord3Short = re.sub('\[(.*)\]', '', ordValueLevel3).rstrip().lower()
+                            ord1Short = re.sub(r'\[(.*)\]', '', ordValueLevel1).rstrip().lower()
+                            ord3Short = re.sub(r'\[(.*)\]', '', ordValueLevel3).rstrip().lower()
                             link = "?jobtype=%s&display_limit=100&gshare=%s" % (ord1Short, ord3Short)
                             shareValue['link'] = link
                             shareValue['level'] = 'level3'
@@ -267,7 +267,7 @@ def get_shares(parents=''):
     gquery = {}
     if parents is None:
         gquery['parent__isnull'] = True
-    elif type(parents) == np.unicode:
+    elif type(parents) == str:
         gquery['parent'] = parents
     elif type(parents) in (list, tuple):
         gquery['parent__in'] = parents
