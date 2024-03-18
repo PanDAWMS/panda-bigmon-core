@@ -7,6 +7,7 @@ from types import MappingProxyType
 
 # vars
 CACHE_TIMEOUT_MINUTES = 15
+RETENTION_PERIOD_DAYS = 180  # 6 months
 EOS_PREFIX = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
 
 # dicts
@@ -30,6 +31,13 @@ N_DAYS_DEFAULT = MappingProxyType({
     'stability': 8,
     'errors': 1,
     'other':  6
+})
+
+TEST_STATUS_INDEX = MappingProxyType({
+    'failed': 3,
+    'active': 2,
+    'finished': 1,
+    'succeeded': 0,
 })
 
 

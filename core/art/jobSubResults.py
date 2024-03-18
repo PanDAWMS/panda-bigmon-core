@@ -8,12 +8,12 @@ from datetime import datetime
 
 from django.db import transaction, DatabaseError
 from core.art.modelsART import ARTSubResult, ARTTests
+import core.art.constants as const_art
 from core.filebrowser.utils import get_job_log_file_path
 
 from django.conf import settings
 
-_logger_error = logging.getLogger('bigpandamon-error')
-_logger = logging.getLogger('bigpandamon')
+_logger = logging.getLogger('bigpandamon-art')
 
 
 def subresults_getter(pandaid):
@@ -70,11 +70,30 @@ def save_subresults(subResultsDict):
                 )
                 row.save()
             except DatabaseError as e:
-                _logger_error.error(e)
+                _logger.error(e)
                 return False
 
     return True
 
+def update_test_status(test_subresults):
+    """
+    A function to update test status in ART_TESTS table depending on sub-step results
+    :param test_subresults: dict in format {'pandaid': pandaid, 'result': subresults}
+    :return: True or False
+    """
+    pandaid = test_subresults['pandaid']
+    # get final status to update test record
+    status_index, _ = get_final_result(test_subresults, output='index')
+
+    with transaction.atomic():
+        _logger.info(f"Updating status of ART test {pandaid} to {status_index}")
+        try:
+            ARTTests.objects.filter(pandaid=pandaid).update(status=status_index)
+        except DatabaseError as e:
+            _logger.error(e)
+            return False
+
+    return True
 
 def lock_nqueuedjobs(cur, nrows):
     """
@@ -91,7 +110,7 @@ def lock_nqueuedjobs(cur, nrows):
     try:
         cur.execute(lquery)
     except DatabaseError as e:
-        _logger_error.error(e)
+        _logger.error(e)
         raise
 
     return lock_time
@@ -110,7 +129,7 @@ def delete_queuedjobs(cur, lock_time):
     try:
         cur.execute(dquery)
     except DatabaseError as e:
-        _logger_error.error(e)
+        _logger.error(e)
         raise
 
     return True
@@ -128,21 +147,24 @@ def clear_queue(cur):
     try:
         cur.execute(cquery)
     except DatabaseError as e:
-        _logger_error.error(e)
+        _logger.error(e)
         raise
 
     return True
 
 
-def get_final_result(job):
+def get_final_result(job, output='str'):
     """ A function to determine the real ART test result depending on sub-step results, exitcode and PanDA job state
     0 - succeeded - green
     1 - finished - yellow
     2 - active - blue
     3 - failed - red
+    :param job: dict - should contain 'jobstatus' and 'result' keys
+    :param output: str - 'str' or 'index'
+    :return: final_result: str or int
+    :return: extra_params_dict: dict -
     """
-    finalResultDict = {0: 'succeeded', 1: 'finished', 2: 'active', 3: 'failed'}
-    extraParamsDict = {
+    extra_params_dict = {
         'testexitcode': None,
         'subresults': None,
         'testdirectory': None,
@@ -150,59 +172,74 @@ def get_final_result(job):
         'reportmail': None,
         'description': None,
         'linktoplots': None,
-        }
-    finalresult = ''
-    if job['jobstatus'] == 'finished':
-        finalresult = 0
-    elif job['jobstatus'] in ('failed', 'cancelled'):
-        finalresult = 3
+    }
+
+    # set final result preliminary based on jobstatus
+    if 'jobstatus' in job and job['jobstatus'] == 'finished':
+        final_result = 0
+    elif 'jobstatus' in job and job['jobstatus'] in ('failed', 'cancelled'):
+        final_result = 3
+    elif 'jobstatus' in job:
+        final_result = 2
     else:
-        finalresult = 2
-    try:
-        job['result'] = json.loads(job['result'])
-    except:
+        final_result = 3
+
+    # load result subdict if it is str
+    if 'result' in job:
+        if isinstance(job['result'], str):
+            try:
+                job['result'] = json.loads(job['result'])
+            except:
+                job['result'] = None
+    else:
         job['result'] = None
+
+    # extract extra params from result subdict
     try:
-        extraParamsDict['testexitcode'] = job['result']['exit_code'] if 'exit_code' in job['result'] else None
+        extra_params_dict['testexitcode'] = job['result']['exit_code'] if 'exit_code' in job['result'] else None
     except:
         pass
     try:
-        extraParamsDict['subresults'] = job['result']['result'] if 'result' in job['result'] else None
+        extra_params_dict['subresults'] = job['result']['result'] if 'result' in job['result'] else None
     except:
         pass
     try:
-        extraParamsDict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else None
+        extra_params_dict['testdirectory'] = job['result']['test_directory'] if 'test_directory' in job['result'] else None
     except:
         pass
     try:
-        extraParamsDict['reportjira'] = job['result']['report-to']['jira'] if 'report-to' in job['result'] and 'jira' in job['result']['report-to'] else None
+        extra_params_dict['reportjira'] = job['result']['report-to']['jira'] if 'report-to' in job['result'] and 'jira' in job['result']['report-to'] else None
     except:
         pass
     try:
-        extraParamsDict['reportmail'] = job['result']['report-to']['mail'] if 'report-to' in job['result'] and 'mail' in job['result']['report-to'] else None
+        extra_params_dict['reportmail'] = job['result']['report-to']['mail'] if 'report-to' in job['result'] and 'mail' in job['result']['report-to'] else None
     except:
         pass
     try:
-        extraParamsDict['description'] = job['result']['description'] if 'description' in job['result'] else None
+        extra_params_dict['description'] = job['result']['description'] if 'description' in job['result'] else None
     except:
         pass
     try:
-        extraParamsDict['linktoplots'] = job['result']['url'] if 'url' in job['result'] else None
+        extra_params_dict['linktoplots'] = job['result']['url'] if 'url' in job['result'] else None
     except:
         pass
 
-    if job['result'] is not None:
-        if 'result' in job['result'] and len(job['result']['result']) > 0:
-            finalresult = analize_test_subresults(job['result']['result'])
-            # for r in job['result']['result']:
-            #     if int(r['result']) > 0:
-            #         finalresult = 'failed'
-        elif 'exit_code' in job['result'] and job['result']['exit_code'] > 0:
-            finalresult = 3
+    # analyze result subdict to get final result
+    if 'result' in job and job['result'] and job['result'] is not None:
+        if 'result' in job and job['result'] and len(job['result']['result']) > 0:
+            final_result = analize_test_subresults(job['result']['result'])
+        elif 'exit_code' in job['result']:
+            if job['result']['exit_code'] == 0:
+                final_result = 0
+            else:
+                final_result = 3
 
-    finalresult = finalResultDict[finalresult]
+    # format output
+    if output == 'str':
+        final_result_dict = {v: k for k, v in const_art.TEST_STATUS_INDEX.items()}
+        final_result = final_result_dict[final_result]
 
-    return finalresult, extraParamsDict
+    return final_result, extra_params_dict
 
 
 def analize_test_subresults(subresults):

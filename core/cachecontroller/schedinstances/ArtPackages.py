@@ -1,6 +1,5 @@
 from core.cachecontroller.BaseURLTasksProvider import BaseURLTasksProvider
 import queue, threading
-from datetime import datetime, timedelta
 import logging
 
 class ArtPackages(BaseURLTasksProvider):
@@ -13,10 +12,7 @@ class ArtPackages(BaseURLTasksProvider):
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)
-        urlsQueue.put((self.BASIC_PRIORITY, '/art/updatejoblist/?ntag_to={}&ntag_from={}'.format(
-            datetime.now().strftime('%Y-%m-%d'),
-            (datetime.now() - timedelta(days=self.N_DAYS_WINDOW)).strftime('%Y-%m-%d')
-        )))
+        urlsQueue.put((self.BASIC_PRIORITY, f"/art/updatejoblist/?days={self.N_DAYS_WINDOW}"))
         return urlsQueue
 
 
@@ -30,4 +26,16 @@ class ArtLoadResults(BaseURLTasksProvider):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)
         urlsQueue.put((self.BASIC_PRIORITY, '/art/loadsubresults/'))
+        return urlsQueue
+
+class ArtRetentionPolicy(BaseURLTasksProvider):
+
+    BASIC_PRIORITY = 1
+    lock = threading.RLock()
+    logger = logging.getLogger(__name__ + ' ArtRetentionPolicy')
+
+    def getpayload(self):
+        self.logger.info("getpayload started")
+        urlsQueue = queue.PriorityQueue(-1)
+        urlsQueue.put((self.BASIC_PRIORITY, '/art/removeoldtests/'))
         return urlsQueue

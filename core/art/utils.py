@@ -17,13 +17,28 @@ from core.libs.job import get_job_list
 
 import core.art.constants as art_const
 artdateformat = '%Y-%m-%d'
-_logger = logging.getLogger('bigpandamon')
+_logger = logging.getLogger('bigpandamon-art')
 
 
-def setupView(request, querytype='task'):
+def setupView(request):
+    """
+    Transform request params into ORM query object
+    :param request:
+    :param days: int - limit of N last nightlies to be used if no other ntags related params specified
+    :return: query: dict
+    :return: query_str: str - for where clause which is not supported by Django ORM
+    """
     if not 'view' in request.session['requestParams']:
         request.session['requestParams']['view'] = 'packages'
+
     query = {}
+    startdate = None
+    enddate = None
+    datelist = []
+
+    art_view = str(request.path).split('/')[2]
+    days_max = art_const.N_DAYS_MAX[art_view] if art_view in art_const.N_DAYS_MAX else art_const.N_DAYS_MAX['other']
+    days_default = art_const.N_DAYS_DEFAULT[art_view] if art_view in art_const.N_DAYS_DEFAULT else art_const.N_DAYS_DEFAULT['other']
 
     # Process time range related params
     if 'ntag_from' in request.session['requestParams']:
@@ -48,7 +63,6 @@ def setupView(request, querytype='task'):
             del request.session['requestParams']['ntag']
     if 'ntags' in request.session['requestParams']:
         dateliststr = request.session['requestParams']['ntags']
-        datelist = []
         for datestr in dateliststr.split(','):
             try:
                 datei = datetime.strptime(datestr, artdateformat)
@@ -62,141 +76,76 @@ def setupView(request, querytype='task'):
         except:
             del request.session['requestParams']['ntag_full']
 
-    art_view = str(request.path).split('/')[2]
-    ndaysmax = art_const.N_DAYS_MAX[art_view] if art_view in art_const.N_DAYS_MAX else art_const.N_DAYS_MAX['other']
-    ndaysdefault = art_const.N_DAYS_DEFAULT[art_view] if art_view in art_const.N_DAYS_DEFAULT else art_const.N_DAYS_DEFAULT['other']
-
     if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        enddate = startdate + timedelta(days=ndaysdefault)
+        enddate = startdate + timedelta(days=days_default)
     elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
-        startdate = enddate - timedelta(days=ndaysdefault)
-    elif not 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
-        if 'ntag' in request.session['requestParams']:
-            enddate = startdate
-        elif 'ntag_full' in request.session['requestParams']:
-            enddate = startdate
-        else:
-            enddate = datetime.now()
-            startdate = enddate - timedelta(days=ndaysdefault)
-    elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > ndaysmax:
-        enddate = startdate + timedelta(days=ndaysmax)
-
+        startdate = enddate - timedelta(days=days_default)
+    elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > days_max:
+        enddate = startdate + timedelta(days=days_max)
     if 'days' in request.session['requestParams']:
         try:
-            ndays = int(request.session['requestParams']['days'])
+            days = int(request.session['requestParams']['days'])
         except:
-            ndays = ndaysdefault
+            days = days_default
         enddate = datetime.now()
-        if ndays <= ndaysmax:
-            startdate = enddate - timedelta(days=ndays)
-        else:
-            startdate = enddate - timedelta(days=ndaysmax)
-
-    if 'nlastnightlies' in request.session['requestParams']:
-        nlastnightlies = int(request.session['requestParams']['nlastnightlies'])
+        if days < days_max:
+            days = days_max
+        startdate = enddate - timedelta(days=days)
+    if 'nlastnightlies' in request.session['requestParams'] or (startdate is None and enddate is None and len(datelist) == 0):
+        nlastnightlies = int(request.session['requestParams']['nlastnightlies']) if 'nlastnightlies' in request.session['requestParams'] else days_default
         datelist = find_last_n_nightlies(request, nlastnightlies)
         _logger.debug('Got n last nightly tags: {}'.format(time.time() - request.session['req_init_time']))
-        if len(datelist) == 0:
-            startdate = datetime.strptime('2017-05-03', artdateformat) # this is the first ART test
-            enddate = datetime.now()
-
-    if not 'ntag' in request.session['requestParams']:
-        if 'ntags' in request.session['requestParams'] or 'nlastnightlies' in request.session['requestParams']:
-            if len(datelist) > 0:
-                # request.session['requestParams']['ntags'] = datelist
-                startdate = min(datelist)
-                enddate = max(datelist)
-
 
     # view params will be shown at page top
     if 'ntag' in request.session['requestParams']:
         request.session['viewParams']['ntag'] = startdate.strftime(art_const.DATETIME_FORMAT['humanized'])
     elif 'ntag_full' in request.session['requestParams']:
         request.session['viewParams']['ntag_full'] = request.session['requestParams']['ntag_full']
+    elif len(datelist) > 0:
+        request.session['viewParams']['ntags'] = ', '.join([date_i.strftime(art_const.DATETIME_FORMAT['humanized']) for date_i in datelist])
     else:
         request.session['viewParams']['ntag_from'] = startdate.strftime(art_const.DATETIME_FORMAT['humanized'])
         request.session['viewParams']['ntag_to'] = enddate.strftime(art_const.DATETIME_FORMAT['humanized'])
 
     # Process and prepare a query as a string
-    querystr = ''
-    if querytype == 'job':
-        if 'package' in request.session['requestParams']:
-            packages = request.session['requestParams']['package'].split(',')
-            if len(packages) == 1 and '*' in packages[0]:
-                querystr += preprocess_wild_card_string(packages[0], 'package').replace('\'', '\'\'') + ' AND '
-            else:
-                querystr += '(UPPER(PACKAGE) IN ( '
-                for p in packages:
-                    querystr += 'UPPER(\'\'' + p + '\'\'), '
-                if querystr.endswith(', '):
-                    querystr = querystr[:len(querystr) - 2]
-                querystr += ')) AND '
-        if 'branch' in request.session['requestParams']:
-            branches = request.session['requestParams']['branch'].split(',')
-            querystr += '(UPPER(NIGHTLY_RELEASE_SHORT || \'\'/\'\' || PROJECT || \'\'/\'\' || PLATFORM)  IN ( '
-            for b in branches:
-                querystr += 'UPPER(\'\'' + b + '\'\'), '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
-        if 'taskid' in request.session['requestParams']:
-            querystr += '(a.TASK_ID = ' + request.session['requestParams']['taskid'] + ' ) AND '
-        if 'ntags' in request.session['requestParams'] or ('nlastnightlies' in request.session['requestParams'] and len(datelist) > 0):
-            querystr += '((SUBSTR(NIGHTLY_TAG_DISPLAY, 0, INSTR(NIGHTLY_TAG_DISPLAY, \'\'T\'\')-1)) IN ('
-            for datei in datelist:
-                querystr += '\'\'' + datei.strftime(artdateformat) + '\'\', '
-            if querystr.endswith(', '):
-                querystr = querystr[:len(querystr) - 2]
-            querystr += ')) AND '
-        if 'ntag_full' in request.session['requestParams']:
-            querystr += '(UPPER(NIGHTLY_TAG_DISPLAY) = \'\'' + request.session['requestParams']['ntag_full'] + '\'\') AND'
-        if querystr.endswith('AND '):
-            querystr = querystr[:len(querystr)-4]
-        else:
-            querystr += '(1=1)'
-        query['strcondition'] = querystr
-        query['ntag_from'] = startdate.strftime(artdateformat)
-        query['ntag_to'] = enddate.strftime(artdateformat)
-    elif querytype == 'task':
-        if 'package' in request.session['requestParams'] and not ',' in request.session['requestParams']['package']:
-            query['package'] = request.session['requestParams']['package']
-        elif 'package' in request.session['requestParams'] and ',' in request.session['requestParams']['package']:
-            query['package__in'] = [p for p in request.session['requestParams']['package'].split(',')]
-        if 'branch' in request.session['requestParams'] and not ',' in request.session['requestParams']['branch']:
-            query['branch'] = request.session['requestParams']['branch']
-        elif 'branch' in request.session['requestParams'] and ',' in request.session['requestParams']['branch']:
-            query['branch__in'] = [b for b in request.session['requestParams']['branch'].split(',')]
-        if not 'ntags' in request.session['requestParams']:
-            query['ntag__range'] = [startdate.strftime(artdateformat), enddate.strftime(artdateformat)]
-        else:
-            query['ntag__in'] = [ntag.strftime(artdateformat) for ntag in datelist]
-    elif querytype == 'test':
-        if 'ntag_full' in request.session['requestParams']:
-            query['nightly_tag'] = request.session['requestParams']['ntag_full']
-        elif 'ntag' in request.session['requestParams']:
-            query['nightly_tag_date__range'] = [startdate, startdate + timedelta(days=1) - timedelta(seconds=1)]
-        else:
-            datelist = find_last_n_nightlies(request, 1)
-            if len(datelist) > 0:
-                query['nightly_tag_date__range'] = [datelist[0], datelist[0] + timedelta(days=1) - timedelta(seconds=1)]
-            _logger.debug('Got n last nightly tags: {}'.format(time.time() - request.session['req_init_time']))
-        art_tests_str_fields = copy.deepcopy(
-            [f.name for f in ARTTests._meta.get_fields() if not f.is_relation and 'String' in f.description])
-        for p, v in request.session['requestParams'].items():
-            if p == 'branch':
-                query['nightly_release_short'], query['project'], query['platform'] = v.split('/')
-                continue
-            for f in art_tests_str_fields:
-                if p == f:
-                    query[f] = v
+    query_str = '(1=1) '
+    if 'ntag_full' in request.session['requestParams']:
+        query['nightly_tag'] = request.session['requestParams']['ntag_full']
+    elif 'ntag' in request.session['requestParams']:
+        query['nightly_tag__startswith'] = request.session['requestParams']['ntag']
+    elif startdate is not None and enddate is not None:
+        query['nightly_tag_date__range'] = [startdate, enddate + timedelta(days=1) - timedelta(seconds=1)]
+    elif len(datelist) == 1:
+        query['nightly_tag_date__range'] = [datelist[0], datelist[0] + timedelta(days=1) - timedelta(seconds=1)]
+    elif len(datelist) > 1:
+        query_str += ' and ('
+        query_str += ' or '.join([f"nightly_tag like '{date_i.strftime(artdateformat)}%%'" for date_i in datelist])
+        query_str += ') '
 
-    return query
+    art_tests_str_fields = copy.deepcopy(
+        [f.name for f in ARTTests._meta.get_fields() if not f.is_relation and 'String' in f.description])
+    for p, v in request.session['requestParams'].items():
+        if p == 'branch' and ',' in v:
+            query['branch__in'] = v.split(',')
+            continue
+        elif p == 'package' and ',' in v:
+            query['package__in'] = v.split(',')
+            continue
+        elif p == 'package' and '*' in v:
+            query_str += 'and ' + preprocess_wild_card_string(v, p)
+            continue
+        for f in art_tests_str_fields:
+            if p == f:
+                query[f] = v
+
+    return query, query_str
 
 
 def find_last_n_nightlies(request, limit=7):
     """
     Find N last nightlies dates in registered tests
     :param request:
+    :param limit: int - how many nightlies to return
     :return: list of ntags
     """
     nquery = {}
@@ -226,6 +175,7 @@ def find_last_n_nightlies(request, limit=7):
             datelist.append(datei)
         except:
             pass
+    datelist = sorted(datelist)
 
     return datelist
 
@@ -306,29 +256,6 @@ def concat_branch(job):
     return branch
 
 
-def remove_duplicates(jobs):
-    """
-    Removee test duplicates which may come from JOBSARCHIVED4 and JOBSARCHIVED
-    :return:
-    """
-    jobs_new = []
-
-    pandaids = {}
-    for job in jobs:
-        if job['pandaid'] not in pandaids:
-            pandaids[job['pandaid']] = []
-        pandaids[job['pandaid']].append(job)
-
-    for pid, plist in pandaids.items():
-        if len(plist) == 1:
-            jobs_new.append(plist[0])
-        elif len(plist) > 1:
-            # find one that has bigger attemptmark
-            jobs_new.append(sorted(plist, key=lambda d: d['attemptmark'], reverse=True)[0])
-
-    return jobs_new
-
-
 def get_test_diff(test_a, test_b):
     """
     Finding difference in 2 test results
@@ -371,3 +298,30 @@ def get_test_diff(test_a, test_b):
             result = 2
 
     return result_translation[result]
+
+
+def clean_tests_list(tests, add_link_previous_attempt=False):
+    """
+    Dropping previous attempts of tests, leaving only last attempt
+    :param tests: list of dict
+    :param add_link_previous_attempt: bool - add link to previous attempt or not
+    :return: tests_filtered: list of dict
+    """
+
+    tmp_dict = {}
+    for t in tests:
+        m = f"{t['testname']}{t['nightly_release_short']}{t['project']}{t['platform']}{t['package']}{t['nightly_tag']}{t['jeditaskid']}{t['inputfileid']}"
+        if m not in tmp_dict:
+            tmp_dict[m] = []
+        tmp_dict[m].append(t['pandaid'])
+
+    tests_filtered = []
+    for t in tests:
+        m = f"{t['testname']}{t['nightly_release_short']}{t['project']}{t['platform']}{t['package']}{t['nightly_tag']}{t['jeditaskid']}{t['inputfileid']}"
+        if t['pandaid'] == max(tmp_dict[m]):
+            t['ntag'] = t['nightly_tag_date'].replace(hour=0, minute=0, second=0, microsecond=0)  # only date is needed
+            if add_link_previous_attempt and len(tmp_dict[m]) > 1:
+                t['linktopreviousattemptlogs'] = f"?pandaid={min(tmp_dict[m])}"
+            tests_filtered.append(t)
+
+    return tests_filtered

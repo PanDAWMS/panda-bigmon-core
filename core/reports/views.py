@@ -2,9 +2,11 @@
 
 """
 import json
+import logging
 from datetime import datetime
 
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
@@ -17,6 +19,7 @@ from core.reports import MC16aCPReport, ObsoletedTasksReport, LargeScaleAthenaTe
 
 from django.conf import settings
 
+_logger = logging.getLogger('bigpandamon')
 
 @login_customrequired
 def reports(request):
@@ -170,3 +173,51 @@ def report(request):
         return JsonResponse({'status': 'error', 'message': 'No report is available for provided parameters'})
 
     return JsonResponse({'status': 'error', 'message': 'Something went wrong'})
+
+# @csrf_exempt
+def send_report(request):
+    """
+    Send message in email
+    :param request:
+    :return:
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    if 'remote' in request.session and request.session['remote'] in settings.CACHING_CRAWLER_HOSTS:
+        _logger.debug('Request came from a cache crawler node, all is good')
+    else:
+        response = JsonResponse({'message': 'Bad request'}, status=400)
+        return response
+
+    if 'subject' in request.session['requestParams']:
+        subject = request.session['requestParams']['subject']
+    else:
+        subject = 'Unidentified report'
+    subject = f'[{settings.EMAIL_SUBJECT_PREFIX}] {subject}'
+
+
+    if 'message' in request.session['requestParams'] and len(request.session['requestParams']['message']) > 0:
+        message = request.session['requestParams']['message']
+    else:
+        response = JsonResponse({'message': 'Bad request'}, status=400)
+        return response
+
+    try:
+        send_mail_bp(
+            template='templated_email/error_alert.html',
+            subject=subject,
+            summary={'message': message},
+            recipient=settings.ADMINS[0][1],
+        )
+    except Exception as ex:
+        response = JsonResponse({'message': 'Error occured, developers were notified'}, status=500)
+        return response
+
+    response = JsonResponse({'message': 'Successfully sent'}, status=200)
+    return response
+
+
+
+

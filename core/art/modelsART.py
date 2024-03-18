@@ -49,12 +49,19 @@ class ARTTests(models.Model):
     nightly_release_short = models.CharField(max_length=24, db_column='NIGHTLY_RELEASE_SHORT', null=True)
     project = models.CharField(max_length=256, db_column='PROJECT', null=True)
     platform = models.CharField(max_length=150, db_column='PLATFORM', null=True)
+    branch = models.CharField(max_length=256, db_column='branch', null=True)
     nightly_tag = models.CharField(max_length=32, db_column='NIGHTLY_TAG', null=True)
     nightly_tag_display = models.CharField(max_length=32, db_column='NIGHTLY_TAG_DISPLAY', null=True)
     package = models.CharField(max_length=32, db_column='PACKAGE', null=False, blank=True)
     extrainfo = models.CharField(max_length=1000, db_column='EXTRA_INFO', null=True, blank=True)
     created = models.DateTimeField(null=True, db_column='CREATED')
     nightly_tag_date = models.DateTimeField(null=True, db_column='nightly_tag_date')
-
+    computingsite = models.CharField(max_length=128, db_column='computingsite', null=True)
+    inputfileid = models.DecimalField(decimal_places=0, max_digits=12, db_column='inputfileid')
+    gitlabid = models.DecimalField(decimal_places=0, max_digits=12, db_column='gitlabid')
+    tarindex = models.DecimalField(decimal_places=0, max_digits=3, db_column='tarindex')
+    attemptnr = models.DecimalField(decimal_places=0, max_digits=3, db_column='attemptnr')
+    maxattempt = models.DecimalField(decimal_places=0, max_digits=3, db_column='maxattempt')
+    status = models.DecimalField(decimal_places=0, max_digits=3, db_column='status')
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."ART_TESTS"'

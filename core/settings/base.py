@@ -1,3 +1,4 @@
+import os
 import core
 try:
     from core.settings.local import DEBUG
@@ -15,7 +16,7 @@ except ImportError:
     ENABLE_DEBUG_TOOLBAR = False
 
 ADMINS = (
-    ('Tatiana Korchuganova', 'tatiana.korchuganova@cern.ch'),
+    ('BigPanDA monitoring admins', os.environ.get('EMAIL_ADMINS', 'atlas-adc-pandamon-operation@cern.ch')),
 )
 MANAGERS = ADMINS
 

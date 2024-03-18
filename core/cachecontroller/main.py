@@ -7,9 +7,10 @@ import schedule
 import time
 import threading
 import logging.config
+from logging.handlers import RotatingFileHandler
 
 from schedinstances.TextFileURLs import TextFileURLs
-from schedinstances.ArtPackages import ArtPackages, ArtLoadResults
+from schedinstances.ArtPackages import ArtPackages, ArtLoadResults, ArtRetentionPolicy
 from schedinstances.ArtMails import ArtMails, ArtDevMails
 from schedinstances.BigTasks import BigTasks
 from schedinstances.Harvester import Harvester
@@ -30,7 +31,12 @@ except ImportError:
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 
-logging.basicConfig(level=logging.DEBUG, filename=LOG_PATH, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG,
+    # filename=LOG_PATH,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[RotatingFileHandler(LOG_PATH, maxBytes=100000000, backupCount=10)],
+)
 
 mainMenuURLs = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
 infrequentURLS = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
@@ -38,6 +44,7 @@ infrequentURLS.setInputFile("infrequenturls.txt")
 
 artPackages = ArtPackages(EXECUTION_CAP_FOR_MAINMENUURLS)
 artLoadResults = ArtLoadResults(EXECUTION_CAP_FOR_MAINMENUURLS)
+artRetentionPolicy = ArtRetentionPolicy(EXECUTION_CAP_FOR_MAINMENUURLS)
 artMails = ArtMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 artDevMails = ArtDevMails(EXECUTION_CAP_FOR_MAINMENUURLS)
 bigTasks = BigTasks(EXECUTION_CAP_FOR_MAINMENUURLS)
@@ -59,8 +66,9 @@ def run_threaded(job_func):
 schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
 schedule.every(10).minutes.do(run_threaded, bigTasks.execute)
 schedule.every(10).minutes.do(run_threaded, harvester.execute)
-schedule.every(15).minutes.do(run_threaded, artPackages.execute)
-schedule.every(5).minutes.do(run_threaded, artLoadResults.execute)
+schedule.every(20).minutes.do(run_threaded, artPackages.execute)
+schedule.every(10).minutes.do(run_threaded, artLoadResults.execute)
+schedule.every().day.at("12:00").do(run_threaded, artRetentionPolicy.execute)
 schedule.every(1).hours.do(run_threaded, artDevMails.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
 # schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)

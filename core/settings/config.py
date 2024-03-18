@@ -199,7 +199,7 @@ CACHES = {
     }
 }
 
-SESSION_COOKIE_AGE = 60*60*24*2  # 48 hours
+SESSION_COOKIE_AGE = 60*60*24  # 24 hours
 SESSION_API_CALL_AGE = 60*30  # 10 minutes
 
 # URL_PATH_PREFIX for multi-developer apache/wsgi instance
@@ -307,6 +307,14 @@ LOGGING = {
             'backupCount': 2,
             'formatter': 'verbose',
         },
+        'logfile-art': {
+            'level': LOG_LEVEL,
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_ROOT + "/logfile.art",
+            'maxBytes': LOG_SIZE,
+            'backupCount': 2,
+            'formatter': 'verbose',
+        },
         'logfile-template': {
             'level': LOG_LEVEL,
             'class': 'logging.handlers.RotatingFileHandler',
@@ -366,6 +374,10 @@ LOGGING = {
         'bigpandamon-error': {
             'handlers': ['logfile-error'],
             'level': 'ERROR',
+        },
+        'bigpandamon-art': {
+            'handlers': ['logfile-art', 'logfile-error', 'console'],
+            'level': LOG_LEVEL,
         },
         'bigpandamon-filebrowser': {
             'handlers': ['logfile-filebrowser', 'logfile-error', 'logfile-info', 'console'],

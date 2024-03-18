@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from core.views import initRequest
+from core.oauth.utils import login_customrequired
 from django.db import connection
 from django.urls import reverse
 from django.core.cache import cache
@@ -8,9 +9,13 @@ from collections import defaultdict
 from core.libs.DateEncoder import DateEncoder
 
 
+@login_customrequired
 def globalviewDemo(request):
 
     valid, response = initRequest(request)
+    if not valid:
+        return response
+
     new_cur = connection.cursor()
     dict_from_cache = cache.get('art-monit-dict')
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span style="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-check">ICON33</span></div>'
