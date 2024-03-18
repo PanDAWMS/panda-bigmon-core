@@ -338,11 +338,13 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
     output = {}
     output_table = {}
     basicstat = None
+    is_from_cache = {'yes': 0, 'total': 0}
     _logger.debug('Getting staging progress and identifying outliers for {} RSEs:'.format(len(datasets_dict)))
     for se, datasets in datasets_dict.items():
         _logger.debug('RSE: {}, {} datasets to analyze'.format(se, len(datasets)))
         basicstat = stageStat.get(se, [])
         for ds in datasets:
+            is_from_cache['total'] +=1
             try:
                 progress_info = getCachedProgress(se, ds['TASKID'])
             except:
@@ -354,12 +356,14 @@ def getOutliers(datasets_dict, stageStat, tasks_to_rucio):
                 progress_info = getStaginProgress(str(ds['TASKID']))
                 if progress_info:
                     setCachedProgress(se, ds['TASKID'], ds['STATUS'], progress_info)
+            else:
+                is_from_cache['yes'] += 1
             if progress_info and len(progress_info) > 1 and '1970' not in progress_info[1][0]:
                 progress_info = patch_start_time((ds['START_TIME'], progress_info, ds['TOTAL_FILES']))
                 progress_info = transform_into_eq_intervals(progress_info, str(ds['TASKID']))
                 basicstat.append(progress_info)
                 tasks_to_rucio[ds['TASKID']] = ds['RRULE']
-                _logger.debug('Length of progress data: {}, task {}, RSE {}'.format(len(progress_info), ds['TASKID'], se))
+            _logger.debug('Length of progress data: {}, task {}, RSE {}, from cache? {}'.format(len(progress_info), ds['TASKID'], se, is_from_cache))
         if basicstat:
             datamerged = pd.concat([s for s in basicstat], axis=1)
             _logger.debug('Merged data shape: {}'.format(datamerged.shape))
