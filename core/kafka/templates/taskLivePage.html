@@ -68,6 +68,7 @@
         .hidden {
             display: none;
         }
+
         .toggle-icon {
             cursor: pointer;
             font-size: 1em;
@@ -88,6 +89,8 @@
         <div class="chart-container">
             <canvas id="dynamic-chart"></canvas>
         </div>
+       <div class="progress-container">
+       </div>
         <div class="sidebar">
                 <table id="task_status_history">
                 <caption>Task Status History</caption>
@@ -182,7 +185,6 @@
             };
 
             var ctx = document.getElementById('dynamic-chart').getContext('2d');
-
             var mainChart = new Chart(ctx, {
                 type: 'bar',
                 data: {},
@@ -230,6 +232,7 @@
                     }
                 },
             });
+
             socket.onmessage = function (event) {
                 var message = JSON.parse(event.data);
 
@@ -529,9 +532,6 @@
                     chart.update();
                 } else {
                     createPieChart(canvasId, data, title);
-                }
-                if (data.datasets[0].data.some(value => value !== 0)) {
-                    document.getElementById('pie-chart-tab').classList.remove('hidden');
                 }
             }
 

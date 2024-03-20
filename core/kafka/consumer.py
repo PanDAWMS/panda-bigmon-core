@@ -114,7 +114,6 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                             else:
                                 continue
 
-
                             if message_dict['jobid'] not in main_jobs_dict:
                                 main_jobs_dict[message_dict['jobid']] = {}
 
@@ -274,12 +273,12 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
         return results
 
     async def send_real_time_agg_data(self, agg_data):
-        await asyncio.sleep(2)
+        await asyncio.sleep(10)
         await self.send(text_data=json.dumps({'type': 'web-terminal', 'web-terminal': agg_data}))
         #await self.send_to_all_clients(text_data=json.dumps({'type': 'terminal', 'message': agg_data}))
 
     async def send_real_time_plots_data(self, jobs_dict, agg_metrics_real_time):
-        await asyncio.sleep(2)
+        await asyncio.sleep(10)
         await self.send(text_data=json.dumps({'type': 'jobs_metrics', 'jobs_metrics': agg_metrics_real_time}))
         await self.send(text_data=json.dumps({'type': 'jobs_list', 'jobs_list': list(jobs_dict.keys())}))
         # await self.send_to_all_clients(text_data=json.dumps(agg_metrics_real_time))
