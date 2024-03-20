@@ -1435,9 +1435,8 @@ def sendArtReport(request):
     # prepare data for report
     artjobsdictpackage = {}
     for job in art_jobs:
-        nightly_tag_time = datetime.strptime(job['nightly_tag'].replace('T', ' '), '%Y-%m-%d %H%M')
-        ntag_from = datetime.strptime(query['ntag_from'], '%Y-%m-%d') if isinstance(query['ntag_from'], str) else query['ntag_from']
-        if nightly_tag_time > ntag_from + timedelta(hours=20):
+        # we want in report only overnight builds, usually starting from 8pm
+        if job['nightly_tag_date'] > query['nightly_tag_date__range'][0] + timedelta(hours=20):
             if job['package'] not in artjobsdictpackage.keys():
                 artjobsdictpackage[job['package']] = {}
                 artjobsdictpackage[job['package']]['branch'] = job['branch']
