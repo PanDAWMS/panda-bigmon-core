@@ -468,8 +468,8 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
     res = list([h['data'] for h in s.scan()])
     if len(res) > 0:
         # filter files having failures with error message starting with "STAGING"
-        file_names = set([f"{r['scope']}:{r['name']}" for r in res])
-        stuck_files = [f for f in stuck_files if f in file_names]
+        file_names = set([r['name'] for r in res])
+        stuck_files = [f"{rule_info['scope']}:{f}" for f in stuck_files if f in file_names]
         if len(stuck_files) > 0:
             return True, stuck_files
     return False, stuck_files
