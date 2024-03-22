@@ -7,6 +7,8 @@ from core.kafka.config import initConsumer
 from core.libs.elasticsearch import get_os_task_status_log
 from core.kafka.utils import (fixed_statuses, prepare_data_for_pie_chart, prepare_data_for_main_chart,
                               update_errors_list, create_new_errors_list)
+from core.common.models import JediDatasets
+from django.db.models import Sum
 
 connected_clients = []
 task_data = {}
@@ -38,8 +40,12 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
         else:
             self.message_ids = task_data[jeditaskid]['message_ids']
             self.jobs_info_status_dict = task_data[jeditaskid]['jobs_info_status_dict']
+        task_statuses = self.task_info_status_dict.keys()
+        if 'done' not in task_statuses:
+            self.consumer = initConsumer(client, user, jeditaskid)
+        else:
+            self.consumer = None
 
-        self.consumer = initConsumer(client, user, jeditaskid)
         self.kafka_task = asyncio.create_task(self.kafka_consumer(jeditaskid))
 
     async def disconnect(self, close_code):
@@ -88,57 +94,57 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
                 last_errors = await self.prepare_errors_repots(main_erros_jobs_dict)
                 await self.send(text_data=json.dumps({'type': 'web-errors-terminal', 'web-errors-terminal': last_errors}))
 
-            while True:
-                message = await loop.run_in_executor(None, self.consumer.poll, 1.0)
+            if self.consumer != None:
+                while True:
+                    message = await loop.run_in_executor(None, self.consumer.poll, 1.0)
 
-                if message is None:
-                    continue
+                    if message is None:
+                        continue
 
-                print('Received message: {}'.format(message.value().decode('utf-8')))
+                    print('Received message: {}'.format(message.value().decode('utf-8')))
 
-                message_dict = json.loads(message.value())
+                    message_dict = json.loads(message.value())
 
-                is_message_meets_conditions = await self.message_filter(jeditaskid, message_dict)
+                    is_message_meets_conditions = await self.message_filter(jeditaskid, message_dict)
 
-                if (is_message_meets_conditions):
-                    if message_dict['msg_type'] == 'task_status':
-                        main_task_dict[message_dict['status']] = message_dict['timestamp']
-                        await self.send(text_data=json.dumps({'type': 'task_status', 'task_status': main_task_dict}))
-                    else:
-                        try:
-                            if (message_dict['jobid'] in jobs_dict and
-                                    jobs_dict[message_dict['jobid']]['status'] != message_dict['status']
-                                    and jobs_dict[message_dict['jobid']]['status'] not in ('failed', 'finished',
-                                                                                           'cancelled', 'closed')):
-                                jobs_dict[message_dict['jobid']] = message_dict
-                            else:
-                                continue
+                    if (is_message_meets_conditions):
+                        if message_dict['msg_type'] == 'task_status':
+                            main_task_dict[message_dict['status']] = message_dict['timestamp']
+                            await self.send(text_data=json.dumps({'type': 'task_status', 'task_status': main_task_dict}))
+                        else:
+                            try:
+                                if (message_dict['jobid'] in jobs_dict and
+                                        jobs_dict[message_dict['jobid']]['status'] != message_dict['status']
+                                        and jobs_dict[message_dict['jobid']]['status'] not in ('failed', 'finished',
+                                                                                               'cancelled', 'closed')):
+                                    jobs_dict[message_dict['jobid']] = message_dict
+                                else:
+                                    continue
 
+                                if message_dict['jobid'] not in main_jobs_dict:
+                                    main_jobs_dict[message_dict['jobid']] = {}
 
-                            if message_dict['jobid'] not in main_jobs_dict:
-                                main_jobs_dict[message_dict['jobid']] = {}
+                                main_jobs_dict[message_dict['jobid']][message_dict['status']] = {}
+                                main_jobs_dict[message_dict['jobid']][message_dict['status']] = message_dict
 
-                            main_jobs_dict[message_dict['jobid']][message_dict['status']] = {}
-                            main_jobs_dict[message_dict['jobid']][message_dict['status']] = message_dict
+                                if jeditaskid in task_data:
+                                    task_data[jeditaskid]['jobs_info_status_dict'] = main_jobs_dict
+                                agg_metrics_real_time = await self.prepare_metrics(jobs_dict)
+                                # sends metrics for plots
+                                await self.send_real_time_plots_data(jobs_dict, agg_metrics_real_time)
 
-                            if jeditaskid in task_data:
-                                task_data[jeditaskid]['jobs_info_status_dict'] = main_jobs_dict
-                            agg_metrics_real_time = await self.prepare_metrics(jobs_dict)
-                            # sends metrics for plots
-                            await self.send_real_time_plots_data(jobs_dict, agg_metrics_real_time)
+                                # await self.send_metrics(jobs_dict)
+                                # sends messages to the terminal
+                                agg_data = await self.aggregate_data(main_jobs_dict)
+                                await self.send_real_time_agg_data(agg_data)
 
-                            # await self.send_metrics(jobs_dict)
-                            # sends messages to the terminal
-                            agg_data = await self.aggregate_data(main_jobs_dict)
-                            await self.send_real_time_agg_data(agg_data)
+                                if message_dict['status'] in ('failed', 'cancelled', 'closed'):
+                                    errors_list = create_new_errors_list(message_dict)
+                                    await self.send(text_data=json.dumps(
+                                        {'type': 'web-errors-terminal', 'web-errors-terminal': errors_list}))
 
-                            if message_dict['status'] in ('failed', 'cancelled', 'closed'):
-                                errors_list = create_new_errors_list(message_dict)
-                                await self.send(text_data=json.dumps(
-                                    {'type': 'web-errors-terminal', 'web-errors-terminal': errors_list}))
-
-                        except Exception as ex:
-                            print(ex)
+                            except Exception as ex:
+                                print(ex)
         except Exception as ex:
             print(ex)
 
@@ -274,13 +280,16 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
         return results
 
     async def send_real_time_agg_data(self, agg_data):
-        await asyncio.sleep(2)
+        await asyncio.sleep(10)
         await self.send(text_data=json.dumps({'type': 'web-terminal', 'web-terminal': agg_data}))
         #await self.send_to_all_clients(text_data=json.dumps({'type': 'terminal', 'message': agg_data}))
 
     async def send_real_time_plots_data(self, jobs_dict, agg_metrics_real_time):
-        await asyncio.sleep(2)
+        await asyncio.sleep(10)
         await self.send(text_data=json.dumps({'type': 'jobs_metrics', 'jobs_metrics': agg_metrics_real_time}))
         await self.send(text_data=json.dumps({'type': 'jobs_list', 'jobs_list': list(jobs_dict.keys())}))
         # await self.send_to_all_clients(text_data=json.dumps(agg_metrics_real_time))
         # await self.send_to_all_clients(text_data=json.dumps({'type': 'jobs_list', 'message': list(jobs_dict.keys())}))
+
+    async def get_jeditask_info_db(self, jeditaskid):
+        pass
