@@ -136,7 +136,7 @@ def getDTCSubmissionHist(request):
         timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
 
         # workaround for analysis tasks
-        if dsdata['processingtype'].startswith('panda-client'):
+        if 'processingtype' in dsdata and dsdata['processingtype'] and dsdata['processingtype'].startswith('panda-client'):
             dsdata['processingtype'] = 'analysis'
 
         for key in summary:

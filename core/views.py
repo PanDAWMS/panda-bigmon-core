@@ -2825,8 +2825,8 @@ def userInfo(request, user=''):
     fullname = ''
     login = ''
     is_prepare_history_links = False
-    userQueryTask = None
-    userQueryJobs = None
+    query_task = None
+    query_job = None
 
     if user == '':
         if 'user' in request.session['requestParams']:
@@ -2845,13 +2845,14 @@ def userInfo(request, user=''):
                 login = user = request.user.username
                 # replace middle name by wildcard if exists
                 first_name = str(request.user.first_name.replace('\'', ''))
-                if ' ' in first_name:
-                    first_name = first_name.split(' ')[0]
                 last_name = str(request.user.last_name)
-                userQueryTask = Q(username=login) | (
-                        Q(username__istartswith=first_name) & Q(username__iendswith=last_name))
-                userQueryJobs = Q(produsername=login) | (
-                        Q(produsername__istartswith=first_name) & Q(produsername__iendswith=last_name))
+                if ' ' not in first_name and ' ' not in last_name:
+                    query_task = Q(username=login) | Q(username=f"{first_name} {last_name}")
+                    query_job = Q(produsername=login) | Q(produsername=f"{first_name} {last_name}")
+                else:
+                    first_name = first_name.split(' ')[0] if ' ' in first_name else first_name
+                    query_task = Q(username=login) | (Q(username__istartswith=first_name) & Q(username__iendswith=last_name))
+                    query_job = Q(produsername=login) | (Q(produsername__istartswith=first_name) & Q(produsername__iendswith=last_name))
                 is_prepare_history_links = True
 
     if 'days' in request.session['requestParams']:
@@ -2885,11 +2886,11 @@ def userInfo(request, user=''):
     # Tasks owned by the user
     query, extra_query_str, _ = setupView(request, hours=days * 24, limit=999999, querytype='task', wildCardExt=True)
 
-    if userQueryTask is None:
+    if query_task is None:
         query['username__icontains'] = user.strip()
         tasks = JediTasks.objects.filter(**query).extra(where=[extra_query_str]).values()
     else:
-        tasks = JediTasks.objects.filter(**query).filter(userQueryTask).extra(where=[extra_query_str]).values()
+        tasks = JediTasks.objects.filter(**query).filter(query_task).extra(where=[extra_query_str]).values()
     _logger.info('Got {} tasks: {}'.format(len(tasks), time.time() - request.session['req_init_time']))
 
     tasks = cleanTaskList(tasks, sortby=sortby, add_datasets_info=True)
@@ -2924,7 +2925,7 @@ def userInfo(request, user=''):
         jobs = []
         values = 'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime', 'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname', 'proddblock', 'destinationdblock', 'container_name', 'cmtconfig'
 
-        if userQueryJobs is None:
+        if query_job is None:
             query['produsername__icontains'] = user.strip()
             jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[extra_query_str])[
                         :request.session['JOB_LIMIT']].values(*values))
@@ -2938,18 +2939,18 @@ def userInfo(request, user=''):
                 jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_query_str])[
                             :request.session['JOB_LIMIT']].values(*values))
         else:
-            jobs.extend(Jobsdefined4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[
+            jobs.extend(Jobsdefined4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
                         :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsactive4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[
+            jobs.extend(Jobsactive4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
                         :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobswaiting4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[
+            jobs.extend(Jobswaiting4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
                         :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsarchived4.objects.filter(**query).filter(userQueryJobs).extra(where=[extra_query_str])[
+            jobs.extend(Jobsarchived4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
                         :request.session['JOB_LIMIT']].values(*values))
 
             # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
             if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-                query['produsername__startswith'] = user.strip()  # .filter(userQueryJobs)
+                query['produsername__startswith'] = user.strip()  # .filter(query_job)
                 archjobs = []
                 # This two filters again to force Oracle search
                 archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip())).extra(
