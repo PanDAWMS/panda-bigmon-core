@@ -1,6 +1,6 @@
 """"""
 import logging
-import statistics
+import collections, functools, operator
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
     Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021,  Jobsarchived, Jobsarchived4
 from core.libs.datetimestrings import parse_datetime
@@ -147,6 +147,7 @@ def job_summary_dict(request, jobs, fieldlist=None):
     }
 
     for job in jobs:
+        print(job['minramcount'], '   ', job['corecount'])
         for f in flist:
             if f == 'pilotversion':
                 if 'pilotid' in job and job['pilotid'] and '|' in job['pilotid']:
@@ -272,11 +273,14 @@ def job_summary_dict(request, jobs, fieldlist=None):
             itemd['stats']['sum'] = sum([x['kname'] * x['kvalue'] for x in iteml if isinstance(x['kname'], int)])
         if f == 'minramcount':
             itemd['stats'] = {}
-            # calculate mean/core and convert MB->GB
+            # calculate sum(minramcount)/sum(cores) and convert MB->GB
             try:
-                itemd['stats']['mean'] = round(1.0/1000*statistics.mean([j[f]/j['corecount'] for j in jobs if isinstance(j[f], int) and isinstance(j['corecount'], int) and j['corecount'] > 0]), 2)
+                result = dict(functools.reduce(operator.add, map(collections.Counter, [
+                    {'corecount': j['corecount'], 'minramcount': j['minramcount']} for j in jobs if isinstance(j[f], int) and isinstance(j['corecount'], int) and j['corecount'] > 0
+                ])))
+                itemd['stats']['sum'] = round(1.0/1000*result['minramcount']/result['corecount'], 2)
             except Exception as ex:
-                _logger.warning(f"Can not calculate mean {f}/core with {ex}")
+                _logger.warning(f"Can not calculate {f}/core with {ex}")
         suml.append(itemd)
         suml = sorted(suml, key=lambda x: x['field'])
     return suml, esjobdict
