@@ -147,7 +147,6 @@ def job_summary_dict(request, jobs, fieldlist=None):
     }
 
     for job in jobs:
-        print(job['minramcount'], '   ', job['corecount'])
         for f in flist:
             if f == 'pilotversion':
                 if 'pilotid' in job and job['pilotid'] and '|' in job['pilotid']:
