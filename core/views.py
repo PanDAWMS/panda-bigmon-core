@@ -52,7 +52,6 @@ from core.common.models import Incidents
 from core.common.models import Pandalog
 from core.common.models import JediJobRetryHistory
 from core.common.models import JediTasks
-from core.common.models import JediTasksOrdered
 from core.common.models import TasksStatusLog
 from core.common.models import GetEventsForTask
 from core.common.models import JediEvents
@@ -4375,9 +4374,9 @@ def taskList(request):
     if 'statenotupdated' in request.session['requestParams']:
         tasks = tasks_not_updated(request, query, extra_str)
     else:
-        tasks = JediTasksOrdered.objects.filter(**query).extra(where=[extra_str])[:limit].values()
+        tasks = JediTasks.objects.filter(**query).extra(where=[extra_str]).order_by('-modificationtime')[:limit].values()
         # calculate total number of tasks suited for query without hard limit
-        listTasks.append(JediTasksOrdered)
+        listTasks.append(JediTasks)
         if not is_json_request(request):
             thread = Thread(target=totalCount, args=(listTasks, query, extra_str, dkey))
             thread.start()
