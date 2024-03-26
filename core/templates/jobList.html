@@ -146,8 +146,8 @@
 <tr><th>
   <p>{{ fdict.field }} ({{ fdict.list|length }})</p>
   {% if fdict.stats %}
-    {% if fdict.stats.sum and 'jobstatus' in requestParams and requestParams.jobstatus == 'running' %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}
-    {% if fdict.field == 'minramcount' and 'mean' in fdict.stats %}<span class="label secondary">&mu;: {{ fdict.stats.mean }} GB/core</span>{% endif %}
+    {% if fdict.field == 'actualcorecount' and 'sum' in fdict.stats and 'jobstatus' in requestParams and requestParams.jobstatus == 'running' %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}
+    {% if fdict.field == 'minramcount' and 'sum' in fdict.stats %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma}} GB/core <span class="bp-tooltip right"><i class="fi-info"></i><span class="tooltip-text">sum(minramcount)/sum(corecount)</span></span></span> {% endif %}
   {% endif %}
 </th>
     <td><div class="comment more">

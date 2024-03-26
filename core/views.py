@@ -1403,7 +1403,6 @@ def jobList(request, mode=None, param=None):
             values.append('resourcetype')
             values.append('container_name')
 
-    totalJobs = 0
     showTop = 0
     if 'limit' in request.session['requestParams']:
         request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
@@ -1459,7 +1458,7 @@ def jobList(request, mode=None, param=None):
         jobs.extend(Jobsactive4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         jobs.extend(Jobswaiting4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
-
+        _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
         listJobs = [Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4]
 
         if not noarchjobs:
@@ -1486,24 +1485,25 @@ def jobList(request, mode=None, param=None):
                                                             settings.DATETIME_FORMAT)).days > 2 or
                         (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
                                                             settings.DATETIME_FORMAT)).days > 2):
-                    if 'jeditaskid' in request.session['requestParams'] or (
-                            is_json_request(request) and (
-                            'fulllist' in request.session['requestParams'] and (
-                            request.session['requestParams']['fulllist'] == 'true'))):
+                    # add jobsarchived model to calculation of total jobs count in a separate thread
+                    listJobs.append(Jobsarchived)
+                    # remove timewindow if all jobs for a task or full list is requested
+                    if 'jeditaskid' in request.session['requestParams'] or (is_json_request(request) and (
+                            'fulllist' in request.session['requestParams'] and request.session['requestParams']['fulllist'] == 'true')):
+                        del query['modificationtime__castdate__range']
+                    # jobsarchived table has index by statechangetime, use it instead of modificationtime
+                    if 'modificationtime__castdate__range' in query:
+                        query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
                         del query['modificationtime__castdate__range']
                     # order by  statechangetime to get recent jobs as it is an index
                     order_by = '-statechangetime'
-                    archJobs = Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values)
-                    listJobs.append(Jobsarchived)
-                    totalJobs = len(archJobs)
-                    jobs.extend(archJobs)
+                    jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
+                    _logger.info('Got archived jobs: {}'.format(time.time() - request.session['req_init_time']))
         if not is_json_request(request):
             thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension, dkey))
             thread.start()
         else:
             thread = None
-
-    _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     # If the list is for a particular JEDI task, filter out the jobs superseded by retries
     # if ES -> nodrop by default
@@ -1826,7 +1826,6 @@ def jobList(request, mode=None, param=None):
             'showwarn': showwarn,
             'joblimit': request.session['JOB_LIMIT'],
             'limit': JOB_LIMIT,
-            'totalJobs': totalJobs,
             'showTop': showTop,
             'url_nolimit': url_nolimit,
             'display_limit': display_limit,

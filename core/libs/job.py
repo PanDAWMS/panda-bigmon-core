@@ -283,9 +283,13 @@ def get_job_list(query, **kwargs):
         jobs.extend(job_table.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
     if 'jeditaskid' in query or 'jeditaskid__in' in query or 'jeditaskid' in extra_str or (
-        'pandaid' in query or 'pandaid__in' in query or 'pandaid' in extra_str) or  (
-        'modificationtime__castdate__range' in query and query['modificationtime__castdate__range'][0] < (
-            datetime.now() - timedelta(days=3))) or (len(jobs) == 0 and 'pandaid' in query):
+            'pandaid' in query or 'pandaid__in' in query or 'pandaid' in extra_str) or  (
+                'modificationtime__castdate__range' in query and query['modificationtime__castdate__range'][0] < (
+                    datetime.now() - timedelta(days=3))) or (len(jobs) == 0 and 'pandaid' in query):
+        if 'modificationtime__castdate__range' in query:
+            # jobsarchived table has index by statechangetime, use it instead of modificationtime
+            query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
+            del query['modificationtime__castdate__range']
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
     # drop duplicate jobs
