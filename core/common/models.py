@@ -297,7 +297,7 @@ class JediTasksBase(models.Model):
     status = models.CharField(max_length=192, db_column='status')
     username = models.CharField(max_length=384, db_column='username')
     creationdate = models.DateTimeField(db_column='creationdate')
-    modificationtime = models.DateTimeField(db_column='modificationtime')
+    # modificationtime = models.DateTimeField(db_column='modificationtime')  # use realmodificationtime instead
     reqid = models.IntegerField(null=True, db_column='reqid', blank=True)
     oldstatus = models.CharField(max_length=192, db_column='oldstatus', blank=True)
     cloud = models.CharField(max_length=30, db_column='cloud', blank=True)
@@ -360,6 +360,9 @@ class JediTasksBase(models.Model):
     diskiounit = models.CharField(max_length=96, db_column='diskiounit', blank=True)
     container_name = models.CharField(max_length=200, db_column='container_name', blank=True)
     attemptnr = models.IntegerField(null=True, db_column='attemptnr', blank=True)
+    memoryleakcore = models.BigIntegerField(null=True, db_column='memory_leak_core', blank=True)
+    memoryleakx2 = models.BigIntegerField(null=True, db_column='memory_leak_x2', blank=True)
+    modificationtime = models.DateTimeField(db_column='realmodificationtime')
 
     def get_fields_by_type(self, ftype='integer'):
         field_list = [str(f.name) for f in self._meta.fields if ftype in str(f.description).lower()]
@@ -371,17 +374,9 @@ class JediTasksBase(models.Model):
 
 class JediTasks(JediTasksBase):
 
-    if LooseVersion(os.environ.get('PANDADB_VERSION', '0.0.0')) > LooseVersion('0.0.16'):
-        realmodificationtime = models.DateTimeField(db_column='realmodificationtime')
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."jedi_tasks"'
         app_label = 'jedi'
-
-
-class JediTasksOrdered(JediTasksBase):
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA}"."jedi_tasks_ordered"'
-        app_label = 'pandamon'
 
 
 class GetEventsForTask(models.Model):
