@@ -209,7 +209,7 @@ def upload_data(os_conn, index_name_base, data, timestamp_param='creationdate', 
         es_host = os_host.split('/')[0]
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(
-        f"https://{os_host}/щы/_bulk",
+        f"https://{os_host}/os/_bulk",
         data=data,
         headers=headers,
         auth=HTTPBasicAuth(os_user, os_password),
