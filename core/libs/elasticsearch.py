@@ -206,7 +206,7 @@ def upload_data(os_conn, index_name_base, data, timestamp_param='creationdate', 
     # send data via POST request
     os_host, os_user, os_password = get_os_credentials(instance='os-atlas')
     if '/' in os_host:
-        es_host = os_host.split('/')[0]
+        os_host = os_host.split('/')[0]
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(
         f"https://{os_host}/os/_bulk",
