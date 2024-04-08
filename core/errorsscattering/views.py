@@ -4,7 +4,7 @@
     A set of views showed errors scattering matrix on different levels of grouping
 """
 
-import random, json, math
+import json, math, logging
 from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
@@ -15,11 +15,12 @@ from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_tab
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
-from core.common.models import JediTasksOrdered
+from core.common.models import JediTasks
 from core.schedresource.utils import get_pq_clouds
 
 from django.conf import settings
 
+_logger = logging.getLogger('bigpandamon')
 
 @login_customrequired
 def errorsScattering(request):
@@ -52,14 +53,14 @@ def errorsScattering(request):
         except:
             pass
 
+    tasks = []
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=9999999, querytype='task', wildCardExt=True)
     query['tasktype'] = 'prod'
     query['superstatus__in'] = ['submitting', 'running']
     # exclude paused tasks
     wildCardExtension += ' and status != \'paused\''
-    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid")
-
-    # print ('tasks found %i') % len(tasks)
+    tasks.extend(JediTasks.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid"))
+    _logger.debug(f'{len(tasks)} tasks found ')
 
     taskListByReq = {}
     task_ids = []
@@ -339,10 +340,9 @@ def errorsScatteringDetailed(request, cloud, reqid):
             cloudstr = cloudstr[:-1]
         condition = "computingsite in ( %s )" % (str(cloudstr))
 
-
-    tasks = JediTasksOrdered.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid")
-
-    print ('tasks found %i' % (len(tasks)))
+    tasks = []
+    tasks.extend(JediTasks.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values("jeditaskid", "reqid"))
+    _logger.debug(f'{len(tasks)} tasks found %i')
 
     taskListByReq = {}
     task_ids = []
@@ -609,7 +609,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
 
     elif 'cloud' in grouping or view == 'queues':
 
-        print ('%s starting data aggregation' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        _logger.debug(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} starting data aggregation')
         # we fill here the dict
         for errorEntry in errorsRaw:
             rid = errorEntry['REQID']
@@ -655,11 +655,9 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 for color, srint in successrateIntervals.items():
                     reqerrors[rid]['totalstats'][color + 'c'] += 1 if (srpct >= srint[0] and srpct <= srint[1]) else 0
 
-
-        print ('%s starting cleaning of non-errorneous requests' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        _logger.debug(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} starting cleaning of non-errorneous requests')
         reqsToDel = []
-
-        #make cleanup of full none erroneous tasks
+        # make cleanup of full none erroneous tasks
         for rid, reqentry in reqerrors.items():
             notNone = False
             if reqentry['totalstats']['allc'] == 0:
@@ -670,7 +668,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         for reqToDel in reqsToDel:
             del reqerrors[reqToDel]
 
-        print ('%s starting calculation of row average stats' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        _logger.debug(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} starting calculation of row average stats')
 
         for rid, reqentry in reqerrors.items():
             for sn, sv in reqentry['columns'].items():
@@ -688,7 +686,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
                     reqentry['columns'][s]['percent'] = int(math.ceil(reqentry['columns'][s]['finishedc']*100./reqentry['columns'][s]['allc'])) if \
                         reqentry['columns'][s]['allc'] > 0 else 0
 
-        print ('%s starting calculation of columns average stats' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        _logger.debug(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} starting calculation of columns average stats')
 
         ### calculate stats for columns
         columnstats = {}
@@ -709,7 +707,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 math.ceil(columnstats[cn]['finishedc'] * 100. / columnstats[cn]['allc'])) if \
                     columnstats[cn]['allc'] > 0 else 0
 
-        print ('%s starting set unique cache for each request' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        _logger.debug(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} starting set unique cache for each request')
 
         ### Introducing unique tk for each reqid
         for rid, reqentry in reqerrors.items():
@@ -717,8 +715,8 @@ def errorsScatteringDetailed(request, cloud, reqid):
                 tk = setCacheData(request, lifetime=60*20, jeditaskid=taskListByReq[rid][:-1])
                 reqentry['tk'] = tk
 
-        print ('%s starting transform dict to list' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        ### transform requesterrors dict to list for sorting on template
+        _logger.debug(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} starting transform dict to list')
+        # transform requesterrors dict to list for sorting on template
         for rid, reqEntry in reqerrors.items():
             columnlist = []
             for columnname, stats in reqEntry['columns'].items():
@@ -747,7 +745,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
         'nrows': max(len(tasksErrorsList), len(reqErrorsList)),
         'built': datetime.now().strftime("%H:%M:%S"),
     }
-    print ('%s starting rendering of the page' % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    _logger.debug(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} starting rendering of the page')
     setCacheEntry(request, "errorsScatteringDetailed", json.dumps(data, cls=DateEncoder), 60 * 20)
     response = render(request, 'errorsScatteringDetailed.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
