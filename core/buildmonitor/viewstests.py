@@ -79,7 +79,7 @@ title="N/A" class="ui-icon ui-icon-cancel">ICON20</span></div>'
     lllr=len(reslt)
     if lllr > 0:
         rowmax=reslt[-1]
-        host=re.split('\.',rowmax[5])[0]
+        host=re.split('\\.',rowmax[5])[0]
         jid_top = rowmax[0]
         buildareaSS = rowmax[6]
         copyareaSS = rowmax[7]
