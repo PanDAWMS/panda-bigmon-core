@@ -3349,7 +3349,7 @@ def siteInfo(request, site=''):
     panda_queues = SchedconfigJson.objects.filter(**pqquery).values()
     panda_queue_type = None
 
-    if len(panda_queues[0]['data']) > 0:
+    if len(panda_queues) > 0:
         pq_dict = panda_queues[0]['data']
         if isinstance(pq_dict, str):
             pq_dict = json.loads(pq_dict)
