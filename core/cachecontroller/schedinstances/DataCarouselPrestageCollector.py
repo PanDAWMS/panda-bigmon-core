@@ -7,8 +7,6 @@ from urllib.error import HTTPError
 import json
 from settingscron import TIME_OUT_FOR_QUERY
 import oracledb
-oracledb.init_oracle_client()
-
 
 class DataCarouselPrestageCollector(BaseTasksProvider):
     BASE_STAGE_INFO_URL = 'https://bigpanda.cern.ch/staginprogress/?jeditaskid='

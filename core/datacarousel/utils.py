@@ -11,7 +11,6 @@ import pickle
 import numpy as np
 import pandas as pd
 import oracledb
-oracledb.init_oracle_client()
 
 import urllib.request as urllibr
 from sklearn.preprocessing import scale

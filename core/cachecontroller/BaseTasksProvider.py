@@ -2,7 +2,6 @@ from core import settings
 import threading
 import logging
 import oracledb
-oracledb.init_oracle_client()
 
 class BaseTasksProvider(object):
     logger = logging.getLogger(__name__)

@@ -1,5 +1,5 @@
 import getopt, subprocess, re, oracledb, requests, json, psutil
-oracledb.init_oracle_client()
+oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
 
 import sys
 from datetime import datetime
