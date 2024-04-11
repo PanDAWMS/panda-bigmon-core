@@ -3348,9 +3348,11 @@ def siteInfo(request, site=''):
     pqquery = {'pandaqueue': site}
     panda_queues = SchedconfigJson.objects.filter(**pqquery).values()
     panda_queue_type = None
-    if len(panda_queues) > 0:
-        pq_dict = json.loads(panda_queues[0]['data'])
 
+    if len(panda_queues[0]['data']) > 0:
+        pq_dict = panda_queues[0]['data']
+        if isinstance(pq_dict, str):
+            pq_dict = json.loads(pq_dict)
     # get PQ params from CRIC if no info in DB
     if not pq_dict:
         pq_dict = get_panda_resource(site)
