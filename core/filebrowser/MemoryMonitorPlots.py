@@ -62,37 +62,12 @@ def prMonPlots(request, pandaid=-1):
         pandaid = -1
         msg = 'No pandaid provided!'
 
-    processor_type = 'cpu'
-    if pandaid > 0:
-        job = Jobsarchived4.objects.filter(pandaid=pandaid).values('pandaid', 'cmtconfig')
-        if len(job) == 0:
-            job = Jobsarchived.objects.filter(pandaid=pandaid).values('pandaid', 'cmtconfig')
-
-        if len(job) > 0:
-            job = job[0]
-            if 'cmtconfig' in job and job['cmtconfig'] and 'gpu' in job['cmtconfig']:
-                processor_type = 'gpu'
-
-    plots_list = [
-        'np_nt',
-        'cpu_rate',
-        'memory',
-        'memory_rate',
-        'io',
-        'io_rate',
-    ]
-
-    if processor_type == 'gpu':
-        plots_list.extend(['ng', 'gpu_memory', 'gpu_pct'])
-
     data = {
         'request': request,
         'viewParams': request.session['viewParams'],
         'requestParams': request.session['requestParams'],
         'pandaid': pandaid,
-        'processor_type': processor_type,
         'built': datetime.now().strftime("%H:%M:%S"),
-        'plotsList': plots_list,
         "error": msg,
     }
     return render(request, 'jobMemoryMonitor.html', data, content_type='text/html')
@@ -436,7 +411,7 @@ def getPrMonPlotsData(request, pandaid=-1):
     # remove plot if no data
     remove_list = []
     for pn, pdata in plots_data.items():
-        if len(pdata['data']) == 1:
+        if len(pdata['data']) <= 1:
             remove_list.append(pn)
     for i in remove_list:
         del plots_data[i]

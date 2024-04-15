@@ -36,16 +36,16 @@
     </div>
     <div class="card-section">
       <div ng-bind-html="prmon.message"></div>
-      {% if processor_type  == 'gpu' %}
-        <div class="row c3-plots-row">
-          <div class="column small-12 medium-6 c3-chart-block" id="ng_chart"></div>
-          <div class="column small-12 medium-6 c3-chart-block" id="gpu_memory_chart"></div>
-        </div>
-        <div class="row c3-plots-row">
-          <div class="column small-12 medium-6 c3-chart-block" id="gpu_res_chart"></div>
-          <div class="column small-12 medium-6 c3-chart-block" id="gpu_memory_rate_chart"></div>
-        </div>
-      {% endif %}
+
+      <div class="row c3-plots-row" id="gpu_row_1">
+        <div class="column small-12 medium-6 c3-chart-block" id="ng_chart"></div>
+        <div class="column small-12 medium-6 c3-chart-block" id="gpu_memory_chart"></div>
+      </div>
+      <div class="row c3-plots-row" id="gpu_row_2">
+        <div class="column small-12 medium-6 c3-chart-block" id="gpu_res_chart"></div>
+        <div class="column small-12 medium-6 c3-chart-block" id="gpu_memory_rate_chart"></div>
+      </div>
+
       <div class="row c3-plots-row">
         <div class="column small-12 medium-6 c3-chart-block" id="np_nt_chart"></div>
         <div class="column small-12 medium-6 c3-chart-block" id="cpu_rate_chart"></div>
@@ -108,6 +108,11 @@
               }
               $scope.prmon.plot_data = response.data.plotsDict;
               charts = buildPlots($scope.prmon.plot_data);
+              // hide GPU plots if no data
+              if (!('ng' in $scope.prmon.plot_data)) {
+                document.getElementById('gpu_row_1').style.display = 'none';
+                document.getElementById('gpu_row_2').style.display = 'none';
+              }
             }
           }
           else {
