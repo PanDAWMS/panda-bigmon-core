@@ -116,6 +116,7 @@ from core.pandajob.summary_user import user_summary_dict
 from core.pandajob.utils import job_summary_dict
 
 from core.iDDS.algorithms import checkIfIddsTask
+from core.iDDS.utils import add_idds_info_to_tasks
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
@@ -4505,6 +4506,9 @@ def taskList(request):
         if 'display_limit' in request.session['requestParams']:
             n_tasks_to_show = int(request.session['requestParams']['display_limit'])
         tasks = tasks[:n_tasks_to_show]
+        # add idds info to tasks if not ATLAS deployment
+        if 'ATLAS' not in settings.DEPLOYMENT:
+            tasks = add_idds_info_to_tasks(tasks)
         tasks = stringify_datetime_fields(tasks, JediTasks)
 
         del request.session['TFIRST']

@@ -73,7 +73,7 @@ def add_idds_info_to_tasks(tasks):
     extra_str = '(1=1)'
     if len(task_ids) > settings.DB_N_MAX_IN_QUERY:
         transaction_key = insert_to_temp_table(task_ids)
-        extra_str += f' and jeditaskid in (select id from {get_tmp_table_name()} where transactionkey = {transaction_key})'
+        extra_str += f' and workload_id in (select id from {get_tmp_table_name()} where transactionkey = {transaction_key})'
     else:
         query['workload_id__in'] = task_ids
 
