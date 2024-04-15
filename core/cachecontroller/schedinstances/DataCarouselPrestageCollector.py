@@ -6,8 +6,7 @@ import urllib.request as urllibr
 from urllib.error import HTTPError
 import json
 from settingscron import TIME_OUT_FOR_QUERY
-import cx_Oracle
-
+import oracledb
 
 class DataCarouselPrestageCollector(BaseTasksProvider):
     BASE_STAGE_INFO_URL = 'https://bigpanda.cern.ch/staginprogress/?jeditaskid='
@@ -63,7 +62,7 @@ class DataCarouselPrestageCollector(BaseTasksProvider):
             connection = self.pool.acquire()
             cursor = connection.cursor()
             if len(staginginfo) > 60:
-                cursor.setinputsizes(staginginfo=cx_Oracle.LONG_STRING)
+                cursor.setinputsizes(staginginfo=oracledb.LONG_STRING)
                 cursor.execute(
                     """UPDATE atlas_pandabigmon.DATACAR_ST_PROGRESS_ARCH SET PROGRESS_DATA = :staginginfo, PROGRESS_RETRIEVED = :res where TASKID = :taskid""",
                     {'staginginfo': staginginfo, 'res': 1, 'taskid': taskid})

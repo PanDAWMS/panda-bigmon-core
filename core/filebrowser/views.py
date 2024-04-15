@@ -81,8 +81,8 @@ def index(request):
                     errors['missingparameter'] += msg
 
             # if all expected GET parameters are present, execute file lookup
-            pattern_string='^[a-zA-Z0-9.\-_]+$'
-            pattern_guid='^(\{){0,1}[0-9a-zA-Z]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\}){0,1}$'
+            pattern_string=r'^[a-zA-Z0-9.\-_]+$'
+            pattern_guid=r'^(\{){0,1}[0-9a-zA-Z]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}(\}){0,1}$'
             if 'guid' in request.session['requestParams']:
                 guid = request.session['requestParams']['guid']
                 if re.match(pattern_guid, guid) is None:

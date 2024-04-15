@@ -40,6 +40,7 @@ class TaskLogsConsumer(AsyncWebsocketConsumer):
         else:
             self.message_ids = task_data[jeditaskid]['message_ids']
             self.jobs_info_status_dict = task_data[jeditaskid]['jobs_info_status_dict']
+
         task_statuses = self.task_info_status_dict.keys()
         if 'done' not in task_statuses:
             self.consumer = initConsumer(client, user, jeditaskid)

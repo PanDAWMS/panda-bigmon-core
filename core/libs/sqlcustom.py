@@ -20,7 +20,7 @@ def fix_lob(cur):
 
 def escape_input(str_to_escape):
     """Replace reserved symbols in str for LIKE queries"""
-    chars_to_escape = '$%^&()[]{};<>?\`~+%\'\"'
+    chars_to_escape = '$%^&()[]{};<>?\\`~+%\'\\"'
     chars_replacement = '_' * len(chars_to_escape)
     tbl = str.maketrans(chars_to_escape, chars_replacement)
     str_to_escape = encoding.smart_str(str_to_escape, encoding='ascii', errors='ignore')

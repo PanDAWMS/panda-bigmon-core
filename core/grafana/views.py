@@ -473,7 +473,7 @@ def grafana_image(request):
         param = request.build_absolute_uri()
         url = param[param.index("=")+1:len(param)]
         for urlw in whitelist:
-            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
+            pattern = r"^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
             urlConfim = re.findall(pattern, url)
             if len(urlConfim) > 0:
                 break

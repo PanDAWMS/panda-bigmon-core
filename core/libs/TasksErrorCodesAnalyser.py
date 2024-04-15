@@ -36,7 +36,7 @@ class TasksErrorCodesAnalyser:
 
     def remove_stop_words(self, frame):
         def my_tokenizer(s):
-            return list(filter(None, re.split("[/ \-!?:()><=,]+", s)))
+            return list(filter(None, re.split("[/ \\-!?:()><=,]+", s)))
 
         vectorizer = CountVectorizer(tokenizer=my_tokenizer, analyzer="word", stop_words=None, preprocessor=None)
         corpus = frame['errordialog'].tolist()

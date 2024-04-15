@@ -489,12 +489,12 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
 
             # extract job substatus
             if 'jobmetrics' in job:
-                pat = re.compile('.*mode\=([^\s]+).*HPCStatus\=([A-Za-z0-9]+)')
+                pat = re.compile('.*mode\\=([^\\s]+).*HPCStatus\\=([A-Za-z0-9]+)')
                 mat = pat.match(job['jobmetrics'])
                 if mat:
                     job['jobmode'] = mat.group(1)
                     job['substate'] = mat.group(2)
-                pat = re.compile('.*coreCount\=([0-9]+)')
+                pat = re.compile('.*coreCount\\=([0-9]+)')
                 mat = pat.match(job['jobmetrics'])
                 if mat:
                     job['corecount'] = mat.group(1)

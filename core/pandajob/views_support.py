@@ -53,7 +53,7 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
     ### replace + by space
     _logger.debug('prodUserName: ...%s...' % (prodUserName))
     try:
-        prodUserName = re.sub('\+', ' ', prodUserName)
+        prodUserName = re.sub('\\+', ' ', prodUserName)
     except:
         pass
     _logger.debug('prodUserName: ...%s...' % (prodUserName))
@@ -160,7 +160,7 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
     ### replace + by space
     _logger.debug('vo: ...%s...' % (vo))
     try:
-        vo = re.sub('\+', ' ', vo)
+        vo = re.sub('\\+', ' ', vo)
     except:
         pass
     _logger.debug('vo: ...%s...' % (vo))

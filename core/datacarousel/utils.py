@@ -10,7 +10,8 @@ import datetime
 import pickle
 import numpy as np
 import pandas as pd
-import cx_Oracle
+import oracledb
+
 import urllib.request as urllibr
 from sklearn.preprocessing import scale
 from urllib.error import HTTPError
@@ -250,12 +251,12 @@ def getStagingDatasets(timewindow, source):
 
 
 def OutputTypeHandler(cursor, name, defaultType, size, precision, scale):
-    if defaultType == cx_Oracle.LOB:
-        return cursor.var(cx_Oracle.LONG_STRING, arraysize = cursor.arraysize)
-    if defaultType == cx_Oracle.CLOB:
-        return cursor.var(cx_Oracle.LONG_STRING, arraysize = cursor.arraysize)
-    elif defaultType == cx_Oracle.BLOB:
-        return cursor.var(cx_Oracle.LONG_BINARY, arraysize = cursor.arraysize)
+    if defaultType == oracledb.LOB:
+        return cursor.var(oracledb.LONG_STRING, arraysize = cursor.arraysize)
+    if defaultType == oracledb.CLOB:
+        return cursor.var(oracledb.LONG_STRING, arraysize = cursor.arraysize)
+    elif defaultType == oracledb.BLOB:
+        return cursor.var(oracledb.LONG_BINARY, arraysize = cursor.arraysize)
 
 
 def transform_into_eq_intervals(in_series, name):
@@ -305,7 +306,7 @@ def getStaginProgress(taskid):
 def patch_start_time(dbrow):
     dformat = "%Y-%m-%d %H:%M:%S"
     start = dbrow[0].strftime(dformat)
-    if isinstance(dbrow[1], cx_Oracle.LOB):
+    if isinstance(dbrow[1], oracledb.LOB):
         serie=json.loads(dbrow[1].read())
     else:
         serie=dbrow[1]

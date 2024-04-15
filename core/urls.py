@@ -122,7 +122,7 @@ urlpatterns = [
     re_path(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
 
     # robots.txt
-    re_path('^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
+    re_path(r'^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

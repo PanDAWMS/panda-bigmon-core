@@ -54,7 +54,7 @@ def removeParam(urlquery, parname, mode='complete'):
     """Remove a parameter from current query"""
     urlquery = urlquery.replace('&&', '&')
     urlquery = urlquery.replace('?&', '?')
-    pstr = '.*({}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
+    pstr = r'.*({}=[a-zA-Z0-9\.\-\_\,\:]*).*'.format(parname)
     pat = re.compile(pstr)
     mat = pat.match(urlquery)
     if mat:

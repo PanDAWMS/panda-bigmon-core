@@ -206,7 +206,7 @@ def upload_data(os_conn, index_name_base, data, timestamp_param='creationdate', 
     # send data via POST request
     os_host, os_user, os_password = get_os_credentials(instance='os-atlas')
     if '/' in os_host:
-        es_host = os_host.split('/')[0]
+        os_host = os_host.split('/')[0]
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(
         f"https://{os_host}/os/_bulk",
@@ -371,7 +371,7 @@ def get_os_task_status_log(db_source, jeditaskid, os_instance='os-atlas'):
             jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {
                 'message_id': hit_dict['message_id'], 'job_inputfilebytes': job_inputfilebytes,
                 'job_hs06sec': job_hs06sec, 'status': hit_dict['status'], 'job_nevents': job_nevents,
-                'time': hit_dict['@timestamp'],'timestamp':hit_dict['timestamp']
+                'time': hit_dict['@timestamp'],'timestamp': hit_dict['timestamp']
             }
 
         fields_list = list(hit_dict.keys())

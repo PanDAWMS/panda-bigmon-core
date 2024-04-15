@@ -2445,7 +2445,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         coreData = {}
         if jobparams:
             coreParams = re.match(
-                '.*PIPELINE_TASK\=([a-zA-Z0-9]+).*PIPELINE_PROCESSINSTANCE\=([0-9]+).*PIPELINE_STREAM\=([0-9\.]+)',
+                '.*PIPELINE_TASK\\=([a-zA-Z0-9]+).*PIPELINE_PROCESSINSTANCE\\=([0-9]+).*PIPELINE_STREAM\\=([0-9\\.]+)',
                 jobparams)
             if coreParams:
                 coreData['pipelinetask'] = coreParams.group(1)
@@ -3348,9 +3348,11 @@ def siteInfo(request, site=''):
     pqquery = {'pandaqueue': site}
     panda_queues = SchedconfigJson.objects.filter(**pqquery).values()
     panda_queue_type = None
-    if len(panda_queues) > 0:
-        pq_dict = json.loads(panda_queues[0]['data'])
 
+    if len(panda_queues) > 0:
+        pq_dict = panda_queues[0]['data']
+        if isinstance(pq_dict, str):
+            pq_dict = json.loads(pq_dict)
     # get PQ params from CRIC if no info in DB
     if not pq_dict:
         pq_dict = get_panda_resource(site)
@@ -5212,7 +5214,7 @@ def taskInfo(request, jeditaskid=0):
     try:
         jeditaskid = int(jeditaskid)
     except:
-        jeditaskid = re.findall("\d+", jeditaskid)
+        jeditaskid = re.findall("\\d+", jeditaskid)
         jdtstr = ""
         for jdt in jeditaskid:
             jdtstr = jdtstr + str(jdt)
@@ -6374,7 +6376,7 @@ def incidentList(request):
     for inc in incidents:
         desc = inc['description']
         desc = desc.replace('   ', ' ')
-        parsmat = re.match('^([a-z\s]+):\s+queue=([^\s]+)\s+DN=(.*)\s\s\s*([A-Za-z^ \.0-9]*)$', desc)
+        parsmat = re.match('^([a-z\\s]+):\\s+queue=([^\\s]+)\\s+DN=(.*)\\s\\s\\s*([A-Za-z^ \\.0-9]*)$', desc)
         tm = inc['at_time']
         tm = tm - timedelta(minutes=tm.minute % 30, seconds=tm.second, microseconds=tm.microsecond)
         if not tm in incHist: incHist[tm] = 0
@@ -6388,7 +6390,7 @@ def incidentList(request):
                 pars['cloud'] = pq_clouds[pars['site']]
             if parsmat.group(4): pars['comment'] = parsmat.group(4)
         else:
-            parsmat = re.match('^([A-Za-z\s]+):.*$', desc)
+            parsmat = re.match('^([A-Za-z\\s]+):.*$', desc)
             if parsmat:
                 pars['category'] = parsmat.group(1)
             else:
@@ -6405,7 +6407,7 @@ def incidentList(request):
             sumd[p]['vals'][pars[p]]['count'] += 1
         ## convert incident components to URLs. Easier here than in the template.
         if 'site' in pars:
-            inc['description'] = re.sub('queue=[^\s]+', 'queue=<a href="%ssite=%s">%s</a>' % (
+            inc['description'] = re.sub('queue=[^\\s]+', 'queue=<a href="%ssite=%s">%s</a>' % (
                 extensibleURL(request), pars['site'], pars['site']), inc['description'])
         inc['at_time'] = inc['at_time'].strftime(settings.DATETIME_FORMAT)
 
