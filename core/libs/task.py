@@ -13,6 +13,7 @@ from django.db.models import Count, Sum
 from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks, \
     JediJobRetryHistory
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from core.iDDS.utils import add_idds_info_to_tasks
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
 from core.libs.datetimestrings import parse_datetime
@@ -57,6 +58,10 @@ def cleanTaskList(tasks, **kwargs):
         add_datasets_info = True
     if 'sortby' in kwargs:
         sortby = kwargs['sortby']
+    if 'add_idds_info' in kwargs:
+        add_idds_info = kwargs['add_idds_info']
+    else:
+        add_idds_info = False
 
     for task in tasks:
         if task['transpath']:
@@ -134,6 +139,10 @@ def cleanTaskList(tasks, **kwargs):
             task.update(dsinfo)
 
         tasks = flag_tasks_with_scouting_failures(tasks, ds_dict)
+
+    # check if tasks are part of idds and get workflow id
+    if add_idds_info:
+        tasks = add_idds_info_to_tasks(tasks)
 
     if sortby is not None:
         if sortby == 'creationdate-asc':

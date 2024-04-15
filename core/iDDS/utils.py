@@ -59,3 +59,31 @@ def extend_view_idds(request, query, extra_str):
 
 
     return query, extra_str
+
+
+def add_idds_info_to_tasks(tasks):
+    """
+    Add iDDS related information to tasks
+    :param tasks: list of tasks
+    :return: list of tasks with iDDS information
+    """
+    task_ids = [task['jeditaskid'] for task in tasks]
+
+    query = {}
+    extra_str = '(1=1)'
+    if len(task_ids) > settings.DB_N_MAX_IN_QUERY:
+        transaction_key = insert_to_temp_table(task_ids)
+        extra_str += f' and jeditaskid in (select id from {get_tmp_table_name()} where transactionkey = {transaction_key})'
+    else:
+        query['workload_id__in'] = task_ids
+
+    idds_info = Transforms.objects.filter(**query).extra(where=[extra_str]).values('workload_id', 'request_id')
+    if len(idds_info) > 0:
+        idds_info_dict = {row['workload_id']: row['request_id'] for row in idds_info}
+        for task in tasks:
+            if task['jeditaskid'] in idds_info_dict:
+                task['idds_request_id'] = idds_info_dict.get(task['jeditaskid'])
+            else:
+                task['idds_request_id'] = None
+
+    return tasks
