@@ -2,20 +2,26 @@ from core import settings
 import threading
 import logging
 import oracledb
+oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
 
 class BaseTasksProvider(object):
     logger = logging.getLogger(__name__)
 
-    # Retreive DB settings
+    # retrieve DB settings
     ORACLE_USERNAME = settings.local.dbaccess['default']['USER']
     ORACLE_PWD = settings.local.dbaccess['default']['PASSWORD']
-    ORACLE_SNAME = settings.local.dbaccess['default']['NAME']
+    ORACLE_NAME = settings.local.dbaccess['default']['NAME']
     ORACLE_CONNECTION_URL = "(DESCRIPTION=(ADDRESS= (PROTOCOL=TCP) (HOST=adcr-s.cern.ch) (PORT=10121) ) (LOAD_BALANCE=on)" \
-                            "(ENABLE=BROKEN)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME="+ORACLE_SNAME+".cern.ch)))"
-    pool = oracledb.SessionPool(
-        ORACLE_USERNAME, ORACLE_PWD, ORACLE_CONNECTION_URL, min=1, max=10, increment=1, threaded=True, events=False)
-    #lock = threading.RLock() # should be instantiated in a nested class.
-    # If instantiated here become the same over all child classes
+                            "(ENABLE=BROKEN)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME="+ORACLE_NAME+".cern.ch)))"
+    pool = oracledb.create_pool(
+        user=ORACLE_USERNAME,
+        password=ORACLE_PWD,
+        dsn=ORACLE_CONNECTION_URL,
+        min=1,
+        max=10,
+        increment=1,
+        events=False
+    )
 
     def getNumberOfActiveDBSessions(self):
         totalSessionCount, totalActiveSessionCount = 0, 0

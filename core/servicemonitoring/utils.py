@@ -61,7 +61,7 @@ def make_db_connection(cfg):
 
     if db_user and db_passwd and db_description:
         try:
-            connection = oracledb.connect(db_user, db_passwd, db_description)
+            connection = oracledb.connect(user=db_user, password=db_passwd, dsn=db_description)
             _logger.debug('DB connection established. "{0}" "{1}"'.format(db_user, db_description))
             return connection
         except Exception as ex:
