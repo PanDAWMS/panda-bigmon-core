@@ -116,6 +116,7 @@ from core.pandajob.summary_user import user_summary_dict
 from core.pandajob.utils import job_summary_dict
 
 from core.iDDS.algorithms import checkIfIddsTask
+from core.iDDS.utils import add_idds_info_to_tasks
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
@@ -2884,6 +2885,16 @@ def userInfo(request, user=''):
     # Tasks owned by the user
     query, extra_query_str, _ = setupView(request, hours=days * 24, limit=999999, querytype='task', wildCardExt=True)
 
+    # extend query if any idds-related params are present
+    if any(['idds' in p for p in request.session['requestParams']]):
+        try:
+            from core.iDDS.utils import extend_view_idds
+            query, extra_str = extend_view_idds(request, query, extra_query_str)
+        except ImportError:
+            _logger.exception('Failed to import iDDS utils')
+        except Exception as e:
+            _logger.exception(f'Failed to extend query with idds related parameters with:\n{e}')
+
     if query_task is None:
         query['username__icontains'] = user.strip()
         tasks = JediTasks.objects.filter(**query).extra(where=[extra_query_str]).values()
@@ -2891,7 +2902,7 @@ def userInfo(request, user=''):
         tasks = JediTasks.objects.filter(**query).filter(query_task).extra(where=[extra_query_str]).values()
     _logger.info('Got {} tasks: {}'.format(len(tasks), time.time() - request.session['req_init_time']))
 
-    tasks = cleanTaskList(tasks, sortby=sortby, add_datasets_info=True)
+    tasks = cleanTaskList(tasks, sortby=sortby, add_datasets_info=True, add_idds_info=True)
     _logger.info('Cleaned tasks and loading datasets info: {}'.format(time.time() - request.session['req_init_time']))
 
     # consumed cpu hours stats for a user
@@ -3239,7 +3250,7 @@ def userDashApi(request, agg=None):
                     task[tp] = 'false'
 
         task_list_table_headers = [
-            'jeditaskid', 'reqid', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished',
+            'jeditaskid', 'idds_request_id', 'attemptnr', 'tasktype', 'taskname', 'nfiles', 'nfilesfinished',
             'nfilesfailed', 'pctfinished', 'status', 'duration_days',
             'errordialog', 'job_failed', 'top_errors_list',
             'job_queuetime', 'job_walltime', 'job_maxpss_per_actualcorecount', 'job_efficiency', 'job_attemptnr',
@@ -4495,6 +4506,9 @@ def taskList(request):
         if 'display_limit' in request.session['requestParams']:
             n_tasks_to_show = int(request.session['requestParams']['display_limit'])
         tasks = tasks[:n_tasks_to_show]
+        # add idds info to tasks if not ATLAS deployment
+        if 'ATLAS' not in settings.DEPLOYMENT:
+            tasks = add_idds_info_to_tasks(tasks)
         tasks = stringify_datetime_fields(tasks, JediTasks)
 
         del request.session['TFIRST']

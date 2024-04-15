@@ -205,8 +205,7 @@
     </tr>
     <tr class='tablesection'>
         <th><a href="{{ nosorturl }}sortby=jeditaskid-asc">ID</a><br>Parent</th>
-        {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
-            <th>Jobset</th>{% endif %}
+        {% if viewParams.MON_VO != 'ATLAS' %}<th>Workflow ID</th>{% endif %}
         <th><a href="{{ nosorturl }}sortby=taskname">Task name</a><br>TaskType/ProcessingType Campaign
             Group User {% if requestParams.tasktype == 'prod' %}     Tracker     Request {% endif %}
             Errors <br><font color='brown'>Logged status</font></th>
@@ -229,8 +228,11 @@
             {% if task.parent_tid and task.parent_tid != task.jeditaskid %}<br>
                 <a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>{% endif %}
         </td>
-        {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
-            <td>{{ task.reqid }}</td>{% endif %}
+        {% if viewParams.MON_VO != 'ATLAS' %}
+          <td>{% if task.idds_request_id %}
+            <a href="{% url 'taskList' %}?idds_request_id={{ task.idds_request_id }}">{{ task.idds_request_id }}</a>
+          {% else %}---{% endif %}
+          </td>{% endif %}
         <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}
             {% if task.processingtype %}/{{ task.processingtype }} {% endif %}
             {% if task.campaign %}
