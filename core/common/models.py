@@ -401,6 +401,17 @@ class TasksStatusLog(models.Model):
         app_label = 'jedi'
 
 
+class ResourceTypes(models.Model):
+    resource_name= models.CharField(max_length=56, db_column='resource_name', primary_key=True)
+    mincore = models.IntegerField(db_column='mincore')
+    maxcore = models.IntegerField(db_column='maxcore')
+    minrampercore = models.IntegerField(db_column='minrampercore')
+    maxrampercore = models.IntegerField(db_column='maxrampercore')
+
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."resource_types"'
+        app_label = 'panda'
+
 #class BPToken(models.Model):
 #    key = models.CharField(max_length=40, primary_key=True)
 #    user = models.OneToOneField(BPUser)

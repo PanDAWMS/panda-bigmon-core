@@ -197,10 +197,6 @@ app.controller('jobESSummaryRegionController', ['$scope', function($scope) {
         ],
         resourcetype: [
           {name:'all', value:'', query: ''},
-          {name:'SCORE', value:'SCORE', query: 'resourcetype=SCORE&'},
-          {name:'SCORE_HIMEM', value:'SCORE_HIMEM', query: 'resourcetype=SCORE_HIMEM&'},
-          {name:'MCORE', value:'MCORE', query: 'resourcetype=MCORE&'},
-          {name:'MCORE_HIMEM', value:'MCORE_HIMEM', query: 'resourcetype=MCORE_HIMEM&'}
         ],
     };
     select_params.region.forEach(function (param) {
@@ -213,6 +209,10 @@ app.controller('jobESSummaryRegionController', ['$scope', function($scope) {
 
     select_params.queuestatus.forEach(function (param) {
      $scope.esdash.availableOptions.queuestatus.push({name:param, value:param, query:'queuestatus' + param + '&'});
+    });
+
+    select_params.resourcetype.forEach(function (param) {
+     $scope.esdash.availableOptions.resourcetype.push({name:param, value:param, query:'resourcetype' + param + '&'});
     });
 
     Object.keys($scope.esdash.availableOptions).forEach(function (key) {

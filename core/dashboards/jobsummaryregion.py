@@ -10,7 +10,7 @@ from django.db import connection, connections
 from core.pandajob.models import PandaJob
 from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
-from core.libs.exlib import getPilotCounts
+from core.libs.exlib import getPilotCounts, get_resource_types
 from core.libs.sqlsyntax import interval_to_sec
 
 import core.constants as const
@@ -141,7 +141,7 @@ def get_job_summary_region(query, **kwargs):
     jsr_regions_dict = {}
 
     job_types = ['analy', 'prod']
-    resource_types = ['SCORE', 'MCORE', 'SCORE_HIMEM', 'MCORE_HIMEM']
+    resource_types = get_resource_types()
     worker_metrics = ['nwrunning', 'nwsubmitted']
     extra_metrics = copy.deepcopy(worker_metrics)
     extra_metrics.append('rcores')
