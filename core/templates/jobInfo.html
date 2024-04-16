@@ -35,7 +35,7 @@
 	{% if job.workinggroup %}
     <th>WG</th>
   {% endif %}
-  <th>Request <br> Task ID</th>
+  <th>{% if job.prodsourcelabel == 'managed' and job.reqid %}Request <br> {% endif %}Task ID</th>
   {% if job.parentid %}
     <th>Parent</th>
   {% endif %}
@@ -70,7 +70,7 @@
 	{% if job.workinggroup %}
     <td><a href="{% url 'workingGroups' %}?workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a></td>
   {% endif %}
-	<td>{% if job.reqid %} <a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
+	<td>{% if job.prodsourcelabel == 'managed' and job.reqid %}<a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
 	{% if job.jeditaskid %}<a href="{% url 'taskInfo' job.jeditaskid %}">{{ job.jeditaskid }}</a> {% else %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
   {% if job.parentid %}
     <td> <a href="{% url 'jobInfo' %}?pandaid={{ job.parentid }}"> {{ job.parentid }} </a>
