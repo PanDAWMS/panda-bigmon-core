@@ -4221,6 +4221,8 @@ def dashES(request):
         select_params_dict['region'] = sorted(list(set([r[0] for r in jsr_regions_list])))
         select_params_dict['queuetype'] = sorted(list(set([pq[1] for pq in jsr_queues_list])))
         select_params_dict['queuestatus'] = sorted(list(set([pq[3] for pq in jsr_queues_list])))
+        select_params_dict['resourcetype'] = sorted(
+                [rt for rt in jsr_queues_dict[list(jsr_queues_dict.keys())[0]]['summary']['all'].keys() if rt != 'all'])
 
         xurl = request.get_full_path()
         if xurl.find('?') > 0:

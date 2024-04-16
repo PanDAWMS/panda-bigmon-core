@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import timedelta
 from django.db import connection
 
-from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
+from core.common.models import JediDatasets, Filestable4, FilestableArch, Sitedata, ResourceTypes
 from django.conf import settings
 
 
@@ -636,3 +636,13 @@ def get_file_info(job_list, **kwargs):
                     job[file['type'] + 'filesize'] += file['fsize'] if isinstance(file['fsize'], int) else 0
 
     return job_list
+
+
+def get_resource_types():
+    """
+    Get resource types from DB
+    :return: resource_types: list
+    """
+    resource_types = list(ResourceTypes.objects.all().values('resource_name'))
+    resource_types = [rt['resource_name'] for rt in resource_types]
+    return resource_types

@@ -61,13 +61,6 @@ JOB_STATES_FINAL = (
     'merging'
 )
 
-RESOURCE_CAPABILITIES = (
-    'SCORE',
-    'MCORE',
-    'SCORE_HIMEM',
-    'MCORE_HIMEM'
-)
-
 EVENT_STATES = (
     'ready',
     'sent',
