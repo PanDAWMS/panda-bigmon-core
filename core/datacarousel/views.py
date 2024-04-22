@@ -117,7 +117,8 @@ def getDTCSubmissionHist(request):
     summary = {
         'processingtype': {},
         'source_rse': {},
-        'campaign': {}
+        'campaign': {},
+        'destination_rse': {},
     }
     selection_options = {
         'campaign': [],
