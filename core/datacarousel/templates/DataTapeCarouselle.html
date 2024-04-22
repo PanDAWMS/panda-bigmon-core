@@ -19,6 +19,7 @@
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
     <script src="{% static 'js/datatables/RowGroup-1.1.1/js/rowGroup.foundation.min.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+    <script src="{% static "js/clipboardjs/clipboard.min.js" %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -45,6 +46,7 @@
              <option value="" selected="selected">All</option>
           </select>
           <a ng-click="gog();" class="button primary">Update</a>
+          <a id="share_button" ng-click="share();" ng-disabled="share_button.is_disabled" class="button primary">{$ share_button.text $}</a>
       </div>
     </div>
 
@@ -118,15 +120,33 @@
       </div>
     </div>
 
-    <div class="row">
-      <div id="chartDACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
-      <div id="chartFACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
-
-      <div id="chartBACH_div" class="columns medium-4"><p ng-bind-html="loading_placeholder"></p></div>
-    </div>
+    <ul class="accordion secondary" data-accordion data-allow-all-closed="true">
+      <li class="accordion-item" data-accordion-item>
+        <a href="#per_acrivity_plots" ng-click="panel.toggle('activity')" class="accordion-title">Per activity summary</a>
+        <div class="accordion-content" data-tab-content>
+          <div class="row ng-hide" ng-hide="panel.activity.is_hidden">
+              <div id="chartDACH_div" class="columns medium-4"></div>
+              <div id="chartFACH_div" class="columns medium-4"></div>
+              <div id="chartBACH_div" class="columns medium-4"></div>
+          </div>
+        </div>
+      </li>
+    </ul>
+    <ul class="accordion secondary" data-accordion data-allow-all-closed="true">
+      <li class="accordion-item" data-accordion-item>
+        <a href="#per_destination_plots" ng-click="panel.toggle('destination')" class="accordion-title">Per destination summary</a>
+        <div class="accordion-content" data-tab-content>
+          <div class="row ng-hide" ng-hide="panel.destination.is_hidden">
+              <div id="chartDDEST_div" class="columns medium-4"></div>
+              <div id="chartFDEST_div" class="columns medium-4"></div>
+              <div id="chartBDEST_div" class="columns medium-4"></div>
+          </div>
+        </div>
+      </li>
+    </ul>
 
     <div class="card bp-container-simple secondary" id="container_sds">
-      <div class="card-divider"><p>Staging datasets:</p></div>
+      <div class="card-divider"><p>Staging datasets</p></div>
       <div class="card-section">
         <p ng-bind-html="loading_placeholder"></p>
         <table class="data-table nowrap hover" id="stagingdatasetstable">
@@ -191,7 +211,6 @@
   <script src="{% static 'js/google-charts-loader.js' %}"></script>
   <script nonce={{request.csp_nonce}}>
   google.load("visualization", "1.1", {packages: ["sankey","corechart"]});
-
   var chart_list = ['submittime', 'submittimefiles', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];
   var charts = {
     submittime: {
@@ -387,6 +406,69 @@
       obj: {},
       data: [],
     },
+    datasetperdestination: {
+      options: {
+        title: 'Staging datasets per destination RSE',
+        height: 600,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 150,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 9}},
+        hAxis: {title: 'Number of datasets', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    filesperdestination: {
+      options: {
+        title: 'Staging files per destination RSE',
+        height: 600,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 150,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 9}},
+        hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
+    bytesperdestination: {
+      options: {
+        title: 'Volume of staging datasets per destination RSE',
+        height: 600,
+        isStacked: true,
+        bar: {groupWidth: '75%'},
+        chartArea: {width: '100%', height: '70%', left: 150,},
+        legend: {position: 'top'},
+        vAxis: {textStyle: {fontSize: 9}},
+        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        colors: ['#2174bb', '#934fff', '#207f20'],
+        explorer: {
+          actions: ['dragToZoom', 'rightClickToReset'],
+          axis: 'horizontal',
+          keepInBounds: true,
+          maxZoomIn: 4.0
+        },
+      },
+      obj: {},
+      data: [],
+    },
   };
 
   app.service('Service', ['$http', service])
@@ -422,7 +504,15 @@
       data: [],
       data_table_id: '#stuckfilestable',
       data_table: null,
-    }
+    };
+    $scope.panel = {
+      activity: {is_hidden: true},
+      destination: {is_hidden: true},
+    };
+    $scope.share_button = {
+      text: 'Share',
+      is_disabled: false,
+    };
     $scope.request_params = {{ requestParams|safe }};
     $scope.selection = {
       options: {},
@@ -507,6 +597,15 @@
         $scope.bytesperactivity.push([row['processingtype'], row['bytes_queued'], row['bytes_active'], row['bytes_done']]);
       });
 
+      $scope.datasetperdestination = [['Processing Type', 'Queued', 'Staging', 'Done']];
+      $scope.filesperdestination = [['Processing Type', 'Queued', 'Active', 'Done']];
+      $scope.bytesperdestination = [['Processing Type', 'Queued', 'Active', 'Done']];
+      $scope.summary.destination_rse.forEach(row => {
+        $scope.datasetperdestination.push([row['destination_rse'], row['ds_queued'], row['ds_active'], row['ds_done']]);
+        $scope.filesperdestination.push([row['destination_rse'], row['files_queued'], row['files_active'], row['files_done']]);
+        $scope.bytesperdestination.push([row['destination_rse'], row['bytes_queued'], row['bytes_active'], row['bytes_done']]);
+      });
+
       charts.submittime.obj = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
       charts.submittimefiles.obj = new google.visualization.ColumnChart(document.getElementById('chartACTFILECH_div'));
       charts.elapsedtime.obj = new google.visualization.ColumnChart(document.getElementById('chartETCH_div'));
@@ -514,13 +613,12 @@
       charts.reqpertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPECH_div'));
       charts.filespertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPEFILECH_div'));
       charts.bytespertape.obj = new google.visualization.BarChart(document.getElementById('chartTAPEBCH_div'));
-      charts.datasetperactivity.obj = new google.visualization.BarChart(document.getElementById('chartDACH_div'));
-      charts.filesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartFACH_div'));
-      charts.bytesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartBACH_div'));
 
       Object.keys(charts).forEach(name => {
-        charts[name].data = google.visualization.arrayToDataTable($scope[name]);
-        charts[name].obj.draw(charts[name].data, charts[name].options);
+        if (Object.keys(charts[name].obj).length > 0) {
+          charts[name].data = google.visualization.arrayToDataTable($scope[name]);
+          charts[name].obj.draw(charts[name].data, charts[name].options);
+        }
       });
 
       $scope.selection.options = response.data.selection;
@@ -596,7 +694,35 @@
             }
         })
       }
+
+    $scope.share_button.text = 'Share';
+    $scope.share_button.is_disabled = false;
     };
+
+    $scope.draw_plots = function (panel_id) {
+      switch (panel_id) {
+        case 'activity':
+          charts.datasetperactivity.obj = new google.visualization.BarChart(document.getElementById('chartDACH_div'));
+          charts.filesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartFACH_div'));
+          charts.bytesperactivity.obj = new google.visualization.BarChart(document.getElementById('chartBACH_div'));
+          ['datasetperactivity', 'filesperactivity', 'bytesperactivity'].forEach(name => {
+            charts[name].data = google.visualization.arrayToDataTable($scope[name]);
+            $timeout(function(){charts[name].obj.draw(charts[name].data, charts[name].options);}, 1);
+          })
+          break;
+        case 'destination':
+          charts.datasetperdestination.obj = new google.visualization.BarChart(document.getElementById('chartDDEST_div'));
+          charts.filesperdestination.obj = new google.visualization.BarChart(document.getElementById('chartFDEST_div'));
+          charts.bytesperdestination.obj = new google.visualization.BarChart(document.getElementById('chartBDEST_div'));
+          ['datasetperdestination', 'filesperdestination', 'bytesperdestination'].forEach(name => {
+            charts[name].data = google.visualization.arrayToDataTable($scope[name]);
+            $timeout(function(){charts[name].obj.draw(charts[name].data, charts[name].options);}, 1);
+          })
+          break;
+        default:
+          break;
+      }
+    }
 
     $scope.stuckfiles.build_table = function () {
       $scope.stuckfiles.data_table = $($scope.stuckfiles.data_table_id).DataTable({
@@ -662,6 +788,35 @@
         }
       )
     }
+
+    $scope.panel.toggle = function (id) {
+      $scope.panel[id].is_hidden = !$scope.panel[id].is_hidden;
+      if (!$scope.panel[id].is_hidden && Object.keys(charts).some(function(k){ return ~k.indexOf(id) })) {
+        $scope.draw_plots(id);
+      }
+    }
+
+    $scope.share = function() {
+      var link = window.location.href.split('?')[0] + '?';
+      Object.keys($scope.selection.selected).forEach(key => {
+        if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
+          link += key + '=' + $scope.selection.selected[key] + '&';
+        }
+      });
+      var clipboard = new ClipboardJS('#share_button', {text: function() {return link;}}); // needed for copy to clipboard button
+      clipboard.on('success', function(e) {
+        $scope.share_button.text = 'copied!';
+        $scope.share_button.is_disabled = true;
+        e.clearSelection();
+      });
+      clipboard.on('error', function(e) {
+          $scope.share_button.text = 'failed to copy!';
+          $scope.share_button.is_disabled = true;
+      });
+
+      $timeout(function() {}, 1);
+    }
+
     $scope.gog();
   }
 

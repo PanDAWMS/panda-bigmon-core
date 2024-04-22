@@ -934,6 +934,9 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   width: 100%;
   margin: 0;
 }
+.row .columns.table-scroll {
+  padding: 0;
+}
 
 .wrap-words {
     white-space: -moz-pre-wrap !important;
