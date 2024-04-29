@@ -174,10 +174,7 @@
                 <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count&display_limit=20">Production</a></li>
                 <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test2">rc_test2</a></li>
                 <li><a href="{% url 'errorsScattering' %}">Scattering matrix</a></li>
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
-                <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger</a> </li>
-                {% endif %}
+                <li><a href="{% url 'pandaLogger' %}">PanDA logger</a> </li>
                 {% comment %}
                 <li><a href="{% url 'jobProblems' %}">Problem report</a></li>
                 {% endcomment %}
