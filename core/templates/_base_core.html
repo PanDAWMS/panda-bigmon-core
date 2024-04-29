@@ -133,7 +133,7 @@
         <ul class="submenu menu vertical">
             <li><a href="{% url 'taskList' %}?display_limit=300">All</a></li>
             {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'taskList' %}?tasktype=anal&display_limit=300">Analysis</a></li>
+                <li><a href="{% url 'taskList' %}?tasktype=analy&display_limit=300">Analysis</a></li>
                 <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
                 <li><a href="{% url 'taskList' %}?eventservice=eventservice&display_limit=300">Event service</a></li>
                 <li><a href="{% url 'taskList' %}?container_name=all&display_limit=300">Containerized</a></li>
@@ -145,6 +145,7 @@
                         <li><a href="{% url 'runningProdTasks' %}?preset=DATA">Reprocessing production</a></li>
                     </ul>
                 </li>
+                <li><a href="{% url 'taskProblemExplorer' %}">Slow analysis</a></li>
             {% endif %}
         </ul>
         </li>
@@ -175,9 +176,6 @@
                 <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test2">rc_test2</a></li>
                 <li><a href="{% url 'errorsScattering' %}">Scattering matrix</a></li>
                 <li><a href="{% url 'pandaLogger' %}">PanDA logger</a> </li>
-                {% comment %}
-                <li><a href="{% url 'jobProblems' %}">Problem report</a></li>
-                {% endcomment %}
             {% endif %}
         </ul>
         </li>
