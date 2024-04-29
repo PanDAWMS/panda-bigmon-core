@@ -20,7 +20,7 @@ from core.views import initRequest, setupView
 from core.utils import is_json_request, removeParam
 
 from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots, updateView
-from core.runningprod.models import RunningProdTasksModel, RunningProdRequestsModel, FrozenProdTasksModel, ProdNeventsHistory
+from core.runningprod.models import RunningProdTasksModel, FrozenProdTasksModel, ProdNeventsHistory
 
 from django.conf import settings
 import core.constants as const
@@ -288,116 +288,10 @@ def prodNeventsTrend(request):
 @login_customrequired
 def runningProdRequests(request):
     valid, response = initRequest(request)
-
-    if ('dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']):
-        tk = request.session['requestParams']['tk']
-        data = getCacheEntry(request, tk, isData=True)
-        return HttpResponse(data, content_type='application/json')
-
-    # Here we try to get cached data
-    data = getCacheEntry(request, "runningProdRequests")
-    # data = None
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        # if 'ages' in data:
-        #     data['ages'] = preparePlotData(data['ages'])
-        # if 'neventsFStasksSum' in data:
-        #     data['neventsFStasksSum'] = preparePlotData(data['neventsFStasksSum'])
-        # if 'neventsAFIItasksSum' in data:
-        #     data['neventsAFIItasksSum'] = preparePlotData(data['neventsAFIItasksSum'])
-        # if 'neventsByProcessingType' in data:
-        #     data['neventsByProcessingType'] = preparePlotData(data['neventsByProcessingType'])
-        # if 'aslotsByType' in data:
-        #     data['aslotsByType'] = preparePlotData(data['aslotsByType'])
-        response = render(request, 'runningProdRequests.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    if not valid:
         return response
-
-    xurl = request.get_full_path()
-    if xurl.find('?') > 0:
-        xurl += '&'
-    else:
-        xurl += '?'
-    nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-    exquery = {}
-
-    rquery = {}
-    if 'fullcampaign' in request.session['requestParams']:
-        if ':' in request.session['requestParams']['fullcampaign']:
-            rquery['campaign'] = request.session['requestParams']['fullcampaign'].split(':')[0]
-            rquery['subcampaign'] = request.session['requestParams']['fullcampaign'].split(':')[1]
-        else:
-            rquery['campaign'] = request.session['requestParams']['fullcampaign']
-
-    if 'group' in request.session['requestParams'] and '_' in request.session['requestParams']['group']:
-        rquery['provenance'] = request.session['requestParams']['group'].split('_')[0]
-        rquery['physgroup'] = request.session['requestParams']['group'].split('_')[1]
-
-    if 'requesttype' in request.session['requestParams']:
-        rquery['requesttype'] = request.session['requestParams']['requesttype']
-
-    if 'status' in request.session['requestParams']:
-        rquery['status'] = request.session['requestParams']['status']
-
-
-    rrequests = RunningProdRequestsModel.objects.filter(**rquery).values()
-
-    request_list = [t for t in rrequests]
-    nrequests = len(request_list)
-    slots = 0
-    aslots = 0
-    # ages = []
-    neventsTotSum = 0
-    neventsUsedTotSum = 0
-    # rjobs1coreTot = 0
-    # rjobs8coreTot = 0
-    for req in request_list:
-        neventsTotSum += req['nevents'] if req['nevents'] is not None else 0
-        neventsUsedTotSum += req['neventsused']
-        slots += req['slots'] if req['slots'] else 0
-        aslots += req['aslots'] if req['aslots'] else 0
-        req['fullcampaign'] = req['campaign'] + ':' + req['subcampaign'] if req['subcampaign'] is not None and len(req['subcampaign']) > 0 else req['campaign']
-        req['group'] = req['provenance'] + '_' + req['physgroup']
-
-        # ages.append(req['age'])
-
-
-    plotageshistogram = 0
-    # if sum(ages) == 0: plotageshistogram = 0
-    # sumd = task_summary_dict(request, task_list, ['status','workinggroup','cutcampaign', 'processingtype'])
-
-    ### Putting list of requests to cache separately for dataTables plugin
-    transactionKey = random.randrange(100000000)
-    setCacheEntry(request, transactionKey, json.dumps(request_list, cls=DateEncoder), 60 * 30, isData=True)
-
-    if (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json'))) or (
-        'json' in request.session['requestParams']):
-        dump = json.dumps(request_list, cls=DateEncoder)
-        return HttpResponse(dump, content_type='application/json')
-    else:
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'xurl': xurl,
-            'nosorturl': nosorturl,
-            'requests': request_list,
-            'nrequests': nrequests,
-            # 'ages': ages,
-            'slots': slots,
-            'aslots': aslots,
-            # 'sumd': sumd,
-            'neventsUsedTotSum': round(neventsUsedTotSum / 1000000., 1),
-            'neventsTotSum': round(neventsTotSum / 1000000., 1),
-            # 'plotageshistogram': plotageshistogram,
-            'built': datetime.now().strftime("%H:%M:%S"),
-            'transKey': transactionKey,
-        }
-        response = render(request, 'runningProdRequests.html', data, content_type='text/html')
-        setCacheEntry(request, "runningProdRequests", json.dumps(data, cls=DateEncoder), 60 * 20)
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
+    response = render(request, '_decommissioned.html', {}, content_type='text/html')
+    return response
 
 
 @login_customrequired
