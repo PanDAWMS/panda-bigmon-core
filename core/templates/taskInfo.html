@@ -273,15 +273,11 @@
               <a href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
           {% endif %}
           {% if viewParams.MON_VO == 'ATLAS' %}
-              {% if task.tasktype == 'prod' %}
-                  <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
-                     target="_blank">Manage Prod Task</a>
-                  <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
-              {% elif  task.tasktype == 'anal' %}
-                  <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=analysis&task_id={{ task.jeditaskid }}"
-                     target="_blank">Manage Prod Task</a>
-                  <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
-              {% endif %}
+                {% if task.tasktype == 'prod' %}
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/" target="_blank">Prod Task (to manage task)</a>
+                {% elif  task.tasktype == 'anal' %}
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/" target="_blank">Prod Task (to manage task)</a>
+                {% endif %}
               <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(message),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Task
                   brokerage </a>
               <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(message),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'fields.type:%22{% if task.brokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Job
