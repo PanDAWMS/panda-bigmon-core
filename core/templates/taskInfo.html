@@ -292,9 +292,6 @@
               <a href="{% url 'taskInfo' task.parent_tid %}">Parent task {{ task.parent_tid }}</a>
           {% endif %}
           <a href="{% url 'taskList' %}?parent_tid={{ task.jeditaskid }}&display_limit=100">Child tasks</a>
-          {% if task.ttcrequested != None and task.starttime != None %}
-              <a href="{% url 'ttc' %}?jeditaskid={{ jeditaskid }}" target="_blank">TTC page</a>
-          {% endif %}
       </div>
   </div>
 

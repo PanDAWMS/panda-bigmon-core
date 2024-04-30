@@ -53,7 +53,7 @@ urlpatterns = [
     re_path(r'^getbadeventsfortask/$', coremon_views.getBadEventsForTask, name='getbadeventsfortask'),
     re_path(r'^taskstatuslog/(?P<jeditaskid>.*)/$', coremon_views.getTaskStatusLog, name='gettaskstatuslog'),
     re_path(r'^tasklogs/(?P<jeditaskid>.*)/$', coremon_views.getTaskLogs, name='gettasklogs'),
-    re_path(r'^ttc/$', coremon_views.ttc, name='ttc'),
+    re_path(r'^ttc/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^taskchain/$', coremon_views.taskchain, name='taskchain'),
     re_path(r'^ganttTaskChain/$', coremon_views.ganttTaskChain, name='ganttTaskChain'),
     re_path(r'^taskprofileplot/$', coremon_views.taskprofileplot, name='taskprofileplot'),  # legacy
