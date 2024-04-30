@@ -38,7 +38,7 @@ class TasksErrorCodesAnalyser:
 
     def is_did(self, value):
         """Check if value is a DID, i.e. a file, dataset or container name"""
-        regex = re.compile(r'^(?:mc|data|group|valid|user)\w*(?:\.\w+)+', re.IGNORECASE)
+        regex = re.compile(r'.*(?:(mc|data|group|valid|user)\w*:)?(?:mc|data|group|valid|user)\w*(?:[\.\_\/]\w+)+', re.IGNORECASE)
         if regex.match(value):
             return True
         else:
@@ -56,14 +56,14 @@ class TasksErrorCodesAnalyser:
         return re.sub(r'<a\b[^>]*>(.*?)<\/a>', '', text)
 
     def my_tokenizer(self, s):
-        return list(filter(None, re.split("[/ \\-!?:()><=,]+", s)))
+        return list(filter(None, re.split("[/ \\-!?:()><=,\"]+", s)))
 
     def replace_all(self, text, words_to_replace=()):
         text = self.remove_links(text)
         common_tokens = set(self.my_tokenizer(text)).intersection(words_to_replace)
         common_tokens = sorted(common_tokens, key=len, reverse=True)
         for i in common_tokens:
-            text = text.replace(i, '*R*')
+            text = text.replace(f' {i}', ' *R*').replace(f'{i} ', '*R* ').replace(f'{i}', '*R*')
         return text
 
     def remove_stop_words(self, frame):
