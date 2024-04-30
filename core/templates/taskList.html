@@ -441,13 +441,18 @@
             {data: 'errordialog', render: function (data, type, full, meta) {
                 return data.replace(/\_/g, '_<wbr>');
               },},
-            {data: 'count', render: function (data, type, full, meta) {
-                return '<a target="_blanc" href="{{ noerrordialogurl }}' + full['link'] + '">' + full['count'] + '</a>';
+            {data: 'count',  render: function (data, type, full, meta) {
+                if (data > 20) {
+                  return '<a target="_blanc" href="{{ noerrordialogurl }}errordialog=*' + full['processed_errordialog'] + '*">' + full['count'] + '</a>';
+                } else {
+                  return '<a target="_blanc" href="{{ noerrordialogurl }}' + full['link'] + '">' + full['count'] + '</a>';
+              }
               },},
             {data: 'sites'},
         ],
         order: [[ 2, "desc" ]],
         scrollX: true,
+        columnDefs: [{type: "num-html", targets: [2,] }],
     });
   });
 

@@ -7,19 +7,14 @@ import re
 
 _logger = logging.getLogger('bigpandamon')
 
-system_synonyms = ['aipanda052.cern.ch', 'aipanda058.cern.ch', 'aipanda054.cern.ch','aipanda189.cern.ch',
-                   'aipanda055.cern.ch']
-
 class TasksErrorCodesAnalyser:
     future = None
-
     def isfloat(self, value):
         try:
             float(value)
             return True
         except ValueError:
             return False
-
 
     def isint(self, value):
         try:
@@ -34,28 +29,60 @@ class TasksErrorCodesAnalyser:
         else:
             return False
 
-    def remove_stop_words(self, frame):
-        def my_tokenizer(s):
-            return list(filter(None, re.split("[/ \\-!?:()><=,]+", s)))
+    def is_volume(self, value):
+        regex = re.compile(r'(\d+(?:\.\d+)?)\s*([kmgtp]?b)', re.IGNORECASE)
+        if regex.match(value):
+            return True
+        else:
+            return False
 
-        vectorizer = CountVectorizer(tokenizer=my_tokenizer, analyzer="word", stop_words=None, preprocessor=None)
+    def is_did(self, value):
+        """Check if value is a DID, i.e. a file, dataset or container name"""
+        regex = re.compile(r'.*(?:(mc|data|group|valid|user)\w*:)?(?:mc|data|group|valid|user)\w*(?:[\.\_\/]\w+)+', re.IGNORECASE)
+        if regex.match(value):
+            return True
+        else:
+            return False
+
+    def is_vm_name(self, value):
+        """Check if value is a VM hostname"""
+        regex = re.compile(r'^aipanda\d+(?:\.\w+)*', re.IGNORECASE)
+        if regex.match(value):
+            return True
+        else:
+            return False
+
+    def remove_links(self, text):
+        return re.sub(r'<a\b[^>]*>(.*?)<\/a>', '', text)
+
+    def my_tokenizer(self, s):
+        return list(filter(None, re.split("[/ \\-!?:()><=,\"]+", s)))
+
+    def replace_all(self, text, words_to_replace=()):
+        text = self.remove_links(text)
+        common_tokens = set(self.my_tokenizer(text)).intersection(words_to_replace)
+        common_tokens = sorted(common_tokens, key=len, reverse=True)
+        for i in common_tokens:
+            text = text.replace(f' {i}', ' *R*').replace(f'{i} ', '*R* ').replace(f'{i}', '*R*')
+        return text
+
+    def remove_stop_words(self, frame):
+
+        vectorizer = CountVectorizer(tokenizer=self.my_tokenizer, analyzer="word", stop_words=None, preprocessor=None, lowercase=False)
         corpus = frame['errordialog'].tolist()
+        threshold = 2
+        if len(corpus) == 1:
+            threshold = 1
         try:
             bag_of_words = vectorizer.fit_transform(corpus)
             sum_words = bag_of_words.sum(axis=0)
             words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
-            words_freqf = [x[0] for x in filter(lambda x: (x[1] < 2 or
-                                                          self.isint(x[0]) or self.isfloat(x[0]) or x[0] in
-                                                          system_synonyms or self.isHours(x[0])), words_freq)]
+            words_freqf = [x[0] for x in filter(lambda x: (
+                x[1] < threshold or self.is_vm_name(x[0]) or self.is_did(x[0]) or
+                self.isint(x[0]) or self.isfloat(x[0]) or self.isHours(x[0]) or self.is_volume(x[0])
+            ), words_freq)]
             words_freqf = set(words_freqf)
-
-            def replace_all(text):
-                common_tokens = set(my_tokenizer(text)).intersection(words_freqf)
-                common_tokens = sorted(common_tokens, key=len, reverse=True)
-                for i in common_tokens:
-                    text = text.replace(i, '*R*')
-                return text
-            frame['processed_errordialog'] = frame['errordialog'].apply(replace_all)
+            frame['processed_errordialog'] = frame['errordialog'].apply(self.replace_all, words_to_replace=words_freqf)
         except:
             frame['processed_errordialog'] = frame['errordialog']
         return frame
@@ -66,7 +93,7 @@ class TasksErrorCodesAnalyser:
         return error_dialog
 
     def remove_special_character(self, input_str):
-        bad_chars = ['"', ':', "'", '\n']
+        bad_chars = ['"', "'", '\n']
         processed_string = ''.join((filter(lambda i: i not in bad_chars, input_str)))
         return processed_string
 
@@ -110,7 +137,7 @@ class TasksErrorCodesAnalyser:
             self.future = executor.submit(self.process_error_messages, tasks_list)
 
     def get_errors_table(self):
-        if self.future != None:
+        if self.future is not None:
             return_value = self.future.result()
         return return_value
 

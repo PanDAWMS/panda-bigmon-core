@@ -513,6 +513,29 @@ def count_occurrences(obj_list, params_to_count, output='dict'):
     return param_counts
 
 
+def group_low_occurrences(data, threshold=0.01):
+    """
+    Group low occurrences into "other" category
+    :param data: list of lists
+    :param threshold: float (0-1)
+    :return: data: list of lists
+    """
+    grouped_data = []
+    n_other = 0
+    if len(data) > 0:
+        total = sum([item[1] for item in data])
+        if total > 0:
+            for item in data:
+                if item[1] / total > threshold:
+                    grouped_data.append(item)
+                else:
+                    n_other += item[1]
+            if n_other > 0:
+                grouped_data.append(['other', n_other])
+    return grouped_data
+
+
+
 def duration_df(data_raw, id_name='JEDITASKID', timestamp_name='MODIFICATIONTIME'):
     """
     Calculates duration of each status by modificationtime delta

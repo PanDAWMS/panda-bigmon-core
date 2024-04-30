@@ -45,6 +45,8 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
     if strToProcess.startswith('!'):
         isNot = True
         strToProcess = strToProcess[1:]
+    if '*R*' in strToProcess:
+        strToProcess = strToProcess.replace('*R*', '*')
 
     cardParametersRaw = strToProcess.split('*')
     cardRealParameters = [s for s in cardParametersRaw if len(s) >= 1]

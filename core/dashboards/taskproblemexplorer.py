@@ -18,7 +18,7 @@ from core.utils import is_json_request, extensibleURL
 from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, build_time_histogram, count_occurrences, \
-    duration_df, build_stack_histogram
+    group_low_occurrences, duration_df, build_stack_histogram
 from core.libs.task import cleanTaskList
 from core.libs.sqlcustom import preprocess_wild_card_string
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
@@ -202,7 +202,7 @@ def taskProblemExplorer(request):
                 'options': {
                     'labels': ['Owner', 'Count'],
                 },
-                'data': counts['owner'] if 'owner' in counts else [],
+                'data': group_low_occurrences(counts['owner'], threshold=0.005) if 'owner' in counts else [],
             },
             'state_duration': {
                 'name': 'state_duration',

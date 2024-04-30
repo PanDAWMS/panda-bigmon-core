@@ -102,33 +102,6 @@ class FrozenProdTasksModel(models.Model):
         db_table = f'"{settings.DB_SCHEMA}"."frozenprodtasks"'
 
 
-class RunningProdRequestsModel(models.Model):
-    reqid = models.IntegerField(db_column='reqid', primary_key=True)
-    ntasks = models.IntegerField(null=True, db_column='ntasks', blank=True)
-    rjobs = models.IntegerField(null=True, db_column='rjobs', blank=True)
-    slots = models.IntegerField(null=True, db_column='slots', blank=True)
-    aslots = models.IntegerField(null=True, db_column='aslots', blank=True)
-    neventstobeused = models.BigIntegerField(db_column='neventstobeused')
-    neventsrunning = models.BigIntegerField(db_column='neventsrunning')
-    neventsused = models.BigIntegerField(db_column='neventsused')
-    nevents = models.BigIntegerField(db_column='nevents')
-    percentage = models.BigIntegerField(db_column='percentage')
-    age = models.IntegerField(db_column='age', blank=True)
-    nfilesfailed = models.IntegerField(null=True, db_column='nfilesfailed', blank=True)
-    avgpriority = models.IntegerField(null=True, db_column='avgpriority', blank=True)
-    creationdate = models.DateTimeField(db_column='creationdate')
-    cputime = models.IntegerField(null=True,db_column='cputime', blank=True)
-    status = models.CharField(max_length=32, db_column='status', null=False, blank=True)
-    provenance = models.CharField(max_length=32, db_column='provenance', null=False, blank=True)
-    requesttype = models.CharField(max_length=32, db_column='request_type', null=False, blank=True)
-    campaign = models.CharField(max_length=32, db_column='campaign', null=False, blank=True)
-    subcampaign = models.CharField(max_length=32, db_column='sub_campaign', null=False, blank=True)
-    physgroup = models.CharField(max_length=20, db_column='phys_group', null=False, blank=True)
-    
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA}"."runningprodrequests"'
-
-
 class ProdNeventsHistory(models.Model):
     id = models.IntegerField(db_column='id', primary_key=True)
     processingtype = models.CharField(max_length=192, db_column='processing_type')
