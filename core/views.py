@@ -493,9 +493,9 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     processor_type = request.session['requestParams'].get('processor_type', None)
     if processor_type:
         if processor_type.lower() == 'cpu':
-            extraQueryString += " AND (cmtconfig not like '%%gpu%%')"
+            extraQueryString += " AND (jobmetrics not like '%%nGPU=%%')"
         if processor_type.lower() == 'gpu':
-            extraQueryString += " AND (cmtconfig like '%%gpu%%')"
+            extraQueryString += " AND (jobmetrics like '%%nGPU=%%')"
 
     if 'site' in request.session['requestParams'] and (
             request.session['requestParams']['site'] == 'hpc' or not is_wildcards(
@@ -1647,7 +1647,7 @@ def jobList(request, mode=None, param=None):
         jobs,
         standard_fields + [
             'corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement',
-            'container_name', 'nevents'
+            'container_name', 'nevents', 'processor_type'
         ])
     # Sort in order to see the most important tasks
     if sumd:

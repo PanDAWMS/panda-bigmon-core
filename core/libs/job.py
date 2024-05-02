@@ -528,6 +528,10 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
                 job['produsername'] = 'Unknown'
         if job['transformation']:
             job['transformation'] = job['transformation'].split('/')[-1]
+        if 'jobmetrics' in job and job['jobmetrics'] and 'nGPU' in job['jobmetrics']:
+            job['processor_type'] = 'GPU'
+        else:
+            job['processor_type'] = 'CPU'
 
         job['durationsec'] = get_job_walltime(job)
         job['durationsec'] = job['durationsec'] if job['durationsec'] is not None else 0
