@@ -690,9 +690,9 @@ def add_files_info_to_jobs(jobs):
     files_list = []
     fquery = {
         'pandaid__in': [j['pandaid'] for j in jobs],
-        'type__in': ['input', 'log']
+        'type__in': ['input', 'log', 'output'],
     }
-    fvalues = ('pandaid', 'fileid', 'datasetid', 'lfn', 'type', 'scope')
+    fvalues = ('pandaid', 'fileid', 'datasetid', 'lfn', 'type', 'scope', 'dataset')
     files_list.extend(Filestable4.objects.filter(**fquery).values(*fvalues))
     if len(set([f['pandaid'] for f in files_list])) < len(jobs):
         files_list.extend(FilestableArch.objects.filter(**fquery).values(*fvalues))
@@ -703,12 +703,18 @@ def add_files_info_to_jobs(jobs):
         if f['pandaid'] not in files_per_job:
             files_per_job[f['pandaid']] = {
                 'lfn_list': [],
-                'log_dids': []
+                'did_log_list': [],
+                'did_input': {},
+                'did_output': {},
             }
         if f['type'] == 'input' and f['lfn'] not in files_per_job[f['pandaid']]['lfn_list']:
             files_per_job[f['pandaid']]['lfn_list'].append(f['lfn'])
+            if '.lib.' not in f['dataset'] and f['datasetid'] not in files_per_job[f['pandaid']]['did_input']:
+                files_per_job[f['pandaid']]['did_input'][f['datasetid']] = f['dataset']
         elif f['type'] == 'log':
-            files_per_job[f['pandaid']]['log_dids'].append({'scope': f['scope'], 'name': f['lfn']})
+            files_per_job[f['pandaid']]['did_log_list'].append({'scope': f['scope'], 'name': f['lfn']})
+        elif f['type'] == 'output' and f['datasetid'] not in files_per_job[f['pandaid']]['did_output']:
+            files_per_job[f['pandaid']]['did_output'][f['datasetid']] = f['dataset']
 
     # getting info from dataset contents, where only last attempt is kept
     dataset_contents_list = []
@@ -719,7 +725,8 @@ def add_files_info_to_jobs(jobs):
     extra_str = "datasetid in (select datasetid from {}.jedi_datasets where masterid is null)".format(
         settings.DB_SCHEMA_PANDA
     )
-    dataset_contents_list.extend(JediDatasetContents.objects.filter(**dcquery).extra(where=[extra_str]).values())
+    dvalues = ('pandaid', 'lfn', 'type', 'startevent', 'endevent', 'nevents', 'datasetid')
+    dataset_contents_list.extend(JediDatasetContents.objects.filter(**dcquery).extra(where=[extra_str]).values(*dvalues))
 
     dc_per_job = {}
     for jds in dataset_contents_list:
@@ -745,7 +752,17 @@ def add_files_info_to_jobs(jobs):
         else:
             j['ninputs'] = 0
 
-        if j['pandaid'] in files_per_job and len(files_per_job[j['pandaid']]['log_dids']) > 0:
-            j['log_did'] = files_per_job[j['pandaid']]['log_dids'][0]
+        if j['pandaid'] in files_per_job:
+            if len(files_per_job[j['pandaid']]['did_log_list']) > 0:
+                j['log_did'] = files_per_job[j['pandaid']]['did_log_list'][0]
+            if len(files_per_job[j['pandaid']]['did_input']) > 0:
+                j['did_input'] = [{'id': did, 'name': name} for did, name in files_per_job[j['pandaid']]['did_input'].items()]
+            else:
+                j['did_input'] = []
+            if len(files_per_job[j['pandaid']]['did_output']) > 0:
+                j['did_output'] = [{'id': did, 'name': name} for did, name in files_per_job[j['pandaid']]['did_output'].items()]
+            else:
+                j['did_output'] = []
+
 
     return jobs
