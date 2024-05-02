@@ -200,11 +200,6 @@ def job_summary_dict(request, jobs, fieldlist=None):
     if len(esjobs) > 0:
         sumd['eventservicestatus'] = get_event_status_summary(esjobs, const.EVENT_STATES)
 
-    sumd['processor_type'] = {
-        'GPU': len(list(filter(lambda x: x.get('cmtconfig') and 'gpu' in x.get('cmtconfig'), jobs))),
-        'CPU': len(list(filter(lambda x: x.get('cmtconfig') and not 'gpu' in x.get('cmtconfig'), jobs)))
-    }
-
     # convert to ordered lists
     suml = []
     for f in sumd:
