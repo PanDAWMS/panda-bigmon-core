@@ -73,6 +73,10 @@ a.disabled, a[disabled] button.button.disabled, button.button[disabled] {
     background-color: #5e789a;
     color: #fefefe; }
 
+a img.align-text-top {
+  vertical-align: text-top;
+}
+
 select {
     -moz-appearance: none;
     text-indent: 0.01px;

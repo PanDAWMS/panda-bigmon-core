@@ -334,7 +334,7 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
 		<td class="small">{{ job.waittime }}</td>
 		<td class="small">{{ job.duration }}</td>
 		<td class="small">{{ job.modificationtime }}</td>
-		<td class="small">{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %} <a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'>{{job.computingsitestatus}}</span> {{job.computingsitecomment}} </td>
+		<td class="small">{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %} <a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'>{{job.computingsitestatus}}</span>{% if job.computingsitestatus != 'online' %}{{job.computingsitecomment}}{% endif %} </td>
 		<td>{{ job.currentpriority }}</td>
     <td>{{ job.nevents }} ({{ job.ninputs }})</td>
     <td>{% if 'maxpssgbpercore' in job and job.maxpssgbpercore %}{{ job.maxpssgbpercore }}{% endif %}</td>
@@ -344,8 +344,9 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
 		</td>
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
     <td colspan="20" class="small">Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a>  #{{ job.attemptnr }}</td></tr>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
-    <td colspan="20" class="highlightcell small">Datasets: {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a>  {% if request.session.rucio_ui|length > 0 %}|| <a href="{{ request.session.rucio_ui }}did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %} {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> {% endif %} <b> Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+  <tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
+    <td colspan="20" class="small">Datasets: {% if job.did_input|length > 0 %} <b>In:</b> {% for d in job.did_input %}<a href="{% url 'datasetInfo' %}?datasetid={{ d.id }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ d.name }} </a>  {% if request.session.rucio_ui|length > 0 %} <a href="{{ request.session.rucio_ui }}did?scope={{ job.inputfileproject }}&name={{ d.name }}" target="_blank"><img class="align-text-top" src="/static/images/rucio-logo.png" width=14 height=14></a>{% endif %}{% if forloop.last %}{% else %},{% endif %} {% endfor %} {% else %}-{% endif %}
+      {% if job.did_output|length > 0 %} {% if job.did_input|length > 0 %}<br>{% endif %}<b>Out:</b> {% for d in job.did_output %} <a href="{% url 'datasetInfo' %}?datasetid={{ d.id }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}">{{ d.name }}</a>{% if forloop.last %}{% else %},{% endif %}{% endfor %}{% endif %}</td></tr>
     {% endfor %}
 </table>
 </div>
