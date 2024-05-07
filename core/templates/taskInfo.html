@@ -287,7 +287,8 @@
               <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(logName,fields.type,logLevel,message),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Retrial
                   Module logger </a>
           {% endif %}
-          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}">Error summary</a>
+          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}&display_limit=10">Error summary</a>
+          <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}&extra=unfinishedfiles&display_limit=10">Errors for unfinished files</a>
           {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
               <a href="{% url 'taskInfo' task.parent_tid %}">Parent task {{ task.parent_tid }}</a>
           {% endif %}
@@ -303,8 +304,6 @@
       <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&specialhandling=sj">Scouts</a>
       <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
       <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
-      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}&display_limit=10">All errors</a>
-      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}&extra=unfinishedfiles&display_limit=10">Errors for unfinished files only</a>
     </div>
   </div>
 
