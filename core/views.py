@@ -6087,7 +6087,27 @@ def errorSummary(request):
     _logger.info('Processed specific params: {}'.format(time.time() - request.session['req_init_time']))
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=limit, wildCardExt=True)
-
+    # filter out previous errors for successfully processed files, i.e. keeping errors for unfinished files only
+    if 'jeditaskid' in request.session['requestParams'] and 'extra' in request.session['requestParams'] and \
+            request.session['requestParams']['extra'] == 'unfinishedfiles':
+        jeditaskid = request.session['requestParams']['jeditaskid']
+        # get unfinished input files
+        files_input_unfinished = JediDatasetContents.objects.filter(jeditaskid=jeditaskid).exclude(status__in=('finished',)).extra(
+            where=[f"""datasetid in (
+                select datasetid from {settings.DB_SCHEMA_PANDA}.JEDI_DATASETS 
+                where jeditaskid={jeditaskid} and type in ('input', 'pseudo_input') and masterid is null)"""]
+        ).values('fileid', 'datasetid', 'status')
+        if len(files_input_unfinished) > settings.DB_N_MAX_IN_QUERY:
+            # put into tmp table
+            transaction_key = insert_to_temp_table([f['fileid'] for f in files_input_unfinished])
+            extra_str = f"""select id from {get_tmp_table_name()} where TRANSACTIONKEY = {transaction_key}"""
+        else:
+            extra_str = ','.join([str(f['fileid']) for f in files_input_unfinished])
+        wildCardExtension += f""" and pandaid in (
+            select pandaid from {settings.DB_SCHEMA_PANDA}.filestable4 where jeditaskid={jeditaskid} and fileid in ({extra_str})
+            union all 
+            select pandaid from {settings.DB_SCHEMA_PANDA_ARCH}.filestable_arch where jeditaskid={jeditaskid} and fileid in ({extra_str})
+        )"""
     _logger.info('Finished set up view: {}'.format(time.time() - request.session['req_init_time']))
 
     if not testjobs and 'jobstatus' not in request.session['requestParams']:
@@ -6129,15 +6149,12 @@ def errorSummary(request):
         thread.start()
     else:
         thread = None
-
     _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
-
     _logger.info('Cleaned jobs list: {}'.format(time.time() - request.session['req_init_time']))
 
     error_message_summary = get_error_message_summary(jobs)
-
     _logger.info('Prepared new error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
     njobs = len(jobs)
@@ -6178,7 +6195,6 @@ def errorSummary(request):
                     site[s] = sitestates[sitename][s]
             if 'pctfail' in sitestates[sitename]:
                 site['pctfail'] = sitestates[sitename]['pctfail']
-
     _logger.info('Built errors by site summary: {}'.format(time.time() - request.session['req_init_time']))
 
     taskname = ''
@@ -6207,7 +6223,6 @@ def errorSummary(request):
                     task['pctfail'] = taskstates[taskid]['pctfail']
         if 'jeditaskid' in request.session['requestParams']:
             taskname = get_task_name_by_taskid(request.session['requestParams']['jeditaskid'])
-
     _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if 'sortby' in request.session['requestParams']:
@@ -6215,18 +6230,14 @@ def errorSummary(request):
     else:
         sortby = 'alpha'
     flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
-
     _logger.info('Built google diagram: {}'.format(time.time() - request.session['req_init_time']))
 
     if thread is not None:
         try:
             thread.join()
             jobsErrorsTotalCount = sum(tcount[dkey])
-            print(dkey)
-            print(tcount[dkey])
+            _logger.debug(f"{dkey}: total jobs found {tcount[dkey]})")
             del tcount[dkey]
-            print(tcount)
-            print(jobsErrorsTotalCount)
         except:
             jobsErrorsTotalCount = -1
     else:
@@ -6243,9 +6254,9 @@ def errorSummary(request):
         urlParametrs = '&'.join(listPar) + '&'
     else:
         urlParametrs = None
-    print(listPar)
+    _logger.debug(listPar)
     del listPar
-    if (math.fabs(njobs - jobsErrorsTotalCount) < 1000):
+    if math.fabs(njobs - jobsErrorsTotalCount) < 1000:
         jobsErrorsTotalCount = None
     else:
         jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount + 10000) / 10000) * 10000)

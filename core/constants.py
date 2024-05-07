@@ -109,7 +109,6 @@ TASK_STATES_FINAL = (
 )
 
 JOB_FIELDS_ERROR_VIEW = (
-    'cloud',
     'computingelement',
     'computingsite',
     'eventservice',
@@ -119,7 +118,6 @@ JOB_FIELDS_ERROR_VIEW = (
     'prodsourcelabel',
     'produsername',
     'specialhandling',
-    'taskid',
     'transformation',
     'reqid',
     'workinggroup',

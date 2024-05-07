@@ -303,6 +303,8 @@
       <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&specialhandling=sj">Scouts</a>
       <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=finished|failed|cancelled">Ended</a>
       <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus=defined|waiting|pending|assigned|throttled|activated|sent|starting|running|holding|transferring">Active</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}&display_limit=10">All errors</a>
+      <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}&extra=unfinishedfiles&display_limit=10">Errors for unfinished files only</a>
     </div>
   </div>
 

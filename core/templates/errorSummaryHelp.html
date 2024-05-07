@@ -22,6 +22,8 @@ If you drill down eg. into the failures at a particular site, by clicking the si
   The limit depth of the query will now be applied entirely to the site you have zeroed in on, so you will get more failure information (the limit is necessary for performance reasons).
   The timeline plot, attribute summary, and <code>category:code</code> breakdown will now be exclusive to the site of interest. Similarly for drilling down to users and tasks.
 </p>
+<p>If you are interested in errors for unfinished files in a task, add <code>&extra=unfinishedfiles</code> to the URL.
+  This only works for one selected task, i.e. there should be <code>&jeditaskid={some_jedi_task_id}</code> specified.</p>
 <p>
 <b>Wildcards:</b> The computingsite parameter on the URL supports wildcards such that multiple sites can be included in the error summary,
   e.g. <code>&computingsite=UKI-*</code>, <code>&computingsite=*MCORE</code>, <code>&computingsite=*-MAN-*</code>
