@@ -3543,13 +3543,16 @@ def wnInfo(request, site, wnname='all'):
         except:
             pass
 
-    wnPlotFailedL = sorted([[k, v] for k, v in plots_data['failed'].items()], key=lambda x: x[0])
-
-    kys = plots_data['finished'].keys()
-    kys = sorted(kys)
-    wnPlotFinishedL = []
-    for k in kys:
-        wnPlotFinishedL.append([k, plots_data['finished'][k]])
+    wnPlotFailedL = sorted(
+        [[k, v] for k, v in plots_data['failed'].items()],
+        key=lambda x: x[1],
+        reverse=True
+    )
+    wnPlotFinishedL = sorted(
+        [[k, v] for k, v in plots_data['finished'].items()],
+        key=lambda x: x[1],
+        reverse=True
+    )
 
     if not is_json_request(request):
         xurl = extensibleURL(request)
@@ -3594,26 +3597,6 @@ def wnInfo(request, site, wnname='all'):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
-
-
-# https://github.com/PanDAWMS/panda-jedi/blob/master/pandajedi/jedicore/JediCoreUtils.py
-def getEffectiveFileSize(fsize, startEvent, endEvent, nEvents):
-    inMB = 1024 * 1024
-    if fsize in [None, 0]:
-        # use dummy size for pseudo input
-        effectiveFsize = inMB
-    elif nEvents != None and startEvent != None and endEvent != None:
-        # take event range into account
-        effectiveFsize = np.long(float(fsize) * float(endEvent - startEvent + 1) / float(nEvents))
-    else:
-        effectiveFsize = fsize
-    # use dummy size if input is too small
-    if effectiveFsize == 0:
-        effectiveFsize = inMB
-    # in MB
-    effectiveFsize = float(effectiveFsize) / inMB
-    # return
-    return effectiveFsize
 
 
 @login_customrequired
