@@ -256,6 +256,7 @@
                     <option class="searchoption" value="hashtag">Tasks for #</option>
                   {% endif %}
                   <option class="searchoption" value="site">Site by name</option>
+                  <option class="searchoption" value="sitewn">WNs for site</option>
                   <option class="searchoption" value="user">User</option>
                   <option class="searchoption" value="dataset">Dataset by name</option>
                   <option class="searchoption" value="filename">File by name</option>
@@ -416,7 +417,7 @@
         {% if built != None %} {{ built }}, {% endif %} <a id="button-refresh-page"> Refresh</a>
     </div>
 </div>
-<!-- End sub-title -->
+<!-- End sub title -->
 
 <!-- Main Grid Section -->
 <div class="large-12 columns body-content" id="content">
@@ -646,6 +647,10 @@
                       urlBase = "{% url 'siteInfo' %}" ;
                       url = "?site=";
                       break;
+                  case 'sitewn':
+                      urlBase = "{% url 'wnInfo' %}" ;
+                      url = "";
+                      break;
                   case 'user':
                       urlBase = "{% url 'userInfo' %}" ;
                       url = "?user=";
@@ -772,10 +777,18 @@
                   minLength: 1,
               });
               break;
+         case 'sitewn':
+              $("#searchinputid").autocomplete({
+                  source: "{% url 'getsites' %}",
+                  select: function (event, ui) { //item selected
+                      AutoCompleteSelectHandler(event, ui);
+                  },
+                  minLength: 1,
+              });
+              break;
          }
       }
-      function AutoCompleteSelectHandler(event, ui)
-      {
+      function AutoCompleteSelectHandler(event, ui) {
          var selectedObj = ui.item;
       }
 
