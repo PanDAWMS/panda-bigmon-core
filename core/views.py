@@ -3522,22 +3522,17 @@ def wnInfo(request, site, wnname='all'):
 
     fullsummary, plots_data = wn_summary(wnname, query)
 
-    if 'sortby' in request.session['requestParams']:
-        if request.session['requestParams']['sortby'] in sitestatelist:
-            fullsummary = sorted(fullsummary, key=lambda x: x['states'][
-                request.session['requestParams']['sortby']] if not isinstance(
-                x['states'][request.session['requestParams']['sortby']], dict) else
-            x['states'][request.session['requestParams']['sortby']]['count'],
-                                 reverse=True)
-        elif request.session['requestParams']['sortby'] == 'pctfail':
-            fullsummary = sorted(fullsummary, key=lambda x: x['pctfail'], reverse=True)
+    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+        sortby = 1  # count
+    else:
+        sortby = 0  # alpha
 
     # Remove None wn from failed jobs plot if it is in system, add warning banner
     warning = {}
     if 'None' in plots_data['failed']:
-        warning[
-            'message'] = '%i failed jobs are excluded from "Failed jobs per WN slot" plot because of None value of modificationhost.' % (
-        plots_data['failed']['None'])
+        warning['message'] = '{} failed jobs are excluded from "Failed jobs per WN slot" plot because of unknown modificationhost.'.format(
+            plots_data["failed"]["None"]
+        )
         try:
             del plots_data['failed']['None']
         except:
@@ -3545,12 +3540,12 @@ def wnInfo(request, site, wnname='all'):
 
     wnPlotFailedL = sorted(
         [[k, v] for k, v in plots_data['failed'].items()],
-        key=lambda x: x[1],
+        key=lambda x: x[sortby],
         reverse=True
     )
     wnPlotFinishedL = sorted(
         [[k, v] for k, v in plots_data['finished'].items()],
-        key=lambda x: x[1],
+        key=lambda x: x[sortby],
         reverse=True
     )
 
