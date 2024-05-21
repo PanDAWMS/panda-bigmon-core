@@ -477,6 +477,11 @@ def artJobs(request):
                     jobdict['cpuconsumptionunit'] = '---'
 
                 jobdict['duration'] = convert_sec(get_job_walltime(panda_jobs_dict[job['pandaid']]), out_unit='str')
+            else:
+                jobdict['maxrss'] = '---'
+                jobdict['cpuconsumptiontime'] = '---'
+                jobdict['cpuconsumptionunit'] = '---'
+                jobdict['duration'] = '---'
 
             # ATLINFR-3305
             if 'extrainfo' in job:
