@@ -61,18 +61,18 @@ class TaskProgressPlot:
 
     def get_raw_task_profile_fresh(self, taskid):
         cur = connection.cursor()
-        cur.execute("""
-        select  * from (
+        cur.execute(f"""
+        select * from (
             select distinct starttime, creationtime, endtime, pandaid, jeditaskid, eventservice 
-            from {0}.jobsarchived 
-            where jeditaskid={1} and jobstatus='finished' 
+            from {settings.DB_SCHEMA_PANDA_ARCH}.jobsarchived 
+            where jeditaskid={taskid} and jobstatus='finished' 
             union 
             select distinct starttime, creationtime, endtime, pandaid, jeditaskid, eventservice 
-            from {0}.jobsarchived4 
-            where jeditaskid={1} and jobstatus='finished'
+            from {settings.DB_SCHEMA_PANDA}.jobsarchived4 
+            where jeditaskid={taskid} and jobstatus='finished'
         ) t 
         order by pandaid asc
-        """.format(settings.DB_SCHEMA_PANDA, taskid))
+        """)
         rows = cur.fetchall()
 
         starttime_run = []
