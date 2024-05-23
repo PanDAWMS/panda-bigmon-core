@@ -1,5 +1,5 @@
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.db import connection
 from django.db.models import Q, Count, Sum
@@ -24,7 +24,7 @@ def setup_harvester_view(request, otype='worker'):
 
     DEFAULT_HOURS = 12
     startdate = None
-    enddate = datetime.utcnow()
+    enddate = datetime.now(tz=timezone.utc)
 
     if 'hours' in request.session['requestParams']:
         startdate = enddate - timedelta(hours=int(request.session['requestParams']['hours']))
@@ -242,8 +242,8 @@ def get_workers_summary_split(query, **kwargs):
 
     if 'source' in kwargs and kwargs['source'] == 'HarvesterWorkers':
         wquery['submittime__castdate__range'] = [
-            (datetime.utcnow()-timedelta(hours=N_HOURS)).strftime(settings.DATETIME_FORMAT),
-            datetime.utcnow().strftime(settings.DATETIME_FORMAT)
+            (datetime.now(tz=timezone.utc) - timedelta(hours=N_HOURS)).strftime(settings.DATETIME_FORMAT),
+            datetime.now(tz=timezone.utc).strftime(settings.DATETIME_FORMAT)
         ]
         wquery['status__in'] = ['running', 'submitted']
         # wquery['jobtype__in'] = ['managed', 'user', 'panda']

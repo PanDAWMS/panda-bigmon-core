@@ -6,7 +6,7 @@ import json
 import re
 import time
 import multiprocessing
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
@@ -75,7 +75,7 @@ def art(request):
         n_days_limit = int(request.session['requestParams']['days'])
     else:
         n_days_limit = 90
-    tquery['created__castdate__range'] = [datetime.utcnow() - timedelta(days=n_days_limit), datetime.utcnow()]
+    tquery['created__castdate__range'] = [datetime.now(tz=timezone.utc) - timedelta(days=n_days_limit), datetime.now(tz=timezone.utc)]
 
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
     branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
@@ -1276,7 +1276,7 @@ def registerARTTest(request):
                 branch=branch,
                 package=package,
                 extrainfo=json.dumps(extra_info),
-                created=datetime.utcnow(),
+                created=datetime.now(tz=timezone.utc),
                 nightly_tag_date=nightly_tag_date,
                 attemptnr=attemptnr,
                 maxattempt=2,
@@ -1515,7 +1515,7 @@ def sendDevArtReport(request):
         EMAIL_SUBJECT_PREFIX = ''
     subject = '{}[ART] Run on specific day tests'.format(EMAIL_SUBJECT_PREFIX)
 
-    query = {'created__castdate__range': [datetime.utcnow() - timedelta(hours=1), datetime.utcnow()]}
+    query = {'created__castdate__range': [datetime.now(tz=timezone.utc) - timedelta(hours=1), datetime.now(tz=timezone.utc)]}
     exquery = {'nightly_tag__exact': F('nightly_tag_display')}
 
     tests = list(ARTTests.objects.filter(**query).exclude(**exquery).values())

@@ -7730,9 +7730,9 @@ def get_hc_tests(request):
     is_archive_only = False
     is_archive = False
     timerange = [parse_datetime(mt) for mt in query[timeparamname + '__castdate__range']]
-    if timerange[0] < datetime.utcnow() - timedelta(days=4) and timerange[1] < datetime.utcnow() - timedelta(days=4):
+    if timerange[0] < datetime.now(tz=timezone.utc) - timedelta(days=4) and timerange[1] < datetime.now(tz=timezone.utc) - timedelta(days=4):
         is_archive_only = True
-    if timerange[0] < datetime.utcnow() - timedelta(days=3):
+    if timerange[0] < datetime.now(tz=timezone.utc)- timedelta(days=3):
         is_archive = True
 
     if not is_archive_only:

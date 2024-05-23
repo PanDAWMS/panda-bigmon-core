@@ -1,5 +1,5 @@
 from BaseTasksProvider import BaseTasksProvider
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import threading
 from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIMEOUT_WHEN_DB_LOADED
 import logging
@@ -36,7 +36,7 @@ class SQLAggregator(BaseTasksProvider):
                 users[r[0]][var_name] = 0
 
         for days in (1, 7):
-            current_time = datetime.utcnow()
+            current_time = datetime.now(tz=timezone.utc)
             start_time = current_time - timedelta(days=days)
             # For each table get the info from database
             tables = ('atlas_panda.jobsactive4', 'atlas_panda.jobsarchived4', 'atlas_pandaarch.jobsarchived')

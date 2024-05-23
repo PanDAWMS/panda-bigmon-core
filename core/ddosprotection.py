@@ -4,7 +4,7 @@ import re
 import json
 import psutil
 import subprocess
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 
 from django.utils import timezone
 from django.db.models import Count
@@ -151,8 +151,8 @@ class DDOSMiddleware(object):
 
             # Check against number of unprocessed requests to filebrowser from ART subsystem
             if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
-                startdate = datetime.utcnow() - timedelta(minutes=20)
-                enddate = datetime.utcnow()
+                startdate = datetime.now(tz=timezone.utc) - timedelta(minutes=20)
+                enddate = datetime.now(tz=timezone.utc)
                 query = {
                     'qtime__range': [startdate, enddate],
                     'is_rejected': 0,
@@ -170,15 +170,15 @@ class DDOSMiddleware(object):
                             status=429,
                             content_type='application/json')
                 response = self.get_response(request)
-                reqs.rtime = datetime.utcnow()
+                reqs.rtime = datetime.now(tz=timezone.utc)
                 reqs.save()
                 return response
 
             if x_forwarded_for is not None and x_forwarded_for in self.restrictedIPs:
                 _logger.info('[DDOS protection] got request from agent: {}'.format(useragent))
                 countRestictedrequests = []
-                startdate = datetime.utcnow() - timedelta(hours=1)
-                enddate = datetime.utcnow()
+                startdate = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+                enddate = datetime.now(tz=timezone.utc)
                 eiquery = {
                     'qtime__range': [startdate, enddate],
                     'remote': x_forwarded_for,
@@ -198,14 +198,14 @@ class DDOSMiddleware(object):
                             status=429,
                             content_type='application/json')
                 response = self.get_response(request)
-                reqs.rtime = datetime.utcnow()
+                reqs.rtime = datetime.now(tz=timezone.utc)
                 reqs.save()
                 return response
 
             # We restrict number of requests per hour
             if x_forwarded_for is not None and x_forwarded_for not in self.notcachedRemoteAddress:
-                startdate = datetime.utcnow() - timedelta(hours=1)
-                enddate = datetime.utcnow()
+                startdate = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+                enddate = datetime.now(tz=timezone.utc)
                 query = {
                     'remote': x_forwarded_for,
                     'qtime__range': [startdate, enddate],
@@ -225,6 +225,6 @@ class DDOSMiddleware(object):
                             content_type='application/json')
 
         response = self.get_response(request)
-        reqs.rtime = datetime.utcnow()
+        reqs.rtime = datetime.now(tz=timezone.utc)
         reqs.save()
         return response

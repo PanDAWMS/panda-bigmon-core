@@ -5,7 +5,7 @@ import sys
 import json
 import socket
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 
 from utils import get_settings_path, servers_configs, monit_sls_configs, cpu_info, memory_info, disk_info, volume_use, \
     process_availability, subprocess_availability, DateTimeEncoder, send_data, service_availability, \
@@ -115,7 +115,7 @@ def main():
                 conn.close()
 
         # send metrics to logstash
-        dict_metrics['creation_time'] = datetime.utcnow()
+        dict_metrics['creation_time'] = datetime.now(tz=timezone.utc)
         if service_type is not None:
             dict_metrics['monittype'] = service_type
             send_data(json.dumps(dict_metrics, cls=DateTimeEncoder), settings_path)

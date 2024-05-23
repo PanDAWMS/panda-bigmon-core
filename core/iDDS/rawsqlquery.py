@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.db import connections
 from core.libs.exlib import dictfetchall
 from core.libs.sqlsyntax import bind_var
@@ -61,7 +61,7 @@ def prepareSQLQueryParameters(request_params, **kwargs):
     dict_for_subst = {key: request_params.get(key) for key in query_fields_for_subst if key in request_params}
     query_params_substituted = subtitleValue.replaceInverseKeys('requests', dict_for_subst)
 
-    sqlpar['starttime'] = (datetime.utcnow()-timedelta(hours=24*days)).strftime(settings.DATETIME_FORMAT)
+    sqlpar['starttime'] = (datetime.now(tz=timezone.utc) - timedelta(hours=24*days)).strftime(settings.DATETIME_FORMAT)
     condition += 'and r.created_at > {} '.format(bind_var('starttime', db))
 
     for key in query_params_substituted.keys():

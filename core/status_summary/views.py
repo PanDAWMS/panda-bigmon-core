@@ -5,7 +5,7 @@ core.status_summary.views
 
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.db.models import Count, Sum, Q
 from django.shortcuts import render
@@ -177,7 +177,7 @@ def api_status_summary(request):
     raw_data_dict, errors, warnings, query, GET_parameters = index_data(request)
     raw_data = raw_data_dict['data']
     data = {
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(tz=timezone.utc).isoformat(),
         'errors': errors,
         'warnings': warnings,
         'query': query,
