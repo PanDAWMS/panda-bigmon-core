@@ -6,7 +6,8 @@ import json
 import re
 import time
 import multiprocessing
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from django.utils import timezone
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
@@ -1276,7 +1277,7 @@ def registerARTTest(request):
                 branch=branch,
                 package=package,
                 extrainfo=json.dumps(extra_info),
-                created=datetime.now(tz=timezone.utc),
+                created=timezone.now(),
                 nightly_tag_date=nightly_tag_date,
                 attemptnr=attemptnr,
                 maxattempt=2,
