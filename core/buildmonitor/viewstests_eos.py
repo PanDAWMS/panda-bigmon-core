@@ -35,12 +35,12 @@ def testview_eosDemo(request):
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-ico\
 n-circle-check">ICON33</span></div>'
-    clock_icon='<div class="ui-widget ui-state-hover" style="display:inline-block;"> <span s\
-tyle="display:inline-block;" title="UPDATING" class="DataTables_sort_icon css_right ui-icon \
-ui-icon-clock">ICON39</span></div>'
-    minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;"> <s\
-pan style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_righ\
-t ui-icon ui-icon-alert">ICON34</span></div>'
+    clock_icon='<div class="ui-widget ui-state-active" style="display:inline-block;backgroun\
+d:#bc0000;"> <span style="display:inline-block;" title="UPDATING" class="DataTables_sort_ico\
+n css_right ui-icon ui-icon-clock">ICON39</span></div>'
+    minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;">\
+ <span style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_r\
+ight ui-icon ui-icon-alert">ICON34</span></div>'
     warn_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span st\
 yle="display:inline-block;" title="WARNING" class="DataTables_sort_icon css_right ui-icon ui\
 -icon-lightbulb">ICON35</span></div>'
