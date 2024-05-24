@@ -68,12 +68,12 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
 #    except:
 #        _logger.error('Something wrong with ndays:' + str(ndays))
     try:
-        startdate = datetime.now(tz=timezone.utc).replace(tzinfo=pytz.utc) - timedelta(hours=nhours)
+        startdate = datetime.now(tz=timezone.utc) - timedelta(hours=nhours)
     except:
         _logger.error('Something wrong with startdate:')
-        startdate = datetime.now(tz=timezone.utc).replace(tzinfo=pytz.utc) - timedelta(hours=LAST_N_HOURS)
+        startdate = datetime.now(tz=timezone.utc) - timedelta(hours=LAST_N_HOURS)
     startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = datetime.now(tz=timezone.utc).replace(tzinfo=pytz.utc).strftime(settings.DATETIME_FORMAT)
+    enddate = datetime.now(tz=timezone.utc).strftime(settings.DATETIME_FORMAT)
     jobs.extend(Jobsactive4.objects.filter(\
                 produsername=prodUserName, \
                 modificationtime__range=[startdate, enddate] \
@@ -175,12 +175,12 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
 #    except:
 #        _logger.error('Something wrong with ndays:' + str(ndays))
     try:
-        startdate = datetime.now(tz=timezone.utc).replace(tzinfo=pytz.utc) - timedelta(hours=nhours)
+        startdate = datetime.now(tz=timezone.utc) - timedelta(hours=nhours)
     except:
         _logger.error('Something wrong with startdate:')
-        startdate = datetime.now(tz=timezone.utc).replace(tzinfo=pytz.utc) - timedelta(hours=LAST_N_HOURS)
+        startdate = datetime.now(tz=timezone.utc) - timedelta(hours=LAST_N_HOURS)
     startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = datetime.now(tz=timezone.utc).replace(tzinfo=pytz.utc).strftime(settings.DATETIME_FORMAT)
+    enddate = datetime.now(tz=timezone.utc).strftime(settings.DATETIME_FORMAT)
 
     print ('startdate=', startdate)
     print ('enddate=', enddate)
