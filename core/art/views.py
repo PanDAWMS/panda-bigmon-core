@@ -7,6 +7,7 @@ import re
 import time
 import multiprocessing
 from datetime import datetime, timedelta
+
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
@@ -76,7 +77,7 @@ def art(request):
         n_days_limit = int(request.session['requestParams']['days'])
     else:
         n_days_limit = 90
-    tquery['created__castdate__range'] = [datetime.now(tz=timezone.utc) - timedelta(days=n_days_limit), datetime.now(tz=timezone.utc)]
+    tquery['created__castdate__range'] = [timezone.now() - timedelta(days=n_days_limit), timezone.now()]
 
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
     branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
@@ -1516,7 +1517,7 @@ def sendDevArtReport(request):
         EMAIL_SUBJECT_PREFIX = ''
     subject = '{}[ART] Run on specific day tests'.format(EMAIL_SUBJECT_PREFIX)
 
-    query = {'created__castdate__range': [datetime.now(tz=timezone.utc) - timedelta(hours=1), datetime.now(tz=timezone.utc)]}
+    query = {'created__castdate__range': [timezone.now() - timedelta(hours=1), timezone.now()]}
     exquery = {'nightly_tag__exact': F('nightly_tag_display')}
 
     tests = list(ARTTests.objects.filter(**query).exclude(**exquery).values())
