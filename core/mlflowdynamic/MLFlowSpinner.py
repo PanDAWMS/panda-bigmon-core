@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from core.mlflowdynamic.models import MLFlowContainers
 from core.mlflowdynamic.openshiftcontroller import occlicalls
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.conf import settings
 
@@ -30,7 +30,7 @@ class MLFlowProxyView(ProxyView):
         ocwrap = occlicalls(taskid)
         instance = ocwrap.get_instance()
         dbentry.instanceurl = instance + "/"
-        dbentry.spinnedAt = datetime.utcnow()
+        dbentry.spinnedAt = datetime.now(tz=timezone.utc)
         dbentry.status = "spinning"
         dbentry.save()
 

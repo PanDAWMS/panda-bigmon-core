@@ -5,7 +5,7 @@ import random
 import json
 import re
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from opensearchpy import Search
 
 from django.db import connection
@@ -193,7 +193,7 @@ def tasks_not_updated(request, query, state='submitted', hours_since_update=36, 
         hours_since_update = int(request.session['requestParams']['statenotupdated'])
 
     query['statechangetime__lte'] = (
-            datetime.utcnow() - timedelta(hours=hours_since_update)).strftime(settings.DATETIME_FORMAT)
+            datetime.now(tz=timezone.utc) - timedelta(hours=hours_since_update)).strftime(settings.DATETIME_FORMAT)
 
     tasks = JediTasks.objects.filter(**query).extra(where=[extra_str]).values()
 

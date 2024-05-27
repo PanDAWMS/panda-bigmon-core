@@ -1,7 +1,7 @@
 import re, pytz
 from json import loads
 from requests import post
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from core.grafana.Headers import Headers
 
 
@@ -38,7 +38,7 @@ class Grafana(object):
         if query_object.endtime == "" and query_object.starttime == "":
             timebefore = timedelta(days=query_object.days)
 
-            endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
+            endtime = (datetime.now(tz=timezone.utc)).replace(minute=00, hour=00, second=00, microsecond=000)
             starttime = ((endtime - timebefore)).replace(minute=00, hour=00, second=00, microsecond=000)
 
             startMillisec = int(starttime.strftime("%s")) * 1000
@@ -52,7 +52,7 @@ class Grafana(object):
                     startD = datetime.strptime(query_object.starttime, '%Y-%m-%d')
                     endD = datetime.strptime(query_object.endtime, '%Y-%m-%d')
                 except:
-                    endD = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
+                    endD = (datetime.now(tz=timezone.utc)).replace(minute=00, hour=00, second=00, microsecond=000)
                     startD = ((endD - 1)).replace(minute=00, hour=00, second=00, microsecond=000)
             startMillisec = int(startD.strftime("%s")) * 1000
             endMillisec = int(endD.strftime("%s")) * 1000
