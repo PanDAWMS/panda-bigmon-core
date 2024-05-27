@@ -382,7 +382,9 @@ def artJobs(request):
         request.session['viewParams']['subresults'] = 0
 
     # add PanDA jobs metrics or not
-    if 'ntag' in request.session['requestParams'] or 'ntag_full' in request.session['requestParams']:
+    if 'ntag' in request.session['requestParams'] or 'ntag_full' in request.session['requestParams'] or (
+        'nlastnightlies' in request.session['requestParams'] and request.session['requestParams']['nlastnightlies'] == '1'
+    ):
         request.session['viewParams']['metrics'] = 1
     else:
         request.session['viewParams']['metrics'] = 0
