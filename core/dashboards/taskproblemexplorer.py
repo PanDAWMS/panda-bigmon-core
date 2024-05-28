@@ -176,86 +176,88 @@ def taskProblemExplorer(request):
 
     # plot queuetime, walltime, etc for task and jobs   
 
-
     error_summary_table = error_codes_analyser.get_errors_table()
     error_summary_table = json.dumps(error_summary_table, cls=DateEncoder)
 
     if not is_json_request(request):
+        if len(tasks) > 0:
+            counts = count_occurrences(tasks, ['owner', ], output='list')
 
-        counts = count_occurrences(tasks, ['owner', ], output='list')
+            plots = {
+                'time_hist': {
+                    'name': 'time_hist',
+                    'type': 'bar_time',
+                    'title': 'Task submit time',
+                    'options': {
+                        'labels': ['Task submission time', 'Count'],
+                        'timeFormat': '%Y-%m-%d',
+                    },
+                    'data': [['Time'], ['Count']],
+                },
+                'tasks_by_owner': {
+                    'name': 'tasks_by_owner',
+                    'type': 'pie',
+                    'title': 'Owners',
+                    'options': {
+                        'labels': ['Owner', 'Count'],
+                    },
+                    'data': group_low_occurrences(counts['owner'], threshold=0.005) if 'owner' in counts else [],
+                },
+                'state_duration': {
+                    'name': 'state_duration',
+                    'type': 'pie',
+                    'title': 'Duration, days',
+                    'options': {
+                        'labels': ['State', 'Duration, days'],
+                        'size_mp': 0.3,
+                    },
+                    'data': [[state, round(dur, 3)] for state, dur in states_duration_summary.items() if dur > 0.0001],
+                },
+                'state_duration_hist': {
+                    'name': 'state_duration_hist',
+                    'type': 'bar_hist',
+                    'options': {
+                        'labels': ['Total time in task state, hours', 'Number of tasks'],
+                        'title': 'Task active state duration, hours',
+                        'size_mp': 0.7,
+                    },
+                    'data': {'columns': [], 'stats': [], }
+                },
+            }
+            for time, count in build_time_histogram([t['creationdate'] for t in tasks]):
+                plots['time_hist']['data'][0].append(time.strftime(plots['time_hist']['options']['timeFormat']))
+                plots['time_hist']['data'][1].append(count[0])
+            stats, columns = build_stack_histogram(states_duration_lists, n_decimals=2, n_bin_max=100)
+            plots['state_duration_hist']['data']['columns'] = columns
+            plots['state_duration_hist']['data']['stats'] = stats
 
-        plots = {
-            'time_hist': {
-                'name': 'time_hist',
-                'type': 'bar_time',
-                'title': 'Task submit time',
-                'options': {
-                    'labels': ['Task submission time', 'Count'],
-                    'timeFormat': '%Y-%m-%d',
-                },
-                'data': [['Time'], ['Count']],
-            },
-            'tasks_by_owner': {
-                'name': 'tasks_by_owner',
-                'type': 'pie',
-                'title': 'Owners',
-                'options': {
-                    'labels': ['Owner', 'Count'],
-                },
-                'data': group_low_occurrences(counts['owner'], threshold=0.005) if 'owner' in counts else [],
-            },
-            'state_duration': {
-                'name': 'state_duration',
-                'type': 'pie',
-                'title': 'Duration, days',
-                'options': {
-                    'labels': ['State', 'Duration, days'],
-                    'size_mp': 0.3,
-                },
-                'data': [[state, round(dur, 3)] for state, dur in states_duration_summary.items() if dur > 0.0001],
-            },
-            'state_duration_hist': {
-                'name': 'state_duration_hist',
-                'type': 'bar_hist',
-                'options': {
-                    'labels': ['Total time in task state, hours', 'Number of tasks'],
-                    'title': 'Task active state duration, hours',
-                    'size_mp': 0.7,
-                },
-                'data': {'columns': [], 'stats': [], }
-            },
-        }
-        for time, count in build_time_histogram([t['creationdate'] for t in tasks]):
-            plots['time_hist']['data'][0].append(time.strftime(plots['time_hist']['options']['timeFormat']))
-            plots['time_hist']['data'][1].append(count[0])
-        stats, columns = build_stack_histogram(states_duration_lists, n_decimals=2, n_bin_max=100)
-        plots['state_duration_hist']['data']['columns'] = columns
-        plots['state_duration_hist']['data']['stats'] = stats
+            timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
+                              'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate']
+            for task in tasks:
+                for tp in task:
+                    if tp in timestamp_vars and task[tp] is not None:
+                        task[tp] = task[tp].strftime(settings.DATETIME_FORMAT)
+                    if task[tp] is None:
+                        task[tp] = ''
 
-        timestamp_vars = ['modificationtime', 'statechangetime', 'starttime', 'creationdate', 'resquetime',
-                          'endtime', 'lockedtime', 'frozentime', 'ttcpredictiondate']
-        for task in tasks:
-            for tp in task:
-                if tp in timestamp_vars and task[tp] is not None:
-                    task[tp] = task[tp].strftime(settings.DATETIME_FORMAT)
-                if task[tp] is None:
-                    task[tp] = ''
-
-        # prepare data for datatable
-        task_list_table_headers = [
-            'jeditaskid', 'category', 'owner', 'attemptnr', 'age', 'superstatus', 'status',
-            'problematic_transient_states', 'queued', 'running', 'troubling',
-            'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished', 'errordialog',
-        ]
-        tasks_to_show = []
-        for t in tasks:
-            tmp_list = []
-            for h in task_list_table_headers:
-                if h in t:
-                    tmp_list.append(t[h])
-                else:
-                    tmp_list.append("-")
-            tasks_to_show.append(tmp_list)
+            # prepare data for datatable
+            task_list_table_headers = [
+                'jeditaskid', 'category', 'owner', 'attemptnr', 'age', 'superstatus', 'status',
+                'problematic_transient_states', 'queued', 'running', 'troubling',
+                'nfiles', 'nfilesfinished', 'nfilesfailed', 'pctfinished', 'errordialog',
+            ]
+            tasks_to_show = []
+            for t in tasks:
+                tmp_list = []
+                for h in task_list_table_headers:
+                    if h in t:
+                        tmp_list.append(t[h])
+                    else:
+                        tmp_list.append("-")
+                tasks_to_show.append(tmp_list)
+        else:
+            tasks_to_show = []
+            plots = {}
 
         data = {
             'request': request,
