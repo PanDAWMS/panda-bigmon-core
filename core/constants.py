@@ -149,6 +149,7 @@ JOB_FIELDS_ATTR_SUMMARY = (
     'homepackage',
     'inputfileproject',
     'inputfiletype',
+    'outputfiletype',
     'attemptnr',
     'specialhandling',
     'priorityrange',

@@ -506,16 +506,6 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
         if is_debug_mode(job):
             job['jobinfo'] += 'Real-time logging is activated for this job.'
 
-        if 'destinationdblock' in job and job['destinationdblock']:
-            ddbfields = job['destinationdblock'].split('.')
-            if len(ddbfields) == 6 and ddbfields[0] != 'hc_test':
-                job['outputfiletype'] = ddbfields[4]
-            elif len(ddbfields) >= 7:
-                job['outputfiletype'] = ddbfields[6]
-            # else:
-            #     job['outputfiletype'] = None
-            #     print job['destinationdblock'], job['outputfiletype'], job['pandaid']
-
         try:
             job['homecloud'] = pq_clouds[job['computingsite']]
         except:

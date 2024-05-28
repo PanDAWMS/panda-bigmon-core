@@ -704,9 +704,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         elif param in ('project',) and querytype == 'task':
             val = request.session['requestParams'][param]
             query['taskname__istartswith'] = val
-        elif param in ('outputfiletype',) and querytype != 'task':
-            val = request.session['requestParams'][param]
-            query['destinationdblock__icontains'] = val
         elif param in ('stream',) and querytype == 'task':
             val = request.session['requestParams'][param]
             query['taskname__icontains'] = val
@@ -1390,9 +1387,8 @@ def jobList(request, mode=None, param=None):
             'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag',
             'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr',
             'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount',
-            'statechangetime', 'nevents', 'jobmetrics',
-            'noutputdatafiles', 'parentid', 'actualcorecount', 'schedulerid', 'pilotid', 'commandtopilot',
-            'cmtconfig', 'maxpss']
+            'statechangetime', 'nevents', 'jobmetrics', 'noutputdatafiles', 'outputfiletype', 'parentid',
+            'actualcorecount', 'schedulerid', 'pilotid', 'commandtopilot', 'cmtconfig', 'maxpss']
         if not eventservice:
             values.extend(['avgvmem', 'maxvmem', 'maxrss'])
 
@@ -1645,10 +1641,10 @@ def jobList(request, mode=None, param=None):
     sumd, esjobdict = job_summary_dict(
         request,
         jobs,
-        standard_fields + [
+        const.JOB_FIELDS_ATTR_SUMMARY + (
             'corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement',
             'container_name', 'nevents', 'processor_type'
-        ])
+        ))
     # Sort in order to see the most important tasks
     if sumd:
         for item in sumd:
@@ -3307,6 +3303,8 @@ def siteList(request):
         for pq in pqs:
             if 'maxrss' in pq and isinstance(pq['maxrss'], int):
                 pq['maxrss_gb'] = round(pq['maxrss'] / 1000., 1)
+            if 'minrss' in pq and isinstance(pq['minrss'], int):
+                pq['minrss_gb'] = round(pq['minrss'] / 1000., 1)
             if 'maxtime' in pq and isinstance(pq['maxtime'], int) and pq['maxtime'] > 0:
                 pq['maxtime_hours'] = round(pq['maxtime'] / 3600.)
             if 'maxinputsize' in pq and isinstance(pq['maxinputsize'], int) and pq['maxinputsize'] > 0:
@@ -3315,13 +3313,13 @@ def siteList(request):
                 pq['copytool'] = ', '.join(list(pq['copytools'].keys()))
         pq_params_table = [
             'cloud', 'gocname', 'tier', 'nickname', 'status', 'type', 'workflow', 'system', 'copytool', 'harvester',
-            'maxrss_gb', 'maxtime_hours', 'maxinputsize_gb', 'comment'
+            'minrss_gb', 'maxrss_gb', 'maxtime_hours', 'maxinputsize_gb', 'comment'
         ]
         sites = []
         for pq in pqs:
             tmp_dict = {}
             for param in pq_params_table:
-                tmp_dict[param] = pq[param] if param in pq and pq[param] else '---'
+                tmp_dict[param] = pq[param] if param in pq and pq[param] is not None else '---'
             sites.append(tmp_dict)
 
         data = {

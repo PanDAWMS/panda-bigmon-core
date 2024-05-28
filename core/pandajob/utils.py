@@ -180,7 +180,7 @@ def job_summary_dict(request, jobs, fieldlist=None):
                 if kval not in sumd[f]:
                     sumd[f][kval] = 0
                 sumd[f][kval] += 1
-        for extra in ('jobmode', 'substate', 'outputfiletype', 'durationmin'):
+        for extra in ('jobmode', 'substate', 'durationmin'):
             if extra in job:
                 if extra not in sumd:
                     sumd[extra] = {}
