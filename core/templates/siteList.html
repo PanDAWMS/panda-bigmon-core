@@ -72,7 +72,7 @@ function buildDatasetsTable(data) {
     "scrollX": true,
     "aaSorting": [[3,'asc']],
     "columnDefs": [
-        {"type": "num-html", "targets": [9,10,11] }
+        {"type": "num-html", "targets": [10,11,12,13] }
     ],
     "data": data,
     "aoColumns": [
@@ -171,6 +171,12 @@ function buildDatasetsTable(data) {
               }
               else {return data}
             }
+        },
+        {
+            data: "minrss_gb",
+            title: "Min RSS [GB]",
+            sDefaultContent: "-",
+            className: 'num',
         },
         {
             data: "maxrss_gb",

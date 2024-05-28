@@ -3307,6 +3307,8 @@ def siteList(request):
         for pq in pqs:
             if 'maxrss' in pq and isinstance(pq['maxrss'], int):
                 pq['maxrss_gb'] = round(pq['maxrss'] / 1000., 1)
+            if 'minrss' in pq and isinstance(pq['minrss'], int):
+                pq['minrss_gb'] = round(pq['minrss'] / 1000., 1)
             if 'maxtime' in pq and isinstance(pq['maxtime'], int) and pq['maxtime'] > 0:
                 pq['maxtime_hours'] = round(pq['maxtime'] / 3600.)
             if 'maxinputsize' in pq and isinstance(pq['maxinputsize'], int) and pq['maxinputsize'] > 0:
@@ -3315,7 +3317,7 @@ def siteList(request):
                 pq['copytool'] = ', '.join(list(pq['copytools'].keys()))
         pq_params_table = [
             'cloud', 'gocname', 'tier', 'nickname', 'status', 'type', 'workflow', 'system', 'copytool', 'harvester',
-            'maxrss_gb', 'maxtime_hours', 'maxinputsize_gb', 'comment'
+            'minrss_gb', 'maxrss_gb', 'maxtime_hours', 'maxinputsize_gb', 'comment'
         ]
         sites = []
         for pq in pqs:
