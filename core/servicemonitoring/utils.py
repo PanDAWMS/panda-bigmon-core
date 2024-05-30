@@ -1,5 +1,4 @@
-import getopt, subprocess, re, oracledb, requests, json, psutil
-oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
+import getopt, subprocess, re, requests, json, psutil
 
 import sys
 from datetime import datetime
@@ -7,6 +6,14 @@ from configparser import ConfigParser
 from logger import ServiceLogger
 
 _logger = ServiceLogger("servicemonitoring", __file__).logger
+
+try:
+    import oracledb
+    oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
+except oracledb.exceptions.DatabaseError as e:
+    _logger.error(f"Failed to initialize Oracle Client: {e}")
+except Exception as e:
+    _logger.error(f"An unexpected error occurred: {e}")
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
