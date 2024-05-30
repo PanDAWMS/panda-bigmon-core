@@ -1,9 +1,10 @@
-import os
+import os, core, logging
 from os.path import dirname, join
 
-import core
 from core import filebrowser, admin
 from core.settings.local import MY_SECRET_KEY, LOG_ROOT
+
+_logger = logging.getLogger('bigpandamon')
 
 ALLOWED_HOSTS = [
     # cern.ch
@@ -134,6 +135,15 @@ except ImportError:
     dbaccess_oracle_doma = None
 
 DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
+
+if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA'):
+    try:
+        import oracledb
+        oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
+    except oracledb.exceptions.DatabaseError as e:
+        _logger.error(f"Failed to initialize Oracle Client: {e}")
+    except Exception as e:
+        _logger.error(f"An unexpected error occurred: {e}")
 
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
