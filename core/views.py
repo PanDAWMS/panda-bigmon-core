@@ -1685,8 +1685,15 @@ def jobList(request, mode=None, param=None):
         pq_dict = get_panda_queues()
         for job in jobsToShow:
             if job['computingsite'] in pq_dict:
-                job['computingsitestatus'] = pq_dict[job['computingsite']]['status']
-                job['computingsitecomment'] = pq_dict[job['computingsite']]['comment']
+                if 'status' in pq_dict[job['computingsite']]:
+                    job['computingsitestatus'] = pq_dict[job['computingsite']]['status']
+                else:
+                    job['computingsitestatus'] = 'UNKNOWN'
+                if 'comment' in pq_dict[job['computingsite']]:
+                    job['computingsitecomment'] = pq_dict[job['computingsite']]['comment']
+                else:
+                    job['computingsitecomment'] = 'UNKNOWN'
+
         _logger.debug('Got extra params for sites: {}'.format(time.time() - request.session['req_init_time']))
 
         # checking if log file replica available
