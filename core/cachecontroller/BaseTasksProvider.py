@@ -1,8 +1,15 @@
 from core import settings
-import threading
 import logging
 import oracledb
-oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
+
+_logger = logging.getLogger('bigpandamon')
+
+try:
+    oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
+except oracledb.exceptions.DatabaseError as e:
+    _logger.error(f"Failed to initialize Oracle Client: {e}")
+except Exception as e:
+    _logger.error(f"An unexpected error occurred: {e}")
 
 class BaseTasksProvider(object):
     logger = logging.getLogger(__name__)
