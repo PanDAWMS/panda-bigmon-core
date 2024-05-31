@@ -85,7 +85,7 @@
                 <th class="nowrap"> <a class="nowrap" href="{% url 'taskList' %}?tape=true&stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">{$ x.source_rse $}</a>
                 </th>
                 <td class="mid">
-                    <a target="_blank" href="{% url 'staginprogressplot' %}?stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}"><i class="fi-graph-trend"></i></a>
+                    <a target="_blank" href="/staginprogressplot/?stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}"><i class="fi-graph-trend"></i></a>
                 </td>
                 <td class="mid">
                   <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}"><img src="{% static 'images/grafana.png' %}" width=14 height=14 border=0></a>
@@ -641,7 +641,7 @@
                 className: 'text icons1',
                 "render": function(data, type, full, meta) {
                   let entry = '<a href="{% url 'taskInfo' %}'+full['taskid']+'">'+full['taskid']+'</a> ';
-                  entry += '<a target="_blank" href="{% url 'staginprogressplot' %}'+'?jeditaskid='+full['taskid']+'"><i class="fi-graph-trend"></i></a>';
+                  entry += '<a target="_blank" href="/staginprogressplot/?jeditaskid='+full['taskid']+'"><i class="fi-graph-trend"></i></a>';
                   return entry;
                 },
               },

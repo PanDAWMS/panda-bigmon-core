@@ -8,7 +8,6 @@ import time
 import json
 import copy
 import random
-import numpy as np
 import pandas as pd
 import math
 import base64
@@ -48,12 +47,9 @@ from core.common.models import Jobparamstable
 from core.common.models import JobsStatuslog
 from core.common.models import Logstable
 from core.common.models import Jobsdebug
-from core.common.models import Incidents
-from core.common.models import Pandalog
 from core.common.models import JediJobRetryHistory
 from core.common.models import JediTasks
 from core.common.models import TasksStatusLog
-from core.common.models import GetEventsForTask
 from core.common.models import JediEvents
 from core.common.models import JediDatasets
 from core.common.models import JediDatasetContents
@@ -347,6 +343,9 @@ def initRequest(request, callselfmon=True):
         request.session['crichost'] = urlparse(settings.CRIC_API_URL).hostname
     if settings.RUCIO_UI_URL:
         request.session['rucio_ui'] = settings.RUCIO_UI_URL
+
+    # add installed apps to session
+    request.session['installed_apps'] = list(settings.INSTALLED_APPS)
 
     # remove xurls from session if it is kept from previous requests
     if 'xurls' in request.session:
@@ -4492,7 +4491,7 @@ def taskList(request):
             n_tasks_to_show = int(request.session['requestParams']['display_limit'])
         tasks = tasks[:n_tasks_to_show]
         # add idds info to tasks if not ATLAS deployment
-        if 'ATLAS' not in settings.DEPLOYMENT:
+        if 'ATLAS' not in settings.DEPLOYMENT and 'core.iDDS' in settings.INSTALLED_APPS:
             tasks = add_idds_info_to_tasks(tasks)
         tasks = stringify_datetime_fields(tasks, JediTasks)
 
