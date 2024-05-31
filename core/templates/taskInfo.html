@@ -539,7 +539,7 @@
     </thead>
     <tbody>
       <tr>
-       <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid|safe }}"><i class="fi-graph-trend"></i></a></th>
+       <th>Staged / Total files <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}"><i class="fi-graph-trend"></i></a></th>
        <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
       </tr>
       <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO!='ATLAS' ">
@@ -1282,7 +1282,7 @@ function operationtask_token(taskID, action) {
     if (confirm(message)) {
 
         $.ajax({
-            url: {% url 'panda_client' %},
+            url: 'panda_client/',
             data: {taskID: taskID, action: action},
             async: false,
             type: "POST",

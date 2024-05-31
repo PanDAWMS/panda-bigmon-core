@@ -61,7 +61,7 @@
       <br>
       <div class="button-group bp-comparison">
         <a class="button {% if isincomparisonlist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}"><span class="tooltip-right">{% if isincomparisonlist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if isincomparisonlist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
-        <a class="button" href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
+        <a class="button" href="/compare/jobs/?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
       </div>
     {% endif %}
   </td>
@@ -87,8 +87,8 @@
 	<td>{% if job.waittime %}{{ job.waittime }}{% else %}-{% endif %}<br>{% if job.duration %}{{ job.duration }}{% else %}-{% endif %}</td>
 	<td>{% if viewParams.MON_VO != 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %}<a href="{% url 'siteInfo' job.computingsite  %}">{{ job.computingsite }}</a></td>
   {% if job.harvesterInfo and job.harvesterInfo|length > 0 %}
-    <td><a href="{% url 'harvesterWorkerList' %}?instance={{ job.harvesterInfo.harvesterid }}">{{ job.harvesterInfo.harvesterid }}</a>
-        <br><a href="{% url 'harvesterWorkerInfo' %}?harvesterid={{ job.harvesterInfo.harvesterid }}&workerid={{ job.harvesterInfo.workerid }}">{{ job.harvesterInfo.workerid }}</a>
+    <td><a href="/harvester/workers/?instance={{ job.harvesterInfo.harvesterid }}">{{ job.harvesterInfo.harvesterid }}</a>
+        <br><a href="/harvester/worker/?harvesterid={{ job.harvesterInfo.harvesterid }}&workerid={{ job.harvesterInfo.workerid }}">{{ job.harvesterInfo.workerid }}</a>
     </td>
   {% endif %}
   <td>{% if job.actualcorecount %}{{ job.actualcorecount }}{% else %}{{ job.corecount }}{% endif %}</td>
@@ -254,7 +254,7 @@
     <button class="dropdown">Go to</button>
     <div   class=" dropdown-items">
         {% if job.harvesterInfo %}
-            <a href="{% url "harvesterWorkerList" %}?pandaid={{pandaid}}&days={{ job.days_since_creation }}">Associated Harvester workers</a>
+            <a href="/harvester/workers/?pandaid={{pandaid}}&days={{ job.days_since_creation }}">Associated Harvester workers</a>
         {% endif %}
 
         {% if inputfiles|length > 0 %}

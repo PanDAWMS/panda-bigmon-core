@@ -94,7 +94,9 @@
         <li class="has-submenu">
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
-            <li><a href="{% url 'workflowprogressitems' %}">Workflows progress</a></li>
+            {% if 'core.iDDS' in request.session.installed_apps %}
+              <li><a href="/idds/wfprogress/">Workflows progress</a></li>
+            {% endif %}
             {% if viewParams.MON_VO == 'ATLAS' %}
                 <li><a>Region view</a>
                     <ul class="submenu menu">
@@ -111,16 +113,26 @@
                     </ul>
                 </li>
                 <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
-                <li><a>Data Carousel</a>
+                {% if 'installed_apps' in request.session and 'core.datacarousel' in request.session.installed_apps %}
+                  <li><a>Data Carousel</a>
                     <ul class="submenu menu">
-                        <li><a href="{% url 'dataCarouselleDashBoard' %}">Dashboard</a></li>
-                        <li><a href="{% url 'datacartails' %}">Staging Tails</a></li>
+                        <li><a href="/dc/dash/">Dashboard</a></li>
+                        <li><a href="/dc/tails/">Staging Tails</a></li>
                     </ul>
-                </li>
-                <li><a href="{% url 'iddsmain' %}">iDDS</a></li>
-                <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
-                <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
-                <li><a href="{% url 'BuildGlobal' %}">Nightlies and CI</a></li>
+                  </li>
+                {% endif %}
+                {% if 'installed_apps' in request.session and 'core.iDDS' in request.session.installed_apps %}
+                  <li><a href="/idds/">iDDS</a></li>
+                {% endif %}
+                {% if 'installed_apps' in request.session and 'core.globalshares' in request.session.installed_apps %}
+                  <li><a href="/globalshares/">Global Shares</a></li>
+                {% endif %}
+                {% if 'installed_apps' in request.session and 'core.art' in request.session.installed_apps %}
+                  <li><a href="/art/">ART tests</a></li>
+                {% endif %}
+                {% if 'installed_apps' in request.session and 'core.buildmonitor' in request.session.installed_apps %}
+                  <li><a href="/globalpage/">Nightlies and CI</a></li>
+                {% endif %}
             {% else %}
                 <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
                 <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
@@ -139,10 +151,10 @@
                 <li><a href="{% url 'taskList' %}?container_name=all&display_limit=300">Containerized</a></li>
                 <li><a>Running production</a>
                     <ul class="submenu menu">
-                        <li><a href="{% url 'runningProdTasks' %}">All</a></li>
-                        <li><a href="{% url 'runningProdTasks' %}?preset=MC">MC production</a></li>
-                        <li><a href="{% url 'runningProdTasks' %}?preset=DPD">Derivation production</a></li>
-                        <li><a href="{% url 'runningProdTasks' %}?preset=DATA">Reprocessing production</a></li>
+                        <li><a href="/runningprodtasks/">All</a></li>
+                        <li><a href="/runningprodtasks/?preset=MC">MC production</a></li>
+                        <li><a href="/runningprodtasks/?preset=DPD">Derivation production</a></li>
+                        <li><a href="/runningprodtasks/?preset=DATA">Reprocessing production</a></li>
                     </ul>
                 </li>
                 <li><a href="{% url 'taskProblemExplorer' %}">Slow analysis</a></li>
@@ -174,7 +186,7 @@
                 <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count&display_limit=20">Analysis</a></li>
                 <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count&display_limit=20">Production</a></li>
                 <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test2">rc_test2</a></li>
-                <li><a href="{% url 'errorsScattering' %}">Scattering matrix</a></li>
+                <li><a href="/errorsscat/">Scattering matrix</a></li>
                 <li><a href="{% url 'pandaLogger' %}">PanDA logger</a> </li>
             {% endif %}
         </ul>
@@ -213,15 +225,16 @@
         </ul>
         </li>
 
-
-        <li class="has-submenu">
-        <a href="#">Harvester</a>
-        <ul class="submenu menu vertical">
-            <li><a href="{% url 'harvesterInstanceList' %}">Instances</a></li>
-            <li><a href="{% url 'harvesterWorkerList' %}">Workers</a></li>
-            <li><a href="{% url 'harvesterSlots' %}">Slots</a></li>
-        </ul>
-        </li>
+        {% if 'installed_apps' in request.session and 'core.harvester' in request.session.installed_apps %}
+          <li class="has-submenu">
+          <a href="#">Harvester</a>
+          <ul class="submenu menu vertical">
+              <li><a href="/harvester/instances/">Instances</a></li>
+              <li><a href="/harvester/workers/">Workers</a></li>
+              <li><a href="/harvester/slots/">Slots</a></li>
+          </ul>
+          </li>
+        {% endif %}
 
         <li>
             <a href="{% url 'userInfo' %}">My BigPanDA</a>
@@ -317,8 +330,8 @@
               <ul class="submenu menu vertical">
                   <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
                   <li><span class="li-text loggeduser">{{ request.user.email }}</span>
-                  {% if request.user.is_tester %}
-                      <li><a href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
+                  {% if request.user.is_tester and 'core.compare' in request.session.installed_apps %}
+                      <li><a href="/compare/jobs/?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
                       <li><a id="button-clear-comparison-list">Clear jobs comparison list</a>
                   {% endif %}
                   <li><a href="{% url 'userInfo' %}">My BigPanDA</a>

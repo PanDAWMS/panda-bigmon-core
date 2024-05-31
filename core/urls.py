@@ -104,7 +104,6 @@ urlpatterns = [
     re_path(r'^slowtasks/$', taskproblemexplorer.taskProblemExplorer, name='taskProblemExplorer'),
 
     # auth
-    re_path('', include('core.oauth.urls')),
     re_path(r'^csrftoken/$', coremon_views.getCSRFToken, name='getCSRFToken'),
 
     # support views for core
@@ -127,9 +126,10 @@ urlpatterns = [
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # add apps urls if installed
-if len(settings.INSTALLED_APPS_EXTRA) > 0:
-    for app_name in settings.INSTALLED_APPS_EXTRA:
-        urlpatterns.append(re_path('', include('{}.urls'.format(app_name)), name=app_name))
+if len(settings.INSTALLED_APPS) > 0:
+    for app_name in settings.INSTALLED_APPS:
+        if app_name.startswith('core.'):
+            urlpatterns.append(re_path('', include('{}.urls'.format(app_name)), name=app_name))
 
 if settings.DEBUG:
     try:

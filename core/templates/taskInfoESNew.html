@@ -1304,14 +1304,14 @@
                   "mData": "harvesterid",
                   sDefaultContent: "",
                   "render": function (chunk, type, full) {
-                      return '<a target="_blank" href="'+'{% url 'harvesterWorkerList' %}' +'?instance='+full['harvesterid']+'">'+full['harvesterid']+'</a>'
+                      return '<a target="_blank" href="/harvester/workers/?instance='+full['harvesterid']+'">'+full['harvesterid']+'</a>'
                   },
               },
               {
                   "mData": "workerid",
                   sDefaultContent: "",
                   "render": function (chunk, type, full) {
-                      return '<a target="_blank" href="'+'{% url 'harvesterWorkerInfo' %}' +'?harvesterid='+full['harvesterid']+'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
+                      return '<a target="_blank" href="/harvester/worker/?harvesterid='+full['harvesterid']+'&workerid='+full['workerid']+'">'+full['workerid']+'</a>'
                   },
 
               },
@@ -1344,7 +1344,7 @@
           "aaSorting": [[0, 'asc']],
           "ajax": {
               "processing": true,
-              "url": "{% url 'workersfortask' %}?jeditaskid={{ jeditaskid }}",
+              "url": "/workersfortask/?jeditaskid={{ jeditaskid }}",
               "dataSrc" : ''
           },
       });
