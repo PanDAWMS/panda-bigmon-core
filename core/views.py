@@ -81,8 +81,7 @@ from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist, get_task_name_by_taskid
 from core.libs.task import get_dataset_locality, is_event_service_task, \
-    get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, \
-    wg_task_summary, tasks_not_updated
+    get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
 from core.libs.taskparams import analyse_task_submission_options
 from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
     job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, job_state_count, \
@@ -105,7 +104,6 @@ from core.pandajob.summary_error import errorSummaryDict, get_error_message_summ
 from core.pandajob.summary_task import task_summary, job_summary_for_task, job_summary_for_task_light, \
     get_job_state_summary_for_tasklist, get_top_memory_consumers
 from core.pandajob.summary_site import cloud_site_summary, vo_summary, site_summary_dict
-from core.pandajob.summary_wg import wg_summary
 from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_os import objectstore_summary
 from core.pandajob.summary_user import user_summary_dict
