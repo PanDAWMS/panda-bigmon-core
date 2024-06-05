@@ -6345,12 +6345,15 @@ def decommissioned(request, **kwargs):
     valid, response = initRequest(request)
     if not valid:
         return response
-    data = {
-        'viewParams': request.session['viewParams'],
-        'requestParams': request.session['requestParams'],
-        'request': request,
-    }
-    response = render(request, '_decommissioned.html', data, content_type='text/html')
+    if not is_json_request(request):
+        data = {
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'request': request,
+        }
+        response = render(request, '_decommissioned.html', data, content_type='text/html')
+    else:
+        response = JsonResponse({'message': 'decommissioned'}, status=410)
     return response
 
 
@@ -6546,77 +6549,6 @@ def esatlasPandaLogger(request):
             'json' not in request.session['requestParams'])):
         response = render(request, 'esatlasPandaLogger.html', data, content_type='text/html')
         return response
-
-
-
-# @cache_page(60 * 20)
-@login_customrequired
-def workingGroups(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    # Here we try to get cached data
-    data = getCacheEntry(request, "workingGroups")
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        response = render(request, 'workingGroups.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-
-    taskdays = 3
-    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
-        VOMODE = 'atlas'
-    else:
-        VOMODE = ''
-    if VOMODE != 'atlas':
-        days = 30
-    else:
-        days = taskdays
-
-    errthreshold = 15
-    hours = days * 24
-    query = setupView(request, hours=hours, limit=999999)
-    query['workinggroup__isnull'] = False
-
-    # WG task summary
-    tasksummary = wg_task_summary(request, view='working group', taskdays=taskdays)
-
-    # WG job summary
-    if 'workinggroup' in request.session['requestParams'] and request.session['requestParams']['workinggroup']:
-        query['workinggroup'] = request.session['requestParams']['workinggroup']
-    wgsummary = wg_summary(query)
-
-    if not is_json_request(request):
-        xurl = extensibleURL(request)
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'url': request.path,
-            'xurl': xurl,
-            'user': None,
-            'wgsummary': wgsummary,
-            'taskstates': taskstatedict,
-            'tasksummary': tasksummary,
-            'hours': hours,
-            'days': days,
-            'errthreshold': errthreshold,
-            'built': datetime.now().strftime("%H:%M:%S"),
-        }
-        setCacheEntry(request, "workingGroups", json.dumps(data, cls=DateEncoder), 60 * 20)
-
-        response = render(request, 'workingGroups.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-    else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        resp = []
-        return HttpResponse(json.dumps(resp), content_type='application/json')
 
 
 @login_customrequired

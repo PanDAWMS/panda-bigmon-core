@@ -94,7 +94,7 @@ urlpatterns = [
     re_path(r'^dash/world/$', coremon_views.dashNucleus, name='dashWorld'),
     re_path(r'^dash/es/$', coremon_views.dashES, name='dashES'),
     re_path(r'^status_summary/', include('core.status_summary.urls'), name='status_summary'),
-    re_path(r'^workingGroups/$', coremon_views.workingGroups, name='workingGroups'),
+    re_path(r'^workingGroups/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),
 
     re_path(r'^campaignpredictiondash/$', campaignprediction.campaignPredictionDash, name='campaignPredictionDash'),

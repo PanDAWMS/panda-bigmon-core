@@ -112,7 +112,6 @@
                         <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service jobs</a></li>
                     </ul>
                 </li>
-                <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
                 {% if 'installed_apps' in request.session and 'core.datacarousel' in request.session.installed_apps %}
                   <li><a>Data Carousel</a>
                     <ul class="submenu menu">
@@ -135,7 +134,6 @@
                 {% endif %}
             {% else %}
                 <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
-                <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
             {% endif %}
         </ul>
         </li>

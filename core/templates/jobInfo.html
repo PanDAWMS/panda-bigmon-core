@@ -68,7 +68,7 @@
   </td>
 	<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }} {% endif %}{% endif %}</td>
 	{% if job.workinggroup %}
-    <td><a href="{% url 'workingGroups' %}?workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a></td>
+    <td>{{ job.workinggroup }}</td>
   {% endif %}
 	<td>{% if job.prodsourcelabel == 'managed' and job.reqid %}<a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
 	{% if job.jeditaskid %}<a href="{% url 'taskInfo' job.jeditaskid %}">{{ job.jeditaskid }}</a> {% else %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
