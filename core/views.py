@@ -6345,12 +6345,15 @@ def decommissioned(request, **kwargs):
     valid, response = initRequest(request)
     if not valid:
         return response
-    data = {
-        'viewParams': request.session['viewParams'],
-        'requestParams': request.session['requestParams'],
-        'request': request,
-    }
-    response = render(request, '_decommissioned.html', data, content_type='text/html')
+    if not is_json_request(request):
+        data = {
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'request': request,
+        }
+        response = render(request, '_decommissioned.html', data, content_type='text/html')
+    else:
+        response = JsonResponse({'message': 'decommissioned'}, status=410)
     return response
 
 
