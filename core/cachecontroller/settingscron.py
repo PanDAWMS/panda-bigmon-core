@@ -10,6 +10,6 @@ URL_WITH_ES_TASKS = '/tasks/?eventservice=eventservice&json'
 HARVESTER_LIST_URL = '/harvester/instances/?days=7&json'
 LOG_PATH = "/tmp/cachecontroller.log"
 PANDA_LOGGER_PATH = "/cephfs/atlpan/filebrowser"
-MAX_LOG_AGE_DAYS = 3
+MAX_LOG_AGE_DAYS = 30
 PANDA_LOGGER_PATH_ANALYTICS = "/cephfs/atlpan/pandajoblogs"
 MAX_LOG_AGE_DAYS_ANALYTICS = 14
