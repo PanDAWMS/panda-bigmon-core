@@ -536,7 +536,7 @@ def group_low_occurrences(data, threshold=0.01):
 
 
 
-def duration_df(data_raw, id_name='JEDITASKID', timestamp_name='MODIFICATIONTIME'):
+def duration_df(data_raw, id_name='jeditaskid', timestamp_name='modificationtime'):
     """
     Calculates duration of each status by modificationtime delta
     (in days)
@@ -544,7 +544,7 @@ def duration_df(data_raw, id_name='JEDITASKID', timestamp_name='MODIFICATIONTIME
     task_states_duration = {}
     if len(data_raw) > 0:
         df = pd.DataFrame(data_raw)
-        groups = df.groupby([id_name])
+        groups = df.groupby(id_name)
         for k, v in groups:
             v.sort_values(by=[timestamp_name], inplace=True)
             v['START_TS'] = pd.to_datetime(v[timestamp_name])
