@@ -1,5 +1,6 @@
 
 import json
+import logging
 
 from django.http import HttpResponse
 
@@ -10,6 +11,9 @@ from core.libs.job import add_job_category
 from core.libs.jobconsumption import job_consumption_plots
 
 from core.pandajob.models import Jobsdefined4, Jobsarchived, Jobswaiting4, Jobsactive4, Jobsarchived4
+from core.utils import error_response
+
+_logger = logging.getLogger('bigpandamon')
 
 
 def getJobsData(request):
@@ -21,7 +25,7 @@ def getJobsData(request):
     idList = request.GET.get('idtasks', '')
     tasksList = getCacheEntry(request, idList, isData=True)
     if tasksList is None or len(tasksList) == 0:
-        return HttpResponse(data, status=500, content_type='application/json')
+        return error_response(request, message='No tasks found in cache', status=404)
     else:
         results = get_jobs_plot_data(tasksList)
         if len(results['error']) > 0:
@@ -62,8 +66,8 @@ def get_jobs_plot_data(taskid_list):
 
     jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_str]).values(*values))
 
-    print("Number of found jobs: {}".format(len(jobs)))
-    print("Number of sites: {}".format(len(set([j['computingsite'] for j in jobs]))))
+    _logger.info("Number of found jobs: {}".format(len(jobs)))
+    _logger.info("Number of sites: {}".format(len(set([j['computingsite'] for j in jobs]))))
     if len(jobs) > MAX_JOBS:
         error = 'Too many jobs to prepare plots. Please decrease the selection of tasks and try again.'
     else:

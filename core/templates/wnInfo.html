@@ -39,55 +39,48 @@
 {% endif %}
 
 {% if wnname %}
-    <div class='section'>Worker node slot performance {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a href="{% url 'siteInfo' site %}">{{ site }}</a></div>
+  <p><b>Worker node slot performance</b> {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a class="bp-link" href="{% url 'siteInfo' site %}">{{ site }}</a>, sort by:
+    {% if 'sortby' in requestParams %}{% if requestParams.sortby == 'alpha' %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=count">count</a>{% else %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=alpha">alpha</a>{% endif %}{% else %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=count">count</a>{% endif %}</p>
 {% endif %}
 
 {% if wnPlotFailed %}
 
-    <script src="{% static 'js/google-charts-loader.js' %}"></script>
-    <script nonce={{request.csp_nonce}}>
-      google.load("visualization", "1", {packages:["corechart"]});
-      google.setOnLoadCallback(drawChart);
-      function drawChart() {
-        var windowwidth = $('#chart_div').width();
-        var plotwidth = 2.5 * parseInt('{{ wnPlotFailed|length }}');
-        var plotwidth2 = 2.5 * parseInt('{{ wnPlotFinished|length }}');
-        var title_appx = '';
-        var title_appx2 = '';
-        if (plotwidth < windowwidth) {plotwidth = windowwidth} else {title_appx += ' (not all the bins fit in window size, please scroll horizontally to see all of them)'}
-        if (plotwidth2 < windowwidth) {plotwidth2 = windowwidth} else {title_appx2 += ' (not all the bins fit in window size, please scroll horizontally to see all of them)'}
-{% if wnPlotFailed|length > 0 %}
-
-        var data = google.visualization.arrayToDataTable([
-          ['Time', 'Count'],
-
-{% for wn, count in wnPlotFailed %}
-          ['{{ wn }}', {{ count }}],
-{% endfor %}
-
-            ]);
-        var options = {
-          title: 'Failed jobs per WN slot' + title_appx,
-          legend: { position: 'none' },
-          hAxis: {
-              title: 'WN slot (empty bins suppressed)',
-              titleTextStyle: {color: 'black'},
-              textStyle: { fontSize:10},},
-          width: plotwidth,
-          height: 400,
-          chartArea: {
-              width:plotwidth,
-              left:100,
-              top:40,
-              height:250
-          },
-          bar: {groupWidth: '100%'},
-          colors: ['firebrick'],
-        };
-
-        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
-{% endif %}
+<script src="{% static 'js/google-charts-loader.js' %}"></script>
+<script nonce={{request.csp_nonce}}>
+  google.load("visualization", "1", {packages:["corechart"]});
+  google.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var windowwidth = $('#chart_div').width();
+    var plotwidth = 2.5 * parseInt('{{ wnPlotFailed|length }}');
+    var plotwidth2 = 2.5 * parseInt('{{ wnPlotFinished|length }}');
+    var title_appx = '';
+    var title_appx2 = '';
+    if (plotwidth < windowwidth) {plotwidth = windowwidth} else {title_appx += ' (not all the bins fit in window size, please scroll horizontally to see all of them)'}
+    if (plotwidth2 < windowwidth) {plotwidth2 = windowwidth} else {title_appx2 += ' (not all the bins fit in window size, please scroll horizontally to see all of them)'}
+    {% if wnPlotFailed|length > 0 %}
+      var data = google.visualization.arrayToDataTable([['Time', 'Count'], {% for wn, count in wnPlotFailed %}['{{ wn }}', {{ count }}],{% endfor %}]);
+      var options = {
+        title: 'Failed jobs per WN slot' + title_appx,
+        legend: { position: 'none' },
+        hAxis: {
+            title: 'WN slot (empty bins suppressed)',
+            titleTextStyle: {color: 'black'},
+            textStyle: { fontSize:10},},
+        width: plotwidth,
+        height: 400,
+        chartArea: {
+            width:plotwidth,
+            left:100,
+            top:40,
+            height:250
+        },
+        bar: {groupWidth: '100%'},
+        colors: ['firebrick'],
+      };
+      
+      var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+      chart.draw(data, options);
+    {% endif %}
 
 {% if wnPlotFinished|length > 0 %}
         var data2 = google.visualization.arrayToDataTable([

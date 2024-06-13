@@ -260,6 +260,16 @@ div.bp-selected-params a {
 }
 
 
+a.bp-link {
+    font-weight: bold;
+    color: #272727;
+    border-bottom: 1px dotted;
+}
+  a.bp-link:hover {
+      border-bottom: 1px solid;
+  }
+
+
 div.normal {
   font-size: 0.875rem;
 }

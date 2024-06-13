@@ -67,7 +67,7 @@ from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
 from core.oauth.utils import login_customrequired, get_auth_provider, is_expert
 
-from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss
+from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
@@ -265,24 +265,11 @@ def initRequest(request, callselfmon=True):
     try:
         u = u._replace(query=urlencode(query, True))
     except UnicodeEncodeError:
-        data = {
-            'errormessage': 'Error appeared while encoding URL!'
-        }
-        _logger.exception(data)
-        return False, render(request, 'errorPage.html', data, content_type='text/html')
+        return False, error_response(request, message='Error appeared while encoding URL!', status=400)
 
     # if injection -> 400
     if is_xss(url):
-        data = {
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            "errormessage": "Illegal request",
-        }
-        _logger.error(data)
-        if not is_json_request(request):
-            return False, render(request, 'errorPage.html', data, content_type='text/html', status=400)
-        else:
-            return False, JsonResponse({'error': data["errormessage"]}, status=400)
+        return False, error_response(request, message="Illegal request", status=400)
 
     request.session['urls_cut']['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
     notimerangeurl = extensibleURL(request)
@@ -364,7 +351,7 @@ def initRequest(request, callselfmon=True):
             _logger.exception("Something wrong with POST request, returning 400")
             return False, JsonResponse({'error': 'Failed to read request body'}, status=400)
         except Exception as ex:
-            _logger.exception("Exception thrown while trying get length of request body \n{}".format(ex))
+            _logger.exception(f"Exception thrown while trying get length of request body \n{ex}")
             return False, JsonResponse({'error': 'Failed to read request body'}, status=400)
 
         if len(request.POST) > 0:
@@ -378,7 +365,7 @@ def initRequest(request, callselfmon=True):
                 post_params = json.loads(request.body)
             except Exception as ex:
                 post_params = None
-                _logger.exception('Failed to decode params in body of POST request')
+                _logger.exception(f"Failed to decode params in body of POST request:\n{ex}")
             if isinstance(post_params, dict):
                 if 'params' in post_params and isinstance(post_params['params'], dict):
                     request.session['requestParams'].update(post_params['params'])
@@ -394,63 +381,36 @@ def initRequest(request, callselfmon=True):
 
             # is it int, if it's supposed to be?
             if p.lower() in (
-                    'days', 'hours', 'limit', 'display_limit', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount',
-                    'taskpriority', 'priority', 'attemptnr', 'statenotupdated', 'tasknotupdated', 'corepower',
+                    'days', 'hours', 'limit', 'display_limit', 'pandaid', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount',
+                    'taskpriority', 'priority', 'attemptnr', 'statenotupdated', 'corepower',
                     'wansourcelimit', 'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
-                    'maxinputsize', 'timefloor', 'depthboost', 'idlepilotsupression', 'pilotlimit', 'transferringlimit',
+                    'maxinputsize', 'timefloor', 'depthboost', 'pilotlimit', 'transferringlimit',
                     'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory', 'maxmemory', 'minrss',
                     'maxrss', 'mintime', 'nlastnightlies'):
                 try:
-                    requestVal = request.GET[p]
-                    if '|' in requestVal:
-                        values = requestVal.split('|')
+                    if '|' in pval:
+                        values = pval.split('|')
                         for value in values:
-                            i = int(value)
-                    elif ',' in requestVal:
-                        values = requestVal.split(',')
+                            int(value)
+                    elif ',' in pval:
+                        values = pval.split(',')
                         for value in values:
-                            i = int(value)
-                    elif requestVal == 'Not specified':
-                        # allow 'Not specified' value for int parameters
-                        i = requestVal
+                            int(value)
+                    elif pval == 'Not specified':
+                        pass  # allow 'Not specified' value for int parameters
                     else:
-                        i = int(requestVal)
+                        int(pval)
                 except:
-                    data = {
-                        'viewParams': request.session['viewParams'],
-                        'requestParams': request.session['requestParams'],
-                        "errormessage": "Illegal value '%s' for %s" % (pval, p),
-                    }
-                    _logger.exception(data)
-                    return False, render(request, 'errorPage.html', data, content_type='text/html')
+                    return False, error_response(request, message=f"Illegal value '{pval}' for {p}", status=400)
             if p.lower() in ('date_from', 'date_to'):
                 try:
-                    requestVal = request.GET[p]
-                    i = parse_datetime(requestVal)
+                    parse_datetime(pval)
                 except:
-                    data = {
-                        'viewParams': request.session['viewParams'],
-                        'requestParams': request.session['requestParams'],
-                        "errormessage": "Illegal value '%s' for %s" % (pval, p),
-                    }
-                    _logger.exception(data)
-                    return False, render(request, 'errorPage.html', data, content_type='text/html')
+                    return False, error_response(request, message=f"Illegal value '{pval}' for {p}, expected YYYY-MM-DD", status=400)
             if p.lower() not in allowedemptyparams and len(pval) == 0:
-                data = {
-                    'viewParams': request.session['viewParams'],
-                    'requestParams': request.session['requestParams'],
-                    "errormessage": "Empty value '%s' for %s" % (pval, p),
-                }
-                _logger.exception(data)
-                return False, render(request, 'errorPage.html', data, content_type='text/html')
+                return False, error_response(request, message=f"Empty value '{pval}' for {p}", status=400)
             if p.lower() in ('jobname', 'taskname',) and len(pval) > 0 and ('%' in pval or '%s' in pval):
-                data = {
-                    'viewParams': request.session['viewParams'],
-                    'requestParams': request.session['requestParams'],
-                    "errormessage": "Use * symbol for pattern search instead of % for {}".format(p),
-                }
-                _logger.exception(data)
-                return False, render(request, 'errorPage.html', data, content_type='text/html')
+                return False, error_response(request, message=f"Use * symbol for pattern search instead of % for {p}", status=400)
             request.session['requestParams'][p.lower()] = pval
 
     return True, None
@@ -473,8 +433,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     extraQueryString = '(1=1) '
     extraQueryFields = []  # params that goes directly to the wildcards processing
-
-    LAST_N_HOURS_MAX = 0
 
     for paramName, paramVal in request.session['requestParams'].items():
         try:
@@ -1204,7 +1162,7 @@ def jobParamList(request):
     if is_json_request(request):
         return HttpResponse(json.dumps(jobparams, cls=DateEncoder), content_type='application/json')
     else:
-        return HttpResponse('not supported', content_type='text/html')
+        return error_response(request, message='not supported', status=204)
 
 
 @login_customrequired
@@ -2049,7 +2007,8 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
             response = render(request, 'jobInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-    ### Get the current AUTH type
+
+    # Get the current AUTH type
     auth = get_auth_provider(request)
 
     eventservice = False
@@ -2446,7 +2405,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         coreData = {}
         if jobparams:
             coreParams = re.match(
-                '.*PIPELINE_TASK\\=([a-zA-Z0-9]+).*PIPELINE_PROCESSINSTANCE\\=([0-9]+).*PIPELINE_STREAM\\=([0-9\\.]+)',
+                '.*PIPELINE_TASK=([a-zA-Z0-9]+).*PIPELINE_PROCESSINSTANCE\=([0-9]+).*PIPELINE_STREAM\=([0-9\.]+)',
                 jobparams)
             if coreParams:
                 coreData['pipelinetask'] = coreParams.group(1)
@@ -2593,9 +2552,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
 
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
     else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        return HttpResponse('not understood', content_type='text/html')
+        return error_response(request, message='not understood', status=400)
 
 
 @never_cache
@@ -3598,10 +3555,17 @@ def wnInfo(request, site, wnname='all'):
 
 @login_customrequired
 def dashboard(request, view='all'):
+    """
+    This is a legacy. We keep it to redirect to the region dashboard with filters depending on the view.
+    :param request:
+    :param view:
+    :return:
+    """
     valid, response = initRequest(request)
     if not valid:
         return response
 
+    is_json = is_json_request(request)
     # if it is region|cloud view redirect to new dash
     cloudview = 'region'
     if 'cloudview' in request.session['requestParams']:
@@ -4260,7 +4224,7 @@ def taskESExtendedInfo(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
     else:
-        return HttpResponse("Not jeditaskid supplied", content_type='text/html')
+        return error_response(request, message="No jeditaskid provided", status=400)
 
     eventsdict = []
     equery = {'jeditaskid': jeditaskid}
@@ -4683,7 +4647,7 @@ def killtasks_token(request):
         # from pandaclient import Client
         # c=Client()
 
-        print('completed')
+        _logger.info('completed')
         # c = Client()
         # c.show_tasks()
         # from core.panda_client.utils import kill_task, show_tasks
@@ -4709,7 +4673,7 @@ def getErrorSummaryForEvents(request):
     if not valid: return response
     data = {}
     eventsErrors = []
-    print('getting error summary for events')
+    _logger.debug('getting error summary for events')
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = int(request.session['requestParams']['jeditaskid'])
     else:
@@ -5302,7 +5266,7 @@ def taskInfo(request, jeditaskid=0):
             if len(tasks) > 0:
                 jeditaskid = tasks[0]['jeditaskid']
         else:
-            return redirect('/tasks/')
+            return error_response(request, message="No jeditaskid or taskname provided", status=400)
 
     # getting task info
     taskrec = None
@@ -5935,7 +5899,7 @@ def taskFlowDiagram(request, jeditaskid=-1):
 
 
 def totalCount(panJobList, query, wildCardExtension, dkey):
-    print('Thread started')
+    _logger.debug('Thread started')
     lock.acquire()
     try:
         tcount.setdefault(dkey, [])
@@ -5949,7 +5913,7 @@ def totalCount(panJobList, query, wildCardExtension, dkey):
             tcount[dkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
     finally:
         lock.release()
-    print('Thread finished')
+    _logger.debug('Thread finished')
 
 
 def digkey(rq):
@@ -6358,7 +6322,6 @@ def decommissioned(request, **kwargs):
 
 def esatlasPandaLoggerJson(request):
     valid, response = initRequest(request)
-
     if not valid or settings is None:
         return response
 
@@ -6376,8 +6339,7 @@ def esatlasPandaLoggerJson(request):
         .bucket('logLevel', 'terms', field='logLevel.keyword')
 
     res = s.execute()
-
-    print('query completed')
+    _logger.debug('query completed')
 
     jdListFinal = []
 
@@ -6399,12 +6361,11 @@ def esatlasPandaLoggerJson(request):
 
 def esatlasPandaLogger(request):
     valid, response = initRequest(request)
-
     if not valid:
         return response
 
     if settings.DEPLOYMENT != 'ORACLE_ATLAS':
-        return HttpResponse('It does not exist for non ATLAS BipPanDA monintoring system', content_type='text/html')
+        return error_response(request, message='It does not exist for non ATLAS BipPanDA monitoring system')
 
     connection = create_os_connection()
 
@@ -6543,10 +6504,11 @@ def esatlasPandaLogger(request):
         'time': time.strftime("%Y-%m-%d"),
     }
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         response = render(request, 'esatlasPandaLogger.html', data, content_type='text/html')
         return response
+    else:
+        return JsonResponse({'panda': panda, 'pandadesc': pandaDesc, 'jedi': jedi, 'jedidesc': jediDesc})
 
 
 @login_customrequired
@@ -6876,18 +6838,17 @@ def fileInfo(request):
 @login_customrequired
 def fileList(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
+
     setupView(request, hours=365 * 24, limit=999999999)
     query = {}
     files = []
     defaultlimit = 1000
-    frec = None
-    colnames = []
-    columns = []
     datasetname = ''
     datasetid = 0
 
-    #### It's dangerous when dataset name is not unique over table
+    # It's dangerous when dataset name is not unique over table
     if 'datasetname' in request.session['requestParams']:
         datasetname = request.session['requestParams']['datasetname']
         dsets = JediDatasets.objects.filter(datasetname=datasetname).values()
@@ -6899,19 +6860,13 @@ def fileList(request):
         if len(dsets) > 0:
             datasetname = dsets[0]['datasetname']
     else:
-        data = {
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            "errormessage": "No datasetid or datasetname was provided",
-        }
-        return render(request, 'errorPage.html', data, content_type='text/html')
+        return error_response(request, message='No datasetid or datasetname was provided', status=400)
 
     extraparams = ''
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
         extraparams += '&procstatus=' + request.session['requestParams']['procstatus']
 
-    dataset = []
     nfilestotal = 0
     nfilesunique = 0
     if int(datasetid) > 0:
@@ -6922,7 +6877,6 @@ def fileList(request):
     del request.session['TFIRST']
     del request.session['TLAST']
     if not is_json_request(request):
-        xurl = extensibleURL(request)
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -7248,7 +7202,8 @@ def initSelfMonitor(request):
         else:
             qstring = ''
         urls = urlProto + request.META['SERVER_NAME'] + port + path + qstring
-    print(urls)
+    _logger.debug(urls)
+
     qtime = str(timezone.now())
     load = psutil.cpu_percent(interval=1)
     mem = psutil.virtual_memory().percent
@@ -7270,8 +7225,7 @@ def initSelfMonitor(request):
 
 
 def handler500(request):
-    response = render(request, '500.html', {},
-                      context_instance=RequestContext(request))
+    response = render(request, '500.html', {}, context_instance=RequestContext(request))
     response.status_code = 500
     return response
 
@@ -7280,7 +7234,7 @@ def getBadEventsForTask(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
     else:
-        return HttpResponse("Not jeditaskid supplied", content_type='text/html')
+        return error_response(request, message="Not jeditaskid supplied", status=400)
 
     mode = 'drop'
     if 'mode' in request.GET and request.GET['mode'] == 'nodrop':
@@ -7485,7 +7439,8 @@ def getTaskStatusLog(request, jeditaskid=None):
     :return: json contained task states changes history
     """
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
 
     try:
         jeditaskid = int(jeditaskid)
@@ -7530,8 +7485,8 @@ def getTaskLogs(request, jeditaskid=None):
     :return: json
     """
     valid, response = initRequest(request)
-
-    if not valid: return response
+    if not valid:
+        return response
 
     try:
         jeditaskid = int(jeditaskid)
@@ -7755,11 +7710,10 @@ def getPayloadLog(request):
     :return: json
     """
     valid, response = initRequest(request)
+    if not valid:
+        return response
 
     connection = create_os_connection()
-
-    if not valid: return response
-
     mode = 'pandaid'
 
     log_content = {}

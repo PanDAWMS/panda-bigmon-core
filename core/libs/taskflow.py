@@ -163,7 +163,6 @@ def frec(M):
     """frec function: calculate the frcuencies in a proper way for sankey plot"""
     A = np.array(M)
     df = pd.DataFrame(A, columns=['X', 'Y', 'frec'])
-#    print(df)
     df['frec'] = df['frec'].apply(int)
     df = df.groupby(['X','Y'], as_index=False)['frec'].sum()
     NP = df.to_numpy() #convert from panda-dataframe to numpy-array
