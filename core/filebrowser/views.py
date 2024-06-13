@@ -15,7 +15,7 @@ from core.oauth.utils import login_customrequired
 from core.views import initRequest
 from core.libs.exlib import convert_bytes
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.utils import is_json_request
+from core.utils import is_json_request, error_response
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
@@ -118,13 +118,10 @@ def index(request):
         # check if size of logfile is too big return to user error message with rucio cli command to download it locally
         if sizemb > MAX_FILE_SIZE_MB:
             _logger.warning('Size of the requested log is {} MB which is more than limit {} MB'.format(sizemb, MAX_FILE_SIZE_MB))
-            errormessage = """The size of requested log is too big ({}MB). 
+            errormessage = f"""The size of requested log is too big ({sizemb}MB). 
                                 Please try to download it locally using Rucio CLI by the next command: 
-                                rucio download {}:{}""".format(sizemb, scope, lfn)
-            data = {
-                'errormessage': errormessage
-            }
-            return render(request, 'errorPage.html', data, content_type='text/html')
+                                rucio download {scope}:{lfn}"""
+            return error_response(request, message=errormessage, status=400)
         _logger.debug('Prepared params needed to download logs with rucio - {}'.format(time.time() - request.session['req_init_time']))
 
         # download the file
@@ -136,10 +133,7 @@ def index(request):
                 errors['improperformat'] if 'improperformat' in errors else ''
             )
             _logger.warning(errormessage)
-            data = {
-                'errormessage': errormessage
-            }
-            return render(request, 'errorPage.html', data, content_type='text/html')
+            return error_response(request, message=errormessage, status=400)
         if not len(files):
             msg = 'Something went wrong while the log file downloading. [guid={}, scope={}, lfn={}] \n'.format(guid, scope, lfn)
             _logger.warning(msg)

@@ -5,7 +5,8 @@ import logging
 import re
 import subprocess
 import os
-from django.conf import settings
+from django.http import JsonResponse
+from django.shortcuts import render
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -126,3 +127,25 @@ def is_xss(val):
     else:
         return False
 
+
+def error_response(request, message=None, status=400):
+    """
+    Return error depending on expected output type (json or rendered HTML)
+    :param request: request
+    :param message: error message to be returned
+    :param status: int - HTTP status code
+    :return: response
+    """
+    if message is None:
+        message = "Unknown error appeared"
+    if is_json_request(request):
+        response = JsonResponse({'error': message}, status=status)
+    else:
+        data = {
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            "errormessage": message,
+        }
+        response =  render(request, 'errorPage.html', data, content_type='text/html', status=status)
+    _logger.warning(message)
+    return response

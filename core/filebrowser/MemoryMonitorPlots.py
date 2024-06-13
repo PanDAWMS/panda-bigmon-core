@@ -9,10 +9,9 @@ from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 from django.shortcuts import render, redirect
 
-from core.pandajob.models import Jobsarchived4, Jobsarchived
-
 from core.oauth.utils import login_customrequired
 from core.views import initRequest
+from core.utils import error_response
 from core.libs.datetimestrings import parse_datetime
 from core.filebrowser.utils import get_job_log_file_path
 
@@ -28,23 +27,13 @@ def getPlots(request):
         return response
 
     if not 'pandaid' in request.session['requestParams']:
-        data = {
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            "errormessage": "No pandaid provided!",
-        }
-        return render(request, 'errorPage.html', data, content_type='text/html')
+        return error_response(request, message='No pandaid provided!', status=400)
     else:
-        pandaid = request.session['requestParams']['pandaid']
         try:
-            pandaid = int(pandaid)
-        except:
-            data = {
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                "errormessage": "Illegal value {} for pandaid provided! Check the URL please!".format(pandaid),
-            }
-            return render(request, 'errorPage.html', data, content_type='text/html')
+            pandaid = int(request.session['requestParams']['pandaid'])
+        except ValueError:
+            return error_response(request, message='Illegal value for pandaid, it must be a number!', status=400)
+
     # redirect to new PrMon plots page
     return redirect('prMonPlots', pandaid=pandaid)
 

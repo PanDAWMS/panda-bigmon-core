@@ -1,4 +1,5 @@
 from core.views import initRequest
+from core.utils import error_response
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 import urllib.request
@@ -21,7 +22,7 @@ def query_idds_server(request_id, **kwargs):
     try:
         response = urllib.request.urlopen(url).read()
     except (HTTPError, URLError) as e:
-        print('Error: {}'.format(e.reason))
+        _logger.exception('Error: {}'.format(e.reason))
     stats = json.loads(response)
     return stats
 
@@ -45,11 +46,12 @@ def daggraph(request):
     if not valid:
         return response
     if 'idds_request_id' not in request.session['requestParams']:
-        data = {
-            'errormessage': 'idds_request_id is not provided'
-        }
-        return render(request, 'errorPage.html', data, content_type='text/html', status=400)
-    requestid = int(request.session['requestParams']['idds_request_id'])
+        return error_response(request, message='idds_request_id is not provided', status=400)
+    try:
+        requestid = int(request.session['requestParams']['idds_request_id'])
+    except ValueError:
+        return error_response(request, message='Illegal value for idds_request_id, it must be a number', status=400)
+
     kwargs = {}
     stats = query_idds_server(requestid, **kwargs)
     nodes_dag_vis = []
