@@ -181,7 +181,5 @@ def get_event_status_summary(pandaids, eventservicestatelist):
 
 
     for ev in evtable:
-        evstat = eventservicestatelist[ev['STATUS']]
-        summary[evstat] = ev['COUNTSTAT']
-
+        summary[ev['status']] = ev['countstat']
     return summary
