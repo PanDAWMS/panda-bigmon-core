@@ -77,7 +77,7 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
 
 
 def dictfetchall(cursor, **kwargs):
-    "Returns all rows from a cursor as a dict"
+    """Returns all rows from a cursor as a dict"""
     style = 'default'
     if 'style' in kwargs:
         style = kwargs['style']
@@ -87,11 +87,16 @@ def dictfetchall(cursor, **kwargs):
             dict(zip([str(col[0]).upper() for col in desc], row))
             for row in cursor.fetchall()
         ]
+    elif style == 'lowercase':
+        return [
+            dict(zip([str(col[0]).lower() for col in desc], row))
+            for row in cursor.fetchall()
+        ]
     else:
         return [
             dict(zip([col[0] for col in desc], row))
             for row in cursor.fetchall()
-            ]
+        ]
 
 
 def is_timestamp(key):

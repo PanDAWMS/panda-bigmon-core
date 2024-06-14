@@ -198,7 +198,7 @@ def job_summary_dict(request, jobs, fieldlist=None):
         if is_event_service(job):
             esjobs.append(job['pandaid'])
     if len(esjobs) > 0:
-        sumd['eventservicestatus'] = get_event_status_summary(esjobs, const.EVENT_STATES)
+        sumd['eventservicestatus'] = get_event_status_summary(esjobs)
 
     # convert to ordered lists
     suml = []

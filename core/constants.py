@@ -61,19 +61,19 @@ JOB_STATES_FINAL = (
     'merging'
 )
 
-EVENT_STATES = (
-    'ready',
-    'sent',
-    'running',
-    'finished',
-    'cancelled',
-    'discarded',
-    'done',
-    'failed',
-    'fatal',
-    'merged',
-    'corrupted',
-)
+EVENT_STATES = MappingProxyType({
+    0: 'ready',
+    1: 'sent',
+    2: 'running',
+    3: 'finished',
+    4: 'cancelled',
+    5: 'discarded',
+    6: 'done',
+    7: 'failed',
+    8: 'fatal',
+    9: 'merged',
+    10: 'corrupted',
+})
 
 TASK_STATES = (
     'registered',
