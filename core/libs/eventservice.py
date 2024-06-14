@@ -7,8 +7,8 @@ from django.db.models import Count
 from django.conf import settings
 from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_table
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, get_tmp_table_name_debug
-
 from core.common.models import JediEvents, GetEventsForTask
+from core import constants as const
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -155,16 +155,14 @@ def add_event_summary_to_tasklist(tasks, transaction_key=None):
     return tasks
 
 
-def get_event_status_summary(pandaids, eventservicestatelist):
+def get_event_status_summary(pandaids):
     """
     Getting event statuses summary for list of pandaids of ES jobs
     :param pandaids: list
     :return: dict of status: nevents
     """
     summary = {}
-
     tmpTableName = get_tmp_table_name()
-
     transactionKey = insert_to_temp_table(pandaids)
     new_cur = connection.cursor()
     new_cur.execute(
@@ -177,9 +175,14 @@ def get_event_status_summary(pandaids, eventservicestatelist):
         ) t1 
         group by status""".format(tmpTableName, transactionKey, settings.DB_SCHEMA_PANDA))
 
-    evtable = dictfetchall(new_cur)
+    evtable = dictfetchall(new_cur, style='lowercase')
 
-
+    # translate numerical status to string, if not in const.EVENT_STATES, then it is 'unknown'
     for ev in evtable:
-        summary[ev['status']] = ev['countstat']
+        if ev['status'] in const.EVENT_STATES:
+            summary[const.EVENT_STATES[ev['status']]] = ev['countstat']
+        else:
+            if 'unknown' not in summary:
+                summary['unknown'] = 0
+            summary['unknown'] += ev['countstat']
     return summary
