@@ -381,8 +381,8 @@ def initRequest(request, callselfmon=True):
 
             # is it int, if it's supposed to be?
             if p.lower() in (
-                    'days', 'hours', 'limit', 'display_limit', 'pandaid', 'taskid', 'jeditaskid', 'jobsetid', 'reqid', 'corecount',
-                    'taskpriority', 'priority', 'attemptnr', 'statenotupdated', 'corepower',
+                    'days', 'hours', 'limit', 'display_limit', 'pandaid', 'taskid', 'jeditaskid', 'jobsetid', 'reqid',
+                    'datasetid', 'fileid', 'corecount', 'taskpriority', 'priority', 'attemptnr', 'statenotupdated', 'corepower',
                     'wansourcelimit', 'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
                     'maxinputsize', 'timefloor', 'depthboost', 'pilotlimit', 'transferringlimit',
                     'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory', 'maxmemory', 'minrss',
