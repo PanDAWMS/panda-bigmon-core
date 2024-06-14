@@ -442,13 +442,12 @@
 {% block js_body_page %}
 <script nonce={{request.csp_nonce}}>
 var pandaid = '{{ pandaid }}';
-document.getElementById("button-job-status-log").addEventListener("click", loadJobStatusLog.bind(null, pandaid));
+if (document.getElementById("button-job-status-log")) {document.getElementById("button-job-status-log").addEventListener("click", loadJobStatusLog.bind(null, pandaid));}
 if (document.getElementById("button-job-relationships-upstream")) {document.getElementById("button-job-relationships-upstream").addEventListener("click", loadJobRelationships.bind(null, pandaid, 'upstream'));}
-document.getElementById("button-job-relationships-downstream").addEventListener("click", loadJobRelationships.bind(null, pandaid, 'downstream'));
-document.getElementById("button-extended-error-info").addEventListener("click", loadExtendedErrorData.bind(null, '{{ job.jeditaskid }}', pandaid));
-
-document.getElementById("comparisonbutton{{ pandaid }}").addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton{{ pandaid }}", '{{ pandaid }}'));
-document.getElementById("button-open-all-logs").addEventListener("click", openAllLogs);
+if (document.getElementById("button-job-relationships-downstream")) {document.getElementById("button-job-relationships-downstream").addEventListener("click", loadJobRelationships.bind(null, pandaid, 'downstream'));}
+if (document.getElementById("button-extended-error-info")) {document.getElementById("button-extended-error-info").addEventListener("click", loadExtendedErrorData.bind(null, '{{ job.jeditaskid }}', pandaid));}
+if (document.getElementById("comparisonbutton{{ pandaid }}")) {document.getElementById("comparisonbutton{{ pandaid }}").addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton{{ pandaid }}", '{{ pandaid }}'));}
+if (document.getElementById("button-open-all-logs")) {document.getElementById("button-open-all-logs").addEventListener("click", openAllLogs);}
 
 $(document).ready(function () {
     $(".comment").shorten({showChars: getNCharsShorten(), minHideChars: 250});
