@@ -488,7 +488,7 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
                 job['jobinfo'] += job['taskbuffererrordiag']
 
             # extract job substatus
-            if 'jobmetrics' in job:
+            if 'jobmetrics' in job and job['jobmetrics']:
                 pat = re.compile('.*mode\\=([^\\s]+).*HPCStatus\\=([A-Za-z0-9]+)')
                 mat = pat.match(job['jobmetrics'])
                 if mat:
