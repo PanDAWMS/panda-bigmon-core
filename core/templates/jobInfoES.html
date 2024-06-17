@@ -198,56 +198,66 @@
 
 <div class="bp-container-wrapper">
 <div class="bp-dropdown-button">
-    <button class="dropdown"><span>Logs</span></button>
-    <div   class=" dropdown-items">
-        {% if logfile.lfn %}
-          {% if viewParams.MON_VO == 'ATLAS' %}
-              {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging' or job.jobstatus == 'holding' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled' or job.jobstatus == 'closed' %}
-                {% if logfile.guid %}
-                    {% if job.jobstatus == 'failed' or job.jobstatus == 'finished'  or job.jobstatus == 'closed' or job.jobstatus == 'transferring' or job.jobstatus == 'cancelled'  or job.jobstatus == 'merging'  %}
-                        <a href="/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}&fileid={{ logfile.fileid }}">Log files</a>
-                    {% else %}
-                      <a class="disabled">No logs available yet</a>
-                    {% endif %}
-                {% else %}
-                  <a class="disabled">No logs were saved</a>
-                {% endif %}
+  <button class="dropdown"><span>Logs</span></button>
+  <div   class=" dropdown-items">
+    <script nonce={{request.csp_nonce}}>var logLinksArray = [];</script>
+    {% if debugmode %}
+        <a href="#payloadlog" id="button-realtime-payload-log">Real-time log</a>
+    {% endif %}
 
-                {% if oslogpath %}
-                    <a href="{{ oslogpath }}">log tarball</a>
-                {% endif %}
-              {% else %}
-                <a class="disabled">No logs available yet</a>
-              {% endif %}
-          {% else %}
-            {% if job.jobstatus == 'finished' or job.jobstatus == 'failed' %}
-                <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/application_log.txt">Job stdout</a
-                <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/output/">Job outputs</a>
-            {% endif %}
-            <a href="http://pandawms.org/pandajobslogstmp/core/data/jschovan/pandajobs/{{pandaid}}/logs/athena_stdout.txt">Payload stdout</a>
-            <a href='http://pilots1.pandawms.org/pandawms-jobcache/jobcache-{{job.pandaid}}.tar.gz'>Job cache tarball</a>
-          {% endif %}
-        {% else %}
-            <a class="disabled">No logs available</a>
+    {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging'  or job.jobstatus == 'transferring'  or job.jobstatus == 'cancelled' %}
+      {% if logfile.lfn %}
+        {% if viewParams.log_provider == 'rucio' or viewParams.log_provider == 's3' %}
+          <a href="{% url 'filebrowser' %}?pandaid={{ pandaid }}">Log files</a>
         {% endif %}
-        {% if job.jobstatus == 'holding' or job.jobstatus == 'finished' or job.jobstatus == 'failed' or job.jobstatus == 'merging'  or job.jobstatus == 'transferring' %}
-            {% if stdout %}
-                <a href='{{stdout}}'>Pilot job stdout</a>
-                <a href='{{stderr}}'>Pilot job stderr</a>
-                <a href='{{stdlog}}'>Batch log of pilot job</a>
-                <a href='{{stdjdl}}'>Pilot job jdl</a>
-            {% endif %}
-            {% if job.jobstatus == 'closed' %}
-                <td><a href='{{stdout}}'>Pilot ID</a></td>
-            {% endif %}
+        {% if oslogpath %}
+          <a href="{{ oslogpath }}">Log tarball</a>
+        {% endif %}
+      {% else %}
+        <a class="disabled">No logs available</a>
+      {% endif %}
+      {% if stdout %}
+        <a href='{{stdout}}'>Pilot stdout</a>
+        <a href='{{stderr}}'>Job stderr</a>
+        <a href='{{stdlog}}'>Job stdout</a>
+        {% if stdjdl %}
+          <a href='{{stdjdl}}'>Pilot job jdl</a>
+        {% endif %}
+        <script nonce={{request.csp_nonce}}>
+          logLinksArray[logLinksArray.length] ='{{stdout}}'
+          logLinksArray[logLinksArray.length] ='{{stderr}}'
+          logLinksArray[logLinksArray.length] ='{{stdlog}}'
+          logLinksArray[logLinksArray.length] ='{{stdjdl}}'
+        </script>
+        {% endif %}
+        {% if prmon_logs %}
+            <a href="{{ prmon_logs.prmon_summary }}">Job system process summary</a>
+            <a href="{{ prmon_logs.prmon_details }}">Job system process details</a>
+        {% endif %}
+        {% if job.jobstatus == 'closed' %}
+          <td><a href='{{stdout}}'>Pilot ID</a></td>
+          <script nonce={{request.csp_nonce}}>
+            logLinksArray[logLinksArray.length] ='{{stdout}}'
+          </script>
+        {% endif %}
+        {% if viewParams.MON_VO == 'ATLAS' %}
+          <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover#?_a=(discover:(columns:!(_source),isDirty:!f,sort:!()),metadata:(indexPattern:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_q=(filters:!(),query:(language:lucene,query:'{{ job.pandaid|safe }}'))">PanDA logs (Kibana)</a>
+          <script nonce={{request.csp_nonce}}>
+              logLinksArray[logLinksArray.length] ="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}"
+              logLinksArray[logLinksArray.length] ="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(fields.type,logLevel,message,_source),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'jediTaskID:{{ job.jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))"
 
-            <a href="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}">Pilot records</a>
-            {% if viewParams.MON_VO == 'ATLAS' %}
-            <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover#?_a=(discover:(columns:!(_source),isDirty:!f,sort:!()),metadata:(indexPattern:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_q=(filters:!(),query:(language:lucene,query:'{{ job.pandaid|safe }}'))">PanDA logs (Kibana)</a>
-           <a href="#" id="button-open-all-logs">Open all logs</a>
-            {% endif %}
+              function openAllLogs() {
+                  for (var i = 0; i < logLinksArray.length; i++) {
+                      window.open(logLinksArray[i], '_blank');
+                  }
+              }
+          </script>
+          <a href="#" id="button-open-all-logs">Open all logs</a>
         {% endif %}
-    </div>
+    {% else %}
+      <a class="disabled">No logs available yet</a>
+    {% endif %}
+  </div>
 </div>
 <div class="bp-dropdown-button">
     <button class="dropdown">Go to</button>
