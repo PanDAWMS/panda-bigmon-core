@@ -66,7 +66,6 @@ urlpatterns = [
     re_path(r'^taskflow/(?P<jeditaskid>.*)/$', coremon_views.taskFlowDiagram, name='taskFlowDiagram'),
     re_path(r'^api/taskdatamovement/(?P<jeditaskid>.*)/$', coremon_views.getTaskDataMovementData, name='taskdatamovement'),
 
-
     re_path(r'^errors/$', coremon_views.errorSummary, name='errorSummary'),
     re_path(r'^incidents/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^logger/$', coremon_views.decommissioned),  # decommissioned
@@ -85,15 +84,14 @@ urlpatterns = [
     re_path(r'^dataset/$', coremon_views.datasetInfo, name='datasetInfo'),
     re_path(r'^datasets/$', coremon_views.datasetList, name='datasetList'),
 
-    re_path(r'^dash/$', coremon_views.dashboard, name='dashboard'),
-    re_path(r'^dash/analysis/$', coremon_views.dashAnalysis, name='dashAnalysis'),
-    re_path(r'^dash/production/$', coremon_views.dashProduction, name='dashProduction'),
-    re_path(r'^dash/objectstore/$', coremon_views.dashObjectStore, name='dashObjectStore'),
-    re_path(r'^new/dash/$', coremon_views.dashRegion, name='dashRegionLegacy'),  # legacy
     re_path(r'^dash/region/$', coremon_views.dashRegion, name='dashRegion'),
     re_path(r'^dash/world/$', coremon_views.dashNucleus, name='dashWorld'),
     re_path(r'^dash/es/$', coremon_views.dashES, name='dashES'),
-    re_path(r'^status_summary/', include('core.status_summary.urls'), name='status_summary'),
+    re_path(r'^dash/$', coremon_views.dashboard, name='dashRegion'), # legacy
+    re_path(r'^new/dash/$', coremon_views.dashRegion),  # legacy
+    re_path(r'^dash/analysis/$', coremon_views.dashAnalysis),
+    re_path(r'^dash/production/$', coremon_views.dashProduction),
+    re_path(r'^dash/objectstore/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^workingGroups/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),
 
