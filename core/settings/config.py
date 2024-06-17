@@ -260,6 +260,17 @@ except ImportError:
 if DEBUG is True:
     LOG_LEVEL = 'DEBUG'
 
+class CustomFormatter(logging.Formatter):
+    def format(self, record):
+        if hasattr(record, 'request'):
+            request = record.request
+            full_url = request.build_absolute_uri(request.get_full_path())
+            record.message = f"Internal Server Error: {full_url}\n{record.getMessage()}"
+        else:
+            record.message = f"Internal Server Error: N/A\n{record.getMessage()}"
+        return super().format(record)
+
+
 LOG_SIZE = 100000000
 LOGGING = {
     'version': 1,
@@ -307,7 +318,7 @@ LOGGING = {
             'filename': LOG_ROOT + "/logfile.error",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
-            'formatter': 'verbose',
+            'formatter': 'custom',
         },
         'logfile-filebrowser': {
             'level': LOG_LEVEL,
@@ -358,7 +369,7 @@ LOGGING = {
             'level': LOG_LEVEL,
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-            'formatter': 'full'
+            'formatter': 'custom'
         },
     },
     'loggers': {
@@ -382,7 +393,7 @@ LOGGING = {
             'level': LOG_LEVEL,
         },
         'bigpandamon-error': {
-            'handlers': ['logfile-error'],
+            'handlers': ['logfile-error', 'console'],
             'level': 'ERROR',
         },
         'bigpandamon-art': {
@@ -409,6 +420,10 @@ LOGGING = {
             'style': '{',
         },
         'verbose': {
+            'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
+        },
+        'custom': {
+            '()': CustomFormatter,
             'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
         },
         'simple': {

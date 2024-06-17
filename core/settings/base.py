@@ -55,6 +55,8 @@ MIDDLEWARE = (
     'core.oauth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
 
     'csp.middleware.CSPMiddleware',
+
+    'core.loggingmiddleware.RequestLogMiddleware',
 )
 
 ROOT_URLCONF = 'core.urls'
