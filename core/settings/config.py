@@ -78,7 +78,6 @@ TEMPLATES = [
         'DIRS': [
             join(dirname(core.__file__), 'templates'),
             join(dirname(admin.__file__), 'templates'),
-            # join(dirname(core.filebrowser.__file__), 'templates'),
         ],
         'OPTIONS': {
             'context_processors': [
