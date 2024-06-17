@@ -58,6 +58,9 @@
         <div class="column small-12 medium-6 c3-chart-block" id="memory_rate_chart"></div>
         <div class="column small-12 medium-6 c3-chart-block" id="io_rate_chart"></div>
       </div>
+      <div class="row c3-plots-row">
+        <div class="column small-12 medium-6 c3-chart-block" id="memory_fit_chart"></div>
+      </div>
     </div>
   </div>
   <p>Represented data metrics were collected using <a href="https://github.com/HSF/prmon">prmon</a> program
@@ -112,6 +115,10 @@
               if (!('ng' in $scope.prmon.plot_data)) {
                 document.getElementById('gpu_row_1').style.display = 'none';
                 document.getElementById('gpu_row_2').style.display = 'none';
+              }
+              // hide memory fit plot if no data
+              if (!('memory_fit' in $scope.prmon.plot_data)) {
+                document.getElementById('memory_fit_chart').style.display = 'none';
               }
             }
           }
