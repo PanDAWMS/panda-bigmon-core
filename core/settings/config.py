@@ -3,6 +3,7 @@ from os.path import dirname, join
 
 from core import filebrowser, admin
 from core.settings.local import MY_SECRET_KEY, LOG_ROOT
+from core.settings.CustomFormatter import CustomFormatter
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -260,18 +261,8 @@ except ImportError:
 if DEBUG is True:
     LOG_LEVEL = 'DEBUG'
 
-class CustomFormatter(logging.Formatter):
-    def format(self, record):
-        if hasattr(record, 'request'):
-            request = record.request
-            full_url = request.build_absolute_uri(request.get_full_path())
-            record.message = f"Internal Server Error: {full_url}\n{record.getMessage()}"
-        else:
-            record.message = f"Internal Server Error: N/A\n{record.getMessage()}"
-        return super().format(record)
-
-
 LOG_SIZE = 100000000
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
