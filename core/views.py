@@ -805,8 +805,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['eventservice'] = 1
                         else:
                             query['eventservice'] = 0
+                    elif param == 'campaign':
+                        if not is_wildcards(request.session['requestParams'][param]):
+                            if ':' not in request.session['requestParams'][param]:
+                                query['campaign__icontains'] = request.session['requestParams'][param]
+                            else:
+                                query['campaign__iexact'] = request.session['requestParams'][param]
                     else:
-                        if (param not in wildSearchFields):
+                        if param not in wildSearchFields:
                             query[param] = request.session['requestParams'][param]
         else:
             if param == 'jobtype':
@@ -972,7 +978,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString = ''
 
     # wild cards handling
-    wildSearchFields = (set(wildSearchFields) & set(list(request.session['requestParams'].keys())))
+    wildSearchFields = (set(wildSearchFields) & set([x.split('__')[0] for x in request.session['requestParams'].keys()]))
     # filter out fields that already in query dict
     wildSearchFields1 = set()
     for currenfField in wildSearchFields:
