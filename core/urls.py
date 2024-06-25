@@ -87,7 +87,7 @@ urlpatterns = [
     re_path(r'^dash/region/$', coremon_views.dashRegion, name='dashRegion'),
     re_path(r'^dash/world/$', coremon_views.dashNucleus, name='dashWorld'),
     re_path(r'^dash/es/$', coremon_views.dashES, name='dashES'),
-    re_path(r'^dash/$', coremon_views.dashboard, name='dashRegion'), # legacy
+    re_path(r'^dash/$', coremon_views.dashboard), # legacy
     re_path(r'^new/dash/$', coremon_views.dashRegion),  # legacy
     re_path(r'^dash/analysis/$', coremon_views.dashAnalysis),
     re_path(r'^dash/production/$', coremon_views.dashProduction),
