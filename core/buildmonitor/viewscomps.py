@@ -94,17 +94,9 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
         reslt1 = new_cur.fetchall()
      relextend=relname
      if re.search('ATN',nname): relextend=relnstamp+'('+relname+')'
-     afs_top_url='atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/gitwww'
-     eos_top_url='atlas-sw-www.web.cern.ch/gitwww'
-     afs_top_url1 = '//cern.ch/atlas-computing/links/distDirectory/gitwww'
-     eos_top_url1 = '//atlas-sw-www.web.cern.ch/gitwww'
      if re.search('CI',nname):
         sComm='git branch '+gitbrSS
         cmmnt='ATLAS CI %s, release %s, platform %s (on %s)<BR><span style="font-size:  smaller">%s</span>' % ( nname, relextend, arname, host, sComm )
-        afs_top_url = 'atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/ci'
-        eos_top_url = 'atlas-sw-www.web.cern.ch/ciwww'
-        afs_top_url1 = '//cern.ch/atlas-computing/links/distDirectory/ci'
-        eos_top_url1 = '//atlas-sw-www.web.cern.ch/ciwww'
      else:
         cmmnt='ATLAS nightly %s, release %s, platform %s, project %s (on %s)' % ( nname, relextend, arname, pjname, host)
 #  HEADERS
@@ -125,12 +117,6 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       i_result=di_res.get(str(result),str(result))
       if i_result == None or i_result == "None" : i_result=radiooff_icon;
       nameln3=nameln1
-      if ntype == 'eos':
-          nameln2 = re.sub(afs_top_url, eos_top_url, nameln1)
-          nameln3 = re.sub(afs_top_url1, eos_top_url1, nameln2)
-      elif ntype == 'afs':
-          nameln2 = re.sub(eos_top_url, afs_top_url, nameln1)
-          nameln3 = re.sub(eos_top_url1, afs_top_url1, nameln2)
       row_cand=[i_result,proj,nameln3,container]
       rows_s.append(row_cand)
 

@@ -101,18 +101,10 @@ title="N/A" class="ui-icon ui-icon-cancel">ICON20</span></div>'
     relextend=relname
     if re.search('ATN',nname): relextend=relnstamp+'('+relname+')'
     CI_flag=False
-    afs_top_url='atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/gitwww'
-    eos_top_url='atlas-sw-www.web.cern.ch/gitwww'
-    afs_top_url1 = '//cern.ch/atlas-computing/links/distDirectory/gitwww'
-    eos_top_url1 = '//atlas-sw-www.web.cern.ch/gitwww'
     if re.search('CI',nname):
         CI_flag = True
         sComm='git branch '+gitbrSS
         cmmnt='ATLAS CI %s, release %s, platform %s (on %s)<BR><span style="font-size:  smaller">%s</span>' % ( nname, relextend, arname, host, sComm )
-        afs_top_url = 'atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/ci'
-        eos_top_url = 'atlas-sw-www.web.cern.ch/ciwww'
-        afs_top_url1 = '//cern.ch/atlas-computing/links/distDirectory/ci'
-        eos_top_url1 = '//atlas-sw-www.web.cern.ch/ciwww'
     else:
         cmmnt='ATLAS nightly %s, release %s, platform %s (on %s)' % ( nname, relextend, arname, host)
 
@@ -155,12 +147,6 @@ title="N/A" class="ui-icon ui-icon-cancel">ICON20</span></div>'
         if fname != None and fname != '':
           nameln1=re.sub(fname+'#','',nameln,1)
         nameln3=nameln1
-        if ntype == 'eos':
-          nameln2 = re.sub(afs_top_url, eos_top_url, nameln1)
-          nameln3 = re.sub(afs_top_url1, eos_top_url1, nameln2)
-        elif ntype == 'afs':
-          nameln2 = re.sub(eos_top_url, afs_top_url, nameln1)
-          nameln3 = re.sub(eos_top_url1, afs_top_url1, nameln2)
         row_cand=[i_result,proj,nameln3,category,container,ttime]
         rows_s.append(row_cand)
 
