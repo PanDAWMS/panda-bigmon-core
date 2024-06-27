@@ -108,7 +108,8 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
 ##      mrlink = row[7]
       gitbr = row[13]
       lartwebarea=row[14]
-      if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDirectory/gitwww/GITWebArea/nightlies"
+      if lartwebarea is None or lartwebarea == '':
+          lartwebarea = "https://atlas-art-data.web.cern.ch/atlas-art-data/local-output"
 #      print("JIDX",jid_sel)
 #
       query01="select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,wala,ecp,scp,eext,sext,vext,hname from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
@@ -311,14 +312,14 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                       local_art_res='N/A'
                   elif sula == '0' and erla == '0':
                       local_art_res='N/A'
-                  else: 
-                      local_art_res=local_art_res+'<B><span style="color: green">'+ str(sula)+'</span></B>,'
-                      local_art_res = local_art_res + '<B><span style="color: brown">' + str(wala) + '</span></B>,'
-                      local_art_res=local_art_res+'<B><span style="color: red">'+ str(erla)+'</span></B>'
-                      arrk=re.split('_',nname)
-                      branch=arrk[0]
-                      loares="<a href=\""+lartwebarea+"/"+branch+"/"+rname+"/"+pjname+"/"+ar_sel+"/"+pjname+"/art.log.html\">"
-                      local_art_res=loares+local_art_res+"</a>"
+                  else:
+                      local_art_res += '<B><span style="color: green">' + str(sula) + '</span></B>,'
+                      local_art_res += '<B><span style="color: brown">' + str(wala) + '</span></B>,'
+                      local_art_res += '<B><span style="color: red">' + str(erla) + '</span></B>'
+                      branch = re.split('_', nname)[0]
+                      # Local art results template: https://atlas-art-data.web.cern.ch/atlas-art-data/local-output/<branch>/<nightly_tag>/
+                      loares = '<a href="' + lartwebarea + "/" + branch + "/" + pjname + "/" + ar_sel + "/" + rname + '/">'
+                      local_art_res = loares + local_art_res + "</a>"
 
                   row_cand=[rname,t_start,ii_checkout,ii_ext,ii_config,t_build,i_combo_c,ii_cpack,t_test,i_combo_t,local_art_res,val_cache_transf,i_combo_cv_serv,tt_cv_clie,hname]
                   rows_s.append(row_cand)
