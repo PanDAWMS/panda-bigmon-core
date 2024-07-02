@@ -672,6 +672,13 @@ float: none !important; }
     font-size: 100%;
 }
 
+.search-form .input-group select.input-group-field  {
+  border-radius: 0;
+  height: 2.5rem;
+  margin: 0;
+}
+
+
 .button-group.bp-comparison {
 
 }
