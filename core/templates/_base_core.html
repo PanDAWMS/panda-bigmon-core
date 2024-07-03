@@ -467,7 +467,7 @@
     <div class="columns medium-8 small-7">
       <p>In case of suggestions, questions, or problems with:</p>
       {% if viewParams.MON_VO == 'ATLAS' %}
-        <p>running analysis - <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">email DAST experts</a></p>
+        <p>running analysis - <a target="_blank" href="https://atlas-talk.web.cern.ch/c/distributed-computing-help"><img src="{% static 'images/atlas-logo-white.png' %}"> ATLAS talk</a> or <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">email DAST experts</a></p>
       {% endif %}
         <p>
           monitoring - <a href="mailto:atlas-adc-pandamon-support@cern.ch">email</a>
@@ -488,20 +488,20 @@
     <script src="{% static 'js/app.js' %}?{% cache_bust "js/app.js" %}"></script>
     <script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
     <script nonce={{request.csp_nonce}}>
-
-      document.getElementById("button-save-settings").addEventListener("click", saveSettings);
-      document.getElementById("button-bpsearch").addEventListener("click", bpsearch);
-      if ('{{ request.user.is_tester }}' === 'True') {
-        document.getElementById("button-clear-comparison-list").addEventListener("click", clearComparisonList);
-        document.getElementById("button-deny-rights").addEventListener("click", denyRights);
-      }
-      else {
-        document.getElementById("button-grant-rights").addEventListener("click", grantRights);
+      
+      if (document.getElementById("button-bpsearch")) { document.getElementById("button-bpsearch").addEventListener("click", bpsearch);}
+      if ('{{ request.user.is_authenticated }}' === 'True') {
+        if ('{{ request.user.is_tester }}' === 'True') {
+          document.getElementById("button-save-settings").addEventListener("click", saveSettings);
+          document.getElementById("button-clear-comparison-list").addEventListener("click", clearComparisonList);
+          document.getElementById("button-deny-rights").addEventListener("click", denyRights);
+        }
+        else {
+          document.getElementById("button-grant-rights").addEventListener("click", grantRights);
+        }
       }
       document.getElementById("button-refresh-page").addEventListener("click", refreshPage);
-
-      document.getElementById("searchselectid").addEventListener("change", getSelectValue);
-
+      if (document.getElementById("searchselectid")) {document.getElementById("searchselectid").addEventListener("change", getSelectValue);}
 
       {% if timerange %}
           var timerange = {{ timerange|safe }};
