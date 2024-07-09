@@ -16,6 +16,8 @@ import core.pandajob.views_support as core_coremon_support_views
 app_name = "bigpandamon"
 
 urlpatterns = [
+    # legacy - means the url pattern is obsolete, and we redirect to a new one so bookmarks still work
+    # decommissioned - means this view was removed, and we return 404 error
     re_path(r'^$', coremon_views.mainPage, name='mainPage'),
     re_path(r'^$', coremon_views.mainPage, name='index'),
     re_path(r'^help/$', coremon_views.helpPage, name='helpPage'),
@@ -57,8 +59,8 @@ urlpatterns = [
     re_path(r'^ttc/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^taskchain/$', coremon_views.taskchain, name='taskchain'),
     re_path(r'^ganttTaskChain/$', coremon_views.ganttTaskChain, name='ganttTaskChain'),
-    re_path(r'^taskprofileplot/$', coremon_views.taskprofileplot, name='taskprofileplot'),  # legacy
-    re_path(r'^taskesprofileplot/$', coremon_views.taskESprofileplot, name='taskesprofileplot'),
+    re_path(r'^taskprofileplot/$', coremon_views.taskProfile, name='taskprofileplot'),  # legacy
+    re_path(r'^taskesprofileplot/$', coremon_views.taskProfile, name='taskesprofileplot'), # legacy
     re_path(r'^taskprofile/(?P<jeditaskid>.*)/$', coremon_views.taskProfile, name='taskProfileMonitor'),
     re_path(r'^taskprofiledata/(?P<jeditaskid>.*)/$', coremon_views.taskProfileData, name='getTaskProfilePlotData'),
     re_path(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
