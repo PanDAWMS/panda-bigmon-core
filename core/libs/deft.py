@@ -4,6 +4,7 @@ All functions related to the data from ATLAS DEFT
 import logging
 from django.db import connections
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, dictfetchall
+from core.common.models import TRequest
 
 from django.conf import settings
 
@@ -71,6 +72,31 @@ def get_prod_slice_by_taskid(jeditaskid):
     if task_prod_info:
         slice = task_prod_info[0][3]
     return slice
+
+
+def get_prod_request_info(reqid_list, params=None):
+    """
+    Getting request info from DEFT DB
+    :param reqid_list: list - list of production request id
+    :param params: list - list of fields to get from DEFT DB
+    :return: reqs: list - list of dicts
+    """
+    if len(reqid_list) == 0:
+        return None
+    pquery = {'reqid__in': reqid_list}
+    if params is None:
+        # get all fields
+        values = [f.name for f in TRequest._meta.get_fields()]
+    elif isinstance(params, list) and len(params) > 0:
+        values = tuple(set(params) & set([f.name for f in TRequest._meta.get_fields()]))
+    else:
+        return None
+
+    reqs = []
+    reqs.extend(TRequest.objects.filter(**pquery).values(*values))
+
+    return reqs
+
 
 
 def staging_info_for_tasklist(request, tasks, transaction_key=None):

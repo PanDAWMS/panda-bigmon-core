@@ -95,9 +95,6 @@
         {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
           <th>Parent</th>
         {% endif %}
-        {% if task.ticketid %}
-            <th>Tracker</th>
-        {% endif %}
         {% if 'gco2_global_humanized' in task and 'total' in task.gco2_global_humanized %}
           <th>CO<sub>2</sub> <a class="bp-tooltip left blacklink" target="_blank" href="https://panda-wms.readthedocs.io/en/latest/advanced/carbon_footprint.html"><i class="fi-info"></i>
             <span class="bp-tooltip tooltip-text">Estimated CO<sub>2</sub> emission, based on the weighted average of regional electricity sources for ATLAS Grid computing, click to read in more detail</span></a>
@@ -120,8 +117,8 @@
         {% if task.deftreqid %}
             <td>
               {% if viewParams.MON_VO == 'ATLAS' %}
-                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
-                     target="_blank">{{ task.deftreqid }}</a>
+                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}" target="_blank">{{ task.deftreqid }}</a>
+                {% if task.reference_link %}<a target="_blank" href="{{ task.reference_link }}"><img height="14" width="36" src="{% static 'images/jira-logo-color.png' %}"></a>{% endif %}
               {% else %}
                 {{ task.deftreqid }}
               {% endif %}
@@ -203,9 +200,6 @@
         <td>{{ task.attemptnr }}</td>
         {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
           <td><a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a></td>
-        {% endif %}
-        {% if task.ticketid %}
-            <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
         {% endif %}
         {% if 'gco2_global_humanized' in task and 'total' in task.gco2_global_humanized %}
           <td>{{ task.gco2_global_humanized.total.value|intcomma }}{{ task.gco2_global_humanized.total.unit }}

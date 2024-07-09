@@ -69,9 +69,6 @@
             <br><span class="closed">current</span>
           </th>
           <th>Attempt</th>
-          {% if task.ticketid %}
-              <th>Tracker</th>
-          {% endif %}
       </tr>
       <tr>
           <td>
@@ -85,8 +82,8 @@
           {% if task.deftreqid %}
             <td>
               {% if viewParams.MON_VO == 'ATLAS' %}
-                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
-                     target="_blank">{{ task.deftreqid }}</a>
+                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}" target="_blank">{{ task.deftreqid }}</a>
+                {% if task.reference_link %}<a target="_blank" href="{{ task.reference_link }}"><img height="14" width="36" src="{% static 'images/jira-logo-color.png' %}"></a>{% endif %}
               {% else %}
                 {{ task.deftreqid }}
               {% endif %}
@@ -137,9 +134,6 @@
             <br><span class="activated">{% if task.naccsum %}{{ task.naccsum }}{% else %}-{% endif %}</span></td>
           <td><span class="defined">{{ task.taskpriority }}</span><br><span class="closed">{{ task.currentpriority }}</span></td>
           <td>{{ task.attemptnr }}</td>
-          {% if task.ticketid %}
-              <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
-          {% endif %}
       </tr>
     </tbody>
   </table>

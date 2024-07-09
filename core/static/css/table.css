@@ -65,6 +65,13 @@ th.sub {
     background-color:white;
 }
 
+table tr td a:has(img) {
+  display: inline-block;
+}
+table tr td a > img {
+  vertical-align: text-top;
+}
+
 table.tableinlinel {
     float:left;
     width:25%;
