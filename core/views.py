@@ -4516,10 +4516,11 @@ def taskProfile(request, jeditaskid=None):
 
     task_profile = TaskProgressPlot(jeditaskid)
     task = task_profile.get_task_info()
-    if task and isinstance(task['starttime'], datetime):
-        request.session['viewParams']['selection'] = f', started at {task['starttime'].strftime(settings.DATETIME_FORMAT)}'
-    elif task and isinstance(task['creationdate'], datetime):
-        request.session['viewParams']['selection'] = f', created at {task['creationdate'].strftime(settings.DATETIME_FORMAT)}'
+
+    if task and 'starttime' in task and isinstance(task['starttime'], datetime):
+        request.session['viewParams']['selection'] = f', started at {task["starttime"].strftime(settings.DATETIME_FORMAT)}'
+    elif task and 'creationdate' in task and isinstance(task['creationdate'], datetime):
+        request.session['viewParams']['selection'] = f', created at {task["creationdate"].strftime(settings.DATETIME_FORMAT)}'
         task['starttime'] = task['creationdate']
     else:
         msg = 'A task with provided jeditaskid does not exist'.format(jeditaskid)

@@ -1,6 +1,6 @@
 import logging
 import math
-from datetime import datetime, timedelta
+from datetime import  timedelta
 from core.common.models import JediTasks, TaskAttempts
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived
 from core.libs.exlib import drop_duplicates
@@ -210,23 +210,47 @@ class TaskProgressPlot:
         """
         task_attempts = self.get_task_attempts()
         task_attempts_data_dict = {}
+
         for t in task_attempts:
-            task_attempts_data_dict[f'Attempt {t['attemptnr']+1} start'] = {
+            if 'attemptnr' in t:
+                attempt_number = t['attemptnr'] + 1
+            else:
+                attempt_number = 0
+
+            start_label = {
                 'type': 'line',
                 'borderWidth': 1,
-                'label': {'content': f'{t['attemptnr']+1}', 'position': 'end', 'display': True, 'yAdjust': 20, 'padding': 2, 'backgroundColor': 'rgba(0, 128, 186, 0.8)', 'z':10},
+                'label': {
+                    'content': f'{attempt_number}',
+                    'position': 'end',
+                    'display': True,
+                    'yAdjust': 20,
+                    'padding': 2,
+                    'backgroundColor': 'rgba(0, 128, 186, 0.8)',
+                    'z': 10
+                },
                 'xMin': t['starttime'].strftime(settings.DATETIME_FORMAT),
                 'xMax': t['starttime'].strftime(settings.DATETIME_FORMAT),
             }
+            task_attempts_data_dict[f'Attempt {attempt_number} start'] = start_label
+
             if t['endtime'] is not None:
-                task_attempts_data_dict[f'Attempt {t['attemptnr']+1} end'] = {
+                end_label = {
                     'type': 'line',
                     'borderWidth': 1,
                     'borderColor': 'rgba(0, 0, 0, 1)',
-                    'label': {'content':f'{t['attemptnr']+1}', 'position': 'end', 'display': True, 'padding': 2, 'z':10},
+                    'label': {
+                        'content': f'{attempt_number}',
+                        'position': 'end',
+                        'display': True,
+                        'padding': 2,
+                        'z': 10
+                    },
                     'xMin': t['endtime'].strftime(settings.DATETIME_FORMAT),
                     'xMax': t['endtime'].strftime(settings.DATETIME_FORMAT),
                 }
+                task_attempts_data_dict[f'Attempt {attempt_number} end'] = end_label
+
         return task_attempts_data_dict
 
 
