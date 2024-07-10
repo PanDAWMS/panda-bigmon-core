@@ -94,47 +94,38 @@
         <li class="has-submenu">
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
-            {% if 'core.iDDS' in request.session.installed_apps %}
-              <li><a href="/idds/wfprogress/">Workflows progress</a></li>
-            {% endif %}
-            {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a>Region view</a>
-                    <ul class="submenu menu">
-                        <li><a href="{% url 'dashRegion' %}">All jobs</a></li>
-                        <li><a href="{% url 'dashRegion' %}?jobtype=analy&splitby=jobtype">Analysis jobs</a></li>
-                        <li><a href="{% url 'dashRegion' %}?jobtype=prod&splitby=jobtype">Production jobs</a></li>
-                        <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Event Service jobs</a></li>
-                    </ul>
-                </li>
-                <li><a>World view</a>
-                    <ul class="submenu menu">
-                        <li><a href="{% url 'dashWorld' %}">Production jobs</a></li>
-                        <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service jobs</a></li>
-                    </ul>
-                </li>
-                {% if 'installed_apps' in request.session and 'core.datacarousel' in request.session.installed_apps %}
-                  <li><a>Data Carousel</a>
-                    <ul class="submenu menu">
-                        <li><a href="/dc/dash/">Dashboard</a></li>
-                        <li><a href="/dc/tails/">Staging Tails</a></li>
-                    </ul>
-                  </li>
-                {% endif %}
-                {% if 'installed_apps' in request.session and 'core.iDDS' in request.session.installed_apps %}
-                  <li><a href="/idds/">iDDS</a></li>
-                {% endif %}
-                {% if 'installed_apps' in request.session and 'core.globalshares' in request.session.installed_apps %}
-                  <li><a href="/globalshares/">Global Shares</a></li>
-                {% endif %}
-                {% if 'installed_apps' in request.session and 'core.art' in request.session.installed_apps %}
-                  <li><a href="/art/">ART tests</a></li>
-                {% endif %}
-                {% if 'installed_apps' in request.session and 'core.buildmonitor' in request.session.installed_apps %}
-                  <li><a href="/globalpage/">Nightlies and CI</a></li>
-                {% endif %}
-            {% else %}
-                <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
-            {% endif %}
+          {% if 'core.iDDS' in request.session.installed_apps %}
+            <li><a href="/idds/wfprogress/">Workflows progress</a></li>
+          {% endif %}
+          {% if viewParams.MON_VO == 'ATLAS' %}
+              <li><a>Region view</a>
+                <ul class="submenu menu">
+                  <li><a href="{% url 'dashRegion' %}">All jobs</a></li>
+                  <li><a href="{% url 'dashRegion' %}?jobtype=analy&splitby=jobtype">Analysis jobs</a></li>
+                  <li><a href="{% url 'dashRegion' %}?jobtype=prod&splitby=jobtype">Production jobs</a></li>
+                  <li><a href="{% url 'dashES' %}">Event Service jobs</a></li>
+                </ul>
+              </li>
+              <li><a href="{% url 'dashWorld' %}">Nucleus view</a></li>
+              {% if 'installed_apps' in request.session and 'core.datacarousel' in request.session.installed_apps %}
+                <li><a href="/dc/dash/">Data Carousel</a></li>
+              {% endif %}
+              {% if 'installed_apps' in request.session and 'core.iDDS' in request.session.installed_apps %}
+                <li><a href="/idds/">iDDS</a></li>
+              {% endif %}
+              {% if 'installed_apps' in request.session and 'core.globalshares' in request.session.installed_apps %}
+                <li><a href="/globalshares/">Global Shares</a></li>
+                <li><a href="/workQueues/">Work queues</a></li>
+              {% endif %}
+              {% if 'installed_apps' in request.session and 'core.art' in request.session.installed_apps %}
+                <li><a href="/art/">ART tests</a></li>
+              {% endif %}
+              {% if 'installed_apps' in request.session and 'core.buildmonitor' in request.session.installed_apps %}
+                <li><a href="/globalpage/">Nightlies and CI</a></li>
+              {% endif %}
+          {% else %}
+              <li><a href="{% url 'dashRegion' %}">VOs, sites</a></li>
+          {% endif %}
         </ul>
         </li>
 
@@ -219,7 +210,6 @@
                 <li><a href="{% url 'siteList' %}?cloud=US">US</a></li>
                 <li><a href="{% url 'siteList' %}?CATCHALL=*jobseed%3Des*|*jobseed%3Dall*">Event Service sites</a></li>
             {% endif %}
-            <li><a href="{% url 'workQueues' %}">Work queues</a></li>
         </ul>
         </li>
 
@@ -477,7 +467,7 @@
     <div class="columns medium-8 small-7">
       <p>In case of suggestions, questions, or problems with:</p>
       {% if viewParams.MON_VO == 'ATLAS' %}
-        <p>running analysis - <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">email DAST experts</a></p>
+        <p>running analysis - <a target="_blank" href="https://atlas-talk.web.cern.ch/c/distributed-computing-help"><img src="{% static 'images/atlas-logo-white.png' %}"> ATLAS talk</a> or <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">email DAST experts</a></p>
       {% endif %}
         <p>
           monitoring - <a href="mailto:atlas-adc-pandamon-support@cern.ch">email</a>
@@ -498,20 +488,20 @@
     <script src="{% static 'js/app.js' %}?{% cache_bust "js/app.js" %}"></script>
     <script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
     <script nonce={{request.csp_nonce}}>
-
-      document.getElementById("button-save-settings").addEventListener("click", saveSettings);
-      document.getElementById("button-bpsearch").addEventListener("click", bpsearch);
-      if ('{{ request.user.is_tester }}' === 'True') {
-        document.getElementById("button-clear-comparison-list").addEventListener("click", clearComparisonList);
-        document.getElementById("button-deny-rights").addEventListener("click", denyRights);
-      }
-      else {
-        document.getElementById("button-grant-rights").addEventListener("click", grantRights);
+      
+      if (document.getElementById("button-bpsearch")) { document.getElementById("button-bpsearch").addEventListener("click", bpsearch);}
+      if ('{{ request.user.is_authenticated }}' === 'True') {
+        if ('{{ request.user.is_tester }}' === 'True') {
+          document.getElementById("button-save-settings").addEventListener("click", saveSettings);
+          document.getElementById("button-clear-comparison-list").addEventListener("click", clearComparisonList);
+          document.getElementById("button-deny-rights").addEventListener("click", denyRights);
+        }
+        else {
+          document.getElementById("button-grant-rights").addEventListener("click", grantRights);
+        }
       }
       document.getElementById("button-refresh-page").addEventListener("click", refreshPage);
-
-      document.getElementById("searchselectid").addEventListener("change", getSelectValue);
-
+      if (document.getElementById("searchselectid")) {document.getElementById("searchselectid").addEventListener("change", getSelectValue);}
 
       {% if timerange %}
           var timerange = {{ timerange|safe }};

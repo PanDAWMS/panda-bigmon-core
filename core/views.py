@@ -33,11 +33,9 @@ from django.template.defaulttags import register
 from django.template.context_processors import csrf
 
 import core.constants as const
-import core.Customrenderer as Customrenderer
 from core.common.utils import getPrefix, getContextVariables
 from core.pandajob.SQLLookups import CastDate
-from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
-    CombinedWaitActDefArch4, PandaJob
+from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, PandaJob
 from core.schedresource.models import SchedconfigJson
 from core.common.models import Filestable4
 from core.common.models import Datasets
@@ -87,7 +85,6 @@ from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add
     job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, job_state_count, \
     getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode, clean_job_list, \
     add_files_info_to_jobs
-from core.libs.eventservice import job_suppression
 from core.libs.jobmetadata import addJobMetadata
 from core.libs.error import errorInfo, getErrorDescription, get_job_error_desc
 from core.libs.site import get_pq_metrics
@@ -103,9 +100,8 @@ from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.pandajob.summary_error import errorSummaryDict, get_error_message_summary
 from core.pandajob.summary_task import task_summary, job_summary_for_task, job_summary_for_task_light, \
     get_job_state_summary_for_tasklist, get_top_memory_consumers
-from core.pandajob.summary_site import cloud_site_summary, vo_summary, site_summary_dict
+from core.pandajob.summary_site import site_summary_dict
 from core.pandajob.summary_wn import wn_summary
-from core.pandajob.summary_os import objectstore_summary
 from core.pandajob.summary_user import user_summary_dict
 from core.pandajob.utils import job_summary_dict
 
@@ -197,21 +193,6 @@ def get_tk(input_dict, key):
 @register.filter(takes_context=True)
 def get_item(input_dict, key):
     return input_dict.get(key)
-
-
-@register.simple_tag(takes_context=True)
-def get_renderedrow(context, **kwargs):
-    if kwargs['type'] == "world_nucleussummary":
-        kwargs['statelist'] = statelist
-        return Customrenderer.world_nucleussummary(context, kwargs)
-
-    if kwargs['type'] == "world_computingsitesummary":
-        kwargs['statelist'] = statelist
-        return Customrenderer.world_computingsitesummary(context, kwargs)
-
-    if kwargs['type'] == "region_sitesummary":
-        kwargs['statelist'] = statelist
-        return Customrenderer.region_sitesummary(context, kwargs)
 
 
 def initRequest(request, callselfmon=True):
@@ -342,7 +323,7 @@ def initRequest(request, callselfmon=True):
     requestParams = {}
     request.session['requestParams'] = requestParams
 
-    allowedemptyparams = ('json', 'snap', 'dt', 'dialogs', 'pandaids', 'workersstats', 'keephtml')
+    allowedemptyparams = ('json', 'snap', 'dt', 'dialogs', 'pandaids', 'workersstats')
     if request.method == 'POST':
         # check of POST request complete
         try:
@@ -824,8 +805,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['eventservice'] = 1
                         else:
                             query['eventservice'] = 0
+                    elif param == 'campaign':
+                        if not is_wildcards(request.session['requestParams'][param]):
+                            if ':' not in request.session['requestParams'][param]:
+                                query['campaign__icontains'] = request.session['requestParams'][param]
+                            else:
+                                query['campaign__iexact'] = request.session['requestParams'][param]
                     else:
-                        if (param not in wildSearchFields):
+                        if param not in wildSearchFields:
                             query[param] = request.session['requestParams'][param]
         else:
             if param == 'jobtype':
@@ -991,7 +978,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraQueryString = ''
 
     # wild cards handling
-    wildSearchFields = (set(wildSearchFields) & set(list(request.session['requestParams'].keys())))
+    wildSearchFields = (set(wildSearchFields) & set([x.split('__')[0] for x in request.session['requestParams'].keys()]))
     # filter out fields that already in query dict
     wildSearchFields1 = set()
     for currenfField in wildSearchFields:
@@ -1323,10 +1310,7 @@ def jobList(request, mode=None, param=None):
         wildCardExtension += ' AND ' + extraquery_tasks
 
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
-        data = {
-            'desc': 'Request token is not found or data is outdated. Please reload the original page.',
-        }
-        return render(request, 'message.html', data, content_type='text/html')
+        return error_response(request, message='Request token is not found or data is outdated. Please reload the original page.', status=204)
 
     jobs = []
 
@@ -1483,9 +1467,7 @@ def jobList(request, mode=None, param=None):
     files_attempts = []
     if fileid:
         if fileid and jeditaskid and datasetid:
-            fquery = {}
-            fquery['pandaid__in'] = [job['pandaid'] for job in jobs if len(jobs) > 0]
-            fquery['fileid'] = fileid
+            fquery = {'pandaid__in': [job['pandaid'] for job in jobs if len(jobs) > 0], 'fileid': fileid}
             files_attempts.extend(Filestable4.objects.filter(**fquery).values('pandaid', 'attemptnr'))
             files_attempts.extend(FilestableArch.objects.filter(**fquery).values('pandaid', 'attemptnr'))
             if len(files_attempts) > 0:
@@ -1990,7 +1972,7 @@ def descendentjoberrsinfo(request):
 
 @login_customrequired
 @csrf_exempt
-def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
+def jobInfo(request, pandaid=None, batchid=None):
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -2405,7 +2387,7 @@ def jobInfo(request, pandaid=None, batchid=None, p2=None, p3=None, p4=None):
         coreData = {}
         if jobparams:
             coreParams = re.match(
-                '.*PIPELINE_TASK=([a-zA-Z0-9]+).*PIPELINE_PROCESSINSTANCE\=([0-9]+).*PIPELINE_STREAM\=([0-9\.]+)',
+                '.*PIPELINE_TASK=([a-zA-Z0-9]+).*PIPELINE_PROCESSINSTANCE=([0-9]+).*PIPELINE_STREAM=([0-9.]+)',
                 jobparams)
             if coreParams:
                 coreData['pipelinetask'] = coreParams.group(1)
@@ -3565,311 +3547,21 @@ def dashboard(request, view='all'):
     if not valid:
         return response
 
-    is_json = is_json_request(request)
-    # if it is region|cloud view redirect to new dash
-    cloudview = 'region'
-    if 'cloudview' in request.session['requestParams']:
-        cloudview = request.session['requestParams']['cloudview']
-    if view == 'analysis':
-        cloudview = 'region'
-    elif view != 'production' and view != 'all':
-        cloudview = 'N/A'
-
-    if ('version' not in request.session['requestParams'] or request.session['requestParams']['version'] != 'old') \
-            and view in ('all', 'production', 'analysis') and cloudview in ('region', 'world') \
-            and 'es' not in request.session['requestParams'] and 'mode' not in request.session['requestParams'] \
-            and not is_json_request(request):
-        # do redirect
-        if cloudview == 'world':
-            return redirect('/dash/world/')
-        elif cloudview == 'region':
-            if view == 'production':
-                return redirect('/dash/region/?jobtype=prod&splitby=jobtype')
-            elif view == 'analysis':
-                return redirect('/dash/region/?jobtype=analy&splitby=jobtype')
-            elif view == 'all':
-                return redirect('/dash/region/')
-
-    data = getCacheEntry(request, "dashboard")
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        template = data['template']
-        response = render(request, template, data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-
-    taskdays = 3
-    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
-        VOMODE = 'atlas'
+    # do redirect
+    if 'cloudview' in request.session['requestParams'] and request.session['requestParams']['cloudview'] == 'world':
+        return redirect('/dash/world/')
     else:
-        VOMODE = ''
-    if VOMODE != 'atlas':
-        hours = 24 * taskdays
-    else:
-        hours = 12
+        if view == 'production':
+            return redirect('/dash/region/?jobtype=prod&splitby=jobtype')
+        elif view == 'analysis':
+            return redirect('/dash/region/?jobtype=analy&splitby=jobtype')
 
-    hoursSinceUpdate = 36
-    estailtojobslinks = ''
-    extra = "(1=1)"
-    if view == 'production':
-        if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
-            extra = "(not eventservice is null and eventservice in (1, 5) and not specialhandling like '%%sc:%%')"
-            estailtojobslinks = '&eventservice=eventservice'
-        elif 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
-            extra = "(not (not eventservice is null and eventservice in (1, 5) and not specialhandling like '%%sc:%%'))"
-        elif 'esmerge' in request.session['requestParams'] and request.session['requestParams']['esmerge'].upper() == 'TRUE':
-            extra = "(not eventservice is null and eventservice=2 and not specialhandling like '%%sc:%%')"
-            estailtojobslinks = '&eventservice=2'
-        noldtransjobs, transclouds, transrclouds = stateNotUpdated(request, state='transferring',
-                                                                   hoursSinceUpdate=hoursSinceUpdate, count=True,
-                                                                   wildCardExtension=extra)
-    elif view == 'analysis':
-        hours = 3
-        noldtransjobs = 0
-        transclouds = []
-        transrclouds = []
-    else:
-        hours = 12
-        noldtransjobs = 0
-        transclouds = []
-        transrclouds = []
-
-    errthreshold = 10
-    query = setupView(request, hours=hours, limit=999999, opmode=view)
-
-    # this is decommissioned -> return error message
+    # task view is decommissioned -> return error message
     if 'mode' in request.session['requestParams'] and request.session['requestParams']['mode'] == 'task':
-        err_message = 'This view was decommissioned!'
-        if is_json_request(request):
-            return JsonResponse({'error': err_message}, safe=False)
-        else:
-            data = {
-                'request': request,
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'warning': err_message,
-            }
-            response = render(request, 'dashboard.html', data, content_type='text/html')
-            return response
+        return error_response(request, message='This view was decommissioned!')
 
-    if VOMODE != 'atlas':
-        sortby = 'name'
-        if 'sortby' in request.session['requestParams']:
-            sortby = request.session['requestParams']['sortby']
-        vosummary = vo_summary(query, sortby=sortby)
+    return redirect('/dash/region/')
 
-    else:
-        if view == 'production':
-            errthreshold = 5
-        elif view == 'analysis':
-            errthreshold = 15
-        else:
-            errthreshold = 10
-        vosummary = []
-
-    if view == 'production' and (
-            cloudview == 'world' or cloudview == 'cloud'):  # cloud view is the old way of jobs distributing;
-        # just to avoid redirecting
-        if 'modificationtime__castdate__range' in query:
-            query = {'modificationtime__castdate__range': query['modificationtime__castdate__range']}
-        else:
-            query = {}
-        values = ['nucleus', 'computingsite', 'jobstatus']
-        worldJobsSummary = []
-        estailtojobslinks = ''
-
-        if 'days' in request.session['requestParams']:
-            hours = int(request.session['requestParams']['days']) * 24
-        if 'hours' in request.session['requestParams']:
-            hours = int(request.session['requestParams']['hours'])
-
-        extra = '(1=1)'
-
-        if view == 'production':
-            query['tasktype'] = 'prod'
-        elif view == 'analysis':
-            query['tasktype'] = 'anal'
-
-        if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'TRUE':
-            query['es__in'] = [1, 5]
-            estailtojobslinks = '&eventservice=eventservice|cojumbo'
-            extra = job_suppression(request)
-
-        if 'es' in request.session['requestParams'] and request.session['requestParams']['es'].upper() == 'FALSE':
-            query['es'] = 0
-
-        # This is done for compartibility with /jobs/ results
-        excludedTimeQuery = copy.deepcopy(query)
-        jobsarch4statuses = ['finished', 'failed', 'cancelled', 'closed']
-        if ('modificationtime__castdate__range' in excludedTimeQuery and not 'date_to' in request.session[
-            'requestParams']):
-            del excludedTimeQuery['modificationtime__castdate__range']
-        worldJobsSummary.extend(
-            CombinedWaitActDefArch4.objects.filter(**excludedTimeQuery).values(*values).extra(where=[extra]).exclude(
-                isarchive=1).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
-        worldJobsSummary.extend(
-            CombinedWaitActDefArch4.objects.filter(**query).values(*values).extra(where=[extra]).exclude(
-                isarchive=0).annotate(countjobsinstate=Count('jobstatus')).annotate(counteventsinstate=Sum('nevents')))
-        nucleus = {}
-        statelist1 = statelist
-        if len(worldJobsSummary) > 0:
-            for jobs in worldJobsSummary:
-                if jobs['nucleus'] in nucleus:
-                    if jobs['computingsite'] in nucleus[jobs['nucleus']]:
-                        nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] += jobs['countjobsinstate']
-                        if jobs['jobstatus'] in ('finished', 'failed', 'merging'):
-                            nucleus[jobs['nucleus']][jobs['computingsite']]['events' + jobs['jobstatus']] += jobs[
-                                'counteventsinstate']
-
-                    else:
-                        nucleus[jobs['nucleus']][jobs['computingsite']] = {}
-                        for state in statelist1:
-                            nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
-                            if state in ('finished', 'failed', 'merging'):
-                                nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = 0
-
-                        nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
-                        if state in ('finished', 'failed', 'merging'):
-                            nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = jobs[
-                                'counteventsinstate']
-                else:
-                    nucleus[jobs['nucleus']] = {}
-                    nucleus[jobs['nucleus']][jobs['computingsite']] = {}
-                    for state in statelist1:
-                        nucleus[jobs['nucleus']][jobs['computingsite']][state] = 0
-                        if state in ('finished', 'failed', 'merging'):
-                            nucleus[jobs['nucleus']][jobs['computingsite']]['events' + state] = 0
-
-                    nucleus[jobs['nucleus']][jobs['computingsite']][jobs['jobstatus']] = jobs['countjobsinstate']
-                    if state in ('finished', 'failed', 'merging'):
-                        nucleus[jobs['nucleus']][jobs['computingsite']]['events' + jobs['jobstatus']] = jobs[
-                            'counteventsinstate']
-
-        nucleusSummary = {}
-        for nucleusInfo in nucleus:
-            nucleusSummary[nucleusInfo] = {}
-            for site in nucleus[nucleusInfo]:
-                for state in nucleus[nucleusInfo][site]:
-                    if state in nucleusSummary[nucleusInfo]:
-                        nucleusSummary[nucleusInfo][state] += nucleus[nucleusInfo][site][state]
-                    else:
-                        nucleusSummary[nucleusInfo][state] = nucleus[nucleusInfo][site][state]
-
-        if not is_json_request(request):
-            xurl = extensibleURL(request)
-            nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-            if 'TFIRST' in request.session: del request.session['TFIRST']
-            if 'TLAST' in request.session: del request.session['TLAST']
-            data = {
-                'request': request,
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'url': request.path,
-                'nucleuses': nucleus,
-                'nucleussummary': nucleusSummary,
-                'statelist': statelist1,
-                'xurl': xurl,
-                'estailtojobslinks': estailtojobslinks,
-                'nosorturl': nosorturl,
-                'user': None,
-                'hours': hours,
-                'template': 'worldjobs.html',
-                'built': datetime.now().strftime("%m-%d %H:%M:%S"),
-            }
-            # self monitor
-            response = render(request, 'worldjobs.html', data, content_type='text/html')
-            setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 30)
-            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-            return response
-        else:
-            data = {
-                'nucleuses': nucleus,
-                'nucleussummary': nucleusSummary,
-                'statelist': statelist1,
-            }
-        return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-
-    elif view == 'objectstore':
-
-        mObjectStores, mObjectStoresSummary = objectstore_summary(request, hours=hours)
-        data = {
-            'mObjectStoresSummary': mObjectStoresSummary,
-            'mObjectStores': mObjectStores,
-            'viewParams': request.session['viewParams'],
-            'statelist': sitestatelist + ["closed"],
-            'template': 'dashObjectStore.html',
-            'built': datetime.now().strftime("%m-%d %H:%M:%S"),
-        }
-        response = render(request, 'dashObjectStore.html', data, content_type='text/html')
-        setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 25)
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-
-    else:
-
-        notime = True
-        if len({'date_to', 'hours'}.intersection(request.session['requestParams'].keys())) > 0:
-            notime = False
-
-        fullsummary = cloud_site_summary(query, extra=extra, view=view, cloudview=cloudview, notime=notime)
-
-        if not is_json_request(request) or 'keephtml' in request.session['requestParams']:
-            xurl = extensibleURL(request)
-            nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-            del request.session['TFIRST']
-            del request.session['TLAST']
-            data = {
-                'request': request,
-                'viewParams': request.session['viewParams'],
-                'requestParams': request.session['requestParams'],
-                'url': request.path,
-                'xurl': xurl,
-                'nosorturl': nosorturl,
-                'user': None,
-                'summary': fullsummary,
-                'vosummary': vosummary,
-                'view': view,
-                'mode': 'site',
-                'cloudview': cloudview,
-                'hours': hours,
-                'errthreshold': errthreshold,
-                'taskstates': taskstatedict,
-                'taskdays': taskdays,
-                'estailtojobslinks': estailtojobslinks,
-                'noldtransjobs': noldtransjobs,
-                'transclouds': transclouds,
-                'transrclouds': transrclouds,
-                'hoursSinceUpdate': hoursSinceUpdate,
-                'template': 'dashboard.html',
-                'built': datetime.now().strftime("%H:%M:%S"),
-            }
-            response = render(request, 'dashboard.html', data, content_type='text/html')
-            setCacheEntry(request, "dashboard", json.dumps(data, cls=DateEncoder), 60 * 60)
-            patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-            return response
-        else:
-            del request.session['TFIRST']
-            del request.session['TLAST']
-
-            data = {
-                'summary': fullsummary,
-                'vosummary': vosummary,
-                'view': view,
-                'mode': 'site',
-                'cloudview': cloudview,
-                'hours': hours,
-                'errthreshold': errthreshold,
-                'taskstates': taskstatedict,
-                'taskdays': taskdays,
-                'noldtransjobs': noldtransjobs,
-                'transclouds': transclouds,
-                'transrclouds': transrclouds,
-                'hoursSinceUpdate': hoursSinceUpdate,
-                'built': datetime.now().strftime("%H:%M:%S"),
-            }
-
-            return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
 @login_customrequired
@@ -4213,11 +3905,6 @@ def dashAnalysis(request):
 @login_customrequired
 def dashProduction(request):
     return dashboard(request, view='production')
-
-
-@login_customrequired
-def dashObjectStore(request):
-    return dashboard(request, view='objectstore')
 
 
 def taskESExtendedInfo(request):
@@ -4802,79 +4489,47 @@ def getErrorSummaryForEvents(request):
     return response
 
 
-def taskprofileplot(request):
-    jeditaskid = 0
-    if 'jeditaskid' in request.GET: jeditaskid = int(request.GET['jeditaskid'])
-    image = None
-    if jeditaskid != 0:
-        dp = TaskProgressPlot()
-        image = dp.get_task_profile(taskid=jeditaskid)
-    if image is not None:
-        return HttpResponse(image, content_type="image/png")
-    else:
-        return HttpResponse('')
-        # response = HttpResponse(content_type="image/jpeg")
-        # red.save(response, "JPEG")
-        # return response
-
-
-def taskESprofileplot(request):
-    jeditaskid = 0
-    if 'jeditaskid' in request.GET: jeditaskid = int(request.GET['jeditaskid'])
-    image = None
-    if jeditaskid != 0:
-        dp = TaskProgressPlot()
-        image = dp.get_es_task_profile(taskid=jeditaskid)
-    if image is not None:
-        return HttpResponse(image, content_type="image/png")
-    else:
-        return HttpResponse('')
-        # response = HttpResponse(content_type="image/jpeg")
-        # red.save(response, "JPEG")
-        # return response
-
-
 @login_customrequired
-def taskProfile(request, jeditaskid=0):
+def taskProfile(request, jeditaskid=None):
     """A wrapper page for task profile plot"""
     valid, response = initRequest(request)
     if not valid:
         return response
 
+    if jeditaskid is None and 'jeditaskid' in request.session['requestParams']:
+        jeditaskid = request.session['requestParams']['jeditaskid']
     try:
         jeditaskid = int(jeditaskid)
     except ValueError:
         msg = 'Provided jeditaskid: {} is not valid, it must be numerical'.format(jeditaskid)
-        _logger.exception(msg)
-        response = HttpResponse(json.dumps(msg), status=400)
+        return error_response(request, message=msg, status=400)
 
-    if jeditaskid > 0:
-        task_profile = TaskProgressPlot()
-        task_profile_start = task_profile.get_task_start(taskid=jeditaskid)
-        if 'starttime' in task_profile_start:
-            request.session['viewParams']['selection'] = ', started at ' + task_profile_start['starttime'].strftime(
-                settings.DATETIME_FORMAT)
-        else:
-            msg = 'A task with provided jeditaskid does not exist'.format(jeditaskid)
-            _logger.exception(msg)
-            response = HttpResponse(json.dumps(msg), status=400)
+    task_profile = TaskProgressPlot(jeditaskid)
+    task = task_profile.get_task_info()
+    if task and isinstance(task['starttime'], datetime):
+        request.session['viewParams']['selection'] = f', started at {task['starttime'].strftime(settings.DATETIME_FORMAT)}'
+    elif task and isinstance(task['creationdate'], datetime):
+        request.session['viewParams']['selection'] = f', created at {task['creationdate'].strftime(settings.DATETIME_FORMAT)}'
+        task['starttime'] = task['creationdate']
     else:
-        msg = 'Not valid jeditaskid provided: {}'.format(jeditaskid)
-        _logger.exception(msg)
-        response = HttpResponse(json.dumps(msg), status=400)
+        msg = 'A task with provided jeditaskid does not exist'.format(jeditaskid)
+        return error_response(request, message=msg, status=400)
+
+    # datetime -> str for template
+    task = stringify_datetime_fields(task, JediTasks)[0]
 
     data = {
         'request': request,
         'requestParams': request.session['requestParams'],
         'viewParams': request.session['viewParams'],
         'jeditaskid': jeditaskid,
+        'task': task,
     }
-    response = render(request, 'taskProgressMonitor.html', data, content_type='text/html')
+    response = render(request, 'taskProfile.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
-# @login_customrequired
 @never_cache
 def taskProfileData(request, jeditaskid=0):
     """A view that returns data for task profile plot"""
@@ -4886,14 +4541,18 @@ def taskProfileData(request, jeditaskid=0):
         jeditaskid = int(jeditaskid)
     except ValueError:
         msg = 'Provided jeditaskid: {} is not valid, it must be numerical'.format(jeditaskid)
-        _logger.exception(msg)
-        response = HttpResponse(json.dumps(msg), status=400)
+        return error_response(request, message=msg, status=400)
 
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype']:
         request_job_types = request.session['requestParams']['jobtype'].split(',')
     else:
         request_job_types = None
     if 'jobstatus' in request.session['requestParams'] and request.session['requestParams']['jobstatus']:
+        # replace active with list of real job states
+        if 'active' in request.session['requestParams']['jobstatus']:
+            request.session['requestParams']['jobstatus'] = request.session['requestParams']['jobstatus'].replace(
+                'active',
+                ','.join(list(set(const.JOB_STATES) - set(const.JOB_STATES_FINAL))))
         request_job_states = request.session['requestParams']['jobstatus'].split(',')
     else:
         request_job_states = None
@@ -4903,86 +4562,15 @@ def taskProfileData(request, jeditaskid=0):
         request_progress_unit = 'jobs'
 
     # get raw profile data
-    if jeditaskid > 0:
-        task_profile = TaskProgressPlot()
-        task_profile_dict = task_profile.get_raw_task_profile_full(
-            taskid=jeditaskid,
-            jobstatus=request_job_states,
-            category=request_job_types
-        )
-    else:
-        msg = 'Not valid jeditaskid provided: {}'.format(jeditaskid)
-        _logger.exception(msg)
-        response = HttpResponse(json.dumps(msg), status=400)
+    task_profile = TaskProgressPlot(jeditaskid)
+    task_profile_data = task_profile.prepare_plot_data(
+        jobstatus=request_job_states,
+        category=request_job_types,
+        progress_unit=request_progress_unit
+    )
+    task_attempts_data = task_profile.prepare_attempts_data()
 
-    # convert raw data to format acceptable by chart.js library
-    job_time_names = ['end', 'start', 'creation']
-    job_types = ['build', 'run', 'merge']
-    job_states = ['finished', 'failed', 'closed', 'cancelled']
-    colors = {
-        'creation': {'finished': 'RGBA(162,198,110,1)', 'failed': 'RGBA(255,176,176,1)',
-                     'closed': 'RGBA(214,214,214,1)', 'cancelled': 'RGBA(255,227,177,1)'},
-        'start': {'finished': 'RGBA(70,181,117,0.8)', 'failed': 'RGBA(235,0,0,0.8)',
-                  'closed': 'RGBA(100,100,100,0.8)', 'cancelled': 'RGBA(255,165,0,0.8)'},
-        'end': {'finished': 'RGBA(2,115,0,0.8)', 'failed': 'RGBA(137,0,0,0.8)',
-                'closed': 'RGBA(0,0,0,0.8)', 'cancelled': 'RGBA(157,102,0,0.8)'},
-    }
-    markers = {'build': 'triangle', 'run': 'circle', 'merge': 'crossRot'}
-    order_mpx = {
-        'creation': 1,
-        'start': 2,
-        'end': 3,
-        'finished': 7,
-        'failed': 6,
-        'closed': 5,
-        'cancelled': 4,
-    }
-    order_dict = {}
-    for jtn in job_time_names:
-        for js in job_states:
-            order_dict[jtn + '_' + js] = order_mpx[js] * order_mpx[jtn]
-
-    task_profile_data_dict = {}
-    for jt in job_types:
-        if len(task_profile_dict[jt]) > 0:
-            for js in list(set(job_states) & set([r['jobstatus'] for r in task_profile_dict[jt]])):
-                for jtmn in job_time_names:
-                    task_profile_data_dict['_'.join((jtmn, js, jt))] = {
-                        'name': '_'.join((jtmn, js, jt)),
-                        'label': jtmn.capitalize() + ' time of a ' + js + ' ' + jt + ' job',
-                        'pointRadius': round(1 + 3.0 * math.exp(-0.0004 * len(task_profile_dict[jt]))),
-                        'backgroundColor': colors[jtmn][js],
-                        'borderColor': colors[jtmn][js],
-                        'pointStyle': markers[jt],
-                        'data': [],
-                    }
-
-    for jt in job_types:
-        if jt in task_profile_dict:
-            rdata = task_profile_dict[jt]
-            for r in rdata:
-                for jtn in job_time_names:
-                    task_profile_data_dict['_'.join((jtn, r['jobstatus'], jt))]['data'].append({
-                        't': r[jtn].strftime(settings.DATETIME_FORMAT),
-                        'y': r['indx'] if request_progress_unit == 'jobs' else r['nevents'],
-                        'label': r['pandaid'],
-                    })
-
-    # deleting point groups if data is empty
-    group_to_remove = []
-    for group in task_profile_data_dict:
-        if len(task_profile_data_dict[group]['data']) == 0:
-            group_to_remove.append(group)
-    for group in group_to_remove:
-        try:
-            del task_profile_data_dict[group]
-        except:
-            _logger.info('failed to remove key from dict')
-
-    # dict -> list
-    task_profile_data = [v for k, v in task_profile_data_dict.items()]
-
-    data = {'plotData': task_profile_data, 'error': ''}
+    data = {'plotData': task_profile_data, 'annotations': task_attempts_data, 'error': ''}
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
@@ -6514,7 +6102,8 @@ def esatlasPandaLogger(request):
 @login_customrequired
 def datasetInfo(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     setupView(request, hours=365 * 24, limit=999999999)
     query = {}
     dsets = []

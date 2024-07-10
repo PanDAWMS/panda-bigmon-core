@@ -401,6 +401,21 @@ class TasksStatusLog(models.Model):
         app_label = 'jedi'
 
 
+class TaskAttempts(models.Model):
+    """
+    Task attempts
+    """
+    jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
+    attemptnr = models.IntegerField(db_column='attemptnr', primary_key=True)
+    starttime = models.DateTimeField(db_column='starttime', blank=True)
+    endtime = models.DateTimeField(db_column='endtime', blank=True)
+    startstatus = models.CharField(max_length=32, db_column='startstatus', blank=True)
+    endstatus = models.CharField(max_length=32, db_column='endstatus', blank=True)
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."task_attempts"'
+        app_label = 'jedi'
+
+
 class ResourceTypes(models.Model):
     resource_name= models.CharField(max_length=56, db_column='resource_name', primary_key=True)
     mincore = models.IntegerField(db_column='mincore')
@@ -532,22 +547,6 @@ class Metrics(models.Model):
         unique_together = ('computingsite', 'gshare')
 
 
-class Pandalog(models.Model):
-    bintime = models.DateTimeField(db_column='bintime', primary_key=True)
-    name = models.CharField(max_length=90, db_column='name', blank=True)
-    module = models.CharField(max_length=90, db_column='module', blank=True)
-    loguser = models.CharField(max_length=240, db_column='loguser', blank=True)
-    type = models.CharField(max_length=60, db_column='type', blank=True)
-    pid = models.BigIntegerField(db_column='pid')
-    loglevel = models.IntegerField(db_column='loglevel')
-    levelname = models.CharField(max_length=90, db_column='levelname', blank=True)
-    time = models.CharField(max_length=90, db_column='time', blank=True)
-    filename = models.CharField(max_length=300, db_column='filename', blank=True)
-    line = models.IntegerField(db_column='line')
-    message = models.CharField(max_length=12000, db_column='message', blank=True)
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA}"."pandalog"'
-        app_label = 'panda'
 
 
 class RucioAccounts(models.Model):

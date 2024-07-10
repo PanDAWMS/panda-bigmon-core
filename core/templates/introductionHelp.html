@@ -1,3 +1,4 @@
+{% load static %}
 <div class="card bp-container-simple help">
 <div class="card-divider"><p>Help:</p></div>
 <div class="card-section">
@@ -32,8 +33,9 @@ If you need to use PanDA data programmatically, json dumps are available.
 <p>
 Send your suggestions and requests for the PanDA monitor to <a href="mailto:atlas-adc-pandamon-support@cern.ch">PanDA monitor support</a>.</p>
 {% if viewParams.MON_VO == 'ATLAS' %}
-  <p>Problem reports for which you want assistance ASAP should be sent (as ever) to <b>the distributed analysis support team (DAST)</b> list,
-    <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">hn-atlas-dist-analysis-help@cern.ch</a>, not the monitor support list.</p>
+  <p>Problem reports for which you want assistance ASAP should be sent (as ever) to <b>the distributed analysis support team (DAST)</b>, not the monitor support.
+    You are welcome to open a topic at the <a target="_blank" href="https://atlas-talk.web.cern.ch/c/distributed-computing-help">ATLAS talk</a> 
+    or drop an email to DAST experts list: <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">hn-atlas-dist-analysis-help@cern.ch</a></p>
 {% endif %}
 
 
@@ -45,7 +47,7 @@ JEDI documentation can be found <a href="https://panda-wms.readthedocs.io/en/lat
 {% if viewParams.MON_VO == 'ATLAS' %}
 
 <p>
-Use the <a href="https://groups.cern.ch/group/hn-atlas-dist-analysis-help">hn-atlas-dist-analysis-help e-group</a>
+Use the <a target="_blank" href="https://atlas-talk.web.cern.ch/c/distributed-computing-help">ATLAS talk</a> 
   to learn about distributed analysis problems and their reported solutions and to report problems of your own.
 </p>
 

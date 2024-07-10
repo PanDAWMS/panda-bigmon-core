@@ -16,8 +16,7 @@ var colors = [
         "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
         "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
 
-function prepare_scatter_chart(datasets, options) {
-
+function prepare_scatter_chart(datasets, options, annotations) {
   var timeFormat = 'YYYY-MM-DD HH:mm:ss';
   var config = {
     type: 'scatter',
@@ -26,7 +25,7 @@ function prepare_scatter_chart(datasets, options) {
     },
     options: {
       scales: {
-        xAxes: [{
+        x: {
           type: 'time',
           time: {
             parser: timeFormat,
@@ -34,33 +33,66 @@ function prepare_scatter_chart(datasets, options) {
               hour: 'll hA'
             }
           },
-          scaleLabel: {
+          suggestedMin: options.xmin,
+          suggestedMax: options.xmax,
+          title: {
             display: true,
-            labelString: 'Time, UTC'
+            text: 'Time, UTC'
           },
           ticks: {
             source: 'auto'
           }
-        }],
-        yAxes: [{
-          scaleLabel: {
+        },
+        y: {
+          title: {
             display: true,
-            labelString: options.ylabel,
+            text: options.ylabel,
           },
-        }],
+          suggestedMax: options.ymax,
+        },
       },
-      legend: {
-        display: true,
-        labels: {
-          usePointStyle: true,
-        }
+      plugins: {
+        legend: {
+          display: true,
+          labels: {
+            usePointStyle: true,
+          }
+        },
+        tooltip: {
+          enabled: true,
+          mode: 'point',
+          yAlign: 'top',
+          position: 'nearest',
+          caretPadding: 5,
+          callbacks: {
+            title: (tooltipItems) => {
+                var title = tooltipItems[0].raw.x  || '';
+                if (title) {
+                    title = 'Time: ' + title + ' UTC';
+                }
+                return title;
+            },
+            label: (tooltipItems) => {
+              let dslabel = '';
+              if (tooltipItems.constructor === Array ) {
+                tooltipItems.forEach((tooltipItem) => {
+                  dslabel += ' ' + tooltipItem.dataset.label + ', pandaid: ' + tooltipItem.raw.label;
+                });
+              }
+              else {
+                dslabel = ' ' + tooltipItems.dataset.label + ', pandaid: ' + tooltipItems.raw.label;
+              }
+              return dslabel;
+            },
+          },
+        },
       },
       layout: {
         padding: {
           left: 0,
           right: 20,
           top: 0,
-          bottom: 100
+          bottom: 80
         }
       },
       events: ['click', 'mousemove'],
@@ -73,34 +105,14 @@ function prepare_scatter_chart(datasets, options) {
       },
       responsiveAnimationDuration: 0, // animation duration after a resize
       responsive: false,
-      tooltips: {
-        enabled: true,
-        mode: 'point',
-        yAlign: 'top',
-        position: 'nearest',
-        caretPadding: 5,
-        callbacks: {
-          title: function(tooltipItem, data) {
-              var title = tooltipItem[0].label  || '';
-
-              if (title) {
-                  title = 'Time: ' + title + ' UTC';
-              }
-              return title;
-          },
-          label: function(tooltipItem, data) {
-              var label = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].label || '';
-              var dslabel = data.datasets[tooltipItem.datasetIndex].label || '';
-              if (label && dslabel) {
-                  dslabel += ', pandaid: ' + label;
-              }
-              return dslabel;
-          },
-        },
-      },
     }
   };
 
+  if (annotations) {
+    config.options.plugins.annotation = {
+      annotations: annotations,
+    }
+  }
   return config
 
 }
