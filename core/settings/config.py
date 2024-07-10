@@ -3,6 +3,7 @@ from os.path import dirname, join
 
 from core import filebrowser, admin
 from core.settings.local import MY_SECRET_KEY, LOG_ROOT
+from core.settings.CustomFormatter import CustomFormatter
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -139,8 +140,6 @@ if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA'):
     try:
         import oracledb
         oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
-    except oracledb.exceptions.DatabaseError as e:
-        _logger.error(f"Failed to initialize Oracle Client: {e}")
     except Exception as e:
         _logger.error(f"An unexpected error occurred: {e}")
 
@@ -260,6 +259,7 @@ if DEBUG is True:
     LOG_LEVEL = 'DEBUG'
 
 LOG_SIZE = 100000000
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -306,7 +306,7 @@ LOGGING = {
             'filename': LOG_ROOT + "/logfile.error",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
-            'formatter': 'verbose',
+            'formatter': 'custom',
         },
         'logfile-filebrowser': {
             'level': LOG_LEVEL,
@@ -357,7 +357,7 @@ LOGGING = {
             'level': LOG_LEVEL,
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-            'formatter': 'full'
+            'formatter': 'custom'
         },
     },
     'loggers': {
@@ -381,7 +381,7 @@ LOGGING = {
             'level': LOG_LEVEL,
         },
         'bigpandamon-error': {
-            'handlers': ['logfile-error'],
+            'handlers': ['logfile-error', 'console'],
             'level': 'ERROR',
         },
         'bigpandamon-art': {
@@ -408,6 +408,10 @@ LOGGING = {
             'style': '{',
         },
         'verbose': {
+            'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
+        },
+        'custom': {
+            '()': CustomFormatter,
             'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
         },
         'simple': {
