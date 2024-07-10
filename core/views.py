@@ -4516,10 +4516,11 @@ def taskProfile(request, jeditaskid=None):
 
     task_profile = TaskProgressPlot(jeditaskid)
     task = task_profile.get_task_info()
-    if task and isinstance(task['starttime'], datetime):
-        request.session['viewParams']['selection'] = f', started at {task['starttime'].strftime(settings.DATETIME_FORMAT)}'
-    elif task and isinstance(task['creationdate'], datetime):
-        request.session['viewParams']['selection'] = f', created at {task['creationdate'].strftime(settings.DATETIME_FORMAT)}'
+
+    if task and 'starttime' in task and isinstance(task['starttime'], datetime):
+        request.session['viewParams']['selection'] = f', started at {task["starttime"].strftime(settings.DATETIME_FORMAT)}'
+    elif task and 'creationdate' in task and isinstance(task['creationdate'], datetime):
+        request.session['viewParams']['selection'] = f', created at {task["creationdate"].strftime(settings.DATETIME_FORMAT)}'
         task['starttime'] = task['creationdate']
     else:
         msg = 'A task with provided jeditaskid does not exist'.format(jeditaskid)
@@ -4578,9 +4579,9 @@ def taskProfileData(request, jeditaskid=0):
         category=request_job_types,
         progress_unit=request_progress_unit
     )
-    task_attempts_data = task_profile.prepare_attempts_data()
+    task_annotations_data = task_profile.prepare_annotation_data()
 
-    data = {'plotData': task_profile_data, 'annotations': task_attempts_data, 'error': ''}
+    data = {'plotData': task_profile_data, 'annotations': task_annotations_data, 'error': ''}
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
