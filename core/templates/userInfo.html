@@ -124,7 +124,7 @@
 <tr class='tablesection'>
 	<th><a href="{{nosorturl}}#tasks">ID</a><br>Parent</th>
     <th>Jobset</th>
-	<th><a href="{{nosorturl}}sortby=taskname#tasks">Task name</a><br>TaskType/ProcessingType     Campaign     Group     User {% if requestParams.tasktype == 'prod' %}     TrackerLink {% endif %}<br><font color='brown'>Logged status</font></th>
+	<th><a href="{{nosorturl}}sortby=taskname#tasks">Task name</a><br>TaskType/ProcessingType     Campaign     Group     User <br><font color='brown'>Logged status</font></th>
 	<th>Task status<br><a href="{{nosorturl}}sortby=nfiles#tasks">Nfiles</a></th>
 	<th>Input files <br><a href="{{nosorturl}}sortby=pctfinished#tasks"><span class='finished'>finish%</span></a> <a href="{{nosorturl}}sortby=pctfailed#tasks"><span class='failed'>fail%</span></a>
 <br>	<a href="{{nosorturl}}sortby=pctfinished#tasks"><span class='finished'>Nfinish</span></a> <a href="{{nosorturl}}sortby=pctfailed#tasks"><span class='failed'>Nfail</span></a>
@@ -142,7 +142,7 @@
 			{% endif %}
 		</td>
 		<td>{{ task.reqid }} </td>
-		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %}     <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}     {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> {% if task.ticketid %}     <a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}"> {% if task.ticketsystemtype %}{{ task.ticketsystemtype }} {% else %} JIRA {% endif %}</a> {% endif %} <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
+		<td><font size=-1><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}{% if task.processingtype %}/{{ task.processingtype }} {% endif %} {% if task.campaign %}     <a href='/tasks/?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}     {% if task.workinggroup %} <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}  <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></font> <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
 		<td  {% if task.scoutinghascritfailures == True %} class='broken_fill'
              {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
              {% else %} class='{{task.superstatus}}_fill'

@@ -69,7 +69,7 @@ from core.utils import is_json_request, extensibleURL, complete_request, is_wild
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
-    get_prod_slice_by_taskid
+    get_prod_slice_by_taskid, get_prod_request_info
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
 from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, \
     convert_grams
@@ -4139,9 +4139,19 @@ def taskList(request):
         if 'display_limit' in request.session['requestParams']:
             n_tasks_to_show = int(request.session['requestParams']['display_limit'])
         tasks = tasks[:n_tasks_to_show]
+
         # add idds info to tasks if not ATLAS deployment
         if 'ATLAS' not in settings.DEPLOYMENT and 'core.iDDS' in settings.INSTALLED_APPS:
             tasks = add_idds_info_to_tasks(tasks)
+
+        # get reference and link to JIRA for ATLAS prod tasks
+        if "ATLAS" in settings.DEPLOYMENT and any([t['tasktype'] == 'prod' for t in tasks]):
+            reqs = get_prod_request_info([t['reqid'] for t in tasks if t['tasktype'] == 'prod'], params=['reqid', 'reference_link'])
+            if len(reqs) > 0:
+                reqs_dict = {r['reqid']: r for r in reqs}
+                for t in tasks:
+                    t['reference_link'] = reqs_dict[t['reqid']]['reference_link'] if t['tasktype'] == 'prod' and t['reqid'] in reqs_dict else None
+
         tasks = stringify_datetime_fields(tasks, JediTasks)
 
         del request.session['TFIRST']
@@ -4968,6 +4978,13 @@ def taskInfo(request, jeditaskid=0):
 
     outctrs.extend(
         list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
+
+    # get reference and link to JIRA for ATLAS prod tasks
+    if "ATLAS" in settings.DEPLOYMENT and taskrec['tasktype'] == 'prod':
+        reqs = get_prod_request_info([taskrec['reqid'],], params=['reqid', 'reference_link'])
+        if len(reqs) > 0:
+            taskrec['reference_link'] = reqs[0]['reference_link']
+
     # get dataset locality
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         dataset_locality = get_dataset_locality(jeditaskid)
@@ -5048,12 +5065,6 @@ def taskInfo(request, jeditaskid=0):
                 if itn in idds_info and isinstance(idds_info[itn], datetime):
                     idds_info[itn] = idds_info[itn].strftime(settings.DATETIME_FORMAT)
             taskrec['idds_info'] = idds_info
-
-        if 'ticketsystemtype' in taskrec and taskrec['ticketsystemtype'] == '' and taskparams is not None:
-            if 'ticketID' in taskparams:
-                taskrec['ticketid'] = taskparams['ticketID']
-            if 'ticketSystemType' in taskparams:
-                taskrec['ticketsystemtype'] = taskparams['ticketSystemType']
 
         if 'creationdate' in taskrec:
             taskrec['kibanatimefrom'] = taskrec['creationdate'].strftime("%Y-%m-%dT%H:%M:%SZ")
