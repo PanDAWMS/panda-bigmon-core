@@ -3,11 +3,6 @@
 <div class="card-divider"><p>Job summary region view:</p></div>
 <div class="card-section">
   <p><a href="{% url 'dashRegion' %}">This page</a> summarizes recent job status for regions and queues. The time limit is not applied for jobs in active states.</p>
-  <p>The old one is still available, via the links:
-    <a class="blacklink" href="{% url 'dashboard' %}?version=old"><b>all</b></a>,
-    <a class="blacklink" href="{% url 'dashProduction' %}?version=old"><b>production</b></a>,
-    <a class="blacklink" href="{% url 'dashAnalysis' %}?version=old"><b>analysis</b></a>. But it will be decommissioned soon.
-  </p>
   <p>Use <b>drop-down select menus</b> on top of the page to select particular queue type and status, job type and resource type.
     Use <b>Split by check boxes</b> to separate the region/site statistics by job and/or resource type.
       I.e. if you check the <b>split by job type</b> checkbox, you will get up to 2 rows in tables for each Region/PQ showing number of production and analysis jobs separately.

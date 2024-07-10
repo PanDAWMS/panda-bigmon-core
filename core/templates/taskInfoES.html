@@ -428,8 +428,6 @@
             <th>Modified</th>
             <th>Cores</th>
             <th>Priority</th>
-            {% if task.ticketid %}
-                <th>Tracker</th> {% endif %}
         </tr>
         <tr>
             <td>
@@ -491,9 +489,6 @@
             <td>{{ task.modificationtime }}</td>
             <td>{{ task.corecount }}</td>
             <td>{{ task.taskpriority }}</td>
-            {% if task.ticketid %}
-                <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a>
-                </td>
             {% endif %}
         </tr>
     </table>

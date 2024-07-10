@@ -16,6 +16,8 @@ import core.pandajob.views_support as core_coremon_support_views
 app_name = "bigpandamon"
 
 urlpatterns = [
+    # legacy - means the url pattern is obsolete, and we redirect to a new one so bookmarks still work
+    # decommissioned - means this view was removed, and we return 404 error
     re_path(r'^$', coremon_views.mainPage, name='mainPage'),
     re_path(r'^$', coremon_views.mainPage, name='index'),
     re_path(r'^help/$', coremon_views.helpPage, name='helpPage'),
@@ -57,15 +59,14 @@ urlpatterns = [
     re_path(r'^ttc/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^taskchain/$', coremon_views.taskchain, name='taskchain'),
     re_path(r'^ganttTaskChain/$', coremon_views.ganttTaskChain, name='ganttTaskChain'),
-    re_path(r'^taskprofileplot/$', coremon_views.taskprofileplot, name='taskprofileplot'),  # legacy
-    re_path(r'^taskesprofileplot/$', coremon_views.taskESprofileplot, name='taskesprofileplot'),
+    re_path(r'^taskprofileplot/$', coremon_views.taskProfile, name='taskprofileplot'),  # legacy
+    re_path(r'^taskesprofileplot/$', coremon_views.taskProfile, name='taskesprofileplot'), # legacy
     re_path(r'^taskprofile/(?P<jeditaskid>.*)/$', coremon_views.taskProfile, name='taskProfileMonitor'),
     re_path(r'^taskprofiledata/(?P<jeditaskid>.*)/$', coremon_views.taskProfileData, name='getTaskProfilePlotData'),
     re_path(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
     re_path(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
     re_path(r'^taskflow/(?P<jeditaskid>.*)/$', coremon_views.taskFlowDiagram, name='taskFlowDiagram'),
     re_path(r'^api/taskdatamovement/(?P<jeditaskid>.*)/$', coremon_views.getTaskDataMovementData, name='taskdatamovement'),
-
 
     re_path(r'^errors/$', coremon_views.errorSummary, name='errorSummary'),
     re_path(r'^incidents/$', coremon_views.decommissioned),  # decommissioned
@@ -85,15 +86,14 @@ urlpatterns = [
     re_path(r'^dataset/$', coremon_views.datasetInfo, name='datasetInfo'),
     re_path(r'^datasets/$', coremon_views.datasetList, name='datasetList'),
 
-    re_path(r'^dash/$', coremon_views.dashboard, name='dashboard'),
-    re_path(r'^dash/analysis/$', coremon_views.dashAnalysis, name='dashAnalysis'),
-    re_path(r'^dash/production/$', coremon_views.dashProduction, name='dashProduction'),
-    re_path(r'^dash/objectstore/$', coremon_views.dashObjectStore, name='dashObjectStore'),
-    re_path(r'^new/dash/$', coremon_views.dashRegion, name='dashRegionLegacy'),  # legacy
     re_path(r'^dash/region/$', coremon_views.dashRegion, name='dashRegion'),
     re_path(r'^dash/world/$', coremon_views.dashNucleus, name='dashWorld'),
     re_path(r'^dash/es/$', coremon_views.dashES, name='dashES'),
-    re_path(r'^status_summary/', include('core.status_summary.urls'), name='status_summary'),
+    re_path(r'^dash/$', coremon_views.dashboard), # legacy
+    re_path(r'^new/dash/$', coremon_views.dashRegion),  # legacy
+    re_path(r'^dash/analysis/$', coremon_views.dashAnalysis),
+    re_path(r'^dash/production/$', coremon_views.dashProduction),
+    re_path(r'^dash/objectstore/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^workingGroups/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),
 

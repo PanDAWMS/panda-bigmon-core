@@ -4,7 +4,6 @@
 {% block subtitle %}{{ viewParams.MON_VO }} PanDA monitor home{% endblock %}
 
 {% block bottom_info %}
-{% if requestParams|length < 2 %}
 
 {% if viewParams.MON_VO == 'ATLAS' %}
 
@@ -92,8 +91,7 @@ Welcome to the {{ viewParams.MON_VO }} PanDA monitor.
 Select what you'd like to have a look at in the top menu bar: dashboard overview; job and task lists; error summaries; user lists and pages; site, cloud and WN information; etc.
 
 {% endif %}
-
-{% endif %}
+  
 <p>
 <script nonce={{request.csp_nonce}}>
   $(function() {
@@ -184,8 +182,7 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
       </form>
       <form action="{% url 'jobList' %}" method='get' class="search-form">
           <div class="input-group">
-              <span class="input-group-label">Stalled jobs</span>
-              <span class="input-group-label">in:</span>
+              <span class="input-group-label">Stalled jobs in:</span>
               <select name="jobstatus" class="input-group-field">
                 <option value="defined"><span class="defined">defined</span></option>
                 <option value="waiting"><span class="waiting">waiting</span></option>
@@ -206,8 +203,7 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
       </form>
       <form action="{% url 'taskList' %}" method='get' class="search-form">
           <div class="input-group">
-              <span class="input-group-label">Stalled tasks</span>
-              <span class="input-group-label">in:</span>
+              <span class="input-group-label">Stalled tasks in:</span>
               <select name="superstatus" class="input-group-field">
                 <option value="registered"><span class="registered">registered</span></option>
                 <option value="submitting"><span class="submitting">submitting</span></option>

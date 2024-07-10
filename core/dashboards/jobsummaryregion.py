@@ -497,6 +497,21 @@ def prettify_json_output(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict, **kw
                 if sum([rtdict[js] for js in const.JOB_STATES if js in rtdict]) > 0:
                     if qn not in queue_summary:
                         queue_summary[qn] = qdict['pq_params']
+                        if 'pq_pilots' in qdict and 'count' in qdict['pq_pilots'] and qdict['pq_pilots']['count'] and qdict['pq_pilots']['count'] > 0:
+                            queue_summary[qn]['n_pilots_total'] = qdict['pq_pilots']['count']
+                        else:
+                            queue_summary[qn]['n_pilots_total'] = 0
+                        if 'pq_pilots' in qdict and 'count_nojob' in qdict['pq_pilots'] and qdict['pq_pilots']['count_nojob'] and qdict['pq_pilots']['count_nojob'] > 0:
+                            queue_summary[qn]['n_pilots_nojob'] = qdict['pq_pilots']['count_nojob']
+                        else:
+                            queue_summary[qn]['n_pilots_nojob'] = 0
+                        queue_summary[qn]['n_running_cores'] = qdict['summary']['all']['all']['rcores']
+                        if (qdict['summary']['all']['all']['failed'] + qdict['summary']['all']['all']['finished']) > 0:
+                            queue_summary[qn]['failed_percentage'] = round(100. * qdict['summary']['all']['all']['failed'] / (
+                                        qdict['summary']['all']['all']['failed'] + qdict['summary']['all']['all']['finished']), 1)
+                        else:
+                            queue_summary[qn]['failed_percentage'] = 0
+                        queue_summary[qn]['n_jobs'] = sum([v for k, v in qdict['summary']['all']['all'].items() if k in const.JOB_STATES])
                         queue_summary[qn]['job_summary'] = {}
                     if jt not in queue_summary[qn]['job_summary']:
                         queue_summary[qn]['job_summary'][jt] = {}
@@ -514,6 +529,7 @@ def prettify_json_output(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict, **kw
                             if rt != 'all':
                                 temp_dict['job_link'] += '&resourcetype=' + rt
                         queue_summary[qn]['job_summary'][jt][rt].append(temp_dict)
+
 
     return queue_summary, site_summary, region_summary
 

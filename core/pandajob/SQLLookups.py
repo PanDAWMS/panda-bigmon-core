@@ -1,5 +1,4 @@
 from django.db.models import Transform
-from django.db.models import Lookup
 from django.conf import settings
 
 

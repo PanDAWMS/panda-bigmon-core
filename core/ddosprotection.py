@@ -26,7 +26,8 @@ _logger = logging.getLogger('bigpandamon')
 class DDOSMiddleware(object):
 
     sleepInterval = 5  # sec
-    maxAllowedJSONRequstesPerHour = 600
+
+    max_allowed_requests_per_hour = 600
     notcachedRemoteAddress = [
         '188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
         '188.184.90.172'  # J..h M......n request
@@ -44,18 +45,10 @@ class DDOSMiddleware(object):
         '/art/uploadtestresult/',
     ]
     blacklist = ['130.132.21.90', '192.170.227.149']
-    maxAllowedJSONRequstesParallel = 1
-    maxAllowedSimultaneousRequestsToFileBrowser = 1
-    listOfServerBackendNodesIPs = settings.BIGMON_BACKEND_NODES_IP_LIST
 
-    restrictedIPs = ['137.138.77.2',  # Incident on 13-01-2020 14:30:00
-                     '188.185.76.164',  # EI Machine
-                     '147.156.116.63',  # EI Machine
-                     '147.156.116.43',  # EI Machine
-                     '147.156.116.44',  # EI Machine
-                     '147.156.116.81',  # EI Machine
-                     '147.156.116.83',  # EI Machine
-                     ]
+    useragent_parallel_limit_applied = ["EI-monitor/0.0.1",]
+    max_allowed_parallel_requests = 2
+    listOfServerBackendNodesIPs = settings.BIGMON_BACKEND_NODES_IP_LIST
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -162,7 +155,7 @@ class DDOSMiddleware(object):
                 countRequest = []
                 countRequest.extend(AllRequests.objects.filter(**query).values('remote').annotate(Count('urlview')))
                 if len(countRequest) > 0:
-                    if countRequest[0]['urlview__count'] > self.maxAllowedSimultaneousRequestsToFileBrowser or x_forwarded_for in self.blacklist:
+                    if countRequest[0]['urlview__count'] > self.max_allowed_parallel_requests or x_forwarded_for in self.blacklist:
                         reqs.is_rejected = 1
                         reqs.save()
                         return HttpResponse(
@@ -174,27 +167,26 @@ class DDOSMiddleware(object):
                 reqs.save()
                 return response
 
-            if x_forwarded_for is not None and x_forwarded_for in self.restrictedIPs:
+            # restrict number of parallel requests for some user agents
+            if useragent is not None and useragent in self.useragent_parallel_limit_applied:
                 _logger.info('[DDOS protection] got request from agent: {}'.format(useragent))
-                countRestictedrequests = []
                 startdate = timezone.now() - timedelta(hours=1)
                 enddate = timezone.now()
                 eiquery = {
                     'qtime__range': [startdate, enddate],
-                    'remote': x_forwarded_for,
-                    'is_rejected': 0,
+                    'useragent': useragent,
                     'rtime': None,
                 }
-                countRestictedrequests.extend(
-                    AllRequests.objects.filter(**eiquery).values('remote').annotate(Count('remote')))
-                if len(countRestictedrequests) > 0 and 'remote__count' in countRestictedrequests[0]:
-                    _logger.info('[DDOS protection] found number of non rejected request for last minute: {}'.format(
-                        countRestictedrequests[0]['remote__count']))
-                    if countRestictedrequests[0]['remote__count'] > self.maxAllowedJSONRequstesParallel:
+                data_raw = []
+                data_raw.extend(AllRequests.objects.filter(**eiquery).values('useragent').annotate(count=Count('useragent')))
+                if len(data_raw) > 0 and 'count' in data_raw[0]:
+                    count_parallel_requests = data_raw[0]['count']
+                    _logger.info(f'[DDOS protection] found number of non rejected request for last minute: {count_parallel_requests}')
+                    if count_parallel_requests > self.max_allowed_parallel_requests:
                         reqs.is_rejected = 1
                         reqs.save()
                         return HttpResponse(
-                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
+                            json.dumps({'message': 'you produce too many parallel requests'}),
                             status=429,
                             content_type='application/json')
                 response = self.get_response(request)
@@ -216,7 +208,7 @@ class DDOSMiddleware(object):
 
                 # Check against general number of request
                 if len(countRequest) > 0:
-                    if countRequest[0]['remote__count'] > self.maxAllowedJSONRequstesPerHour or x_forwarded_for in self.blacklist:
+                    if countRequest[0]['remote__count'] > self.max_allowed_requests_per_hour or x_forwarded_for in self.blacklist:
                         reqs.is_rejected = 1
                         reqs.save()
                         return HttpResponse(

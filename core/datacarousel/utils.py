@@ -199,10 +199,10 @@ def getStagingData(request):
         inner join {0}.t_production_task t3 on t2.taskid=t3.taskid 
         inner join {1}.jedi_tasks t4 on t2.taskid=t4.jeditaskid {2} 
         """.format('atlas_deft', settings.DB_SCHEMA_PANDA, selection))
-    datasets = dictfetchall(new_cur)
+    datasets = dictfetchall(new_cur, style='lowercase')
     for dataset in datasets:
         # Sort out requests by request on February 19, 2020
-        if dataset['STATUS'] in ('staging', 'queued', 'done'):
+        if dataset['status'] in ('staging', 'queued', 'done'):
             dataset = {k.lower(): v for k, v in dataset.items()}
 
             datasetname = dataset.get('dataset')
