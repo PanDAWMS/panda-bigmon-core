@@ -10,9 +10,11 @@
 {% block js_head_page_library %}
   <script src="{% static 'js/datatables/moment.min.js' %}"></script>
   <!-- Load chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-moment/1.0.1/chartjs-adapter-moment.min.js" charset="utf-8"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js" charset="utf-8"></script>
 
 {% endblock %}
 
@@ -51,7 +53,10 @@
   <div class="medium-1 column align-middle">
       <a class="button primary" ng-style="taskprofile.button.style" ng-click="taskprofile.update()">{$ taskprofile.button.text $}</a>
   </div>
-  <div class="medium-5 column"></div>
+  <div class="medium-4 column"></div>
+  <div class="medium-1 column align-right">
+      <a class="button secondary" ng-click="taskprofile.reset_zoom()">Reset zoom</a>
+  </div>
   </div>
   </form>
   </div>
@@ -153,6 +158,7 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
       let resp = $scope.taskprofile.fetch();
       resp.then(function (data) {
         $scope.taskprofile.charts["profile_chart"].data.datasets = $scope.taskprofile.data;
+        $scope.taskprofile.charts["profile_chart"].config.options.plugins.annotation.annotations = $scope.taskprofile.annotations;
         if ($scope.taskprofile.selection.progressunit === 'events') {
           $scope.taskprofile.charts["profile_chart"].config.options.scales.y.title.text = 'Number of events';
         }
@@ -197,6 +203,11 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
         }
       };
     });
+    
+    $scope.taskprofile.reset_zoom = function() {
+      $scope.taskprofile.charts["profile_chart"].resetZoom();
+    };
+    
 }]);
 
 </script>

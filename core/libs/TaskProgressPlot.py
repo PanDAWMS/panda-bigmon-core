@@ -1,11 +1,11 @@
 import logging
 import math
-from datetime import  timedelta
+from datetime import timedelta
 from core.common.models import JediTasks, TaskAttempts
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived
 from core.libs.exlib import drop_duplicates
 from core.libs.job import add_job_category
-from core.libs.task import get_task_duration
+from core.libs.task import get_task_duration, get_datasets_for_tasklist
 
 import core.constants as const
 from django.conf import settings
@@ -15,9 +15,10 @@ _logger = logging.getLogger('bigpandamon')
 class TaskProgressPlot:
     taskid = None
     task_profile_dict = None
+    progress_unit = 'jobs'
+
     def __init__(self, taskid):
         self.taskid = taskid
-        task_profile_dict = None
 
     def get_task_info(self):
         """
@@ -44,6 +45,22 @@ class TaskProgressPlot:
         query = {'jeditaskid': self.taskid}
         task_attempts = list(TaskAttempts.objects.filter(**query).order_by('attemptnr', 'starttime').values())
         return task_attempts
+
+    def get_task_input_info(self):
+        """
+        Getting total number of input files and events for the task
+        :return: dict - containing number of input files and events for the task
+        """
+        task_inputs_dict = {'files': 0, 'events': 0}
+        task_datasets = get_datasets_for_tasklist([{'jeditaskid': self.taskid}])
+        if len(task_datasets) > 0 and 'datasets' in task_datasets[0]:
+            for d in task_datasets[0]['datasets']:
+                if 'type' in d and d['type'] in ('input', 'pseudo_input') and 'masterid' in d and d['masterid'] is None:
+                    task_inputs_dict['files'] += d['nfiles']
+                    task_inputs_dict['events'] += d['nevents']
+
+        return task_inputs_dict
+
 
     def get_raw_task_profile_full(self, jobstatus=None, category=None):
         """
@@ -125,8 +142,9 @@ class TaskProgressPlot:
             jobstatus = list(const.JOB_STATES)
         if category is None:
             category = ['build', 'run', 'merge']
-        if progress_unit is None:
-            progress_unit = 'jobs'
+
+        if progress_unit is not None:
+            self.progress_unit = progress_unit
 
         # get raw jobs data
         self.task_profile_dict = self.get_raw_task_profile_full(jobstatus, category)
@@ -195,7 +213,7 @@ class TaskProgressPlot:
         for group in group_to_remove:
             try:
                 del task_profile_data_dict[group]
-            except:
+            except KeyError:
                 _logger.info('failed to remove key from dict')
 
         # dict -> list
@@ -203,21 +221,22 @@ class TaskProgressPlot:
 
         return task_profile_data
 
-    def prepare_attempts_data(self):
+    def prepare_annotation_data(self):
         """
-        Prepare data for task attempts plot
+        Prepare data for annotations: task attempts as vertical lines and total number of files/events as horizontal line
         :return:
         """
-        task_attempts = self.get_task_attempts()
-        task_attempts_data_dict = {}
+        task_annotations_data_dict = {}
 
+        # task attempts
+        task_attempts = self.get_task_attempts()
         for t in task_attempts:
             if 'attemptnr' in t:
                 attempt_number = t['attemptnr'] + 1
             else:
-                attempt_number = 0
+                attempt_number = 1
 
-            start_label = {
+            task_annotations_data_dict[f'Attempt {attempt_number} start'] = {
                 'type': 'line',
                 'borderWidth': 1,
                 'label': {
@@ -232,10 +251,9 @@ class TaskProgressPlot:
                 'xMin': t['starttime'].strftime(settings.DATETIME_FORMAT),
                 'xMax': t['starttime'].strftime(settings.DATETIME_FORMAT),
             }
-            task_attempts_data_dict[f'Attempt {attempt_number} start'] = start_label
 
             if t['endtime'] is not None:
-                end_label = {
+                task_annotations_data_dict[f'Attempt {attempt_number} end'] = {
                     'type': 'line',
                     'borderWidth': 1,
                     'borderColor': 'rgba(0, 0, 0, 1)',
@@ -249,9 +267,29 @@ class TaskProgressPlot:
                     'xMin': t['endtime'].strftime(settings.DATETIME_FORMAT),
                     'xMax': t['endtime'].strftime(settings.DATETIME_FORMAT),
                 }
-                task_attempts_data_dict[f'Attempt {attempt_number} end'] = end_label
 
-        return task_attempts_data_dict
+        # total number of files and events - only of progress unit is files or events
+        if self.progress_unit in ('files', 'events'):
+            task_inputs_dict = self.get_task_input_info()
+            task_annotations_data_dict['Total number of files'] = {
+                'type': 'line',
+                'borderWidth': 1,
+                'borderColor': 'rgba(0, 0, 0, 1)',
+                'display': True,
+                'label': {
+                    'content': f'{task_inputs_dict[self.progress_unit]} {self.progress_unit}',
+                    'position': 'start',
+                    'display': True,
+                    'padding': 2,
+                    'z': 10
+                },
+                'yMin': task_inputs_dict[self.progress_unit],
+                'yMax': task_inputs_dict[self.progress_unit],
+            }
+
+        return task_annotations_data_dict
+
+
 
 
 

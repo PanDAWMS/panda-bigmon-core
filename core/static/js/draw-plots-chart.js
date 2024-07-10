@@ -86,6 +86,26 @@ function prepare_scatter_chart(datasets, options, annotations) {
             },
           },
         },
+        zoom: {
+          pan: {
+            enabled: true,
+            mode: 'x',
+            scaleMode: 'x',
+            threshold: 50,
+          },
+          zoom: {
+            drag: {
+              enabled: true,
+              mode: 'x',
+              threshold: 50,
+              modifierKey: 'shift',
+            },
+            pinch: {
+              enabled: true,
+            },
+            mode: 'x',
+          }
+        }
       },
       layout: {
         padding: {

@@ -4579,9 +4579,9 @@ def taskProfileData(request, jeditaskid=0):
         category=request_job_types,
         progress_unit=request_progress_unit
     )
-    task_attempts_data = task_profile.prepare_attempts_data()
+    task_annotations_data = task_profile.prepare_annotation_data()
 
-    data = {'plotData': task_profile_data, 'annotations': task_attempts_data, 'error': ''}
+    data = {'plotData': task_profile_data, 'annotations': task_annotations_data, 'error': ''}
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
