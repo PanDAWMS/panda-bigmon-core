@@ -91,7 +91,7 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
         selection: {
             jobtype: ['build', 'run', 'merge'],
             jobstatus: ['active', 'finished', 'failed', 'closed', 'cancelled'],
-            progressunit: 'jobs',
+            progressunit: 'files',
         },
         task: task,
         charts: {},
@@ -159,6 +159,12 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
       resp.then(function (data) {
         $scope.taskprofile.charts["profile_chart"].data.datasets = $scope.taskprofile.data;
         $scope.taskprofile.charts["profile_chart"].config.options.plugins.annotation.annotations = $scope.taskprofile.annotations;
+        let ymax = Math.max.apply(
+          Math, $scope.taskprofile.data.map(function(o) { return Math.max.apply(Math, o.data.map(function(o) { return o.y; })); }));
+        if (['events', 'files'].includes($scope.taskprofile.selection.progressunit) && 
+            "total_input" in $scope.taskprofile.annotations && ymax < $scope.taskprofile.annotations.total_input.yMax) {
+          ymax = $scope.taskprofile.annotations.total_input.yMax;
+        }
         if ($scope.taskprofile.selection.progressunit === 'events') {
           $scope.taskprofile.charts["profile_chart"].config.options.scales.y.title.text = 'Number of events';
         }
@@ -168,8 +174,7 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
         else {
           $scope.taskprofile.charts["profile_chart"].config.options.scales.y.title.text = 'Number of jobs';
         }
-        let ymax = Math.max.apply(
-          Math, $scope.taskprofile.data.map(function(o) { return Math.max.apply(Math, o.data.map(function(o) { return o.y; })); }));
+
         $scope.taskprofile.charts["profile_chart"].config.options.scales.y.suggestedMax = ymax * 1.075;
         $scope.taskprofile.charts["profile_chart"].update();
         $scope.taskprofile.button.text = 'Update';
@@ -183,6 +188,10 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
       if ($scope.taskprofile.selection.progressunit === 'events') {options.ylabel = 'Number of events';}
       if ($scope.taskprofile.selection.progressunit === 'files') {options.ylabel = 'Number of files';}
       options.ymax = Math.max.apply(Math, datasets.map(function(o) { return Math.max.apply(Math, o.data.map(function(o) { return o.y; })); }));
+      if (['events', 'files'].includes($scope.taskprofile.selection.progressunit) && 
+            "total_input" in annotations && options.ymax < annotations.total_input.yMax) {
+        options.ymax = annotations.total_input.yMax;
+      }
       options.ymax *= 1.075;
       options.xmin = task.xmin;
       options.xmax = task.xmax;
