@@ -271,13 +271,13 @@ class TaskProgressPlot:
         # total number of files and events - only of progress unit is files or events
         if self.progress_unit in ('files', 'events'):
             task_inputs_dict = self.get_task_input_info()
-            task_annotations_data_dict['Total number of files'] = {
+            task_annotations_data_dict['total_input'] = {
                 'type': 'line',
                 'borderWidth': 1,
                 'borderColor': 'rgba(0, 0, 0, 1)',
                 'display': True,
                 'label': {
-                    'content': f'{task_inputs_dict[self.progress_unit]} {self.progress_unit}',
+                    'content': f'{task_inputs_dict[self.progress_unit]} in total',
                     'position': 'start',
                     'display': True,
                     'padding': 2,
