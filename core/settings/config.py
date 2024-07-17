@@ -1,4 +1,4 @@
-import os, core, logging
+import os, core, logging, sys, io
 from os.path import dirname, join
 
 from core import filebrowser, admin
@@ -260,6 +260,9 @@ if DEBUG is True:
 
 LOG_SIZE = 100000000
 
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -283,6 +286,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'logfile-bigpandamon': {
             'level': LOG_LEVEL,
@@ -291,6 +295,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'logfile-info': {
             'level': 'INFO',
@@ -299,6 +304,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'full',
+            'encoding': 'utf-8',
         },
         'logfile-error': {
             'level': 'ERROR',
@@ -307,6 +313,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'custom',
+            'encoding': 'utf-8',
         },
         'logfile-filebrowser': {
             'level': LOG_LEVEL,
@@ -315,6 +322,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'logfile-art': {
             'level': LOG_LEVEL,
@@ -323,6 +331,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'logfile-template': {
             'level': LOG_LEVEL,
@@ -331,6 +340,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'social': {
             'level': LOG_LEVEL,
@@ -339,6 +349,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'panda-client': {
             'level': 'DEBUG',
@@ -347,17 +358,20 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'logging.StreamHandler',
+            'encoding': 'utf-8',
         },
         'console': {
             'level': LOG_LEVEL,
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-            'formatter': 'custom'
+            'formatter': 'custom',
+            'encoding': 'utf-8',
         },
     },
     'loggers': {
@@ -372,7 +386,7 @@ LOGGING = {
             'level': LOG_LEVEL,
         },
         'django.template': {
-            'handlers': ['logfile-template'],
+            'handlers': ['logfile-template', 'console'],
             'level': LOG_LEVEL,
             'propagate': False,
         },
@@ -425,6 +439,7 @@ LOGGING = {
         'maxBytes': LOG_SIZE,
         'backupCount': 5,
         'formatter': 'verbose',
+        'encoding': 'utf-8',
     },
 }
 

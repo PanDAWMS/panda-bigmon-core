@@ -1058,6 +1058,7 @@ def mainPage(request):
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
+            'timetange': None
         }
         data.update(getContextVariables(request))
         response = render(request, 'core-mainPage.html', data, content_type='text/html')
