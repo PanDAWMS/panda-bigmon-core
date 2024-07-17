@@ -97,7 +97,7 @@ function prepare_scatter_chart(datasets, options, annotations) {
             drag: {
               enabled: true,
               mode: 'x',
-              threshold: 50,
+              threshold: 20,
               modifierKey: 'shift',
             },
             pinch: {
