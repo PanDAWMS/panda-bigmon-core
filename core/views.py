@@ -1057,8 +1057,7 @@ def mainPage(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'built': datetime.now().strftime("%H:%M:%S"),
-            'timetange': None
+            'built': datetime.now().strftime("%H:%M:%S")
         }
         data.update(getContextVariables(request))
         response = render(request, 'core-mainPage.html', data, content_type='text/html')
@@ -3947,7 +3946,6 @@ def taskList(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-
     # Here we try to get cached data
     data = getCacheEntry(request, "taskList")
     # data = None

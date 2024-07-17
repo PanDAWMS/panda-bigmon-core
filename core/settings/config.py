@@ -1,4 +1,4 @@
-import os, core, logging, sys, io
+import os, core, logging, io, sys
 from os.path import dirname, join
 
 from core import filebrowser, admin
@@ -83,6 +83,7 @@ TEMPLATES = [
         ],
         'OPTIONS': {
             'context_processors': [
+
                 # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
                 # list if you haven't customized them:
                 'django.contrib.auth.context_processors.auth',
@@ -92,7 +93,7 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.request',
                 'django.template.context_processors.tz',
-                'django.contrib.messages.context_processors.messages',
+                'django.contrib.messages.context_processors.messages'
             ],
             'loaders':[
                 'django.template.loaders.filesystem.Loader',
@@ -364,14 +365,12 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'logging.StreamHandler',
-            'encoding': 'utf-8',
         },
         'console': {
             'level': LOG_LEVEL,
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'custom',
-            'encoding': 'utf-8',
         },
     },
     'loggers': {
@@ -386,7 +385,7 @@ LOGGING = {
             'level': LOG_LEVEL,
         },
         'django.template': {
-            'handlers': ['logfile-template', 'console'],
+            'handlers': ['logfile-template'],
             'level': LOG_LEVEL,
             'propagate': False,
         },
