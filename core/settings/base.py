@@ -56,7 +56,8 @@ MIDDLEWARE = (
 
     'csp.middleware.CSPMiddleware',
 
-    'core.loggingmiddleware.RequestLogMiddleware',
+    'core.loggingmiddleware.RequestLoggingMiddleware',
+
 )
 
 ROOT_URLCONF = 'core.urls'

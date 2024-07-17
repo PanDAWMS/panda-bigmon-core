@@ -20,7 +20,8 @@ ALLOWED_HOSTS = [
 ]
 
 if 'BIGMON_HOST' in os.environ:
-    ALLOWED_HOSTS.append(os.environ['BIGMON_HOST'])
+    bigmon_hosts  = os.environ['BIGMON_HOST'].split(',')
+    ALLOWED_HOSTS.extend(bigmon_hosts )
 
 # IPs of CACHING CRAWLERS if any
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46', '188.184.90.5']
@@ -370,7 +371,7 @@ LOGGING = {
             'level': LOG_LEVEL,
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-            'formatter': 'custom',
+            'formatter': 'full',
         },
     },
     'loggers': {
@@ -396,6 +397,7 @@ LOGGING = {
         'bigpandamon-error': {
             'handlers': ['logfile-error', 'console'],
             'level': 'ERROR',
+            'formatter': 'custom',
         },
         'bigpandamon-art': {
             'handlers': ['logfile-art', 'logfile-error', 'console'],
@@ -421,7 +423,7 @@ LOGGING = {
             'style': '{',
         },
         'verbose': {
-            'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
+             'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
         },
         'custom': {
             '()': CustomFormatter,

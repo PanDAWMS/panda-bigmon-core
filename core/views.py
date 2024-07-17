@@ -1974,6 +1974,7 @@ def descendentjoberrsinfo(request):
 @csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None):
     valid, response = initRequest(request)
+
     if not valid:
         return response
 
