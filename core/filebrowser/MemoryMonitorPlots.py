@@ -217,6 +217,8 @@ def getPrMonPlotsData(request, pandaid=-1):
                      It can happen if a job failed and logs were not saved 
                      or a life time of storing job logs are already expired."""
             _logger.warning(msg)
+    else:
+        return error_response(request, message='No pandaid provided!', status=400)
 
     # rename columns if old memory monitor is used
     if not raw_data.empty:
@@ -352,21 +354,7 @@ def getPrMonPlotsData(request, pandaid=-1):
             tmp.extend(raw_data[mc].tolist())
             plots_data['gpu_res']['data'].append(tmp)
 
-        if len(payload_steps) > 0:
-            for pname, pdet in plots_details.items():
-                plots_data[pname]['grid'] = {'x': {'lines': []}}
-                for step in payload_steps:
-                    plots_data[pname]['grid']['x']['lines'].append({'value': step[0], 'text': step[1]})
-
-                plots_data[pname]['details']['ymax'] = 0
-                for row in plots_data[pname]['data'][1:]:
-                    if len(row[1:]) > 1 and max(row[1:])+abs(min(row[1:]))/2 > plots_data[pname]['details']['ymax']:
-                        plots_data[pname]['details']['ymax'] = max(row[1:])+abs(min(row[1:]))/2
-                plots_data[pname]['details']['ymax'] *= 1.35
-
-
-    # get memory leak reported by pilot from job records & add memory fit plot
-    if pandaid > 0:
+        # get memory leak reported by pilot from job records & add memory fit plot
         jobs = get_job_list({"pandaid": pandaid}, values=['memoryleak', 'memoryleakx2'])
         if len(jobs) > 0:
             job_memory_leak = jobs[0].get('memoryleak', None)  # memory leak in KB/s
@@ -374,15 +362,30 @@ def getPrMonPlotsData(request, pandaid=-1):
             plots_details['memory_fit']['title'] += f' (leak={job_memory_leak}KB/s; \u03c7\u00b2={job_memory_leak_x2}) '
             if job_memory_leak is not None and job_memory_leak > 0:
                 # we plot memory fit i.e. pss+swap & memory leak slope
-                job_memory_leak_gb_per_min = job_memory_leak*60./1000./1000.  # transform KB/s to MB/min
+                job_memory_leak_gb_per_min = job_memory_leak * 60. / 1000. / 1000.  # transform KB/s to MB/min
                 plots_data['memory_fit'] = {'data': [['x']], 'details': plots_details['memory_fit']}
                 plots_data['memory_fit']['data'][0].extend(raw_data['wtime_min'].tolist())
                 plots_data['memory_fit']['data'].append(
                     ['PSS+SWAP', ] + [sum(x) for x in zip(raw_data['pss'].tolist(), raw_data['swap'].tolist())])
                 plots_data['memory_fit']['data'].append(
                     ['Fitted memory utilization', ] +
-                    [round(x*job_memory_leak_gb_per_min,2) for x in raw_data['wtime_min'].tolist()])
+                    [round(x * job_memory_leak_gb_per_min, 2) for x in raw_data['wtime_min'].tolist()])
 
+        # set ymax for plots
+        for pname, pdet in plots_details.items():
+            plots_data[pname]['details']['ymax'] = 0
+            for row in plots_data[pname]['data'][1:]:
+                if len(row[1:]) > 1 and max(row[1:]) + abs(min(row[1:])) / 2 > plots_data[pname]['details']['ymax']:
+                    plots_data[pname]['details']['ymax'] = max(row[1:]) + abs(min(row[1:])) / 2
+
+        # add grid lines as payload steps extracted from stdout and adjust ymax
+        if len(payload_steps) > 0:
+            for pname, pdet in plots_details.items():
+                plots_data[pname]['grid'] = {'x': {'lines': []}}
+                for step in payload_steps:
+                    plots_data[pname]['grid']['x']['lines'].append({'value': step[0], 'text': step[1]})
+                # adjust y max
+                plots_data[pname]['details']['ymax'] *= 1.35
 
     # remove plot if no data
     remove_list = []
