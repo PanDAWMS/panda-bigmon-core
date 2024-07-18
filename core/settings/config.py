@@ -21,7 +21,7 @@ ALLOWED_HOSTS = [
 
 if 'BIGMON_HOST' in os.environ:
     bigmon_hosts  = os.environ['BIGMON_HOST'].split(',')
-    ALLOWED_HOSTS.extend(bigmon_hosts )
+    ALLOWED_HOSTS.extend(bigmon_hosts)
 
 # IPs of CACHING CRAWLERS if any
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46', '188.184.90.5']
