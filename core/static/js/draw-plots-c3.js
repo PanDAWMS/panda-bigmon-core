@@ -799,7 +799,6 @@ function draw_line_chart(rawdata, divid, ext={}) {
     let details = rawdata['details'];
     let grid = {}
     if ('grid' in rawdata) { grid = rawdata['grid']; height += 50; details.xmax = data[0][data[0].length-1] + 1;}
-    console.log(details.xmax)
 
     var chart = c3.generate({
         bindto: '#' + divid,

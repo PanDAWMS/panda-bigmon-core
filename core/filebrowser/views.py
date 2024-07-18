@@ -197,7 +197,7 @@ def index(request):
             'totalLogSize': totalLogSize,
             'nfiles': len(files),
         }
-        response = render(request, 'filebrowser/filebrowser_index.html', data, RequestContext(request))
+        response = render(request, 'filebrowser_index.html', data, RequestContext(request))
         _logger.debug('Rendered template - {}'.format(time.time() - request.session['req_init_time']))
         return response
     else:

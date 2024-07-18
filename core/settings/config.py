@@ -1,8 +1,9 @@
-import os, core, logging
+import os, core, logging, io, sys
 from os.path import dirname, join
 
 from core import filebrowser, admin
 from core.settings.local import MY_SECRET_KEY, LOG_ROOT
+from core.settings.CustomFormatter import CustomFormatter
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -19,7 +20,8 @@ ALLOWED_HOSTS = [
 ]
 
 if 'BIGMON_HOST' in os.environ:
-    ALLOWED_HOSTS.append(os.environ['BIGMON_HOST'])
+    bigmon_hosts  = os.environ['BIGMON_HOST'].split(',')
+    ALLOWED_HOSTS.extend(bigmon_hosts)
 
 # IPs of CACHING CRAWLERS if any
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46', '188.184.90.5']
@@ -79,10 +81,10 @@ TEMPLATES = [
         'DIRS': [
             join(dirname(core.__file__), 'templates'),
             join(dirname(admin.__file__), 'templates'),
-            # join(dirname(core.filebrowser.__file__), 'templates'),
         ],
         'OPTIONS': {
             'context_processors': [
+
                 # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
                 # list if you haven't customized them:
                 'django.contrib.auth.context_processors.auth',
@@ -92,7 +94,7 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.request',
                 'django.template.context_processors.tz',
-                'django.contrib.messages.context_processors.messages',
+                'django.contrib.messages.context_processors.messages'
             ],
             'loaders':[
                 'django.template.loaders.filesystem.Loader',
@@ -140,8 +142,6 @@ if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA'):
     try:
         import oracledb
         oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
-    except oracledb.exceptions.DatabaseError as e:
-        _logger.error(f"Failed to initialize Oracle Client: {e}")
     except Exception as e:
         _logger.error(f"An unexpected error occurred: {e}")
 
@@ -261,6 +261,10 @@ if DEBUG is True:
     LOG_LEVEL = 'DEBUG'
 
 LOG_SIZE = 100000000
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -284,6 +288,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'logfile-bigpandamon': {
             'level': LOG_LEVEL,
@@ -292,6 +297,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'logfile-info': {
             'level': 'INFO',
@@ -300,6 +306,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'full',
+            'encoding': 'utf-8',
         },
         'logfile-error': {
             'level': 'ERROR',
@@ -307,7 +314,8 @@ LOGGING = {
             'filename': LOG_ROOT + "/logfile.error",
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
-            'formatter': 'verbose',
+            'formatter': 'custom',
+            'encoding': 'utf-8',
         },
         'logfile-filebrowser': {
             'level': LOG_LEVEL,
@@ -316,6 +324,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'logfile-art': {
             'level': LOG_LEVEL,
@@ -324,6 +333,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'logfile-template': {
             'level': LOG_LEVEL,
@@ -332,6 +342,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'social': {
             'level': LOG_LEVEL,
@@ -340,6 +351,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'panda-client': {
             'level': 'DEBUG',
@@ -348,6 +360,7 @@ LOGGING = {
             'maxBytes': LOG_SIZE,
             'backupCount': 2,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
         'mail_admins': {
             'level': 'ERROR',
@@ -358,7 +371,7 @@ LOGGING = {
             'level': LOG_LEVEL,
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-            'formatter': 'full'
+            'formatter': 'full',
         },
     },
     'loggers': {
@@ -382,8 +395,9 @@ LOGGING = {
             'level': LOG_LEVEL,
         },
         'bigpandamon-error': {
-            'handlers': ['logfile-error'],
+            'handlers': ['logfile-error', 'console'],
             'level': 'ERROR',
+            'formatter': 'custom',
         },
         'bigpandamon-art': {
             'handlers': ['logfile-art', 'logfile-error', 'console'],
@@ -409,6 +423,10 @@ LOGGING = {
             'style': '{',
         },
         'verbose': {
+             'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
+        },
+        'custom': {
+            '()': CustomFormatter,
             'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
         },
         'simple': {
@@ -422,6 +440,7 @@ LOGGING = {
         'maxBytes': LOG_SIZE,
         'backupCount': 5,
         'formatter': 'verbose',
+        'encoding': 'utf-8',
     },
 }
 
