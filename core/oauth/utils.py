@@ -111,3 +111,17 @@ def is_expert(request):
     else:
         _logger.exception('There is no user with user_id equals {}'.format(request.session['USER_ID']))
         return False
+
+
+def get_full_name(email):
+    """
+    Getting full name of user by email
+    :param email: str -
+    :return: list of full names
+    """
+    full_names = []
+    bp_users = BPUser.objects.filter(email=email).values('first_name', 'last_name')
+    if len(bp_users) > 0:
+        full_names.extend([f"{u['first_name']} {u['last_name']}" for u in bp_users])
+
+    return list(set(full_names))

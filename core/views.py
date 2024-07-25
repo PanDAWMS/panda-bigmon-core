@@ -63,7 +63,7 @@ from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
-from core.oauth.utils import login_customrequired, get_auth_provider, is_expert
+from core.oauth.utils import login_customrequired, get_auth_provider, is_expert, get_full_name
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
@@ -2792,6 +2792,10 @@ def userInfo(request, user=''):
                     first_name = first_name.split(' ')[0] if ' ' in first_name else first_name
                     query_task = Q(username=login) | (Q(username__istartswith=first_name) & Q(username__iendswith=last_name))
                     query_job = Q(produsername=login) | (Q(produsername__istartswith=first_name) & Q(produsername__iendswith=last_name))
+                # add to query all known full names of a user email
+                for n in get_full_name(request.user.email):
+                    query_task |= Q(username=n)
+                    query_job |= Q(produsername=n)
                 is_prepare_history_links = True
 
     if 'days' in request.session['requestParams']:
