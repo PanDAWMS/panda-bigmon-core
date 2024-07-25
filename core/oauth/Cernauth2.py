@@ -1,13 +1,10 @@
 from requests import ConnectionError, request
 from social_core.backends.oauth import BaseOAuth2
-import urllib
-import ssl
-from social_core.utils import url_add_parameters
-from social_core.exceptions import AuthMissingParameter, AuthStateMissing, AuthStateForbidden, AuthFailed
+from social_core.exceptions import AuthMissingParameter, AuthFailed
+from social_core.utils import SSLHttpAdapter
 
 import logging
-
-from social_core.utils import SSLHttpAdapter
+_logger = logging.getLogger('social')
 
 
 class CernAuthOIDC(BaseOAuth2):
@@ -31,7 +28,7 @@ class CernAuthOIDC(BaseOAuth2):
 
     def get_user_details(self, response):
         """Return user details from CERN account"""
-        [print('{}:{}'.format(k, v)) for k, v in response.items()]
+        _logger.debug([f"{k}: {v}" for k, v in response.items()])
         return {
             'username': response.get('preferred_username'),
             'email': response.get('email') or '',
@@ -73,7 +70,7 @@ class CernAuthOIDC(BaseOAuth2):
         return 'social-auth-1.6.0'
 
     def request(self, url, method='POST', *args, **kwargs):
-        logger = logging.getLogger('social')
+        """Request helper"""
         kwargs.setdefault('headers', {})
         if self.setting('VERIFY_SSL') is not None:
             kwargs.setdefault('verify', self.setting('VERIFY_SSL'))
@@ -97,9 +94,9 @@ class CernAuthOIDC(BaseOAuth2):
                 self.general_to_message(kwargs, response)
                 self.message_write()
             else:
-                logger.error('Message is Empty!')
+                _logger.error('Message is Empty!')
         except Exception as ex:
-            logger.error(ex)
+            _logger.error(ex)
             pass
         return response
 
@@ -110,39 +107,21 @@ class CernAuthOIDC(BaseOAuth2):
             return None
         state = self.get_session_state()
         request_state = self.get_request_state()
-        # self.social_error_logger('Test Error Message.')
         if not request_state:
             self.errordesc = AuthMissingParameter(self, 'state').__str__()
             self.social_error_logger(self.errordesc)
-            # raise AuthMissingParameter(self, 'state')
         elif not state:
             self.errordesc = 'Session value state missing.'
             self.social_error_logger(self.errordesc)
-            # raise AuthStateMissing(self, 'state')
-            # name = self.name + '_state'
-            # state = self.data['state']
-            # self.strategy.session_set(name, state)
-            # state = self.get_session_state()
-            # if not state:
-            #     raise AuthStateMissing(self, 'state')
-            # else: return state
         elif not request_state == state:
             self.errordesc = 'Wrong state parameter given'
             self.social_error_logger(self.errordesc)
-            # raise AuthStateForbidden(self)
         else:
             return state
 
     def message_write(self):
-        logger = logging.getLogger('social')
-        logger.error(self.message)
+        _logger.error(self.message)
         self.message = ''
-        # if self.errordesc=='Session value state missing.':
-        #     raise AuthStateMissing(self, 'state')
-        # elif self.errordesc=='Wrong state parameter given':
-        #     raise AuthStateForbidden(self)
-        # else:
-        #     raise AuthMissingParameter(self, 'state')
 
     def self_to_message(self):
         dictattr = {}
@@ -165,11 +144,11 @@ class CernAuthOIDC(BaseOAuth2):
     def social_error_logger(self, errmess):
         try:
             if 'HTTP_REFERER' in self.strategy.request.META:
-                self.message += 'Internal Server Error: ' + self.strategy.request.META['HTTP_REFERER'] + '\n'
+                self.message += f"ERROR during authentication via {self.name}: {self.strategy.request.META['HTTP_REFERER']} \n"
             else:
-                self.message += 'Internal Server Error: -' + '\n'
+                self.message += "ERROR during authentication\n"
         except:
-            self.message += 'Internal Server Error: -' + '\n'
+            self.message += "ERROR during authentication\n"
         self.message += 'EXCEPTION:' + errmess + '\n'
         self.self_to_message()
         self.message += 'SESSION INFO:'+'\n'
@@ -210,5 +189,5 @@ class CernAuthOIDC(BaseOAuth2):
                 self.message += '_session in the session object not exists' + '\n'
         else:
             self.message += 'Session NOT exists' + '\n'
-        logger = logging.getLogger('social')
-        logger.error(self.message)
+
+        _logger.error(self.message)

@@ -386,7 +386,7 @@ LOGGING = {
             'level': LOG_LEVEL,
         },
         'django.template': {
-            'handlers': ['logfile-template'],
+            'handlers': ['logfile-template', 'console'],
             'level': LOG_LEVEL,
             'propagate': False,
         },
@@ -412,7 +412,7 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'social': {
-            'handlers': ['logfile-error', 'social'],
+            'handlers': ['logfile-error', 'social', 'console'],
             'level': LOG_LEVEL,
             'propagate': True,
         }
