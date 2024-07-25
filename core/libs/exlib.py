@@ -7,6 +7,7 @@ from datetime import timedelta
 from django.db import connection
 
 from core.common.models import JediDatasets, Filestable4, FilestableArch, Sitedata, ResourceTypes
+from core.schedresource.utils import get_panda_queues
 from django.conf import settings
 
 
@@ -673,3 +674,22 @@ def get_resource_types():
     """
     resource_types = list(ResourceTypes.objects.all().values())
     return resource_types
+
+def get_maxrampercore_dict():
+    """
+    Get maxrampercore values depending on resource type and computingsite
+    :return:
+    """
+    resource_types = get_resource_types()
+    pqs = get_panda_queues()
+    maxrampercore_dict = {}
+    for rt in resource_types:
+        if rt['resource_name'] not in maxrampercore_dict:
+            maxrampercore_dict[rt['resource_name']] = {}
+        for pq, pq_data in pqs.items():
+            if rt['maxrampercore'] is not None:
+                maxrampercore_dict[rt['resource_name']][pq] = int(rt['maxrampercore'])
+            elif rt['maxrampercore'] is None and pq_data['maxrss'] is not None and pq_data['corecount'] is not None:
+                maxrampercore_dict[rt['resource_name']][pq] = int(pq_data['maxrss']/pq_data['corecount'])
+
+    return maxrampercore_dict

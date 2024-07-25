@@ -148,7 +148,7 @@
   {% if fdict.stats %}
     {% if fdict.field == 'actualcorecount' and 'sum' in fdict.stats and 'jobstatus' in requestParams and requestParams.jobstatus == 'running' %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}
     {% if fdict.field == 'minramcount' and 'sum' in fdict.stats %}<span class="label neutral">&Sigma;: {{ fdict.stats.sum | intcomma}} GB/core <span class="bp-tooltip right"><i class="fi-info"></i><span class="tooltip-text">Requested by jobs: sum(minramcount)/sum(corecount)</span></span></span> {% endif %}
-    {% if fdict.field == 'minramcount' and 'sum_allocated' in fdict.stats %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum_allocated | intcomma}} GB/core <span class="bp-tooltip right"><i class="fi-info"></i><span class="tooltip-text">Allocated by system: sum(resourcetype.maxrampercore*corecount)/sum(corecount)</span></span></span> {% endif %}
+    {% if fdict.field == 'minramcount' and 'sum_allocated' in fdict.stats %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum_allocated | intcomma}} GB/core <span class="bp-tooltip right"><i class="fi-info"></i><span class="tooltip-text">Allocated by the system: sum(resourcetype.maxrampercore*corecount)/sum(corecount)</span></span></span> {% endif %}
   {% endif %}
 </th>
     <td><div class="comment more">
