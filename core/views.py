@@ -37,21 +37,8 @@ from core.common.utils import getPrefix, getContextVariables
 from core.pandajob.SQLLookups import CastDate
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, PandaJob
 from core.schedresource.models import SchedconfigJson
-from core.common.models import Filestable4
-from core.common.models import Datasets
-from core.common.models import FilestableArch
-from core.common.models import Users
-from core.common.models import Jobparamstable
-from core.common.models import JobsStatuslog
-from core.common.models import Logstable
-from core.common.models import Jobsdebug
-from core.common.models import JediJobRetryHistory
-from core.common.models import JediTasks
-from core.common.models import TasksStatusLog
-from core.common.models import JediEvents
-from core.common.models import JediDatasets
-from core.common.models import JediDatasetContents
-from core.common.models import JediWorkQueue
+from core.common.models import Filestable4, FilestableArch, Datasets, Users, Jobparamstable, JobsStatuslog, Jobsdebug, ResourceTypes
+from core.common.models import JediJobRetryHistory, JediTasks, TasksStatusLog, JediEvents, JediDatasets, JediDatasetContents, JediWorkQueue
 from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.ruciowrapper import ruciowrapper
@@ -2141,17 +2128,6 @@ def jobInfo(request, pandaid=None, batchid=None):
         job['harvesterInfo'] = job['harvesterInfo'][0]
     else:
         job['harvesterInfo'] = {}
-
-    try:
-        # Check for logfile extracts
-        logs = Logstable.objects.filter(pandaid=pandaid)
-        if logs:
-            logextract = logs[0].log1
-        else:
-            logextract = None
-    except:
-        traceback.print_exc(file=sys.stderr)
-        logextract = None
 
     files = []
     fileids = []
@@ -7365,3 +7341,40 @@ def getPayloadLog(request):
     response = HttpResponse(json.dumps(log_content, cls=DateEncoder), content_type='application/json')
 
     return response
+
+
+@never_cache
+@login_customrequired
+def resourceTypeList(request):
+    """
+    List resource types
+    :param request:
+    :return:
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    resource_types = []
+    resource_types.extend(ResourceTypes.objects.values())
+
+    if is_json_request(request):
+        response = JsonResponse({'resource_types': resource_types})
+    else:
+        # replace None with "---"
+        for rt in resource_types:
+            for k, v in rt.items():
+                if v is None:
+                    rt[k] = '---'
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'requestParams': request.session['requestParams'],
+            'built': datetime.now().strftime("%H:%M:%S"),
+            'resource_types': resource_types
+        }
+        response = render(request, 'resourceTypeList.html', data, content_type='text/html')
+        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
+    return response
+
+

@@ -1,0 +1,100 @@
+{% extends "_base_core.html" %}
+{% load static %}
+{% block css_page_library %}
+  <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+  <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+{% block page_title %} {{ viewParams.MON_VO }} PanDA resource types{% endblock %}
+{% block title %} <a class="menu-link" href="{% url 'index' %}">{{ viewParams.MON_VO }} PanDA monitor</a>{% endblock %}
+{% block subtitle %}PanDA resource types{% endblock %}
+{% block body %}
+
+{% if resource_types|length > 0 %}
+  
+<div class="card bp-container-simple secondary" id="container_files">
+<div class="card-divider"><p> {{ resource_types|length }} resource types </p></div>
+<div class="card-section">
+  <table class="data-table nowrap" id="userstatstable">
+    <thead>
+    <tr>
+      <th>Resource type name</th>
+      <th>Min cores</th>
+      <th>Max cores</th>
+      <th>Min RAM/core</th>
+      <th>Max RAM/core</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+</div>
+
+{% else %}
+  
+<p>No dynamic usage information found.</p>
+  
+{% endif %}
+  
+{% endblock %}
+
+
+{% block js_body_page %}
+<script nonce={{request.csp_nonce}}>
+$(document).ready(function () {
+    var resource_types = {{ resource_types|safe }};
+    buildTable(resource_types);
+});
+
+function buildTable(data) {
+  $('#userstatstable').dataTable({
+    "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+    "paging": true,
+    "scrollX": true,
+    "aaSorting": [[1,'asc'], [3, 'asc']],
+    "columnDefs": [
+        {"type": "num-html", "targets": [1,2,3,4] }
+    ],
+    "data": data,
+    "aoColumns": [
+      {
+        title: "Resource type name",
+        data: "resource_name",
+        className: "text",
+        sDefaultContent: "---",
+      },
+      {
+        title: "Min cores",
+        data: "mincore",
+        className: "num",
+        sDefaultContent: "---",
+      },
+      {
+        title: "Max cores",
+        data: "maxcore",
+        className: "num",
+        sDefaultContent: "---",
+      },
+      {
+        title: "Min RAM/core [MB]",
+        data: "minrampercore",
+        className: "num",
+        sDefaultContent: "---",
+      },
+      {
+        title: "Max RAM/core [MB]",
+        data: "maxrampercore",
+        className: "num",
+        sDefaultContent: "---",
+      },
+
+    ],
+  })
+}
+
+
+</script>
+{% endblock %}

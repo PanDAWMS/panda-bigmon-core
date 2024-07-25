@@ -97,6 +97,8 @@ urlpatterns = [
     re_path(r'^workingGroups/$', coremon_views.decommissioned),  # decommissioned
     re_path(r'^workQueues/$', coremon_views.workQueues, name='workQueues'),
 
+    re_path(r'^resourcetypes/$', coremon_views.resourceTypeList, name='resourceTypeList'),
+
     re_path(r'^campaignpredictiondash/$', campaignprediction.campaignPredictionDash, name='campaignPredictionDash'),
     re_path(r'^campaignpredictioninfo/$', campaignprediction.campaignPredictionInfo, name='campaignPredictionInfo'),
     re_path(r'^campprog/$', campaingprogressDKB.campaignProgressDash, name='campaignProgressDash'),
