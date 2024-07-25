@@ -489,17 +489,6 @@ class Jobsdebug(models.Model):
         app_label = 'panda'
 
 
-class Logstable(models.Model):
-    pandaid = models.IntegerField(primary_key=True, db_column='pandaid')
-    log1 = models.TextField(db_column='log1')
-    log2 = models.TextField(db_column='log2')
-    log3 = models.TextField(db_column='log3')
-    log4 = models.TextField(db_column='log4')
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."logstable"'
-        app_label = 'panda'
-
-
 class Metatable(models.Model):
     pandaid = models.BigIntegerField(db_column='pandaid', primary_key=True)
     modificationtime = models.DateTimeField(db_column='modificationtime')

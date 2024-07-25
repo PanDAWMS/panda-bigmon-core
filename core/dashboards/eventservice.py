@@ -110,7 +110,7 @@ def get_es_job_summary_region(query, extra, **kwargs):
     jsr_queues_dict = dict()
     jsr_regions_dict = dict()
 
-    resource_types = get_resource_types()
+    resource_types = [rt['resource_name'] for rt in get_resource_types()]
     job_es_types = list(const.EVENT_SERVICE_JOB_TYPES.values())
     job_states_order = list(const.JOB_STATES)
 

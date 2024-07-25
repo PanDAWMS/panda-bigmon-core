@@ -150,6 +150,10 @@ span.bold {
   font-size: 0.9rem;
   margin: 0.3rem;
 }
+.label.secondary {
+  background-color: #5e789a;
+  color: #fefefe;
+}
 .label.ok {
   background-color: #4ba173;
   color: #fefefe;

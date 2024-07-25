@@ -141,7 +141,7 @@ def get_job_summary_region(query, **kwargs):
     jsr_regions_dict = {}
 
     job_types = ['analy', 'prod']
-    resource_types = get_resource_types()
+    resource_types = [rt['resource_name'] for rt in get_resource_types()]
     worker_metrics = ['nwrunning', 'nwsubmitted']
     extra_metrics = copy.deepcopy(worker_metrics)
     extra_metrics.append('rcores')

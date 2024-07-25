@@ -671,6 +671,5 @@ def get_resource_types():
     Get resource types from DB
     :return: resource_types: list
     """
-    resource_types = list(ResourceTypes.objects.all().values('resource_name'))
-    resource_types = [rt['resource_name'] for rt in resource_types]
+    resource_types = list(ResourceTypes.objects.all().values())
     return resource_types
