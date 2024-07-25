@@ -6,7 +6,7 @@ from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarc
 from core.libs.datetimestrings import parse_datetime
 from core.libs.job import is_event_service
 from core.libs.eventservice import get_event_status_summary
-from core.libs.exlib import split_into_intervals, get_resource_types
+from core.libs.exlib import split_into_intervals, get_maxrampercore_dict
 
 from django.conf import settings
 import core.constants as const
@@ -146,7 +146,7 @@ def job_summary_dict(request, jobs, fieldlist=None):
         'nevents': 'neventsrange'
     }
 
-    resource_type_maxrampercore = {rt['resource_name']: rt['maxrampercore'] if rt['maxrampercore'] else rt['minrampercore'] for rt in get_resource_types()}
+    maxrampercore_dict = get_maxrampercore_dict()
 
     for job in jobs:
         for f in flist:
@@ -280,8 +280,8 @@ def job_summary_dict(request, jobs, fieldlist=None):
             # calculate requested ramcount estimate resource_type.maxrampercore*corecount*njobs
             try:
                 result = dict(functools.reduce(operator.add, map(collections.Counter, [
-                    {'corecount': j['corecount'], 'maxram': 1.0*j['corecount']*resource_type_maxrampercore[j['resourcetype']]} for j in jobs if (
-                        'resourcetype' in j and j['resourcetype'] in resource_type_maxrampercore and isinstance(resource_type_maxrampercore[j['resourcetype']], int) and isinstance(j['corecount'], int) and j['corecount'] > 0)
+                    {'corecount': j['corecount'], 'maxram': 1.0*j['corecount']*maxrampercore_dict[j['resourcetype']][j['computingsite']]} for j in jobs if (
+                        'resourcetype' in j and j['resourcetype'] in maxrampercore_dict and 'computingsite' in j and j['computingsite'] in maxrampercore_dict[j['resourcetype']] and isinstance(maxrampercore_dict[j['resourcetype']][j['computingsite']], int) and isinstance(j['corecount'], int) and j['corecount'] > 0)
                 ])))
                 itemd['stats']['sum_allocated'] = round(1.0/1000*result['maxram']/result['corecount'], 2)
             except Exception as ex:
