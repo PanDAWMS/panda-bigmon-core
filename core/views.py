@@ -2464,7 +2464,6 @@ def jobInfo(request, pandaid=None, batchid=None):
             'jobparams': jobparams,
             'jobid': jobid,
             'coreData': coreData,
-            'logextract': logextract,
             'eventservice': is_event_service(job),
             'evtable': evtable[:1000],
             'debugmode': debugmode,

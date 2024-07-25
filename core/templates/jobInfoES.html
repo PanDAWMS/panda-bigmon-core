@@ -400,18 +400,6 @@
 </tbody>
 </table>
 
-
-{% if logextract %}
-<div class="card bp-container-simple warning">
-  <div class="card-divider">
-    <p>Warning: job log extract indicates possible problems</p>
-  </div>
-  <div class="card-section scrollable">
-    <pre>{{ logextract }}</pre>
-  </div>
-</div>
-{% endif %}
-
 {% if job.metadata %}
 <div class="card bp-container-simple info">
   <div class="card-divider">
