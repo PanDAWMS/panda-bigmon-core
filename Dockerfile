@@ -1,5 +1,26 @@
-FROM gitlab-registry.cern.ch/linuxsupport/alma9-base:latest
+ARG PYTHON_VERSION=3.11.6
+
+FROM docker.io/almalinux:9
+
+ARG PYTHON_VERSION
+
 MAINTAINER PanDA team
+
+RUN yum update -y
+RUN yum install -y epel-release
+
+RUN yum install -y httpd httpd-devel gcc gridsite git psmisc less wget logrotate procps which \
+    openssl-devel readline-devel bzip2-devel libffi-devel zlib-devel systemd-udev
+
+# install python
+RUN mkdir /tmp/python && cd /tmp/python && \
+    wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+    tar -xzf Python-*.tgz && rm -f Python-*.tgz && \
+    cd Python-* && \
+    ./configure --enable-shared --enable-optimizations --with-lto && \
+    make altinstall && \
+    echo /usr/local/lib > /etc/ld.so.conf.d/local.conf && ldconfig && \
+    cd / && rm -rf /tmp/pyton
 
 RUN echo -e '[epel]\n\
 name=Extra Packages for Enterprise Linux 9 [HEAD]\n\
@@ -23,6 +44,19 @@ RUN ln -s /usr/bin/python3 /usr/bin/python && \
 ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
 ENV BIGMON_WSGI_PATH /data/bigmon
 ENV DJANGO_SETTINGS_MODULE core.settings
+
+
+# setup venv with pythonX.Y
+RUN python$(echo ${PYTHON_VERSION} | sed -E 's/\.[0-9]+$//') -m venv ${BIGMON_VIRTUALENV_PATH}
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U pip
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U setuptools
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U gnureadline
+RUN adduser atlpan
+RUN groupadd zp/opt/panda
+RUN usermod -a -G zp atlpan
+RUN mkdir /tmp/src
+WORKDIR /tmp/src
+COPY . .
 
 RUN yum -y update
 
@@ -53,7 +87,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptool
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade channels pyOpenSSL daphne python-dotenv pyrebase4 confluent_kafka futures psycopg2-binary \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
     beautifulsoup4 boto3 bz2file cachetools certifi cffi chardet click codegen cryptography oracledb cycler \
-    dataclasses datefinder decorator defusedxml Django docopt dogpile.cache ecdsa django-csp \
+    dataclasses datefinder decorator defusedxml Django==5.0.8 docopt dogpile.cache ecdsa django-csp \
     elasticsearch elasticsearch-dsl opensearch-py enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
     humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
     Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
