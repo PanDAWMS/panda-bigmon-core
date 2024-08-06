@@ -71,6 +71,8 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade channels 
     django-debug-toolbar django-extensions django-htmlmin django-mathfilters django-redis \
     django-redis-cache social-auth-app-django
 
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir oracledb
+
 RUN mkdir -p ${BIGMON_WSGI_PATH}
 RUN mkdir ${BIGMON_WSGI_PATH}/config
 RUN mkdir ${BIGMON_WSGI_PATH}/logs
