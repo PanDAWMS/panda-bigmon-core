@@ -52,7 +52,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U pip
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U setuptools
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U gnureadline
 RUN adduser atlpan
-RUN groupadd zp/opt/panda
+RUN groupadd zp
 RUN usermod -a -G zp atlpan
 RUN mkdir /tmp/src
 WORKDIR /tmp/src
