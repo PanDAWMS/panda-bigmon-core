@@ -75,11 +75,6 @@ RUN wget https://download.oracle.com/otn_software/linux/instantclient/oracle-ins
 
 RUN yum clean all && rm -rf /var/cache/yum
 
-# setup env
-RUN adduser atlpan
-RUN groupadd zp
-RUN usermod -a -G zp atlpan
-
 RUN python3 -m venv ${BIGMON_VIRTUALENV_PATH} --system-site-packages
 
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptools
