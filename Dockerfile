@@ -61,7 +61,7 @@ COPY . .
 RUN yum -y update
 
 RUN yum install -y nano python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
-        python3 python3-devel less git ca-policy-egi-core \
+        less git ca-policy-egi-core \
         httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch wget net-tools sudo \
         https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
     yum install -y postgresql14 postgresql14-devel
@@ -74,10 +74,6 @@ RUN wget https://download.oracle.com/otn_software/linux/instantclient/oracle-ins
     rpm -ivh http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient-tnsnames.ora-1.4.4-1.el7.cern.noarch.rpm
 
 RUN yum clean all && rm -rf /var/cache/yum
-
-RUN python3 -m venv ${BIGMON_VIRTUALENV_PATH} --system-site-packages
-
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptools
 
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade channels pyOpenSSL daphne python-dotenv pyrebase4 confluent_kafka futures psycopg2-binary \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
