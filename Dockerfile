@@ -90,7 +90,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade channels 
     py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyparsing pytest \
     python-dateutil python-magic python-openid python-social-auth python-string-utils python-utils python3-openid \
     pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
-    schedule scikit-learn scipy six sklearn  social-auth-core soupsieve sqlparse \
+    schedule scikit-learn scipy six scikit-learn  social-auth-core soupsieve sqlparse \
     stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
     urllib3 webencodings websocket-client Werkzeug xlrd zipp \
     rucio-clients \
