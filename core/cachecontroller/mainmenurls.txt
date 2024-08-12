@@ -16,10 +16,6 @@
 /errors/?jobtype=production&sortby=count&display_limit=20
 /errors/?sortby=count&prodsourcelabel=rc_test2
 /errorsscat/
-/users/?sortby=date&view=database
-/users/?sortby=date&view=dynamic
-/sites/
-/workQueues/
 /runningprodtasks/
 /runningprodtasks/?preset=MC
 /runningprodtasks/?json&snap
@@ -32,6 +28,4 @@
 /dash/region/?jobtype=analy&splitby=jobtype
 /dash/region/?jobtype=prod&splitby=jobtype
 /dash/world/
-/dc/sendstalledreport/
-/slowtasks/
 /harvester/workers/

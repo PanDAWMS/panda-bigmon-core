@@ -1,1 +1,5 @@
-/api/dc/tails/?json&days=10
+/sites/
+/slowtasks/
+/users/?sortby=date&view=database
+/users/?sortby=date&view=dynamic
+/dc/sendstalledreport/
