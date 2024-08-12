@@ -18,10 +18,8 @@ from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes, c
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
-from core.datacarousel.utils import getBinnedData, getStagingData, getStagingDatasets, send_report_rse, \
-    retreiveStagingStatistics, getOutliers, substitudeRSEbreakdown, extractTasksIds, staging_rule_verification, \
+from core.datacarousel.utils import getBinnedData, getStagingData, send_report_rse, substitudeRSEbreakdown, staging_rule_verification, \
     get_stuck_files_data
-
 
 from django.conf import settings
 
@@ -30,7 +28,7 @@ _logger = logging.getLogger('bigpandamon')
 
 @never_cache
 @login_customrequired
-def dataCarouselleDashBoard(request):
+def data_carousel_dash(request):
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -48,57 +46,24 @@ def dataCarouselleDashBoard(request):
         'timerange': request.session['timerange'],
     }
 
-    response = render(request, 'DataTapeCarouselle.html', data, content_type='text/html')
-    # patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
+    response = render(request, 'dataCarouselDash.html', data, content_type='text/html')
     return response
 
 
+
 @never_cache
-@login_customrequired
-def dataCarouselTailsDashBoard(request):
+def get_staging_info_for_task(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
-    request.session['viewParams']['selection'] = ''
-    data = {
-        'request': request,
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-    }
-
-    response = render(request, 'DataTapeCaruselTails.html', data, content_type='text/html')
-    return response
-
-
-@never_cache
-def getStagingInfoForTask(request):
-    valid, response = initRequest(request)
     data = getStagingData(request)
     response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response
 
 
-def getStagingTailsData(request):
-    initRequest(request)
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
-    timewindow = query['modificationtime__castdate__range']
-    if 'source' in request.GET:
-        source = request.GET['source']
-    else:
-        source = None
-    datasets = getStagingDatasets(timewindow, source)
-    tasks = extractTasksIds(datasets)
-    setOfSEs = datasets.keys()
-    outliers = None
-    if len(setOfSEs) > 0:
-        stageStat, tasks_to_rucio = retreiveStagingStatistics(setOfSEs, taskstoingnore=tasks)
-        outliers = getOutliers(datasets, stageStat, tasks_to_rucio)
-    return JsonResponse(outliers, safe=False)
-
-
 @never_cache
-def getDTCSubmissionHist(request):
+def get_data_carousel_data(request):
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -218,24 +183,24 @@ def getDTCSubmissionHist(request):
     binned_subm_datasets = build_time_histogram(timelistSubmitted) if len(timelistSubmitted) > 0 else {}
     binned_subm_files = build_time_histogram(timelistSubmittedFiles) if len(timelistSubmittedFiles) > 0 else {}
 
-    binnedActFinData = getBinnedData(
-        timelistIntervalact,
-        additionalList1=timelistIntervalfin, additionalList2=timelistIntervalqueued)
-    eplTime = [['Time', 'Active staging', 'Finished staging', 'Queued staging']] + [[round(time_str, 1), data[0], data[1], data[2]] for (time_str, data) in binnedActFinData]
-
+    binnedActFinData = getBinnedData(timelistIntervalact, timelistIntervalfin, timelistIntervalqueued)
+    eplTime = (
+        [['Time', 'Active staging', 'Finished staging', 'Queued staging']] +
+        [[round(time_str, 1), data[0], data[1], data[2]] for (time_str, data) in binnedActFinData]
+    )
     _logger.debug('Prepared data: {}'.format(time.time() - request.session['req_init_time']))
 
-    finalvalue = {}
-    finalvalue["elapsedtime"] = eplTime
-    finalvalue["submittime"] = [['Time', 'Count']] + [[time_str, data[0]] for time_str, data in binned_subm_datasets]
-    finalvalue["submittimefiles"] = [['Time', 'Count']] + [[time_str, data[0]] for time_str, data in binned_subm_files]
-    finalvalue["progress"] = [["Progress"]] + [[x * 100] for x in progressDistribution]
-    finalvalue['summary'] = summary
-    finalvalue['selection'] = selection_options
-    finalvalue["detailstable"] = dataset_list
+    finalvalue = {
+        "elapsedtime": eplTime,
+        "submittime": [['Time', 'Count']] + [[time_str, data[0]] for time_str, data in binned_subm_datasets],
+        "submittimefiles": [['Time', 'Count']] + [[time_str, data[0]] for time_str, data in binned_subm_files],
+        "progress": [["Progress"]] + [[x * 100] for x in progressDistribution],
+        "summary": summary,
+        "selection": selection_options,
+        "detailstable": dataset_list
+    }
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
-
 
 
 def get_stuck_files(request):
@@ -266,6 +231,7 @@ def get_stuck_files(request):
         stuck_files_list.extend(data['transfers'])
 
     return JsonResponse({'data': stuck_files_list})
+
 
 @never_cache
 def send_stalled_requests_report(request):

@@ -13,30 +13,15 @@ from core.utils import is_json_request
 from core.libs.DateEncoder import DateEncoder
 
 
-def cacheIsAvailable(request):
-    hostname = "bigpanda-redis.cern.ch"
-    port = 6379
-    try:
-        host = socket.gethostbyname(hostname)
-        s = socket.create_connection((host, port), 2)
-        if(s):
-            cache_key = uuid.uuid4()
-            data = json.dumps({"message": "ping-pong"}, cls=DateEncoder)
-            timeout = 0.5
-            cache.set(cache_key, data, timeout)
-            data = cache.get(cache_key, None)
-            return True
-    except Exception as e:
-        logger = logging.getLogger('bigpandamon-error')
-        message = "Internal Servicer Error: %s | Error in Reddis: %s" %(str(request),e)
-        #e = 'Internal Server Error: Reddis! '+ e
-        logger.error(message)
-        pass
-    return False
-
-
 def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
-    # isCache = cacheIsAvailable(request)
+    """
+    Getting cache entry
+    :param request:
+    :param viewType:
+    :param skipCentralRefresh:
+    :param isData:
+    :return:
+    """
     isCache = True
     if isCache:
         is_json = is_json_request(request)
@@ -44,7 +29,6 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
         # We do this check to always rebuild cache for the page when it called from the crawler
         if (('HTTP_X_FORWARDED_FOR' in request.META) and (request.META['HTTP_X_FORWARDED_FOR'] in settings.CACHING_CRAWLER_HOSTS) and
                 skipCentralRefresh == False):
-
             return None
 
         request._cache_update_cache = False
@@ -66,7 +50,15 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
 
 
 def setCacheEntry(request, viewType, data, timeout, isData = False):
-    # isCache = cacheIsAvailable(request)
+    """
+    Putting data to cache
+    :param request:
+    :param viewType:
+    :param data:
+    :param timeout:
+    :param isData:
+    :return:
+    """
     isCache = True
     # do not cache data for 'refreshed' pages
     if 'requestParams' in request.session and 'timestamp' in request.session['requestParams'] and not isData:

@@ -478,7 +478,7 @@
     var get = function(requestparams) {
       return $http({
         method: 'GET',
-        url: '{% url 'getDTCSubmissionHist' %}'+requestparams,
+        url: '{% url 'datacardata' %}?json'+requestparams,
         cache: false
       })};
     var get_stuck_files = function(rule_id, source_rse) {
@@ -516,7 +516,7 @@
     $scope.request_params = {{ requestParams|safe }};
     $scope.selection = {
       options: {},
-      selected: {campaign: [], processingtype: [], source_rse: []},
+      selected: {campaign: [], processingtype: [], source_rse: [], destination_rse: [], jeditaskid: []},
     }
     Object.keys($scope.selection.selected).forEach(key => {
       if (key in $scope.request_params) {
@@ -535,7 +535,6 @@
 
     $scope.gog = function() {
       var request = "";
-      request = "?" + $scope.getTimeForQuery();
       Object.keys($scope.selection.selected).forEach(key => {
         if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
           request += '&' + key + '=' + $scope.selection.selected[key]
@@ -838,5 +837,5 @@
 {% endblock %}
 
 {% block help %}
-{% include 'dataCarouselleHelp.html' %}
+{% include 'dataCarouselHelp.html' %}
 {% endblock %}
