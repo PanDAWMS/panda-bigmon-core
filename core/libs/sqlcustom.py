@@ -48,6 +48,8 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
     if '*R*' in strToProcess:
         strToProcess = strToProcess.replace('*R*', '*')
 
+    fieldToLookAt = fieldToLookAt.lower()
+
     cardParametersRaw = strToProcess.split('*')
     cardRealParameters = [s for s in cardParametersRaw if len(s) >= 1]
     countRealParameters = len(cardRealParameters)
@@ -70,11 +72,11 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
             if currentParCount + 1 < countParameters:
                 trailStar = True
 
-            if fieldToLookAt.lower() == 'produserid':
+            if fieldToLookAt == 'produserid':
                 leadStar = True
                 trailStar = True
 
-            if fieldToLookAt.lower() == 'resourcetype':
+            if fieldToLookAt == 'resourcetype':
                 fieldToLookAt = 'resource_type'
 
             isEscape = False
@@ -82,17 +84,17 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
                 parameter = parameter.replace('_', '!_')
                 isEscape = True
 
-            extraQueryString += "({}{}{}".format(prefix, fieldToLookAt, postfix)
+            extraQueryString += f"({fieldToLookAt}"
             if isNot:
                 extraQueryString += "NOT "
             if leadStar and trailStar:
-                extraQueryString += " LIKE {}'%%{}%%'{}".format(prefix, parameter, postfix)
+                extraQueryString += f" LIKE {prefix}'%%{parameter}%%'{postfix}"
             elif not leadStar and not trailStar:
-                extraQueryString += " LIKE {}'{}'{}".format(prefix, parameter, postfix)
+                extraQueryString += f" LIKE {prefix}'{parameter}'{postfix}"
             elif leadStar and not trailStar:
-                extraQueryString += " LIKE {}'%%{}'{}".format(prefix, parameter, postfix)
+                extraQueryString += f" LIKE {prefix}'%%{parameter}'{postfix}"
             elif not leadStar and trailStar:
-                extraQueryString += " LIKE {}'{}%%'{}".format(prefix, parameter, postfix)
+                extraQueryString += f" LIKE {prefix}'{parameter}%%'{postfix}"
             if isEscape:
                 extraQueryString += " ESCAPE '!'"
             extraQueryString += ")"
