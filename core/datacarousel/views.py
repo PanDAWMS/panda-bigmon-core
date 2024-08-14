@@ -14,7 +14,7 @@ from django.views.decorators.cache import never_cache
 from django.utils import timezone
 from django.db import connection
 
-from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes, convert_sec
+from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes, convert_sec, round_to_n_digits
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
@@ -56,9 +56,36 @@ def get_staging_info_for_task(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    data = getStagingData(request)
-    response = HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
+    data_raw = getStagingData(request)
+    # prepare data for template
+    data = {}
+    if data_raw and len(data_raw) > 0:
+        for task, dsdata in data_raw.items():
+            for key in ('taskid', 'status', 'scope', 'dataset', 'rse', 'source_rse', 'destination_rse', 'step_action_id'):
+                data[key] = dsdata[key] if key in dsdata else '---'
+            for key in ('start_time', 'end_time'):
+                if key in dsdata and dsdata[key] and isinstance(dsdata[key], timezone.datetime):
+                    data[key] = dsdata[key].strftime(settings.DATETIME_FORMAT)
+                else:
+                    data[key] = '---'
+            if 'update_time' in dsdata and dsdata['update_time'] is not None:
+                data['update_time'] = convert_sec(dsdata['update_time'].total_seconds(), out_unit='str')
+            else:
+                data['update_time'] = '---'
+            data['total_files'] = dsdata['total_files']
+            data['staged_files'] = dsdata['staged_files']
+            if isinstance(dsdata['total_files'], int) and dsdata['total_files'] > 0:
+                data['staged_files_pct'] = round_to_n_digits(dsdata['staged_files'] * 100.0 / dsdata['total_files'], 1, method='floor')
+            else:
+                data['staged_files_pct'] = 0
+            data['total_bytes'] = round_to_n_digits(convert_bytes(dsdata['dataset_bytes'], output_unit='GB'), 2)
+            data['staged_bytes'] = round_to_n_digits(convert_bytes(dsdata['staged_bytes'], output_unit='GB'), 2)
+            if isinstance(dsdata['dataset_bytes'], int) and dsdata['dataset_bytes'] > 0:
+                data['staged_bytes_pct'] = round_to_n_digits(dsdata['staged_bytes'] * 100.0 / dsdata['dataset_bytes'], 1, method='floor')
+            else:
+                data['staged_bytes_pct'] = 0
+
+    response = JsonResponse(data, content_type='application/json')
     return response
 
 
