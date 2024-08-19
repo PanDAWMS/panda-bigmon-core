@@ -270,7 +270,7 @@ def taskProblemExplorer(request):
             'error_summary_table': error_summary_table,
         }
         response = render(request, 'taskProblemExplorer.html', data, content_type='text/html')
-        setCacheEntry(request, "taskProblemExplorer", json.dumps(data, cls=DateEncoder), 60 * 20)
+        setCacheEntry(request, "taskProblemExplorer", json.dumps(data, cls=DateEncoder), 60 * 60)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:

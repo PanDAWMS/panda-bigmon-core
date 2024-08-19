@@ -2721,7 +2721,7 @@ def userList(request):
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
-        setCacheEntry(request, "userList", json.dumps(data, cls=DateEncoder), 60 * 20)
+        setCacheEntry(request, "userList", json.dumps(data, cls=DateEncoder), 60 * 60)
         response = render(request, 'userList.html', data, content_type='text/html')
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -3255,7 +3255,7 @@ def siteList(request):
             'nosorturl': nosorturl,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        setCacheEntry(request, "siteList", json.dumps(data, cls=DateEncoder), 60 * 20)
+        setCacheEntry(request, "siteList", json.dumps(data, cls=DateEncoder), 60 * 60)
         response = render(request, 'siteList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
