@@ -84,9 +84,9 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
                 parameter = parameter.replace('_', '!_')
                 isEscape = True
 
-            extraQueryString += f"({fieldToLookAt}"
+            extraQueryString += f"({fieldToLookAt} "
             if isNot:
-                extraQueryString += "NOT "
+                extraQueryString += " NOT "
             if leadStar and trailStar:
                 extraQueryString += f" LIKE {prefix}'%%{parameter}%%'{postfix}"
             elif not leadStar and not trailStar:
