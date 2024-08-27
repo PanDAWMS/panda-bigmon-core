@@ -195,8 +195,10 @@ elif 'POSTGRES' in DEPLOYMENT:
 elif 'MYSQL' in DEPLOYMENT:
     DATETIME_FORMAT = "%Y-%m-%d %H:%M:%SZ"
 
-# max number of items in IN (*,*..) query, if more - use tmp table.
+# max number of items in `IN (*,*..)` query, if more - use tmp table. Do not use it for non oracle deployments
 DB_N_MAX_IN_QUERY = 100
+if 'ORACLE' not in DEPLOYMENT:
+    DB_N_MAX_IN_QUERY = 100000000
 
 CACHES = {
     "default": {
