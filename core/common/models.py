@@ -131,14 +131,6 @@ class FilestableArch(models.Model):
         app_label = 'panda'
 
 
-class Incidents(models.Model):
-    at_time = models.DateTimeField(primary_key=True, db_column='at_time')
-    typekey = models.CharField(max_length=60, db_column='typekey', blank=True)
-    description = models.CharField(max_length=600, db_column='description', blank=True)
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."incidents"'
-        app_label = 'panda'
-
 
 class JediDatasetContents(models.Model):
     jeditaskid = models.BigIntegerField(db_column='jeditaskid', primary_key=True)
