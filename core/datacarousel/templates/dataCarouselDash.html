@@ -654,13 +654,13 @@
               { title: 'Destination RSE', data: 'destination_rse' },
               { title: 'Time elapsed [d:h:m:s]', data: 'elapsedtime', defaultValue: '---'},
               { title: 'Started at', data: 'start_time' },
-              { title: 'Rucio rule', data: 'rse', className: 'text icons1',
+              { title: 'Rucio rule', data: 'rrule', className: 'text icons1',
                 "render": function(data, type, full, meta) {
                     let entry = ''
                     if (data && "{{ request.session.rucio_ui }}".length > 0) {
-                      entry += '<a href="{{ request.session.rucio_ui }}rule?rule_id=' + full['rse'] + '">' + full['rse'].slice(0,3) + '...' + full['rse'].slice(full['rse'].length-3, full['rse'].length) + ' <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+                      entry += '<a href="{{ request.session.rucio_ui }}rule?rule_id=' + full['rrule'] + '">' + full['rrule'].slice(0,3) + '...' + full['rrule'].slice(full['rrule'].length-3, full['rrule'].length) + ' <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
                       if (data && full['status'] === 'staging') {
-                        entry += ` <a target="_blank" ng-click="stuckfiles.toggle('` + full['rse'] + `','` + full['source_rse'] + `')"><div class="bp-tooltip left"><i class="fi-plus"></i><span class="tooltip-text">Look for stuck files</span></div></a>`
+                        entry += ` <a target="_blank" ng-click="stuckfiles.toggle('` + full['rrule'] + `','` + full['source_rse'] + `')"><div class="bp-tooltip left"><i class="fi-plus"></i><span class="tooltip-text">Look for stuck files</span></div></a>`
                       }
                     }
                     else {
