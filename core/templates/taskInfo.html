@@ -779,12 +779,12 @@ app.controller('StagingDSController', function ($scope, $http) {
       if ($scope.json) {
         if ('rse' in $scope.json) {
           $scope.json.rrule_cut = $scope.json.rse.slice(0,3) + '...' + $scope.json.rse.slice($scope.json.rse.length-3, $scope.json.rse.length);
+          var displaydiv = document.getElementById('dsStageDiv');
+          displaydiv.style.display = "";
         }
         else {
           $scope.json.rrule_cut = '';
         }
-        var displaydiv = document.getElementById('dsStageDiv');
-        displaydiv.style.display = "";
       }
     });
   };
