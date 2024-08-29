@@ -176,6 +176,7 @@ def get_data_carousel_data(request):
             'campaign': dsdata['campaign'],
             'pr_id': dsdata['pr_id'],
             'taskid': dsdata['taskid'],
+            'dataset': dsdata['dataset'],
             'status': dsdata['status'], 'total_files': dsdata['total_files'], 'staged_files': dsdata['staged_files'],
             'size': round(convert_bytes(dsdata['dataset_bytes'], output_unit='GB'), 2),
             'progress': int(math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])),
@@ -183,7 +184,7 @@ def get_data_carousel_data(request):
             'destination_rse': dsdata['destination_rse'] if 'destination_rse' in dsdata and dsdata['destination_rse'] else '---',
             'elapsedtime': convert_sec(epltime.total_seconds(), out_unit='str') if epltime is not None else '---',
             'start_time': dsdata['start_time'].strftime(settings.DATETIME_FORMAT) if dsdata['start_time'] else '---',
-            'rse': dsdata['rse'],
+            'rrule': dsdata['rse'],
             'update_time': convert_sec(dsdata['update_time'].total_seconds(), out_unit='str') if dsdata['update_time'] is not None else '---',
             'processingtype': dsdata['processingtype']
         })
