@@ -57,8 +57,7 @@ JOB_STATES_FINAL = (
     'finished',
     'failed',
     'cancelled',
-    'closed',
-    'merging'
+    'closed'
 )
 
 EVENT_STATES = MappingProxyType({

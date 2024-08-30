@@ -111,7 +111,7 @@ def get_job_walltime(job):
         endtime = parse_datetime(job['endtime']) if not isinstance(job['endtime'], datetime) else job['endtime']
 
     if endtime is None:
-        if 'jobstatus' in job and job['jobstatus'] not in const.JOB_STATES_FINAL:
+        if 'jobstatus' in job and job['jobstatus'] not in (const.JOB_STATES_FINAL + ('merging',)):
             # for active job take time up to now
             endtime = datetime.now()
         else:
