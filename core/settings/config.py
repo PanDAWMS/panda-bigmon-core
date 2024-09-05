@@ -157,6 +157,17 @@ if DEPLOYMENT == 'ORACLE_ATLAS':
     IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
     RUCIO_UI_URL = 'https://rucio-ui.cern.ch/'
     LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'rucio')
+elif DEPLOYMENT == 'ORACLE_ATLAS_TB':
+    DB_SCHEMA = 'ATLAS_PANDABIGMON_TB'
+    DB_SCHEMA_PANDA = 'ATLAS_PANDA_TB'
+    DB_SCHEMA_PANDA_META = 'ATLAS_PANDAMETA_TB'
+    DB_SCHEMA_PANDA_ARCH = 'ATLAS_PANDAARCH_TB'
+    DB_SCHEMA_IDDS = 'ATLAS_IDDS_TB'
+    DATABASES = dbaccess_oracle_atlas
+    CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
+    IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
+    RUCIO_UI_URL = 'https://rucio-ui.cern.ch/'
+    LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'rucio')
 elif DEPLOYMENT == 'POSTGRES':
     DB_SCHEMA = 'doma_pandabigmon'
     DB_SCHEMA_PANDA = 'doma_panda'
