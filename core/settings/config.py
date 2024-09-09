@@ -138,7 +138,7 @@ except ImportError:
 
 DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
 
-if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA'):
+if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA', 'ORACLE_ATLAS_TB'):
     try:
         import oracledb
         oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
