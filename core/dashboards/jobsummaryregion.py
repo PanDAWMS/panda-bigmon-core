@@ -25,34 +25,35 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
     :param jsr_regions_dict: dict of queue job summary
     :return: list of region job summary, list of queue job summary
     """
-    split_by = None
-    if 'split_by' in kwargs and kwargs['split_by']:
-        split_by = kwargs['split_by']
+    split_by = kwargs.get('split_by', None)
+
     jsr_queues_list = []
     jsr_sites_list = []
     jsr_regions_list = []
+
     for pq, params in jsr_queues_dict.items():
         for jt, resourcetypes in params['summary'].items():
             for rt, summary in resourcetypes.items():
-                row = list()
+                row = []
                 row.append(pq)
-                row.append(params['pq_params']['pqtype'])
-                row.append(params['pq_params']['region'])
-                row.append(params['pq_params']['status'])
+                row.append(params['pq_params'].get('pqtype', 'N/A'))
+                row.append(params['pq_params'].get('region', 'N/A'))
+                row.append(params['pq_params'].get('status', 'N/A'))
                 row.append(jt)
                 row.append(rt)
-                row.append(params['pq_pilots']['count'])
-                row.append(params['pq_pilots']['count_nojob'])
-                row.append(summary['nwsubmitted'])
-                row.append(summary['nwrunning'])
-                row.append(summary['rcores'])
+                row.append(params['pq_pilots'].get('count', 0))
+                row.append(params['pq_pilots'].get('count_nojob', 0))
+                row.append(summary.get('nwsubmitted', 0))
+                row.append(summary.get('nwrunning', 0))
+                row.append(summary.get('rcores', 0))
                 row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
-                if summary['failed'] + summary['finished'] > 0:
-                    row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
+
+                if summary.get('failed', 0) + summary.get('finished', 0) > 0:
+                    row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
                 else:
                     row.append(0)
                 for js in const.JOB_STATES:
-                    row.append(summary[js])
+                    row.append(summary.get(js, 0))
 
                 if split_by is None:
                     if jt == 'all' and rt == 'all':
@@ -70,20 +71,21 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
     for site, jobtypes in jsr_sites_dict.items():
         for jt, resourcetypes in jobtypes.items():
             for rt, summary in resourcetypes.items():
-                row = list()
+                row = []
                 row.append(site)
                 row.append(jt)
                 row.append(rt)
-                row.append(summary['nwsubmitted'])
-                row.append(summary['nwrunning'])
-                row.append(summary['rcores'])
+                row.append(summary.get('nwsubmitted', 0))
+                row.append(summary.get('nwrunning', 0))
+                row.append(summary.get('rcores', 0))
                 row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
-                if summary['failed'] + summary['finished'] > 0:
+
+                if summary.get('failed', 0) + summary.get('finished', 0) > 0:
                     row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
                 else:
                     row.append(0)
                 for js in const.JOB_STATES:
-                    row.append(summary[js])
+                    row.append(summary.get(js, 0))
 
                 if split_by is None:
                     if jt == 'all' and rt == 'all':
@@ -101,20 +103,21 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
     for reg, jobtypes in jsr_regions_dict.items():
         for jt, resourcetypes in jobtypes.items():
             for rt, summary in resourcetypes.items():
-                row = list()
+                row = []
                 row.append(reg)
                 row.append(jt)
                 row.append(rt)
-                row.append(summary['nwsubmitted'])
-                row.append(summary['nwrunning'])
-                row.append(summary['rcores'])
+                row.append(summary.get('nwsubmitted', 0))
+                row.append(summary.get('nwrunning', 0))
+                row.append(summary.get('rcores', 0))
                 row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
-                if summary['failed'] + summary['finished'] > 0:
+
+                if summary.get('failed', 0) + summary.get('finished', 0) > 0:
                     row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
                 else:
                     row.append(0)
                 for js in const.JOB_STATES:
-                    row.append(summary[js])
+                    row.append(summary.get(js, 0))
 
                 if split_by is None:
                     if jt == 'all' and rt == 'all':
@@ -128,6 +131,7 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
                 elif 'jobtype' not in split_by and 'resourcetype' in split_by:
                     if jt == 'all' and rt != 'all':
                         jsr_regions_list.append(row)
+
     return jsr_queues_list, jsr_sites_list, jsr_regions_list
 
 
