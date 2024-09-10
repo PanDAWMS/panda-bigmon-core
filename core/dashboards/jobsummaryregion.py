@@ -34,7 +34,7 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
     for pq, params in jsr_queues_dict.items():
         for jt, resourcetypes in params['summary'].items():
             for rt, summary in resourcetypes.items():
-                row = []
+                row = list()
                 row.append(pq)
                 row.append(params['pq_params'].get('pqtype', 'N/A'))
                 row.append(params['pq_params'].get('region', 'N/A'))
@@ -71,7 +71,7 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
     for site, jobtypes in jsr_sites_dict.items():
         for jt, resourcetypes in jobtypes.items():
             for rt, summary in resourcetypes.items():
-                row = []
+                row = list()
                 row.append(site)
                 row.append(jt)
                 row.append(rt)
@@ -103,7 +103,7 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
     for reg, jobtypes in jsr_regions_dict.items():
         for jt, resourcetypes in jobtypes.items():
             for rt, summary in resourcetypes.items():
-                row = []
+                row = list()
                 row.append(reg)
                 row.append(jt)
                 row.append(rt)
