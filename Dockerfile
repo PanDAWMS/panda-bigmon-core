@@ -73,7 +73,7 @@ RUN wget https://download.oracle.com/otn_software/linux/instantclient/oracle-ins
     yum install /tmp/oracle-instantclient-sqlplus-linuxx64.rpm -y
 
 # Grab the latest version of the Oracle tnsnames.ora file
-RUN ln -fs /data/panda/tnsnames.ora /etc/tnsnames.ora
+RUN ln -fs /data/bigmon/config/tnsnames.ora /etc/tnsnames.ora
 
 RUN yum clean all && rm -rf /var/cache/yum
 
