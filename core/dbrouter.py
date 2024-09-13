@@ -2,6 +2,8 @@ class ProdMonDBRouter(object):
     def db_for_read(self, model, **hints):
         if model._meta.app_label == 'panda':
             return 'default'
+        if model._meta.app_label == 'int8r':
+            return 'int8r'
         if model._meta.app_label == 'pandaarch':
             return 'panda_atlarc'
         if model._meta.app_label == 'pandamon':
@@ -23,4 +25,9 @@ class ProdMonDBRouter(object):
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
+        return None
+
+    def db_for_write(self, model, **hints):
+        if model._meta.app_label == 'int8r':
+            return 'int8r'
         return None

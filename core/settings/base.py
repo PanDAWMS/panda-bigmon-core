@@ -1,5 +1,8 @@
 import os
 import core
+import oracledb
+oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
+
 try:
     from core.settings.local import DEBUG
 except ImportError:

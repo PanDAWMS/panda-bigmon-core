@@ -35,6 +35,16 @@ class PandaDBVersion(models.Model):
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."pandadb_version"'
         app_label = 'panda'
 
+class Rating(models.Model):
+    rating_id = models.IntegerField(primary_key=True, db_column='RATINGID')
+    user_id = models.IntegerField(primary_key=False, db_column='USERID')
+    task_id = models.IntegerField(primary_key=False, db_column='JEDITASKID')
+    rating = models.IntegerField(primary_key=False,db_column='RATING')
+    feedback = models.CharField(max_length=255, db_column='FEEDBACK')
+    timestamp = models.CharField(max_length=255, db_column='ADDED')
+    class Meta:
+            db_table = f'"{settings.DB_SCHEMA}"."rating"'
+            app_label = 'pandamon'
 
 class Cloudconfig(models.Model):
     name = models.CharField(max_length=60, primary_key=True, db_column='name')

@@ -355,7 +355,33 @@
           <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'taskProfileMonitor' task.jeditaskid %}" target="_blank">Task Profile</a>
      </div>
   </div>
-  </div>
+
+  <label for="emotions">Rate this Task:</label>
+<div class="bp-dropdown-button">
+    <div class="dropdown-items-rate">
+        <a href="#5" id="button-very_happy">😍</a>
+        <a href="#4" id="button-happy">😄</a>
+        <a href="#3" id="button-neutral">😐</a>
+        <a href="#2" id="button-angry">😠</a>
+        <a href="#1" id="button-very_angry">😡</a>
+    </div>
+</div>
+<div id="selected-emotion"></div>
+</div>
+
+<div id="emoji-modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-content" style="background-color: white; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; position: relative; box-shadow: 0px 0px 15px rgba(0,0,0,0.3);">
+        <!-- Close Button -->
+        <span id="close-modal" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer; color: #333; background-color: #f1f1f1; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; text-align: center; border: 2px solid #ddd; z-index: 1000;">&times;</span>
+        <!-- Modal Content -->
+        <div style="padding-top: 40px;"> <!-- Add padding to make space for the close button -->
+            <h2 style="margin-top: 0;">Submit your feedback</h2>
+            <textarea id="user-comment" placeholder="Write your feedback here..." style="width: 100%; height: 100px; margin-bottom: 10px; resize: vertical;"></textarea>
+            <button id="submit-rating" style="background-color: #4CAF50; color: white; border: none; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 4px;">Submit</button>
+        </div>
+    </div>
+</div>
+
   <div class="columns small-5 medium-4 large-3 align-right">
   {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
       {% if not task.status in finalstatelist %}
@@ -720,6 +746,13 @@ var MON_VO = '{{ viewParams.MON_VO|safe }}';
 var jeditaskid = {{ jeditaskid | safe }};
 google.charts.load('current', {'packages':['sankey']});
 
+const emojiButtons = document.querySelectorAll('.dropdown-items-rate a');
+emojiButtons.forEach(button => {button.addEventListener('click', emojiButtonClick);});
+document.getElementById('close-modal').addEventListener('click', closeModal);
+document.getElementById('submit-rating').addEventListener('click', submitFeedback);
+document.querySelectorAll('.emoji-button').forEach(button => {
+    button.addEventListener('click', handleEmojiClick);
+});
 document.getElementById("button-taskflow").addEventListener("click", toggletaskflow);
 document.getElementById("button-task-status-log").addEventListener("click", toggleStatusLog);
 if (document.getElementById("button-task-data-movement")) {document.getElementById("button-task-data-movement").addEventListener("click", toggleTaskDataMovement);}
@@ -1248,6 +1281,41 @@ function toggleTaskDataMovement() {
         scope.datamovement.toggle();
       });
     }
+}
+
+function emojiButtonClick() {
+    // Get the emoji and text content
+    const emoji = this.textContent.trim();
+    const emotion = this.getAttribute('href').substring(1);
+    const submitButton = document.getElementById('submit-rating');
+    submitButton.setAttribute('data-emoji', emoji);
+    submitButton.setAttribute('data-emotion', emotion);
+
+    //Open User Feedback
+    document.getElementById('emoji-modal').style.display = 'block';
+
+}
+
+// Function to close the modal
+function closeModal() {
+    document.getElementById('emoji-modal').style.display = 'none';
+}
+
+// Function to handle feedback submission
+function submitFeedback() {
+    // Close the modal after submitting feedback
+    document.getElementById('emoji-modal').style.display = 'none';
+    const feedback = document.getElementById('user-comment').value.trim();
+    const submitButton = document.getElementById('submit-rating');
+    const rating = submitButton.getAttribute('data-emotion');
+    const emoji = submitButton.getAttribute('data-emoji');
+
+    $.ajax({
+            url: {% url 'test_function' %},
+            data: {'task': jeditaskid, 'rating': rating, 'feedback': feedback}})
+
+    // Display the selected emotion
+    document.getElementById('selected-emotion').textContent = `Rating: ${emoji}`;
 }
 
 function killtasks(taskID, action) {

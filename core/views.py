@@ -40,6 +40,7 @@ from core.pandajob.SQLLookups import CastDate
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, \
     CombinedWaitActDefArch4, PandaJob
 from core.schedresource.models import SchedconfigJson
+from core.common.models import Rating
 from core.common.models import Filestable4
 from core.common.models import Datasets
 from core.common.models import FilestableArch
@@ -217,6 +218,31 @@ def get_renderedrow(context, **kwargs):
     if kwargs['type'] == "region_sitesummary":
         kwargs['statelist'] = statelist
         return Customrenderer.region_sitesummary(context, kwargs)
+
+
+def test_function(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    user_id = request.user.id
+    task_id  = int(request.session['requestParams']['task'])
+    rating = int(request.session['requestParams']['rating'])
+    feedback = str(request.session['requestParams']['feedback'])
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+    rating_object = Rating.objects.filter(user_id=user_id, task_id=task_id).values()
+    if len(rating_object) > 0:
+        rating_object[0]["rating"] = rating
+        rating_object[0]["feedback"] = feedback
+        rating_object[0]["timestamp"] = timestamp
+        rating_object.save()
+
+    else:
+        task_rating = Rating(user_id =user_id, task_id=task_id, rating=rating, feedback=feedback, timestamp=timestamp)
+        task_rating.save()
+
+    #return HttpResponse(json.dumps(ratings), content_type='application/json')
 
 
 def initRequest(request, callselfmon=True):
