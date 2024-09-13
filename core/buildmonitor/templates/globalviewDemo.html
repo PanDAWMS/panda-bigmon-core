@@ -25,9 +25,11 @@
 </div>
 
 <div id="note1"><P>
-<UL><LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a>
-<LI> For ART GRID test results, the number of tests with statuses active, succeeded, finished (with Athena succeeded and sub-steps failed), failed are shown. Follow result links for details
-<LI> For ART LOCAL test results, the number of tests with statuses succeeded, finished (with Athena succeeded and sub-steps failed), failed are shown. Follow results links to access ART local documentation (built by the tool developed by Oleg Zenin)
+<UL>
+    <LI><a href="https://atlas-sw-infrastructure.docs.cern.ch/CI_Nightlies_Beginners_Guide">CI and Nightly Systems: A Beginner's Guide</a>
+    <LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">CI and Nightly Systems: Features and Policies</a>
+    <LI> For the <a href="https://atlas-project-art.web.cern.ch/atlas-project-art/doc/ARTManual.html">ATLAS Release Tester (ART)</a> results, the color coding is as follows: blue for active, green for succeeded, brown-red for finished with problems, and red for failed number of tests
+    <LI> <a href="#headers_note">Explanations of the table headers</a> can be found at the bottom of the page
 </UL></div>
 
 <table id="firstGlobalExample" class="stripe">
@@ -46,6 +48,24 @@
      <tbody></tbody>
 </table>
 
+<div id="headers_note"><P>
+Explanations of the table headers
+<UL>
+    <LI>NIGHTLY GROUP - Clusters nightly branches with similar purposes. The CI group is dedicated for CI builds
+    <LI>BRANCH - Names of nightly branches which encode the Git branch, project name, and platform
+    <LI>RECENT RELEASE - Name of the latest release built, reflecting the job date
+    <LI>BUILD TIME - Time when the build was completed
+    <LI>COMPILATION ERRORS (w/warnings) - Shows the number of packages with compilation errors. In parentheses, it includes both errors and warnings
+    <LI>CTEST (or CI) TEST ERRORS (w/warnings) -  Indicates the number of local tests with errors. In parentheses, it shows both errors and warnings.
+    This includes unit test results for nightly builds. For CI tests, it also includes local integration tests. ART tests are excluded
+    <LI>ART LOCAL - Displays the number of ART tests run on a local CERN cluster.
+    Color-coded numbers represent test statuses: green for succeeded, brown-red for finished with Athena succeeded and sub-steps failed, and red for failed.
+    Follow the result links for details
+    <LI>ART GRID - Displays the number of ART tests run on the Grid.
+    Color-coded numbers represent test statuses: blue for active, green for succeeded, brown-red for finished with Athena succeeded and sub-steps failed, and red for failed.
+    Follow the result links for details
+    <LI>CVMFS (on client) - Shows the publication date on CVMFS, indicating when it becomes available to client machines
+</UL>
 </div>
 {% endblock %}
 
