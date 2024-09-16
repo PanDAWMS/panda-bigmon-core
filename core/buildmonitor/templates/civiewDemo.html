@@ -26,9 +26,11 @@
 <div id="notes">
     <P><UL>
     <LI><a href="{% url 'BuildGlobal' %}">Link to global system page</a>
-    <LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">Nightly and CI systems features and policies</a>
+    <LI><a href="https://atlas-sw-infrastructure.docs.cern.ch/CI_Nightlies_Beginners_Guide">CI and Nightly Systems: A Beginner's Guide</a>
+    <LI><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/NightliesCIInfo">CI and Nightly Systems: Features and Policies</a>
     <LI><a href="http://alibrari.web.cern.ch/alibrari/mr-problems-bp.html">Merge Request Problems Display
-    <LI><a href="https://atlas-sw-build-logs.web.cern.ch/ciwww/plots">CI analytics (build and test time distributions)</a>
+    <LI><a href="https://atlas-sw-build-logs.web.cern.ch/ciwww/plots">CI Analytics (build and test time distributions)</a>
+    <LI> <a href="#headers_note">Explanations of the table headers</a> can be found at the bottom of the page
 </UL></div>
 
 <table id="CISummary" class="stripe">
@@ -49,6 +51,30 @@
      </thead>
      <tbody></tbody>
 </table>
+</div>
+{% endblock %}
+
+{% block help %}
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>ATLAS CI Builds Summary Help</p></div>
+<div class="card-section">
+  <b>Explanations of the table headers</b>
+<UL>
+    <LI>RELEASE - Name of the release, reflecting the GitLab MR number and job date
+    <LI>PLATFORM - Name of the platform
+    <LI>PROJECT - Name of the project. Up to 6 projects can be build in a single job
+    <LI>GIT BRANCH (link to MR) - Name of the Git branch for which the MR was created, linked to the corresponding GitLab MR
+    <LI>JOB TIME STAMP - Time when the job information was submitted to the database
+    <LI>GIT CLONE - Status of the git clone stage, linked to the log
+    <LI>EXTERNALS BUILD - Status of the externals build stage, linked to the log
+    <LI>CMAKE CONFIG - Status of the CMake configuration stage, linked to the log
+    <LI>BUILD TIME - Time when the compilation stage was completed
+    <LI>COMPILATION ERRORS (w/warnings) - Shows the number of packages with compilation errors. In parentheses, it includes both errors and warnings
+    <LI>TEST TIME - Time when the test stage was completed
+    <LI>CI TEST ERRORS (w/warnings) -  Indicates the number of local tests with errors. In parentheses, it shows both errors and warnings
+    <LI>HOST - Name of the build node where all stages were run
+</UL>
+</div>
 
 </div>
 {% endblock %}
