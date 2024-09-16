@@ -220,7 +220,7 @@ def get_renderedrow(context, **kwargs):
         return Customrenderer.region_sitesummary(context, kwargs)
 
 
-def test_function(request):
+def rating_func(request):
     valid, response = initRequest(request)
     if not valid:
         return response

@@ -370,9 +370,9 @@
 </div>
 
 <div id="emoji-modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5);">
-    <div class="modal-content" style="background-color: white; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; position: relative; box-shadow: 0px 0px 15px rgba(0,0,0,0.3);">
+    <div class="emoji-modal-content" style="background-color: white; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; position: relative; box-shadow: 0px 0px 15px rgba(0,0,0,0.3);">
         <!-- Close Button -->
-        <span id="close-modal" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer; color: #333; background-color: #f1f1f1; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; text-align: center; border: 2px solid #ddd; z-index: 1000;">&times;</span>
+        <span id="close-rating-box" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer; color: #333; background-color: #f1f1f1; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; text-align: center; border: 2px solid #ddd; z-index: 1000;">&times;</span>
         <!-- Modal Content -->
         <div style="padding-top: 40px;"> <!-- Add padding to make space for the close button -->
             <h2 style="margin-top: 0;">Submit your feedback</h2>
@@ -748,7 +748,7 @@ google.charts.load('current', {'packages':['sankey']});
 
 const emojiButtons = document.querySelectorAll('.dropdown-items-rate a');
 emojiButtons.forEach(button => {button.addEventListener('click', emojiButtonClick);});
-document.getElementById('close-modal').addEventListener('click', closeModal);
+document.getElementById('close-rating-box').addEventListener('click', closeRatingBox);
 document.getElementById('submit-rating').addEventListener('click', submitFeedback);
 document.querySelectorAll('.emoji-button').forEach(button => {
     button.addEventListener('click', handleEmojiClick);
@@ -1297,7 +1297,7 @@ function emojiButtonClick() {
 }
 
 // Function to close the modal
-function closeModal() {
+function closeRatingBox() {
     document.getElementById('emoji-modal').style.display = 'none';
 }
 
@@ -1311,7 +1311,7 @@ function submitFeedback() {
     const emoji = submitButton.getAttribute('data-emoji');
 
     $.ajax({
-            url: {% url 'test_function' %},
+            url: {% url 'rating_func' %},
             data: {'task': jeditaskid, 'rating': rating, 'feedback': feedback}})
 
     // Display the selected emotion
