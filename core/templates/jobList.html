@@ -147,7 +147,8 @@
   <p>{{ fdict.field }} ({{ fdict.list|length }})</p>
   {% if fdict.stats %}
     {% if fdict.field == 'actualcorecount' and 'sum' in fdict.stats and 'jobstatus' in requestParams and requestParams.jobstatus == 'running' %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma }}</span>{% endif %}
-    {% if fdict.field == 'minramcount' and 'sum' in fdict.stats %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum | intcomma}} GB/core <span class="bp-tooltip right"><i class="fi-info"></i><span class="tooltip-text">sum(minramcount)/sum(corecount)</span></span></span> {% endif %}
+    {% if fdict.field == 'minramcount' and 'sum' in fdict.stats %}<span class="label neutral">&Sigma;: {{ fdict.stats.sum | intcomma}} GB/core <span class="bp-tooltip right"><i class="fi-info"></i><span class="tooltip-text">Requested by jobs: sum(minramcount)/sum(corecount)</span></span></span> {% endif %}
+    {% if fdict.field == 'minramcount' and 'sum_allocated' in fdict.stats %}<span class="label secondary">&Sigma;: {{ fdict.stats.sum_allocated | intcomma}} GB/core <span class="bp-tooltip right"><i class="fi-info"></i><span class="tooltip-text">Allocated by the system: sum(resourcetype.maxrampercore*corecount)/sum(corecount)</span></span></span> {% endif %}
   {% endif %}
 </th>
     <td><div class="comment more">
@@ -157,7 +158,7 @@
             {% elif fdict.field  == 'harvesterinstance' %} {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'durationmin' %} {% if item.kvalue > 0 %} {{ item.kname }} <a href="{{nodurminurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a> {% endif %}
             {% elif fdict.field == 'produsername' %} <a href="{% url 'userInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
-            {% elif fdict.field == 'eventservicestatus' %} ({{ item.kvalue }})
+            {% elif fdict.field == 'eventservicestatus' %} <span class='{{item.kname}} item'>{{ item.kname }}</span> ({{ item.kvalue }})
             {% elif fdict.field == 'container_name' and request.session.xurls and fdict.field in request.session.xurls %} {{ item.kname }} <a href="{{ request.session.xurls.container_name }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
             {% elif fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'>{{ item.kname }}</span>
                 {% if item.kname == 'closed:toreassign' %}
@@ -320,13 +321,13 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
         {% if request.user.is_tester %}
           <div class="button-group bp-comparison">
             <a class="button {% if job.pandaid in clist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}" ><span class="tooltip-right">{% if job.pandaid in clist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if job.pandaid in clist %} Remove from comparison {% else %} Add to comparison {% endif %}</span></span></a>
-            <a class="button" href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
+            <a class="button" href="/compare/jobs/?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
           </div>
         {% endif %}
     </td>
 		<td><a href="{% url 'userInfo' job.produsername|safe %}?display_limit=100">{{ job.produsername }}</a>{% if job.workinggroup %}<br><a href="{{xurl}}workinggroup={{ job.workinggroup }}">{{ job.workinggroup }}</a>{% endif %}{% if viewParams.MON_VO != 'ATLAS' %}{% if job.vo %} / {{ job.vo }}{% endif %} {% endif %}
 		</td>
-		<td> {% if job.reqid %} <a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
+		<td> {% if job.prodsourcelabel == 'managed' and job.reqid %} <a href="{% url 'jobList' %}?reqid={{ job.reqid }}&display_limit=300">{{ job.reqid }}</a> <br> {% endif %}
 		{% if job.jeditaskid  and job.jeditaskid != 'None' %}<a href="{{xurl}}jeditaskid={{job.jeditaskid}}">{{ job.jeditaskid }}</a> {% elif job.taskid and job.taskid != 'None' %} <a href="{% url 'jobList' %}?taskid={{job.taskid}}{% if job.taskid < 1000000 %}&produsername={{job.produsername}}{% endif %}&display_limit=100">{{ job.taskid }}</a> {% endif %}</td>
 		<td class="small"><a href="{{xurl}}transformation={{job.transformation}}">{{ job.transformation }}</a></td>
 		<td class='{{job.jobstatus}}_fill'>{{ job.jobstatus }}</td>
@@ -334,7 +335,7 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
 		<td class="small">{{ job.waittime }}</td>
 		<td class="small">{{ job.duration }}</td>
 		<td class="small">{{ job.modificationtime }}</td>
-		<td class="small">{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %} <a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'>{{job.computingsitestatus}}</span> {{job.computingsitecomment}} </td>
+		<td class="small">{% if viewParams.MON_VO == 'ATLAS' %}<a href="{{xurl}}cloud={{job.cloud}}">{{job.cloud}}</a> {% endif %} <a href="{% url 'siteInfo' job.computingsite %}">{{ job.computingsite }}</a> <span class='{{job.computingsitestatus}}'>{{job.computingsitestatus}}</span> {% if job.computingsitestatus != 'online' %} {{job.computingsitecomment}}{% endif %} </td>
 		<td>{{ job.currentpriority }}</td>
     <td>{{ job.nevents }} ({{ job.ninputs }})</td>
     <td>{% if 'maxpssgbpercore' in job and job.maxpssgbpercore %}{{ job.maxpssgbpercore }}{% endif %}</td>
@@ -344,8 +345,9 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
 		</td>
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
     <td colspan="20" class="small">Job name: <a href="{% url 'jobList' %}?jobname={{ job.jobname }}&taskid={{ job.taskid }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}&mode=nodrop&sortby=attemptnr">{{ job.jobname }}</a>  #{{ job.attemptnr }}</td></tr>
-	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
-    <td colspan="20" class="highlightcell small">Datasets: {% if job.proddblock %} <b>In:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.proddblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.proddblock }} </a>  {% if request.session.rucio_ui|length > 0 %}|| <a href="{{ request.session.rucio_ui }}did?scope={{ job.inputfileproject }}&name={{ job.proddblock }}" target="_blank"> Rucio link</a>{% endif %} {% endif %} {% if job.destinationdblock %} {% if job.proddblock %}<br> {% endif %} <b> Out:</b> <a href="{% url 'datasetInfo' %}?datasetname={{ job.destinationdblock }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ job.destinationdblock }} </a> {% endif %} </td></tr>
+  <tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
+    <td colspan="20" class="small">Datasets: {% if job.did_input|length > 0 %} <b>In:</b> {% for d in job.did_input %}<a href="{% url 'datasetInfo' %}?datasetid={{ d.id }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}"> {{ d.name }} </a>  {% if request.session.rucio_ui|length > 0 %} <a href="{{ request.session.rucio_ui }}did?scope={{ job.inputfileproject }}&name={{ d.name }}" target="_blank"><img class="align-text-top" src="/static/images/rucio-logo.png" width=14 height=14></a>{% endif %}{% if forloop.last %}{% else %},{% endif %} {% endfor %} {% else %}-{% endif %}
+      {% if job.did_output|length > 0 %} {% if job.did_input|length > 0 %}<br>{% endif %}<b>Out:</b> {% for d in job.did_output %} <a href="{% url 'datasetInfo' %}?datasetid={{ d.id }}{% if job.jeditaskid > 0 %}&jeditaskid={{ job.jeditaskid }}{% endif %}">{{ d.name }}</a>{% if forloop.last %}{% else %},{% endif %}{% endfor %}{% endif %}</td></tr>
     {% endfor %}
 </table>
 </div>

@@ -1,8 +1,5 @@
 import os
 import core
-import oracledb
-oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
-
 try:
     from core.settings.local import DEBUG
 except ImportError:
@@ -57,6 +54,9 @@ MIDDLEWARE = (
     'core.oauth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
 
     'csp.middleware.CSPMiddleware',
+
+    'core.loggingmiddleware.RequestLoggingMiddleware',
+
 )
 
 ROOT_URLCONF = 'core.urls'
@@ -127,32 +127,35 @@ COMMON_INSTALLED_APPS = \
 
 INSTALLED_APPS_BIGPANDAMON_CORE = (
     # BigPanDAmon core
-    'core.oauth',
-    'core.common',
-    'core.pandajob',
-    'core.schedresource',
-    'core.dashboards',
-    'core.status_summary',
+    "core.oauth",
+    "core.common",
+    "core.pandajob",
+    "core.schedresource",
+    "core.dashboards",
+    "core.status_summary",
+    "core.harvester",
+    "core.filebrowser",
 )
 
-INSTALLED_APPS_EXTRA = [
-    # "core.admin",
-    "core.art",
-    "core.buildmonitor",
-    "core.compare",
-    "core.datacarousel",
-    "core.errorsscattering",
-    "core.filebrowser",
-    "core.globalshares",
-    "core.grafana",
-    "core.harvester",
-    "core.iDDS",
-    "core.mlflowdynamic",
-    "core.reports",
-    "core.runningprod",
-    "core.panda_client",
-    "core.kafka"
-]
+if 'BIGMON_INSTALLED_APPS_LIST' in os.environ and os.environ['BIGMON_INSTALLED_APPS_LIST']:
+    INSTALLED_APPS_EXTRA = os.environ['BIGMON_INSTALLED_APPS_LIST'].split(',')
+else:
+    INSTALLED_APPS_EXTRA = [
+        # "core.admin",
+        "core.art",
+        "core.buildmonitor",
+        "core.compare",
+        "core.datacarousel",
+        "core.errorsscattering",
+        "core.globalshares",
+        "core.grafana",
+        "core.iDDS",
+        "core.mlflowdynamic",
+        "core.reports",
+        "core.runningprod",
+        "core.panda_client",
+        "core.kafka"
+    ]
 
 CHANNEL_LAYERS = {
     "default": {

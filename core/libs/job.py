@@ -111,7 +111,7 @@ def get_job_walltime(job):
         endtime = parse_datetime(job['endtime']) if not isinstance(job['endtime'], datetime) else job['endtime']
 
     if endtime is None:
-        if 'jobstatus' in job and job['jobstatus'] not in const.JOB_STATES_FINAL:
+        if 'jobstatus' in job and job['jobstatus'] not in (const.JOB_STATES_FINAL + ('merging',)):
             # for active job take time up to now
             endtime = datetime.now()
         else:
@@ -488,13 +488,13 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
                 job['jobinfo'] += job['taskbuffererrordiag']
 
             # extract job substatus
-            if 'jobmetrics' in job:
-                pat = re.compile('.*mode\=([^\s]+).*HPCStatus\=([A-Za-z0-9]+)')
+            if 'jobmetrics' in job and job['jobmetrics']:
+                pat = re.compile('.*mode\\=([^\\s]+).*HPCStatus\\=([A-Za-z0-9]+)')
                 mat = pat.match(job['jobmetrics'])
                 if mat:
                     job['jobmode'] = mat.group(1)
                     job['substate'] = mat.group(2)
-                pat = re.compile('.*coreCount\=([0-9]+)')
+                pat = re.compile('.*coreCount\\=([0-9]+)')
                 mat = pat.match(job['jobmetrics'])
                 if mat:
                     job['corecount'] = mat.group(1)
@@ -505,16 +505,6 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
 
         if is_debug_mode(job):
             job['jobinfo'] += 'Real-time logging is activated for this job.'
-
-        if 'destinationdblock' in job and job['destinationdblock']:
-            ddbfields = job['destinationdblock'].split('.')
-            if len(ddbfields) == 6 and ddbfields[0] != 'hc_test':
-                job['outputfiletype'] = ddbfields[4]
-            elif len(ddbfields) >= 7:
-                job['outputfiletype'] = ddbfields[6]
-            # else:
-            #     job['outputfiletype'] = None
-            #     print job['destinationdblock'], job['outputfiletype'], job['pandaid']
 
         try:
             job['homecloud'] = pq_clouds[job['computingsite']]
@@ -528,6 +518,10 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
                 job['produsername'] = 'Unknown'
         if job['transformation']:
             job['transformation'] = job['transformation'].split('/')[-1]
+        if 'jobmetrics' in job and job['jobmetrics'] and 'nGPU' in job['jobmetrics']:
+            job['processor_type'] = 'GPU'
+        else:
+            job['processor_type'] = 'CPU'
 
         job['durationsec'] = get_job_walltime(job)
         job['durationsec'] = job['durationsec'] if job['durationsec'] is not None else 0
@@ -690,9 +684,9 @@ def add_files_info_to_jobs(jobs):
     files_list = []
     fquery = {
         'pandaid__in': [j['pandaid'] for j in jobs],
-        'type__in': ['input', 'log']
+        'type__in': ['input', 'log', 'output'],
     }
-    fvalues = ('pandaid', 'fileid', 'datasetid', 'lfn', 'type', 'scope')
+    fvalues = ('pandaid', 'fileid', 'datasetid', 'lfn', 'type', 'scope', 'dataset')
     files_list.extend(Filestable4.objects.filter(**fquery).values(*fvalues))
     if len(set([f['pandaid'] for f in files_list])) < len(jobs):
         files_list.extend(FilestableArch.objects.filter(**fquery).values(*fvalues))
@@ -703,12 +697,18 @@ def add_files_info_to_jobs(jobs):
         if f['pandaid'] not in files_per_job:
             files_per_job[f['pandaid']] = {
                 'lfn_list': [],
-                'log_dids': []
+                'did_log_list': [],
+                'did_input': {},
+                'did_output': {},
             }
         if f['type'] == 'input' and f['lfn'] not in files_per_job[f['pandaid']]['lfn_list']:
             files_per_job[f['pandaid']]['lfn_list'].append(f['lfn'])
+            if '.lib.' not in f['dataset'] and f['datasetid'] not in files_per_job[f['pandaid']]['did_input']:
+                files_per_job[f['pandaid']]['did_input'][f['datasetid']] = f['dataset']
         elif f['type'] == 'log':
-            files_per_job[f['pandaid']]['log_dids'].append({'scope': f['scope'], 'name': f['lfn']})
+            files_per_job[f['pandaid']]['did_log_list'].append({'scope': f['scope'], 'name': f['lfn']})
+        elif f['type'] == 'output' and f['datasetid'] not in files_per_job[f['pandaid']]['did_output']:
+            files_per_job[f['pandaid']]['did_output'][f['datasetid']] = f['dataset']
 
     # getting info from dataset contents, where only last attempt is kept
     dataset_contents_list = []
@@ -719,7 +719,8 @@ def add_files_info_to_jobs(jobs):
     extra_str = "datasetid in (select datasetid from {}.jedi_datasets where masterid is null)".format(
         settings.DB_SCHEMA_PANDA
     )
-    dataset_contents_list.extend(JediDatasetContents.objects.filter(**dcquery).extra(where=[extra_str]).values())
+    dvalues = ('pandaid', 'lfn', 'type', 'startevent', 'endevent', 'nevents', 'datasetid')
+    dataset_contents_list.extend(JediDatasetContents.objects.filter(**dcquery).extra(where=[extra_str]).values(*dvalues))
 
     dc_per_job = {}
     for jds in dataset_contents_list:
@@ -745,7 +746,17 @@ def add_files_info_to_jobs(jobs):
         else:
             j['ninputs'] = 0
 
-        if j['pandaid'] in files_per_job and len(files_per_job[j['pandaid']]['log_dids']) > 0:
-            j['log_did'] = files_per_job[j['pandaid']]['log_dids'][0]
+        if j['pandaid'] in files_per_job:
+            if len(files_per_job[j['pandaid']]['did_log_list']) > 0:
+                j['log_did'] = files_per_job[j['pandaid']]['did_log_list'][0]
+            if len(files_per_job[j['pandaid']]['did_input']) > 0:
+                j['did_input'] = [{'id': did, 'name': name} for did, name in files_per_job[j['pandaid']]['did_input'].items()]
+            else:
+                j['did_input'] = []
+            if len(files_per_job[j['pandaid']]['did_output']) > 0:
+                j['did_output'] = [{'id': did, 'name': name} for did, name in files_per_job[j['pandaid']]['did_output'].items()]
+            else:
+                j['did_output'] = []
+
 
     return jobs

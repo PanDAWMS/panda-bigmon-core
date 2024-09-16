@@ -94,37 +94,38 @@
         <li class="has-submenu">
         <a href="#">Dash</a>
         <ul class="submenu menu vertical">
-            <li><a href="{% url 'workflowprogressitems' %}">Workflows progress</a></li>
-            {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a>Region view</a>
-                    <ul class="submenu menu">
-                        <li><a href="{% url 'dashRegion' %}">All jobs</a></li>
-                        <li><a href="{% url 'dashRegion' %}?jobtype=analy&splitby=jobtype">Analysis jobs</a></li>
-                        <li><a href="{% url 'dashRegion' %}?jobtype=prod&splitby=jobtype">Production jobs</a></li>
-                        <li><a href="{% url 'dashProduction' %}?cloudview=region&es=true">Event Service jobs</a></li>
-                    </ul>
-                </li>
-                <li><a>World view</a>
-                    <ul class="submenu menu">
-                        <li><a href="{% url 'dashWorld' %}">Production jobs</a></li>
-                        <li><a href="{% url 'dashProduction' %}?cloudview=world&es=true">Event Service jobs</a></li>
-                    </ul>
-                </li>
-                <li><a href="{% url 'workingGroups' %}">Working group jobs</a></li>
-                <li><a>Data Carousel</a>
-                    <ul class="submenu menu">
-                        <li><a href="{% url 'dataCarouselleDashBoard' %}">Dashboard</a></li>
-                        <li><a href="{% url 'datacartails' %}">Staging Tails</a></li>
-                    </ul>
-                </li>
-                <li><a href="{% url 'iddsmain' %}">iDDS</a></li>
-                <li><a href="{% url 'globalshares' %}">Global Shares</a></li>
-                <li><a href="{% url 'art-mainPage' %}">ART tests</a></li>
-                <li><a href="{% url 'BuildGlobal' %}">Nightlies and CI</a></li>
-            {% else %}
-                <li><a href="{% url 'dashboard' %}">VOs, sites</a></li>
-                <li><a href="{% url 'workingGroups' %}">Working groups</a></li>
-            {% endif %}
+          {% if 'core.iDDS' in request.session.installed_apps %}
+            <li><a href="/idds/wfprogress/">Workflows progress</a></li>
+          {% endif %}
+          {% if viewParams.MON_VO == 'ATLAS' %}
+              <li><a>Region view</a>
+                <ul class="submenu menu">
+                  <li><a href="{% url 'dashRegion' %}">All jobs</a></li>
+                  <li><a href="{% url 'dashRegion' %}?jobtype=analy&splitby=jobtype">Analysis jobs</a></li>
+                  <li><a href="{% url 'dashRegion' %}?jobtype=prod&splitby=jobtype">Production jobs</a></li>
+                  <li><a href="{% url 'dashES' %}">Event Service jobs</a></li>
+                </ul>
+              </li>
+              <li><a href="{% url 'dashWorld' %}">Nucleus view</a></li>
+              {% if 'installed_apps' in request.session and 'core.datacarousel' in request.session.installed_apps %}
+                <li><a href="/dc/dash/">Data Carousel</a></li>
+              {% endif %}
+              {% if 'installed_apps' in request.session and 'core.iDDS' in request.session.installed_apps %}
+                <li><a href="/idds/">iDDS</a></li>
+              {% endif %}
+              {% if 'installed_apps' in request.session and 'core.globalshares' in request.session.installed_apps %}
+                <li><a href="/globalshares/">Global Shares</a></li>
+                <li><a href="/workQueues/">Work queues</a></li>
+              {% endif %}
+              {% if 'installed_apps' in request.session and 'core.art' in request.session.installed_apps %}
+                <li><a href="/art/">ART tests</a></li>
+              {% endif %}
+              {% if 'installed_apps' in request.session and 'core.buildmonitor' in request.session.installed_apps %}
+                <li><a href="/globalpage/">Nightlies and CI</a></li>
+              {% endif %}
+          {% else %}
+              <li><a href="{% url 'dashRegion' %}">VOs, sites</a></li>
+          {% endif %}
         </ul>
         </li>
 
@@ -133,18 +134,19 @@
         <ul class="submenu menu vertical">
             <li><a href="{% url 'taskList' %}?display_limit=300">All</a></li>
             {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'taskList' %}?tasktype=anal&display_limit=300">Analysis</a></li>
+                <li><a href="{% url 'taskList' %}?tasktype=analy&display_limit=300">Analysis</a></li>
                 <li><a href="{% url 'taskList' %}?tasktype=prod&display_limit=300">Production</a></li>
                 <li><a href="{% url 'taskList' %}?eventservice=eventservice&display_limit=300">Event service</a></li>
                 <li><a href="{% url 'taskList' %}?container_name=all&display_limit=300">Containerized</a></li>
                 <li><a>Running production</a>
                     <ul class="submenu menu">
-                        <li><a href="{% url 'runningProdTasks' %}">All</a></li>
-                        <li><a href="{% url 'runningProdTasks' %}?preset=MC">MC production</a></li>
-                        <li><a href="{% url 'runningProdTasks' %}?preset=DPD">Derivation production</a></li>
-                        <li><a href="{% url 'runningProdTasks' %}?preset=DATA">Reprocessing production</a></li>
+                        <li><a href="/runningprodtasks/">All</a></li>
+                        <li><a href="/runningprodtasks/?preset=MC">MC production</a></li>
+                        <li><a href="/runningprodtasks/?preset=DPD">Derivation production</a></li>
+                        <li><a href="/runningprodtasks/?preset=DATA">Reprocessing production</a></li>
                     </ul>
                 </li>
+                <li><a href="{% url 'taskProblemExplorer' %}">Slow analysis</a></li>
             {% endif %}
         </ul>
         </li>
@@ -173,14 +175,8 @@
                 <li><a href="{% url 'errorSummary' %}?jobtype=analysis&sortby=count&display_limit=20">Analysis</a></li>
                 <li><a href="{% url 'errorSummary' %}?jobtype=production&sortby=count&display_limit=20">Production</a></li>
                 <li><a href="{% url 'errorSummary' %}?sortby=count&prodsourcelabel=rc_test2">rc_test2</a></li>
-                <li><a href="{% url 'errorsScattering' %}">Scattering matrix</a></li>
-                {% if viewParams.MON_VO == 'ATLAS' %}
-                <li><a href="{% url 'incidentList' %}">Recent incidents</a></li>
-                <li><a href="{% url 'esatlasPandaLogger' %}">PanDA logger</a> </li>
-                {% endif %}
-                {% comment %}
-                <li><a href="{% url 'jobProblems' %}">Problem report</a></li>
-                {% endcomment %}
+                <li><a href="/errorsscat/">Scattering matrix</a></li>
+                <li><a href="{% url 'pandaLogger' %}">PanDA logger</a> </li>
             {% endif %}
         </ul>
         </li>
@@ -214,19 +210,19 @@
                 <li><a href="{% url 'siteList' %}?cloud=US">US</a></li>
                 <li><a href="{% url 'siteList' %}?CATCHALL=*jobseed%3Des*|*jobseed%3Dall*">Event Service sites</a></li>
             {% endif %}
-            <li><a href="{% url 'workQueues' %}">Work queues</a></li>
         </ul>
         </li>
 
-
-        <li class="has-submenu">
-        <a href="#">Harvester</a>
-        <ul class="submenu menu vertical">
-            <li><a href="{% url 'harvesterInstanceList' %}">Instances</a></li>
-            <li><a href="{% url 'harvesterWorkerList' %}">Workers</a></li>
-            <li><a href="{% url 'harvesterSlots' %}">Slots</a></li>
-        </ul>
-        </li>
+        {% if 'installed_apps' in request.session and 'core.harvester' in request.session.installed_apps %}
+          <li class="has-submenu">
+          <a href="#">Harvester</a>
+          <ul class="submenu menu vertical">
+              <li><a href="/harvester/instances/">Instances</a></li>
+              <li><a href="/harvester/workers/">Workers</a></li>
+              <li><a href="/harvester/slots/">Slots</a></li>
+          </ul>
+          </li>
+        {% endif %}
 
         <li>
             <a href="{% url 'userInfo' %}">My BigPanDA</a>
@@ -261,6 +257,7 @@
                     <option class="searchoption" value="hashtag">Tasks for #</option>
                   {% endif %}
                   <option class="searchoption" value="site">Site by name</option>
+                  <option class="searchoption" value="sitewn">WNs for site</option>
                   <option class="searchoption" value="user">User</option>
                   <option class="searchoption" value="dataset">Dataset by name</option>
                   <option class="searchoption" value="filename">File by name</option>
@@ -278,16 +275,8 @@
             </li>
           {% endif %}
           {% if viewParams.MON_VO == 'ATLAS' %}
-              <li class="has-submenu">
-              <a href="#">Prodsys</a>
-              <ul  class="submenu menu vertical">
-                  <li><a href="https://prodtask-dev.cern.ch/prodtask/task_table/">Prodsys task list</a>
-                  <li><a href="https://prodtask-dev.cern.ch/prodtask/task_manage/">Manage tasks</a>
-                  <li><a href="https://prodtask-dev.cern.ch/prodtask/task_create/">Create task</a>
-                  <li><a href="https://prodtask-dev.cern.ch/prodtask/request_table/">Requests</a>
-                  <li><a href="https://prodtask-dev.cern.ch/getdatasets/">Input dataset search</a>
-                  <li><a href="https://prodtask-dev.cern.ch/prodtask/production_dataset_table/">Aborted and obsolete datasets</a>
-              </ul>
+              <li>
+                <a href="https://prodtask-dev.cern.ch/">ProdSys</a>
               </li>
 
               <li class="has-submenu">
@@ -329,8 +318,8 @@
               <ul class="submenu menu vertical">
                   <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
                   <li><span class="li-text loggeduser">{{ request.user.email }}</span>
-                  {% if request.user.is_tester %}
-                      <li><a href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
+                  {% if request.user.is_tester and 'core.compare' in request.session.installed_apps %}
+                      <li><a href="/compare/jobs/?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
                       <li><a id="button-clear-comparison-list">Clear jobs comparison list</a>
                   {% endif %}
                   <li><a href="{% url 'userInfo' %}">My BigPanDA</a>
@@ -429,7 +418,7 @@
         {% if built != None %} {{ built }}, {% endif %} <a id="button-refresh-page"> Refresh</a>
     </div>
 </div>
-<!-- End sub-title -->
+<!-- End sub title -->
 
 <!-- Main Grid Section -->
 <div class="large-12 columns body-content" id="content">
@@ -478,7 +467,7 @@
     <div class="columns medium-8 small-7">
       <p>In case of suggestions, questions, or problems with:</p>
       {% if viewParams.MON_VO == 'ATLAS' %}
-        <p>running analysis - <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">email DAST experts</a></p>
+        <p>running analysis - <a target="_blank" href="https://atlas-talk.web.cern.ch/c/distributed-computing-help"><img src="{% static 'images/atlas-logo-white.png' %}"> ATLAS talk</a> or <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">email DAST experts</a></p>
       {% endif %}
         <p>
           monitoring - <a href="mailto:atlas-adc-pandamon-support@cern.ch">email</a>
@@ -499,20 +488,20 @@
     <script src="{% static 'js/app.js' %}?{% cache_bust "js/app.js" %}"></script>
     <script src="{% static 'js/user-settings.js' %}?{% cache_bust "js/user-settings.js" %}"></script>
     <script nonce={{request.csp_nonce}}>
-
-      document.getElementById("button-save-settings").addEventListener("click", saveSettings);
-      document.getElementById("button-bpsearch").addEventListener("click", bpsearch);
-      if ('{{ request.user.is_tester }}' === 'True') {
-        document.getElementById("button-clear-comparison-list").addEventListener("click", clearComparisonList);
-        document.getElementById("button-deny-rights").addEventListener("click", denyRights);
-      }
-      else {
-        document.getElementById("button-grant-rights").addEventListener("click", grantRights);
+      
+      if (document.getElementById("button-bpsearch")) { document.getElementById("button-bpsearch").addEventListener("click", bpsearch);}
+      if ('{{ request.user.is_authenticated }}' === 'True') {
+        if ('{{ request.user.is_tester }}' === 'True') {
+          document.getElementById("button-save-settings").addEventListener("click", saveSettings);
+          document.getElementById("button-clear-comparison-list").addEventListener("click", clearComparisonList);
+          document.getElementById("button-deny-rights").addEventListener("click", denyRights);
+        }
+        else {
+          document.getElementById("button-grant-rights").addEventListener("click", grantRights);
+        }
       }
       document.getElementById("button-refresh-page").addEventListener("click", refreshPage);
-
-      document.getElementById("searchselectid").addEventListener("change", getSelectValue);
-
+      if (document.getElementById("searchselectid")) {document.getElementById("searchselectid").addEventListener("change", getSelectValue);}
 
       {% if timerange %}
           var timerange = {{ timerange|safe }};
@@ -659,6 +648,10 @@
                       urlBase = "{% url 'siteInfo' %}" ;
                       url = "?site=";
                       break;
+                  case 'sitewn':
+                      urlBase = "{% url 'wnInfo' %}" ;
+                      url = "";
+                      break;
                   case 'user':
                       urlBase = "{% url 'userInfo' %}" ;
                       url = "?user=";
@@ -785,10 +778,18 @@
                   minLength: 1,
               });
               break;
+         case 'sitewn':
+              $("#searchinputid").autocomplete({
+                  source: "{% url 'getsites' %}",
+                  select: function (event, ui) { //item selected
+                      AutoCompleteSelectHandler(event, ui);
+                  },
+                  minLength: 1,
+              });
+              break;
          }
       }
-      function AutoCompleteSelectHandler(event, ui)
-      {
+      function AutoCompleteSelectHandler(event, ui) {
          var selectedObj = ui.item;
       }
 

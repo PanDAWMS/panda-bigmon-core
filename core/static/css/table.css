@@ -65,6 +65,13 @@ th.sub {
     background-color:white;
 }
 
+table tr td a:has(img) {
+  display: inline-block;
+}
+table tr td a > img {
+  vertical-align: text-top;
+}
+
 table.tableinlinel {
     float:left;
     width:25%;
@@ -933,6 +940,9 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .table-scroll table {
   width: 100%;
   margin: 0;
+}
+.row .columns.table-scroll {
+  padding: 0;
 }
 
 .wrap-words {

@@ -5,7 +5,7 @@ import base64
 import io
 import re
 from io import BytesIO
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from PIL import Image
 
 import hashlib
@@ -303,7 +303,7 @@ def pledges(request):
 
     else:
         timebefore = timedelta(days=7)
-        endtime = (datetime.utcnow()).replace(minute=00, hour=00, second=00, microsecond=000)
+        endtime = (datetime.now(tz=timezone.utc)).replace(minute=00, hour=00, second=00, microsecond=000)
         starttime = (endtime - timebefore).replace(minute=00, hour=00, second=00, microsecond=000)
         total_seconds = (starttime - endtime).total_seconds()
         total_days = (endtime - starttime).days
@@ -435,7 +435,7 @@ def pledges(request):
             'date_from': starttime,
             'date_to': endtime,
             'days': total_days,
-            'info': "This page was cached: {0}".format(str(datetime.utcnow()))
+            'info': "This page was cached: {0}".format(str(datetime.now(tz=timezone.utc)))
         }
         setCacheEntry(request, "pledges", json.dumps(data, cls=DateEncoder), 60 * 60 * 24 * 30)
         return HttpResponse(t.render({"date_from": starttime, "date_to": endtime, "days": total_days}, request),
@@ -473,7 +473,7 @@ def grafana_image(request):
         param = request.build_absolute_uri()
         url = param[param.index("=")+1:len(param)]
         for urlw in whitelist:
-            pattern = "^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
+            pattern = r"^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
             urlConfim = re.findall(pattern, url)
             if len(urlConfim) > 0:
                 break

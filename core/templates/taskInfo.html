@@ -95,9 +95,6 @@
         {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
           <th>Parent</th>
         {% endif %}
-        {% if task.ticketid %}
-            <th>Tracker</th>
-        {% endif %}
         {% if 'gco2_global_humanized' in task and 'total' in task.gco2_global_humanized %}
           <th>CO<sub>2</sub> <a class="bp-tooltip left blacklink" target="_blank" href="https://panda-wms.readthedocs.io/en/latest/advanced/carbon_footprint.html"><i class="fi-info"></i>
             <span class="bp-tooltip tooltip-text">Estimated CO<sub>2</sub> emission, based on the weighted average of regional electricity sources for ATLAS Grid computing, click to read in more detail</span></a>
@@ -120,8 +117,8 @@
         {% if task.deftreqid %}
             <td>
               {% if viewParams.MON_VO == 'ATLAS' %}
-                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}"
-                     target="_blank">{{ task.deftreqid }}</a>
+                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/#inputList{{ task.slice }}" target="_blank">{{ task.deftreqid }}</a>
+                {% if task.reference_link %}<a target="_blank" href="{{ task.reference_link }}"><img height="14" width="36" src="{% static 'images/jira-logo-color.png' %}"></a>{% endif %}
               {% else %}
                 {{ task.deftreqid }}
               {% endif %}
@@ -204,9 +201,6 @@
         {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
           <td><a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a></td>
         {% endif %}
-        {% if task.ticketid %}
-            <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a></td>
-        {% endif %}
         {% if 'gco2_global_humanized' in task and 'total' in task.gco2_global_humanized %}
           <td>{{ task.gco2_global_humanized.total.value|intcomma }}{{ task.gco2_global_humanized.total.unit }}
             <br><span class="done">{{ task.gco2_global_humanized.finished.value|intcomma }}{{ task.gco2_global_humanized.finished.unit }}</span>
@@ -273,15 +267,11 @@
               <a href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
           {% endif %}
           {% if viewParams.MON_VO == 'ATLAS' %}
-              {% if task.tasktype == 'prod' %}
-                  <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
-                     target="_blank">Manage Prod Task</a>
-                  <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
-              {% elif  task.tasktype == 'anal' %}
-                  <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=analysis&task_id={{ task.jeditaskid }}"
-                     target="_blank">Manage Prod Task</a>
-                  <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
-              {% endif %}
+                {% if task.tasktype == 'prod' %}
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/" target="_blank">Prod Task (to manage task)</a>
+                {% elif  task.tasktype == 'anal' %}
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/" target="_blank">Prod Task (to manage task)</a>
+                {% endif %}
               <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(message),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Task
                   brokerage </a>
               <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(message),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'fields.type:%22{% if task.brokerage == 'prod_brokerage' %}atlasprodjobbroker{% else %}atlasanaljobbroker{% endif %}%22%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Job
@@ -291,14 +281,12 @@
               <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(logName,fields.type,logLevel,message),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'logName.keyword:%22panda.log.RetrialModule%22%20AND%20fields.type:%22retrialmodule%22%20%20AND%20jediTaskID:{{ jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:'{{ task.kibanatimefrom|safe }}',to:'{{ task.kibanatimeto|safe }}'))">Retrial
                   Module logger </a>
           {% endif %}
-          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}">Error summary</a>
+          <a {% if task.n_jobs_total == 0 %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}&display_limit=10">Error summary</a>
+          <a {% if task.n_jobs_total == 0 or 'archive' in warning %}class="disabled"{% endif %} href="{% url 'errorSummary' %}?jeditaskid={{ jeditaskid }}&extra=unfinishedfiles&display_limit=10">Errors for unfinished files</a>
           {% if task.parent_tid != task.jeditaskid and task.parent_tid != None %}
               <a href="{% url 'taskInfo' task.parent_tid %}">Parent task {{ task.parent_tid }}</a>
           {% endif %}
           <a href="{% url 'taskList' %}?parent_tid={{ task.jeditaskid }}&display_limit=100">Child tasks</a>
-          {% if task.ttcrequested != None and task.starttime != None %}
-              <a href="{% url 'ttc' %}?jeditaskid={{ jeditaskid }}" target="_blank">TTC page</a>
-          {% endif %}
       </div>
   </div>
 
@@ -564,41 +552,56 @@
   </div>
   </div>
 
-  <div id="dsStageDiv" class="fresh-table badevents" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
-  <table>
+  <div id="dsStageDiv" class="table-scroll" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
+  <table class="fresh-table unstriped">
     <thead>
-      <tr><th colspan=20>Dataset staging information</th></tr>
+      <tr><th colspan=20>Staging information for {% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}did?name={$ json.scope $}:{$ json.dataset $}">{$ json.dataset $}</a> <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}"><i class="fi-graph-trend"></i></a>{% else %}{$ json.dataset $}{% endif %} </th></tr>
     </thead>
     <tbody>
       <tr>
-       <th>Staged / Total files <a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid={{ jeditaskid|safe }}"><i class="fi-graph-trend"></i></a></th>
-       <td>{$ json['staged_files'] $} / {$ json['total_files'] $}</td>
+        <th>Rucio rule</th>
+        <th>Source</th>
+        <th>Destination</th>
+        <th class="mid">Status</th>
+        <th class="num">Total files</th>
+        <th class="num">Staged files</th>
+        <th class="num">%</th>
+        <th class="num">Total volume [GB]</th>
+        <th class="num">Staged volume [GB]</th>
+        <th class="num">%</th>
+        <th>Started</th>
+        <th>Since last update</th>
       </tr>
-      <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO!='ATLAS' ">
-        <th ng-if="key!='step_action_id'">{$ key $}</th>
-        <td ng-if="key!='step_action_id'">{$ value $}</td>
-      </tr>
-      <tr ng-repeat="(key, value) in json" ng-if="key!='staged_files' && key!='total_files' && key!='taskid' && MON_VO=='ATLAS' ">
-        <th ng-if="key!='step_action_id'">{$ key $}</th>
-        <td ng-if="key=='dataset'">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}did?name={$ json['scope'] $}:{$ value $}">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
-        <td ng-if="key=='status'" class="{$ value $}_fill">{% if viewParams.MON_VO == 'ATLAS' %}<a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json['step_action_id'] $}/">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
-        <td ng-if="key=='rse'">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}rule?rule_id={$ value $}">{$ value $}</a>{% else %}{$ value $}{% endif %}</td>
-        <td ng-if="key!='dataset' && key!='rse' && key!='step_action_id' && key!='status'">{$ value $}</td>
+      <tr>
+        <td>{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}rule?rule_id={$ json.rse $}">{$ json.rrule_cut $} <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>{% else %}{$ json.rrule_cut $}{% endif %}</td>
+        <td>{$ json.source_rse $}</td>
+        <td>{$ json.destination_rse $}</td>
+        <td class="{$ json.status $}_fill">{% if viewParams.MON_VO == 'ATLAS' %}<a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json.step_action_id $}/">{$ json.status $}</a>{% else %}{$ json.status $}{% endif %}</td>
+        <td class="num">{$ json.total_files $}</td>
+        <td class="num">{$ json.staged_files $}</td>
+        <td class="num">{$ json.staged_files_pct $}</td>
+        <td class="num">{$ json.total_bytes $}</td>
+        <td class="num">{$ json.staged_bytes $}</td>
+        <td class="num">{$ json.staged_bytes_pct $}</td>
+        <td>{$ json.start_time $}</td>
+        <td>{$ json.update_time $}</td>
       </tr>
     </tbody>
   </table>
   </div>
 
   {% if task.idds_info %}
-    <div id="iDDsDiv" class="badevents" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
+    <div id="iDDsDiv" class="table-scroll" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
       <table class="fresh-table">
         <thead>
           <tr><th colspan=20>iDDS information</th></tr>
         </thead>
         <tbody>
-          <tr ng-repeat="(key, value) in iddsjson" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">
-             <th>{$ key $}</th>
-             <td>{$ value $}</td>
+          <tr>
+             <th ng-repeat="(key, value) in iddsjson" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ key $}</th>
+          </tr>
+          <tr>
+             <td ng-repeat="(key, value) in iddsjson" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ value $}</td>
           </tr>
         </tbody>
       </table>
@@ -806,10 +809,15 @@ app.controller('StagingDSController', function ($scope, $http) {
       }
     ).then(function (res) {
       $scope.json = angular.fromJson(res.data);
-      if (jeditaskid in $scope.json) {
-        var displaydiv = document.getElementById('dsStageDiv');
-        displaydiv.style.display = "";
-        $scope.json = $scope.json[jeditaskid];
+      if ($scope.json) {
+        if ('rse' in $scope.json) {
+          $scope.json.rrule_cut = $scope.json.rse.slice(0,3) + '...' + $scope.json.rse.slice($scope.json.rse.length-3, $scope.json.rse.length);
+          var displaydiv = document.getElementById('dsStageDiv');
+          displaydiv.style.display = "";
+        }
+        else {
+          $scope.json.rrule_cut = '';
+        }
       }
     });
   };
@@ -1356,7 +1364,7 @@ function operationtask_token(taskID, action) {
     if (confirm(message)) {
 
         $.ajax({
-            url: {% url 'panda_client' %},
+            url: 'panda_client/',
             data: {taskID: taskID, action: action},
             async: false,
             type: "POST",

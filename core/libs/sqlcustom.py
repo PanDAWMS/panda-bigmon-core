@@ -20,7 +20,7 @@ def fix_lob(cur):
 
 def escape_input(str_to_escape):
     """Replace reserved symbols in str for LIKE queries"""
-    chars_to_escape = '$%^&()[]{};<>?\`~+%\'\"'
+    chars_to_escape = '$%^&()[]{};<>?\\`~+%\'\\"'
     chars_replacement = '_' * len(chars_to_escape)
     tbl = str.maketrans(chars_to_escape, chars_replacement)
     str_to_escape = encoding.smart_str(str_to_escape, encoding='ascii', errors='ignore')
@@ -45,6 +45,10 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
     if strToProcess.startswith('!'):
         isNot = True
         strToProcess = strToProcess[1:]
+    if '*R*' in strToProcess:
+        strToProcess = strToProcess.replace('*R*', '*')
+
+    fieldToLookAt = fieldToLookAt.lower()
 
     cardParametersRaw = strToProcess.split('*')
     cardRealParameters = [s for s in cardParametersRaw if len(s) >= 1]
@@ -68,11 +72,11 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
             if currentParCount + 1 < countParameters:
                 trailStar = True
 
-            if fieldToLookAt.lower() == 'produserid':
+            if fieldToLookAt == 'produserid':
                 leadStar = True
                 trailStar = True
 
-            if fieldToLookAt.lower() == 'resourcetype':
+            if fieldToLookAt == 'resourcetype':
                 fieldToLookAt = 'resource_type'
 
             isEscape = False
@@ -80,17 +84,17 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
                 parameter = parameter.replace('_', '!_')
                 isEscape = True
 
-            extraQueryString += "({}{}{}".format(prefix, fieldToLookAt, postfix)
+            extraQueryString += f"({prefix}{fieldToLookAt}{postfix} "
             if isNot:
-                extraQueryString += "NOT "
+                extraQueryString += " NOT "
             if leadStar and trailStar:
-                extraQueryString += " LIKE {}'%%{}%%'{}".format(prefix, parameter, postfix)
+                extraQueryString += f" LIKE {prefix}'%%{parameter}%%'{postfix}"
             elif not leadStar and not trailStar:
-                extraQueryString += " LIKE {}'{}'{}".format(prefix, parameter, postfix)
+                extraQueryString += f" LIKE {prefix}'{parameter}'{postfix}"
             elif leadStar and not trailStar:
-                extraQueryString += " LIKE {}'%%{}'{}".format(prefix, parameter, postfix)
+                extraQueryString += f" LIKE {prefix}'%%{parameter}'{postfix}"
             elif not leadStar and trailStar:
-                extraQueryString += " LIKE {}'{}%%'{}".format(prefix, parameter, postfix)
+                extraQueryString += f" LIKE {prefix}'{parameter}%%'{postfix}"
             if isEscape:
                 extraQueryString += " ESCAPE '!'"
             extraQueryString += ")"

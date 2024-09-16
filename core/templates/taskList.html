@@ -205,11 +205,8 @@
     </tr>
     <tr class='tablesection'>
         <th><a href="{{ nosorturl }}sortby=jeditaskid-asc">ID</a><br>Parent</th>
-        {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
-            <th>Jobset</th>{% endif %}
-        <th><a href="{{ nosorturl }}sortby=taskname">Task name</a><br>TaskType/ProcessingType Campaign
-            Group User {% if requestParams.tasktype == 'prod' %}     Tracker     Request {% endif %}
-            Errors <br><font color='brown'>Logged status</font></th>
+        {% if viewParams.MON_VO != 'ATLAS' %}<th>Workflow ID</th>{% endif %}
+        <th><a href="{{ nosorturl }}sortby=taskname">Task name</a><br>TaskType/ProcessingType &nbsp;Campaign&nbsp;Group&nbsp;User{% if requestParams.tasktype == 'prod' %}&nbsp;Request{% endif %}&nbsp;Errors<br><span class='alert'>Logged status</span></th>
         <th>Task status<br><a href="{{ nosorturl }}sortby=nfiles">Nfiles</a></th>
         <th>Input files
           <br><span class="lost tooltip-right">Nlost <i class="fi-info"></i><span class="tooltip-text">The files were unavailable at a time of the task running therefore the PanDA did not create jobs for processing them and they are not included to the number of total input files.</span></span>
@@ -229,21 +226,23 @@
             {% if task.parent_tid and task.parent_tid != task.jeditaskid %}<br>
                 <a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a>{% endif %}
         </td>
-        {% if requestParams.tasktype == 'anal' or requestParams.tasktype == 'analy' %}
-            <td>{{ task.reqid }}</td>{% endif %}
+        {% if viewParams.MON_VO != 'ATLAS' %}
+          <td>{% if task.idds_request_id %}
+            <a href="{% url 'taskList' %}?idds_request_id={{ task.idds_request_id }}">{{ task.idds_request_id }}</a>
+          {% else %}---{% endif %}
+          </td>{% endif %}
         <td><a href="{% url 'taskInfo' task.jeditaskid %}">{{ task.taskname }}</a><br>{{ task.tasktype }}
             {% if task.processingtype %}/{{ task.processingtype }} {% endif %}
             {% if task.campaign %}
-                <a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}
+                &nbsp;<a href='{% url 'taskList' %}?campaign={{ task.campaign }}'>{{ task.campaign }}</a> {% endif %}
             {% if task.workinggroup %}
-                <a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}
-            <a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a>
-            {% if task.ticketid %}<a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">
-                {% if task.ticketsystemtype %}{{ task.ticketsystemtype }}{% else %} JIRA {% endif %}</a>
+                &nbsp;<a href="{% url 'taskList' %}?workinggroup={{ task.workinggroup }}">{{ task.workinggroup }}</a>     {% endif %}
+            &nbsp;<a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a>
+            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}
+              &nbsp;RequestID: <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/">{{ task.deftreqid }}</a>
+                {% if task.reference_link %}<a target="_blank" href="{{ task.reference_link }}"><img height="14" width="36" src="{% static 'images/jira-logo-color.png' %}"></a>{% endif %}
             {% endif %}
-            {% if task.deftreqid and viewParams.MON_VO == 'ATLAS' %}     RequestID:
-                <a href="https://prodtask-dev.cern.ch/prodtask/inputlist_with_request/{{ task.deftreqid }}/">{{ task.deftreqid }}</a> {% endif %}
-            <a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">Errors</a>
+            &nbsp;<a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">Errors</a>
             <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
         <td {% if task.scoutinghascritfailures == True %} class='broken_fill'
             {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
@@ -404,7 +403,7 @@
             {data: 'TASKID',
               "render": function (data, type, full, meta) {
                 var entry = '<a href="{% url 'taskInfo' %}' + full['TASKID'] + '">' + full['TASKID'] + '</a>';
-                entry += '<a target="_blank" href="{% url 'staginprogressplot' %}?jeditaskid=' + full['TASKID'] + '"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
+                entry += '<a target="_blank" href="/staginprogressplot/?jeditaskid=' + full['TASKID'] + '"><img src=\'/static/images/tinychart.png\' width=14 height=14 border=0/></a>';
                 return entry;
                 },
             },
@@ -439,13 +438,18 @@
             {data: 'errordialog', render: function (data, type, full, meta) {
                 return data.replace(/\_/g, '_<wbr>');
               },},
-            {data: 'count', render: function (data, type, full, meta) {
-                return '<a target="_blanc" href="{{ noerrordialogurl }}' + full['link'] + '">' + full['count'] + '</a>';
+            {data: 'count',  render: function (data, type, full, meta) {
+                if (data > 20) {
+                  return '<a target="_blanc" href="{{ noerrordialogurl }}errordialog=*' + full['processed_errordialog'] + '*">' + full['count'] + '</a>';
+                } else {
+                  return '<a target="_blanc" href="{{ noerrordialogurl }}' + full['link'] + '">' + full['count'] + '</a>';
+              }
               },},
             {data: 'sites'},
         ],
         order: [[ 2, "desc" ]],
         scrollX: true,
+        columnDefs: [{type: "num-html", targets: [2,] }],
     });
   });
 

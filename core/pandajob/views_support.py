@@ -1,7 +1,7 @@
 import logging
 import pytz
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from json import dumps as json_dumps  ### FIXME - cleanup
 
 import re
@@ -53,7 +53,7 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
     ### replace + by space
     _logger.debug('prodUserName: ...%s...' % (prodUserName))
     try:
-        prodUserName = re.sub('\+', ' ', prodUserName)
+        prodUserName = re.sub('\\+', ' ', prodUserName)
     except:
         pass
     _logger.debug('prodUserName: ...%s...' % (prodUserName))
@@ -68,12 +68,12 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
 #    except:
 #        _logger.error('Something wrong with ndays:' + str(ndays))
     try:
-        startdate = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=nhours)
+        startdate = datetime.now(tz=timezone.utc) - timedelta(hours=nhours)
     except:
         _logger.error('Something wrong with startdate:')
-        startdate = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=LAST_N_HOURS)
+        startdate = datetime.now(tz=timezone.utc) - timedelta(hours=LAST_N_HOURS)
     startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = datetime.utcnow().replace(tzinfo=pytz.utc).strftime(settings.DATETIME_FORMAT)
+    enddate = datetime.now(tz=timezone.utc).strftime(settings.DATETIME_FORMAT)
     jobs.extend(Jobsactive4.objects.filter(\
                 produsername=prodUserName, \
                 modificationtime__range=[startdate, enddate] \
@@ -160,7 +160,7 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
     ### replace + by space
     _logger.debug('vo: ...%s...' % (vo))
     try:
-        vo = re.sub('\+', ' ', vo)
+        vo = re.sub('\\+', ' ', vo)
     except:
         pass
     _logger.debug('vo: ...%s...' % (vo))
@@ -175,12 +175,12 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
 #    except:
 #        _logger.error('Something wrong with ndays:' + str(ndays))
     try:
-        startdate = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=nhours)
+        startdate = datetime.now(tz=timezone.utc) - timedelta(hours=nhours)
     except:
         _logger.error('Something wrong with startdate:')
-        startdate = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=LAST_N_HOURS)
+        startdate = datetime.now(tz=timezone.utc) - timedelta(hours=LAST_N_HOURS)
     startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = datetime.utcnow().replace(tzinfo=pytz.utc).strftime(settings.DATETIME_FORMAT)
+    enddate = datetime.now(tz=timezone.utc).strftime(settings.DATETIME_FORMAT)
 
     print ('startdate=', startdate)
     print ('enddate=', enddate)

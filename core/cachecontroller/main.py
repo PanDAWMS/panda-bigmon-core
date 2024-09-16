@@ -73,7 +73,7 @@ schedule.every(1).hours.do(run_threaded, artDevMails.execute)
 schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
 # schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)
 schedule.every().hour.at(":05").do(run_threaded, grafanaPlots.execute)
-schedule.every(2).hours.do(run_threaded, infrequentURLS.execute)
+schedule.every(1).hours.do(run_threaded, infrequentURLS.execute)
 schedule.every().day.at("20:18").do(run_threaded, cephCleanUp.execute)
 schedule.every().day.at("07:00").do(run_threaded, artMails.execute)  # UTC
 schedule.every().day.at("10:00").do(run_threaded, artMails.execute)  # UTC

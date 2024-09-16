@@ -4,24 +4,24 @@
 {% load common_tags %}
 
 {% block page_title %}Task profile plots{% endblock %}
-{% block subtitle %}Task profile plot for {{ jeditaskid }} task{% if viewParams.selection %}{{ viewParams.selection }}{% endif %}{% endblock %}
+{% block subtitle %}Task profile plot for {{ jeditaskid }} task{% if viewParams.selection %}{{ viewParams.selection }}{% endif %}{% if task.status %}, current status is <span class="{{ task.status }}">{{ task.status }}</span>{% endif %}{% endblock %}
 
-{% block css_page_library %}
-<!-- Load chart.css -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" rel="stylesheet">
-{% endblock %}
 
 {% block js_head_page_library %}
   <script src="{% static 'js/datatables/moment.min.js' %}"></script>
   <!-- Load chart.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-moment/1.0.1/chartjs-adapter-moment.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js" charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js" charset="utf-8"></script>
 
 {% endblock %}
 
 {% block body %}
 
 {% if error|length == 0 %}
-  <div data-ng-controller="taskProfileController">
+  <div data-ng-controller="taskProfileController" id="taskProfileScope">
   <form novalidate class="simple-form">
   <div class="row form-container">
   <div class="medium-2 column">
@@ -53,7 +53,10 @@
   <div class="medium-1 column align-middle">
       <a class="button primary" ng-style="taskprofile.button.style" ng-click="taskprofile.update()">{$ taskprofile.button.text $}</a>
   </div>
-  <div class="medium-5 column"></div>
+  <div class="medium-4 column"></div>
+  <div class="medium-1 column align-right">
+      <a class="button secondary" ng-click="taskprofile.reset_zoom()">Reset zoom</a>
+  </div>
   </div>
   </form>
   </div>
@@ -71,17 +74,6 @@
   </div>
 {% endif %}
 
-<div class="callout primary" data-closable>
-  <h5><b>This is a new version of task profile page!</b></h5>
-  <p>The plot shows the progress of a task in time.</p>
-  <p>Only successfully finished jobs are shown by default. You can use multi-select inputs on the top
-    to include build and merge jobs types ended up in failed, cancelled and closed states to the plot.</p>
-  <p>Also you can select a task progress unit: job or events. It will be applied to y axis. </p>
-  <p>The plot is interactive, if one hover a point the extra information as pandaid of a job will be shown in tooltip.
-    If you can click on a point a new tab for the selected job will be opened.
-    You can click on legend items to hide points associated to its category. </p>
-</div>
-
 {% endblock %}
 
 {% block js_body_page %}
@@ -89,6 +81,7 @@
 <script nonce={{request.csp_nonce}}>
 var jeditaskid = '{{ jeditaskid }}';
 var request_params = {{ requestParams | safe }};
+var task = {{ task | safe }};
 app.controller('taskProfileController', ['$scope', '$http', function($scope, $http) {
     $scope.taskprofile = {
         button: {
@@ -97,17 +90,20 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
         },
         selection: {
             jobtype: ['build', 'run', 'merge'],
-            jobstatus: ['finished', 'failed', 'closed', 'cancelled'],
-            progressunit: 'jobs',
+            jobstatus: ['active', 'finished', 'failed', 'closed', 'cancelled'],
+            progressunit: 'files',
         },
+        task: task,
         charts: {},
         data: [],
+        annotations: {},
     };
 
     $scope.taskprofile.availableOptions = {
         progressunit: [
           {name:'jobs', value:'jobs',},
           {name:'events', value:'events',},
+          {name:'files', value:'files',},
         ],
         jobtype: [
           {name:'build', value:'build', },
@@ -115,6 +111,7 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
           {name:'merge', value:'merge', }
         ],
         jobstatus: [
+          {name:'active', value:'active', },
           {name:'finished', value:'finished',},
           {name:'failed', value:'failed', },
           {name:'closed', value:'closed', },
@@ -149,6 +146,7 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
       }).then(function successCallback(response) {
           $('#task_profile_placeholder').html("");
           $scope.taskprofile.data = response.data.plotData;
+          $scope.taskprofile.annotations = response.data.annotations;
         }, function errorCallback(response) {
           $('#task_profile_placeholder').html(response.data.error);
         });
@@ -160,70 +158,71 @@ app.controller('taskProfileController', ['$scope', '$http', function($scope, $ht
       let resp = $scope.taskprofile.fetch();
       resp.then(function (data) {
         $scope.taskprofile.charts["profile_chart"].data.datasets = $scope.taskprofile.data;
+        $scope.taskprofile.charts["profile_chart"].config.options.plugins.annotation.annotations = $scope.taskprofile.annotations;
+        let ymax = Math.max.apply(
+          Math, $scope.taskprofile.data.map(function(o) { return Math.max.apply(Math, o.data.map(function(o) { return o.y; })); }));
+        if (['events', 'files'].includes($scope.taskprofile.selection.progressunit) && 
+            "total_input" in $scope.taskprofile.annotations && ymax < $scope.taskprofile.annotations.total_input.yMax) {
+          ymax = $scope.taskprofile.annotations.total_input.yMax;
+        }
         if ($scope.taskprofile.selection.progressunit === 'events') {
-          $scope.taskprofile.charts["profile_chart"].config.options.scales.yAxes[0].scaleLabel.labelString = 'Number of events';
+          $scope.taskprofile.charts["profile_chart"].config.options.scales.y.title.text = 'Number of events';
+        }
+        else if ($scope.taskprofile.selection.progressunit === 'files') {
+          $scope.taskprofile.charts["profile_chart"].config.options.scales.y.title.text = 'Number of files';
         }
         else {
-          $scope.taskprofile.charts["profile_chart"].config.options.scales.yAxes[0].scaleLabel.labelString = 'Number of ended jobs';
+          $scope.taskprofile.charts["profile_chart"].config.options.scales.y.title.text = 'Number of jobs';
         }
+
+        $scope.taskprofile.charts["profile_chart"].config.options.scales.y.suggestedMax = ymax * 1.075;
         $scope.taskprofile.charts["profile_chart"].update();
         $scope.taskprofile.button.text = 'Update';
         $scope.taskprofile.button.style = {};
       });
     };
 
-    $scope.taskprofile.buildChart = function (data) {
+    $scope.taskprofile.buildChart = function (data, annotations) {
       let datasets = data;
       let options = {ylabel: 'Number of ended jobs'};
       if ($scope.taskprofile.selection.progressunit === 'events') {options.ylabel = 'Number of events';}
+      if ($scope.taskprofile.selection.progressunit === 'files') {options.ylabel = 'Number of files';}
+      options.ymax = Math.max.apply(Math, datasets.map(function(o) { return Math.max.apply(Math, o.data.map(function(o) { return o.y; })); }));
+      if (['events', 'files'].includes($scope.taskprofile.selection.progressunit) && 
+            "total_input" in annotations && options.ymax < annotations.total_input.yMax) {
+        options.ymax = annotations.total_input.yMax;
+      }
+      options.ymax *= 1.075;
+      options.xmin = task.xmin;
+      options.xmax = task.xmax;
       var ctx = document.getElementById("task_profile_chart");
-      var config = prepare_scatter_chart(datasets, options);
-      // Crosshairs
-      Chart.defaults.scatter = Chart.defaults.line;
-      Chart.controllers.scatter = Chart.controllers.line.extend({
-         draw: function(ease) {
-            Chart.controllers.line.prototype.draw.call(this, ease);
-
-            if (this.chart.tooltip._active && this.chart.tooltip._active.length) {
-               var activePoint = this.chart.tooltip._active[0],
-                   ctx = this.chart.ctx,
-                   y = activePoint.tooltipPosition().y,
-                   leftX = this.chart.chartArea.left,
-                   rightX = this.chart.chartArea.right
-               ;
-
-               // draw line
-               ctx.save();
-               ctx.beginPath();
-               ctx.moveTo(leftX, y);
-               ctx.lineTo(rightX, y);
-               ctx.lineWidth = 0.1;
-               ctx.strokeStyle = '#000';
-               ctx.stroke();
-               ctx.restore();
-            }
-         }
-      });
+      var config = prepare_scatter_chart(datasets, options, annotations);
       var chart = new Chart(ctx, config);
       return chart
     };
 
     let resp = $scope.taskprofile.fetch();
     resp.then(function (data) {
-      $scope.taskprofile.charts["profile_chart"] = $scope.taskprofile.buildChart($scope.taskprofile.data);
+      $scope.taskprofile.charts["profile_chart"] = $scope.taskprofile.buildChart($scope.taskprofile.data, $scope.taskprofile.annotations);
 
       document.getElementById("task_profile_chart").onclick = function (evt) {
         var points = $scope.taskprofile.charts["profile_chart"].getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
         if (points.length && points.length === 1) {
-          window.open('/job/' + $scope.taskprofile.charts["profile_chart"].data.datasets[points[0]._datasetIndex].data[points[0]._index].label + '/', '_blank')
+          window.open('/job/' + $scope.taskprofile.charts["profile_chart"].data.datasets[points[0].datasetIndex].data[points[0].index].label + '/', '_blank')
         }
       };
     });
-
-
+    
+    $scope.taskprofile.reset_zoom = function() {
+      $scope.taskprofile.charts["profile_chart"].resetZoom();
+    };
+    
 }]);
 
-
-
 </script>
+{% endblock %}
+
+
+{% block help %}
+{% include "taskProfileHelp.html" %}
 {% endblock %}

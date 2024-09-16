@@ -81,9 +81,9 @@ def globalviewDemo(request):
                 dd[row1[0]][19] += row1[20]
                 dd[row1[0]][20] += row1[21]
     reslt2 = []
-    dict_g = {'CI': 'AA0', '^[\d_\-]*PRODUCTION.*$': 'AA01', '^[\d_\-]*DEVELOP.*$': 'AA02',
-              '^[\d_\-]*MAIN.*$': 'AA03',
-              '^[\d_\-]*ARM.*$': 'AA05', 'LANG': 'AA06', 'CENTOS': 'AA07', 'NEXT': 'AA08', 'LCG': 'AA1', 'BRAN': 'AA2',
+    dict_g = {'CI': 'AA0', r'^[\d_\-]*PRODUCTION.*$': 'AA01', r'^[\d_\-]*DEVELOP.*$': 'AA02',
+              r'^[\d_\-]*MAIN.*$': 'AA03',
+              r'^[\d_\-]*ARM.*$': 'AA05', 'LANG': 'AA06', 'CENTOS': 'AA07', 'NEXT': 'AA08', 'LCG': 'AA1', 'BRAN': 'AA2',
               'CONSTR': 'Z1', 'LEGACY': 'B1', 'ANALYSIS': 'B2', 'UPGRADE': 'B3', 'BUG': 'B4', 'GAUDI': 'C0',
               'EXP': 'C2', 'OTHER': 'C9', 'TEST': 'Z7', 'TRAIN': 'Z8', 'DOXYGEN': 'Z9'}
     for k, v in dd.items():
@@ -144,8 +144,8 @@ def globalviewDemo(request):
         else: i_combo_cv_clie=i_cv_clie
 
         lartwebarea=row[29]
-        if lartwebarea == None or lartwebarea == '': lartwebarea="http://atlas-computing.web.cern.ch/atlas-computing/links/distDir\
-ectory/gitwww/GITWebArea/nightlies"        
+        if lartwebarea is None or lartwebarea == '':
+            lartwebarea = "https://atlas-art-data.web.cern.ch/atlas-art-data/local-output"
         erla=row[31];sula=row[32]; wala=row[33]; eim=row[34]; sim=row[35]; vext=row[36]; area_suffix=row[37]; webarea_cur=row[38]
         if erla == None or erla == '': erla='N/A'
         if sula == None or sula == '': sula='N/A'
@@ -168,8 +168,8 @@ ectory/gitwww/GITWebArea/nightlies"
 
         rname=row[14]
         rname_trun = re.sub(r'\([^)]*\)', '', rname)
-        key_cache_transf=brname + '_' + rname
-        val_cache_transf,nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
+        key_cache_transf = brname + '_' + rname
+        val_cache_transf, nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
         if val_cache_transf != 'N/A' and nightly_name_art != 'N/A': 
             vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch=" 
             val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + rname + "\">" + val_cache_transf + "</a>"
@@ -180,13 +180,13 @@ ectory/gitwww/GITWebArea/nightlies"
         elif sula == '0' and erla == '0':
             local_art_res='N/A'
         else:
-            local_art_res=local_art_res+'<B><span style="color: green">'+ str(sula)+'</span></B>,'
-            local_art_res = local_art_res +'<B><span style="color: brown">' + str(wala) + '</span></B>,'
-            local_art_res=local_art_res+'<B><span style="color: red">'+ str(erla)+'</span></B>'
-            arrk=re.split('_',brname)
-            branch=arrk[0]
-            loares="<a href=\""+lartwebarea+"/"+branch+"/"+rname+"/"+row[15]+"/"+row[2]+"/"+row[15]+"/art.log.html\">"
-            local_art_res=loares+local_art_res+"</a>"
+            local_art_res += '<B><span style="color: green">'+ str(sula)+'</span></B>,'
+            local_art_res += '<B><span style="color: brown">' + str(wala) + '</span></B>,'
+            local_art_res += '<B><span style="color: red">'+ str(erla)+'</span></B>'
+            branch = re.split('_',brname)[0]
+            # Local art results template: https://atlas-art-data.web.cern.ch/atlas-art-data/local-output/<branch>/<nightly_tag>/
+            loares = '<a href="' + lartwebarea + "/" + branch + "/" + row[15] + "/" + row[2] + "/" + rname + '/">'
+            local_art_res = loares + local_art_res + "</a>"
 
         image_res='N/A'
 #        if sim == 'N/A' or eim == 'N/A':
@@ -199,16 +199,16 @@ ectory/gitwww/GITWebArea/nightlies"
 #                image_res = image_res+" "+eim.strftime('%d-%b %H:%M').upper()
 #        else:
 #            image_res = di_res.get(str(sim), str(sim))
-        list9.append(row[1]);
-        list9.append(link_brname);
-        list9.append(rname);
-        list9.append(row[9]);
-        list9.append(a0001);
-        list9.append(a0002);
-        list9.append(local_art_res);
-        list9.append(val_cache_transf);
-        list9.append(tt_cv_clie);
-        list9.append(row[39]);
+        list9.append(row[1])
+        list9.append(link_brname)
+        list9.append(rname)
+        list9.append(row[9])
+        list9.append(a0001)
+        list9.append(a0002)
+        list9.append(local_art_res)
+        list9.append(val_cache_transf)
+        list9.append(tt_cv_clie)
+        list9.append(row[39])
 
         reslt3.append(list9)
 

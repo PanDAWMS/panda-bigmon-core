@@ -1,22 +1,35 @@
 from core import settings
-import cx_Oracle
-import threading
 import logging
 
+
+_logger = logging.getLogger('bigpandamon')
+
+try:
+    import oracledb
+    oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
+except oracledb.exceptions.DatabaseError as e:
+    _logger.error(f"Failed to initialize Oracle Client: {e}")
+except Exception as e:
+    _logger.error(f"An unexpected error occurred: {e}")
 
 class BaseTasksProvider(object):
     logger = logging.getLogger(__name__)
 
-    # Retreive DB settings
+    # retrieve DB settings
     ORACLE_USERNAME = settings.local.dbaccess['default']['USER']
     ORACLE_PWD = settings.local.dbaccess['default']['PASSWORD']
-    ORACLE_SNAME = settings.local.dbaccess['default']['NAME']
+    ORACLE_NAME = settings.local.dbaccess['default']['NAME']
     ORACLE_CONNECTION_URL = "(DESCRIPTION=(ADDRESS= (PROTOCOL=TCP) (HOST=adcr-s.cern.ch) (PORT=10121) ) (LOAD_BALANCE=on)" \
-                            "(ENABLE=BROKEN)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME="+ORACLE_SNAME+".cern.ch)))"
-    pool = cx_Oracle.SessionPool(
-        ORACLE_USERNAME, ORACLE_PWD, ORACLE_CONNECTION_URL, min=1, max=10, increment=1, threaded=True, events=False)
-    #lock = threading.RLock() # should be instantiated in a nested class.
-    # If instantiated here become the same over all child classes
+                            "(ENABLE=BROKEN)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME="+ORACLE_NAME+".cern.ch)))"
+    pool = oracledb.create_pool(
+        user=ORACLE_USERNAME,
+        password=ORACLE_PWD,
+        dsn=ORACLE_CONNECTION_URL,
+        min=1,
+        max=10,
+        increment=1,
+        events=False
+    )
 
     def getNumberOfActiveDBSessions(self):
         totalSessionCount, totalActiveSessionCount = 0, 0

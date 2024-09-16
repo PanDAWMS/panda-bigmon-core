@@ -5,7 +5,7 @@ import random
 import json
 import re
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from opensearchpy import Search
 
 from django.db import connection
@@ -13,6 +13,7 @@ from django.db.models import Count, Sum
 from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks, \
     JediJobRetryHistory
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
 from core.libs.datetimestrings import parse_datetime
@@ -57,6 +58,10 @@ def cleanTaskList(tasks, **kwargs):
         add_datasets_info = True
     if 'sortby' in kwargs:
         sortby = kwargs['sortby']
+    if 'add_idds_info' in kwargs and 'core.iDDS' in settings.INSTALLED_APPS:
+        add_idds_info = kwargs['add_idds_info']
+    else:
+        add_idds_info = False
 
     for task in tasks:
         if task['transpath']:
@@ -135,6 +140,11 @@ def cleanTaskList(tasks, **kwargs):
 
         tasks = flag_tasks_with_scouting_failures(tasks, ds_dict)
 
+    # check if tasks are part of idds and get workflow id
+    if add_idds_info:
+        from core.iDDS.utils import add_idds_info_to_tasks
+        tasks = add_idds_info_to_tasks(tasks)
+
     if sortby is not None:
         if sortby == 'creationdate-asc':
             tasks = sorted(tasks, key=lambda x: x['creationdate'])
@@ -184,7 +194,7 @@ def tasks_not_updated(request, query, state='submitted', hours_since_update=36, 
         hours_since_update = int(request.session['requestParams']['statenotupdated'])
 
     query['statechangetime__lte'] = (
-            datetime.utcnow() - timedelta(hours=hours_since_update)).strftime(settings.DATETIME_FORMAT)
+            datetime.now(tz=timezone.utc) - timedelta(hours=hours_since_update)).strftime(settings.DATETIME_FORMAT)
 
     tasks = JediTasks.objects.filter(**query).extra(where=[extra_str]).values()
 
@@ -283,74 +293,6 @@ def task_summary_dict(request, tasks, fieldlist=None):
                 else:
                     iteml.append({'kname': 'Not specified', 'kvalue': newvalues[ky]})
             iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
-        itemd['list'] = iteml
-        suml.append(itemd)
-    suml = sorted(suml, key=lambda x: x['field'])
-    return suml
-
-
-def wg_task_summary(request, fieldname='workinggroup', view='production', taskdays=3):
-    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
-    query = {}
-    hours = 24 * taskdays
-    startdate = datetime.now() - timedelta(hours=hours)
-    startdate = startdate.strftime(settings.DATETIME_FORMAT)
-    enddate = datetime.now().strftime(settings.DATETIME_FORMAT)
-    query['modificationtime__castdate__range'] = [startdate, enddate]
-    if fieldname == 'workinggroup':
-        query['workinggroup__isnull'] = False
-    if view == 'production':
-        query['tasktype'] = 'prod'
-    elif view == 'analysis':
-        query['tasktype'] = 'anal'
-
-    if 'processingtype' in request.session['requestParams']:
-        query['processingtype'] = request.session['requestParams']['processingtype']
-
-    if 'workinggroup' in request.session['requestParams']:
-        query['workinggroup'] = request.session['requestParams']['workinggroup']
-
-    if 'project' in request.session['requestParams']:
-        query['taskname__istartswith'] = request.session['requestParams']['project']
-
-    summary = JediTasks.objects.filter(**query).values(fieldname, 'status').annotate(Count('status')).order_by(
-        fieldname, 'status')
-    totstates = {}
-    tottasks = 0
-    wgsum = {}
-    for state in const.TASK_STATES:
-        totstates[state] = 0
-    for rec in summary:
-        wg = rec[fieldname]
-        status = rec['status']
-        count = rec['status__count']
-        if status not in const.TASK_STATES:
-            continue
-        tottasks += count
-        totstates[status] += count
-        if wg not in wgsum:
-            wgsum[wg] = {}
-            wgsum[wg]['name'] = wg
-            wgsum[wg]['count'] = 0
-            wgsum[wg]['states'] = {}
-            wgsum[wg]['statelist'] = []
-            for state in const.TASK_STATES:
-                wgsum[wg]['states'][state] = {}
-                wgsum[wg]['states'][state]['name'] = state
-                wgsum[wg]['states'][state]['count'] = 0
-        wgsum[wg]['count'] += count
-        wgsum[wg]['states'][status]['count'] += count
-
-    # convert to ordered lists
-    suml = []
-    for f in wgsum:
-        itemd = {}
-        itemd['field'] = f
-        itemd['count'] = wgsum[f]['count']
-        kys = copy.deepcopy(const.TASK_STATES)
-        iteml = []
-        for ky in kys:
-            iteml.append({'kname': ky, 'kvalue': wgsum[f]['states'][ky]['count']})
         itemd['list'] = iteml
         suml.append(itemd)
     suml = sorted(suml, key=lambda x: x['field'])

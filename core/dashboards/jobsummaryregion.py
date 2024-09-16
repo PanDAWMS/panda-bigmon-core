@@ -10,7 +10,7 @@ from django.db import connection, connections
 from core.pandajob.models import PandaJob
 from core.pandajob.utils import identify_jobtype
 from core.schedresource.utils import get_panda_queues
-from core.libs.exlib import getPilotCounts
+from core.libs.exlib import getPilotCounts, get_resource_types
 from core.libs.sqlsyntax import interval_to_sec
 
 import core.constants as const
@@ -25,34 +25,35 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
     :param jsr_regions_dict: dict of queue job summary
     :return: list of region job summary, list of queue job summary
     """
-    split_by = None
-    if 'split_by' in kwargs and kwargs['split_by']:
-        split_by = kwargs['split_by']
+    split_by = kwargs.get('split_by', None)
+
     jsr_queues_list = []
     jsr_sites_list = []
     jsr_regions_list = []
+
     for pq, params in jsr_queues_dict.items():
         for jt, resourcetypes in params['summary'].items():
             for rt, summary in resourcetypes.items():
                 row = list()
                 row.append(pq)
-                row.append(params['pq_params']['pqtype'])
-                row.append(params['pq_params']['region'])
-                row.append(params['pq_params']['status'])
+                row.append(params['pq_params'].get('pqtype', 'N/A'))
+                row.append(params['pq_params'].get('region', 'N/A'))
+                row.append(params['pq_params'].get('status', 'N/A'))
                 row.append(jt)
                 row.append(rt)
-                row.append(params['pq_pilots']['count'])
-                row.append(params['pq_pilots']['count_nojob'])
-                row.append(summary['nwsubmitted'])
-                row.append(summary['nwrunning'])
-                row.append(summary['rcores'])
+                row.append(params['pq_pilots'].get('count', 0))
+                row.append(params['pq_pilots'].get('count_nojob', 0))
+                row.append(summary.get('nwsubmitted', 0))
+                row.append(summary.get('nwrunning', 0))
+                row.append(summary.get('rcores', 0))
                 row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
-                if summary['failed'] + summary['finished'] > 0:
-                    row.append(round(100.0*summary['failed']/(summary['failed'] + summary['finished']), 1))
+
+                if summary.get('failed', 0) + summary.get('finished', 0) > 0:
+                    row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
                 else:
                     row.append(0)
                 for js in const.JOB_STATES:
-                    row.append(summary[js])
+                    row.append(summary.get(js, 0))
 
                 if split_by is None:
                     if jt == 'all' and rt == 'all':
@@ -74,16 +75,17 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
                 row.append(site)
                 row.append(jt)
                 row.append(rt)
-                row.append(summary['nwsubmitted'])
-                row.append(summary['nwrunning'])
-                row.append(summary['rcores'])
+                row.append(summary.get('nwsubmitted', 0))
+                row.append(summary.get('nwrunning', 0))
+                row.append(summary.get('rcores', 0))
                 row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
-                if summary['failed'] + summary['finished'] > 0:
+
+                if summary.get('failed', 0) + summary.get('finished', 0) > 0:
                     row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
                 else:
                     row.append(0)
                 for js in const.JOB_STATES:
-                    row.append(summary[js])
+                    row.append(summary.get(js, 0))
 
                 if split_by is None:
                     if jt == 'all' and rt == 'all':
@@ -105,16 +107,17 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
                 row.append(reg)
                 row.append(jt)
                 row.append(rt)
-                row.append(summary['nwsubmitted'])
-                row.append(summary['nwrunning'])
-                row.append(summary['rcores'])
+                row.append(summary.get('nwsubmitted', 0))
+                row.append(summary.get('nwrunning', 0))
+                row.append(summary.get('rcores', 0))
                 row.append(sum([v for k, v in summary.items() if k in const.JOB_STATES]))
-                if summary['failed'] + summary['finished'] > 0:
+
+                if summary.get('failed', 0) + summary.get('finished', 0) > 0:
                     row.append(round(100.0 * summary['failed'] / (summary['failed'] + summary['finished']), 1))
                 else:
                     row.append(0)
                 for js in const.JOB_STATES:
-                    row.append(summary[js])
+                    row.append(summary.get(js, 0))
 
                 if split_by is None:
                     if jt == 'all' and rt == 'all':
@@ -128,6 +131,7 @@ def prepare_job_summary_region(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict
                 elif 'jobtype' not in split_by and 'resourcetype' in split_by:
                     if jt == 'all' and rt != 'all':
                         jsr_regions_list.append(row)
+
     return jsr_queues_list, jsr_sites_list, jsr_regions_list
 
 
@@ -141,7 +145,7 @@ def get_job_summary_region(query, **kwargs):
     jsr_regions_dict = {}
 
     job_types = ['analy', 'prod']
-    resource_types = ['SCORE', 'MCORE', 'SCORE_HIMEM', 'MCORE_HIMEM']
+    resource_types = [rt['resource_name'] for rt in get_resource_types()]
     worker_metrics = ['nwrunning', 'nwsubmitted']
     extra_metrics = copy.deepcopy(worker_metrics)
     extra_metrics.append('rcores')
@@ -497,6 +501,21 @@ def prettify_json_output(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict, **kw
                 if sum([rtdict[js] for js in const.JOB_STATES if js in rtdict]) > 0:
                     if qn not in queue_summary:
                         queue_summary[qn] = qdict['pq_params']
+                        if 'pq_pilots' in qdict and 'count' in qdict['pq_pilots'] and qdict['pq_pilots']['count'] and qdict['pq_pilots']['count'] > 0:
+                            queue_summary[qn]['n_pilots_total'] = qdict['pq_pilots']['count']
+                        else:
+                            queue_summary[qn]['n_pilots_total'] = 0
+                        if 'pq_pilots' in qdict and 'count_nojob' in qdict['pq_pilots'] and qdict['pq_pilots']['count_nojob'] and qdict['pq_pilots']['count_nojob'] > 0:
+                            queue_summary[qn]['n_pilots_nojob'] = qdict['pq_pilots']['count_nojob']
+                        else:
+                            queue_summary[qn]['n_pilots_nojob'] = 0
+                        queue_summary[qn]['n_running_cores'] = qdict['summary']['all']['all']['rcores']
+                        if (qdict['summary']['all']['all']['failed'] + qdict['summary']['all']['all']['finished']) > 0:
+                            queue_summary[qn]['failed_percentage'] = round(100. * qdict['summary']['all']['all']['failed'] / (
+                                        qdict['summary']['all']['all']['failed'] + qdict['summary']['all']['all']['finished']), 1)
+                        else:
+                            queue_summary[qn]['failed_percentage'] = 0
+                        queue_summary[qn]['n_jobs'] = sum([v for k, v in qdict['summary']['all']['all'].items() if k in const.JOB_STATES])
                         queue_summary[qn]['job_summary'] = {}
                     if jt not in queue_summary[qn]['job_summary']:
                         queue_summary[qn]['job_summary'][jt] = {}
@@ -514,6 +533,7 @@ def prettify_json_output(jsr_queues_dict, jsr_sites_dict, jsr_regions_dict, **kw
                             if rt != 'all':
                                 temp_dict['job_link'] += '&resourcetype=' + rt
                         queue_summary[qn]['job_summary'][jt][rt].append(temp_dict)
+
 
     return queue_summary, site_summary, region_summary
 

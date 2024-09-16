@@ -17,6 +17,7 @@ from core.oauth.utils import login_customrequired
 from core.libs.cache import getCacheEntry
 from core.libs.DateEncoder import DateEncoder
 from core.views import initRequest, extensibleURL
+from core.utils import error_response
 
 from core.compare.modelsCompare import ObjectsComparison
 from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison, job_info_getter
@@ -105,7 +106,7 @@ def compareJobs(request):
 
 
     if not pandaidstr:
-        return render(request, 'errorPage.html', {'errormessage': 'No pandaids for comparison provided'}, content_type='text/html')
+        return error_response(request, message='No pandaids for comparison provided', status=400)
 
     pandaids = []
     for pid in pandaidstr:

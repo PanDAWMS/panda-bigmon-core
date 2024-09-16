@@ -1,5 +1,26 @@
+ARG PYTHON_VERSION=3.11.6
+
 FROM gitlab-registry.cern.ch/linuxsupport/alma9-base:latest
+
+ARG PYTHON_VERSION
+
 MAINTAINER PanDA team
+
+RUN yum update -y
+RUN yum install -y epel-release
+
+RUN yum install -y httpd httpd-devel gcc gridsite git psmisc less wget logrotate procps which \
+    openssl-devel readline-devel bzip2-devel libffi-devel zlib-devel systemd-udev
+
+# install python
+RUN mkdir /tmp/python && cd /tmp/python && \
+    wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+    tar -xzf Python-*.tgz && rm -f Python-*.tgz && \
+    cd Python-* && \
+    ./configure --enable-shared --enable-optimizations --with-lto && \
+    make altinstall && \
+    echo /usr/local/lib > /etc/ld.so.conf.d/local.conf && ldconfig && \
+    cd / && rm -rf /tmp/pyton
 
 RUN echo -e '[epel]\n\
 name=Extra Packages for Enterprise Linux 9 [HEAD]\n\
@@ -24,37 +45,42 @@ ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
 ENV BIGMON_WSGI_PATH /data/bigmon
 ENV DJANGO_SETTINGS_MODULE core.settings
 
-RUN yum -y update
 
-RUN yum install -y nano python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
-        python3 python3-devel less git ca-policy-egi-core \
-        httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch wget net-tools sudo \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-basic-19.3.0.0.0-2.x86_64.rpm \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-devel-19.3.0.0.0-1.x86_64.rpm \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-sqlplus-19.3.0.0.0-1.x86_64.rpm \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient19.3-meta-19.3-3.el7.cern.x86_64.rpm \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient-basic-19.3-3.el7.cern.x86_64.rpm \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient-devel-19.3-3.el7.cern.x86_64.rpm \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient-sqlplus-19.3-3.el7.cern.x86_64.rpm \
-        http://linuxsoft.cern.ch/cern/centos/7/cernonly/x86_64/Packages/oracle-instantclient-tnsnames.ora-1.4.4-1.el7.cern.noarch.rpm \
-        https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
-    yum install -y postgresql14 postgresql14-devel
-
-RUN yum clean all && rm -rf /var/cache/yum
-
-# setup env
+# setup venv with pythonX.Y
+RUN python$(echo ${PYTHON_VERSION} | sed -E 's/\.[0-9]+$//') -m venv ${BIGMON_VIRTUALENV_PATH}
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U pip
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U setuptools
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U gnureadline
 RUN adduser atlpan
 RUN groupadd zp
 RUN usermod -a -G zp atlpan
+RUN mkdir /tmp/src
+WORKDIR /tmp/src
+COPY . .
 
-RUN python3 -m venv ${BIGMON_VIRTUALENV_PATH} --system-site-packages
+RUN yum -y update
 
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade setuptools
+RUN yum install -y nano python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
+        less git ca-policy-egi-core \
+        httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch wget net-tools sudo \
+        https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    yum install -y postgresql14 postgresql14-devel
+
+# install Oracle Instant Client and tnsnames.ora
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -P /tmp/ && \
+    yum install /tmp/oracle-instantclient-basic-linuxx64.rpm -y && \
+    wget https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -P /tmp/ && \
+    yum install /tmp/oracle-instantclient-sqlplus-linuxx64.rpm -y
+
+# Grab the latest version of the Oracle tnsnames.ora file
+RUN ln -fs /data/bigmon/config/tnsnames.ora /etc/tnsnames.ora
+
+RUN yum clean all && rm -rf /var/cache/yum
 
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade channels pyOpenSSL daphne python-dotenv pyrebase4 confluent_kafka futures psycopg2-binary \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt \
-    beautifulsoup4 boto3 bz2file cachetools certifi cffi chardet click codegen cryptography cx-Oracle cycler \
-    dataclasses datefinder decorator defusedxml Django docopt dogpile.cache ecdsa django-csp \
+    beautifulsoup4 boto3 bz2file cachetools certifi cffi chardet click codegen cryptography oracledb cycler \
+    dataclasses datefinder decorator defusedxml Django==5.0.8 docopt dogpile.cache ecdsa django-csp \
     elasticsearch elasticsearch-dsl opensearch-py enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
     humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
     Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
@@ -62,7 +88,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade channels 
     py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyparsing pytest \
     python-dateutil python-magic python-openid python-social-auth python-string-utils python-utils python3-openid \
     pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
-    schedule scikit-learn scipy six sklearn  social-auth-core soupsieve sqlparse \
+    schedule scikit-learn scipy six scikit-learn  social-auth-core soupsieve sqlparse \
     stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
     urllib3 webencodings websocket-client Werkzeug xlrd zipp \
     rucio-clients \

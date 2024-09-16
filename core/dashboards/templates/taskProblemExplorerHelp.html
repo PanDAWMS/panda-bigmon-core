@@ -1,0 +1,57 @@
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>Slow analysis tasks summary:</p></div>
+<div class="card-section">
+  <p><a href="">This page</a> lists non-production tasks which submitted earlier than 3 days ago (by default) and still in active state.
+  We assume it indicates a problem if the task is still in a non-final state (e.g. running, pending, exhausted, throttled etc.) after 3 days, and we call them 'slow'</p>
+  </p>
+  <p><b>The top section has 3 rows of plots:</b></p>
+  <ul>
+    <li>1st row: number of slow tasks over time by their creation date;
+    <li>2nd row: number of tasks per owner. In case of user analysis tasks it is the username,
+      in case of group analysis or service tasks (ART etc.) - the working group name.
+    <li>3rd row: how long slow tasks were/are in transient states (running, pending, etc.).
+  </ul>
+  <p><b>The middle section</b> is the table which lists the slow tasks. The columns are:
+    <ul>
+      <li>The 'age' column is #days since task submission.
+      <li>The 'transient states' how many times a task went into "problematic" state, i.e. <b class="throttled">throttled</b> or <b class="exhausted">exhausted</b>.
+      <li>The 'queueing', 'running', 'problematic' columns show how long the task was in these states in hours.
+      <li>The 'queueing' includes time in <b class="pending">pending</b>, <b class="assigning">assigning</b>, <b class="ready">ready</b>, <b class="submitting">submitting</b>, <b class="scouting"> scouting</b> states.
+    </ul>
+  </p>
+  <p><b>The bottom section</b>  is the table which shows reasons why slow tasks went to throttled or exhausted and number of tasks which were in these states with those reasons.</p>
+
+  <p><b>Task states descreption:</b></p>
+  <ul>
+     <li>Status <b class='registered'>registered</b> indicates the task has been received by JEDI and the task information is inserted to the JEDI_Tasks table.
+      <li>Status <b class="defined">defined</b> indicates all task parameters are properly defined.
+      <li>Status <b class="assigning">assigning</b> indicates the task brokerage is assigning the task to a cloud.
+      <li>Status <b class="ready">ready</b> indicates the task is ready to generate jobs. New jobs are generated once computing resources become available.
+      <li>Status <b class="pending">pending</b> indicates the task has a temporary problem, e.g. there is no sites to assign jobs.
+      <li>Status <b class="scouting">scouting</b> indicates the task is running scout jobs to collect job data.
+      <li>Status <b class="scouted">scouted</b> indicates all scout jobs were successfully finished.
+      <li>Status <b class='submitting'>submitting</b> indicates the task is progressing through the steps preparing it to be run, including scouting (sending scout jobs to validate the task and measure its parameters).
+      <li>Status <b class='running'>running</b> indicates the task has successfully validated and is running.
+      <li>Status <b class="prepared">prepared</b> indicates the task is ready to go to a final status
+      <li>Status <b class="finishing">finishing</b> indicates the task is forced to get finished
+      <li>Status <b class="paused">paused</b> indicates the task is paused and doesn't do anything until it is resumed
+      <li>Status <b class="throttled">throttled</b> indicates the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minites
+      <li>Status <b class="exhausted">exhausted</b> for production tasks indicates, all reattempts were done but some inputs were still unsuccessful, and the task is configured to go to this state instead of finished to wait for manual intervention or timeout of 10 days. Also, if cpuTime of scouts jobs > 2x cpuTime of task definition, the task goes to exhausted. For analysis tasks, if there are more than 5 scout jobs with short execution time (< 4 min) and more than 1000 jobs are expected, they will go to exhausted to prevent automatic avalanche since so many short jobs are problematic at grid sites. Analysis tasks in exhausted state can be retried using pbook but it is better to change some parameters like nFilesPerJob to have longer execution time. Also both production and analysis tasks will go to exhausted if they are timed-out while pending in the brokerage.
+      <li>Status <b class="tobroken">tobroken</b> indicates the task is going to broken
+      <li>Status <b class="aborting">aborting</b> indicates the task is being killed
+      <li>Status <b class='finished'>finished</b> indicates that some inputs of the task were successfully processed but others were failed or not processed (e.g. because files were unavailable) when the task was terminated. It can be re-tried by resubmitting the same command again, in order to try again the files not yet processed. It is possible to set/unset --site, --cloud, and --excludedSite when re-submitting the task.
+      <li>Status <b class='done'>done</b> indicates that all inputs of the task were successfully processed.
+      <li>Status <b class='failed'>failed</b> indicates the task has failed, all inputs have failed, in a way that retry is possible (if retry is judged to be impossible the task goes to status 'broken'). If some inputs succeeded while others failed and the class is terminated, the task goes to 'finished' status.
+      <li>Status <b class='aborted'>aborted</b> indicates the task has been killed. Aborted tasks can be re-executed.
+      <li>Status <b class='broken'>broken</b> indicates the task has failed in a way that makes retry very likely impossible. Tasks are declared as broken only in very limited circumstances, e.g. when all scout jobs failed, build jobs failed at multiple sites, etc. Users can force retry from broken state at their own risk see the pathena/prun documentation.
+      <li>Status <b class="toretry">toretry</b> indicates the retry command was received for the task.
+      <li>Status <b class="toincexec">toincexec</b> indicates the incexec command was received for the task.
+      <li>Status <b class="rerefine">rerefine</b> indicates task parameters are going to be changed for incremental execution
+      <li>Status <b class="topreprocess">topreprocess</b> indicates preprocess job is ready for the task
+      <li>Status <b class="preprocessing">preprocessing</b> indicates preprocess job is running for the task
+      <li>Status <b class="passed">passed</b> indicates the task is ready to go to a final state after manual intervention or timeout
+  </ul>
+
+
+</div>
+</div>

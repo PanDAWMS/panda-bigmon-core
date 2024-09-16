@@ -5,9 +5,6 @@ MY_SECRET_KEY = 'FIX_ME'
 dbaccess_oracle_atlas = {
     'default': {
          'ENGINE':'django.db.backends.oracle',
-         'OPTIONS': {
-                 'threaded': True,
-          },
          'NAME': 'FIX_ME',
          'HOST': 'FIX_ME',
          'PORT': 'FIX_ME',

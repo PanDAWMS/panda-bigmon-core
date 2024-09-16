@@ -32,12 +32,12 @@ def compviewDemo(request):
     check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-ico\
 n-circle-check">ICON33</span></div>'
-    clock_icon='<div class="ui-widget ui-state-hover" style="display:inline-block;"> <span s\
-tyle="display:inline-block;" title="UPDATING" class="DataTables_sort_icon css_right ui-icon \
-ui-icon-clock">ICON39</span></div>'
-    minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;"> <s\
-pan style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_righ\
-t ui-icon ui-icon-alert">ICON34</span></div>'
+    clock_icon='<div class="ui-widget ui-state-active" style="display:inline-block;backgroun\
+d:#bc0000;"> <span style="display:inline-block;" title="UPDATING" class="DataTables_sort_ico\
+n css_right ui-icon ui-icon-clock">ICON39</span></div>'
+    minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;">\
+ <span style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_r\
+ight ui-icon ui-icon-alert">ICON34</span></div>'
     warn_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span st\
 yle="display:inline-block;" title="WARNING" class="DataTables_sort_icon css_right ui-icon ui\
 -icon-lightbulb">ICON35</span></div>'
@@ -60,7 +60,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
     di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':minorwarn_icon,'2':majorwarn_icon,'3':error_icon,'10':clock_icon}
     asdd='0'
     if asdd == '0':
-     query="select * from (select to_char(j.jid),j.arch||'-'||os||'-'||comp||'-'||opt as AA, j.tstamp, n.nname as nname, r.name as RNAME, s.hname, j.buildarea, j.copyarea, r.relnstamp, j.gitbr from nightlies@ATLR.CERN.CH n inner join ( releases@ATLR.CERN.CH r inner join ( jobs@ATLR.CERN.CH j inner join jobstat@ATLR.CERN.CH s on j.jid=s.jid ) on r.nid=j.nid and r.relid=j.relid ) on n.nid=r.nid where nname ='%s' and j.tstamp between sysdate-11+1/24 and sysdate order by j.tstamp asc) where RNAME ='%s' and AA='%s'" % (nname,relname,arname)
+     query="select * from (select to_char(j.jid),j.arch||'-'||os||'-'||comp||'-'||opt as AA, j.tstamp, n.nname as nname, r.name as RNAME, s.hname, j.buildarea, j.copyarea, r.relnstamp, j.gitbr, n.ntype from nightlies@ATLR.CERN.CH n inner join ( releases@ATLR.CERN.CH r inner join ( jobs@ATLR.CERN.CH j inner join jobstat@ATLR.CERN.CH s on j.jid=s.jid ) on r.nid=j.nid and r.relid=j.relid ) on n.nid=r.nid where nname ='%s' and j.tstamp between sysdate-11+1/24 and sysdate order by j.tstamp asc) where RNAME ='%s' and AA='%s'" % (nname,relname,arname)
 #     print("Q ",query)
      new_cur.execute(query)
      reslt = new_cur.fetchall()
@@ -69,15 +69,17 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
      buildareaSS='N/A'
      copyareaSS='N/A'
      gitbrSS='N/A'
+     ntype='N/A'
      relnstamp=''
      lllr=len(reslt)
      if lllr > 0:
         rowmax=reslt[-1]
-        host=re.split('\.',rowmax[5])[0]
+        host=re.split('\\.',rowmax[5])[0]
         jid_top = rowmax[0]
         buildareaSS = rowmax[6]
         copyareaSS = rowmax[7]
         relnstamp = rowmax[8]
+        ntype = rowmax[10]
         if gitbrSS != None : gitbrSS=rowmax[9]
         tabname='compresults'
         if pjname == '*' or re.match('^all$',pjname,re.IGNORECASE) :
@@ -109,12 +111,13 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
       if i > 10000: break
       result=row[0]
       proj=row[1]
-      nameln=row[2]
+      nameln1=row[2]
       container=row[3]
       corder=row[4]
       i_result=di_res.get(str(result),str(result))
-      if i_result == None or i_result == "None" : i_result=radiooff_icon; 
-      row_cand=[i_result,proj,nameln,container]
+      if i_result == None or i_result == "None" : i_result=radiooff_icon;
+      nameln3=nameln1
+      row_cand=[i_result,proj,nameln3,container]
       rows_s.append(row_cand)
 
     data={"nightly": nname, "rel": relname, "ar": arname, "proj": pjname, 'viewParams': request.session['viewParams'],'rows_s':json.dumps(rows_s, cls=DateEncoder)}

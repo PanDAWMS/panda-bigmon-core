@@ -206,7 +206,7 @@ def upload_data(os_conn, index_name_base, data, timestamp_param='creationdate', 
     # send data via POST request
     os_host, os_user, os_password = get_os_credentials(instance='os-atlas')
     if '/' in os_host:
-        es_host = os_host.split('/')[0]
+        os_host = os_host.split('/')[0]
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     response = requests.post(
         f"https://{os_host}/os/_bulk",
@@ -253,13 +253,16 @@ def get_split_rule_info(os_host, jeditaskid):
 
     return split_rules
 
-def get_gco2_sum_for_tasklist(task_list):
+def get_gco2_sum_for_tasklist(task_list=None):
     """
     Getting sum of gCO2 for list of tasks from OS-ATLAS
     :param: tasks_list: list of jeditaskid
     :return: gco2_sum
     """
     gco2_sum = {'total': 0, 'finished': 0, 'failed': 0}
+    if task_list is None:
+        return gco2_sum
+
     os_jobs_index = 'atlas_jobs_archived*'
     os_conn = create_os_connection(instance='os-atlas')
 
@@ -270,9 +273,9 @@ def get_gco2_sum_for_tasklist(task_list):
         s = Search(using=os_conn, index=os_jobs_index)
 
         s.filter('range', **{
-            '@timestamp': {'gte': 'now-1y', 'lte': 'now'}
-        }).query("terms", jeditaskid=chunk)
-
+            '@timestamp': {'gte': 'now-2y', 'lte': 'now'}
+        })
+        s = s.query("terms", jeditaskid=chunk)
         s.aggs.bucket('jobstatus', 'terms', field='jobstatus.keyword') \
             .metric('sum_gco2global', 'sum', field='gco2global') \
             .metric('sum_gco2regional', 'sum', field='gco2regional')
@@ -371,7 +374,7 @@ def get_os_task_status_log(db_source, jeditaskid, os_instance='os-atlas'):
             jobs_info_status_dict[hit_dict['jobid']][hit_dict['status']] = {
                 'message_id': hit_dict['message_id'], 'job_inputfilebytes': job_inputfilebytes,
                 'job_hs06sec': job_hs06sec, 'status': hit_dict['status'], 'job_nevents': job_nevents,
-                'time': hit_dict['@timestamp'],'timestamp':hit_dict['timestamp']
+                'time': hit_dict['@timestamp'],'timestamp': hit_dict['timestamp']
             }
 
         fields_list = list(hit_dict.keys())
@@ -398,4 +401,7 @@ def get_os_task_status_log(db_source, jeditaskid, os_instance='os-atlas'):
 def chunks(iterable, chunk_size):
     """Split an iterable into chunks of the specified size."""
     args = [iter(iterable)] * chunk_size
-    return zip_longest(*args, fillvalue=None)
+    return ([
+        tuple([x for x in y if x])
+        for y in list(zip_longest(*args, fillvalue=None))
+    ])

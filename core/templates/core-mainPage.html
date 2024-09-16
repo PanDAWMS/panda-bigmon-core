@@ -4,7 +4,6 @@
 {% block subtitle %}{{ viewParams.MON_VO }} PanDA monitor home{% endblock %}
 
 {% block bottom_info %}
-{% if requestParams|length < 2 %}
 
 {% if viewParams.MON_VO == 'ATLAS' %}
 
@@ -15,15 +14,15 @@
       <div class="expanded row">
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=96&fullscreen&orgId=17'>
-            <img src="{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?&orgId=17&panelId=96&width=1000&height=1000" alt='Daily World All Queues'></a>
+            <img src="/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?&orgId=17&panelId=96&width=1000&height=1000" alt='Daily World All Queues'></a>
           </div>
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=97&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=97&orgId=17&width=1000&height=1000' alt='Weekly World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=97&orgId=17&width=1000&height=1000' alt='Weekly World All Queues'></a>
           </div>
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=95&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=95&orgId=17&width=1000&height=1000' alt='Monthly World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=95&orgId=17&width=1000&height=1000' alt='Monthly World All Queues'></a>
           </div>
       </div>
     </div>
@@ -34,15 +33,15 @@
       <div class="expanded row">
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=103&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=103&orgId=17&width=1000&height=1000' alt='Daily World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=103&orgId=17&width=1000&height=1000' alt='Daily World All Queues'></a>
           </div>
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=108&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=108&orgId=17&width=1000&height=1000' alt='Weekly World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=108&orgId=17&width=1000&height=1000' alt='Weekly World All Queues'></a>
           </div>
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=107&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=107&orgId=17&width=1000&height=1000' alt='Monthly World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=107&orgId=17&width=1000&height=1000' alt='Monthly World All Queues'></a>
           </div>
       </div>
     </div>
@@ -52,15 +51,15 @@
       <div class="expanded row">
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=104&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=104&orgId=17&height=600' alt='Daily World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=104&orgId=17&height=600' alt='Daily World All Queues'></a>
           </div>
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=110&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=110&orgId=17&height=600' alt='Weekly World All Queues'> </a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=110&orgId=17&height=600' alt='Weekly World All Queues'> </a>
           </div>
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=109&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=109&orgId=17&height=600' alt='Monthly World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=109&orgId=17&height=600' alt='Monthly World All Queues'></a>
           </div>
       </div>
     </div>
@@ -70,15 +69,15 @@
       <div class="expanded row">
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=101&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=101&orgId=17&width=1000&height=1000' alt='Daily World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=101&orgId=17&width=1000&height=1000' alt='Daily World All Queues'></a>
           </div>
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=105&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=105&orgId=17&width=1000&height=1000' alt='Weekly World All Queues'> </a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=105&orgId=17&width=1000&height=1000' alt='Weekly World All Queues'> </a>
           </div>
           <div class="columns small-12 medium-4 large-4">
             <a target='_blank' href='https://monit-grafana.cern.ch/d/000000806/bigpanda-monitoring?panelId=106&fullscreen&orgId=17'>
-            <img src='{% url 'grafana_image' %}?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=106&orgId=17&width=1000&height=1000' alt='Monthly World All Queues'></a>
+            <img src='/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=106&orgId=17&width=1000&height=1000' alt='Monthly World All Queues'></a>
           </div>
       </div>
     </div>
@@ -92,8 +91,7 @@ Welcome to the {{ viewParams.MON_VO }} PanDA monitor.
 Select what you'd like to have a look at in the top menu bar: dashboard overview; job and task lists; error summaries; user lists and pages; site, cloud and WN information; etc.
 
 {% endif %}
-
-{% endif %}
+  
 <p>
 <script nonce={{request.csp_nonce}}>
   $(function() {
@@ -184,8 +182,7 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
       </form>
       <form action="{% url 'jobList' %}" method='get' class="search-form">
           <div class="input-group">
-              <span class="input-group-label">Stalled jobs</span>
-              <span class="input-group-label">in:</span>
+              <span class="input-group-label">Stalled jobs in:</span>
               <select name="jobstatus" class="input-group-field">
                 <option value="defined"><span class="defined">defined</span></option>
                 <option value="waiting"><span class="waiting">waiting</span></option>
@@ -206,8 +203,7 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
       </form>
       <form action="{% url 'taskList' %}" method='get' class="search-form">
           <div class="input-group">
-              <span class="input-group-label">Stalled tasks</span>
-              <span class="input-group-label">in:</span>
+              <span class="input-group-label">Stalled tasks in:</span>
               <select name="superstatus" class="input-group-field">
                 <option value="registered"><span class="registered">registered</span></option>
                 <option value="submitting"><span class="submitting">submitting</span></option>

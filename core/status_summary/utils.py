@@ -4,7 +4,7 @@
 """
 import logging
 import pytz
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from core.schedresource.utils import get_panda_queues
 import core.constants as const
@@ -26,7 +26,7 @@ def configure(request_GET):
         except ValueError:
             errors_GET['starttime'] = \
                 'Provided starttime [%s] has incorrect format, expected [%s].' % (starttime, defaultDatetimeFormat)
-            starttime = datetime.utcnow() - timedelta(hours=nhours)
+            starttime = datetime.now(tz=timezone.utc) - timedelta(hours=nhours)
             starttime = starttime.replace(tzinfo=pytz.utc).strftime(defaultDatetimeFormat)
         ### endtime
         endtime = request_GET['endtime']
@@ -35,7 +35,7 @@ def configure(request_GET):
         except ValueError:
             errors_GET['endtime'] = \
                 'Provided endtime [%s] has incorrect format, expected [%s].' % (endtime, defaultDatetimeFormat)
-            endtime = datetime.utcnow()
+            endtime = datetime.now(tz=timezone.utc)
             endtime = endtime.replace(tzinfo=pytz.utc).strftime(defaultDatetimeFormat)
     ### if nhours is provided, do query "last N days"
     elif 'nhours' in request_GET:
@@ -45,16 +45,16 @@ def configure(request_GET):
             nhours = 12
             errors_GET['nhours'] = \
                 'Wrong or no nhours has been provided.Using [%s].' % (nhours)
-        starttime = datetime.utcnow() - timedelta(hours=nhours)
+        starttime = datetime.now(tz=timezone.utc) - timedelta(hours=nhours)
         starttime = starttime.replace(tzinfo=pytz.utc).strftime(defaultDatetimeFormat)
-        endtime = datetime.utcnow()
+        endtime = datetime.now(tz=timezone.utc)
         endtime = endtime.replace(tzinfo=pytz.utc).strftime(defaultDatetimeFormat)
     ### neither nhours, nor starttime&endtime was provided
     else:
         nhours = 12
-        starttime = datetime.utcnow() - timedelta(hours=nhours)
+        starttime = datetime.now(tz=timezone.utc) - timedelta(hours=nhours)
         starttime = starttime.replace(tzinfo=pytz.utc).strftime(defaultDatetimeFormat)
-        endtime = datetime.utcnow()
+        endtime = datetime.now(tz=timezone.utc)
         endtime = endtime.replace(tzinfo=pytz.utc).strftime(defaultDatetimeFormat)
         errors_GET['noparams'] = \
                 'Neither nhours, nor starttime & endtime has been provided. Using starttime=%s and endtime=%s.' % \

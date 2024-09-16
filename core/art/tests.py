@@ -3,7 +3,6 @@ import json
 import random
 import time
 import requests
-from jsondiff import diff
 from django.test import Client
 from core.oauth.models import BPUser
 
@@ -86,9 +85,14 @@ class BPArtTest(unittest.TestCase):
             print("Identical")
         else:
             print("---***---NOT identical---***---")
-            d = diff(data_old, data_new)
-            print(f"~{round(len(str(d))*100.0/len(str(data_old)),2)}% of difference")
-            print(d)
+            try:
+                from jsondiff import diff
+                d = diff(data_old, data_new)
+                print(f"~{round(len(str(d)) * 100.0 / len(str(data_old)), 2)}% of difference")
+                print(d)
+            except ImportError:
+                print("Can not import jsondiff module and compare data")
+
 
     @unittest.skip("Skip art tasks comparison")
     def test_art_tasks_old_vs_new(self):
@@ -105,9 +109,13 @@ class BPArtTest(unittest.TestCase):
             print("Identical")
         else:
             print("---***---NOT identical---***---")
-            d = diff(data_old, data_new)
-            print(f"~{round(len(str(d))*100.0/len(str(data_old)),2)}% of difference")
-            print(d)
+            try:
+                from jsondiff import diff
+                d = diff(data_old, data_new)
+                print(f"~{round(len(str(d)) * 100.0 / len(str(data_old)), 2)}% of difference")
+                print(d)
+            except ImportError:
+                print("Can not import jsondiff module and compare data")
 
     @unittest.skip("Skip art jobs comparison")
     def test_art_jobs_old_vs_new(self):
@@ -125,9 +133,13 @@ class BPArtTest(unittest.TestCase):
             print("Identical")
         else:
             print("---***---NOT identical---***---")
-            d = diff(data_old, data_new)
-            print(f"~{round(len(str(d))*100.0/len(str(data_old)),2)}% of difference")
-            print(d)
+            try:
+                from jsondiff import diff
+                d = diff(data_old, data_new)
+                print(f"~{round(len(str(d)) * 100.0 / len(str(data_old)), 2)}% of difference")
+                print(d)
+            except ImportError:
+                print("Can not import jsondiff module and compare data")
 
 
     @unittest.skip("Skip art stability comparison")
@@ -146,6 +158,10 @@ class BPArtTest(unittest.TestCase):
             print("Identical")
         else:
             print("---***---NOT identical---***---")
-            d = diff(data_old, data_new)
-            print(f"~{round(len(str(d))*100.0/len(str(data_old)),2)}% of difference")
-            print(d)
+            try:
+                from jsondiff import diff
+                d = diff(data_old, data_new)
+                print(f"~{round(len(str(d)) * 100.0 / len(str(data_old)), 2)}% of difference")
+                print(d)
+            except ImportError:
+                print("Can not import jsondiff module and compare data")

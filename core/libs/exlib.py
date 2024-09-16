@@ -6,7 +6,8 @@ import pandas as pd
 from datetime import timedelta
 from django.db import connection
 
-from core.common.models import JediDatasets, JediDatasetContents, Filestable4, FilestableArch, Sitedata
+from core.common.models import JediDatasets, Filestable4, FilestableArch, Sitedata, ResourceTypes
+from core.schedresource.utils import get_panda_queues
 from django.conf import settings
 
 
@@ -77,7 +78,7 @@ def insert_to_temp_table(list_of_items, transactionKey = -1):
 
 
 def dictfetchall(cursor, **kwargs):
-    "Returns all rows from a cursor as a dict"
+    """Returns all rows from a cursor as a dict"""
     style = 'default'
     if 'style' in kwargs:
         style = kwargs['style']
@@ -87,11 +88,16 @@ def dictfetchall(cursor, **kwargs):
             dict(zip([str(col[0]).upper() for col in desc], row))
             for row in cursor.fetchall()
         ]
+    elif style == 'lowercase':
+        return [
+            dict(zip([str(col[0]).lower() for col in desc], row))
+            for row in cursor.fetchall()
+        ]
     else:
         return [
             dict(zip([col[0] for col in desc], row))
             for row in cursor.fetchall()
-            ]
+        ]
 
 
 def is_timestamp(key):
@@ -513,7 +519,30 @@ def count_occurrences(obj_list, params_to_count, output='dict'):
     return param_counts
 
 
-def duration_df(data_raw, id_name='JEDITASKID', timestamp_name='MODIFICATIONTIME'):
+def group_low_occurrences(data, threshold=0.01):
+    """
+    Group low occurrences into "other" category
+    :param data: list of lists
+    :param threshold: float (0-1)
+    :return: data: list of lists
+    """
+    grouped_data = []
+    n_other = 0
+    if len(data) > 0:
+        total = sum([item[1] for item in data])
+        if total > 0:
+            for item in data:
+                if item[1] / total > threshold:
+                    grouped_data.append(item)
+                else:
+                    n_other += item[1]
+            if n_other > 0:
+                grouped_data.append(['other', n_other])
+    return grouped_data
+
+
+
+def duration_df(data_raw, id_name='jeditaskid', timestamp_name='modificationtime'):
     """
     Calculates duration of each status by modificationtime delta
     (in days)
@@ -521,7 +550,7 @@ def duration_df(data_raw, id_name='JEDITASKID', timestamp_name='MODIFICATIONTIME
     task_states_duration = {}
     if len(data_raw) > 0:
         df = pd.DataFrame(data_raw)
-        groups = df.groupby([id_name])
+        groups = df.groupby(id_name)
         for k, v in groups:
             v.sort_values(by=[timestamp_name], inplace=True)
             v['START_TS'] = pd.to_datetime(v[timestamp_name])
@@ -636,3 +665,31 @@ def get_file_info(job_list, **kwargs):
                     job[file['type'] + 'filesize'] += file['fsize'] if isinstance(file['fsize'], int) else 0
 
     return job_list
+
+
+def get_resource_types():
+    """
+    Get resource types from DB
+    :return: resource_types: list
+    """
+    resource_types = list(ResourceTypes.objects.all().values())
+    return resource_types
+
+def get_maxrampercore_dict():
+    """
+    Get maxrampercore values depending on resource type and computingsite
+    :return:
+    """
+    resource_types = get_resource_types()
+    pqs = get_panda_queues()
+    maxrampercore_dict = {}
+    for rt in resource_types:
+        if rt['resource_name'] not in maxrampercore_dict:
+            maxrampercore_dict[rt['resource_name']] = {}
+        for pq, pq_data in pqs.items():
+            if rt['maxrampercore'] is not None:
+                maxrampercore_dict[rt['resource_name']][pq] = int(rt['maxrampercore'])
+            elif rt['maxrampercore'] is None and pq_data['maxrss'] is not None and pq_data['corecount'] is not None:
+                maxrampercore_dict[rt['resource_name']][pq] = int(pq_data['maxrss']/pq_data['corecount'])
+
+    return maxrampercore_dict

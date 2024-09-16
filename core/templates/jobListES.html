@@ -144,8 +144,11 @@
     <td><div class="comment more">
         {% for item in fdict.list %}
             {% if fdict.field == 'jeditaskid' and item.kname != 'Not specified' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
-            {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}">{{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" > ({{ item.kvalue }}) </a>
+            {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}"> {{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% elif fdict.field  == 'harvesterinstance' %} {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% elif fdict.field  == 'durationmin' %} {% if item.kvalue > 0 %} {{ item.kname }} <a href="{{nodurminurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a> {% endif %}
             {% elif fdict.field == 'produsername' %} <a href="{% url 'userInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
+            {% elif fdict.field == 'eventservicestatus' %} <span class='{{item.kname}} item'>{{ item.kname }}</span> ({{ item.kvalue }})
             {% elif fdict.field == 'container_name' and request.session.xurls and fdict.field in request.session.xurls %} {{ item.kname }} <a href="{{ request.session.xurls.container_name }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
             {% elif fdict.field == 'jobstatus' %} <span class='{{item.kname}} item'>{{ item.kname }}</span>
                 {% if item.kname == 'closed:toreassign' %}
@@ -290,7 +293,7 @@ Sort by
             {% if request.user.is_tester %}
               <div class="button-group bp-comparison">
                 <a class="button {% if job.pandaid in clist %} remove {% else %} add {% endif %}" id="comparisonbutton{{ job.pandaid }}"><span class="tooltip-right">{% if job.pandaid in clist %}<i class="fi-minus"></i>{% else %}<i class="fi-plus"></i>{% endif %}<span class="tooltip-text">{% if job.pandaid in clist %}Remove from comparison{% else %}Add to comparison{% endif %}</span></span></a>
-                <a class="button" href="{% url 'compareJobs' %}?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
+                <a class="button" href="/compare/jobs/?timestamp={% now "H:i:s" %}"><span class="tooltip-right"><i class="fi-list-thumbnails"></i><span class="tooltip-text">Go to the comparison</span></span></a>
               </div>
             {% endif %}
 		</td>

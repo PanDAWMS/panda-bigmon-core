@@ -21,10 +21,10 @@ class CombinedWaitActDefArch4(models.Model):
     jeditaskid = models.BigIntegerField(db_column='jeditaskid')
     jobname = models.CharField(max_length=384, db_column='jobname', blank=True)
     nucleus = models.CharField(max_length=10, db_column='nucleus', blank=True)
-    computingsite = models.CharField(max_length=384, db_column='computingsite', blank=True)  # Field name made lowercase.
-    jobstatus = models.CharField(max_length=45, db_column='jobstatus')  # Field name made lowercase.
+    computingsite = models.CharField(max_length=384, db_column='computingsite', blank=True)  
+    jobstatus = models.CharField(max_length=45, db_column='jobstatus')  
     tasktype = models.CharField(max_length=64, db_column='tasktype')
-    modificationtime = models.DateTimeField(db_column='modificationtime')  # Field name made lowercase.
+    modificationtime = models.DateTimeField(db_column='modificationtime')  
     es = models.IntegerField(db_column='es')
     nevents = models.IntegerField(db_column='nevents')
     isarchive = models.IntegerField(db_column='isarchive')
@@ -37,126 +37,127 @@ class CombinedWaitActDefArch4(models.Model):
 
 
 class PandaJob(models.Model):
-    pandaid = models.BigIntegerField(primary_key=True, db_column='pandaid')  # Field name made lowercase.
-    jobdefinitionid = models.BigIntegerField(db_column='jobdefinitionid')  # Field name made lowercase.
-    schedulerid = models.CharField(max_length=384, db_column='schedulerid', blank=True)  # Field name made lowercase.
-    pilotid = models.CharField(max_length=600, db_column='pilotid', blank=True)  # Field name made lowercase.
-    creationtime = models.DateTimeField(db_column='creationtime')  # Field name made lowercase.
-    creationhost = models.CharField(max_length=384, db_column='creationhost', blank=True)  # Field name made lowercase.
-    modificationtime = models.DateTimeField(db_column='modificationtime')  # Field name made lowercase.
-    modificationhost = models.CharField(max_length=384, db_column='modificationhost', blank=True)  # Field name made lowercase.
-    atlasrelease = models.CharField(max_length=192, db_column='atlasrelease', blank=True)  # Field name made lowercase.
-    transformation = models.CharField(max_length=750, db_column='transformation', blank=True)  # Field name made lowercase.
-    homepackage = models.CharField(max_length=240, db_column='homepackage', blank=True)  # Field name made lowercase.
-    prodserieslabel = models.CharField(max_length=60, db_column='prodserieslabel', blank=True)  # Field name made lowercase.
-    prodsourcelabel = models.CharField(max_length=60, db_column='prodsourcelabel', blank=True)  # Field name made lowercase.
-    produserid = models.CharField(max_length=750, db_column='produserid', blank=True)  # Field name made lowercase.
+    pandaid = models.BigIntegerField(primary_key=True, db_column='pandaid')  
+    jobdefinitionid = models.BigIntegerField(db_column='jobdefinitionid')  
+    schedulerid = models.CharField(max_length=384, db_column='schedulerid', blank=True)  
+    pilotid = models.CharField(max_length=600, db_column='pilotid', blank=True)  
+    creationtime = models.DateTimeField(db_column='creationtime')  
+    creationhost = models.CharField(max_length=384, db_column='creationhost', blank=True)  
+    modificationtime = models.DateTimeField(db_column='modificationtime')  
+    modificationhost = models.CharField(max_length=384, db_column='modificationhost', blank=True)  
+    atlasrelease = models.CharField(max_length=192, db_column='atlasrelease', blank=True)  
+    transformation = models.CharField(max_length=750, db_column='transformation', blank=True)  
+    homepackage = models.CharField(max_length=240, db_column='homepackage', blank=True)  
+    prodserieslabel = models.CharField(max_length=60, db_column='prodserieslabel', blank=True)  
+    prodsourcelabel = models.CharField(max_length=60, db_column='prodsourcelabel', blank=True)  
+    produserid = models.CharField(max_length=750, db_column='produserid', blank=True)  
     gshare = models.CharField(max_length=750, db_column='gshare', blank=True)
-    assignedpriority = models.IntegerField(db_column='assignedpriority')  # Field name made lowercase.
-    currentpriority = models.IntegerField(db_column='currentpriority')  # Field name made lowercase.
-    attemptnr = models.IntegerField(db_column='attemptnr')  # Field name made lowercase.
-    maxattempt = models.IntegerField(db_column='maxattempt')  # Field name made lowercase.
-    jobstatus = models.CharField(max_length=45, db_column='jobstatus')  # Field name made lowercase.
-    jobname = models.CharField(max_length=768, db_column='jobname', blank=True)  # Field name made lowercase.
-    maxcpucount = models.IntegerField(db_column='maxcpucount')  # Field name made lowercase.
-    maxcpuunit = models.CharField(max_length=96, db_column='maxcpuunit', blank=True)  # Field name made lowercase.
-    maxdiskcount = models.IntegerField(db_column='maxdiskcount')  # Field name made lowercase.
-    maxdiskunit = models.CharField(max_length=12, db_column='maxdiskunit', blank=True)  # Field name made lowercase.
-    ipconnectivity = models.CharField(max_length=15, db_column='ipconnectivity', blank=True)  # Field name made lowercase.
-    minramcount = models.IntegerField(db_column='minramcount')  # Field name made lowercase.
-    minramunit = models.CharField(max_length=6, db_column='minramunit', blank=True)  # Field name made lowercase.
-    starttime = models.DateTimeField(null=True, db_column='starttime', blank=True)  # Field name made lowercase.
-    endtime = models.DateTimeField(null=True, db_column='endtime', blank=True)  # Field name made lowercase.
-    cpuconsumptiontime = models.BigIntegerField(db_column='cpuconsumptiontime')  # Field name made lowercase.
-    cpuconsumptionunit = models.CharField(max_length=384, db_column='cpuconsumptionunit', blank=True)  # Field name made lowercase.
-    commandtopilot = models.CharField(max_length=750, db_column='commandtopilot', blank=True)  # Field name made lowercase.
-    transexitcode = models.CharField(max_length=384, db_column='transexitcode', blank=True)  # Field name made lowercase.
-    piloterrorcode = models.IntegerField(db_column='piloterrorcode')  # Field name made lowercase.
-    piloterrordiag = models.CharField(max_length=1500, db_column='piloterrordiag', blank=True)  # Field name made lowercase.
-    exeerrorcode = models.IntegerField(db_column='exeerrorcode')  # Field name made lowercase.
-    exeerrordiag = models.CharField(max_length=1500, db_column='exeerrordiag', blank=True)  # Field name made lowercase.
-    superrorcode = models.IntegerField(db_column='superrorcode')  # Field name made lowercase.
-    superrordiag = models.CharField(max_length=750, db_column='superrordiag', blank=True)  # Field name made lowercase.
-    ddmerrorcode = models.IntegerField(db_column='ddmerrorcode')  # Field name made lowercase.
-    ddmerrordiag = models.CharField(max_length=1500, db_column='ddmerrordiag', blank=True)  # Field name made lowercase.
-    brokerageerrorcode = models.IntegerField(db_column='brokerageerrorcode')  # Field name made lowercase.
-    brokerageerrordiag = models.CharField(max_length=750, db_column='brokerageerrordiag', blank=True)  # Field name made lowercase.
-    jobdispatchererrorcode = models.IntegerField(db_column='jobdispatchererrorcode')  # Field name made lowercase.
-    jobdispatchererrordiag = models.CharField(max_length=750, db_column='jobdispatchererrordiag', blank=True)  # Field name made lowercase.
-    taskbuffererrorcode = models.IntegerField(db_column='taskbuffererrorcode')  # Field name made lowercase.
-    taskbuffererrordiag = models.CharField(max_length=900, db_column='taskbuffererrordiag', blank=True)  # Field name made lowercase.
-    computingsite = models.CharField(max_length=384, db_column='computingsite', blank=True)  # Field name made lowercase.
-    computingelement = models.CharField(max_length=384, db_column='computingelement', blank=True)  # Field name made lowercase.
+    assignedpriority = models.IntegerField(db_column='assignedpriority')  
+    currentpriority = models.IntegerField(db_column='currentpriority')  
+    attemptnr = models.IntegerField(db_column='attemptnr')  
+    maxattempt = models.IntegerField(db_column='maxattempt')  
+    jobstatus = models.CharField(max_length=45, db_column='jobstatus')  
+    jobname = models.CharField(max_length=768, db_column='jobname', blank=True)  
+    maxcpucount = models.IntegerField(db_column='maxcpucount')  
+    maxcpuunit = models.CharField(max_length=96, db_column='maxcpuunit', blank=True)  
+    maxdiskcount = models.IntegerField(db_column='maxdiskcount')  
+    maxdiskunit = models.CharField(max_length=12, db_column='maxdiskunit', blank=True)  
+    ipconnectivity = models.CharField(max_length=15, db_column='ipconnectivity', blank=True)  
+    minramcount = models.IntegerField(db_column='minramcount')  
+    minramunit = models.CharField(max_length=6, db_column='minramunit', blank=True)  
+    starttime = models.DateTimeField(null=True, db_column='starttime', blank=True)  
+    endtime = models.DateTimeField(null=True, db_column='endtime', blank=True)  
+    cpuconsumptiontime = models.BigIntegerField(db_column='cpuconsumptiontime')  
+    cpuconsumptionunit = models.CharField(max_length=384, db_column='cpuconsumptionunit', blank=True)  
+    commandtopilot = models.CharField(max_length=750, db_column='commandtopilot', blank=True)  
+    transexitcode = models.CharField(max_length=384, db_column='transexitcode', blank=True)  
+    piloterrorcode = models.IntegerField(db_column='piloterrorcode')  
+    piloterrordiag = models.CharField(max_length=1500, db_column='piloterrordiag', blank=True)  
+    exeerrorcode = models.IntegerField(db_column='exeerrorcode')  
+    exeerrordiag = models.CharField(max_length=1500, db_column='exeerrordiag', blank=True)  
+    superrorcode = models.IntegerField(db_column='superrorcode')  
+    superrordiag = models.CharField(max_length=750, db_column='superrordiag', blank=True)  
+    ddmerrorcode = models.IntegerField(db_column='ddmerrorcode')  
+    ddmerrordiag = models.CharField(max_length=1500, db_column='ddmerrordiag', blank=True)  
+    brokerageerrorcode = models.IntegerField(db_column='brokerageerrorcode')  
+    brokerageerrordiag = models.CharField(max_length=750, db_column='brokerageerrordiag', blank=True)  
+    jobdispatchererrorcode = models.IntegerField(db_column='jobdispatchererrorcode')  
+    jobdispatchererrordiag = models.CharField(max_length=750, db_column='jobdispatchererrordiag', blank=True)  
+    taskbuffererrorcode = models.IntegerField(db_column='taskbuffererrorcode')  
+    taskbuffererrordiag = models.CharField(max_length=900, db_column='taskbuffererrordiag', blank=True)  
+    computingsite = models.CharField(max_length=384, db_column='computingsite', blank=True)  
+    computingelement = models.CharField(max_length=384, db_column='computingelement', blank=True)  
     # jobparameters = models.TextField(db_column='jobparameters', blank=True)  # deprecated (always None)
     # metadata = models.TextField(db_column='metadata', blank=True)  # deprecated (always None)
-    proddblock = models.CharField(max_length=765, db_column='proddblock', blank=True)  # Field name made lowercase.
-    dispatchdblock = models.CharField(max_length=765, db_column='dispatchdblock', blank=True)  # Field name made lowercase.
-    destinationdblock = models.CharField(max_length=765, db_column='destinationdblock', blank=True)  # Field name made lowercase.
-    destinationse = models.CharField(max_length=750, db_column='destinationse', blank=True)  # Field name made lowercase.
-    nevents = models.IntegerField(db_column='nevents')  # Field name made lowercase.
-    grid = models.CharField(max_length=150, db_column='grid', blank=True)  # Field name made lowercase.
-    cloud = models.CharField(max_length=150, db_column='cloud', blank=True)  # Field name made lowercase.
-    cpuconversion = models.DecimalField(decimal_places=4, null=True, max_digits=11, db_column='cpuconversion', blank=True)  # Field name made lowercase.
-    sourcesite = models.CharField(max_length=108, db_column='sourcesite', blank=True)  # Field name made lowercase.
-    destinationsite = models.CharField(max_length=108, db_column='destinationsite', blank=True)  # Field name made lowercase.
-    transfertype = models.CharField(max_length=30, db_column='transfertype', blank=True)  # Field name made lowercase.
-    taskid = models.IntegerField(null=True, db_column='taskid', blank=True)  # Field name made lowercase.
-    cmtconfig = models.CharField(max_length=750, db_column='cmtconfig', blank=True)  # Field name made lowercase.
-    statechangetime = models.DateTimeField(null=True, db_column='statechangetime', blank=True)  # Field name made lowercase.
-    proddbupdatetime = models.DateTimeField(null=True, db_column='proddbupdatetime', blank=True)  # Field name made lowercase.
-    lockedby = models.CharField(max_length=384, db_column='lockedby', blank=True)  # Field name made lowercase.
-    relocationflag = models.IntegerField(null=True, db_column='relocationflag', blank=True)  # Field name made lowercase.
-    jobexecutionid = models.BigIntegerField(null=True, db_column='jobexecutionid', blank=True)  # Field name made lowercase.
-    vo = models.CharField(max_length=48, db_column='vo', blank=True)  # Field name made lowercase.
-    pilottiming = models.CharField(max_length=300, db_column='pilottiming', blank=True)  # Field name made lowercase.
-    workinggroup = models.CharField(max_length=60, db_column='workinggroup', blank=True)  # Field name made lowercase.
-    processingtype = models.CharField(max_length=192, db_column='processingtype', blank=True)  # Field name made lowercase.
-    produsername = models.CharField(max_length=180, db_column='produsername', blank=True)  # Field name made lowercase.
-    ninputfiles = models.IntegerField(null=True, db_column='ninputfiles', blank=True)  # Field name made lowercase.
-    countrygroup = models.CharField(max_length=60, db_column='countrygroup', blank=True)  # Field name made lowercase.
-    batchid = models.CharField(max_length=240, db_column='batchid', blank=True)  # Field name made lowercase.
-    parentid = models.BigIntegerField(null=True, db_column='parentid', blank=True)  # Field name made lowercase.
-    specialhandling = models.CharField(max_length=240, db_column='specialhandling', blank=True)  # Field name made lowercase.
-    jobsetid = models.BigIntegerField(null=True, db_column='jobsetid', blank=True)  # Field name made lowercase.
-    corecount = models.IntegerField(null=True, db_column='corecount', blank=True)  # Field name made lowercase.
-    ninputdatafiles = models.IntegerField(null=True, db_column='ninputdatafiles', blank=True)  # Field name made lowercase.
-    inputfiletype = models.CharField(max_length=96, db_column='inputfiletype', blank=True)  # Field name made lowercase.
-    inputfileproject = models.CharField(max_length=192, db_column='inputfileproject', blank=True)  # Field name made lowercase.
-    inputfilebytes = models.BigIntegerField(null=True, db_column='inputfilebytes', blank=True)  # Field name made lowercase.
-    noutputdatafiles = models.IntegerField(null=True, db_column='noutputdatafiles', blank=True)  # Field name made lowercase.
-    outputfilebytes = models.BigIntegerField(null=True, db_column='outputfilebytes', blank=True)  # Field name made lowercase.
-    jobmetrics = models.CharField(max_length=1500, db_column='jobmetrics', blank=True)  # Field name made lowercase.
-    workqueue_id = models.IntegerField(null=True, db_column='workqueue_id', blank=True)  # Field name made lowercase.
-    jeditaskid = models.BigIntegerField(null=True, db_column='jeditaskid', blank=True)  # Field name made lowercase.
+    proddblock = models.CharField(max_length=765, db_column='proddblock', blank=True)  
+    dispatchdblock = models.CharField(max_length=765, db_column='dispatchdblock', blank=True)  
+    destinationdblock = models.CharField(max_length=765, db_column='destinationdblock', blank=True)  
+    destinationse = models.CharField(max_length=750, db_column='destinationse', blank=True)  
+    nevents = models.IntegerField(db_column='nevents')  
+    grid = models.CharField(max_length=150, db_column='grid', blank=True)  
+    cloud = models.CharField(max_length=150, db_column='cloud', blank=True)  
+    cpuconversion = models.DecimalField(decimal_places=4, null=True, max_digits=11, db_column='cpuconversion', blank=True)  
+    sourcesite = models.CharField(max_length=108, db_column='sourcesite', blank=True)  
+    destinationsite = models.CharField(max_length=108, db_column='destinationsite', blank=True)  
+    transfertype = models.CharField(max_length=30, db_column='transfertype', blank=True)  
+    taskid = models.IntegerField(null=True, db_column='taskid', blank=True)  
+    cmtconfig = models.CharField(max_length=750, db_column='cmtconfig', blank=True)  
+    statechangetime = models.DateTimeField(null=True, db_column='statechangetime', blank=True)  
+    proddbupdatetime = models.DateTimeField(null=True, db_column='proddbupdatetime', blank=True)  
+    lockedby = models.CharField(max_length=384, db_column='lockedby', blank=True)  
+    relocationflag = models.IntegerField(null=True, db_column='relocationflag', blank=True)  
+    jobexecutionid = models.BigIntegerField(null=True, db_column='jobexecutionid', blank=True)  
+    vo = models.CharField(max_length=48, db_column='vo', blank=True)  
+    pilottiming = models.CharField(max_length=300, db_column='pilottiming', blank=True)  
+    workinggroup = models.CharField(max_length=60, db_column='workinggroup', blank=True)  
+    processingtype = models.CharField(max_length=192, db_column='processingtype', blank=True)  
+    produsername = models.CharField(max_length=180, db_column='produsername', blank=True)  
+    ninputfiles = models.IntegerField(null=True, db_column='ninputfiles', blank=True)  
+    countrygroup = models.CharField(max_length=60, db_column='countrygroup', blank=True)  
+    batchid = models.CharField(max_length=240, db_column='batchid', blank=True)  
+    parentid = models.BigIntegerField(null=True, db_column='parentid', blank=True)  
+    specialhandling = models.CharField(max_length=240, db_column='specialhandling', blank=True)  
+    jobsetid = models.BigIntegerField(null=True, db_column='jobsetid', blank=True)  
+    corecount = models.IntegerField(null=True, db_column='corecount', blank=True)  
+    ninputdatafiles = models.IntegerField(null=True, db_column='ninputdatafiles', blank=True)  
+    inputfiletype = models.CharField(max_length=96, db_column='inputfiletype', blank=True)  
+    inputfileproject = models.CharField(max_length=192, db_column='inputfileproject', blank=True)  
+    inputfilebytes = models.BigIntegerField(null=True, db_column='inputfilebytes', blank=True)  
+    noutputdatafiles = models.IntegerField(null=True, db_column='noutputdatafiles', blank=True)  
+    outputfilebytes = models.BigIntegerField(null=True, db_column='outputfilebytes', blank=True)
+    outputfiletype= models.CharField(max_length=32, null=True, db_column='outputfiletype', blank=True)
+    jobmetrics = models.CharField(max_length=1500, db_column='jobmetrics', blank=True)  
+    workqueue_id = models.IntegerField(null=True, db_column='workqueue_id', blank=True)  
+    jeditaskid = models.BigIntegerField(null=True, db_column='jeditaskid', blank=True)  
     actualcorecount = models.IntegerField(null=True, db_column='actualcorecount', blank=True)
-    reqid = models.BigIntegerField(null=True, db_column='reqid', blank=True)  # Field name made lowercase.
-    nucleus = models.CharField(max_length=200, db_column='nucleus', blank=True)  # Field name made lowercase.
+    reqid = models.BigIntegerField(null=True, db_column='reqid', blank=True)  
+    nucleus = models.CharField(max_length=200, db_column='nucleus', blank=True)  
     jobsubstatus = models.CharField(null=True, max_length=80, db_column='jobsubstatus', blank=True)
-    hs06 = models.BigIntegerField(null=True, db_column='hs06', blank=True)  # Field name made lowercase.
-    maxrss = models.BigIntegerField(null=True, db_column='maxrss', blank=True)  # Field name made lowercase.
-    maxvmem = models.BigIntegerField(null=True, db_column='maxvmem', blank=True)  # Field name made lowercase.
-    maxswap = models.BigIntegerField(null=True, db_column='maxswap', blank=True)  # Field name made lowercase.
-    maxpss = models.BigIntegerField(null=True, db_column='maxpss', blank=True)  # Field name made lowercase.
-    avgrss = models.BigIntegerField(null=True, db_column='avgrss', blank=True)  # Field name made lowercase.
-    avgvmem = models.BigIntegerField(null=True, db_column='avgvmem', blank=True)  # Field name made lowercase.
-    avgswap = models.BigIntegerField(null=True, db_column='avgswap', blank=True)  # Field name made lowercase.
-    avgpss = models.BigIntegerField(null=True, db_column='avgpss', blank=True)  # Field name made lowercase.
-    maxwalltime = models.BigIntegerField(null=True, db_column='maxwalltime', blank=True)  # Field name made lowercase.
+    hs06 = models.BigIntegerField(null=True, db_column='hs06', blank=True)  
+    maxrss = models.BigIntegerField(null=True, db_column='maxrss', blank=True)  
+    maxvmem = models.BigIntegerField(null=True, db_column='maxvmem', blank=True)  
+    maxswap = models.BigIntegerField(null=True, db_column='maxswap', blank=True)  
+    maxpss = models.BigIntegerField(null=True, db_column='maxpss', blank=True)  
+    avgrss = models.BigIntegerField(null=True, db_column='avgrss', blank=True)  
+    avgvmem = models.BigIntegerField(null=True, db_column='avgvmem', blank=True)  
+    avgswap = models.BigIntegerField(null=True, db_column='avgswap', blank=True)  
+    avgpss = models.BigIntegerField(null=True, db_column='avgpss', blank=True)  
+    maxwalltime = models.BigIntegerField(null=True, db_column='maxwalltime', blank=True)  
     resourcetype = models.CharField(null=True, max_length=80, db_column='resource_type', blank=True)
-    failedattempt = models.IntegerField(null=True, db_column='failedattempt', blank=True)  # Field name made lowercase.
-    totrchar = models.BigIntegerField(null=True, db_column='totrchar', blank=True)  # Field name made lowercase.
-    totwchar = models.BigIntegerField(null=True, db_column='totwchar', blank=True)  # Field name made lowercase.
-    totrbytes = models.BigIntegerField(null=True, db_column='totrbytes', blank=True)  # Field name made lowercase.
-    totwbytes = models.BigIntegerField(null=True, db_column='totwbytes', blank=True)  # Field name made lowercase.
-    raterchar = models.BigIntegerField(null=True, db_column='raterchar', blank=True)  # Field name made lowercase.
-    ratewchar = models.BigIntegerField(null=True, db_column='ratewchar', blank=True)  # Field name made lowercase.
-    raterbytes = models.BigIntegerField(null=True, db_column='raterbytes', blank=True)  # Field name made lowercase.
-    ratewbytes = models.BigIntegerField(null=True, db_column='ratewbytes', blank=True)  # Field name made lowercase.
-    diskio = models.BigIntegerField(null=True, db_column='diskio', blank=True)  # Field name made lowercase.
+    failedattempt = models.IntegerField(null=True, db_column='failedattempt', blank=True)  
+    totrchar = models.BigIntegerField(null=True, db_column='totrchar', blank=True)  
+    totwchar = models.BigIntegerField(null=True, db_column='totwchar', blank=True)  
+    totrbytes = models.BigIntegerField(null=True, db_column='totrbytes', blank=True)  
+    totwbytes = models.BigIntegerField(null=True, db_column='totwbytes', blank=True)  
+    raterchar = models.BigIntegerField(null=True, db_column='raterchar', blank=True)  
+    ratewchar = models.BigIntegerField(null=True, db_column='ratewchar', blank=True)  
+    raterbytes = models.BigIntegerField(null=True, db_column='raterbytes', blank=True)  
+    ratewbytes = models.BigIntegerField(null=True, db_column='ratewbytes', blank=True)  
+    diskio = models.BigIntegerField(null=True, db_column='diskio', blank=True)  
     memoryleak = models.BigIntegerField(null=True, db_column='memory_leak', blank=True)
     memoryleakx2 = models.BigIntegerField(null=True, db_column='memory_leak_x2', blank=True)
     container_name = models.CharField(max_length=765, db_column='container_name', blank=True)
-    hs06sec = models.BigIntegerField(null=True, db_column='hs06sec', blank=True)  # Field name made lowercase.
+    hs06sec = models.BigIntegerField(null=True, db_column='hs06sec', blank=True)  
     eventservice = models.IntegerField(null=True, db_column='eventservice', blank=True)
     job_label = models.CharField(max_length=20, db_column='job_label', blank=True)
     meancorecount = models.BigIntegerField(null=True, db_column='meancorecount', blank=True)
@@ -269,57 +270,57 @@ class Jobswaiting4(PandaJob):
 # ATLARC DB
 
 class PandaJobArch(models.Model):
-    pandaid = models.BigIntegerField(primary_key=True, db_column='pandaid')  # Field name made lowercase.
-    creationtime = models.DateTimeField(db_column='creationtime')  # Field name made lowercase.
-    modificationtime = models.DateTimeField(db_column='modificationtime')  # Field name made lowercase.
-    modificationhost = models.CharField(max_length=384, db_column='modificationhost', blank=True)  # Field name made lowercase.
-    transformation = models.CharField(max_length=750, db_column='transformation', blank=True)  # Field name made lowercase.
-    prodsourcelabel = models.CharField(max_length=60, db_column='prodsourcelabel', blank=True)  # Field name made lowercase.
-    produserid = models.CharField(max_length=750, db_column='produserid', blank=True)  # Field name made lowercase.
-    attemptnr = models.IntegerField(db_column='attemptnr')  # Field name made lowercase.
-    maxattempt = models.IntegerField(db_column='maxattempt')  # Field name made lowercase.
-    jobstatus = models.CharField(max_length=45, db_column='jobstatus')  # Field name made lowercase.
-    jobname = models.CharField(max_length=768, db_column='jobname', blank=True)  # Field name made lowercase.
-    starttime = models.DateTimeField(null=True, db_column='starttime', blank=True)  # Field name made lowercase.
-    endtime = models.DateTimeField(null=True, db_column='endtime', blank=True)  # Field name made lowercase.
-    cpuconsumptiontime = models.BigIntegerField(db_column='cpuconsumptiontime')  # Field name made lowercase.
-    cpuconsumptionunit = models.CharField(max_length=384, db_column='cpuconsumptionunit', blank=True)  # Field name made lowercase.
-    transexitcode = models.CharField(max_length=384, db_column='transexitcode', blank=True)  # Field name made lowercase.
-    piloterrorcode = models.IntegerField(db_column='piloterrorcode')  # Field name made lowercase.
-    piloterrordiag = models.CharField(max_length=1500, db_column='piloterrordiag', blank=True)  # Field name made lowercase.
-    exeerrorcode = models.IntegerField(db_column='exeerrorcode')  # Field name made lowercase.
-    exeerrordiag = models.CharField(max_length=1500, db_column='exeerrordiag', blank=True)  # Field name made lowercase.
-    superrorcode = models.IntegerField(db_column='superrorcode')  # Field name made lowercase.
-    superrordiag = models.CharField(max_length=750, db_column='superrordiag', blank=True)  # Field name made lowercase.
-    ddmerrorcode = models.IntegerField(db_column='ddmerrorcode')  # Field name made lowercase.
-    ddmerrordiag = models.CharField(max_length=1500, db_column='ddmerrordiag', blank=True)  # Field name made lowercase.
-    brokerageerrorcode = models.IntegerField(db_column='brokerageerrorcode')  # Field name made lowercase.
-    brokerageerrordiag = models.CharField(max_length=750, db_column='brokerageerrordiag', blank=True)  # Field name made lowercase.
-    jobdispatchererrorcode = models.IntegerField(db_column='jobdispatchererrorcode')  # Field name made lowercase.
-    jobdispatchererrordiag = models.CharField(max_length=750, db_column='jobdispatchererrordiag', blank=True)  # Field name made lowercase.
-    taskbuffererrorcode = models.IntegerField(db_column='taskbuffererrorcode')  # Field name made lowercase.
-    taskbuffererrordiag = models.CharField(max_length=900, db_column='taskbuffererrordiag', blank=True)  # Field name made lowercase.
-    computingsite = models.CharField(max_length=384, db_column='computingsite', blank=True)  # Field name made lowercase.
-    computingelement = models.CharField(max_length=384, db_column='computingelement', blank=True)  # Field name made lowercase.
-    nevents = models.IntegerField(db_column='nevents')  # Field name made lowercase.
-    taskid = models.IntegerField(null=True, db_column='taskid', blank=True)  # Field name made lowercase.
-    statechangetime = models.DateTimeField(null=True, db_column='statechangetime', blank=True)  # Field name made lowercase.
-    pilottiming = models.CharField(max_length=300, db_column='pilottiming', blank=True)  # Field name made lowercase.
-    workinggroup = models.CharField(max_length=60, db_column='workinggroup', blank=True)  # Field name made lowercase.
-    processingtype = models.CharField(max_length=192, db_column='processingtype', blank=True)  # Field name made lowercase.
-    produsername = models.CharField(max_length=180, db_column='produsername', blank=True)  # Field name made lowercase.
-    parentid = models.BigIntegerField(null=True, db_column='parentid', blank=True)  # Field name made lowercase.
-    specialhandling = models.CharField(max_length=240, db_column='specialhandling', blank=True)  # Field name made lowercase.
-    jobsetid = models.BigIntegerField(null=True, db_column='jobsetid', blank=True)  # Field name made lowercase.
-    jobmetrics = models.CharField(max_length=1500, db_column='jobmetrics', blank=True)  # Field name made lowercase.
-    jeditaskid = models.BigIntegerField(null=True, db_column='jeditaskid', blank=True)  # Field name made lowercase.
+    pandaid = models.BigIntegerField(primary_key=True, db_column='pandaid')  
+    creationtime = models.DateTimeField(db_column='creationtime')  
+    modificationtime = models.DateTimeField(db_column='modificationtime')  
+    modificationhost = models.CharField(max_length=384, db_column='modificationhost', blank=True)  
+    transformation = models.CharField(max_length=750, db_column='transformation', blank=True)  
+    prodsourcelabel = models.CharField(max_length=60, db_column='prodsourcelabel', blank=True)  
+    produserid = models.CharField(max_length=750, db_column='produserid', blank=True)  
+    attemptnr = models.IntegerField(db_column='attemptnr')  
+    maxattempt = models.IntegerField(db_column='maxattempt')  
+    jobstatus = models.CharField(max_length=45, db_column='jobstatus')  
+    jobname = models.CharField(max_length=768, db_column='jobname', blank=True)  
+    starttime = models.DateTimeField(null=True, db_column='starttime', blank=True)  
+    endtime = models.DateTimeField(null=True, db_column='endtime', blank=True)  
+    cpuconsumptiontime = models.BigIntegerField(db_column='cpuconsumptiontime')  
+    cpuconsumptionunit = models.CharField(max_length=384, db_column='cpuconsumptionunit', blank=True)  
+    transexitcode = models.CharField(max_length=384, db_column='transexitcode', blank=True)  
+    piloterrorcode = models.IntegerField(db_column='piloterrorcode')  
+    piloterrordiag = models.CharField(max_length=1500, db_column='piloterrordiag', blank=True)  
+    exeerrorcode = models.IntegerField(db_column='exeerrorcode')  
+    exeerrordiag = models.CharField(max_length=1500, db_column='exeerrordiag', blank=True)  
+    superrorcode = models.IntegerField(db_column='superrorcode')  
+    superrordiag = models.CharField(max_length=750, db_column='superrordiag', blank=True)  
+    ddmerrorcode = models.IntegerField(db_column='ddmerrorcode')  
+    ddmerrordiag = models.CharField(max_length=1500, db_column='ddmerrordiag', blank=True)  
+    brokerageerrorcode = models.IntegerField(db_column='brokerageerrorcode')  
+    brokerageerrordiag = models.CharField(max_length=750, db_column='brokerageerrordiag', blank=True)  
+    jobdispatchererrorcode = models.IntegerField(db_column='jobdispatchererrorcode')  
+    jobdispatchererrordiag = models.CharField(max_length=750, db_column='jobdispatchererrordiag', blank=True)  
+    taskbuffererrorcode = models.IntegerField(db_column='taskbuffererrorcode')  
+    taskbuffererrordiag = models.CharField(max_length=900, db_column='taskbuffererrordiag', blank=True)  
+    computingsite = models.CharField(max_length=384, db_column='computingsite', blank=True)  
+    computingelement = models.CharField(max_length=384, db_column='computingelement', blank=True)  
+    nevents = models.IntegerField(db_column='nevents')  
+    taskid = models.IntegerField(null=True, db_column='taskid', blank=True)  
+    statechangetime = models.DateTimeField(null=True, db_column='statechangetime', blank=True)  
+    pilottiming = models.CharField(max_length=300, db_column='pilottiming', blank=True)  
+    workinggroup = models.CharField(max_length=60, db_column='workinggroup', blank=True)  
+    processingtype = models.CharField(max_length=192, db_column='processingtype', blank=True)  
+    produsername = models.CharField(max_length=180, db_column='produsername', blank=True)  
+    parentid = models.BigIntegerField(null=True, db_column='parentid', blank=True)  
+    specialhandling = models.CharField(max_length=240, db_column='specialhandling', blank=True)  
+    jobsetid = models.BigIntegerField(null=True, db_column='jobsetid', blank=True)  
+    jobmetrics = models.CharField(max_length=1500, db_column='jobmetrics', blank=True)  
+    jeditaskid = models.BigIntegerField(null=True, db_column='jeditaskid', blank=True)  
     actualcorecount = models.IntegerField(null=True, db_column='actualcorecount', blank=True)
-    reqid = models.BigIntegerField(null=True, db_column='reqid', blank=True)  # Field name made lowercase.
-    nucleus = models.CharField(max_length=200, db_column='nucleus', blank=True)  # Field name made lowercase.
+    reqid = models.BigIntegerField(null=True, db_column='reqid', blank=True)  
+    nucleus = models.CharField(max_length=200, db_column='nucleus', blank=True)  
     jobsubstatus = models.CharField(null=True, max_length=80, db_column='jobsubstatus', blank=True)
-    eventservice = models.IntegerField(null=True, db_column='eventservice', blank=True)  # Field name made lowercase.
-    hs06 = models.BigIntegerField(null=True, db_column='hs06', blank=True)  # Field name made lowercase.
-    hs06sec = models.BigIntegerField(null=True, db_column='hs06sec', blank=True)  # Field name made lowercase.
+    eventservice = models.IntegerField(null=True, db_column='eventservice', blank=True)  
+    hs06 = models.BigIntegerField(null=True, db_column='hs06', blank=True)  
+    hs06sec = models.BigIntegerField(null=True, db_column='hs06sec', blank=True)  
     maxpss = models.BigIntegerField(null=True, db_column='maxpss', blank=True)
 
 

@@ -73,6 +73,10 @@ a.disabled, a[disabled] button.button.disabled, button.button[disabled] {
     background-color: #5e789a;
     color: #fefefe; }
 
+a img.align-text-top {
+  vertical-align: text-top;
+}
+
 select {
     -moz-appearance: none;
     text-indent: 0.01px;
@@ -145,6 +149,10 @@ span.bold {
 .label.medium {
   font-size: 0.9rem;
   margin: 0.3rem;
+}
+.label.secondary {
+  background-color: #5e789a;
+  color: #fefefe;
 }
 .label.ok {
   background-color: #4ba173;
@@ -254,6 +262,16 @@ div.bp-selected-params a {
 .callout.alert {
   background-color: #ffcccc;
 }
+
+
+a.bp-link {
+    font-weight: bold;
+    color: #272727;
+    border-bottom: 1px dotted;
+}
+  a.bp-link:hover {
+      border-bottom: 1px solid;
+  }
 
 
 div.normal {
@@ -657,6 +675,13 @@ float: none !important; }
 .search-form input {
     font-size: 100%;
 }
+
+.search-form .input-group select.input-group-field  {
+  border-radius: 0;
+  height: 2.5rem;
+  margin: 0;
+}
+
 
 .button-group.bp-comparison {
 
@@ -1171,7 +1196,7 @@ li.list-item > label {
     max-width: 100%;
 }
   .form-container .column {
-      padding: 0.7rem 0.3rem;
+      padding: 0 0.3rem 0.7rem 0.3rem;
   }
   .form-container .no-bullet {
       margin: 0;

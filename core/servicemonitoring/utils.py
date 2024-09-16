@@ -1,4 +1,4 @@
-import getopt, subprocess, re, cx_Oracle, requests, json, psutil
+import getopt, subprocess, re, requests, json, psutil
 
 import sys
 from datetime import datetime
@@ -6,6 +6,14 @@ from configparser import ConfigParser
 from logger import ServiceLogger
 
 _logger = ServiceLogger("servicemonitoring", __file__).logger
+
+try:
+    import oracledb
+    oracledb.init_oracle_client(config_dir='/etc/tnsnames.ora')
+except oracledb.exceptions.DatabaseError as e:
+    _logger.error(f"Failed to initialize Oracle Client: {e}")
+except Exception as e:
+    _logger.error(f"An unexpected error occurred: {e}")
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
@@ -60,7 +68,7 @@ def make_db_connection(cfg):
 
     if db_user and db_passwd and db_description:
         try:
-            connection = cx_Oracle.connect(db_user, db_passwd, db_description)
+            connection = oracledb.connect(user=db_user, password=db_passwd, dsn=db_description)
             _logger.debug('DB connection established. "{0}" "{1}"'.format(db_user, db_description))
             return connection
         except Exception as ex:

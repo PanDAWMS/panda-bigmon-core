@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class Query(object):
@@ -186,11 +186,11 @@ class Query(object):
         if 'date_from' in request.session['requestParams']:
             self.starttime = request.session['requestParams']['date_from']
         else:
-            self.starttime = str(_round_to_hour(datetime.utcnow() - timedelta(days=7)))
+            self.starttime = str(_round_to_hour(datetime.now(tz=timezone.utc) - timedelta(days=7)))
         if 'date_to' in request.session['requestParams']:
             self.endtime = request.session['requestParams']['date_to']
         else:
-            self.endtime = str(_round_to_hour(datetime.utcnow() - timedelta(hours=1)))
+            self.endtime = str(_round_to_hour(datetime.now(tz=timezone.utc) - timedelta(hours=1)))
 
         if 'groupby' in request.session['requestParams']:
             if 'time' in str(request.session['requestParams']['groupby']):

@@ -7,6 +7,8 @@ import re
 import time
 import multiprocessing
 from datetime import datetime, timedelta
+
+from django.utils import timezone
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
@@ -18,7 +20,7 @@ from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F, Max
 
 from core.oauth.utils import login_customrequired
-from core.utils import is_json_request, complete_request, removeParam
+from core.utils import is_json_request, complete_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
 from core.art.modelsART import ARTTests, ARTResultsQueue, ARTSubResult
@@ -55,7 +57,7 @@ def get_time(value):
 def art(request):
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artMain")
@@ -75,7 +77,7 @@ def art(request):
         n_days_limit = int(request.session['requestParams']['days'])
     else:
         n_days_limit = 90
-    tquery['created__castdate__range'] = [datetime.utcnow() - timedelta(days=n_days_limit), datetime.utcnow()]
+    tquery['created__castdate__range'] = [timezone.now() - timedelta(days=n_days_limit), timezone.now()]
 
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
     branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
@@ -111,7 +113,7 @@ def art(request):
 def artOverview(request):
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
     
     # getting aggregation order
     if not 'view' in request.session['requestParams'] or (
@@ -120,7 +122,7 @@ def artOverview(request):
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         ao = ['branch', 'package']
     else:
-        return HttpResponse(status=401)
+        return response
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artOverview")
@@ -239,7 +241,7 @@ def artOverview(request):
 def artTasks(request):
     valid, response = initRequest(request)
     if not valid:
-        return HttpResponse(status=401)
+        return response
 
     # getting aggregation order
     if not 'view' in request.session['requestParams'] or (
@@ -248,7 +250,7 @@ def artTasks(request):
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         ao = ['branch', 'package']
     else:
-        return HttpResponse(status=401)
+        return error_response(request, message=f"Illegal value '{request.session['requestParams']['view']}' for view ", status=400)
 
     final_result_dict = {v: k for k, v in art_const.TEST_STATUS_INDEX.items()}
 
@@ -372,7 +374,7 @@ def artJobs(request):
         ao = ['branch', 'package']
         art_view = 'branch'
     else:
-        return HttpResponse(status=401)
+        return error_response(request, message=f"Illegal value '{request.session['requestParams']['view']}' for view ", status=400)
 
     # show subresults or not
     if 'ntag' in request.session['requestParams'] or 'ntag_full' in request.session['requestParams'] or (
@@ -382,7 +384,9 @@ def artJobs(request):
         request.session['viewParams']['subresults'] = 0
 
     # add PanDA jobs metrics or not
-    if 'ntag' in request.session['requestParams'] or 'ntag_full' in request.session['requestParams']:
+    if 'ntag' in request.session['requestParams'] or 'ntag_full' in request.session['requestParams'] or (
+        'nlastnightlies' in request.session['requestParams'] and request.session['requestParams']['nlastnightlies'] == '1'
+    ):
         request.session['viewParams']['metrics'] = 1
     else:
         request.session['viewParams']['metrics'] = 0
@@ -477,6 +481,11 @@ def artJobs(request):
                     jobdict['cpuconsumptionunit'] = '---'
 
                 jobdict['duration'] = convert_sec(get_job_walltime(panda_jobs_dict[job['pandaid']]), out_unit='str')
+            else:
+                jobdict['maxrss'] = '---'
+                jobdict['cpuconsumptiontime'] = '---'
+                jobdict['cpuconsumptionunit'] = '---'
+                jobdict['duration'] = '---'
 
             # ATLINFR-3305
             if 'extrainfo' in job:
@@ -741,7 +750,7 @@ def artStability(request):
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
         ao = ['branch', 'package']
     else:
-        return HttpResponse(status=401)
+        return error_response(request, message=f"Illegal value '{request.session['requestParams']['view']}' for view ", status=400)
 
     # Here we try to get cached data
     data = getCacheEntry(request, "artStability")
@@ -1126,7 +1135,7 @@ def registerARTTest(request):
     # log all the req params for debug
     _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
 
-    ### Checking whether params were provided
+    # Checking whether params were provided
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams'] and 'testname' in request.session['requestParams']:
         pandaid = request.session['requestParams']['pandaid']
         testname = request.session['requestParams']['testname']
@@ -1271,7 +1280,7 @@ def registerARTTest(request):
                 branch=branch,
                 package=package,
                 extrainfo=json.dumps(extra_info),
-                created=datetime.utcnow(),
+                created=timezone.now(),
                 nightly_tag_date=nightly_tag_date,
                 attemptnr=attemptnr,
                 maxattempt=2,
@@ -1510,7 +1519,7 @@ def sendDevArtReport(request):
         EMAIL_SUBJECT_PREFIX = ''
     subject = '{}[ART] Run on specific day tests'.format(EMAIL_SUBJECT_PREFIX)
 
-    query = {'created__castdate__range': [datetime.utcnow() - timedelta(hours=1), datetime.utcnow()]}
+    query = {'created__castdate__range': [timezone.now() - timedelta(hours=1), timezone.now()]}
     exquery = {'nightly_tag__exact': F('nightly_tag_display')}
 
     tests = list(ARTTests.objects.filter(**query).exclude(**exquery).values())
@@ -1603,12 +1612,12 @@ def fill_table(request):
     if ntag is not None:
         tests_to_update.extend(ARTTests.objects.filter(nightly_tag=ntag).values('pandaid'))
 
-    print(f"Got {len(tests_to_update)} tests to update for ntag={ntag}")
+    _logger.info(f"Got {len(tests_to_update)} tests to update for ntag={ntag}")
     i = 0
     for t in tests_to_update:
         # Preparing params to fill art_tests
         i = i+1
-        print(f"/n{i}/{len(tests_to_update)}")
+        _logger.debug(f"/n{i}/{len(tests_to_update)}")
         gitlabid = None
         pandaid = t['pandaid']
         query = {'pandaid': pandaid}
@@ -1625,16 +1634,14 @@ def fill_table(request):
             _logger.info('Failed to extract tarindex from log lfn')
             gitlabid = None
 
-
-        print(f"""Got job-related metadata for test {pandaid}: gitlabid={gitlabid}""")
+        _logger.info(f"""Got job-related metadata for test {pandaid}: gitlabid={gitlabid}""")
 
         try:
             ARTTests.objects.filter(pandaid=pandaid).update(
                 gitlabid=gitlabid
             )
         except Exception as ex:
-            print(f"""Failed to update test {pandaid} with : 
-                gitlabid={gitlabid}\n{str(ex)}""")
+            _logger.exception(f"""Failed to update test {pandaid} with gitlabid={gitlabid}\n{str(ex)}""")
             return JsonResponse({'message': f"Failed to update info for test {pandaid}"}, status=500)
 
     return JsonResponse({'message': f"Updated {len(tests_to_update)} tests for ntag={ntag}, it took {(datetime.now()-start).total_seconds()}s"}, status=200)

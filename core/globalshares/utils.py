@@ -9,7 +9,7 @@ from core.globalshares.models import JobsShareStats
 def get_child_elements(tree,childsgsharelist):
     for gshare in tree:
         if gshare!='childlist':
-            shortGshare = re.sub('\[(.*)\]', '', gshare).rstrip()
+            shortGshare = re.sub(r'\[(.*)\]', '', gshare).rstrip()
             if 'childlist' in tree[gshare] and len(tree[gshare]['childlist'])==0:#len(tree[gshare])==0:
                 childsgsharelist.append(shortGshare)
             elif 'childlist' not in tree[gshare]:
@@ -80,7 +80,7 @@ def get_gs_plots_data(gs_list, resources_dict, gs_tree_dict):
     for l1 in sorted(gs_tree_dict['childlist']):
         for gs in gs_list:
             if l1 in gs['level1']:
-                gs_name = re.sub('\[(.*)\]', '', l1).rstrip()
+                gs_name = re.sub(r'\[(.*)\]', '', l1).rstrip()
                 level = 'level1'
                 gs_tree_dict_level = gs_tree_dict[l1]
                 gs_plot_data = fill_level_gs_plots_data(gs_plot_data, level, gs_name, gs, resources_dict,
@@ -95,7 +95,7 @@ def get_gs_plots_data(gs_list, resources_dict, gs_tree_dict):
         for l2 in sorted(gs_tree_dict[l1]['childlist']):
             for gs in gs_list:
                 if l2 in gs['level2']:
-                    gs_name = re.sub('\[(.*)\]', '', l2).rstrip()
+                    gs_name = re.sub(r'\[(.*)\]', '', l2).rstrip()
                     level = 'level2'
                     gs_tree_dict_level = gs_tree_dict[l1][l2]
                     gs_plot_data = fill_level_gs_plots_data(gs_plot_data, level, gs_name, gs, resources_dict,
@@ -108,7 +108,7 @@ def get_gs_plots_data(gs_list, resources_dict, gs_tree_dict):
             for l3 in sorted(gs_tree_dict[l1][l2]['childlist']):
                 for gs in gs_list:
                     if l3 in gs['level3']:
-                        gs_name = re.sub('\[(.*)\]', '', l3).rstrip()
+                        gs_name = re.sub(r'\[(.*)\]', '', l3).rstrip()
                         level = 'level3'
                         gs_tree_dict_level = gs_tree_dict[l1][l2][l3]
                         gs_plot_data = fill_level_gs_plots_data(gs_plot_data, level, gs_name, gs, resources_dict,

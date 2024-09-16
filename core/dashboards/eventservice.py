@@ -10,6 +10,7 @@ import core.constants as const
 
 from django.db.models import Count
 
+from core.libs.exlib import get_resource_types
 from core.schedresource.utils import get_panda_queues, get_object_stores
 from core.pandajob.models import CombinedWaitActDefArch4
 
@@ -109,7 +110,7 @@ def get_es_job_summary_region(query, extra, **kwargs):
     jsr_queues_dict = dict()
     jsr_regions_dict = dict()
 
-    resource_types = list(const.RESOURCE_CAPABILITIES)
+    resource_types = [rt['resource_name'] for rt in get_resource_types()]
     job_es_types = list(const.EVENT_SERVICE_JOB_TYPES.values())
     job_states_order = list(const.JOB_STATES)
 
@@ -157,7 +158,7 @@ def get_es_job_summary_region(query, extra, **kwargs):
         for jt in list(const.EVENT_SERVICE_JOB_TYPES.values()):
             jsr_regions_dict[r][jt] = {}
             jsr_regions_dict[r]['all'] = {}
-            for rt in list(const.RESOURCE_CAPABILITIES):
+            for rt in resource_types:
                 jsr_regions_dict[r][jt][rt] = {}
                 jsr_regions_dict[r][jt]['all'] = {}
                 jsr_regions_dict[r]['all'][rt] = {}

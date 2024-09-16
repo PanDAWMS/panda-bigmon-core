@@ -59,6 +59,12 @@
     </div>
   {% endif %}
 </div>
+{% else %}
+<div class="card bp-container-simple info">
+  <div class="card-divider">
+    <p>No slow tasks found!</p>
+  </div>
+</div>
 {% endif %}
 
 
@@ -367,3 +373,4 @@ var task_errors = {{ error_summary_table|safe }};
 </script>
 {% endblock %}
 
+{% block help %}{% include 'taskProblemExplorerHelp.html' %}{% endblock %}

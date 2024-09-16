@@ -103,7 +103,7 @@ def setupView(request):
         request.session['viewParams']['ntag_full'] = request.session['requestParams']['ntag_full']
     elif len(datelist) > 0:
         request.session['viewParams']['ntags'] = ', '.join([date_i.strftime(art_const.DATETIME_FORMAT['humanized']) for date_i in datelist])
-    else:
+    elif startdate is not None and enddate is not None:
         request.session['viewParams']['ntag_from'] = startdate.strftime(art_const.DATETIME_FORMAT['humanized'])
         request.session['viewParams']['ntag_to'] = enddate.strftime(art_const.DATETIME_FORMAT['humanized'])
 
@@ -291,7 +291,7 @@ def get_test_diff(test_a, test_b):
                         is_diff = test_b['subresults'][step]['result'] - test_a['subresults'][step]['result']
                         break
             except:
-                print('ddd')
+                _logger.warning(f"Can not compare subresults for test {test_a['testname']} and {test_b['testname']}")
         if is_diff is not None:
             result = 1 if is_diff < 0 else 3
         else:

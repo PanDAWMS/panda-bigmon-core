@@ -56,7 +56,7 @@ def getErrorDescription(job, mode='html', provideProcessedCodes = False, **kwarg
             try:
                 meta = json.loads(job['metastruct'])
             except:
-                print ('Meta type: '+str(type(job['metastruct'])))
+                _logger.exception('Meta type: ' + str(type(job['metastruct'])))
                 meta = job['metastruct']
             if 'exitCode' in meta and meta['exitCode'] != 0:
                 txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])

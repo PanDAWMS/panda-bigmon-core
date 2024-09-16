@@ -61,7 +61,7 @@ def get_pq_metrics(pq='all'):
             if m['computingsite'] not in pq_metrics:
                 pq_metrics[m['computingsite']] = {}
             if m['metric'] not in pq_metrics[m['computingsite']]:
-                pq_metrics[m['computingsite']][m['metric']] = json.loads(m['json'])
+                pq_metrics[m['computingsite']][m['metric']] = m['json']
 
     return pq_metrics
 

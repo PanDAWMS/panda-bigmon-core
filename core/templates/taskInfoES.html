@@ -428,8 +428,6 @@
             <th>Modified</th>
             <th>Cores</th>
             <th>Priority</th>
-            {% if task.ticketid %}
-                <th>Tracker</th> {% endif %}
         </tr>
         <tr>
             <td>
@@ -491,9 +489,6 @@
             <td>{{ task.modificationtime }}</td>
             <td>{{ task.corecount }}</td>
             <td>{{ task.taskpriority }}</td>
-            {% if task.ticketid %}
-                <td><a href="https://its.cern.ch/jira/browse/{{ task.ticketid }}">{{ task.ticketsystemtype }}</a>
-                </td>
             {% endif %}
         </tr>
     </table>
@@ -531,15 +526,11 @@
             {% endif %}
             {% if viewParams.MON_VO == 'ATLAS' %}
                 {% if task.tasktype == 'prod' %}
-                    <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=production&task_id={{ task.jeditaskid }}"
-                       target="_blank">Prod Task view (to manage task)</a>
-                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/" target="_blank">Prod Task (to manage task)</a>
                 {% elif  task.tasktype == 'anal' %}
-                    <a href="https://prodtask-dev.cern.ch/prodtask/task_manage/#/?time_period=custom&task_type=analysis&task_id={{ task.jeditaskid }}"
-                       target="_blank">Prod Task view (to manage task)</a>
-                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/">Prod Task page</a>
-                {% endif %}    {% endif %}
-
+                    <a href="https://prodtask-dev.cern.ch/prodtask/task/{{ task.jeditaskid }}/" target="_blank">Prod Task (to manage task)</a>
+                {% endif %}
+            {% endif %}
             <a target="_blank" href="https://os-atlas.cern.ch/kibana/app/kibana?#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'{{ task.kibanatimefrom }}',mode:quick,to:'{{ task.kibanatimeto }}'))&_a=(columns:!(,fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'fields.type:%22atlasprodtaskbroker%22%20AND%20jediTaskID:{{ jeditaskid }}')),sort:!('@timestamp',desc),vis:(aggs:!((params:(field:jediTaskID,orderBy:'2',size:20),schema:segment,type:terms),(id:'2',schema:metric,type:count)),type:histogram))&indexPattern=6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc&type=histogram">Task
                 brokerage </a>
 
@@ -556,9 +547,6 @@
                 <a href="{% url 'taskInfo' task.parent_tid %}">Parent task {{ task.parent_tid }}</a>
             {% endif %}
             <a href="{% url 'taskList' %}?parent_tid={{ task.jeditaskid }}&display_limit=100">Child tasks</a>
-            {% if task.ttcrequested != None and task.starttime != None %}
-                <a href="{% url 'ttc' %}?jeditaskid={{ jeditaskid }}" target="_blank">TTC page</a>
-            {% endif %}
         </div>
     </div>
 
