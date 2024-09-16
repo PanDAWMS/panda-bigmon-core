@@ -51,9 +51,14 @@
      </thead>
      <tbody></tbody>
 </table>
+</div>
+{% endblock %}
 
-<div id="headers_note"><P>
-Explanations of the table headers
+{% block help %}
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>ATLAS CI Builds Summary Help</p></div>
+<div class="card-section">
+  <b>Explanations of the table headers</b>
 <UL>
     <LI>RELEASE - Name of the release, reflecting the GitLab MR number and job date
     <LI>PLATFORM - Name of the platform

@@ -58,8 +58,15 @@ These nightly jobs build <B>{{ project }}</B> on <B>{{ platform }}</B>
      <tbody></tbody>
 </table>
 
-<div id="headers_note"><P>
-Explanations of the table headers
+</div>
+{% endblock %}
+
+
+{% block help %}
+<div class="card bp-container-simple help">
+<div class="card-divider"><p>ATLAS Nightly Builds Summary Help</p></div>
+<div class="card-section">
+  <b>Explanations of the table headers</b>
 <UL>
     <LI>RELEASE - Name of the release, reflecting the GitLab MR number and job date
     <LI>JOB TIME STAMP - Time when the job information was submitted to the database
@@ -82,10 +89,10 @@ Explanations of the table headers
     <LI>HOST - Name of the build node where all stages were run
 </UL>
 </div>
-
-
 </div>
 {% endblock %}
+
+
 
 {% block js_body_page %}
 <script nonce={{request.csp_nonce}}>
