@@ -20,36 +20,6 @@ class PandaDBVersion(models.Model):
         app_label = 'panda'
 
 
-class Cloudconfig(models.Model):
-    name = models.CharField(max_length=60, primary_key=True, db_column='name')
-    description = models.CharField(max_length=150, db_column='description')
-    tier1 = models.CharField(max_length=60, db_column='tier1')
-    tier1se = models.CharField(max_length=1200, db_column='tier1se')
-    relocation = models.CharField(max_length=30, db_column='relocation', blank=True)
-    weight = models.IntegerField(db_column='weight')
-    server = models.CharField(max_length=300, db_column='server')
-    status = models.CharField(max_length=60, db_column='status')
-    transtimelo = models.IntegerField(db_column='transtimelo')
-    transtimehi = models.IntegerField(db_column='transtimehi')
-    waittime = models.IntegerField(db_column='waittime')
-    comment_field = models.CharField(max_length=600, db_column='comment_', blank=True)  # Field renamed because it was a Python reserved word.
-    space = models.IntegerField(db_column='space')
-    moduser = models.CharField(max_length=90, db_column='moduser', blank=True)
-    modtime = models.DateTimeField(db_column='modtime')
-    validation = models.CharField(max_length=60, db_column='validation', blank=True)
-    mcshare = models.IntegerField(db_column='mcshare')
-    countries = models.CharField(max_length=240, db_column='countries', blank=True)
-    fasttrack = models.CharField(max_length=60, db_column='fasttrack', blank=True)
-    nprestage = models.BigIntegerField(db_column='nprestage')
-    pilotowners = models.CharField(max_length=900, db_column='pilotowners', blank=True)
-    dn = models.CharField(max_length=300, db_column='dn', blank=True)
-    email = models.CharField(max_length=180, db_column='email', blank=True)
-    fairshare = models.CharField(max_length=384, db_column='fairshare', blank=True)
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA_META}"."cloudconfig"'
-        app_label = 'panda'
-
-
 class Datasets(models.Model):
     vuid = models.CharField(max_length=120, db_column='vuid', primary_key=True)
     name = models.CharField(max_length=765, db_column='name')
