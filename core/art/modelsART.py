@@ -30,6 +30,7 @@ class ARTTests(models.Model):
     status = models.DecimalField(decimal_places=0, max_digits=3, db_column='status')
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."art_tests"'
+        app_label = 'pandamon'
 
 
 class ARTSubResult(models.Model):
@@ -39,6 +40,7 @@ class ARTSubResult(models.Model):
 
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."art_subresult"'
+        app_label = 'pandamon'
 
 
 class ARTResultsQueue(models.Model):
@@ -48,4 +50,5 @@ class ARTResultsQueue(models.Model):
     lock_time = models.DateTimeField(null=True, db_column='lock_time', blank=True)
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."art_results_queue"'
+        app_label = 'pandamon'
 
