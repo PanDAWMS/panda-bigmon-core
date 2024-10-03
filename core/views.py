@@ -506,13 +506,67 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         opmode = 'notime'
         hours = LAST_N_HOURS_MAX = 24 * 180
         request.session['JOB_LIMIT'] = 999999
+
+    # processing time window params
+    startdate = None
+    if 'date_from' in request.session['requestParams']:
+        startdate = parse_datetime(request.session['requestParams']['date_from'])
+    if not startdate:
+        startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
+
+    enddate = None
+    if 'date_to' in request.session['requestParams']:
+        enddate = parse_datetime(request.session['requestParams']['date_to'])
+    if 'earlierthan' in request.session['requestParams']:
+        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthan']))
+    if 'earlierthandays' in request.session['requestParams']:
+        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthandays']) * 24)
+
+    if enddate is None:
+        enddate = timezone.now()
+        request.session['noenddate'] = True
+    else:
+        request.session['noenddate'] = False
+
+    # checking if timerange specified
+    time_window_param_key = None
+    time_range = []
+    if querytype == 'job':
+        time_window_fields = [f.name for f in Jobsactive4._meta.get_fields() if 'date' in str(f.description).lower()]
+    elif querytype == 'task':
+        time_window_fields = [f.name for f in JediTasks._meta.get_fields() if 'date' in str(f.description).lower()]
+    else:
+        time_window_fields = []
+    time_window_params = set(time_window_fields) & set(
+        [x.replace('range', '') for x in request.session['requestParams'] if x.endswith('timerange') or x.endswith('daterange')]
+    )
+    if len(time_window_params) > 0:
+        time_window_param_key = time_window_params.pop()
+        time_range = request.session['requestParams'][time_window_param_key + 'range'].split('|')
+        time_range = [
+            parse_datetime(time_range[0]).strftime(settings.DATETIME_FORMAT),
+            parse_datetime(time_range[1]).strftime(settings.DATETIME_FORMAT)
+        ]
+    if time_window_param_key is not None and len(time_range) == 2:
+        query = {time_window_param_key + '__castdate__range': [time_range[0], time_range[1]]}
+    else:
+        query = {
+            'modificationtime__castdate__range': [
+                startdate.strftime(settings.DATETIME_FORMAT),
+                enddate.strftime(settings.DATETIME_FORMAT)]
+        }
+
+    # form selection for viewParams
     if opmode != 'notime':
-        if (LAST_N_HOURS_MAX <= 72 and
-                not ('date_from' in request.session['requestParams'] or
-                     'date_to' in request.session['requestParams'] or
-                     'earlierthan' in request.session['requestParams'] or
-                     'earlierthandays' in request.session['requestParams'])):
+        if LAST_N_HOURS_MAX <= 72 and time_window_param_key is None and not (
+                'date_from' in request.session['requestParams'] or
+                'date_to' in request.session['requestParams'] or
+                'earlierthan' in request.session['requestParams'] or
+                'earlierthandays' in request.session['requestParams']
+        ):
             request.session['viewParams']['selection'] = ", last %s hours" % LAST_N_HOURS_MAX
+        elif time_window_param_key is not None:
+            request.session['viewParams']['selection'] = f", {time_window_param_key} range: {time_range[0]} - {time_range[1]}"
         else:
             request.session['viewParams']['selection'] = ", last %d days" % (float(LAST_N_HOURS_MAX) / 24.)
         if querytype == 'job' and 100000 > request.session['JOB_LIMIT'] > 0:
@@ -532,49 +586,12 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             continue
         if param == 'limit' and request.session['JOB_LIMIT'] > 0:
             continue
+        if param.endswith('range'):
+            continue
         request.session['viewParams']['selection'] += " <b>%s=</b>%s " % (
             param, request.session['requestParams'][param])
 
-    startdate = None
-    if 'date_from' in request.session['requestParams']:
-        startdate = parse_datetime(request.session['requestParams']['date_from'])
-    if not startdate:
-        startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
 
-    enddate = None
-    endtime__castdate__range = None
-    if 'endtimerange' in request.session['requestParams']:
-        endtimerange = request.session['requestParams']['endtimerange'].split('|')
-        endtime__castdate__range = [
-            parse_datetime(endtimerange[0]).strftime(settings.DATETIME_FORMAT),
-            parse_datetime(endtimerange[1]).strftime(settings.DATETIME_FORMAT)
-        ]
-
-    if 'date_to' in request.session['requestParams']:
-        enddate = parse_datetime(request.session['requestParams']['date_to'])
-    if 'earlierthan' in request.session['requestParams']:
-        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthan']))
-    if 'earlierthandays' in request.session['requestParams']:
-        enddate = timezone.now() - timedelta(hours=float(request.session['requestParams']['earlierthandays']) * 24)
-
-    if enddate is None:
-        enddate = timezone.now()
-        request.session['noenddate'] = True
-    else:
-        request.session['noenddate'] = False
-
-    if not endtime__castdate__range:
-        query = {
-            'modificationtime__castdate__range': [
-                startdate.strftime(settings.DATETIME_FORMAT),
-                enddate.strftime(settings.DATETIME_FORMAT)]
-        }
-    else:
-        query = {
-            'endtime__castdate__range': [
-                endtime__castdate__range[0],
-                endtime__castdate__range[1]]
-        }
 
     # add min/max values to session
     request.session['TFIRST'] = startdate
