@@ -204,21 +204,21 @@
         </th>
     </tr>
     <tr class='tablesection'>
-        <th><a href="{{ nosorturl }}sortby=jeditaskid-asc">ID</a><br>Parent</th>
+        <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=jeditaskid-asc">ID</a><br>Parent</th>
         {% if viewParams.MON_VO != 'ATLAS' %}<th>Workflow ID</th>{% endif %}
-        <th><a href="{{ nosorturl }}sortby=taskname">Task name</a><br>TaskType/ProcessingType &nbsp;Campaign&nbsp;Group&nbsp;User{% if requestParams.tasktype == 'prod' %}&nbsp;Request{% endif %}&nbsp;Errors<br><span class='alert'>Logged status</span></th>
-        <th>Task status<br><a href="{{ nosorturl }}sortby=nfiles">Nfiles</a></th>
+        <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=taskname">Task name</a><br>TaskType/ProcessingType &nbsp;Campaign&nbsp;Group&nbsp;User{% if requestParams.tasktype == 'prod' %}&nbsp;Request{% endif %}&nbsp;Errors<br><span class='alert'>Logged status</span></th>
+        <th>Task status<br><a href="{{ request.session.urls_cut.nosorturl }}sortby=nfiles">Nfiles</a></th>
         <th>Input files
           <br><span class="lost tooltip-right">Nlost <i class="fi-info"></i><span class="tooltip-text">The files were unavailable at a time of the task running therefore the PanDA did not create jobs for processing them and they are not included to the number of total input files.</span></span>
-          <br><a href="{{ nosorturl }}sortby=pctfinished"><span class='finished'>Nfinish&nbsp;%</span></a>
-          <a href="{{ nosorturl }}sortby=pctfailed"><span class='failed'>Nfail&nbsp;%</span></a>
+          <br><a href="{{ request.session.urls_cut.nosorturl }}sortby=pctfinished"><span class='finished'>Nfinish&nbsp;%</span></a>
+          <a href="{{ request.session.urls_cut.nosorturl }}sortby=pctfailed"><span class='failed'>Nfail&nbsp;%</span></a>
         </th>
-        <th>Total/<a href="{{ nosorturl }}sortby=totevrem">Remaining</a> events</th>
-        <th><a href="{{ nosorturl }}sortby=creationdate-asc">Created</a></th>
-        <th><a href="{{ nosorturl }}sortby=time-descending">Modified</a></th>
-        <th><a href="{{ nosorturl }}sortby=statetime-descending">State changed</a></th>
-        <th><a href="{{ nosorturl }}sortby=priority">Priority</a></th>
-        <th><a href="{{ nosorturl }}sortby=nucleus">Nucleus</a></th>
+        <th>Total/<a href="{{ request.session.urls_cut.nosorturl }}sortby=totevrem">Remaining</a> events</th>
+        <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=creationdate-asc">Created</a></th>
+        <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=time-descending">Modified</a></th>
+        <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=statetime-descending">State changed</a></th>
+        <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=priority">Priority</a></th>
+        <th><a href="{{ request.session.urls_cut.nosorturl }}sortby=nucleus">Nucleus</a></th>
     </tr>
     {% for task in tasks %}
       <tr>
