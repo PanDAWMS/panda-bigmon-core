@@ -506,6 +506,14 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
         if is_debug_mode(job):
             job['jobinfo'] += 'Real-time logging is activated for this job.'
 
+        # add diag with error code = 0 to job info
+        diag_no_error_list = [
+            job[c['diag']] for c in const.JOB_ERROR_CATEGORIES if (job[c['error']] == 0 or job[c['error']] == '0') and c['diag'] and len(job[c['diag']]) > 0
+        ]
+        if len(diag_no_error_list) > 0:
+            for d in diag_no_error_list:
+                job['jobinfo'] += f' {d}.'
+
         try:
             job['homecloud'] = pq_clouds[job['computingsite']]
         except:
