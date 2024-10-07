@@ -21,7 +21,7 @@ urlpatterns = [
     re_path(r'^$', coremon_views.mainPage, name='mainPage'),
     re_path(r'^$', coremon_views.mainPage, name='index'),
     re_path(r'^help/$', coremon_views.helpPage, name='helpPage'),
-
+    re_path(r'^rating/$', coremon_views.rating_func, name='rating_func'),
     re_path(r'^jobs/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/$', coremon_views.jobList, name='jobList'),
     re_path(r'^jobs/(.*)/(.*)/$', coremon_views.jobList, name='jobList'),
