@@ -219,7 +219,7 @@ def get_renderedrow(context, **kwargs):
         kwargs['statelist'] = statelist
         return Customrenderer.region_sitesummary(context, kwargs)
 
-
+@csrf_exempt
 def rating_func(request):
     valid, response = initRequest(request)
     if not valid:
@@ -233,16 +233,17 @@ def rating_func(request):
 
     rating_object = Rating.objects.filter(user_id=user_id, task_id=task_id).values()
     if len(rating_object) > 0:
-        rating_object[0]["rating"] = rating
-        rating_object[0]["feedback"] = feedback
-        rating_object[0]["timestamp"] = timestamp
-        rating_object.save()
+        rating_id = rating_object[0]["rating_id"]
+        r = Rating.objects.get(rating_id=rating_id)
+        r.rating = rating
+        r.feedback = feedback
+        r.timestamp = timestamp
+        r.save()
 
     else:
         task_rating = Rating(user_id =user_id, task_id=task_id, rating=rating, feedback=feedback, timestamp=timestamp)
         task_rating.save()
-
-    #return HttpResponse(json.dumps(ratings), content_type='application/json')
+    return JsonResponse({},status=200)
 
 
 def initRequest(request, callselfmon=True):
@@ -5510,6 +5511,10 @@ def taskInfo(request, jeditaskid=0):
 
     # update taskrec dict
     if taskrec:
+        try:
+            taskrec['rating'] = Rating.objects.get(task_id=jeditaskid, user_id=request.user.id).rating
+        except:
+            taskrec['rating'] = -1
         if 'tasktype' in taskrec and taskrec['tasktype'] and 'ORACLE' in settings.DEPLOYMENT:
             tmcj_list = get_top_memory_consumers(taskrec)
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
