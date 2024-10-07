@@ -20,7 +20,7 @@ class PandaDBVersion(models.Model):
         app_label = 'panda'
 
 class Rating(models.Model):
-    rating_id = models.IntegerField(primary_key=True, db_column='RATINGID')
+    rating_id = models.BigAutoField(primary_key=True, db_column='RATINGID')
     user_id = models.IntegerField(primary_key=False, db_column='USERID')
     task_id = models.IntegerField(primary_key=False, db_column='JEDITASKID')
     rating = models.IntegerField(primary_key=False,db_column='RATING')

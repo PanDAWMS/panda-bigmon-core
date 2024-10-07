@@ -5031,6 +5031,10 @@ def taskInfo(request, jeditaskid=0):
 
     # update taskrec dict
     if taskrec:
+        try:
+            taskrec['rating'] = Rating.objects.get(task_id=jeditaskid, user_id=request.user.id).rating
+        except:
+            taskrec['rating'] = -1
         if 'tasktype' in taskrec and taskrec['tasktype'] and 'ORACLE' in settings.DEPLOYMENT:
             tmcj_list = get_top_memory_consumers(taskrec)
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:

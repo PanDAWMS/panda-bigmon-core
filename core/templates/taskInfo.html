@@ -32,6 +32,7 @@
     <tbody>
       <tr>
         <th>Task ID</th>
+        <th>Task Rating</th>
         {% if task.campaign %}
             <th> Campaign</th>
         {% endif %}
@@ -109,6 +110,21 @@
                target="_blank">{{ task.jeditaskid }}</a>
           {% else %}
             {{ task.jeditaskid }}
+          {% endif %}
+        </td>
+        <td>
+          {% if task.rating == 1 %}
+            😡
+          {% elif task.rating == 2 %}
+            😠
+          {% elif task.rating == 3 %}
+            😐
+          {% elif task.rating == 4 %}
+            😄
+          {% elif task.rating == 5 %}
+            😍
+          {% else %}
+            &mdash;
           {% endif %}
         </td>
         {% if task.campaign %}
@@ -1319,11 +1335,16 @@ function submitFeedback() {
     const emoji = submitButton.getAttribute('data-emoji');
 
     $.ajax({
+            method: "POST",
             url: {% url 'rating_func' %},
             data: {'task': jeditaskid, 'rating': rating, 'feedback': feedback}})
+        .done(function (){
+            window.location = location.href.split('#')[0]+'?timestamp={% now "H:i:s" %}'
+    });
+
 
     // Display the selected emotion
-    document.getElementById('selected-emotion').textContent = `Rating: ${emoji}`;
+    //document.getElementById('selected-emotion').textContent = `Rating: ${emoji}`;
 }
 
 function killtasks(taskID, action) {
