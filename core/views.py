@@ -39,6 +39,7 @@ from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsar
 from core.schedresource.models import SchedconfigJson
 from core.common.models import Filestable4, FilestableArch, Datasets, Users, Jobparamstable, JobsStatuslog, Jobsdebug, ResourceTypes
 from core.common.models import JediJobRetryHistory, JediTasks, TasksStatusLog, JediEvents, JediDatasets, JediDatasetContents, JediWorkQueue
+from core.common.models import Rating
 from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.ruciowrapper import ruciowrapper
@@ -5267,6 +5268,33 @@ def taskInfo(request, jeditaskid=0):
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
+
+
+@csrf_exempt
+def rating_func(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    user_id = request.user.id
+    task_id  = int(request.session['requestParams']['task'])
+    rating = int(request.session['requestParams']['rating'])
+    feedback = str(request.session['requestParams']['feedback'])
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+    rating_object = Rating.objects.filter(user_id=user_id, task_id=task_id).values()
+    if len(rating_object) > 0:
+        rating_id = rating_object[0]["rating_id"]
+        r = Rating.objects.get(rating_id=rating_id)
+        r.rating = rating
+        r.feedback = feedback
+        r.timestamp = timestamp
+        r.save()
+
+    else:
+        task_rating = Rating(user_id =user_id, task_id=task_id, rating=rating, feedback=feedback, timestamp=timestamp)
+        task_rating.save()
+    return JsonResponse({},status=200)
 
 
 def getEventsDetails(request, mode='drop', jeditaskid=0):
