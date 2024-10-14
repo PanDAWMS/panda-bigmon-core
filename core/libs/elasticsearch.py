@@ -36,7 +36,7 @@ def get_os_credentials(instance):
         elif instance == 'monit-opensearch' and hasattr(settings, 'MONIT_OPENSEARCH'):
             os_host = settings.MONIT_OPENSEARCH.get('osHost', None)
             os_port = settings.MONIT_OPENSEARCH.get('osPort', None)
-            os_host = protocol + '://' + os_host + ':' + os_port + '/es' if os_host else None
+            os_host = protocol + '://' + os_host + ':' + os_port + '/os' if os_host else None
             os_user = settings.MONIT_OPENSEARCH.get('osUser', None)
             os_password = settings.MONIT_OPENSEARCH.get('osPassword', None)
         if any(i is None for i in (os_host, os_user, os_password)):
