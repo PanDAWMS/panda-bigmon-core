@@ -6,7 +6,6 @@ Created by Tatiana Korchuganova on 05.03.2020
 import math
 import statistics
 import logging
-import re
 from core.libs.exlib import convert_bytes
 from datetime import datetime, timedelta
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
@@ -15,24 +14,13 @@ from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, drop_dupli
 from core.libs.datetimestrings import parse_datetime
 from core.libs.jobmetadata import addJobMetadata
 from core.libs.error import errorInfo, get_job_error_desc
+from core.libs.eventservice import add_event_service_info_to_job, is_event_service
 from core.schedresource.utils import get_pq_clouds
 
 from django.conf import settings
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
-
-
-def is_event_service(job):
-    if 'eventservice' in job and job['eventservice'] is not None:
-        if 'specialhandling' in job and job['specialhandling'] and (
-                    job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
-                job['eventservice'] != 'ordinary' and job['eventservice'])) and job['specialhandling'].find('sc:') == -1:
-                return True
-        else:
-            return False
-    else:
-        return False
 
 
 def is_debug_mode(job):
@@ -125,6 +113,43 @@ def get_job_walltime(job):
         walltime = (endtime-starttime).total_seconds()
 
     return walltime
+
+
+def get_job_info(job):
+    """
+    Get job info string. If job is event service, add event service type. If job is not failed but has error diag, add it.
+    :param job: dict
+    :return: str
+    """
+    job_info = ''
+    if is_event_service(job):
+        es_job_types_desc = {
+            'eventservice': 'Event service job. ',
+            'esmerge': 'Event service merge job. ',
+            'clone': 'Clone job. ',
+            'jumbo': 'Jumbo job. ',
+            'cojumbo': 'Cojumbo job. ',
+            'finegrained': 'Fine grained processing job. ',
+        }
+        job_info += es_job_types_desc[job['eventservice']] if job['eventservice'] in es_job_types_desc else ''
+
+    if is_debug_mode(job):
+        job_info += 'Real-time logging is activated for this job.'
+
+    # add diag with error code = 0 or any error code for not failed jobs
+    diag_no_error_list = [
+        (c['name'], job[c['error']], job[c['diag']]) for c in const.JOB_ERROR_CATEGORIES if c['error'] in job and c['diag'] and len(job[c['diag']]) > 0 and (
+                (job[c['error']] == 0 or job[c['error']] == '0') or ('jobstatus' in job and job['jobstatus'] not in ('failed', 'holding'))
+            )
+    ]
+    if len(diag_no_error_list) > 0:
+        for d in diag_no_error_list:
+            if d[1] == 0 or d[1] == '0':
+                job_info += f'{d[2]}. '
+            else:
+                job_info += f'{d[0]}: {d[1]} {d[2]}. '
+
+    return job_info
 
 
 def add_job_category(jobs):
@@ -459,62 +484,16 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
         if job['currentpriority'] < request.session['PLOW']:
             request.session['PLOW'] = job['currentpriority']
 
-        if do_add_errorinfo:
-            job['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
-
-        job['jobinfo'] = ''
         if is_event_service(job):
-            if job['eventservice'] == 1:
-                job['eventservice'] = 'eventservice'
-                job['jobinfo'] = 'Event service job. '
-            elif job['eventservice'] == 2:
-                job['eventservice'] = 'esmerge'
-                job['jobinfo'] = 'Event service merge job. '
-            elif job['eventservice'] == 3:
-                job['eventservice'] = 'clone'
-            elif job['eventservice'] == 4:
-                job['eventservice'] = 'jumbo'
-                job['jobinfo'] = 'Jumbo job. '
-            elif job['eventservice'] == 5:
-                job['eventservice'] = 'cojumbo'
-                job['jobinfo'] = 'Cojumbo job. '
-            elif job['eventservice'] == 6:
-                job['eventservice'] = 'finegrained'
-                job['jobinfo'] = 'Fine grained processing job. '
-
-            if 'taskbuffererrordiag' in job and job['taskbuffererrordiag'] is None:
-                job['taskbuffererrordiag'] = ''
-            if 'taskbuffererrordiag' in job and len(job['taskbuffererrordiag']) > 0:
-                job['jobinfo'] += job['taskbuffererrordiag']
-
-            # extract job substatus
-            if 'jobmetrics' in job and job['jobmetrics']:
-                pat = re.compile('.*mode\\=([^\\s]+).*HPCStatus\\=([A-Za-z0-9]+)')
-                mat = pat.match(job['jobmetrics'])
-                if mat:
-                    job['jobmode'] = mat.group(1)
-                    job['substate'] = mat.group(2)
-                pat = re.compile('.*coreCount\\=([0-9]+)')
-                mat = pat.match(job['jobmetrics'])
-                if mat:
-                    job['corecount'] = mat.group(1)
-            if 'jobsubstatus' in job and job['jobstatus'] == 'closed' and job['jobsubstatus'] == 'toreassign':
-                job['jobstatus'] += ':' + job['jobsubstatus']
+            job = add_event_service_info_to_job(job)
         else:
             job['eventservice'] = 'ordinary'
 
-        if is_debug_mode(job):
-            job['jobinfo'] += 'Real-time logging is activated for this job.'
+        # add error info only for failed and holding jobs
+        if do_add_errorinfo and 'jobstatus' in job and job['jobstatus'] in ('failed', 'holding'):
+            job['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
 
-        # add diag with error code = 0 to job info
-        diag_no_error_list = [
-            job[c['diag']] for c in const.JOB_ERROR_CATEGORIES if c['error'] in job and (
-                    job[c['error']] == 0 or job[c['error']] == '0'
-                ) and c['diag'] and len(job[c['diag']]) > 0
-        ]
-        if len(diag_no_error_list) > 0:
-            for d in diag_no_error_list:
-                job['jobinfo'] += f' {d}.'
+        job['jobinfo'] = get_job_info(job)
 
         try:
             job['homecloud'] = pq_clouds[job['computingsite']]

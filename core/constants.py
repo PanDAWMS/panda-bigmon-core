@@ -13,6 +13,7 @@ EVENT_SERVICE_JOB_TYPES = MappingProxyType({
     3: 'clone',
     4: 'jumbo',
     5: 'cojumbo',
+    6: 'finegrained'
 })
 
 # lists

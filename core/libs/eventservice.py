@@ -2,15 +2,53 @@
 A set of functions related to handling EventService jobs and tasks
 """
 import logging
+import re
 from django.db import connection
 from django.db.models import Count
 from django.conf import settings
-from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_table
-from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, get_tmp_table_name_debug
+from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_table, get_tmp_table_name_debug
 from core.common.models import JediEvents, GetEventsForTask
 from core import constants as const
 
 _logger = logging.getLogger('bigpandamon')
+
+
+def is_event_service(job):
+    if 'eventservice' in job and job['eventservice'] is not None:
+        if 'specialhandling' in job and job['specialhandling'] and (
+                    job['specialhandling'].find('eventservice') >= 0 or job['specialhandling'].find('esmerge') >= 0 or (
+                job['eventservice'] != 'ordinary' and job['eventservice'])) and job['specialhandling'].find('sc:') == -1:
+                return True
+        else:
+            return False
+    else:
+        return False
+
+def add_event_service_info_to_job(job):
+    """
+    Adding EventService specific info to job
+    :param job: dict
+    :return: job: dict
+    """
+
+    if job['eventservice'] in const.EVENT_SERVICE_JOB_TYPES:
+        job['eventservice'] = const.EVENT_SERVICE_JOB_TYPES[job['eventservice']]
+
+    # extract job substatus
+    if 'jobmetrics' in job and job['jobmetrics']:
+        pat = re.compile('.*mode\\=([^\\s]+).*HPCStatus\\=([A-Za-z0-9]+)')
+        mat = pat.match(job['jobmetrics'])
+        if mat:
+            job['jobmode'] = mat.group(1)
+            job['substate'] = mat.group(2)
+        pat = re.compile('.*coreCount\\=([0-9]+)')
+        mat = pat.match(job['jobmetrics'])
+        if mat:
+            job['corecount'] = mat.group(1)
+    if 'jobsubstatus' in job and job['jobstatus'] == 'closed' and job['jobsubstatus'] == 'toreassign':
+        job['jobstatus'] += ':' + job['jobsubstatus']
+    return job
+
 
 def job_suppression(request):
 
@@ -41,21 +79,12 @@ def event_summary_for_task(mode, query, **kwargs):
     if tk_dj in kwargs:
         tk_dj = kwargs['tk_dj']
 
-    if mode == 'drop' and tk_dj == -1:
-        # inserting dropped jobs to tmp table
-        extra = '(1=1)'
-        extra, tk_dj = insert_dropped_jobs_to_tmp_table(query, extra)
-        tmp_table = get_tmp_table_name_debug()
-
-    eventservicestatelist = [
-        'ready', 'sent', 'running', 'finished', 'cancelled', 'discarded', 'done', 'failed', 'fatal', 'merged',
-        'corrupted'
-    ]
+    eventservicestatelist = const.EVENT_STATES.values()
     eventslist = []
     essummary = dict((key, 0) for key in eventservicestatelist)
 
     _logger.debug('getting events states summary')
-    if mode == 'drop':
+    if mode == 'drop' and tk_dj != -1:
         jeditaskid = query['jeditaskid']
         # explicit time window for better searching over partitioned JOBSARCHIVED
         time_field = 'modificationtime'
@@ -94,12 +123,10 @@ def event_summary_for_task(mode, query, **kwargs):
                 )  j
             where ev.pandaid = j.pandaid and ev.jeditaskid = :tid 
             group by ev.status
-        """.format(extra_str, settings.DB_SCHEMA_PANDA, settings.DB_SCHEMA_PANDA_ARCH, settings.DB_SCHEMA, tmp_table)
+        """.format(extra_str, settings.DB_SCHEMA_PANDA, settings.DB_SCHEMA_PANDA_ARCH, settings.DB_SCHEMA, get_tmp_table_name_debug())
         new_cur = connection.cursor()
         new_cur.execute(equerystr, {'tid': jeditaskid, 'tkdj': tk_dj})
-
         evtable = dictfetchall(new_cur)
-
         for ev in evtable:
             essummary[eventservicestatelist[ev['STATUS']]] += ev['EVCOUNT']
     if mode == 'nodrop':
