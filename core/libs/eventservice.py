@@ -79,7 +79,7 @@ def event_summary_for_task(mode, query, **kwargs):
     if tk_dj in kwargs:
         tk_dj = kwargs['tk_dj']
 
-    eventservicestatelist = const.EVENT_STATES.values()
+    eventservicestatelist = list(const.EVENT_STATES.values())
     eventslist = []
     essummary = dict((key, 0) for key in eventservicestatelist)
 
