@@ -4,8 +4,7 @@ import collections, functools, operator
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
     Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021,  Jobsarchived, Jobsarchived4
 from core.libs.datetimestrings import parse_datetime
-from core.libs.job import is_event_service
-from core.libs.eventservice import get_event_status_summary
+from core.libs.eventservice import is_event_service, get_event_status_summary
 from core.libs.exlib import split_into_intervals, get_maxrampercore_dict
 
 from django.conf import settings

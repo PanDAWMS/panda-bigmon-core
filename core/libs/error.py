@@ -5,16 +5,13 @@ Created by Tatiana Korchuganova on 05.03.2020
 """
 import json
 import logging
-import numpy as np
 from html import escape
 
 from django.core.cache import cache
 from django.conf import settings
 
 from core.pandajob.models import Jobsarchived4, Jobsarchived
-
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table
-
 from core.libs.ErrorCodes import ErrorCodes, ErrorCodesAtlas
 import core.constants as const
 
@@ -125,7 +122,8 @@ def errorInfo(job, nchars=300, mode='html', **kwargs):
     desc, codesDescribed = getErrorDescription(job, provideProcessedCodes=True, errorCodes=errorCodes)
 
     for error_cat in const.JOB_ERROR_CATEGORIES:
-        if error_cat['error'] in job and job[error_cat['error']] != '' and not job[error_cat['error']] is None and int(job[error_cat['error']]) != 0 and int(job[error_cat['error']]) not in codesDescribed:
+        if (error_cat['error'] in job and job[error_cat['error']] != '' and job[error_cat['error']] is not None
+                and int(job[error_cat['error']]) != 0 and int(job[error_cat['error']]) not in codesDescribed):
             if error_cat['diag'] is not None:
                 errtxt += '{} {}: {} <br>'.format(
                     error_cat['title'],

@@ -2,8 +2,6 @@ import logging
 import re
 import subprocess
 import os
-import sys
-import traceback
 import time
 import json
 import copy
@@ -60,7 +58,7 @@ from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_de
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
 from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, \
     convert_grams
-from core.libs.eventservice import event_summary_for_task, add_event_summary_to_tasklist
+from core.libs.eventservice import is_event_service, event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
@@ -68,10 +66,9 @@ from core.libs.task import input_summary_for_task, datasets_for_task, \
 from core.libs.task import get_dataset_locality, is_event_service_task, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
 from core.libs.taskparams import analyse_task_submission_options
-from core.libs.job import is_event_service, get_job_list, calc_jobs_metrics, add_job_category, \
-    job_states_count_by_param, is_job_active, get_job_queuetime, get_job_walltime, job_state_count, \
-    getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode, clean_job_list, \
-    add_files_info_to_jobs
+from core.libs.job import get_job_list, calc_jobs_metrics, add_job_category, job_states_count_by_param, is_job_active, \
+    get_job_queuetime, get_job_walltime, job_state_count, getSequentialRetries, getSequentialRetries_ES, \
+     getSequentialRetries_ESupstream, is_debug_mode, clean_job_list, add_files_info_to_jobs
 from core.libs.jobmetadata import addJobMetadata
 from core.libs.error import errorInfo, getErrorDescription, get_job_error_desc
 from core.libs.site import get_pq_metrics

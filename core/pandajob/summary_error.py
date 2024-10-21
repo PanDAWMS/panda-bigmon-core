@@ -128,14 +128,13 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
         _logger.debug('Got tasknames for summary by task: {}'.format(time.time() - request.session['req_init_time']))
 
     # get error codes and description
-    # codes = ErrorCodes()
-    # errorFields, errorCodes, errorStages = codes.getErrorCodes()
     errorCodes = get_job_error_desc()
     errorcodelist = copy.deepcopy(const.JOB_ERROR_CATEGORIES)
 
     for job in jobs:
         if not testjobs:
-            if job['jobstatus'] not in ['failed', 'holding', 'finished', 'closed', 'cancelled']: continue
+            if job['jobstatus'] not in ['failed', 'holding']:
+                continue
         site = job['computingsite']
         user = job['produsername']
         taskname = ''
