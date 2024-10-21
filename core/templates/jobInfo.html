@@ -106,6 +106,12 @@
 	<td colspan="20"> {{ fileSummary }} </td>
 </tr>
 {% endif %}
+{% if 'jobinfo' in job and job.jobinfo|length > 0 %} 
+  <tr>
+    <th>Job info:</th>
+    <td colspan="20"> {{ job.jobinfo }} </td>
+  </tr>
+{% endif %}
 </tbody>
 </table>
 </div>
@@ -147,7 +153,6 @@
     </tbody>
   </table>
 {% endif %}
-
 
 {% if job.metastruct and job.metastruct.exitCode and job.metastruct.exitCode > 0 %}
 <div class="card bp-container-simple alert">
