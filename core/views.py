@@ -192,6 +192,8 @@ def initRequest(request, callselfmon=True):
 
     request.session['req_init_time'] = time.time()
     request.session['IS_TESTER'] = False
+    request.session['viewParams'] = {}
+    request.session['requestParams'] = {}
 
     if VOMODE == 'atlas':
         if "MELLON_SAML_RESPONSE" in request.META and base64.b64decode(request.META['MELLON_SAML_RESPONSE']):
@@ -217,8 +219,6 @@ def initRequest(request, callselfmon=True):
                                                       last_name=request.session['ADFS_LASTNAME'])
                     user.set_unusable_password()
                     user.save()
-
-    request.session['viewParams'] = {}
 
     # creating a dict in session to store long urls as it will not be saved to session storage
     # Session is NOT modified, because this alters sub dict
@@ -303,9 +303,6 @@ def initRequest(request, callselfmon=True):
             del request.session['xurls']
         except:
             pass
-
-    requestParams = {}
-    request.session['requestParams'] = requestParams
 
     allowedemptyparams = ('json', 'snap', 'dt', 'dialogs', 'pandaids', 'workersstats')
     if request.method == 'POST':

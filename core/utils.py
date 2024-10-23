@@ -142,8 +142,8 @@ def error_response(request, message=None, status=400):
         response = JsonResponse({'error': message}, status=status)
     else:
         data = {
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+            'requestParams': request.session['requestParams'] if 'requestParams' in request.session else None,
             "errormessage": message,
         }
         response =  render(request, 'errorPage.html', data, content_type='text/html', status=status)
