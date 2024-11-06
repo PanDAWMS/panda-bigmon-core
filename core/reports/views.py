@@ -1,21 +1,19 @@
 """
 
 """
-import json
+
 import logging
 from datetime import datetime
 
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import render
 
-from core.libs.DateEncoder import DateEncoder
-from core.views import initRequest
+from core.views import initRequest, setupView
 from core.oauth.utils import login_customrequired
 from core.reports.sendMail import send_mail_bp
 
-from core.reports import MC16aCPReport, ObsoletedTasksReport, LargeScaleAthenaTestsReport
+from core.reports import ObsoletedTasksReport, LargeScaleAthenaTestsReport, ErrorClassificationReport
 
 from django.conf import settings
 
@@ -35,14 +33,6 @@ def reports(request):
     available_reports = {}
     if 'ATLAS' in settings.DEPLOYMENT:
         available_reports = {
-            # 'campaign': {
-            #     'value': 'campaign', 'name': 'Campaign summary',
-            #     'params': {
-            #         'values': ['MC16', 'MC16A', 'MC16C', ],
-            #         'delivery_options': ['page', 'email', ],
-            #         'get_redirect': ['campaign', ],
-            #     }
-            # },
             'obstasks': {
                 'value': 'obstasks', 'name': 'Obsoleted tasks',
                 'params': {
@@ -57,6 +47,13 @@ def reports(request):
                     'get_redirect': ['jeditaskid', ],
                 }
             },
+            'error_classification': {
+                'value': 'error_classification', 'name': 'Error classification',
+                'params': {
+                    'delivery_options': ['json'],
+                    'get_redirect': ['hours', ],
+                }
+            }
         }
 
     data = {
@@ -74,7 +71,6 @@ def report(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    step = 0
 
     if 'report_type' in request.session['requestParams'] and request.session['requestParams']['report_type']:
         report_type = request.session['requestParams']['report_type']
@@ -85,26 +81,7 @@ def report(request):
     if 'delivery' in request.session['requestParams'] and request.session['requestParams']['delivery']:
         delivery = request.session['requestParams']['delivery']
 
-    if report_type == 'campaign':
-        if 'campaign' in request.session['requestParams'] and request.session['requestParams']['campaign']:
-            campaign = request.session['requestParams']['campaign']
-        else:
-            return JsonResponse({'status': 'error', 'message': 'No campaign specified'})
-
-        if campaign.upper() == 'MC16':
-            reportGen = MC16aCPReport.MC16aCPReport()
-            response = reportGen.prepareReportJEDI(request)
-            return response
-        elif campaign.upper() == 'MC16C':
-            reportGen = MC16aCPReport.MC16aCPReport()
-            response = reportGen.prepareReportJEDIMC16c(request)
-            return response
-        elif campaign.upper() == 'MC16A':
-            reportGen = MC16aCPReport.MC16aCPReport()
-            resp = reportGen.getDKBEventsSummaryRequestedBreakDownHashTag(request)
-            dump = json.dumps(resp, cls=DateEncoder)
-            return HttpResponse(dump, content_type='application/json')
-    elif report_type == 'obstasks':
+    if report_type == 'obstasks':
         reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
         response = reportGen.prepareReport(request)
         return response
@@ -165,6 +142,27 @@ def report(request):
                 result['status'] = 'error'
                 result['message'] = 'Failed to send the report!'
             response = JsonResponse(result)
+        else:
+            response = JsonResponse({'status': 'error', 'message': 'Unsupported delivery type'})
+        return response
+
+    elif report_type == 'error_classification':
+
+        query = setupView(request, querytype='job', wildCardExt=False)
+
+        report = ErrorClassificationReport.ErrorClassificationReport(query=query)
+        report_data = report.prepare_report()
+        data = {
+            'request': request,
+            'requestParams': request.session['requestParams'],
+            'viewParams': request.session['viewParams'],
+        }
+        data.update(report_data)
+
+        if delivery == 'page':
+            response = render(request, 'reportErrorClassification.html', data)
+        elif delivery == 'json':
+            response = JsonResponse(report_data)
         else:
             response = JsonResponse({'status': 'error', 'message': 'Unsupported delivery type'})
         return response
