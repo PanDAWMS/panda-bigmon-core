@@ -1604,7 +1604,7 @@ def jobList(request, mode=None, param=None):
             request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0):
         testjobs = True
 
-    errsByCount, _, _, _, errdSumd, _ = errorSummaryDict(request, jobs, testjobs, output=['errsByCount', 'errdSumd'])
+    errsByCount, _, _, _, errdSumd, _ = errorSummaryDict(jobs, testjobs, output=['errsByCount', 'errdSumd'])
     _logger.debug('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
     errsByMessage = get_error_message_summary(jobs)
     _logger.debug('Built error message summary: {}'.format(time.time() - request.session['req_init_time']))
@@ -3101,7 +3101,7 @@ def userDashApi(request, agg=None):
         jobs = get_job_list(jquery, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, False, flist=[], sortby='count')
+        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(jobs, is_test_jobs=False, flist=[], sortby='count')
         errs_by_task_dict = {}
         for err in errs_by_task:
             if err['name'] not in errs_by_task_dict:
@@ -5562,14 +5562,11 @@ def errorSummary(request):
         jobtype = 'rc_test'
 
     if jobtype == '':
-        hours = 3
+        hours = 6
         limit = 100000
     elif jobtype.startswith('ana'):
         hours = 6
         limit = 100000
-    elif 'JOB_LIMIT' in request.session:
-        hours = 6
-        limit = request.session['JOB_LIMIT']
     else:
         hours = 12
         limit = 100000
@@ -5584,6 +5581,10 @@ def errorSummary(request):
         display_limit = int(request.session['requestParams']['display_limit'])
     else:
         display_limit = 9999999
+
+    sortby = 'count'
+    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
+        sortby = request.session['requestParams']['sortby']
 
     xurlsubst = extensibleURL(request)
     xurlsubstNoSite = xurlsubst
@@ -5683,74 +5684,16 @@ def errorSummary(request):
     error_message_summary = get_error_message_summary(jobs)
     _logger.info('Prepared new error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
-
     # Build the error summary
     errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(
-        request, jobs, testjobs, errHist=True)
-
+        jobs,
+        is_test_jobs=testjobs,
+        sortby=sortby,
+        is_user_req=True if 'produsername' in request.session['requestParams'] else False,
+        errHist=True,
+    )
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
-    # Build the state summary by computingsite to give perspective
-    # remove jobstatus from query
-    squery = copy.deepcopy(query)
-    if 'jobstatus__in' in squery:
-        del squery['jobstatus__in']
-    jsr_queues_dict, _, _ = get_job_summary_region(squery, extra=wildCardExtension)
-    sitestates = {}
-    savestates = ['finished', 'failed', 'cancelled', 'holding', ]
-    for pq, data in jsr_queues_dict.items():
-        sitestates[pq] = {}
-        for s in savestates:
-            sitestates[pq][s] = 0
-            if 'summary' in data and 'all' in data['summary'] and 'all' in data['summary']['all'] and s in data['summary']['all']['all']:
-                sitestates[pq][s] += data['summary']['all']['all'][s]
-        if sitestates[pq]['failed'] > 0:
-            sitestates[pq]['pctfail'] = round(
-                100.0*sitestates[pq]['failed']/(sitestates[pq]['finished'] + sitestates[pq]['failed'])
-            )
-        else:
-            sitestates[pq]['pctfail'] = 0
-
-    for site in errsBySite:
-        sitename = site['name']
-        if sitename in sitestates:
-            for s in savestates:
-                if s in sitestates[sitename]:
-                    site[s] = sitestates[sitename][s]
-            if 'pctfail' in sitestates[sitename]:
-                site['pctfail'] = sitestates[sitename]['pctfail']
-    _logger.info('Built errors by site summary: {}'.format(time.time() - request.session['req_init_time']))
-
-    taskname = ''
-    if not testjobs:
-        # Build the task state summary and add task state info to task error summary
-        taskstatesummary = task_summary(query, limit=limit, view=jobtype)
-        _logger.info(f'Prepared data for errors by task summary: {(time.time() - request.session['req_init_time'])}')
-
-        taskstates = {}
-        for task in taskstatesummary:
-            taskid = task['taskid']
-            taskstates[taskid] = {}
-            for s in savestates:
-                taskstates[taskid][s] = task['states'][s]['count']
-            if 'pctfail' in task:
-                taskstates[taskid]['pctfail'] = task['pctfail']
-        for task in errsByTask:
-            taskid = task['name']
-            if taskid in taskstates:
-                for s in savestates:
-                    if s in taskstates[taskid]:
-                        task[s] = taskstates[taskid][s]
-                if 'pctfail' in taskstates[taskid]:
-                    task['pctfail'] = taskstates[taskid]['pctfail']
-        if 'jeditaskid' in request.session['requestParams']:
-            taskname = get_task_name_by_taskid(request.session['requestParams']['jeditaskid'])
-    _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
-
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-    else:
-        sortby = 'alpha'
 
     if thread is not None:
         try:
@@ -5770,6 +5713,71 @@ def errorSummary(request):
     _logger.info('Finished thread counting total number of jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     if not is_json_request(request):
+
+        savestates = ['finished', 'failed', 'cancelled', 'holding', ]
+        # Build the state summary by computingsite to give perspective
+        errsBySite = errsBySite[:display_limit]
+        # remove jobstatus from query
+        squery = copy.deepcopy(query)
+        if 'jobstatus__in' in squery:
+            del squery['jobstatus__in']
+        squery['computingsite__in'] = [site['name'] for site in errsBySite]
+        jsr_queues_dict, _, _ = get_job_summary_region(squery, extra=wildCardExtension)
+        _logger.info(f"Got data for errors by site summary: {(time.time() - request.session['req_init_time'])}")
+
+        sitestates = {}
+        for pq, data in jsr_queues_dict.items():
+            sitestates[pq] = {}
+            for s in savestates:
+                sitestates[pq][s] = 0
+                if 'summary' in data and 'all' in data['summary'] and 'all' in data['summary']['all'] and s in \
+                        data['summary']['all']['all']:
+                    sitestates[pq][s] += data['summary']['all']['all'][s]
+            if sitestates[pq]['failed'] > 0:
+                sitestates[pq]['pctfail'] = round(
+                    100.0 * sitestates[pq]['failed'] / (sitestates[pq]['finished'] + sitestates[pq]['failed'])
+                )
+            else:
+                sitestates[pq]['pctfail'] = 0
+
+        for site in errsBySite:
+            sitename = site['name']
+            if sitename in sitestates:
+                for s in savestates:
+                    if s in sitestates[sitename]:
+                        site[s] = sitestates[sitename][s]
+                if 'pctfail' in sitestates[sitename]:
+                    site['pctfail'] = sitestates[sitename]['pctfail']
+        _logger.info('Built errors by site summary: {}'.format(time.time() - request.session['req_init_time']))
+
+        # Build the task state summary and add task state info to task error summary
+        errsByTask = errsByTask[:display_limit]
+        taskname = ''
+        if not testjobs:
+            tquery = copy.deepcopy(query)
+            tquery['jeditaskid__in'] = [task['name'] for task in errsByTask]
+            taskstatesummary = task_summary(tquery, limit=limit, view=jobtype)
+            _logger.info(f"Got data for errors by task summary: {(time.time() - request.session['req_init_time'])}")
+
+            taskstates = {}
+            for task in taskstatesummary:
+                taskid = task['taskid']
+                taskstates[taskid] = {}
+                for s in savestates:
+                    taskstates[taskid][s] = task['states'][s]['count']
+                if 'pctfail' in task:
+                    taskstates[taskid]['pctfail'] = task['pctfail']
+            for task in errsByTask:
+                taskid = task['name']
+                if taskid in taskstates:
+                    for s in savestates:
+                        if s in taskstates[taskid]:
+                            task[s] = taskstates[taskid][s]
+                    if 'pctfail' in taskstates[taskid]:
+                        task['pctfail'] = taskstates[taskid]['pctfail']
+            if 'jeditaskid' in request.session['requestParams']:
+                taskname = get_task_name_by_taskid(request.session['requestParams']['jeditaskid'])
+        _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
 
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby')

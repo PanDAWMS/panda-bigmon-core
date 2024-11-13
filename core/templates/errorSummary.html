@@ -43,14 +43,14 @@
   Jump to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
 </p>
 
-{% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
-{% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
-{% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a></b> {% endif %}
-{% if requestParams.produsername %}<br><b>User: <a href="{% url 'userInfo' requestParams.produsername %}?display_limit=100">{{ requestParams.produsername }}</a></b> {% endif %}
-{% if requestParams.jeditaskid %}<br><b>JEDI Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}     {{ taskname }}</a> </b> {% endif %}
-{% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
-{% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
-{% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
+{% if requestParams.jobtype %}<p><b>Job type: {{ requestParams.jobtype }}</b></p> {% endif %}
+{% if requestParams.cloud %}<p><b>Cloud: {{ requestParams.cloud }}</b> </p>{% endif %}
+{% if requestParams.computingsite %}<p><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a></b> </p>{% endif %}
+{% if requestParams.produsername %}<p><b>User: <a href="{% url 'userInfo' requestParams.produsername %}?display_limit=100">{{ requestParams.produsername }}</a></b> </p>{% endif %}
+{% if requestParams.jeditaskid %}<p><b>JEDI Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}     {{ taskname }}</a> </b> </p>{% endif %}
+{% if requestParams.reqid_from %}<p><b>From request ID: {{ requestParams.reqid_from }}</b> </p>{% endif %}
+{% if requestParams.reqid_to %}<p><b>To request ID: {{ requestParams.reqid_to }}</b></p> {% endif %}
+{% if requestParams.workinggroup %}<p><b>Working group: {{ requestParams.workinggroup }}</b> </p>{% endif %}
 
 <p>Job modification times in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>,
   <a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a></p>
@@ -72,32 +72,30 @@
   </div>
   <div class="tabs-panel" id="panel_es_code">
     <div class="c3-plots-row row">
-      <div class="column medium-8"><canvas class="chartjs_block" id="barChartErrSplit_code"></canvas></div>
-      <div class="column medium-4"><canvas class="chartjs_block" id="pieChartErr_code"></canvas></div>
+      <div class="column medium-8 xlarge-10"><canvas class="chartjs_block" id="barChartErrSplit_code"></canvas></div>
+      <div class="column medium-4 xlarge-2"><canvas class="chartjs_block" id="pieChartErr_code"></canvas></div>
     </div>
   </div>
   <div class="tabs-panel" id="panel_es_site">
     <div class="c3-plots-row row">
-      <div class="column medium-8"><canvas class="chartjs_block" id="barChartErrSplit_site"></canvas></div>
-      <div class="column medium-4"><canvas class="chartjs_block" id="pieChartErr_site"></canvas></div>
+      <div class="column medium-8 xlarge-10"><canvas class="chartjs_block" id="barChartErrSplit_site"></canvas></div>
+      <div class="column medium-4 xlarge-2"><canvas class="chartjs_block" id="pieChartErr_site"></canvas></div>
     </div>
   </div>
   <div class="tabs-panel" id="panel_es_user">
     <div class="c3-plots-row row">
-      <div class="column medium-8"><canvas class="chartjs_block" id="barChartErrSplit_user"></canvas></div>
-      <div class="column medium-4"><canvas class="chartjs_block" id="pieChartErr_user"></canvas></div>
+      <div class="column medium-8 xlarge-10"><canvas class="chartjs_block" id="barChartErrSplit_user"></canvas></div>
+      <div class="column medium-4 xlarge-2"><canvas class="chartjs_block" id="pieChartErr_user"></canvas></div>
     </div>
   </div>
   <div class="tabs-panel" id="panel_es_task">
     <div class="c3-plots-row row">
-      <div class="column medium-8"><canvas class="chartjs_block" id="barChartErrSplit_task"></canvas></div>
-      <div class="column medium-4"><canvas class="chartjs_block" id="pieChartErr_task"></canvas></div>
+      <div class="column medium-8 xlarge-10"><canvas class="chartjs_block" id="barChartErrSplit_task"></canvas></div>
+      <div class="column medium-4 xlarge-2"><canvas class="chartjs_block" id="pieChartErr_task"></canvas></div>
     </div>
   </div>
 </div>
 </div>
-  
-<div id="chart_div"></div>
 {% endif %}
 
 {% if sumd %}
@@ -151,10 +149,9 @@
         <tbody>
         {% for errval in errsByCount %}
         <tr>
-            <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
-            <td> {{ errval.count }} </td>
-            <td> {{ errval.diag|force_escape|safe }}
-            </td>
+            <td> <a href="{{ xurl }}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
+            <td> <a href="{% url 'jobList' %}?{{ requestString }}&hours={{ hours }}&jobstatus=failed&{{errval.codename}}={{errval.codeval}}">{{ errval.count }}</a></td>
+            <td> {{ errval.diag|force_escape|safe }}</td>
         </tr>
         {% endfor %}
         </tbody>
@@ -202,7 +199,7 @@
 <th> Total errors in {{ site.toterrjobs }} jobs.     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a>     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a>     % failed: {{ site.pctfail }}     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ site.holding }} </span></a>      <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }} </span></a> </th>  </tr>
 {% for errval in site.errorlist %}
 <tr><td>  </td>
-    <td> <a href="{{jobsurlNoSite}}?computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td>
+    <td> <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td>
     <td class="wrap-words"> <b>{{ errval.error }}</b>     <font size=-1> {{ errval.diag|force_escape|safe }} </font></td>
 </tr>
 {% endfor %}
@@ -257,9 +254,7 @@
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script src="{% static 'js/draw-plots-chart.js' %}?{% cache_bust "js/draw-plots-chart.js" %}"></script>
 <script nonce={{request.csp_nonce}}>
-{#let err_hist = {{ errHist | safe }};#}
-var chart;
-window.addEventListener('resize', onWindowResize);
+
 $(document).ready(function() {
 
     $(".comment").shorten();
@@ -354,9 +349,9 @@ function DisplayErrorMessagesListTableData() {
 }
 
 app.controller('chartController', function($scope, $window) {
+  var ctx_pie, ctx;
   $scope.es = {
     selection: {
-      resourceType: [],
       tab: 'total'
     },
     plot_data: {{ errHist | safe }},
@@ -365,73 +360,87 @@ app.controller('chartController', function($scope, $window) {
     pie: {
       options: {
         title: '',
-        size:[getWidth()*4/12-40, 400]
+        size:[getWidth()*4/12-40, 500]
       },
       data: [],
     },
     barSplit: {
       options: {
         title: '',
-        size: [getWidth()*8/12-40, 400],
-        labels: ['Timestamp, UTC', 'Number of failed jobs']
+        size: [getWidth()*8/12-40, 500],
+        labels: ['Timestamp, UTC', 'Number of failed jobs'],
+        color_schema: {},
       },
       data: []
     }
   };
-  
 
-  $scope.es.fillPieChartData = function fillPieChartData() {
-    {#$scope.es.charts.pie.data = $scope.es.plot_data[$scope.es.selection.tab].total;#}
-  };
-  
-
-  $scope.es.getSplitData = function getSplitData() {
-    let level = $scope.es.selection.tab;
-    $scope.es.charts.barSplit.data = structuredClone($scope.es.plot_data[level].binned);
+  $scope.es.getData = function getSplitData() {
+    $scope.es.charts.barSplit.data = structuredClone($scope.es.plot_data[$scope.es.selection.tab].binned);
+    $scope.es.charts.pie.data = structuredClone($scope.es.plot_data[$scope.es.selection.tab].total);
   };
 
   $scope.es.enable_panel = function enable_panel(id) {
     $scope.es.selection.tab = id;
-    $scope.es.fillPieChartData();
-    $scope.es.getSplitData();
+    $scope.es.getData();
+    if ($scope.es.charts.pie.chart) {
+      $scope.es.charts.pie.chart.destroy();
+    }
     if ($scope.es.charts.barSplit.chart) {
       $scope.es.charts.barSplit.chart.destroy();
     }
-    var ctx = document.getElementById("barChartErrSplit_" + $scope.es.selection.tab);
+
+    ctx_pie = document.getElementById("pieChartErr_" + $scope.es.selection.tab);
+    if (ctx_pie) {
+      ctx_pie.width = $scope.es.charts.pie.options.size[0];
+      ctx_pie.height = $scope.es.charts.pie.options.size[1];
+      console.log(ctx_pie);
+      let config_pie = prepare_pie_chart($scope.es.charts.pie.data, $scope.es.charts.pie.options);
+      // extract color schema so colors in pie and bar chart are the same
+      $scope.es.charts.barSplit.options.color_schema = config_pie.data.labels.reduce((acc, label, index) => {
+        acc[label] = config_pie.data.datasets[0].backgroundColor[index];
+        return acc;
+      }, {});
+      $scope.es.charts.pie.chart = new Chart(ctx_pie, config_pie);
+      setTimeout(function() {
+        $scope.es.charts.pie.chart.resize();
+      }, 0);
+    }
+    ctx = document.getElementById("barChartErrSplit_" + $scope.es.selection.tab);
     ctx.width = $scope.es.charts.barSplit.options.size[0];
     ctx.height = $scope.es.charts.barSplit.options.size[1];
-    var config = prepare_stacked_timeseries_chart($scope.es.charts.barSplit.data, $scope.es.charts.barSplit.options);
+    let config = prepare_stacked_timeseries_chart($scope.es.charts.barSplit.data, $scope.es.charts.barSplit.options);
     $scope.es.charts.barSplit.chart = new Chart(ctx, config);
     setTimeout(function() {
       $scope.es.charts.barSplit.chart.resize();
     }, 0);
-    {#$scope.es.charts.pie.chart = draw_donut($scope.es.charts.pie.data, "pieChartGS_" + $scope.es.selection.tab, 'Actual HS23', $scope.es.charts.pie.options);#}
-    {#$scope.es.charts.barSplit.chart = draw_bar_cat($scope.es.charts.barSplit.data, 'barChartGSSplit_' + $scope.es.selection.tab, 'Actual VS Target HS23', $scope.es.charts.barSplit.options);#}
+
   };
 
   $scope.es.enable_panel($scope.es.selection.tab);
 
-  {#var appWindow = angular.element($window);#}
-  {#appWindow.bind('resize', function () {#}
-  {#  // get chart vars to apply resizing#}
-  {#  let currentWidth = getWidth();#}
-  {#  if (currentWidth <= 840) {#}
-  {#    $scope.es.charts.pie.chart.resize({width: getWidth() - 40});#}
-  {#    $scope.es.charts.barSplit.chart.resize({width: getWidth() - 40});#}
-  {#  }#}
-  {#  else {#}
-  {#    $scope.es.charts.pie.chart.resize({width: getWidth() * 4 / 12 - 40});#}
-  {#    $scope.es.charts.barSplit.chart.resize({width: getWidth() * 8 / 12 - 40});#}
-  {#  }#}
-  {# });#}
+  var appWindow = angular.element($window);
+  appWindow.bind('resize', function () {
+    // get chart vars to apply resizing
+    let currentWidth = getWidth();
+    if (currentWidth <= 840) {
+      if (ctx_pie) ctx_pie.width = currentWidth-40;
+      ctx.width = currentWidth-40;
+    }
+    else {
+      if (ctx_pie) ctx_pie.width = currentWidth * 4 / 12 - 40;
+      ctx.width = currentWidth * 8 / 12 - 40;
+    }
+    $scope.es.charts.pie.options.size[0] = ctx_pie.width;
+    $scope.es.charts.barSplit.options.size[0] = ctx.width;
+    setTimeout(function() {
+      $scope.es.charts.pie.chart.resize();
+      $scope.es.charts.barSplit.chart.resize();
+    }, 0);
+   });
 
 });
 
-
-function onWindowResize() {
-    // get chart vars to apply resizing
-  chart.resize({width:getWidth()-40});
-}
 </script>
 
 
