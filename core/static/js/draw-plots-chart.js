@@ -10,11 +10,12 @@ function getWidth() {
 }
 
 var colors = [
-        "#62c9ae","#52cad7","#d5a9e4","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
+        "#b22222", "#62c9ae","#d5a9e4","#52cad7","#e38924","#9bd438","#438760","#ca46ce","#e08284","#4ba930",
         "#a191d6","#57a3cf","#476be2","#85713b","#e35625","#a5be48","#a0c284","#498635","#e135ac","#d6c175","#dc82e1",
         "#7458df","#e8875c","#b36eee","#5bdd61","#c39438","#d4c926","#dd74b6","#cf4482","#9e6c28","#86cd6f","#af511c",
         "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
         "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
+
 
 function prepare_scatter_chart(datasets, options, annotations) {
   var timeFormat = 'YYYY-MM-DD HH:mm:ss';
@@ -138,55 +139,78 @@ function prepare_scatter_chart(datasets, options, annotations) {
 }
 
 
-function prepare_stacked_histogram_chart(rawdata, options) {
+function prepare_stacked_timeseries_chart(rawdata, options) {
   let labels = rawdata[0];
   labels.shift();
   var data = {
     labels: labels,
     datasets: [],
   };
-  rawdata.shift();
-  rawdata.forEach((val, i) => {
-    let label = val[0];
-    let row = val;
-    row.shift();
-    data.datasets.push({
-      label: label,
-      backgroundColor: colors[i],
-      data: row,
-    })
+  var datasets = {}
+  labels.forEach((label, i) => {datasets[label] = {label: label, backgroundColor: colors[i], fill:true,  data: [] };});
+  rawdata.shift(); // remove header
+  rawdata.forEach((row) => {
+    labels.forEach((label, i) => {
+      datasets[label].data.push({
+        x: row[0],
+        y: row[i+1],
+        label: label,
+      })
+    });
   });
-
+  data.datasets = Object.values(datasets);
+  console.log(rawdata[0][0],rawdata[rawdata.length-1][0]);
 
   var config = {
     type: 'bar',
     data: data,
     options: {
+      plugins: {
+        title: {
+          display: true,
+          text: options.title,
+        },
+      },
+      barPercentage: 0.9,      // Max width for each bar within a category
+      categoryPercentage: 0.9,   // Max width for each category
       scales: {
-        xAxes: [{
+        x: {
+          type: 'time',
+          time: {
+            // unit: 'hour',
+            parser: "YYYY-MM-DD HH:mm:ss",
+            // displayFormats: {
+            //   hour: 'll hA'
+            // }
+          },
           stacked: true,
-          scaleLabel: {
-            display: true,
-            labelString: options.xlabel,
+          offset: true,
+          title: {
+              display: true,
+              text: options.labels[0],
           },
           ticks: {
-            source: 'auto'
-          }
-        }],
-        yAxes: [{
-          stacked: true,
-          scaleLabel: {
-            display: true,
-            labelString: options.ylabel,
+            // autoSkip: false,
+            source: 'data'
           },
-        }],
+          min: rawdata[0][0],
+          max: rawdata[rawdata.length-1][0],
+          grid: {
+            display: false  // Disable vertical grid lines
+          },
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          title: {
+              display: true,
+              text: options.labels[1]
+          }
+        }
       },
       legend: {
         display: true,
         position: 'bottom',
-        labels: {
-          usePointStyle: true,
-        }
       },
       layout: {
         padding: {
@@ -212,3 +236,4 @@ function prepare_stacked_histogram_chart(rawdata, options) {
   return config
 
 }
+

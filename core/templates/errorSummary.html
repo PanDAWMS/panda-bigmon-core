@@ -8,7 +8,7 @@
 {% if vo %}     VO={{ vo }} {% endif %}
 {% endblock %}
 {% block subtitle_params %}
-{% if jobsErrorsTotalCount != None%} <b> Total jobs found &#x7E; <a href="{% url 'errorSummary' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">{{ jobsErrorsTotalCount }}</a></b> {% endif %}
+{% if jobs_count_total > 0 %} <b> Total jobs found &#x7E; <a href="{% url 'errorSummary' %}?{% if requestString|length > 0 %}{{ requestString }}{% endif %}&hours={{hours}}&limit={{jobsErrorsTotalCount}}&mode=nodrop">{{ jobs_count_total }}</a></b> {% endif %}
 {% endblock %}
 
 {% block css_page_library %}
@@ -28,43 +28,75 @@
     <!-- Load d3.js and c3.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.12.0/d3.min.js" charset="utf-8"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.15/c3.min.js"></script>
+    <script src="{% static 'js/datatables/moment.min.js' %}"></script>
+    <!-- Load chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-moment/1.0.1/chartjs-adapter-moment.min.js" charset="utf-8"></script>
 {% endblock %}
 
 {% block body %}
-{{ viewParams.header }}
-
-<b>{{ njobs }} jobs found. Show jobs: </b>
-    <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>Failed </b></a>,
-    <a href="{% url 'jobList' %}?{% if requestString != None %}{{ requestString }}{% endif %}hours={{hours}}&limit={{limit}}&mode=nodrop"><b> All</b></a>
-
-{% if sortby == "count" %}
-<p>Sort by <b>count</b>, <a href="{{nosorturl}}">alpha</a>
-{% else %}
-<p>Sort by <a href="{{xurlsubst}}sortby=count">count</a>, <b>alpha</b>
-{% endif %}
+<p><b>{{ njobs }}</b> jobs found, go to job list:
+  <a href="{% url 'jobList' %}?{% if requestString|length > 0 %}{{ requestString }}{% endif %}&jobstatus=failed&hours={{hours}}&limit={{limit}}&mode=nodrop"><b>failed </b></a>,
+  <a href="{% url 'jobList' %}?{% if requestString|length > 0 %}{{ requestString }}{% endif %}&hours={{hours}}&limit={{limit}}&mode=nodrop"><b> all</b></a>.
+  {% if sortby == "count" %}Sort by <b>count</b>, <a href="{{nosorturl}}">alpha</a>.{% else %} Sort by <a href="{{xurlsubst}}sortby=count">count</a>, <b>alpha</b>.{% endif %}
+  Jump to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
+</p>
 
 {% if requestParams.jobtype %}<br><b>Job type: {{ requestParams.jobtype }}</b> {% endif %}
 {% if requestParams.cloud %}<br><b>Cloud: {{ requestParams.cloud }}</b> {% endif %}
 {% if requestParams.computingsite %}<br><b>Site: <a href="{% url 'siteInfo' requestParams.computingsite %}">{{ requestParams.computingsite }}</a></b> {% endif %}
 {% if requestParams.produsername %}<br><b>User: <a href="{% url 'userInfo' requestParams.produsername %}?display_limit=100">{{ requestParams.produsername }}</a></b> {% endif %}
 {% if requestParams.jeditaskid %}<br><b>JEDI Task: <a href="{% url 'taskInfo' requestParams.jeditaskid  %}">{{ requestParams.jeditaskid }}     {{ taskname }}</a> </b> {% endif %}
-
 {% if requestParams.reqid_from %}<br><b>From request ID: {{ requestParams.reqid_from }}</b> {% endif %}
 {% if requestParams.reqid_to %}<br><b>To request ID: {{ requestParams.reqid_to }}</b> {% endif %}
-
-{% if requestParams.taskid %}<br><b>Task ID: {{ requestParams.taskid }}</b> {% endif %}
-{% if requestParams.jobsetid %}<br><b>Jobset ID: {{ requestParams.jobsetid }}</b> {% endif %}
 {% if requestParams.workinggroup %}<br><b>Working group: {{ requestParams.workinggroup }}</b> {% endif %}
 
-<p>
-
 <p>Job modification times in this listing range from <b>{{ tfirst }}</b> to <b>{{ tlast }}</b>,
-<a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a>
-<p>
-
-<p>Go to {% if errsByCount %} <a href="#summary">overall</a>, {% endif %} {% if errsBySite %} <a href="#sites">site</a>,{% endif %} {% if errsByUser %} <a href="#users">user</a>, {% endif %} {% if errsByTask %} <a href="#tasks">task</a> {% endif %} summary
+  <a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a></p>
 
 {% if errHist %}
+<div data-ng-controller="chartController" id="chartController">
+<ul class="tabs primary" data-tabs data-active-collapse="true" id="es-tabs">
+  <li class="tabs-title is-active"><a href="#panel_es_total" ng-click="es.enable_panel('total')">Total</a></li>
+  <li class="tabs-title"><a href="#panel_es_code" ng-click="es.enable_panel('code')">Error code</a></li>
+  <li class="tabs-title"><a href="#panel_es_site" ng-click="es.enable_panel('site')">Site</a></li>
+  <li class="tabs-title"><a href="#panel_es_user" ng-click="es.enable_panel('user')">User</a></li>
+  <li class="tabs-title"><a href="#panel_es_task" ng-click="es.enable_panel('task')">Task</a></li>
+</ul>
+<div class="tabs-content" data-tabs-content="es-tabs">
+  <div class="tabs-panel is-active" id="panel_es_total">
+    <div class="c3-plots-row row">
+      <div class="column medium-12"><canvas class="chartjs_block" id="barChartErrSplit_total"></canvas></div>
+    </div>
+  </div>
+  <div class="tabs-panel" id="panel_es_code">
+    <div class="c3-plots-row row">
+      <div class="column medium-8"><canvas class="chartjs_block" id="barChartErrSplit_code"></canvas></div>
+      <div class="column medium-4"><canvas class="chartjs_block" id="pieChartErr_code"></canvas></div>
+    </div>
+  </div>
+  <div class="tabs-panel" id="panel_es_site">
+    <div class="c3-plots-row row">
+      <div class="column medium-8"><canvas class="chartjs_block" id="barChartErrSplit_site"></canvas></div>
+      <div class="column medium-4"><canvas class="chartjs_block" id="pieChartErr_site"></canvas></div>
+    </div>
+  </div>
+  <div class="tabs-panel" id="panel_es_user">
+    <div class="c3-plots-row row">
+      <div class="column medium-8"><canvas class="chartjs_block" id="barChartErrSplit_user"></canvas></div>
+      <div class="column medium-4"><canvas class="chartjs_block" id="pieChartErr_user"></canvas></div>
+    </div>
+  </div>
+  <div class="tabs-panel" id="panel_es_task">
+    <div class="c3-plots-row row">
+      <div class="column medium-8"><canvas class="chartjs_block" id="barChartErrSplit_task"></canvas></div>
+      <div class="column medium-4"><canvas class="chartjs_block" id="pieChartErr_task"></canvas></div>
+    </div>
+  </div>
+</div>
+</div>
+  
 <div id="chart_div"></div>
 {% endif %}
 
@@ -223,21 +255,14 @@
 {% block js_body_page %}
 
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
+<script src="{% static 'js/draw-plots-chart.js' %}?{% cache_bust "js/draw-plots-chart.js" %}"></script>
 <script nonce={{request.csp_nonce}}>
-let err_hist = {{ errHist | safe }};
+{#let err_hist = {{ errHist | safe }};#}
 var chart;
 window.addEventListener('resize', onWindowResize);
 $(document).ready(function() {
 
     $(".comment").shorten();
-
-    let options = {
-      title: 'Error count timeline',
-      labels: ['Timestamp, UTC', 'Number of failed jobs'],
-      size: [getWidth()-40, 300],
-      colors: {'Number of failed jobs':'#b22222'},
-    };
-    chart = draw_bar_timeseries(err_hist, 'chart_div', options);
 
     DisplayErrorCountListTableData();
     DisplayErrorMessagesListTableData();
@@ -327,6 +352,81 @@ function DisplayErrorMessagesListTableData() {
         }
     });
 }
+
+app.controller('chartController', function($scope, $window) {
+  $scope.es = {
+    selection: {
+      resourceType: [],
+      tab: 'total'
+    },
+    plot_data: {{ errHist | safe }},
+  };
+  $scope.es.charts = {
+    pie: {
+      options: {
+        title: '',
+        size:[getWidth()*4/12-40, 400]
+      },
+      data: [],
+    },
+    barSplit: {
+      options: {
+        title: '',
+        size: [getWidth()*8/12-40, 400],
+        labels: ['Timestamp, UTC', 'Number of failed jobs']
+      },
+      data: []
+    }
+  };
+  
+
+  $scope.es.fillPieChartData = function fillPieChartData() {
+    {#$scope.es.charts.pie.data = $scope.es.plot_data[$scope.es.selection.tab].total;#}
+  };
+  
+
+  $scope.es.getSplitData = function getSplitData() {
+    let level = $scope.es.selection.tab;
+    $scope.es.charts.barSplit.data = structuredClone($scope.es.plot_data[level].binned);
+  };
+
+  $scope.es.enable_panel = function enable_panel(id) {
+    $scope.es.selection.tab = id;
+    $scope.es.fillPieChartData();
+    $scope.es.getSplitData();
+    if ($scope.es.charts.barSplit.chart) {
+      $scope.es.charts.barSplit.chart.destroy();
+    }
+    var ctx = document.getElementById("barChartErrSplit_" + $scope.es.selection.tab);
+    ctx.width = $scope.es.charts.barSplit.options.size[0];
+    ctx.height = $scope.es.charts.barSplit.options.size[1];
+    var config = prepare_stacked_timeseries_chart($scope.es.charts.barSplit.data, $scope.es.charts.barSplit.options);
+    $scope.es.charts.barSplit.chart = new Chart(ctx, config);
+    setTimeout(function() {
+      $scope.es.charts.barSplit.chart.resize();
+    }, 0);
+    {#$scope.es.charts.pie.chart = draw_donut($scope.es.charts.pie.data, "pieChartGS_" + $scope.es.selection.tab, 'Actual HS23', $scope.es.charts.pie.options);#}
+    {#$scope.es.charts.barSplit.chart = draw_bar_cat($scope.es.charts.barSplit.data, 'barChartGSSplit_' + $scope.es.selection.tab, 'Actual VS Target HS23', $scope.es.charts.barSplit.options);#}
+  };
+
+  $scope.es.enable_panel($scope.es.selection.tab);
+
+  {#var appWindow = angular.element($window);#}
+  {#appWindow.bind('resize', function () {#}
+  {#  // get chart vars to apply resizing#}
+  {#  let currentWidth = getWidth();#}
+  {#  if (currentWidth <= 840) {#}
+  {#    $scope.es.charts.pie.chart.resize({width: getWidth() - 40});#}
+  {#    $scope.es.charts.barSplit.chart.resize({width: getWidth() - 40});#}
+  {#  }#}
+  {#  else {#}
+  {#    $scope.es.charts.pie.chart.resize({width: getWidth() * 4 / 12 - 40});#}
+  {#    $scope.es.charts.barSplit.chart.resize({width: getWidth() * 8 / 12 - 40});#}
+  {#  }#}
+  {# });#}
+
+});
+
 
 function onWindowResize() {
     // get chart vars to apply resizing
