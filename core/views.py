@@ -3101,7 +3101,8 @@ def userDashApi(request, agg=None):
         jobs = get_job_list(jquery, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(jobs, is_test_jobs=False, flist=[], sortby='count')
+        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(
+            jobs, is_test_jobs=False, flist=[], sortby='count', output=['errsByCount', 'errsByTask', 'errsHist'])
         errs_by_task_dict = {}
         for err in errs_by_task:
             if err['name'] not in errs_by_task_dict:
