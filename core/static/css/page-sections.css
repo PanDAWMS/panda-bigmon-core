@@ -1290,6 +1290,11 @@ fieldset.inline {
     margin: 1rem 0;
 }
 
+canvas.chartjs_block {
+  width: 100% !important;
+  margin: 0;
+}
+
 .bp-container-wrapper {
   margin: 0 0 0.7rem 0;}
   .row.bp-container-wrapper .columns, .row.bp-container-wrapper .column {

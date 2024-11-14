@@ -87,7 +87,7 @@ from core.pandajob.summary_task import task_summary, job_summary_for_task, job_s
 from core.pandajob.summary_site import site_summary_dict
 from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_user import user_summary_dict
-from core.pandajob.utils import job_summary_dict
+from core.pandajob.utils import job_summary_dict, is_archived_jobs
 
 from core.iDDS.algorithms import checkIfIddsTask
 from core.iDDS.utils import add_idds_info_to_tasks
@@ -1604,7 +1604,7 @@ def jobList(request, mode=None, param=None):
             request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0):
         testjobs = True
 
-    errsByCount, _, _, _, errdSumd, _ = errorSummaryDict(request, jobs, testjobs, output=['errsByCount', 'errdSumd'])
+    errsByCount, _, _, _, errdSumd, _ = errorSummaryDict(jobs, testjobs, output=['errsByCount', 'errdSumd'])
     _logger.debug('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
     errsByMessage = get_error_message_summary(jobs)
     _logger.debug('Built error message summary: {}'.format(time.time() - request.session['req_init_time']))
@@ -3101,7 +3101,7 @@ def userDashApi(request, agg=None):
         jobs = get_job_list(jquery, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(request, jobs, False, flist=[], sortby='count')
+        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(jobs, is_test_jobs=False, flist=[], sortby='count')
         errs_by_task_dict = {}
         for err in errs_by_task:
             if err['name'] not in errs_by_task_dict:
@@ -5517,13 +5517,14 @@ def digkey(rq):
 
 @login_customrequired
 def errorSummary(request):
-    start_time = time.time()
+    """
+    Error summary view
+    :param request:
+    :return:
+    """
     valid, response = initRequest(request)
-    thread = None
-    dkey = digkey(request)
     if not valid:
         return response
-
     _logger.info('Initialized request: {}'.format(time.time() - request.session['req_init_time']))
 
     # Here we try to get cached data
@@ -5533,7 +5534,6 @@ def errorSummary(request):
         data = json.loads(data)
         data['request'] = request
         # Filtering data due to user settings
-        # if 'ADFS_LOGIN' in request.session and request.session['ADFS_LOGIN'] and 'IS_TESTER' in request.session and request.session['IS_TESTER']:
         if request.user.is_authenticated and request.user.is_tester:
             data = filterErrorData(request, data)
         if data['errHist']:
@@ -5548,30 +5548,25 @@ def errorSummary(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
+    dkey = digkey(request)
+
     testjobs = False
-    if 'prodsourcelabel' in request.session['requestParams'] and request.session['requestParams'][
-        'prodsourcelabel'].lower().find('test') >= 0:
+    if ('prodsourcelabel' in request.session['requestParams'] and
+            request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0):
         testjobs = True
 
     jobtype = ''
     if 'jobtype' in request.session['requestParams']:
         jobtype = request.session['requestParams']['jobtype']
-    elif '/analysis' in request.path:
-        jobtype = 'analysis'
-    elif '/production' in request.path:
-        jobtype = 'production'
     elif testjobs:
         jobtype = 'rc_test'
 
     if jobtype == '':
-        hours = 3
-        limit = 100000
-    elif jobtype.startswith('anal'):
         hours = 6
         limit = 100000
-    elif 'JOB_LIMIT' in request.session:
+    elif jobtype.startswith('ana'):
         hours = 6
-        limit = request.session['JOB_LIMIT']
+        limit = 100000
     else:
         hours = 12
         limit = 100000
@@ -5586,6 +5581,10 @@ def errorSummary(request):
         display_limit = int(request.session['requestParams']['display_limit'])
     else:
         display_limit = 9999999
+
+    sortby = 'count'
+    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
+        sortby = request.session['requestParams']['sortby']
 
     xurlsubst = extensibleURL(request)
     xurlsubstNoSite = xurlsubst
@@ -5621,6 +5620,7 @@ def errorSummary(request):
     _logger.info('Processed specific params: {}'.format(time.time() - request.session['req_init_time']))
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, limit=limit, wildCardExt=True)
+
     # filter out previous errors for successfully processed files, i.e. keeping errors for unfinished files only
     if 'jeditaskid' in request.session['requestParams'] and 'extra' in request.session['requestParams'] and \
             request.session['requestParams']['extra'] == 'unfinishedfiles':
@@ -5646,6 +5646,7 @@ def errorSummary(request):
 
     if not testjobs and 'jobstatus' not in request.session['requestParams']:
         query['jobstatus__in'] = ['failed', 'holding']
+
     jobs = []
     values = (
         'eventservice', 'produsername', 'produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',
@@ -5657,154 +5658,136 @@ def errorSummary(request):
         'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'actualcorecount', 'computingelement'
     )
 
+    panda_job_models = [Jobsarchived4,]
+    # we add tables with active jobs for test jobs summary
     if testjobs:
-        jobs.extend(
-            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
-        jobs.extend(
-            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
-    listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4
+        panda_job_models.extend([Jobsactive4, Jobsdefined4, Jobswaiting4])
 
-    jobs.extend(
-        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
-    jobs.extend(
-        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
+    # add big archived table if timewindow is more than 2 days
+    if is_archived_jobs(query['modificationtime__castdate__range']):
+        panda_job_models.append(Jobsarchived)
 
-    if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
-                                             "%Y-%m-%d %H:%M:%S")).days > 1) or \
-            ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
-                                                 "%Y-%m-%d %H:%M:%S")).days > 1)):
-        jobs.extend(
-            Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(
-                *values))
-        listJobs = Jobsactive4, Jobsarchived4, Jobsdefined4, Jobswaiting4, Jobsarchived
+    for model in panda_job_models:
+        jobs.extend(model.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
 
     if not is_json_request(request):
-        thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension, dkey))
+        thread = Thread(target=totalCount, args=(panda_job_models, query, wildCardExtension, dkey))
         thread.start()
     else:
         thread = None
     _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
+    njobs = len(jobs)
     _logger.info('Cleaned jobs list: {}'.format(time.time() - request.session['req_init_time']))
 
     error_message_summary = get_error_message_summary(jobs)
     _logger.info('Prepared new error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
-    njobs = len(jobs)
-
-    # Build the error summary.
-    errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(request, jobs, testjobs,
-                                                                                      errHist=True)
-
+    # Build the error summary
+    errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(
+        jobs,
+        is_test_jobs=testjobs,
+        sortby=sortby,
+        is_user_req=True if 'produsername' in request.session['requestParams'] else False,
+        errHist=True,
+    )
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
-    # Build the state summary by computingsite to give perspective
-    notime = False  # behave as it used to before introducing notime for dashboards. Pull only 12hrs.
-    # remove jobstatus from query
-    squery = copy.deepcopy(query)
-    if 'jobstatus__in' in squery:
-        del squery['jobstatus__in']
-    jsr_queues_dict, _, _ = get_job_summary_region(squery, extra=wildCardExtension)
-    sitestates = {}
-    savestates = ['finished', 'failed', 'cancelled', 'holding', ]
-    for pq, data in jsr_queues_dict.items():
-        sitestates[pq] = {}
-        for s in savestates:
-            sitestates[pq][s] = 0
-            if 'summary' in data and 'all' in data['summary'] and 'all' in data['summary']['all'] and s in data['summary']['all']['all']:
-                sitestates[pq][s] += data['summary']['all']['all'][s]
-        if sitestates[pq]['failed'] > 0:
-            sitestates[pq]['pctfail'] = round(
-                100.0*sitestates[pq]['failed']/(sitestates[pq]['finished'] + sitestates[pq]['failed'])
-            )
-        else:
-            sitestates[pq]['pctfail'] = 0
-
-    for site in errsBySite:
-        sitename = site['name']
-        if sitename in sitestates:
-            for s in savestates:
-                if s in sitestates[sitename]:
-                    site[s] = sitestates[sitename][s]
-            if 'pctfail' in sitestates[sitename]:
-                site['pctfail'] = sitestates[sitename]['pctfail']
-    _logger.info('Built errors by site summary: {}'.format(time.time() - request.session['req_init_time']))
-
-    taskname = ''
-    if not testjobs:
-        # Build the task state summary and add task state info to task error summary
-        taskstatesummary = task_summary(query, limit=limit, view=jobtype)
-
-        _logger.info(
-            'Prepared data for errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
-
-        taskstates = {}
-        for task in taskstatesummary:
-            taskid = task['taskid']
-            taskstates[taskid] = {}
-            for s in savestates:
-                taskstates[taskid][s] = task['states'][s]['count']
-            if 'pctfail' in task:
-                taskstates[taskid]['pctfail'] = task['pctfail']
-        for task in errsByTask:
-            taskid = task['name']
-            if taskid in taskstates:
-                for s in savestates:
-                    if s in taskstates[taskid]:
-                        task[s] = taskstates[taskid][s]
-                if 'pctfail' in taskstates[taskid]:
-                    task['pctfail'] = taskstates[taskid]['pctfail']
-        if 'jeditaskid' in request.session['requestParams']:
-            taskname = get_task_name_by_taskid(request.session['requestParams']['jeditaskid'])
-    _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
-
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-    else:
-        sortby = 'alpha'
-    flowstruct = buildGoogleFlowDiagram(request, jobs=jobs)
-    _logger.info('Built google diagram: {}'.format(time.time() - request.session['req_init_time']))
 
     if thread is not None:
         try:
             thread.join()
-            jobsErrorsTotalCount = sum(tcount[dkey])
+            jobs_count_total = sum(tcount[dkey])
             _logger.debug(f"{dkey}: total jobs found {tcount[dkey]})")
             del tcount[dkey]
         except:
-            jobsErrorsTotalCount = -1
+            jobs_count_total = -1
     else:
-        jobsErrorsTotalCount = -1
+        jobs_count_total = -1
 
-    _logger.info(
-        'Finished thread counting total number of jobs: {}'.format(time.time() - request.session['req_init_time']))
-
-    listPar = []
-    for key, val in request.session['requestParams'].items():
-        if (key != 'limit' and key != 'display_limit'):
-            listPar.append(key + '=' + str(val))
-    if len(listPar) > 0:
-        urlParametrs = '&'.join(listPar) + '&'
+    if math.fabs(njobs - jobs_count_total) < 1000:
+        jobs_count_total = -1
     else:
-        urlParametrs = None
-    _logger.debug(listPar)
-    del listPar
-    if math.fabs(njobs - jobsErrorsTotalCount) < 1000:
-        jobsErrorsTotalCount = None
-    else:
-        jobsErrorsTotalCount = int(math.ceil((jobsErrorsTotalCount + 10000) / 10000) * 10000)
-    _logger.info('Formed list of params: {}'.format(time.time() - request.session['req_init_time']))
+        jobs_count_total = int(math.ceil((jobs_count_total + 10000) / 10000) * 10000)
+    _logger.info('Finished thread counting total number of jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-            'json' not in request.session['requestParams'])):
-        nosorturl = removeParam(request.get_full_path(), 'sortby')
+    if not is_json_request(request):
+
+        savestates = ['finished', 'failed', 'cancelled', 'holding', ]
+        # Build the state summary by computingsite to give perspective
+        errsBySite = errsBySite[:display_limit]
+        # remove jobstatus from query
+        squery = copy.deepcopy(query)
+        if 'jobstatus__in' in squery:
+            del squery['jobstatus__in']
+        squery['computingsite__in'] = [site['name'] for site in errsBySite]
+        jsr_queues_dict, _, _ = get_job_summary_region(squery, extra=wildCardExtension)
+        _logger.info(f"Got data for errors by site summary: {(time.time() - request.session['req_init_time'])}")
+
+        sitestates = {}
+        for pq, data in jsr_queues_dict.items():
+            sitestates[pq] = {}
+            for s in savestates:
+                sitestates[pq][s] = 0
+                if 'summary' in data and 'all' in data['summary'] and 'all' in data['summary']['all'] and s in \
+                        data['summary']['all']['all']:
+                    sitestates[pq][s] += data['summary']['all']['all'][s]
+            if sitestates[pq]['failed'] > 0:
+                sitestates[pq]['pctfail'] = round(
+                    100.0 * sitestates[pq]['failed'] / (sitestates[pq]['finished'] + sitestates[pq]['failed'])
+                )
+            else:
+                sitestates[pq]['pctfail'] = 0
+
+        for site in errsBySite:
+            sitename = site['name']
+            if sitename in sitestates:
+                for s in savestates:
+                    if s in sitestates[sitename]:
+                        site[s] = sitestates[sitename][s]
+                if 'pctfail' in sitestates[sitename]:
+                    site['pctfail'] = sitestates[sitename]['pctfail']
+        _logger.info('Built errors by site summary: {}'.format(time.time() - request.session['req_init_time']))
+
+        # Build the task state summary and add task state info to task error summary
+        errsByTask = errsByTask[:display_limit]
+        taskname = ''
+        if not testjobs:
+            tquery = copy.deepcopy(query)
+            tquery['jeditaskid__in'] = [task['name'] for task in errsByTask]
+            taskstatesummary = task_summary(tquery, limit=limit, view=jobtype)
+            _logger.info(f"Got data for errors by task summary: {(time.time() - request.session['req_init_time'])}")
+
+            taskstates = {}
+            for task in taskstatesummary:
+                taskid = task['taskid']
+                taskstates[taskid] = {}
+                for s in savestates:
+                    taskstates[taskid][s] = task['states'][s]['count']
+                if 'pctfail' in task:
+                    taskstates[taskid]['pctfail'] = task['pctfail']
+            for task in errsByTask:
+                taskid = task['name']
+                if taskid in taskstates:
+                    for s in savestates:
+                        if s in taskstates[taskid]:
+                            task[s] = taskstates[taskid][s]
+                    if 'pctfail' in taskstates[taskid]:
+                        task['pctfail'] = taskstates[taskid]['pctfail']
+            if 'jeditaskid' in request.session['requestParams']:
+                taskname = get_task_name_by_taskid(request.session['requestParams']['jeditaskid'])
+        _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
+
         xurl = extensibleURL(request)
+        nosorturl = removeParam(xurl, 'sortby')
         time_locked_url = removeParam(removeParam(xurl, 'date_from', mode='extensible'), 'date_to', mode='extensible') + \
                           'date_from=' + request.session['TFIRST'].strftime('%Y-%m-%dT%H:%M') + \
                           '&date_to=' + request.session['TLAST'].strftime('%Y-%m-%dT%H:%M')
         jobsurl = xurlsubst.replace('/errors/', '/jobs/')
         jobsurlNoSite = xurlsubstNoSite.replace('/errors/', '')
+        excluded_params = ('display_limit', 'limit', 'hours', 'days')
+        request_params_str = '&'.join([f'{k}={v}' for k, v in request.session['requestParams'].items() if k not in excluded_params])
 
         TFIRST = request.session['TFIRST'].strftime(settings.DATETIME_FORMAT)
         TLAST = request.session['TLAST'].strftime(settings.DATETIME_FORMAT)
@@ -5818,7 +5801,7 @@ def errorSummary(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
-            'requestString': urlParametrs,
+            'requestString': request_params_str,
             'jobtype': jobtype,
             'njobs': njobs,
             'hours': LAST_N_HOURS_MAX,
@@ -5842,8 +5825,7 @@ def errorSummary(request):
             'tlast': TLAST,
             'sortby': sortby,
             'taskname': taskname,
-            'flowstruct': flowstruct,
-            'jobsErrorsTotalCount': jobsErrorsTotalCount,
+            'jobs_count_total': jobs_count_total,
             'display_limit': display_limit,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
@@ -5856,15 +5838,17 @@ def errorSummary(request):
         if request.user.is_authenticated and request.user.is_tester:
             data = filterErrorData(request, data)
         response = render(request, 'errorSummary.html', data, content_type='text/html')
-
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
 
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-    elif 'fields' in request.session['requestParams'] and request.session['requestParams']['fields']:
+    else:
         del request.session['TFIRST']
         del request.session['TLAST']
-        fields = request.session['requestParams']['fields'].split(',')
+        if 'fields' in request.session['requestParams'] and request.session['requestParams']['fields']:
+            fields = request.session['requestParams']['fields'].split(',')
+        else:
+            fields = ('jobSummary', 'errsByCount', 'errsBySite', 'errsByUser', 'errsByTask' )
         data = {}
         if 'jobSummary' in fields:
             data['jobSummary'] = sumd
@@ -5876,16 +5860,8 @@ def errorSummary(request):
             data['errsByUser'] = errsByUser
         if 'errsByTask' in fields:
             data['errsByTask'] = errsByTask
-        return HttpResponse(json.dumps(data), content_type='application/json')
-    else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
-        resp = []
-        for job in jobs:
-            resp.append(
-                {'pandaid': job['pandaid'], 'status': job['jobstatus'], 'prodsourcelabel': job['prodsourcelabel'],
-                 'produserid': job['produserid']})
-        return HttpResponse(json.dumps(resp), content_type='application/json')
+        return JsonResponse(data)
+
 
 
 def decommissioned(request, **kwargs):

@@ -389,15 +389,6 @@ def task_summary_data(query, limit=1000):
     summary = []
     querynotime = copy.deepcopy(query)
     del querynotime['modificationtime__castdate__range']
-    
-    summary.extend(Jobsactive4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('taskid', 'jobstatus')[:limit])
-    summary.extend(Jobsdefined4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('taskid', 'jobstatus')[:limit])
-    summary.extend(Jobswaiting4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('taskid', 'jobstatus')[:limit])
-    summary.extend(Jobsarchived4.objects.filter(**query).values('taskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('taskid', 'jobstatus')[:limit])
 
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus').annotate(
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
