@@ -399,26 +399,29 @@ def build_error_histograms(jobs):
             'user': job['produsername'],
         })
 
-    df = pd.DataFrame(data)
-    df['modificationtime'] = pd.to_datetime(df['modificationtime'])
-    df.set_index('modificationtime', inplace=True)
+    if len(data) > 0:
+        df = pd.DataFrame(data)
+        df['modificationtime'] = pd.to_datetime(df['modificationtime'])
+        df.set_index('modificationtime', inplace=True)
 
-    # Apply the function to each column where you want low-impact values grouped
-    for column in ['site', 'code', 'task', 'user']:
-        df = categorize_low_impact_by_percentage(df, column, threshold_percent)
+        # Apply the function to each column where you want low-impact values grouped
+        for column in ['site', 'code', 'task', 'user']:
+            df = categorize_low_impact_by_percentage(df, column, threshold_percent)
 
-    # Generate JSON-ready data for each column
-    output_data = {}
-    for column in ['site', 'code', 'task', 'user']:
-        output_data[column] = prepare_binned_and_total_data(df, column)
+        # Generate JSON-ready data for each column
+        output_data = {}
+        for column in ['site', 'code', 'task', 'user']:
+            output_data[column] = prepare_binned_and_total_data(df, column)
 
-    total_jobs_per_bin = df.resample('10T').size().reset_index(name='total')
-    total_jobs_per_bin['modificationtime'] = total_jobs_per_bin['modificationtime'].dt.strftime(settings.DATETIME_FORMAT)
+        total_jobs_per_bin = df.resample('10T').size().reset_index(name='total')
+        total_jobs_per_bin['modificationtime'] = total_jobs_per_bin['modificationtime'].dt.strftime(settings.DATETIME_FORMAT)
 
-    output_data['total'] = {
-        'binned': [['timestamp', 'total']] + total_jobs_per_bin.values.tolist(),
-        'total': {}
-    }
+        output_data['total'] = {
+            'binned': [['timestamp', 'total']] + total_jobs_per_bin.values.tolist(),
+            'total': {}
+        }
+    else:
+        output_data = {}
 
     return output_data
 
