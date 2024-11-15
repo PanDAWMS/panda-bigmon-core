@@ -418,52 +418,6 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
     return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, error_histograms
 
 
-def get_job_error_categories(job):
-    """
-    Get shortened error category string by error field and error code
-    :param job: dict, name of error field
-    :return: error_category_list: list of str, shortened error category string
-    """
-    error_category_list = []
-    for k in list(const.JOB_ERROR_CATEGORIES):
-        if k['error'] in job and job[k['error']] is not None and job[k['error']] != '' and int(job[k['error']]) > 0:
-            error_category_list.append(f'{k['name']}:{job[k['error']]}')
-
-    return error_category_list
-
-
-def prepare_binned_and_total_data(df, column):
-    # resample in 10-minute bins and count occurrences for each unique value in the specified column
-    resampled = df.groupby([pd.Grouper(freq='10T'), column]).size().unstack(fill_value=0)
-
-    # calculate total counts across all bins for pie chart
-    total_counts = resampled.sum().to_dict()
-
-    # convert binned data to Chart.js format
-    header = ["timestamp"] + list(resampled.columns)
-    binned_data = [header] + [[timestamp.strftime(settings.DATETIME_FORMAT)] + list(row) for timestamp, row in resampled.iterrows()]
-
-    return {
-        'binned': binned_data,
-        'total': total_counts
-    }
-
-
-def categorize_low_impact_by_percentage(df, column, threshold_percent):
-    # Count occurrences of each unique value across the entire dataset
-    counts = df[column].value_counts()
-    total_count = counts.sum()
-
-    # Calculate threshold in terms of counts
-    threshold_count = total_count * (threshold_percent / 100.0)
-
-    # Identify low-impact values below this threshold
-    low_impact_values = counts[counts < threshold_count].index
-
-    # Replace low-impact values with "Other"
-    df[column] = df[column].apply(lambda x: "Other" if x in low_impact_values else x)
-    return df
-
 def build_error_histograms(jobs):
     """
     Prepare histograms data by different categories
