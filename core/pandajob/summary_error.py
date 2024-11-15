@@ -83,60 +83,142 @@ def get_error_message_summary(jobs):
     return error_message_summary_list
 
 
-def errorSummaryDict(request, jobs, testjobs, **kwargs):
-    """ takes a job list and produce error summaries from it """
+
+def get_job_error_categories(job):
+    """
+    Get shortened error category string by error field and error code
+    :param job: dict, name of error field
+    :return: error_category_list: list of str, shortened error category string
+    """
+    error_category_list = []
+    for k in list(const.JOB_ERROR_CATEGORIES):
+        if k['error'] in job and job[k['error']] is not None and job[k['error']] != '' and int(job[k['error']]) > 0:
+            error_category_list.append(f"{k['name']}:{job[k['error']]}")
+
+    return error_category_list
+
+
+def prepare_binned_and_total_data(df, column):
+    # resample in 10-minute bins and count occurrences for each unique value in the specified column
+    resampled = df.groupby([pd.Grouper(freq='10T'), column]).size().unstack(fill_value=0)
+
+    # calculate total counts across all bins for pie chart
+    total_counts = resampled.sum().to_dict()
+
+    # convert binned data to Chart.js format
+    header = ["timestamp"] + list(resampled.columns)
+    binned_data = [header] + [[timestamp.strftime(settings.DATETIME_FORMAT)] + list(row) for timestamp, row in resampled.iterrows()]
+
+    return {
+        'binned': binned_data,
+        'total': total_counts
+    }
+
+
+def categorize_low_impact_by_percentage(df, column, threshold_percent):
+    # Count occurrences of each unique value across the entire dataset
+    counts = df[column].value_counts()
+    total_count = counts.sum()
+
+    # Calculate threshold in terms of counts
+    threshold_count = total_count * (threshold_percent / 100.0)
+
+    # Identify low-impact values below this threshold
+    low_impact_values = counts[counts < threshold_count].index
+
+    # Replace low-impact values with "Other"
+    df[column] = df[column].apply(lambda x: "Other" if x in low_impact_values else x)
+    return df
+
+
+def build_error_histograms(jobs):
+    """
+    Prepare histograms data by different categories
+    :param jobs:
+    :return: error_histograms: dict of data for histograms by different categories
+    """
+    threshold_percent = 2  # % threshold for low-impact values
+
+    data = []
+    for job in jobs:
+        data.append({
+            'modificationtime': job['modificationtime'],
+            'site': job['computingsite'],
+            'code': ','.join(sorted(get_job_error_categories(job))),
+            'task': job['jeditaskid'],
+            'user': job['produsername'],
+        })
+
+    df = pd.DataFrame(data)
+    df['modificationtime'] = pd.to_datetime(df['modificationtime'])
+    df.set_index('modificationtime', inplace=True)
+
+    # Apply the function to each column where you want low-impact values grouped
+    for column in ['site', 'code', 'task', 'user']:
+        df = categorize_low_impact_by_percentage(df, column, threshold_percent)
+
+    # Generate JSON-ready data for each column
+    output_data = {}
+    for column in ['site', 'code', 'task', 'user']:
+        output_data[column] = prepare_binned_and_total_data(df, column)
+
+    total_jobs_per_bin = df.resample('10T').size().reset_index(name='total')
+    total_jobs_per_bin['modificationtime'] = total_jobs_per_bin['modificationtime'].dt.strftime(
+        settings.DATETIME_FORMAT)
+
+    output_data['total'] = {
+        'binned': [['timestamp', 'total']] + total_jobs_per_bin.values.tolist(),
+        'total': {}
+    }
+
+    return output_data
+
+
+def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False,  **kwargs):
+    """
+    Takes a job list and produce error summaries from it
+    :param jobs: list of dicts
+    :param is_test_jobs:  bool: for test jobs we do not limit to "failed" jobs only
+    :param sortby: str: count or alpha
+    :param is_user_req: bool: we do jeditaskid in attribute summary only if a user is specified
+    :param kwargs: flist and outputs
+    :return: errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, error_histograms
+    """
+
+    start_time = time.time()
     errsByCount = {}
     errsBySite = {}
     errsByUser = {}
     errsByTask = {}
-
+    error_histograms = {}
     sumd = {}
-    errHistL = []
-    if 'errHist' in kwargs and kwargs['errHist']:
-        # histogram of errors vs. time, for plotting
-        jobs_failed = [{'modificationtime': j['modificationtime'], 'pandaid': j['pandaid']} for j in jobs if 'modificationtime' in j and j['jobstatus'] == 'failed']
-        if len(jobs_failed) > 0:
-            df = pd.DataFrame(jobs_failed)
-            df['modificationtime'] = pd.to_datetime(df['modificationtime'])
-            df = df.groupby(pd.Grouper(freq='10T', key='modificationtime')).count()
-            errHistL = [df.reset_index()['modificationtime'].tolist(), df['pandaid'].values.tolist()]
-            errHistL[0] = [t.strftime(settings.DATETIME_FORMAT) for t in errHistL[0]]
-            errHistL[0].insert(0, 'Timestamp')
-            errHistL[1].insert(0, 'Number of failed jobs')
-    _logger.debug('Built errHist: {}'.format(time.time() - request.session['req_init_time']))
-
-    error_histograms = build_error_histograms(jobs)
 
     if 'flist' in kwargs:
         flist = kwargs['flist']
     else:
         flist = copy.deepcopy(const.JOB_FIELDS_ERROR_VIEW)
-
-    sortby = 'count'
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
-        sortby = request.session['requestParams']['sortby']
-    elif 'sortby' in kwargs and kwargs['sortby']:
-        sortby = kwargs['sortby']
+    if is_user_req is not None and 'jeditaskid' in flist:
+        flist = list(flist)
+        flist.remove('jeditaskid')
 
     if 'output' in kwargs:
         outputs = kwargs['output']
     else:
-        outputs = ['errsByCount', 'errsBySite', 'errsByUser', 'errsByTask']
+        outputs = ['errsByCount', 'errsBySite', 'errsByUser', 'errsByTask', 'errsHist']
 
     # get task names needed for error summary by task
     tasknamedict = {}
     if 'errsByTask' in outputs:
         tasknamedict = taskNameDict(jobs)
-        _logger.debug('Got tasknames for summary by task: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Got tasknames for summary by task: {}'.format(time.time() - start_time))
 
     # get error codes and description
     errorCodes = get_job_error_desc()
     errorcodelist = copy.deepcopy(const.JOB_ERROR_CATEGORIES)
 
     for job in jobs:
-        if not testjobs:
-            if job['jobstatus'] not in ['failed', 'holding']:
-                continue
+        if not is_test_jobs and job['jobstatus'] not in ['failed', 'holding']:
+            continue
         site = job['computingsite']
         user = job['produsername']
         taskname = ''
@@ -153,21 +235,20 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
 
         ## Overall summary
         for f in flist:
-            if job[f]:
-                if f == 'taskid' and job[f] < 1000000 and 'produsername' not in request.session['requestParams']:
-                    pass
-                else:
-                    if not f in sumd: sumd[f] = {}
-                    if not job[f] in sumd[f]: sumd[f][job[f]] = 0
-                    sumd[f][job[f]] += 1
+            if f in job and job[f]:
+                if not f in sumd:
+                    sumd[f] = {}
+                if not job[f] in sumd[f]:
+                    sumd[f][job[f]] = 0
+                sumd[f][job[f]] += 1
         if job['specialhandling']:
             if not 'specialhandling' in sumd: sumd['specialhandling'] = {}
             shl = job['specialhandling'].split()
             for v in shl:
                 if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
                 sumd['specialhandling'][v] += 1
-        errsByList = {}
 
+        errsByList = {}
         for err in errorcodelist:
             if job[err['error']] != 0 and job[err['error']] != '' and job[err['error']] is not None:
                 errval = job[err['error']]
@@ -230,7 +311,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
                 errsBySite[site]['errors'][errcode]['count'] += 1
                 errsBySite[site]['toterrors'] += 1
 
-                if tasktype == 'jeditaskid' or (taskid is not None and taskid > 1000000) or 'produsername' in request.session['requestParams']:
+                if tasktype == 'jeditaskid' or (taskid is not None and taskid > 1000000):
                     if taskid not in errsByTask:
                         errsByTask[taskid] = {}
                         errsByTask[taskid]['name'] = taskid
@@ -252,7 +333,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
 
         if site in errsBySite: errsBySite[site]['toterrjobs'] += 1
         if taskid in errsByTask: errsByTask[taskid]['toterrjobs'] += 1
-    _logger.debug('Built summary dicts: {}'.format(time.time() - request.session['req_init_time']))
+    _logger.debug('Built summary dicts: {}'.format(time.time() - start_time))
 
     # reorganize as sorted lists
     errsByCountL = []
@@ -269,9 +350,6 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
             esjobs.append(key)
         errsByCountL.append(errsByCount[err])
 
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
-        errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
-
     kys = list(errsByUser.keys())
     kys = sorted(kys)
     for user in kys:
@@ -280,11 +358,9 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
         errkeys = sorted(errkeys)
         for err in errkeys:
             errsByUser[user]['errorlist'].append(errsByUser[user]['errors'][err])
-        if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+        if sortby == 'count':
             errsByUser[user]['errorlist'] = sorted(errsByUser[user]['errorlist'], key=lambda x: -x['count'])
         errsByUserL.append(errsByUser[user])
-    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
-        errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
 
     kys = list(errsBySite.keys())
     kys = sorted(kys)
@@ -297,8 +373,6 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
         if sortby == 'count':
             errsBySite[site]['errorlist'] = sorted(errsBySite[site]['errorlist'], key=lambda x: -x['count'])
         errsBySiteL.append(errsBySite[site])
-    if sortby == 'count':
-        errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
 
     kys = list(errsByTask.keys())
     kys = sorted(kys)
@@ -311,8 +385,7 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
         if sortby == 'count':
             errsByTask[taskid]['errorlist'] = sorted(errsByTask[taskid]['errorlist'], key=lambda x: -x['count'])
         errsByTaskL.append(errsByTask[taskid])
-    if sortby == 'count':
-        errsByTaskL = sorted(errsByTaskL, key=lambda x: -x['toterrors'])
+
 
     suml = []
     for f in sumd:
@@ -330,7 +403,17 @@ def errorSummaryDict(request, jobs, testjobs, **kwargs):
     if sortby == 'count':
         for item in suml:
             item['list'] = sorted(item['list'], key=lambda x: -x['kvalue'])
-    _logger.debug('Dict -> list & sorting are done: {}'.format(time.time() - request.session['req_init_time']))
+
+        errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
+        errsByTaskL = sorted(errsByTaskL, key=lambda x: -x['toterrors'])
+        errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
+        errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
+
+    _logger.debug('Dict -> list & sorting are done: {}'.format(time.time() - start_time))
+
+    if 'errsHist' in outputs:
+        error_histograms = build_error_histograms(jobs)
+    _logger.debug('Built errHist: {}'.format(time.time() - start_time))
 
     return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, error_histograms
 

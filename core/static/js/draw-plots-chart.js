@@ -146,8 +146,17 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
     labels: labels,
     datasets: [],
   };
-  var datasets = {}
-  labels.forEach((label, i) => {datasets[label] = {label: label, backgroundColor: colors[i], fill:true,  data: [] };});
+  var datasets = {};
+  var color_schema = {};
+  if ("color_schema" in options && options.color_schema.length > 0) {
+    color_schema = options.colors;
+  }
+  else {
+    color_schema = labels.reduce((acc, label, index) => {acc[label] = colors[index]; return acc; }, {});
+  }
+  labels.forEach((label) => {
+    datasets[label] = {label: label, backgroundColor: color_schema[label], fill:true,  data: [] };
+  });
   rawdata.shift(); // remove header
   rawdata.forEach((row) => {
     labels.forEach((label, i) => {
@@ -159,7 +168,6 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
     });
   });
   data.datasets = Object.values(datasets);
-  console.log(rawdata[0][0],rawdata[rawdata.length-1][0]);
 
   var config = {
     type: 'bar',
@@ -170,6 +178,10 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
           display: true,
           text: options.title,
         },
+        legend: {
+          display: true,
+          position: 'bottom',
+        },
       },
       barPercentage: 0.9,      // Max width for each bar within a category
       categoryPercentage: 0.9,   // Max width for each category
@@ -177,11 +189,11 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
         x: {
           type: 'time',
           time: {
-            // unit: 'hour',
             parser: "YYYY-MM-DD HH:mm:ss",
-            // displayFormats: {
-            //   hour: 'll hA'
-            // }
+            unit: 'hour',
+            displayFormats: {
+              hour: 'HH:mm', // 24-hour format for hours and minutes
+            },
           },
           stacked: true,
           offset: true,
@@ -208,10 +220,6 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
           }
         }
       },
-      legend: {
-        display: true,
-        position: 'bottom',
-      },
       layout: {
         padding: {
           left: 0,
@@ -237,3 +245,58 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
 
 }
 
+
+function prepare_pie_chart(raw_data, options) {
+  const data = {
+    labels: [],
+    datasets: [
+      {
+        label: '',
+        data: [],
+        backgroundColor: [],
+      }
+    ]
+  };
+  const color_schema = {};
+  Object.keys(raw_data).forEach((key, index) => {
+    data.labels.push(key);
+    data.datasets[0].data.push(raw_data[key]);
+    data.datasets[0].backgroundColor.push(colors[index]);
+  });
+
+  var config = {
+    type: 'doughnut',
+    data: data,
+    options: {
+      plugins: {
+        legend: {
+          position: 'bottom',
+        },
+        title: {
+          display: true,
+          text: options.title,
+        }
+      },
+      animation: {
+        duration: 0 // general animation time
+      },
+      hover: {
+        // intersect: false,
+        animationDuration: 0 // duration of animations when hovering an item
+      },
+      responsiveAnimationDuration: 0, // animation duration after a resize
+      responsive: false,
+      layout: {
+        padding: {
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 20
+        }
+      },
+    },
+  }
+
+
+  return config
+}
