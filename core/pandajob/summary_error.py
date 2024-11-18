@@ -83,7 +83,6 @@ def get_error_message_summary(jobs):
     return error_message_summary_list
 
 
-
 def get_job_error_categories(job):
     """
     Get shortened error category string by error field and error code
@@ -99,6 +98,12 @@ def get_job_error_categories(job):
 
 
 def prepare_binned_and_total_data(df, column):
+    """
+    Prepare binned and total time-series data for plots
+    :param df: data frame
+    :param column: column in data frame which use to split values for stacking
+    :return:
+    """
     # resample in 10-minute bins and count occurrences for each unique value in the specified column
     resampled = df.groupby([pd.Grouper(freq='10T'), column]).size().unstack(fill_value=0)
 
@@ -107,7 +112,9 @@ def prepare_binned_and_total_data(df, column):
 
     # convert binned data to Chart.js format
     header = ["timestamp"] + list(resampled.columns)
-    binned_data = [header] + [[timestamp.strftime(settings.DATETIME_FORMAT)] + list(row) for timestamp, row in resampled.iterrows()]
+    binned_data = [header] + [
+        [timestamp.strftime(settings.DATETIME_FORMAT)] + list(row) for timestamp, row in resampled.iterrows()
+    ]
 
     return {
         'binned': binned_data,
@@ -116,17 +123,24 @@ def prepare_binned_and_total_data(df, column):
 
 
 def categorize_low_impact_by_percentage(df, column, threshold_percent):
-    # Count occurrences of each unique value across the entire dataset
+    """
+    Replace low impact values as "Other" category
+    :param df: data frame
+    :param column: column name
+    :param threshold_percent: int
+    :return:
+    """
+    # count occurrences of each unique value across the entire dataset
     counts = df[column].value_counts()
     total_count = counts.sum()
 
-    # Calculate threshold in terms of counts
+    # calculate threshold in terms of counts
     threshold_count = total_count * (threshold_percent / 100.0)
 
-    # Identify low-impact values below this threshold
+    # identify low-impact values below this threshold
     low_impact_values = counts[counts < threshold_count].index
 
-    # Replace low-impact values with "Other"
+    # replace low-impact values with "Other"
     df[column] = df[column].apply(lambda x: "Other" if x in low_impact_values else x)
     return df
 
@@ -149,27 +163,30 @@ def build_error_histograms(jobs):
             'user': job['produsername'],
         })
 
-    df = pd.DataFrame(data)
-    df['modificationtime'] = pd.to_datetime(df['modificationtime'])
-    df.set_index('modificationtime', inplace=True)
+    if len(data) > 0:
+        df = pd.DataFrame(data)
+        df['modificationtime'] = pd.to_datetime(df['modificationtime'])
+        df.set_index('modificationtime', inplace=True)
 
-    # Apply the function to each column where you want low-impact values grouped
-    for column in ['site', 'code', 'task', 'user']:
-        df = categorize_low_impact_by_percentage(df, column, threshold_percent)
+        # Apply the function to each column where you want low-impact values grouped
+        for column in ['site', 'code', 'task', 'user']:
+            df = categorize_low_impact_by_percentage(df, column, threshold_percent)
 
-    # Generate JSON-ready data for each column
-    output_data = {}
-    for column in ['site', 'code', 'task', 'user']:
-        output_data[column] = prepare_binned_and_total_data(df, column)
+        # Generate JSON-ready data for each column
+        output_data = {}
+        for column in ['site', 'code', 'task', 'user']:
+            output_data[column] = prepare_binned_and_total_data(df, column)
 
-    total_jobs_per_bin = df.resample('10T').size().reset_index(name='total')
-    total_jobs_per_bin['modificationtime'] = total_jobs_per_bin['modificationtime'].dt.strftime(
-        settings.DATETIME_FORMAT)
+        total_jobs_per_bin = df.resample('10T').size().reset_index(name='total')
+        total_jobs_per_bin['modificationtime'] = total_jobs_per_bin['modificationtime'].dt.strftime(
+            settings.DATETIME_FORMAT)
 
-    output_data['total'] = {
-        'binned': [['timestamp', 'total']] + total_jobs_per_bin.values.tolist(),
-        'total': {}
-    }
+        output_data['total'] = {
+            'binned': [['timestamp', 'total']] + total_jobs_per_bin.values.tolist(),
+            'total': {}
+        }
+    else:
+        output_data = {}
 
     return output_data
 
@@ -416,100 +433,4 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
     _logger.debug('Built errHist: {}'.format(time.time() - start_time))
 
     return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, error_histograms
-
-
-def get_job_error_categories(job):
-    """
-    Get shortened error category string by error field and error code
-    :param job: dict, name of error field
-    :return: error_category_list: list of str, shortened error category string
-    """
-    error_category_list = []
-    for k in list(const.JOB_ERROR_CATEGORIES):
-        if k['error'] in job and job[k['error']] is not None and job[k['error']] != '' and int(job[k['error']]) > 0:
-            error_category_list.append(f'{k['name']}:{job[k['error']]}')
-
-    return error_category_list
-
-
-def prepare_binned_and_total_data(df, column):
-    # resample in 10-minute bins and count occurrences for each unique value in the specified column
-    resampled = df.groupby([pd.Grouper(freq='10T'), column]).size().unstack(fill_value=0)
-
-    # calculate total counts across all bins for pie chart
-    total_counts = resampled.sum().to_dict()
-
-    # convert binned data to Chart.js format
-    header = ["timestamp"] + list(resampled.columns)
-    binned_data = [header] + [[timestamp.strftime(settings.DATETIME_FORMAT)] + list(row) for timestamp, row in resampled.iterrows()]
-
-    return {
-        'binned': binned_data,
-        'total': total_counts
-    }
-
-
-def categorize_low_impact_by_percentage(df, column, threshold_percent):
-    # Count occurrences of each unique value across the entire dataset
-    counts = df[column].value_counts()
-    total_count = counts.sum()
-
-    # Calculate threshold in terms of counts
-    threshold_count = total_count * (threshold_percent / 100.0)
-
-    # Identify low-impact values below this threshold
-    low_impact_values = counts[counts < threshold_count].index
-
-    # Replace low-impact values with "Other"
-    df[column] = df[column].apply(lambda x: "Other" if x in low_impact_values else x)
-    return df
-
-def build_error_histograms(jobs):
-    """
-    Prepare histograms data by different categories
-    :param jobs:
-    :return: error_histograms: dict of data for histograms by different categories
-    """
-    threshold_percent = 1  # % threshold for low-impact values
-
-    data = []
-    for job in jobs:
-        data.append({
-            'modificationtime': job['modificationtime'],
-            'site': job['computingsite'],
-            'code': ','.join(sorted(get_job_error_categories(job))),
-            'task': job['jeditaskid'],
-            'user': job['produsername'],
-        })
-
-    if len(data) > 0:
-        df = pd.DataFrame(data)
-        df['modificationtime'] = pd.to_datetime(df['modificationtime'])
-        df.set_index('modificationtime', inplace=True)
-
-        # Apply the function to each column where you want low-impact values grouped
-        for column in ['site', 'code', 'task', 'user']:
-            df = categorize_low_impact_by_percentage(df, column, threshold_percent)
-
-        # Generate JSON-ready data for each column
-        output_data = {}
-        for column in ['site', 'code', 'task', 'user']:
-            output_data[column] = prepare_binned_and_total_data(df, column)
-
-        total_jobs_per_bin = df.resample('10T').size().reset_index(name='total')
-        total_jobs_per_bin['modificationtime'] = total_jobs_per_bin['modificationtime'].dt.strftime(settings.DATETIME_FORMAT)
-
-        output_data['total'] = {
-            'binned': [['timestamp', 'total']] + total_jobs_per_bin.values.tolist(),
-            'total': {}
-        }
-    else:
-        output_data = {}
-
-    return output_data
-
-
-
-
-
 
