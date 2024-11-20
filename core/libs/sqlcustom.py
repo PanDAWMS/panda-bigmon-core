@@ -64,7 +64,7 @@ def preprocess_wild_card_string(strToProcess, fieldToLookAt, **kwargs):
     for parameter in cardParametersRaw:
         leadStar = False
         trailStar = False
-        if currentParCount < countParameters - 1:
+        if len(parameter) > 0:
 
             if currentParCount - 1 >= 0:
                 leadStar = True
