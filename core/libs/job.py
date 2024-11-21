@@ -138,9 +138,12 @@ def get_job_info(job):
 
     # add diag with error code = 0 or any error code for not failed jobs
     diag_no_error_list = [
-        (c['name'], job[c['error']], job[c['diag']]) for c in const.JOB_ERROR_CATEGORIES if c['error'] in job and c['diag'] and len(job[c['diag']]) > 0 and (
-                (job[c['error']] == 0 or job[c['error']] == '0') or ('jobstatus' in job and job['jobstatus'] not in ('failed', 'holding'))
-            )
+        (c['name'], job[c['error']], job[c['diag']])
+        for c in const.JOB_ERROR_CATEGORIES
+        if c['error'] in job and c['diag'] and c['diag'] in job and job[c['diag']] and len(job[c['diag']]) > 0
+        and (
+            job[c['error']] in (0, '0') or ('jobstatus' in job and job['jobstatus'] not in ('failed', 'holding'))
+        )
     ]
     if len(diag_no_error_list) > 0:
         for d in diag_no_error_list:
