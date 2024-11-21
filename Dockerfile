@@ -6,14 +6,14 @@ ARG PYTHON_VERSION
 
 MAINTAINER PanDA team
 
-RUN wget  -P /etc/yum.repos.d/ https://wguan-idds.web.cern.ch/almalinux-baseos_1.repo
-RUN wget  -P /etc/yum.repos.d/ https://wguan-idds.web.cern.ch/almalinux-appstream_1.repo
-
 RUN yum update -y
 RUN yum install -y epel-release
 
 RUN yum install -y httpd httpd-devel gcc gridsite git psmisc less wget logrotate procps which \
     openssl-devel readline-devel bzip2-devel libffi-devel zlib-devel systemd-udev
+
+RUN wget  -P /etc/yum.repos.d/ https://wguan-idds.web.cern.ch/almalinux-baseos_1.repo
+RUN wget  -P /etc/yum.repos.d/ https://wguan-idds.web.cern.ch/almalinux-appstream_1.repo
 
 # install python
 RUN mkdir /tmp/python && cd /tmp/python && \
