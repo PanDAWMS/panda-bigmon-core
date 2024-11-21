@@ -80,7 +80,7 @@ def prepare_user_dash_plots(tasks, **kwargs):
             plots_dict['ntasks_by_status']['data'][task['status']] = 0
         plots_dict['ntasks_by_status']['data'][task['status']] += 1
 
-        if task['age'] > 0:
+        if 'age' in task and task['age'] is not None and task['age'] > 0:
             if task['status'] not in plots_dict['age_hist']['data']['data_raw']:
                 plots_dict['age_hist']['data']['data_raw'][task['status']] = []
             plots_dict['age_hist']['data']['data_raw'][task['status']].append((task['age']))
@@ -218,7 +218,9 @@ def humanize_metrics(metrics):
 
             for key, thresholds in metrics_thresholds.items():
                 if key in md:
-                    metric_defs[md]['class'].extend([c for c, crange in thresholds.items() if metric_defs[md]['value'] >= crange[0] and metric_defs[md]['value'] < crange[1]])
+                    metric_defs[md]['class'].extend(
+                        [c for c, crange in thresholds.items() if crange[0] <= metric_defs[md]['value'] < crange[1]]
+                    )
 
             metric_defs[md]['class'] = metric_defs[md]['class'][0] if len(metric_defs[md]['class']) > 0 else 'ok'
             metrics_list.append(metric_defs[md])
