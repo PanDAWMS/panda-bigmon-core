@@ -18,7 +18,7 @@ class ErrorClassificationReport:
             query[timeparamname + '__castdate__range'] = query['modificationtime__castdate__range']
             del query['modificationtime__castdate__range']
         self.query_errors = copy.deepcopy(query)
-        self.extra_query = '(' + ' or '.join([f'({k["error"]} is not null and {k["error"]} > 0)' for k in list(const.JOB_ERROR_CATEGORIES)]) + ')'
+        self.extra_query = "(" + " or ".join([f"({k['error']} is not null and {k['error']} > 0)" for k in list(const.JOB_ERROR_CATEGORIES)]) + ")"
         self.jobs = []
         _logger.debug(self.query_jobs, self.query_errors, self.extra_query)
 
