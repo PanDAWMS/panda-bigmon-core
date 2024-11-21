@@ -6,6 +6,9 @@ ARG PYTHON_VERSION
 
 MAINTAINER PanDA team
 
+RUN wget  -P /etc/yum.repos.d/ https://wguan-idds.web.cern.ch/almalinux-baseos_1.repo
+RUN wget  -P /etc/yum.repos.d/ https://wguan-idds.web.cern.ch/almalinux-appstream_1.repo
+
 RUN yum update -y
 RUN yum install -y epel-release
 
