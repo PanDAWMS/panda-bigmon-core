@@ -6,6 +6,9 @@ ARG PYTHON_VERSION
 
 MAINTAINER PanDA team
 
+COPY docker/yum.repos.d/almalinux-appstream_1.repo /etc/yum.repos.d/
+COPY docker/yum.repos.d/almalinux-baseos_1.repo /etc/yum.repos.d/
+
 RUN yum update -y
 RUN yum install -y epel-release
 
