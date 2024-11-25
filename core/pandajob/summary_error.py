@@ -162,8 +162,9 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
             'modificationtime': job['modificationtime'],
             'site': job['computingsite'] if not is_wn_instead_of_site else job['wn'],
             'code': ','.join(sorted(get_job_error_categories(job))),
-            'task': job['jeditaskid'],
+            'task': str(job['jeditaskid']),
             'user': job['produsername'],
+            'request': str(job['reqid']),
         })
         timestamp_list.append(job['modificationtime'])
 
@@ -175,12 +176,12 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
         df.set_index('modificationtime', inplace=True)
 
         # Apply the function to each column where you want low-impact values grouped
-        for column in ['site', 'code', 'task', 'user']:
+        for column in ['site', 'code', 'task', 'user', 'request']:
             df = categorize_low_impact_by_percentage(df, column, threshold_percent)
 
         # Generate JSON-ready data for each column
         output_data = {}
-        for column in ['site', 'code', 'task', 'user']:
+        for column in ['site', 'code', 'task', 'user', 'request']:
             output_data[column] = prepare_binned_and_total_data(df, column, freq=freq)
 
         total_jobs_per_bin = df.resample(freq).size().reset_index(name='total')
