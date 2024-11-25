@@ -17,6 +17,7 @@
 {% endblock %}
 {% block extra_js %}
     <script src="{% static 'js/humanize.min.js' %}"></script>
+    <script src="{% static "js/clipboardjs/clipboard.min.js" %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
     <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
     <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
@@ -40,7 +41,9 @@
 
 {% if wnname %}
   <p><b>Worker node slot performance</b> {% if wnname != 'all' %} for node {{ wnname }} {% endif %} at <a class="bp-link" href="{% url 'siteInfo' site %}">{{ site }}</a>, sort by:
-    {% if 'sortby' in requestParams %}{% if requestParams.sortby == 'alpha' %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=count">count</a>{% else %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=alpha">alpha</a>{% endif %}{% else %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=count">count</a>{% endif %}</p>
+    {% if 'sortby' in requestParams %}{% if requestParams.sortby == 'alpha' %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=count">count</a>{% else %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=alpha">alpha</a>{% endif %}{% else %}<a class="bp-link" href="{{ request.session.urls_cut.nosorturl }}sortby=count">count</a>,{% endif %}
+    <a id="copy-button" class="bluelink" data-clipboard-text="https://{{ request.get_host }}{{ time_locked_url }}">copy time locked link</a>
+  </p>
 {% endif %}
 
 {% if wnPlotFailed %}
@@ -257,6 +260,21 @@ $(document).ready(function () {
         "paging": true,
         "scrollX": true,
         "aaSorting": [[20, 'desc']],
+    });
+    
+    // copy time locked link to clipboard button
+    let clipboard = new ClipboardJS('#copy-button'); 
+    clipboard.on('success', function (e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copied!';
+        copy_button.classList.add('disabled');
+        e.clearSelection();
+    });
+
+    clipboard.on('error', function (e) {
+        let copy_button = document.getElementById('copy-button');
+        copy_button.innerHTML = 'copying failed!';
+        copy_button.classList.add('disabled');
     });
 });
 </script>

@@ -3484,6 +3484,13 @@ def wnInfo(request, site, wnname='all'):
 
     if not is_json_request(request):
         xurl = extensibleURL(request)
+        time_format = '%Y-%m-%dT%H:%M'
+        time_locked_url = removeParam(removeParam(removeParam(removeParam(xurl,
+        'date_from', mode='extensible'),
+        'date_to', mode='extensible'),
+        'hours', mode='extensible'),
+                'days', mode='extensible'
+        ) + 'date_from=' + request.session['TFIRST'].strftime(time_format) + '&date_to=' + request.session['TLAST'].strftime(time_format)
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -3501,6 +3508,7 @@ def wnInfo(request, site, wnname='all'):
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
             'errthreshold': errthreshold,
+            'time_locked_url': time_locked_url,
             'warning': warning,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
@@ -5636,13 +5644,16 @@ def errorSummary(request):
             # put into tmp table
             transaction_key = insert_to_temp_table([f['fileid'] for f in files_input_unfinished])
             extra_str = f"""select id from {get_tmp_table_name()} where TRANSACTIONKEY = {transaction_key}"""
-        else:
+        elif len(files_input_unfinished) > 0:
             extra_str = ','.join([str(f['fileid']) for f in files_input_unfinished])
-        wildCardExtension += f""" and pandaid in (
-            select pandaid from {settings.DB_SCHEMA_PANDA}.filestable4 where jeditaskid={jeditaskid} and fileid in ({extra_str})
-            union all 
-            select pandaid from {settings.DB_SCHEMA_PANDA_ARCH}.filestable_arch where jeditaskid={jeditaskid} and fileid in ({extra_str})
-        )"""
+        else:
+            extra_str = ''
+        if len(extra_str) > 0:
+            wildCardExtension += f""" and pandaid in (
+                select pandaid from {settings.DB_SCHEMA_PANDA}.filestable4 where jeditaskid={jeditaskid} and fileid in ({extra_str})
+                union all 
+                select pandaid from {settings.DB_SCHEMA_PANDA_ARCH}.filestable_arch where jeditaskid={jeditaskid} and fileid in ({extra_str})
+            )"""
     _logger.info('Finished set up view: {}'.format(time.time() - request.session['req_init_time']))
 
     if not testjobs and 'jobstatus' not in request.session['requestParams']:

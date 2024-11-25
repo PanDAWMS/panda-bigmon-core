@@ -62,6 +62,7 @@
   <li class="tabs-title"><a href="#panel_es_code" ng-click="es.enable_panel('code')">Error code</a></li>
   <li class="tabs-title"><a href="#panel_es_site" ng-click="es.enable_panel('site')">{% if 'computingsite' in requestParams %}WN{% else %}Site{% endif %}</a></li>
   <li class="tabs-title"><a href="#panel_es_user" ng-click="es.enable_panel('user')">User</a></li>
+  <li class="tabs-title"><a href="#panel_es_request" ng-click="es.enable_panel('request')">Request</a></li>
   <li class="tabs-title"><a href="#panel_es_task" ng-click="es.enable_panel('task')">Task</a></li>
 </ul>
 <div class="tabs-content" data-tabs-content="es-tabs">
@@ -86,6 +87,12 @@
     <div class="c3-plots-row row fixed-height">
       <div class="column medium-8 xlarge-10"><canvas class="chartjs_block" id="barChartErrSplit_user"></canvas></div>
       <div class="column medium-4 xlarge-2"><canvas class="chartjs_block" id="pieChartErr_user"></canvas></div>
+    </div>
+  </div>
+  <div class="tabs-panel" id="panel_es_request">
+    <div class="c3-plots-row row fixed-height">
+      <div class="column medium-8 xlarge-10"><canvas class="chartjs_block" id="barChartErrSplit_request"></canvas></div>
+      <div class="column medium-4 xlarge-2"><canvas class="chartjs_block" id="pieChartErr_request"></canvas></div>
     </div>
   </div>
   <div class="tabs-panel" id="panel_es_task">
