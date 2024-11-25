@@ -164,7 +164,7 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
             'code': ','.join(sorted(get_job_error_categories(job))),
             'task': str(job['jeditaskid']),
             'user': job['produsername'],
-            'request': str(job['reqid']),
+            'request': str(job['reqid']) if 'reqid' in job else 'None',
         })
         timestamp_list.append(job['modificationtime'])
 
