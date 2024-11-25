@@ -3484,6 +3484,13 @@ def wnInfo(request, site, wnname='all'):
 
     if not is_json_request(request):
         xurl = extensibleURL(request)
+        time_format = '%Y-%m-%dT%H:%M'
+        time_locked_url = removeParam(removeParam(removeParam(removeParam(xurl,
+        'date_from', mode='extensible'),
+        'date_to', mode='extensible'),
+        'hours', mode='extensible'),
+                'days', mode='extensible'
+        ) + 'date_from=' + request.session['TFIRST'].strftime(time_format) + '&date_to=' + request.session['TLAST'].strftime(time_format)
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
@@ -3501,6 +3508,7 @@ def wnInfo(request, site, wnname='all'):
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
             'errthreshold': errthreshold,
+            'time_locked_url': time_locked_url,
             'warning': warning,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
