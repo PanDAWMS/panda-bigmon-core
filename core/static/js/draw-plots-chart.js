@@ -192,7 +192,8 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
             parser: "YYYY-MM-DD HH:mm:ss",
             unit: 'hour',
             displayFormats: {
-              hour: 'HH:mm', // 24-hour format for hours and minutes
+              minute: 'YYYY-MM-DD HH:mm',
+              hour: 'YYYY-MM-DD HH:mm'
             },
           },
           stacked: true,
@@ -223,9 +224,9 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
       layout: {
         padding: {
           left: 0,
-          right: 20,
+          right: 0,
           top: 0,
-          bottom: 20
+          bottom: 0
         }
       },
       events: ['click', 'mousemove'],
@@ -238,6 +239,7 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
       },
       responsiveAnimationDuration: 0, // animation duration after a resize
       responsive: false,
+      maintainAspectRatio: false,
     }
   };
 
@@ -286,12 +288,13 @@ function prepare_pie_chart(raw_data, options) {
       },
       responsiveAnimationDuration: 0, // animation duration after a resize
       responsive: false,
+      maintainAspectRatio: false,
       layout: {
         padding: {
           left: 0,
           right: 0,
           top: 0,
-          bottom: 20
+          bottom: 0
         }
       },
     },

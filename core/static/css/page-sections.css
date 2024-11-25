@@ -1295,6 +1295,13 @@ canvas.chartjs_block {
   margin: 0;
 }
 
+.c3-plots-row.fixed-height canvas.chartjs_block {
+  height: 500px;
+  max-height: 500px;
+  min-height: 500px;
+}
+
+
 .bp-container-wrapper {
   margin: 0 0 0.7rem 0;}
   .row.bp-container-wrapper .columns, .row.bp-container-wrapper .column {

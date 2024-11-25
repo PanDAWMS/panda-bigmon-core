@@ -5651,7 +5651,7 @@ def errorSummary(request):
     jobs = []
     values = (
         'eventservice', 'produsername', 'produserid', 'pandaid', 'cloud', 'computingsite', 'cpuconsumptiontime',
-        'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime',
+        'jobstatus', 'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'modificationhost',
         'atlasrelease', 'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'starttime',
         'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag', 'exeerrorcode',
         'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode', 'piloterrordiag',
@@ -5665,14 +5665,23 @@ def errorSummary(request):
         panda_job_models.extend([Jobsactive4, Jobsdefined4, Jobswaiting4])
 
     # add big archived table if timewindow is more than 2 days
+    is_archived = False
     if is_archived_jobs(query['modificationtime__castdate__range']):
-        panda_job_models.append(Jobsarchived)
+        is_archived = True
 
     for model in panda_job_models:
         jobs.extend(model.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
 
+    # use indexed statechangetime field instead of default modificationtime
+    query_arch = copy.deepcopy(query)
+    if is_archived:
+        if 'modificationtime__castdate__range' in query_arch:
+            query_arch['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
+            del query_arch['modificationtime__castdate__range']
+        jobs.extend(Jobsarchived.objects.filter(**query_arch).extra(where=[wildCardExtension])[:limit].values(*values))
+
     if not is_json_request(request):
-        thread = Thread(target=totalCount, args=(panda_job_models, query, wildCardExtension, dkey))
+        thread = Thread(target=totalCount, args=(panda_job_models, query_arch, wildCardExtension, dkey))
         thread.start()
     else:
         thread = None
@@ -5691,6 +5700,7 @@ def errorSummary(request):
         is_test_jobs=testjobs,
         sortby=sortby,
         is_user_req=True if 'produsername' in request.session['requestParams'] else False,
+        is_site_req=True if 'computingsite' in request.session['requestParams'] else False,
         errHist=True,
     )
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))

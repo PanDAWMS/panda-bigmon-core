@@ -7,6 +7,7 @@ import time
 from core.libs.error import get_job_error_desc
 from core.libs.task import taskNameDict
 from core.libs.job import get_job_walltime
+from core.libs.exlib import calc_freq_time_series
 
 from django.conf import settings
 import core.constants as const
@@ -97,15 +98,16 @@ def get_job_error_categories(job):
     return error_category_list
 
 
-def prepare_binned_and_total_data(df, column):
+def prepare_binned_and_total_data(df, column, freq='10T'):
     """
     Prepare binned and total time-series data for plots
     :param df: data frame
     :param column: column in data frame which use to split values for stacking
+    :param freq: frequency for resampling
     :return:
     """
     # resample in 10-minute bins and count occurrences for each unique value in the specified column
-    resampled = df.groupby([pd.Grouper(freq='10T'), column]).size().unstack(fill_value=0)
+    resampled = df.groupby([pd.Grouper(freq=freq), column]).size().unstack(fill_value=0)
 
     # calculate total counts across all bins for pie chart
     total_counts = resampled.sum().to_dict()
@@ -145,7 +147,7 @@ def categorize_low_impact_by_percentage(df, column, threshold_percent):
     return df
 
 
-def build_error_histograms(jobs):
+def build_error_histograms(jobs, is_wn_instead_of_site=False):
     """
     Prepare histograms data by different categories
     :param jobs:
@@ -153,15 +155,19 @@ def build_error_histograms(jobs):
     """
     threshold_percent = 2  # % threshold for low-impact values
 
+    timestamp_list = []
     data = []
     for job in jobs:
         data.append({
             'modificationtime': job['modificationtime'],
-            'site': job['computingsite'],
+            'site': job['computingsite'] if not is_wn_instead_of_site else job['wn'],
             'code': ','.join(sorted(get_job_error_categories(job))),
             'task': job['jeditaskid'],
             'user': job['produsername'],
         })
+        timestamp_list.append(job['modificationtime'])
+
+    freq = calc_freq_time_series(timestamp_list, n_bins_max=60)
 
     if len(data) > 0:
         df = pd.DataFrame(data)
@@ -175,9 +181,9 @@ def build_error_histograms(jobs):
         # Generate JSON-ready data for each column
         output_data = {}
         for column in ['site', 'code', 'task', 'user']:
-            output_data[column] = prepare_binned_and_total_data(df, column)
+            output_data[column] = prepare_binned_and_total_data(df, column, freq=freq)
 
-        total_jobs_per_bin = df.resample('10T').size().reset_index(name='total')
+        total_jobs_per_bin = df.resample(freq).size().reset_index(name='total')
         total_jobs_per_bin['modificationtime'] = total_jobs_per_bin['modificationtime'].dt.strftime(
             settings.DATETIME_FORMAT)
 
@@ -191,13 +197,14 @@ def build_error_histograms(jobs):
     return output_data
 
 
-def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False,  **kwargs):
+def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False, is_site_req=False, **kwargs):
     """
     Takes a job list and produce error summaries from it
     :param jobs: list of dicts
     :param is_test_jobs:  bool: for test jobs we do not limit to "failed" jobs only
     :param sortby: str: count or alpha
     :param is_user_req: bool: we do jeditaskid in attribute summary only if a user is specified
+    :param is_site_req: bool: we do summary per worker node if True
     :param kwargs: flist and outputs
     :return: errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, error_histograms
     """
@@ -236,7 +243,11 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
     for job in jobs:
         if not is_test_jobs and job['jobstatus'] not in ['failed', 'holding']:
             continue
-        site = job['computingsite']
+        # if specific site, we do summary per worker node
+        if is_site_req:
+            site = job['wn']
+        else:
+            site = job['computingsite']
         user = job['produsername']
         taskname = ''
         if job['jeditaskid'] is not None and job['jeditaskid'] > 0:
@@ -429,7 +440,7 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
     _logger.debug('Dict -> list & sorting are done: {}'.format(time.time() - start_time))
 
     if 'errsHist' in outputs:
-        error_histograms = build_error_histograms(jobs)
+        error_histograms = build_error_histograms(jobs, is_wn_instead_of_site=is_site_req)
     _logger.debug('Built errHist: {}'.format(time.time() - start_time))
 
     return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, error_histograms
