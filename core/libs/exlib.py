@@ -379,6 +379,8 @@ def calc_freq_time_series(timestamp_list, n_bins_max=60):
     :param n_bins_max:
     :return: freq: str - for data frame grouping
     """
+    if len(timestamp_list) == 0:
+        return '10T'
     full_timerange_seconds = (max(timestamp_list) - min(timestamp_list)).total_seconds()
 
     step = 30
@@ -448,13 +450,13 @@ def build_stack_histogram(data_raw, **kwargs):
     # calc x-axis ticks, get average from each range
     x_axis_ticks = ['x']
     ranges_all_avg = np.convolve(ranges_all, np.ones(2), 'valid') / 2
-    x_axis_ticks.extend(list(np.round(ranges_all_avg, n_decimals)))
+    x_axis_ticks.extend([round_to_n_digits(r, n_decimals) for r in list(ranges_all_avg)])
 
     ranges_all = list(ranges_all)
 
     for stack_param, data in data_raw.items():
         column = [stack_param]
-        column.extend(list(np.histogram(data, ranges_all)[0]))
+        column.extend([int(r) for r in list(np.histogram(data, ranges_all)[0])])
         # do not add if all the values are zeros
         if sum(column[1:]) > 0:
             columns.append(column)
