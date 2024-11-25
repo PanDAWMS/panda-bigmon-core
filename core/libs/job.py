@@ -511,6 +511,10 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
             job['processor_type'] = 'GPU'
         else:
             job['processor_type'] = 'CPU'
+        if 'modificationhost' in job and job['modificationhost']:
+            job['wn'] = job['modificationhost'].split('@')[1] if '@' in job['modificationhost'] else job['modificationhost']
+        else:
+            job['wn'] = 'Unknown'
 
         job['durationsec'] = get_job_walltime(job)
         job['durationsec'] = job['durationsec'] if job['durationsec'] is not None else 0

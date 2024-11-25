@@ -372,6 +372,48 @@ def calc_nbins(length, n_bins_max=50):
     return n_bins
 
 
+def calc_freq_time_series(timestamp_list, n_bins_max=60):
+    """
+    Calculate N bins for time series data
+    :param timestamp_list:
+    :param n_bins_max:
+    :return: freq: str - for data frame grouping
+    """
+    full_timerange_seconds = (max(timestamp_list) - min(timestamp_list)).total_seconds()
+
+    step = 30
+    label = 'S'
+    while full_timerange_seconds/step > n_bins_max:
+        if step <= 600:
+            step += 30
+        elif step <= 3600:
+            step += 600
+            label = 'T'
+        elif step <= 3600 * 24:
+            step += 3600
+            label = 'H'
+        elif step <= 3600 * 24 * 7:
+            step += 3600 * 24
+            label = 'D'
+        elif step <= 3600 * 24 * 30:
+            step += 3600 * 24 * 7
+            label = 'W'
+        else:
+            step += 3600 * 24 * 30
+            label = 'M'
+
+    labels = {
+        'S': 1,
+        'T': 60,
+        'H': 3600,
+        'D': 3600*24,
+        'W': 3600 * 24 * 7,
+        'M': 3600 * 24 * 30,
+    }
+    freq = '{}{}'.format(math.floor(step/labels[label]), label)
+    return freq
+
+
 def build_stack_histogram(data_raw, **kwargs):
     """
     Prepare stack histogram data and calculate mean and std metrics
@@ -430,7 +472,6 @@ def build_time_histogram(data):
     :param data: list. if 1xN - counting occurances, if 2xN - sum for each occurance
     :return:
     """
-    N_BINS_MAX = 60
     agg = 'count'
     if len(data) > 0 and isinstance(data[0], list) and len(data[0]) == 2:
         agg = 'sum'
@@ -440,39 +481,7 @@ def build_time_histogram(data):
         timestamp_list = data
     else:
         timestamp_list = [item[0] for item in data]
-
-    full_timerange_seconds = (max(timestamp_list) - min(timestamp_list)).total_seconds()
-
-    step = 30
-    label = 'S'
-    while full_timerange_seconds/step > N_BINS_MAX:
-        if step <= 600:
-            step += 30
-        elif step <= 3600:
-            step += 600
-            label = 'T'
-        elif step <= 3600 * 24:
-            step += 3600
-            label = 'H'
-        elif step <= 3600 * 24 * 7:
-            step += 3600 * 24
-            label = 'D'
-        elif step <= 3600 * 24 * 30:
-            step += 3600 * 24 * 7
-            label = 'W'
-        else:
-            step += 3600 * 24 * 30
-            label = 'M'
-
-    labels = {
-        'S': 1,
-        'T': 60,
-        'H': 3600,
-        'D': 3600*24,
-        'W': 3600 * 24 * 7,
-        'M': 3600 * 24 * 30,
-    }
-    freq = '{}{}'.format(math.floor(step/labels[label]), label)
+    freq = calc_freq_time_series(timestamp_list, n_bins_max=60)
 
     # prepare binned data
     if agg == 'count':
