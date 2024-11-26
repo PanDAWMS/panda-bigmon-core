@@ -438,8 +438,8 @@ def build_stack_histogram(data_raw, **kwargs):
     for site, sd in data_raw.items():
         data_all.extend(sd)
 
-    stats.append(np.average(data_all) if not np.isnan(np.average(data_all)) else 0)
-    stats.append(np.std(data_all) if not np.isnan(np.std(data_all)) else 0)
+    stats.append(round_to_n_digits(np.average(data_all), 3) if not np.isnan(np.average(data_all)) else 0)
+    stats.append(round_to_n_digits(np.std(data_all), 3) if not np.isnan(np.std(data_all)) else 0)
 
     if stats[1] == 0:
         n_bins = 1
