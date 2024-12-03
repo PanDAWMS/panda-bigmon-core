@@ -3395,11 +3395,14 @@ def siteInfo(request, site=''):
 
 
 @login_customrequired
-def wnInfo(request, site, wnname='all'):
+def wnInfo(request, site=None, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
     valid, response = initRequest(request)
     if not valid:
         return response
+
+    if not site:
+        return error_response(request, message="No computing site specified", status=400)
 
     jobs_url = '?computingsite={}&mode=nodrop'.format(site)
     if 'hours' in request.session['requestParams']:
