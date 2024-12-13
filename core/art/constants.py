@@ -9,6 +9,8 @@ from types import MappingProxyType
 CACHE_TIMEOUT_MINUTES = 15
 RETENTION_PERIOD_DAYS = 180  # 6 months
 EOS_PREFIX = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
+EOS_PREFIX_LOCAL = 'https://atlas-art-data.web.cern.ch/atlas-art-data/local-output/'
+INITIAL_LOCAL_ID = 1
 
 # dicts
 DATETIME_FORMAT = MappingProxyType({
@@ -118,3 +120,4 @@ GITLAB_PATH_PER_PACKAGE =  MappingProxyType({
     "egammaValidation": "Reconstruction/egamma/egammaValidation/test"
 })
 
+AUTHORIZED_HOSTS = ['aibuild16-025', 'aibuild16-026']
