@@ -28,6 +28,7 @@ class ARTTests(models.Model):
     attemptnr = models.DecimalField(decimal_places=0, max_digits=3, db_column='attemptnr')
     maxattempt = models.DecimalField(decimal_places=0, max_digits=3, db_column='maxattempt')
     status = models.DecimalField(decimal_places=0, max_digits=3, db_column='status')
+    test_type = models.CharField(max_length=1000, db_column='test_type', null=True, blank=True)
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."art_tests"'
 

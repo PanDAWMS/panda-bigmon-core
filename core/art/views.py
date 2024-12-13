@@ -5,6 +5,7 @@ import logging
 import json
 import re
 import time
+import socket
 import multiprocessing
 from datetime import datetime, timedelta
 
@@ -1105,6 +1106,18 @@ def loadSubResults(request):
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
+def get_client_ip(request):
+    # Get the 'X-Forwarded-For' header (which contains the real client IP if behind a proxy)
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        # If there are multiple IP addresses in the header (because of multiple proxies),
+        # the first one is usually the original client IP
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        # Otherwise, use the direct connection's IP address (REMOTE_ADDR)
+        ip = request.META.get('REMOTE_ADDR')
+
+    return ip
 
 @csrf_exempt
 def registerARTTest(request):
@@ -1131,13 +1144,46 @@ def registerARTTest(request):
     tarindex = None
     inputfileid = None
     gitlabid = None
+    test_type = None
 
     # log all the req params for debug
     _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
 
     # Checking whether params were provided
+    if 'test_type' in request.session['requestParams']:
+        test_type = request.session['requestParams']['test_type']
+
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams'] and 'testname' in request.session['requestParams']:
         pandaid = request.session['requestParams']['pandaid']
+        testname = request.session['requestParams']['testname']
+    elif test_type == 'local':
+        '''
+        session_id = request.COOKIES.get('sessionid')
+        if session_id:
+        '''
+        client_ip = get_client_ip(request)
+        try:
+        # Perform reverse DNS lookup to get the client's hostname
+            art_host = socket.gethostbyaddr(client_ip)[0]
+        except socket.herror:
+        # If reverse DNS lookup fails, return the IP address as fallback
+            art_host = client_ip
+
+        if art_host.split('.')[0] in art_const.AUTHORIZED_HOSTS: 
+            pass
+        else:
+            return JsonResponse({"error": "Invalid ART API user!"}, status=403)
+
+        # Generate job ID for ART Local
+        query = {'test_type': 'local'}
+        localIDs = []
+        localIDs.extend(ARTTests.objects.filter(**query).values('pandaid'))
+        if localIDs:
+            newIDs = sorted(localIDs, key=lambda x: x['pandaid'])
+            pandaid = int(newIDs[-1]['pandaid']) + 1
+        else:
+            pandaid = art_const.INITIAL_LOCAL_ID
+        _logger.info("JobID: {} was generated".format(pandaid))
         testname = request.session['requestParams']['testname']
     else:
         data = {'exit_code': -1, 'message': "There were not recieved any pandaid and testname"}
@@ -1206,56 +1252,61 @@ def registerARTTest(request):
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
-    # Checking if provided pandaid exists in panda db
-    query = {'pandaid': pandaid}
-    values = ('pandaid', 'jeditaskid', 'username', 'computingsite', 'jobname')
-    jobs = []
-    jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
-    try:
-       job = jobs[0]
-    except:
-        data = {'exit_code': -1, 'message': "Provided pandaid does not exists"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
-
-    # Checking whether provided pandaid is art job
-    if 'username' in job and job['username'] != 'artprod':
-        data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
-
-    # Preparing params to register art job
-    branch = concat_branch({'nightly_release_short':nightly_release_short, 'project': project, 'platform': platform})
-    if 'computingsite' in job:
-        computingsite = job['computingsite']
-    if 'jeditaskid' in job:
-        jeditaskid = job['jeditaskid']
-
-        # get files -> extract log tarball name, attempts
-        files = []
-        fquery = {'jeditaskid': jeditaskid, 'pandaid': pandaid, 'type__in': ('pseudo_input', 'input', 'log')}
-        files.extend(Filestable4.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
-        # count of attempts starts from 0, for readability change it to start from 1
-        if len(files) > 0:
-            input_files = [f for f in files if f['type'] in ('pseudo_input', 'input')]
-            if len(input_files) > 0:
-                attemptnr = 1 + max([f['attemptnr'] for f in input_files])
-                inputfileid = max([f['fileid'] for f in input_files])
-            log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
-            if len(log_lfn) > 0:
-                try:
-                    tarindex = int(re.search('.([0-9]{6}).log.', log_lfn[0]).group(1))
-                except:
-                    _logger.info('Failed to extract tarindex from log lfn')
-                    tarindex = None
-    if 'jobname' in job:
+    # Only check ART Grid tests
+    if test_type and test_type == 'local':
+        branch = concat_branch({'nightly_release_short':nightly_release_short, 'project': project, 'platform': platform})
+        attemptnr = 1
+    else:
+        # Checking if provided pandaid exists in panda db
+        query = {'pandaid': pandaid}
+        values = ('pandaid', 'jeditaskid', 'username', 'computingsite', 'jobname')
+        jobs = []
+        jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
         try:
-            gitlabid = int(re.search('.([0-9]{6,8}).', job['jobname']).group(1))
+            job = jobs[0]
         except:
-            _logger.info('Failed to extract tarindex from log lfn')
-            gitlabid = None
-    _logger.info(f"""Got job-related metadata for test {pandaid}: 
-        computingsite={computingsite}, tarindex={tarindex}, inputfileid={inputfileid}, attemptnr={attemptnr}""")
+            data = {'exit_code': -1, 'message': "Provided pandaid does not exists"}
+            _logger.warning(data['message'] + str(request.session['requestParams']))
+            return HttpResponse(json.dumps(data), status=422, content_type='application/json')
+
+        # Checking whether provided pandaid is art job
+        if 'username' in job and job['username'] != 'artprod':
+            data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
+            _logger.warning(data['message'] + str(request.session['requestParams']))
+            return HttpResponse(json.dumps(data), status=422, content_type='application/json')
+
+        # Preparing params to register art job
+        branch = concat_branch({'nightly_release_short':nightly_release_short, 'project': project, 'platform': platform})
+        if 'computingsite' in job:
+            computingsite = job['computingsite']
+        if 'jeditaskid' in job:
+            jeditaskid = job['jeditaskid']
+
+            # get files -> extract log tarball name, attempts
+            files = []
+            fquery = {'jeditaskid': jeditaskid, 'pandaid': pandaid, 'type__in': ('pseudo_input', 'input', 'log')}
+            files.extend(Filestable4.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
+            # count of attempts starts from 0, for readability change it to start from 1
+            if len(files) > 0:
+                input_files = [f for f in files if f['type'] in ('pseudo_input', 'input')]
+                if len(input_files) > 0:
+                    attemptnr = 1 + max([f['attemptnr'] for f in input_files])
+                    inputfileid = max([f['fileid'] for f in input_files])
+                log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
+                if len(log_lfn) > 0:
+                    try:
+                        tarindex = int(re.search('.([0-9]{6}).log.', log_lfn[0]).group(1))
+                    except:
+                        _logger.info('Failed to extract tarindex from log lfn')
+                        tarindex = None
+        if 'jobname' in job:
+            try:
+                gitlabid = int(re.search('.([0-9]{6,8}).', job['jobname']).group(1))
+            except:
+                _logger.info('Failed to extract tarindex from log lfn')
+                gitlabid = None
+        _logger.info(f"""Got job-related metadata for test {pandaid}: 
+            computingsite={computingsite}, tarindex={tarindex}, inputfileid={inputfileid}, attemptnr={attemptnr}""")
 
     # extract datetime from str nightly time
     nightly_tag_date = None
@@ -1265,6 +1316,8 @@ def registerARTTest(request):
         _logger.exception('Failed to parse date from nightly_tag')
 
     # Check whether the pandaid has been registered already
+    if test_type and test_type == 'local':
+        computingsite = "ART Local"
     if ARTTests.objects.filter(pandaid=pandaid).count() == 0:
         # INSERT ROW
         try:
@@ -1289,9 +1342,10 @@ def registerARTTest(request):
                 gitlabid=gitlabid,
                 computingsite=computingsite,
                 status=art_const.TEST_STATUS_INDEX['active'],
+                test_type=test_type,
             )
             insertRow.save()
-            data = {'exit_code': 0, 'message': "Provided pandaid has been successfully registered"}
+            data = {'exit_code': 0, 'PandaID': pandaid, 'message': "Provided pandaid has been successfully registered"}
             _logger.info(data['message'] + str(request.session['requestParams']))
         except Exception as e:
             data = {'exit_code': 0, 'message': "Failed to register test, can not save the row to DB"}
