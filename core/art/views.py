@@ -38,7 +38,7 @@ from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
 from core.common.models import Filestable4
 
 from core.art.utils import setupView, get_test_diff, get_result_for_multijob_test, concat_branch, \
-    find_last_successful_test, build_gitlab_link, clean_tests_list
+    find_last_successful_test, build_gitlab_link, clean_tests_list, get_client_ip
 
 from django.conf import settings
 import core.art.constants as art_const
@@ -1144,49 +1144,50 @@ def registerARTTest(request):
     tarindex = None
     inputfileid = None
     gitlabid = None
-    test_type = None
+    test_type = "grid"
 
     # log all the req params for debug
     _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
 
     # Checking whether params were provided
-    if 'test_type' in request.session['requestParams']:
+    if 'requestParams' in request.session and 'test_type' in request.session['requestParams']:
         test_type = request.session['requestParams']['test_type']
 
-    if 'requestParams' in request.session and 'pandaid' in request.session['requestParams'] and 'testname' in request.session['requestParams']:
-        pandaid = request.session['requestParams']['pandaid']
+    if 'requestParams' in request.session and 'testname' in request.session['requestParams']:
         testname = request.session['requestParams']['testname']
+    else:
+        data = {'exit_code': -1, 'message': "There were not received any testname"}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+
+    if 'requestParams' in request.session and 'pandaid' in request.session['requestParams']:
+        pandaid = request.session['requestParams']['pandaid']
     elif test_type == 'local':
-        '''
-        session_id = request.COOKIES.get('sessionid')
-        if session_id:
-        '''
+        #session_id = request.COOKIES.get('sessionid')
+        #if session_id:
         client_ip = get_client_ip(request)
         try:
-        # Perform reverse DNS lookup to get the client's hostname
+            # Perform reverse DNS lookup to get the client's hostname
             art_host = socket.gethostbyaddr(client_ip)[0]
         except socket.herror:
-        # If reverse DNS lookup fails, return the IP address as fallback
+            # If reverse DNS lookup fails, return the IP address as fallback
             art_host = client_ip
 
-        if art_host.split('.')[0] in art_const.AUTHORIZED_HOSTS: 
-            pass
-        else:
+        if art_host.split('.')[0] not in art_const.AUTHORIZED_HOSTS:
             return JsonResponse({"error": "Invalid ART API user!"}, status=403)
 
         # Generate job ID for ART Local
         query = {'test_type': 'local'}
-        localIDs = []
-        localIDs.extend(ARTTests.objects.filter(**query).values('pandaid'))
-        if localIDs:
-            newIDs = sorted(localIDs, key=lambda x: x['pandaid'])
-            pandaid = int(newIDs[-1]['pandaid']) + 1
+        pandaid = ARTTests.objects.filter(test_type='local').aggregate(Max('pandaid'))
+        if len(pandaid) > 0 and pandaid['pandaid__max'] is not None:
+            pandaid = int(pandaid['pandaid__max']) + 1
         else:
             pandaid = art_const.INITIAL_LOCAL_ID
         _logger.info("JobID: {} was generated".format(pandaid))
-        testname = request.session['requestParams']['testname']
+        attemptnr = 1
+        computingsite = "ART Local"
     else:
-        data = {'exit_code': -1, 'message': "There were not recieved any pandaid and testname"}
+        data = {'exit_code': -1, 'message': "There were not received any pandaid"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=400, content_type='application/json')
 
@@ -1253,10 +1254,8 @@ def registerARTTest(request):
         return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
     # Only check ART Grid tests
-    if test_type and test_type == 'local':
-        branch = concat_branch({'nightly_release_short':nightly_release_short, 'project': project, 'platform': platform})
-        attemptnr = 1
-    else:
+    branch = concat_branch({'nightly_release_short':nightly_release_short, 'project': project, 'platform': platform})
+    if test_type and test_type == 'grid':
         # Checking if provided pandaid exists in panda db
         query = {'pandaid': pandaid}
         values = ('pandaid', 'jeditaskid', 'username', 'computingsite', 'jobname')
@@ -1276,7 +1275,6 @@ def registerARTTest(request):
             return HttpResponse(json.dumps(data), status=422, content_type='application/json')
 
         # Preparing params to register art job
-        branch = concat_branch({'nightly_release_short':nightly_release_short, 'project': project, 'platform': platform})
         if 'computingsite' in job:
             computingsite = job['computingsite']
         if 'jeditaskid' in job:
@@ -1345,7 +1343,7 @@ def registerARTTest(request):
                 test_type=test_type,
             )
             insertRow.save()
-            data = {'exit_code': 0, 'PandaID': pandaid, 'message': "Provided pandaid has been successfully registered"}
+            data = {'exit_code': 0, 'pandaid': pandaid, 'message': "ART test has been successfully registered"}
             _logger.info(data['message'] + str(request.session['requestParams']))
         except Exception as e:
             data = {'exit_code': 0, 'message': "Failed to register test, can not save the row to DB"}
