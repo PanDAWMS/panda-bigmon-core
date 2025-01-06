@@ -33,12 +33,14 @@ def get_pandajob_models_by_year(timewindow):
             2022: [Jobsarchived, ],
             2023: [Jobsarchived, ],
             2024: [Jobsarchived, Jobsarchived4],
+            2025: [Jobsarchived, Jobsarchived4],
         }
     else:
         pjm_year_dict = {
             2022: [Jobsarchived, ],
             2023: [Jobsarchived, ],
             2024: [Jobsarchived, Jobsarchived4],
+            2025: [Jobsarchived, Jobsarchived4],
         }
     pandajob_models = []
 
