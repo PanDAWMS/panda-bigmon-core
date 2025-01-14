@@ -37,7 +37,7 @@ def globalviewDemo(request):
     TO_CHAR(j.ecv,'DD-MON HH24:MI') as \"CVMFS\", j.SCV as \"S.CV\",
     a.tcrel as \"TAG\", a.name as \"REL\", p.projname \"PROJ\",
     cs.nc, cs.nc_er, cs.nc_pb,
-    ts.nt, ts.nt_er, ts.nt_pb,
+    ts.nt, ts.nt_er, ts.nt_pb, ts.nt_to,
     TO_CHAR(j.jid),
     j.lastpj,
     j.relid,
@@ -53,7 +53,7 @@ def globalviewDemo(request):
       on n.nid=a.nid,
     (select arch||'-'||os||'-'||comp||'-'||opt as pl, jid, lartwebarea, webarea from jobs@ATLR.CERN.CH ) platf,
     (select ncompl as nc, ner as nc_er, npb as nc_pb, jid, projid from cstat@ATLR.CERN.CH ) cs,
-    (select ncompl as nt, ner as nt_er, npb as nt_pb, jid, projid from tstat@ATLR.CERN.CH ) ts
+    (select ncompl as nt, ner as nt_er, npb as nt_pb, nto as nt_to, jid, projid from tstat@ATLR.CERN.CH ) ts
      WHERE
     j.jid BETWEEN to_number(to_char(SYSDATE-10, 'YYYYMMDD'))*10000000
      AND to_number(to_char(SYSDATE, 'YYYYMMDD')+1)*10000000
@@ -69,17 +69,23 @@ def globalviewDemo(request):
     rows_s = []
     dd = defaultdict(list)
     for row1 in result:
+# row1[22] is the numner of timed-out test - row added in Jan 2025 - needed redefinition from None for old entries
+        row122=row1[22]
+        if row122 is None or row122 == None:
+            row122 = 0
         if row1[0] not in dd:
-            if row1[23] == 1:  # LAST PROJECT
+            if row1[24] == 1:  # LAST PROJECT
                 dd[row1[0]] += row1[1:]
+                dd[row1[0]][21] = row122
         else:
-            if row1[24] == dd[row1[0]][23]:
+            if row1[25] == dd[row1[0]][24]:
                 dd[row1[0]][15] += row1[16]
                 dd[row1[0]][16] += row1[17]
                 dd[row1[0]][17] += row1[18]
                 dd[row1[0]][18] += row1[19]
                 dd[row1[0]][19] += row1[20]
                 dd[row1[0]][20] += row1[21]
+                dd[row1[0]][21] += row122
     reslt2 = []
     dict_g = {'CI': 'AA0', r'^[\d_\-]*PRODUCTION.*$': 'AA01', r'^[\d_\-]*DEVELOP.*$': 'AA02',
               r'^[\d_\-]*MAIN.*$': 'AA03',
@@ -96,9 +102,10 @@ def globalviewDemo(request):
         v[0] = row10u
         #        v[13]='<a href="http://atlas-nightlies-browser.cern.ch/~platinum/nightlies/info?tp=g&nightly='+k+'&rel='+v[13]+'&ar=*">'+v[13]+'</a>'
         ar1.extend(v)
-        m_tcompl = v[17]
-        if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0: 
-            v[18]='N/A'; v[19]='N/A'
+    #   Next 3 commented out lines are useless since "a1" has been extended above with 'v'
+    #    m_tcompl = v[17]
+    #    if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
+    #        v[18]='N/A'; v[19]='N/A'
         ar1.append(name_code)
         reslt2.append(ar1)
         lar1 = len(ar1)
@@ -124,10 +131,10 @@ def globalviewDemo(request):
         a0001 = str(row[17]) + ' (' + str(row[18]) + ')'
         m_tcompl = row[19]
         if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
-            row[20]='N/A'; row[21]='N/A';
-        a0002 = str(row[20]) + ' (' + str(row[21]) + ')'
+            row[20]='N/A'; row[21]='N/A'; row[22]='N/A';
+        a0002 = str(row[20]) + ' (' + str(row[21]) + ') ' + str(row[22])
         
-        t_cv_clie=row[27];s_cv_clie=row[28]
+        t_cv_clie=row[28];s_cv_clie=row[29]
         t_cv_serv=row[11];s_cv_serv=row[12]
         tt_cv_serv='N/A' 
         if t_cv_serv != None and t_cv_serv != '': tt_cv_serv=t_cv_serv
@@ -143,10 +150,10 @@ def globalviewDemo(request):
         if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
         else: i_combo_cv_clie=i_cv_clie
 
-        lartwebarea=row[29]
+        lartwebarea=row[30]
         if lartwebarea is None or lartwebarea == '':
             lartwebarea = "https://atlas-art-data.web.cern.ch/atlas-art-data/local-output"
-        erla=row[31];sula=row[32]; wala=row[33]; eim=row[34]; sim=row[35]; vext=row[36]; area_suffix=row[37]; webarea_cur=row[38]
+        erla=row[32];sula=row[33]; wala=row[34]; eim=row[35]; sim=row[36]; vext=row[37]; area_suffix=row[38]; webarea_cur=row[39]
         if erla == None or erla == '': erla='N/A'
         if sula == None or sula == '': sula='N/A'
         if wala == None or wala == '': wala = 'N/A'
@@ -208,7 +215,7 @@ def globalviewDemo(request):
         list9.append(local_art_res)
         list9.append(val_cache_transf)
         list9.append(tt_cv_clie)
-        list9.append(row[39])
+        list9.append(row[40])
 
         reslt3.append(list9)
 
