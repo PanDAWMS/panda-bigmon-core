@@ -46,7 +46,7 @@
                 <th>Build time</th>
                 <th>Comp. errors<BR>(w/warnings)</th>
                 <th>Test time</th>
-                <th>CI tests errors<BR>(w/warnings)</th>
+                <th>CI tests errors<BR>(w/warnings)<BR>timeouts</th>
                 <th>Host</th>
      </thead>
      <tbody></tbody>
@@ -71,7 +71,9 @@
     <LI>BUILD TIME - Time when the compilation stage was completed
     <LI>COMPILATION ERRORS (w/warnings) - Shows the number of packages with compilation errors. In parentheses, it includes both errors and warnings
     <LI>TEST TIME - Time when the test stage was completed
-    <LI>CI TEST ERRORS (w/warnings) -  Indicates the number of local tests with errors. In parentheses, it shows both errors and warnings
+    <LI>CI TEST ERRORS (w/warnings) timeouts - Indicates the number of local tests with errors.
+    The value in parentheses represents the count of tests that have both errors and warnings.
+    The third value represents the number of timed-out tests
     <LI>HOST - Name of the build node where all stages were run
 </UL>
 </div>
@@ -134,13 +136,15 @@ var cidisplayTable = $('#CISummary').dataTable({
                  $('td:eq(0)', row).css("background-color", hexV0).css("border", "1px solid rgb(197, 219, 236)");
                  var v9=($('td:eq(9)',row).text().split(" "))[0];
                  var v11=($('td:eq(11)',row).text().split(" "))[0];
+                 var v112=($('td:eq(11)',row).text().split(" "))[2];
+                 if ( /\D/.test(v112) ) { v112 = 0; }
                  if ( v9 > 6 ) { $('td:eq(9)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v9 > 0 ) { $('td:eq(9)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( /\s/.test(v9) )  { $('td:eq(9)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(9)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
-                 if ( v11 > 0 && v11 <= 1 ) { $('td:eq(11)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v11 > 1 ) { $('td:eq(11)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v11 != 'N/A' )  { $('td:eq(11)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v11 > 0 && v11 <= 1 && v112 == 0 ) { $('td:eq(11)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v11 > 1 || v112 > 0 ) { $('td:eq(11)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( ! /\D/.test(v11) )  { $('td:eq(11)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(11)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 
 /*
