@@ -161,14 +161,14 @@ def civiewDemo(request):
               if tpcto is None:
                   tpcto=0
           s_checkout='0'
-          if row01[25] is not None:
-              s_checkout=str(row01[25])
+          if row01[26] is not None:
+              s_checkout=str(row01[26])
           s_config='0'
-          if row01[23] is not None:
-              s_config=str(row01[23])
-          s_inst='0'
           if row01[24] is not None:
-              s_inst=str(row01[24])
+              s_config=str(row01[24])
+          s_inst='0'
+          if row01[25] is not None:
+              s_inst=str(row01[25])
           t_bstart='N/A'
           if row01[3] is not None:
               t_bstart=row01[3].strftime('%Y/%m/%d %H:%M')

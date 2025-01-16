@@ -123,7 +123,7 @@ var ndisplayTable = $('#NSummary').dataTable({
                  else if ( /\D/.test(v8) )  { $('td:eq(6)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(6)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  if ( v10 > 0 && v10 <=5 && v102 >= 0 && v102 <= 3  ) { $('td:eq(9)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v10 == 0 && v102 >= 0 && v102 <= 3 ) { $('td:eq(9)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v10 == 0 && v102 > 0 && v102 <= 3 ) { $('td:eq(9)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v10 > 5 || v102 > 3 ) { $('td:eq(9)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( ! /\D/.test(v10) )  { $('td:eq(9)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(9)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
