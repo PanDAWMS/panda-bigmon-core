@@ -138,6 +138,9 @@ def setupView(request):
             if p == f:
                 query[f] = v
 
+    # For transiton period to integrate ART Local tests, temporarily requiring test_type=grid to only show ART Grid test
+    query['test_type'] = "grid"
+
     return query, query_str
 
 
@@ -325,3 +328,17 @@ def clean_tests_list(tests, add_link_previous_attempt=False):
             tests_filtered.append(t)
 
     return tests_filtered
+
+
+def get_client_ip(request):
+    # Get the 'X-Forwarded-For' header (which contains the real client IP if behind a proxy)
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        # If there are multiple IP addresses in the header (because of multiple proxies),
+        # the first one is usually the original client IP
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        # Otherwise, use the direct connection's IP address (REMOTE_ADDR)
+        ip = request.META.get('REMOTE_ADDR')
+
+    return ip
