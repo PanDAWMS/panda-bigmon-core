@@ -1106,18 +1106,6 @@ def loadSubResults(request):
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
-def get_client_ip(request):
-    # Get the 'X-Forwarded-For' header (which contains the real client IP if behind a proxy)
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        # If there are multiple IP addresses in the header (because of multiple proxies),
-        # the first one is usually the original client IP
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        # Otherwise, use the direct connection's IP address (REMOTE_ADDR)
-        ip = request.META.get('REMOTE_ADDR')
-
-    return ip
 
 @csrf_exempt
 def registerARTTest(request):
@@ -1314,8 +1302,6 @@ def registerARTTest(request):
         _logger.exception('Failed to parse date from nightly_tag')
 
     # Check whether the pandaid has been registered already
-    if test_type and test_type == 'local':
-        computingsite = "ART Local"
     if ARTTests.objects.filter(pandaid=pandaid).count() == 0:
         # INSERT ROW
         try:
