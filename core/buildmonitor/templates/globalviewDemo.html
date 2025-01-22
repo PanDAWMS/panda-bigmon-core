@@ -38,7 +38,7 @@
     <th>Recent<BR>Release</th>
     <th>Build time</th>
     <th>Compilation errors<BR>(w/warnings)</th>
-    <th>CTest (or CI)<BR>test errors<BR>(w/warnings)</th>
+    <th>CTest (or CI)<BR>test errors<BR>(w/warnings)<BR>timeouts</th>
     <th>ART<BR>LOCAL</th>
     <th>ART<BR>GRID</th>
     <th>CVMFS<BR>(on client)</th>
@@ -59,7 +59,9 @@
       <LI>RECENT RELEASE - Name of the latest release built, reflecting the job date
       <LI>BUILD TIME - Time when the build was completed
       <LI>COMPILATION ERRORS (w/warnings) - Shows the number of packages with compilation errors. In parentheses, it includes both errors and warnings
-      <LI>CTEST (or CI) TEST ERRORS (w/warnings) -  Indicates the number of local tests with errors. In parentheses, it shows both errors and warnings.
+      <LI>CTEST (or CI) TEST ERRORS (w/warnings) timeouts - Indicates the number of local tests with errors.
+      The value in parentheses represents the count of tests that have both errors and warnings.
+      The third value represents the number of timed-out tests.
       This includes unit test results for nightly builds. For CI tests, it also includes local integration tests. ART tests are excluded
       <LI>ART LOCAL - Displays the number of ART tests run on a local CERN cluster.
       Color-coded numbers represent test statuses: green for succeeded, brown-red for finished with Athena succeeded and sub-steps failed, and red for failed.
@@ -73,8 +75,6 @@
 </div>
   </div>
 {% endblock %}
-
-
 
 {% block js_body_page %}
 <script nonce={{request.csp_nonce}}>
@@ -96,13 +96,16 @@ var globaldisplayTable = $('#firstGlobalExample').dataTable({
 "rowCallback": function( row, data, displayIndex ) {
                  var v4=($('td:eq(4)',row).text().split(" "))[0];
                  var v5=($('td:eq(5)',row).text().split(" "))[0];
+                 var v52=($('td:eq(5)',row).text().split(" "))[2];
+                 if ( /\D/.test(v52) ) { v52 = 0; }
                  if ( v4 > 6 ) { $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( /\s/.test(v4) )  { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( ! /\D/.test(v4) ) { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
-                 if ( v5 > 0 && v5 <= 5 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v5 > 5 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+                 if ( v5 > 0 && v5 <= 5 && v52 >= 0 && v52 <= 3 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v5 == 0 && v52 > 0 && v52 <= 3 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+                 else if ( v5 > 5 || v52 > 3 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
                  else if ( ! /\D/.test(v5) )  { $('td:eq(5)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
                  else { $('td:eq(5)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 

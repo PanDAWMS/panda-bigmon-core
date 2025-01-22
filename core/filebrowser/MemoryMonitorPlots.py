@@ -74,6 +74,19 @@ def get_seconds(line):
     return seconds
 
 
+def is_cut_last_points(data):
+    """
+    Decide if the last point(s) of the rate plots needs to be removed for better representation
+    :param data: list of y values
+    :return: bool
+    """
+    if data[-1] == 0:
+        return True
+    else:
+        return False
+
+
+
 def get_payload_steps(payload_stdout_path):
     """
     Read payload.stdout log to find name and start time in min of each step
@@ -304,13 +317,9 @@ def getPrMonPlotsData(request, pandaid=-1):
             tmp.extend(raw_data[mm].tolist())
             plots_data['memory']['data'].append(tmp)
 
-            is_cut_rate_plot_data = False
-            if tmp[-1] == 0:
-                is_cut_rate_plot_data = True
-
             tmp = [legendnames[mm]]
             tmp.extend(raw_data[mm + '_rate'].tolist())
-            if is_cut_rate_plot_data:
+            if is_cut_last_points(tmp):
                 tmp = tmp[:-1]
             plots_data['memory_rate']['data'].append(tmp)
 
@@ -319,13 +328,9 @@ def getPrMonPlotsData(request, pandaid=-1):
             tmp.extend(raw_data[mi].tolist())
             plots_data['io']['data'].append(tmp)
 
-            is_cut_rate_plot_data = False
-            if tmp[-1] == 0:
-                is_cut_rate_plot_data = True
-
             tmp = [legendnames[mi]]
             tmp.extend(raw_data[mi + '_rate'].tolist())
-            if is_cut_rate_plot_data:
+            if is_cut_last_points(tmp):
                 tmp = tmp[:-1]
             plots_data['io_rate']['data'].append(tmp)
 
@@ -334,13 +339,9 @@ def getPrMonPlotsData(request, pandaid=-1):
             tmp.extend(raw_data[mm].tolist())
             plots_data['gpu_memory']['data'].append(tmp)
 
-            is_cut_rate_plot_data = False
-            if tmp[-1] == 0:
-                is_cut_rate_plot_data = True
-
             tmp = [legendnames[mm]]
             tmp.extend(raw_data[mm + '_rate'].tolist())
-            if is_cut_rate_plot_data:
+            if is_cut_last_points(tmp):
                 tmp = tmp[:-1]
             plots_data['gpu_memory_rate']['data'].append(tmp)
 
@@ -361,15 +362,24 @@ def getPrMonPlotsData(request, pandaid=-1):
             job_memory_leak_x2 = jobs[0].get('memoryleakx2', None)  # memory leak square statistic
             plots_details['memory_fit']['title'] += f' (leak={job_memory_leak}KB/s; \u03c7\u00b2={job_memory_leak_x2}) '
             if job_memory_leak is not None and job_memory_leak > 0:
-                # we plot memory fit i.e. pss+swap & memory leak slope
+                # we plot memory fit i.e. pss+swap & memory leak slope i.e. a for y=ax+b
                 job_memory_leak_gb_per_min = job_memory_leak * 60. / 1000. / 1000.  # transform KB/s to MB/min
                 plots_data['memory_fit'] = {'data': [['x']], 'details': plots_details['memory_fit']}
                 plots_data['memory_fit']['data'][0].extend(raw_data['wtime_min'].tolist())
                 plots_data['memory_fit']['data'].append(
                     ['PSS+SWAP', ] + [sum(x) for x in zip(raw_data['pss'].tolist(), raw_data['swap'].tolist())])
+                # find b for y=ax+b, depending on the number of available data points, take average of +-X points
+                if len(raw_data['wtime_min']) >= 100:
+                    range_points = [2, 10]
+                elif 10 < len(raw_data['wtime_min']) < 100:
+                    range_points = [2, 5]
+                else:
+                    # take first point
+                    range_points = [1, 2]
+                b = sum(plots_data['memory_fit']['data'][1][range_points[0]:range_points[1]])/(range_points[1]-range_points[0])
                 plots_data['memory_fit']['data'].append(
                     ['Fitted memory utilization', ] +
-                    [round(x * job_memory_leak_gb_per_min, 2) for x in raw_data['wtime_min'].tolist()])
+                    [round(b + x * job_memory_leak_gb_per_min, 2) for x in raw_data['wtime_min'].tolist()])
 
         # set ymax for plots
         for pname, pdet in plots_details.items():

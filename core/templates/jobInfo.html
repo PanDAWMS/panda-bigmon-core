@@ -106,6 +106,12 @@
 	<td colspan="20"> {{ fileSummary }} </td>
 </tr>
 {% endif %}
+{% if 'jobinfo' in job and job.jobinfo|length > 0 %} 
+  <tr>
+    <th>Job info:</th>
+    <td colspan="20"> {{ job.jobinfo }} </td>
+  </tr>
+{% endif %}
 </tbody>
 </table>
 </div>
@@ -147,7 +153,6 @@
     </tbody>
   </table>
 {% endif %}
-
 
 {% if job.metastruct and job.metastruct.exitCode and job.metastruct.exitCode > 0 %}
 <div class="card bp-container-simple alert">
@@ -552,7 +557,7 @@ function openAllLogs() {
       logLinksArray.push('{{stdlog}}');
       logLinksArray.push('{{stdjdl}}');
       logLinksArray.push("{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}");
-      logLinksArray.push("https://os-atlas.cern.ch/kibana/app/discover#/?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-10d,to:now))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'jediTaskID:{{job.jeditaskid}}'),sort:!('@timestamp',desc))")
+      logLinksArray.push("https://os-atlas.cern.ch/dashboards/app/discover#/?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-10d,to:now))&_a=(columns:!(fields.type,logLevel,message),filters:!(),index:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',interval:auto,query:(language:lucene,query:'jediTaskID:{{job.jeditaskid}}'),sort:!('@timestamp',desc))")
    }
   }
   else {

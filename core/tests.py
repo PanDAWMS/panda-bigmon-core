@@ -249,7 +249,7 @@ class BPCoreTest(unittest.TestCase):
         response = self.client.get('/errors/?json=1&limit=10&' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        self.assertIsInstance(data, list)
+        self.assertIsInstance(data, dict)
 
     # files
     def test_files(self):

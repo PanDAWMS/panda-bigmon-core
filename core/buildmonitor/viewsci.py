@@ -106,7 +106,7 @@ def civiewDemo(request):
 
         dict_p = {'jid': jid_sel}
         query2 = """
-            select to_char(jid),projname,econf,eb,sb,ei,si,eafs,safs,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco 
+            select to_char(jid),projname,econf,eb,sb,ei,si,eafs,safs,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,nto,pcto,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco 
             from jobstat@ATLR.CERN.CH natural 
                 join tstat@ATLR.CERN.CH natural 
                 join projects@ATLR.CERN.CH 
@@ -119,7 +119,7 @@ def civiewDemo(request):
           pj2=row02[1]
           if not pj2 in dict_jid02 :
               dict_jid02[pj2]=[]
-          dict_jid02[pj2]=[row02[13],row02[14],row02[16],row02[15],row02[18],row02[17]]
+          dict_jid02[pj2]=[row02[13],row02[14],row02[16],row02[15],row02[19],row02[18],row02[17],row02[20]]
 
         for row01 in reslt1:
           nccompl=row01[13]
@@ -139,18 +139,27 @@ def civiewDemo(request):
           tpccompl='0'
           nt_er='0'
           nt_pb='0'
+          nt_to='0'
           tpcer='0'
           tpcpb='0'
+          tpcto='0'
           if pjname in dict_jid02 :
               ntcompl=dict_jid02[pjname][0]
               tpccompl=dict_jid02[pjname][1]
               nt_er=dict_jid02[pjname][2]
               nt_pb=dict_jid02[pjname][3]
+              nt_to = dict_jid02[pjname][4]
+              if nt_to is None:
+                  nt_to=0
               if ntcompl is None or ntcompl == 'N/A' or ntcompl <= 0:
                   nt_er='N/A'
                   nt_pb='N/A'
-              tpcer=dict_jid02[pjname][4]
-              tpcpb=dict_jid02[pjname][5]
+                  nt_to='N/A'
+              tpcer=dict_jid02[pjname][5]
+              tpcpb=dict_jid02[pjname][6]
+              tpcto=dict_jid02[pjname][7]
+              if tpcto is None:
+                  tpcto=0
           s_checkout='0'
           if row01[26] is not None:
               s_checkout=str(row01[26])
@@ -171,9 +180,9 @@ def civiewDemo(request):
               t_start=job_start.strftime('%Y/%m/%d %H:%M')
           build_time_cell=t_bstart + '===' + s_checkout + s_config + s_inst
           combo_c=str(nc_er)+' ('+str(nc_pb)+')'
-          combo_t=str(nt_er)+' ('+str(nt_pb)+')'
+          combo_t=str(nt_er)+' ('+str(nt_pb)+') '+str(nt_to)
           if nt_er == 'N/A':
-              combo_t='N/A(N/A)'
+              combo_t='N/A(N/A)N/A'
           mrlink_a = "<a href=\""+mrlink+"\">"+gitbr+"</a>"
           [i_checkout,i_inst,i_config]=map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config])
           if i_checkout is None or i_checkout == "None":
@@ -192,7 +201,7 @@ def civiewDemo(request):
           link_to_testsRes = reverse('TestsRes')
           link_to_compsRes = reverse('CompsRes')
           i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_t+"</a>"
-          if combo_t == 'N/A(N/A)': i_combo_t=combo_t
+          if combo_t == 'N/A(N/A)N/A': i_combo_t=combo_t
           i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_c+"</a>"
           row_cand=[rname,ar_sel,pjname,mrlink_a,t_start,ii_checkout,ii_inst,ii_config,t_bstart,i_combo_c,t_test,i_combo_t,hname]
           rows_s.append(row_cand)

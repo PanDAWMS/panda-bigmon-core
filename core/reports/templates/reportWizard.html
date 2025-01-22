@@ -42,14 +42,6 @@
     </label>
   <div class="" ng-switch on="form_params.report_type">
     <div class="" ng-switch-default></div>
-    <div class="" ng-switch-when="campaign">
-      <label>Campaign:
-        <select name="campaign" ng-model="form_params.campaign" ng-options="v.value as v.name for v in available_campaign_reports" ng-required="form_params.report_type==='campaign'" ng-class="{'input-error': reportSetupForm.campaign.$touched && reportSetupForm.campaign.$error.required}"></select>
-      </label>
-      <label ng-show="form_params.campaign">Delivery method:
-        <select name="delivery" ng-model="form_params.delivery" ng-options="v.value as v.name for v in available_delivery_types" ng-required="form_params.report_type==='campaign'&& form_params.campaign!==''"  ng-class="{'input-error': reportSetupForm.delivery.$touched && reportSetupForm.delivery.$error.required}"></select>
-      </label>
-    </div>
 
     <div class="" ng-switch-when="obstasks"></div>
 
@@ -61,6 +53,16 @@
         Incorrect format, it must be an integer number or list of integers separated by comma with no spaces.</div>
       <label ng-show="form_params.jeditaskid && reportSetupForm.jeditaskid.$valid">Delivery method:
         <select ng-model="form_params.delivery" ng-options="v.value as v.name for v in available_delivery_types" ng-required="form_params.report_type==='lsat'&& form_params.jeditaskid!==''" ng-class="{'input-error': reportSetupForm.delivery.$touched && reportSetupForm.delivery.$error.required}"></select>
+      </label>
+    </div>
+
+    <div class="" ng-switch-when="error_classification">
+      <label>Hours:
+        <input type="number" name="hours" ng-model="form_params.hours" ng-required="form_params.report_type==='error_classification'" ng-class="{'input-error': reportSetupForm.hours.$touched && reportSetupForm.hours.$error.required}">
+      </label>
+      <div class="form-error-message" ng-show="reportSetupForm.hours.$error.required">This field is required.</div>
+      <label>Delivery method:
+        <select ng-model="form_params.delivery" ng-options="v.value as v.name for v in available_delivery_types" ng-required="form_params.report_type==='error_classification'&& form_params.hours!==''" ng-class="{'input-error': reportSetupForm.delivery.$touched && reportSetupForm.delivery.$error.required}"></select>
       </label>
     </div>
 
@@ -137,7 +139,7 @@ controller('reportWizardController', ['$scope', '$http', '$window', '$sce', func
     // set default values
     $scope.form_params = {
       report_type: '',
-      campaign: '',
+      hours: 24,
       jeditaskid: '',
       delivery: 'page',
       email: user_email,
@@ -155,11 +157,6 @@ controller('reportWizardController', ['$scope', '$http', '$window', '$sce', func
     }
     else {
       $scope.available_report_types = {...$scope.available_report_types, ...available_report_types};
-      if ('campaign' in $scope.available_report_types) {
-        $scope.available_report_types.campaign.params.values.forEach((item) => {
-          $scope.available_campaign_reports.push({name: item, value: item});
-        });
-      }
     }
   }
 
@@ -176,7 +173,7 @@ controller('reportWizardController', ['$scope', '$http', '$window', '$sce', func
       })
     }
     $scope.form_params.jeditaskid = '';
-    $scope.form_params.campaign = '';
+    $scope.form_params.hours = 24;
     $scope.form_params.delivery = 'page';
     $scope.result = {
       status: '',

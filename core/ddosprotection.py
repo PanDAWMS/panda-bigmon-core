@@ -175,6 +175,7 @@ class DDOSMiddleware(object):
                 eiquery = {
                     'qtime__range': [startdate, enddate],
                     'useragent': useragent,
+                    'is_rejected': 0,
                     'rtime': None,
                 }
                 data_raw = []

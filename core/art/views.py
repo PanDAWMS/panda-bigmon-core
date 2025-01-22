@@ -1161,7 +1161,7 @@ def registerARTTest(request):
             # If reverse DNS lookup fails, return the IP address as fallback
             art_host = client_ip
 
-        if art_host.split('.')[0] not in art_const.AUTHORIZED_HOSTS: 
+        if art_host.split('.')[0] not in art_const.AUTHORIZED_HOSTS:
             return JsonResponse({"error": "Invalid ART API user!"}, status=403)
 
         # Generate job ID for ART Local

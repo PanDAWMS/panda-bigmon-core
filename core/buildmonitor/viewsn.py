@@ -177,7 +177,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   if not pj2 in dict_jid01 : dict_jid01[pj2]=[]
                   dict_jid01[pj2]=[row02[2],row02[3],row02[5],row02[4],row02[7],row02[6]]
 #
-              query2="select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer from tstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
+              query2="select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer,nto,pcto from tstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname" % (jid_sel)
               new_cur.execute(query2)
               reslt2 = new_cur.fetchall()
               dict_jid02={}
@@ -185,7 +185,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
 #                  print("=======", row02[0],row02[1],row02[2])
                   pj2=row02[1]
                   if not pj2 in dict_jid02 : dict_jid02[pj2]=[]
-                  dict_jid02[pj2]=[row02[2],row02[3],row02[5],row02[4],row02[7],row02[6]]
+                  dict_jid02[pj2]=[row02[2],row02[3],row02[5],row02[4],row02[8],row02[7],row02[6],row02[9]]
               reslt2 = {}
               for row01 in reslt1:
 #                  print("JID",row01[0])  
@@ -226,17 +226,24 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                           nc_pb='N/A'
                       cpcer=dict_jid01[pjname][4]
                       cpcpb=dict_jid01[pjname][5]
-                  ntcompl='0';tpccompl='0';nt_er='0';nt_pb='0';tpcer='0';tpcpb='0'
+                  ntcompl='0';tpccompl='0';nt_er='0';nt_pb='0';nt_to='0';tpcer='0';tpcpb='0';tpcto='0'
                   if pjname in dict_jid02 :
                       ntcompl=dict_jid02[pjname][0]
                       tpccompl=dict_jid02[pjname][1]
                       nt_er=dict_jid02[pjname][2]
                       nt_pb=dict_jid02[pjname][3]
+                      nt_to=dict_jid02[pjname][4]
+                      if nt_to == None:
+                          nt_to='0'
                       if ntcompl == None or ntcompl == 'N/A' or ntcompl <= 0: 
                           nt_er='N/A'
                           nt_pb='N/A'
-                      tpcer=dict_jid02[pjname][4]
-                      tpcpb=dict_jid02[pjname][5]
+                          nt_to='N/A'
+                      tpcer=dict_jid02[pjname][5]
+                      tpcpb=dict_jid02[pjname][6]
+                      tpcto=dict_jid02[pjname][7]
+                      if tpcto == None:
+                          tpcto = '0'
 #                  [tpcer_s,tpcpb_s]=map(lambda c: 100 - c, [tpcer,tpcpb])
 #                  [tpcer_sf,tpcpb_sf]=map(lambda c: format(c,'.1f'), [tpcer_s,tpcpb_s])
                   s_checkout='N/A'
@@ -263,8 +270,8 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   if s_cv_clie != None and s_cv_clie != '': ss_cv_clie=str(s_cv_clie)
 #
                   combo_c=str(nc_er)+' ('+str(nc_pb)+')'  
-                  combo_t=str(nt_er)+' ('+str(nt_pb)+')'
-                  if nt_er == 'N/A': combo_t='N/A(N/A)'
+                  combo_t=str(nt_er)+' ('+str(nt_pb)+') '+str(nt_to)
+                  if nt_er == 'N/A': combo_t='N/A(N/A)N/A'
 #                  mrlink_a="<a href=\""+mrlink+"\">"+gitbr+"</a>" 
                   [i_checkout,i_inst,i_config,i_cv_serv,i_cv_clie,i_ext,i_cpack]=\
                       map(lambda x: di_res.get(str(x),str(x)), [s_checkout,s_inst,s_config,ss_cv_serv,ss_cv_clie,s_ext,s_cpack])
@@ -295,7 +302,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                   link_to_testsRes=reverse('TestsRes')
                   link_to_compsRes=reverse('CompsRes')
                   i_combo_t="<a href=\""+link_to_testsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_t+"</a>"
-                  if combo_t == 'N/A(N/A)': i_combo_t=combo_t
+                  if combo_t == 'N/A(N/A)N/A': i_combo_t=combo_t
                   i_combo_c="<a href=\""+link_to_compsRes+"?nightly="+nname+"&rel="+rname+"&ar="+ar_sel+"&proj="+pjname+"\">"+combo_c+"</a>"
                   if tt_cv_serv != 'N/A' : i_combo_cv_serv=tt_cv_serv+i_cv_serv
                   else: i_combo_cv_serv=i_cv_serv

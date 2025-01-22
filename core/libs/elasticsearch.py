@@ -36,7 +36,7 @@ def get_os_credentials(instance):
         elif instance == 'monit-opensearch' and hasattr(settings, 'MONIT_OPENSEARCH'):
             os_host = settings.MONIT_OPENSEARCH.get('osHost', None)
             os_port = settings.MONIT_OPENSEARCH.get('osPort', None)
-            os_host = protocol + '://' + os_host + ':' + os_port + '/es' if os_host else None
+            os_host = protocol + '://' + os_host + ':' + os_port + '/os' if os_host else None
             os_user = settings.MONIT_OPENSEARCH.get('osUser', None)
             os_password = settings.MONIT_OPENSEARCH.get('osPassword', None)
         if any(i is None for i in (os_host, os_user, os_password)):
@@ -224,7 +224,7 @@ def upload_data(os_conn, index_name_base, data, timestamp_param='creationdate', 
     else:
         result['status'] = 'success'
         result['message'] = "Successfully pushed data to the ES cluster"
-        result['link'] = "https://os-atlas.cern.ch/kibana/goto/c987a191e5fa02605e20e5e6eaa9bc1f?security_tenant=global"
+        result['link'] = "https://os-atlas.cern.ch/dashboards/goto/c987a191e5fa02605e20e5e6eaa9bc1f?security_tenant=global"
         _logger.info(result['message'])
 
 

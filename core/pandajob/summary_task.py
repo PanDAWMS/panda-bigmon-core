@@ -54,11 +54,11 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
         values.append('hs06sec')
 
     if task_archive_flag >= 0:
-        jobs.extend(Jobsdefined4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
-        jobs.extend(Jobsactive4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
-        jobs.extend(Jobsarchived4.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
-        jobs.extend(Jobsarchived.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
+        for job_model in (Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4, Jobsarchived):
+            try:
+                jobs.extend(job_model.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
+            except Exception as ex:
+                _logger.exception(f'Failed to get jobs from {job_model} at ADCR: \n{ex}')
         _logger.info("Got jobs from ADCR: {} sec".format(time.time() - start_time))
     if task_archive_flag <= 0 and settings.DEPLOYMENT == 'ORACLE_ATLAS':
         # get list of jobsarchived models
@@ -389,15 +389,6 @@ def task_summary_data(query, limit=1000):
     summary = []
     querynotime = copy.deepcopy(query)
     del querynotime['modificationtime__castdate__range']
-    
-    summary.extend(Jobsactive4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('taskid', 'jobstatus')[:limit])
-    summary.extend(Jobsdefined4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('taskid', 'jobstatus')[:limit])
-    summary.extend(Jobswaiting4.objects.filter(**querynotime).values('taskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('taskid', 'jobstatus')[:limit])
-    summary.extend(Jobsarchived4.objects.filter(**query).values('taskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('taskid', 'jobstatus')[:limit])
 
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus').annotate(
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])

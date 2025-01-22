@@ -1,11 +1,11 @@
 """"""
+import datetime
 import logging
 import collections, functools, operator
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
     Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021,  Jobsarchived, Jobsarchived4
 from core.libs.datetimestrings import parse_datetime
-from core.libs.job import is_event_service
-from core.libs.eventservice import get_event_status_summary
+from core.libs.eventservice import is_event_service, get_event_status_summary
 from core.libs.exlib import split_into_intervals, get_maxrampercore_dict
 
 from django.conf import settings
@@ -33,12 +33,14 @@ def get_pandajob_models_by_year(timewindow):
             2022: [Jobsarchived, ],
             2023: [Jobsarchived, ],
             2024: [Jobsarchived, Jobsarchived4],
+            2025: [Jobsarchived, Jobsarchived4],
         }
     else:
         pjm_year_dict = {
             2022: [Jobsarchived, ],
             2023: [Jobsarchived, ],
             2024: [Jobsarchived, Jobsarchived4],
+            2025: [Jobsarchived, Jobsarchived4],
         }
     pandajob_models = []
 
@@ -86,6 +88,23 @@ def get_pandajob_arch_models_by_year(timewindow):
     pandajob_models = list(set(pandajob_models))
 
     return pandajob_models
+
+
+def is_archived_jobs(timerange):
+    """
+    Check if archived PanDA jobs are needed for the given time range as jobs go there after ~2-4 days
+    :param timerange: list of datetime strings
+    :return: bool
+    """
+    if len(timerange) == 2 and isinstance(timerange[0], str):
+        timerange = [parse_datetime(t) for t in timerange]
+
+    # if start or end is older than 4 days - need to check archived
+    if (datetime.datetime.now() - timerange[0]).days > 2 or (datetime.datetime.now() - timerange[1]).days > 2:
+        return True
+
+    return False
+
 
 
 def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):

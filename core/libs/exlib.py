@@ -372,80 +372,20 @@ def calc_nbins(length, n_bins_max=50):
     return n_bins
 
 
-def build_stack_histogram(data_raw, **kwargs):
+def calc_freq_time_series(timestamp_list, n_bins_max=60):
     """
-    Prepare stack histogram data and calculate mean and std metrics
-    :param data_raw: dict of lists
-    :param kwargs:
-    :return:
+    Calculate N bins for time series data
+    :param timestamp_list:
+    :param n_bins_max:
+    :return: freq: str - for data frame grouping
     """
-
-    n_decimals = 0
-    if 'n_decimals' in kwargs:
-        n_decimals = kwargs['n_decimals']
-
-    n_bins_max = 50
-    if 'n_bin_max' in kwargs:
-        n_bins_max = kwargs['n_bin_max']
-    stats = []
-    columns = []
-
-    data_all = []
-    for site, sd in data_raw.items():
-        data_all.extend(sd)
-
-    stats.append(np.average(data_all) if not np.isnan(np.average(data_all)) else 0)
-    stats.append(np.std(data_all) if not np.isnan(np.std(data_all)) else 0)
-
-    if stats[1] == 0:
-        n_bins = 1
-    else:
-        n_bins = calc_nbins(len(data_all), n_bins_max)
-    bins_all, ranges_all = np.histogram(data_all, bins=n_bins)
-
-    # calc x-axis ticks, get average from each range
-    x_axis_ticks = ['x']
-    ranges_all_avg = np.convolve(ranges_all, np.ones(2), 'valid') / 2
-    x_axis_ticks.extend(list(np.round(ranges_all_avg, n_decimals)))
-
-    ranges_all = list(ranges_all)
-
-    for stack_param, data in data_raw.items():
-        column = [stack_param]
-        column.extend(list(np.histogram(data, ranges_all)[0]))
-        # do not add if all the values are zeros
-        if sum(column[1:]) > 0:
-            columns.append(column)
-
-    # sort by biggest impact
-    columns = sorted(columns, key=lambda x: sum(x[1:]), reverse=True)
-    columns.insert(0, x_axis_ticks)
-
-    return stats, columns
-
-
-def build_time_histogram(data):
-    """
-    Preparing data for time-based histogram.
-    :param data: list. if 1xN - counting occurances, if 2xN - sum for each occurance
-    :return:
-    """
-    N_BINS_MAX = 60
-    agg = 'count'
-    if len(data) > 0 and isinstance(data[0], list) and len(data[0]) == 2:
-        agg = 'sum'
-
-    # find optimal interval
-    if agg == 'count':
-        timestamp_list = data
-    else:
-        timestamp_list = [item[0] for item in data]
-
+    if len(timestamp_list) == 0:
+        return '10T'
     full_timerange_seconds = (max(timestamp_list) - min(timestamp_list)).total_seconds()
 
     step = 30
     label = 'S'
-    while full_timerange_seconds/step > N_BINS_MAX:
+    while full_timerange_seconds/step > n_bins_max:
         if step <= 600:
             step += 30
         elif step <= 3600:
@@ -473,6 +413,77 @@ def build_time_histogram(data):
         'M': 3600 * 24 * 30,
     }
     freq = '{}{}'.format(math.floor(step/labels[label]), label)
+    return freq
+
+
+def build_stack_histogram(data_raw, **kwargs):
+    """
+    Prepare stack histogram data and calculate mean and std metrics
+    :param data_raw: dict of lists
+    :param kwargs:
+    :return:
+    """
+
+    n_decimals = 0
+    if 'n_decimals' in kwargs:
+        n_decimals = kwargs['n_decimals']
+
+    n_bins_max = 50
+    if 'n_bin_max' in kwargs:
+        n_bins_max = kwargs['n_bin_max']
+    stats = []
+    columns = []
+
+    data_all = []
+    for site, sd in data_raw.items():
+        data_all.extend(sd)
+
+    stats.append(round_to_n_digits(np.average(data_all), 3) if not np.isnan(np.average(data_all)) else 0)
+    stats.append(round_to_n_digits(np.std(data_all), 3) if not np.isnan(np.std(data_all)) else 0)
+
+    if stats[1] == 0:
+        n_bins = 1
+    else:
+        n_bins = calc_nbins(len(data_all), n_bins_max)
+    bins_all, ranges_all = np.histogram(data_all, bins=n_bins)
+
+    # calc x-axis ticks, get average from each range
+    x_axis_ticks = ['x']
+    ranges_all_avg = np.convolve(ranges_all, np.ones(2), 'valid') / 2
+    x_axis_ticks.extend([round_to_n_digits(r, n_decimals) for r in list(ranges_all_avg)])
+
+    ranges_all = list(ranges_all)
+
+    for stack_param, data in data_raw.items():
+        column = [stack_param]
+        column.extend([int(r) for r in list(np.histogram(data, ranges_all)[0])])
+        # do not add if all the values are zeros
+        if sum(column[1:]) > 0:
+            columns.append(column)
+
+    # sort by biggest impact
+    columns = sorted(columns, key=lambda x: sum(x[1:]), reverse=True)
+    columns.insert(0, x_axis_ticks)
+
+    return stats, columns
+
+
+def build_time_histogram(data):
+    """
+    Preparing data for time-based histogram.
+    :param data: list. if 1xN - counting occurances, if 2xN - sum for each occurance
+    :return:
+    """
+    agg = 'count'
+    if len(data) > 0 and isinstance(data[0], list) and len(data[0]) == 2:
+        agg = 'sum'
+
+    # find optimal interval
+    if agg == 'count':
+        timestamp_list = data
+    else:
+        timestamp_list = [item[0] for item in data]
+    freq = calc_freq_time_series(timestamp_list, n_bins_max=60)
 
     # prepare binned data
     if agg == 'count':
