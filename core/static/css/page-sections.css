@@ -328,6 +328,7 @@ a.bp-button.inverted:hover {
   font-weight: bold;
   text-decoration: none;
   background-color: firebrick;
+  border: 1px solid firebrick;
   color: #fefefe;
   padding: 0.875rem;
   line-height: 1;
