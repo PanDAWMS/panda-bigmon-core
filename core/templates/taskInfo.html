@@ -17,17 +17,22 @@
   <script type="text/javascript" src="/static/js/datatables/dataTables.rowsGroup.js"></script>
 {% endblock %}
 
-{% block subtitle %}{% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <span class="hide-for-small-only"><b>{{ task.taskname }}</b></span>{% endblock %}
+{% block subtitle %}
+  {% if jeditaskid > 0 %}{{ jeditaskid }} task:{% endif %} <span class="hide-for-small-only"><b>{{ task.taskname }}</b></span>
+{% endblock %}
 
 {% block body %}
 
 {% if columns %}
+  <div id="taskInfoTable" data-ng-app="" data-ng-controller="taskInfoController">
   <div class="table-scroll">
-  <table class="fresh-table unstriped" data-ng-app="" data-ng-controller="iDDSGeneralInfo">
-    <thead>
-      <tr>
-        <th colspan=30> {{ jeditaskid }} task </th>
-      </tr>
+  <table class="fresh-table unstriped">
+    <thead class="section-emoji">
+      <tr><th colspan="30">
+        <div class="left">{{ jeditaskid }} task</div>
+        <div class="right">Rate task<sup><span class="bp-tooltip bottom"><i class="fi-info"></i><span class="bp-tooltip tooltip-text">Rate the task processing from 1 (very bad) to 5 (excellent). We are collecting statistics to be used for an analysis by experts. In the future, it could be used to report problems directly.</span></span></sup>: 
+          <a ng-repeat="(key, value) in rating.emoji_desc" ng-click="rating.emojiButtonClick(key)" >{$ value $}</a></div>
+      </th></tr>
     </thead>
     <tbody>
       <tr>
@@ -92,6 +97,7 @@
           <br><span class="closed">current</span>
         </th>
         <th>Attempt</th>
+        <th>Rating</th>
         {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
           <th>Parent</th>
         {% endif %}
@@ -148,13 +154,10 @@
         {% endif %}
         {% if task.idds_info and task.idds_info.task_type == 'hpo' %}
           <td class="num">
-            <div ng-show="loading">LOADING...</div>
-            <div ng-cloak ng-show="!loading">
-              <span ng-bind="iddsjson.out_total_files">
-                <span>{$ iddsjson.out_total_files $}</span>
-              </span>
-{#              <span>{$ iddsjson.out_total_files $}</span>#}
-              <br><span class='finished'><span>{$ iddsjson.out_total_files $}</span> (<span>{$ iddsjson.pctprocessed $}</span>%) </span>
+            <div ng-show="idds.loading">LOADING...</div>
+            <div ng-cloak ng-show="!idds.loading">
+              <span ng-bind="idds.json.out_total_files"><span>{$ idds.json.out_total_files $}</span></span><br>
+              <span class='finished'><span>{$ idds.json.out_total_files $}</span> (<span>{$ idds.json.pctprocessed $}</span>%) </span>
             </div>
           </td>
         {% else %}
@@ -198,6 +201,7 @@
         <td>{{ task.corecount }}</td>
         <td><span class="defined">{{ task.taskpriority }}</span><br><span class="closed">{{ task.currentpriority }}</span></td>
         <td>{{ task.attemptnr }}</td>
+        <td> <a class="bp-tooltip left" ng-show="rating.total>0" ng-click="rating.is_shown_feedback_list=true">{$ rating.pick_emoji(rating.total) $} ({$ rating.total $})<span class="bp-tooltip tooltip-text">Show ratings and provided feedback messages</span></a><span ng-show="rating.total<=0">&mdash;</span></td>
         {% if task.parent_tid and task.parent_tid != task.jeditaskid %}
           <td><a href="{% url 'taskInfo' task.parent_tid %}">{{ task.parent_tid }}</a></td>
         {% endif %}
@@ -210,6 +214,40 @@
     </tbody>
   </table>
   </div>
+
+  <div class="bp-modal ng-hide" ng-show="rating.is_shown_feedback_modal">
+    <div class="emoji-modal-content content">
+        <!-- Close Button -->
+        <a ng-click="rating.closeFeedbackModal()"><span class="close">&times;</span></a>
+        <!-- Modal Content -->
+        <div>
+            <label>Submit your feedback</label>
+            <textarea ng-model="rating.feedback" id="user-comment" placeholder="Write your feedback here..."></textarea>
+            <p class="ng-hide alert" ng-show="rating.is_shown_modal_alert">{$ rating.modal_alert $}</p>
+            <a class="bp-button submit" ng-click="rating.submitFeedback()" ng-disabled="rating.submitting">{$ rating.submit_button_text $}</a>
+        </div>
+    </div>
+  </div>
+  
+  <div class="ng-hide" ng-show="rating.is_shown_feedback_list">
+    <table class="bp-table secondary unstriped">
+      <thead><tr><th colspan="3">Provided ratings and feedback for task:</th></tr></thead>
+      <tbody><tr>
+        <th>User</th>
+        <th>Rating</th>
+        <th>Feedback message</th>
+      </tr>
+      <tr ng-repeat="row in rating.feedback_list">
+        <td>{$ row.username $}</td>
+        <td>{$ rating.pick_emoji(row.rating) $}</td>
+        <td>{$ row.feedback $}</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  </div>
+
 
   {% if warning.submission %}
     <div class="callout warning" data-closable>
@@ -344,6 +382,7 @@
      </div>
   </div>
   </div>
+
   <div class="columns small-5 medium-4 large-3 align-right">
   {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
       {% if not task.status in finalstatelist %}
@@ -359,7 +398,7 @@
   {% endwith %}
   </div>
   </div>
-
+  
   {% if warning.dropmode %}
       <div class="callout warning" data-closable>
         <h5>Warning! </h5>
@@ -636,8 +675,7 @@
   {% else %}
       <p>No datasets were found for this task</p>
   {% endif %}
-
-
+  
   {% if jobparams %}
     <a name="jobparams"></a>
     <table class="fresh-table">
@@ -653,8 +691,7 @@
       </tbody>
     </table>
   {% endif %}
-
-
+  
   {% if taskparams %}
     <a name="taskparamsprodsys"></a>
     <table class="fresh-table">
@@ -734,6 +771,84 @@ if (document.getElementById("button-task-action-abort-panda")) {document.getElem
 if (document.getElementById("button-task-action-finish-prodsys")) {document.getElementById("button-task-action-finish-prodsys").addEventListener("click", killtasks.bind(null, jeditaskid, 0));}
 if (document.getElementById("button-task-action-abort-prodsys")) {document.getElementById("button-task-action-abort-prodsys").addEventListener("click", killtasks.bind(null, jeditaskid, 1));}
 
+const task_rating = {{ task.rating|safe }};
+const task_rating_feedback_messages = {% if 'rating_feedback' in task %} {{ task.rating_feedback|safe }} {% else %} "" {% endif %};
+
+app.controller('taskInfoController', function($rootScope, $scope, $http) {
+  $scope.idds = {
+    loading: true,
+  }
+  $rootScope.$on('idds_info', function(event, data) {
+      $scope.idds.json = data;
+      $scope.idds.loading = false;
+  });
+  $scope.rating = {
+    total: (task_rating > 0 && task_rating <= 5) ? task_rating : 0,
+    new: -1,
+    feedback: '',
+    is_shown_feedback_modal: false,
+    emoji_desc: {
+      1: '\u{1F621}',
+      2: '\u{1F620}',
+      3: '\u{1F610}',
+      4: '\u{1F600}',
+      5: '\u{1F60D}'
+    },
+    modal_alert: '',
+    submit_button_text: 'Submit',
+    submitting: false,
+    is_shown_modal_alert: false,
+    is_shown_feedback_messages: false,
+    feedback_list: (task_rating_feedback_messages.constructor === Array) ? task_rating_feedback_messages : [],
+  }
+  $scope.rating.pick_emoji = function(rating) {
+    return $scope.rating.emoji_desc[Math.ceil(rating)];
+  }
+  
+  $scope.rating.emojiButtonClick = function(rating) {
+      // Get the emoji and text content
+      $scope.rating.new = rating;
+      // Open User Feedback
+      $scope.rating.is_shown_feedback_modal = true;
+  }
+  
+  // Function to close the modal
+  $scope.rating.closeFeedbackModal = function() {
+      $scope.rating.is_shown_feedback_modal = false;
+  }
+  
+  // Function to handle feedback submission
+  $scope.rating.submitFeedback = function () {
+    $scope.rating.submit_button_text = 'Submitting...';
+    $scope.rating.submitting = true;
+    $http({
+        url: '{% url 'rating_func' %}?json',
+        method: "POST",
+        data: {
+          'task': jeditaskid, 
+          'rating': $scope.rating.new, 
+          'feedback': $scope.rating.feedback}}
+    ).then(function success(response) {
+        let res_data = angular.fromJson(response.data);
+        if (('data' in res_data) && ('rating_average' in res_data.data)) {
+            $scope.rating.total = res_data.data.rating_average;
+            $scope.rating.feedback_list = res_data.data.rating_data;
+        }
+        // Close the modal after submitting feedback
+        $scope.rating.submitting = false;
+        $scope.rating.submit_button_text = 'Submit';
+        $scope.rating.is_shown_feedback_modal = false;
+    }, function error(response) {
+        $scope.rating.modal_alert = "Your rating & feedback submission failed";
+        if (('data' in response) && ('error' in response.data)) {
+            $scope.rating.modal_alert += " with the following error: " + response.data.error;
+        }
+        $scope.rating.is_shown_modal_alert = true;
+        $scope.rating.submitting = false;
+        $scope.rating.submit_button_text = 'Submit';
+    });
+  }  
+});
 
 app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
     $scope.iddsjson = "";
@@ -758,13 +873,7 @@ app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope)
     };
     init();
 });
-app.controller('iDDSGeneralInfo', function($rootScope, $scope) {
-    $scope.loading = true;
-    $rootScope.$on('idds_info', function(event, data) {
-        $scope.iddsjson = data;
-        $scope.loading = false;
-    });
-});
+
 app.controller('StagingDSController', function ($scope, $http) {
   $scope.json = "";
   $scope.MON_VO = MON_VO;
@@ -886,8 +995,7 @@ app.controller('jobConsumptionPlotsController', function($scope) {
         }
     };
 });
-
-
+  
 app.controller('taskflowController', function ($scope, $http, $sce) {
     $scope.taskflow = {
       message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
@@ -948,7 +1056,6 @@ app.controller('taskflowController', function ($scope, $http, $sce) {
         $scope.taskflow.get();
     };
 });
-
 
 app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
     $scope.status_log = {

@@ -19,6 +19,16 @@ class PandaDBVersion(models.Model):
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."pandadb_version"'
         app_label = 'panda'
 
+class Rating(models.Model):
+    rating_id = models.BigAutoField(primary_key=True, db_column='ratingid')
+    user_id = models.IntegerField(primary_key=False, db_column='userid')
+    task_id = models.IntegerField(primary_key=False, db_column='jeditaskid')
+    rating = models.IntegerField(primary_key=False,db_column='rating')
+    feedback = models.CharField(max_length=255, db_column='feedback')
+    timestamp = models.CharField(max_length=255, db_column='added')
+    class Meta:
+            db_table = f'"{settings.DB_SCHEMA}"."rating"'
+            app_label = 'pandamon'
 
 class Datasets(models.Model):
     vuid = models.CharField(max_length=120, db_column='vuid', primary_key=True)

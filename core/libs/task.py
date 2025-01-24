@@ -11,8 +11,9 @@ from opensearchpy import Search
 from django.db import connection
 from django.db.models import Count, Sum
 from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks, \
-    JediJobRetryHistory
+    JediJobRetryHistory, Rating
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from core.oauth.models import BPUser
 
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
@@ -1039,3 +1040,24 @@ def flag_tasks_with_scouting_failures(tasks, ds_dict):
             task['scoutinghasnoncritfailures'] = retries_dict[task['jeditaskid']] if task['jeditaskid'] in retries_dict else False
 
     return tasks
+
+
+def get_task_rating(jeditaskid_list):
+    """
+    Get ratings for a list of tasks
+    :param jeditaskid_list: list of int
+    :return:
+    """
+    task_rating_list = []
+    task_rating_list.extend(Rating.objects.filter(task_id__in=jeditaskid_list).values('task_id','user_id', 'rating', 'feedback'))
+    if len(task_rating_list) > 0:
+        # getting usernames from user ids and replacing them
+        user_names = BPUser.objects.filter(id__in=[r['user_id'] for r in task_rating_list]).values('id', 'first_name', 'last_name')
+        user_names = {u['id']: f"{u['first_name']} {u['last_name']}" for u in user_names}
+        task_rating_list = [{
+            'jeditaskid': r['task_id'],
+            'username': user_names[r['user_id']] if r['user_id'] in user_names else 'Unknown',
+            'rating': r['rating'],
+            'feedback': r['feedback']} for r in task_rating_list]
+
+    return task_rating_list
