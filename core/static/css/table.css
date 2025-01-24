@@ -933,6 +933,20 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 }
 
 
+.fresh-table thead.section-emoji th div.left {
+  display: inline-block;
+  width: 50%;
+  text-align: left;
+}
+.fresh-table thead.section-emoji th div.right {
+  display: inline-block;
+  width: 49%;
+  text-align: right;
+}
+  .fresh-table thead.section-emoji th div.right a {
+    padding: 0 0 0 0.3rem;
+  }
+
 
 .table-scroll {
   margin: 0 0 0.7rem 0;

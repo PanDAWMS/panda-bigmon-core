@@ -20,7 +20,7 @@ from opensearchpy import Search
 from django.http import HttpResponse, JsonResponse, UnreadablePostError
 from django.shortcuts import render, redirect
 from django.template import RequestContext
-from django.db.models import Count, Sum, F, Value, FloatField, Q, DateTimeField
+from django.db.models import Count, Sum, F, Value, FloatField, Q, DateTimeField, Avg
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
@@ -63,7 +63,7 @@ from core.libs.eventservice import is_event_service, event_summary_for_task, add
 from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
-    get_datasets_for_tasklist, get_task_name_by_taskid
+    get_datasets_for_tasklist, get_task_name_by_taskid, get_task_rating
 from core.libs.task import get_dataset_locality, is_event_service_task, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
 from core.libs.taskparams import analyse_task_submission_options
@@ -5055,10 +5055,13 @@ def taskInfo(request, jeditaskid=0):
 
     # update taskrec dict
     if taskrec:
-        try:
-            taskrec['rating'] = Rating.objects.get(task_id=jeditaskid, user_id=request.user.id).rating
-        except:
+        task_rating_data = get_task_rating([jeditaskid,])
+        if len(task_rating_data) > 0:
+            taskrec['rating'] = sum([r['rating'] for r in task_rating_data])/len(task_rating_data)
+            taskrec['rating_feedback'] = task_rating_data
+        else:
             taskrec['rating'] = -1
+            taskrec['rating_feedback'] = []
         if 'tasktype' in taskrec and taskrec['tasktype'] and 'ORACLE' in settings.DEPLOYMENT:
             tmcj_list = get_top_memory_consumers(taskrec)
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
@@ -5283,9 +5286,20 @@ def rating_func(request):
         return response
 
     user_id = request.user.id
-    task_id  = int(request.session['requestParams']['task'])
-    rating = int(request.session['requestParams']['rating'])
-    feedback = str(request.session['requestParams']['feedback'])
+    if 'task' in request.session['requestParams']:
+        task_id  = int(request.session['requestParams']['task'])
+    else:
+        return error_response(request, 'No task ID provided', status=400)
+    if 'rating' in request.session['requestParams']:
+        rating = int(request.session['requestParams']['rating'])
+        if rating < 0 or rating > 5:
+            return error_response(request, 'Invalid rating value', status=400)
+    else:
+        return error_response(request, 'No rating value provided', status=400)
+    if 'feedback' in request.session['requestParams']:
+        feedback = str(request.session['requestParams']['feedback'])
+    else:
+        feedback = ''
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
     rating_object = Rating.objects.filter(user_id=user_id, task_id=task_id).values()
@@ -5296,11 +5310,14 @@ def rating_func(request):
         r.feedback = feedback
         r.timestamp = timestamp
         r.save()
-
     else:
-        task_rating = Rating(user_id =user_id, task_id=task_id, rating=rating, feedback=feedback, timestamp=timestamp)
+        task_rating = Rating(user_id=user_id, task_id=task_id, rating=rating, feedback=feedback, timestamp=timestamp)
         task_rating.save()
-    return JsonResponse({},status=200)
+
+    # get updated rating data
+    rating_data = get_task_rating([task_id, ])
+    rating_average = sum([r['rating'] for r in rating_data])/len(rating_data)
+    return JsonResponse({'data': {'rating_average': rating_average, 'rating_data': rating_data}}, status=200)
 
 
 def getEventsDetails(request, mode='drop', jeditaskid=0):

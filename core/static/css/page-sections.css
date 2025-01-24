@@ -755,6 +755,21 @@ a.close-x-sign:hover {
         border-style: solid;
         border-color: #272727 transparent transparent transparent;
       }
+    .bp-tooltip.bottom .tooltip-text {
+      top: 100%;
+      left: 50%;
+      -ms-transform: translateX(-50%);
+          transform: translateX(-50%);
+    }
+      .bp-tooltip.bottom .tooltip-text::after {
+        content: "";
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        border-width: 0.3rem;
+        border-style: solid;
+        border-color: transparent transparent #272727 transparent;
+      }
     .bp-tooltip.right .tooltip-text {
       top: 50%;
       bottom: auto;
@@ -1812,3 +1827,61 @@ footer {
 .zselect ul li.deselectall{
   cursor: pointer!important;
 }
+
+
+/* ---------------------------------------------------------- */
+/* Dialog window */
+/* ---------------------------------------------------------- */
+
+.bp-modal {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100000;
+}
+  .bp-modal .content {
+    background-color: #f1f1f1;
+    margin: 10% auto;
+    padding: 0.7rem;
+    border: 1px solid #888;
+    width: 50%;
+    position: relative;
+    box-shadow: 0 0 2rem rgba(0,0,0,0.3);
+  }
+  .bp-modal .content .close {
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    top: 0;
+    right: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    color: #333;
+  }
+  .bp-modal .content label {
+    font-size: 1rem;
+    font-weight: bold;
+    margin: 0 0 0.7rem 0;
+  }
+  .bp-modal .content textarea {
+    width: 100%;
+    height: 100px;
+    resize: vertical;
+    padding: 0.3rem;
+    margin: 0 0 0.3rem 0;
+    font-size: 0.875rem;
+  }
+  .bp-modal .content .submit {
+    background-color: #4CAF50;
+    color: white;
+    border: 1px solid #4CAF50;
+  }
+  .bp-modal .content .submit:hover {
+    background-color: #272727;
+    border: 1px solid #272727;
+  }
+
