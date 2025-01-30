@@ -374,3 +374,9 @@ class Jobsarchived_y2021(PandaJobArch):
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."y2021_jobsarchived"'
         app_label = 'pandaarch'
+
+
+class Jobsarchived_y2022(PandaJobArch):
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."y2022_jobsarchived"'
+        app_label = 'pandaarch'
