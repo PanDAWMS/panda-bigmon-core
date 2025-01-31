@@ -1301,6 +1301,14 @@ canvas.chartjs_block {
   min-height: 500px;
 }
 
+canvas.full_screen_size {
+  width: 100%;
+  height: 80vh;
+  max-height: 1500px !important;
+  min-height: 500px !important;
+}
+
+
 
 .bp-container-wrapper {
   margin: 0 0 0.7rem 0;}
