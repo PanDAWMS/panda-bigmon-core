@@ -100,7 +100,6 @@ class TasksRatedReport:
         """
         Prepare data for the report email.
         """
-
         self.collect_data()
 
         # add usernames, rating and feedback to the tasks
