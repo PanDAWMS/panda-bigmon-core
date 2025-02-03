@@ -441,7 +441,8 @@ def build_stack_histogram(data_raw, **kwargs):
     stats.append(round_to_n_digits(np.average(data_all), 3) if not np.isnan(np.average(data_all)) else 0)
     stats.append(round_to_n_digits(np.std(data_all), 3) if not np.isnan(np.std(data_all)) else 0)
 
-    if stats[1] == 0:
+    # if std less than n decimals, i.e. not enough resolution - set n_bins to 1
+    if stats[1] <= 1/(10**n_decimals):
         n_bins = 1
     else:
         n_bins = calc_nbins(len(data_all), n_bins_max)
