@@ -8,12 +8,12 @@ from datetime import datetime
 from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
 from django.shortcuts import render
-
+from django.core.cache import cache
 from core.views import initRequest, setupView
 from core.oauth.utils import login_customrequired
+from core.reports.models import ReportEmails
 from core.reports.sendMail import send_mail_bp
-
-from core.reports import ObsoletedTasksReport, LargeScaleAthenaTestsReport, ErrorClassificationReport
+from core.reports import ObsoletedTasksReport, LargeScaleAthenaTestsReport, ErrorClassificationReport, TasksRatedReport
 
 from django.conf import settings
 
@@ -33,6 +33,13 @@ def reports(request):
     available_reports = {}
     if 'ATLAS' in settings.DEPLOYMENT:
         available_reports = {
+            'rated_tasks': {
+                'value': 'rated_tasks', 'name': 'Rated tasks',
+                'params': {
+                    'delivery_options': ['page', 'email'],
+                    'get_redirect': ['days', 'rating_threshold'],
+                }
+            },
             'obstasks': {
                 'value': 'obstasks', 'name': 'Obsoleted tasks',
                 'params': {
@@ -81,6 +88,21 @@ def report(request):
     if 'delivery' in request.session['requestParams'] and request.session['requestParams']['delivery']:
         delivery = request.session['requestParams']['delivery']
 
+    if delivery == 'email':
+        recipients = []
+        if 'email' in request.session['requestParams'] and request.session['requestParams']['email']:
+            recipients.append(request.session['requestParams']['email'])
+        elif 'egroup' in request.session['requestParams'] and request.session['requestParams']['egroup'] == 'default':
+            recipients.extend(ReportEmails.objects.filter(report=report_type, type='all').values_list('email', flat=True))
+        else:
+            return JsonResponse({'status': 'error', 'message': 'No recipient email specified'})
+        if 'cc_email_list' in request.session['requestParams'] and request.session['requestParams']['cc_email_list']:
+            for cc in request.session['requestParams']['cc_email_list']:
+                if 'email' in cc and cc['email'] and isinstance(cc['email'], str) and len(cc['email']) > 0:
+                    recipients.append(cc['email'])
+    else:
+        recipients = []
+
     if report_type == 'obstasks':
         reportGen = ObsoletedTasksReport.ObsoletedTasksReport()
         response = reportGen.prepareReport(request)
@@ -118,15 +140,6 @@ def report(request):
             result = report_lsat.export_data()
             response = JsonResponse(result)
         elif delivery == 'email':
-            recipients = []
-            if 'email' in request.session['requestParams'] and request.session['requestParams']['email']:
-                recipients.append(request.session['requestParams']['email'])
-            else:
-                return JsonResponse({'status': 'error', 'message': 'No recipient email specified'})
-            if 'cc_email_list' in request.session['requestParams'] and request.session['requestParams']['cc_email_list']:
-                for cc in request.session['requestParams']['cc_email_list']:
-                    if 'email' in cc and cc['email'] and isinstance(cc['email'], str) and len(cc['email']) > 0:
-                        recipients.append(cc['email'])
             is_success = send_mail_bp(
                 'templated_email/reportLargeScaleAthenaTest.html',
                 '{} Report on large-scale Athena test(s) {}'.format(settings.EMAIL_SUBJECT_PREFIX, jeditaskid),
@@ -167,6 +180,63 @@ def report(request):
             response = JsonResponse({'status': 'error', 'message': 'Unsupported delivery type'})
         return response
 
+    elif report_type == 'rated_tasks':
+        if 'days' in request.session['requestParams'] and request.session['requestParams']['days']:
+            days = int(request.session['requestParams']['days'])
+        else:
+            days = 7
+        if 'rating_threshold' in request.session['requestParams'] and request.session['requestParams']['rating_threshold']:
+            rating_threshold = int(request.session['requestParams']['rating_threshold'])
+        else:
+            rating_threshold = 3
+
+        report = TasksRatedReport.TasksRatedReport(days=days, rating_threshold=rating_threshold)
+
+        if delivery == 'page':
+            ratings = report.prepare_data_page()
+            data = {
+                'request': request,
+                'requestParams': request.session['requestParams'],
+                'viewParams': request.session['viewParams'],
+                'ratings': ratings,
+                'built': datetime.now().strftime("%H:%M:%S"),
+            }
+            return render(request, 'reportRatedTasks.html', data)
+        elif delivery == 'email':
+            data_summary = report.prepare_data_email()
+            result = {}
+            do_submit = True
+            cache_key = None
+            # if tge report was sent to the default egroup, do not allow to send it again until the next week
+            if 'egroup' in request.session['requestParams'] and request.session['requestParams']['egroup'] == 'default':
+                cache_key = f"mail_sent_flag_{report_type}_default_egroup"
+                if cache.get(cache_key, False):
+                    do_submit = False
+            if do_submit:
+                is_success = send_mail_bp(
+                    'templated_email/taskRatedReport.html',
+                    '{} Task Ratings Report'.format(settings.EMAIL_SUBJECT_PREFIX),
+                    data_summary,
+                    recipients,
+                    send_html=True
+                )
+            else:
+                is_success = False
+            if is_success:
+                result['status'] = 'success'
+                result['message'] = 'The report is sent successfully!'
+                if cache_key:
+                    cache.set(cache_key, "1", days * 24 * 3600)
+            else:
+                result['status'] = 'error'
+                result['message'] = 'Failed to send the report!'
+                if cache_key:
+                    result['status'] = 'error'
+                    result['message'] = 'This report has already been sent!'
+            response = JsonResponse(result)
+        else:
+            response = JsonResponse({'status': 'error', 'message': 'Unsupported delivery type'})
+        return response
     else:
         return JsonResponse({'status': 'error', 'message': 'No report is available for provided parameters'})
 

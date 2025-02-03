@@ -66,6 +66,20 @@
       </label>
     </div>
 
+    <div class="" ng-switch-when="rated_tasks">
+      <label>Days:
+        <input type="number" name="days" ng-model="form_params.days" ng-required="form_params.report_type==='rated_tasks'" ng-class="{'input-error': reportSetupForm.days.$touched && reportSetupForm.days.$error.required}">
+      </label>
+      <div class="form-error-message" ng-show="reportSetupForm.days.$error.required">This field is required.</div>
+      <label>Rating less than or equal to:
+        <input type="number" name="rating_threshold" min="1" max="5" ng-model="form_params.rating_threshold" ng-required="form_params.report_type==='rated_tasks'" ng-class="{'input-error': reportSetupForm.rating_threshold.$touched && reportSetupForm.rating_threshold.$error.required}">
+      </label>
+      <div class="form-error-message" ng-show="reportSetupForm.days.$error.required">This field is required.</div>
+      <label>Delivery method:
+        <select ng-model="form_params.delivery" ng-options="v.value as v.name for v in available_delivery_types" ng-required="form_params.report_type==='rated_tasks'&& form_params.days!==''" ng-class="{'input-error': reportSetupForm.delivery.$touched && reportSetupForm.delivery.$error.required}"></select>
+      </label>
+    </div>
+
     <p ng-show="form_params.delivery==='email'">Email: <b>{$ form_params.email $}</b></p>
 
     <div ng-show="form_params.delivery==='email' ">
@@ -96,7 +110,7 @@
       </div>
       <div ng-switch-when="success">
         <div class="callout success">
-          <p>{$ result.message $}. The direct <a href="{$ result.link $}"> link</a> to the ElasticSearch index.</p>
+          <p>{$ result.message $}. <span ng-show="result.link">The direct <a href="{$ result.link $}"> link</a> to the ElasticSearch index.</span></p>
         </div>
       </div>
       <div ng-switch-when="error" >
@@ -104,6 +118,7 @@
          <p> {$ result.message $} </p>
       </div>
     </div>
+</div>
 </div>
 </div>
 </form>
@@ -140,6 +155,8 @@ controller('reportWizardController', ['$scope', '$http', '$window', '$sce', func
     $scope.form_params = {
       report_type: '',
       hours: 24,
+      days: 7,
+      rating_threshold: 3,
       jeditaskid: '',
       delivery: 'page',
       email: user_email,
@@ -175,6 +192,8 @@ controller('reportWizardController', ['$scope', '$http', '$window', '$sce', func
     $scope.form_params.jeditaskid = '';
     $scope.form_params.hours = 24;
     $scope.form_params.delivery = 'page';
+    $scope.form_params.days = 7;
+    $scope.form_params.rating_threshold = 3;
     $scope.result = {
       status: '',
       message: '',
