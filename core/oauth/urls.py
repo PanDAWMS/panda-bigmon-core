@@ -2,9 +2,8 @@
 URL patterns for auth
 """
 
-from django.urls import re_path
+from django.urls import re_path, include
 from core.oauth import views as auth_views
-from django.urls import include
 
 urlpatterns = [
     re_path(r'^oauth/', include('social_django.urls', namespace='social')),  # <--

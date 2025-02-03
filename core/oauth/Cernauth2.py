@@ -1,7 +1,11 @@
+import base64
+import json
 from requests import ConnectionError, request
 from social_core.backends.oauth import BaseOAuth2
 from social_core.exceptions import AuthMissingParameter, AuthFailed
 from social_core.utils import SSLHttpAdapter
+from django.conf import settings
+from core.oauth.utils import update_user_groups
 
 import logging
 _logger = logging.getLogger('social')
@@ -40,11 +44,21 @@ class CernAuthOIDC(BaseOAuth2):
 
     def user_data(self, access_token, *args, **kwargs):
         """Load user data from the service"""
-        return self.get_json(
-            self.USER_DATA,
-            # headers=self.get_auth_header(access_token)
-            data={"access_token": access_token}
-        )
+        token_dict = json.loads(base64.b64decode(access_token.split('.')[1] + '==').decode('utf-8'))
+        _logger.debug(token_dict)
+        user_data = {
+            'username': token_dict.get('cern_upn'),
+            'email': token_dict.get('email'),
+            'first_name': token_dict.get('given_name'),
+            'last_name': token_dict.get('family_name'),
+            'name': token_dict.get('name'),
+            'roles': token_dict.get('resource_access').get(settings.SOCIAL_AUTH_CERNOIDC_KEY).get('roles') or [],
+        }
+        if user_data['roles'] and len(user_data['roles']) > 0:
+            is_success = update_user_groups(user_data['username'], user_data['roles'])
+            _logger.info(f"User groups update status: {is_success}, user: {user_data['email']}, groups: {user_data['roles']}")
+        return user_data
+
 
     def get_auth_header(self, access_token):
         return {'Authorization': 'Bearer {0}'.format(access_token)}
