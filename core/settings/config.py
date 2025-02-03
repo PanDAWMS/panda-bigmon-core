@@ -1,7 +1,6 @@
 import os, core, logging, io, sys
 from os.path import dirname, join
 
-from core import filebrowser, admin
 from core.settings.local import MY_SECRET_KEY, LOG_ROOT
 from core.settings.CustomFormatter import CustomFormatter
 
@@ -80,7 +79,6 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             join(dirname(core.__file__), 'templates'),
-            join(dirname(admin.__file__), 'templates'),
         ],
         'OPTIONS': {
             'context_processors': [
@@ -391,7 +389,7 @@ LOGGING = {
             'propagate': True,
         },
         'django': {
-            'handlers': ['logfile-django', 'logfile-error'],
+            'handlers': ['logfile-django', 'logfile-error', 'console'],
             'propagate': True,
             'level': LOG_LEVEL,
         },
