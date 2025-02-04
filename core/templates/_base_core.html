@@ -422,9 +422,7 @@
 
 <!-- Main Grid Section -->
 <div class="large-12 columns body-content" id="content">
-{% block body %}
-
-{% endblock %}
+{% block body %}{% endblock %}
 
 {% block bottom_info %}
 {% comment %} {% if query %} Query: <i>{{ query }}</i> {% endif %}  {% endcomment %}
@@ -436,7 +434,6 @@
 {% block help %}{% endblock %}
 
 <table width=1000 class="hide-for-small">
-
 {% block helptext %}
 
 {% endblock %}

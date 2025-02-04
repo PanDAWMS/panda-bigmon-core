@@ -141,7 +141,6 @@ if 'BIGMON_INSTALLED_APPS_LIST' in os.environ and os.environ['BIGMON_INSTALLED_A
     INSTALLED_APPS_EXTRA = os.environ['BIGMON_INSTALLED_APPS_LIST'].split(',')
 else:
     INSTALLED_APPS_EXTRA = [
-        # "core.admin",
         "core.art",
         "core.buildmonitor",
         "core.compare",

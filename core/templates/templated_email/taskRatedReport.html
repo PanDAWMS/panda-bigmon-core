@@ -1,0 +1,110 @@
+{% autoescape off %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Weekly Smiley Task Ratings Report</title>
+<style>
+  .container { width: 100%; padding: 0; margin: 0}
+  table { width: 100%; border-collapse: collapse;}
+  th, td { border: 1px solid #ddd; padding: 4px; text-align: left;}
+  .highlight { color: #d9534f; font-weight: bold; }
+  {# state colors #}
+  .finished { color:#207f20 }
+  .done { color:#207f20 }
+  .broken { color:firebrick }
+  .lost { color:firebrick }
+  .tobroken { color:firebrick }
+  .missed { color:firebrick }
+  .deleted { color:red }
+  .failed { color:red }
+  .aborted { color:red }
+  .aborting { color:red }
+  .paused { color:darkgrey }
+  .skipped { color:darkgrey }
+  .notcheckedskipped { color:darkgrey }
+  .debug { color:darkgrey }
+  .pending { color:#deb900 }
+  .waiting { color:#deb900 }
+  .sent { color:#deb900 }
+  .brokeroff { color:#deb900 }
+  .holding { color:#FF9933 }
+  .throttled { color:#FF9933 }
+  .throttling { color:#FF9933 }
+  .exhausted { color:#FF9933 }
+  .finishing { color:#FF9933 }
+  .cancelled { color:#e67300 }
+  .warning { color:#e67300 }
+  .missing { color:#e67300 }
+  .timeout { color:#e67300 }
+  .discarded { color:#e67300 }
+  .approved { color:#47D147 }
+  .topreprocess { color:#47D147 }
+  .preprocessing { color:#47D147 }
+  .starting { color:#47D147 }
+  .submitting { color:#47D147 }
+  .scouting { color:#47D147 }
+  .scouted { color:#47D147 }
+  .picked { color:#47D147 }
+  .triggering { color:#47D147 }
+  .running { color:#34a934; }
+  .merging { color:#34a934 }
+  .partial { color:#34a934 }
+  .transferring { color:#34a934 }
+  .activated { color:#3b8e67 }
+  .prepared { color:#3b8e67 }
+  .ready { color:#3b8e67 }
+  .submitted{ color:#3b8e67; }
+  .assigning { color:#099999 }
+  .scheduled { color:#099999 }
+  .assigned { color:#099999 }
+  .defined { color:#2174bb }
+  .registered { color:#2174bb }
+  .staging { color:#934fff }
+  .toretry { color:grey }
+  .toincexec { color:grey }
+  .rerefine { color:grey }
+  .closed { color:#4a4a4a}
+  .reassign { color:#FF8174 }
+</style>
+  
+</head>
+<body>
+{% if summary.tasks|length == 0 %}
+{% else %}
+<div class="container">
+  <h2>Task Ratings Report, {{ summary.stats.time_period.0 }} – {{ summary.stats.time_period.1 }}</h2>
+  <h3><strong>{{ summary.stats.tasks_count }}</strong> tasks were rated, the average rating is <strong>{{ summary.stats.rating_avg }}</strong> </h3>
+  {% for task in summary.tasks %}
+    <p>{{ task.tasktype|title }} task <a href="https://bigpanda.cern.ch/task/{{ task.jeditaskid }}/">{{ task.jeditaskid }}</a>,
+     submitted <strong>{{ task.creationdate }}</strong>  by <strong>{{ task.username }}</strong>
+      using <strong>{{ task.tool }}</strong>  transformation {% if task.framework %} and <strong>{{ task.framework }}</strong> framework,{% endif %} 
+      and requiring <strong>{{ task.resourcetype }}</strong>. 
+      The current status is <strong class="{{ task.status }}">{{ task.status }}</strong> and the last time it has been modified on <strong>{{ task.modificationtime }}</strong>.
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Reporter</th>
+                <th>Rating</th>
+                <th>Feedback</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rating in task.ratings %}
+            <tr>
+                <td>{{ rating.reporter }}</td>
+                <td {% if rating.value < 3 %}class="highlight"{% endif %}>{{ rating.emoji }}{{ rating.value }}</td>
+                <td>{{ rating.feedback }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+  {% endfor %}
+</div>
+{% endif %}
+  <p>Best Regards,<br>PanDA team</p>
+</body>
+</html>
+{% endautoescape %}

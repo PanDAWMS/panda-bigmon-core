@@ -5,7 +5,7 @@
 import logging
 
 from django.http import HttpResponseRedirect
-
+from django.contrib.auth.models import Group
 from core.utils import is_json_request
 from core.oauth.models import BPUser
 from django.conf import settings as django_settings
@@ -125,3 +125,29 @@ def get_full_name(email):
         full_names.extend([f"{u['first_name']} {u['last_name']}" for u in bp_users])
 
     return list(set(full_names))
+
+
+def update_user_groups(username, user_roles):
+    """
+    Update user groups
+    :param username: str
+    :param user_roles: list of user roles
+    :return: bool
+    """
+    try:
+        user = BPUser.objects.get(username=username)
+    except:
+        _logger.exception('Exception was caught while getting row from AUTH_USER by email')
+        return False
+
+    if user:
+        groups_existing = [g['name'] for g in Group.objects.filter(name__in=user_roles).values('name')]
+        for role in list(set(user_roles) & set(groups_existing)):
+            if not user.groups.filter(name=role).exists():
+                user.groups.add(Group.objects.get(name=role))
+                user.save()
+    else:
+        _logger.exception(f'There is no user with this email {username}')
+        return False
+
+    return True

@@ -1,0 +1,125 @@
+{% extends "_base_core.html" %}
+{% load static %}
+{% block page_title %} {{ viewParams.MON_VO }} Rated Tasks {% endblock %}
+{% block subtitle %}Rated tasks {{ viewParams.selection|safe }}{% endblock %}
+{% block css_page_library %}
+    <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}">
+{% endblock %}
+{% block js_head_page_library %}
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'js/datatables/DataTables-1.10.13/js/dataTables.foundation.js' %}"></script>
+    <script src="{% static 'js/datatables/dataTables.num-html.js' %}"></script>
+{% endblock %}
+{% block body %}
+
+<div class="card bp-container-simple secondary" id="container_ratings">
+<div class="card-divider"><p>{{ ratings|length }} ratings</p></div>
+<div class="card-section">
+  <table id='rated_tasks' class="data-table">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+</div>
+</div>
+
+{% endblock %}
+
+{% block js_body_page %}
+<script nonce={{request.csp_nonce}}>
+  $(document).ready(function () {
+      const ratings = {{ ratings|safe }};
+      var ratingTable = ratingsListTable(ratings);
+  });
+
+function ratingsListTable(data_raw) {
+  var table = $('#rated_tasks').dataTable({
+    "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+    "paging": true,
+    "scrollX": true,
+    "aaSorting": [[0,'desc']],
+    "columnDefs": [
+       // {"type": "num-html", "targets": [0,4,7,8,9] }
+    ],
+    "data": data_raw,
+    "aoColumns": [
+        {
+            title: 'Reported on',
+            "data": "timestamp",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Reporter',
+            "data": "username",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Rating',
+            "data": "rating",
+            sDefaultContent: "-",
+            render: (data, type, row) => {
+                return row.rating + ' ' + row.emoji ;
+            }
+        },
+        {
+            title: 'Feedback',
+            "data": "feedback",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Task ID',
+            "data": "task_id",
+            sDefaultContent: "---",
+            "render": function(data, type, row, meta) {
+                return '<a href = "{% url 'taskInfo' %}' + row['task_id'] + '/">'+row['task_id']+'</a>'
+            }
+        },
+        {
+            title: 'Type',
+            "data": "task_type",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Username',
+            "data": "task_username",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Status',
+            "data": "task_status",
+            sDefaultContent: "-",
+            className: 'state',
+        },
+        {
+            title: 'Transpath',
+            "data": "task_transpath",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Framework',
+            "data": "task_framework",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Resource type',
+            "data": "task_resourcetype",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Created',
+            "data": "task_creationdate",
+            sDefaultContent: "-",
+        },
+        {
+            title: 'Last modified',
+            "data": "task_modificationtime",
+            sDefaultContent: "-",
+        },
+    ],
+    "createdRow": function ( row, data, index ) {
+        $('td', row).eq(7).addClass(data['task_status'] + '_fill');
+    }
+  });
+  return table
+}
+</script>
+{% endblock %}
