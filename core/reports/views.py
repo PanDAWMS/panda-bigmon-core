@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.core.cache import cache
 from core.views import initRequest, setupView
+from core.utils import error_response
 from core.oauth.utils import login_customrequired
 from core.reports.models import ReportEmails
 from core.reports.sendMail import send_mail_bp
@@ -33,13 +34,6 @@ def reports(request):
     available_reports = {}
     if 'ATLAS' in settings.DEPLOYMENT:
         available_reports = {
-            'rated_tasks': {
-                'value': 'rated_tasks', 'name': 'Rated tasks',
-                'params': {
-                    'delivery_options': ['page', 'email'],
-                    'get_redirect': ['days', 'rating_threshold'],
-                }
-            },
             'obstasks': {
                 'value': 'obstasks', 'name': 'Obsoleted tasks',
                 'params': {
@@ -62,6 +56,14 @@ def reports(request):
                 }
             }
         }
+        if request.user.groups.filter(name='atlas-adc-dpa').exists():
+            available_reports['rated_tasks'] = {
+                'value': 'rated_tasks', 'name': 'Rated tasks',
+                'params': {
+                    'delivery_options': ['page', 'email'],
+                    'get_redirect': ['days', 'rating_threshold'],
+                }
+            }
 
     data = {
         'request': request,
@@ -193,6 +195,8 @@ def report(request):
         report = TasksRatedReport.TasksRatedReport(days=days, rating_threshold=rating_threshold)
 
         if delivery == 'page':
+            if not request.user.groups.filter(name='atlas-adc-dpa').exists():
+                return error_response(request, "You are not allowed to view this report", status=403)
             ratings = report.prepare_data_page()
             data = {
                 'request': request,
