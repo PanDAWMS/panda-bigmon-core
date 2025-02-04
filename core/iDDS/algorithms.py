@@ -76,7 +76,7 @@ def checkIfIddsTask(taskinfo):
         if 'HO=1' in split_rule:
             return 'hpo'
     if taskinfo['tasktype']:
-        if taskinfo['tasktype'] == "prod":
+        if taskinfo['tasktype'] == "prod" or taskinfo['tasktype'] == 'anal':
             return 'idds'
     return None
 
