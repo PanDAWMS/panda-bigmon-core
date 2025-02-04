@@ -849,7 +849,6 @@ app.controller('taskInfoController', function($rootScope, $scope, $http) {
     });
   }  
 });
-
 app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
     $scope.iddsjson = "";
     $scope.getiDDs = function () {
@@ -881,7 +880,7 @@ app.controller('StagingDSController', function ($scope, $http) {
     $http({
         url: '/api/dc/staginginfofortask/',
         method: "GET",
-        params: {'jeditaskid':jeditaskid}
+        params: {'jeditaskid':jeditaskid, tasktype:'{{task.tasktype|safe}}'}
       }
     ).then(function (res) {
       $scope.json = angular.fromJson(res.data);

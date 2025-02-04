@@ -53,19 +53,29 @@ def getStagingData(request):
     else:
         processingtype = None
 
+    task_type = request.GET.get('tasktype', 'prod')
+
     data = {}
     tmpTableName = get_tmp_table_name()
     new_cur = connection.cursor()
 
     selection = "where 1=1 "
     jeditaskid = None
+
+    campaign_column = "t3.campaign" if task_type == "prod" else "t4.campaign"
+    processingtype_column = "t4.processingtype" if task_type == "prod" else "t3.processingtype"
+    tasktype_column = "t4.tasktype" if task_type == "prod" else "t3.tasktype"
+    endtime_column = "t4.endtime" if task_type == "prod" else "t3.endtime"
+    taskid_column = "taskid" if task_type == "prod" else "task_id"
+    tasks_table = "ATLAS_DEFT.T_ACTION_STAGING" if task_type == "prod" else "ATLAS_PANDA.DATA_CAROUSEL_RELATIONS"
+
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = request.session['requestParams']['jeditaskid']
         taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
-        transactionKey =  insert_to_temp_table(taskl)
-        selection += "and t2.taskid in (SELECT tmp.id FROM %s tmp where transactionkey=%i)"  % (tmpTableName, transactionKey)
+        transactionKey = insert_to_temp_table(taskl)
+        selection += "and t2."+ taskid_column + " in (SELECT tmp.id FROM %s tmp where transactionkey=%i)" % (tmpTableName, transactionKey)
     else:
-        selection += "and t2.TASKID in (select taskid from ATLAS_DEFT.T_ACTION_STAGING)"
+        selection += "and t2." + taskid_column + " in (select " + taskid_column + " from " + tasks_table + " )"
 
     if source:
         sourcel = [source] if ',' not in source else [rse for rse in source.split(',')]
@@ -80,45 +90,85 @@ def getStagingData(request):
         if 'Unknown' in campaignl:
             campaignl.remove('Unknown')
             if len(campaignl) > 0:
-                selection += " AND (t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ") OR t3.campaign is null)"
+                selection += " AND (" + campaign_column + " in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ") OR " + campaign_column + "is null)"
             else:
-                selection += " AND t3.campaign is null"
+                selection += " AND " + campaign_column + " is null"
         else:
-            selection += " AND t3.campaign in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
+            selection += " AND " + campaign_column + " in (" + ','.join('\''+str(x)+'\'' for x in campaignl) + ")"
 
     if processingtype:
         processingtypel = [processingtype] if ',' not in processingtype else [pt for pt in processingtype.split(',')]
         if 'analysis' in processingtypel:
             processingtypel.remove('analysis')
             if processingtypel and len(processingtypel) > 0:
-                selection += " AND (t4.processingtype in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ") OR t4.tasktype='anal')"
+                selection += " AND (" + processingtype_column + " in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ") OR " + processingtype_column + "='anal')"
             else:
-                selection += " AND t4.tasktype='anal'"
+                selection += " AND " + tasktype_column + "='anal'"
         else:
-            selection += " AND t4.processingtype in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
+            selection += " AND " + processingtype_column + " in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
 
     if not jeditaskid:
-        selection += """  
-        and not (nvl(t4.endtime, current_timestamp) < t1.start_time) 
+        selection += f"""  
+        and not (nvl({endtime_column}, current_timestamp) < t1.start_time) 
         and (
-            end_time between to_date('{}', 'YYYY-mm-dd HH24:MI:SS') and to_date('{}', 'YYYY-mm-dd HH24:MI:SS') 
-            or (end_time is null and not (t1.status = 'done'))
+            t1.end_time between to_date('{timewindow[0]}', 'YYYY-mm-dd HH24:MI:SS') and to_date('{timewindow[1]}', 'YYYY-mm-dd HH24:MI:SS') 
+            or (t1.end_time is null and not (t1.status = 'done'))
         )
-        """.format(timewindow[0], timewindow[1])
-
-    new_cur.execute(
         """
-        select t1.dataset, t1.status, t1.staged_files, t1.start_time, t1.end_time, t1.rse as rse, t1.total_files, 
-            t1.update_time, t1.source_rse, t1.destination_rse, t1.dataset_bytes, t1.staged_bytes,
-            t2.taskid, t3.campaign, t3.pr_id,
-            row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence, 
-            (current_timestamp-t1.update_time) as update_time, t4.processingtype, t2.step_action_id 
-        from atlas_deft.t_dataset_staging t1
-        inner join {0}.t_action_staging t2 on t1.dataset_staging_id=t2.dataset_staging_id
-        inner join {0}.t_production_task t3 on t2.taskid=t3.taskid 
-        inner join {1}.jedi_tasks t4 on t2.taskid=t4.jeditaskid {2} 
-        """.format('atlas_deft', settings.DB_SCHEMA_PANDA, selection))
+
+    if task_type == 'prod':
+        sql_query = """
+            select 
+            t1.dataset, 
+            t1.status, 
+            t1.staged_files, 
+            t1.start_time, 
+            t1.end_time, 
+            t1.rse as rse, 
+            t1.total_files, 
+            t1.update_time, 
+            t1.source_rse, 
+            t1.destination_rse, 
+            t1.dataset_bytes, 
+            t1.staged_bytes,
+            t2.taskid, 
+            t3.campaign, 
+            t3.pr_id,
+                row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence, 
+                (current_timestamp-t1.update_time) as update_time, t4.processingtype, t2.step_action_id 
+            from {0}.t_dataset_staging t1
+            inner join {0}.t_action_staging t2 on t1.dataset_staging_id=t2.dataset_staging_id
+            inner join {0}.t_production_task t3 on t2.taskid=t3.taskid 
+            inner join {1}.jedi_tasks t4 on t2.taskid=t4.jeditaskid {2} 
+            """.format('atlas_deft', settings.DB_SCHEMA_PANDA, selection)
+    else:
+        sql_query = """
+         select
+        t1.dataset,
+        t1.status,
+        t1.staged_files,
+        t1.start_time,
+        t1.end_time,
+        t1.ddm_rule_id AS rse,
+        t1.total_files,
+        t1.modification_time AS update_time,
+        t1.source_rse,
+        t1.destination_rse,
+        t1.dataset_size AS dataset_bytes,
+        t1.staged_size AS staged_bytes,
+        t2.task_id AS taskid,
+        t3.campaign,
+        t3.processingtype,
+        row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
+        (current_timestamp - t1.modification_time) AS update_time
+        from {0}.data_carousel_requests t1
+        inner join {0}.data_carousel_relations t2 on t1.request_id = t2.request_id
+        inner join {0}.jedi_tasks t3 on t2.task_id = t3.jeditaskid {1}
+        """.format(settings.DB_SCHEMA_PANDA, selection)
+
+    new_cur.execute(sql_query)
     datasets = dictfetchall(new_cur, style='lowercase')
+
     for dataset in datasets:
         # Sort out requests by request on February 19, 2020
         if dataset['status'] in ('staging', 'queued', 'done'):
