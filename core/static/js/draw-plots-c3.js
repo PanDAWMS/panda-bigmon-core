@@ -6,7 +6,7 @@ var task_state_colors =  {
     'running': '#47D147',
     'waiting': '#c7c7c7',
     'assigning': '#099999',
-    'exhausted': '#FF9933',
+    'exhausted': '#e67300',
     'paused': '#808080',
     'throttled': '#FF9933',
     'pending': '#deb900',
@@ -16,7 +16,7 @@ var task_state_colors =  {
     'scouted': '#addf80',
     'toabort': '#ff9896',
     'aborting': '#FF8174',
-    'aborted': '#ff0000',
+    'aborted': '#FF8174',
     'failed': '#ff0000',
     'broken': '#b22222',
     'passed': '#1a1a1a',
@@ -117,27 +117,7 @@ function draw_donut(data, divid, title, ext={}) {
         colors = job_state_colors;
     }
     else if (title.indexOf('status') > -1) {
-        colors =  {
-            'done': '#165616',
-            'finished': '#207f20',
-            'running': '#34a934',
-            'waiting': '#c7c7c7',
-            'assigning': '#099999',
-            'exhausted': '#FF9933',
-            'paused': '#808080',
-            'throttled': '#deb900',
-            'pending': '#a9a9a9',
-            'ready': '#3b8e67',
-            'registered': '#4a4a4a',
-            'scouting': '#addf80',
-            'aborting': '#ff9896',
-            'aborted': '#FF8174',
-            'failed': '#ff0000',
-            'broken': '#b22222',
-            'passed': '#1a1a1a',
-            'defined': '#2174bb',
-            'remaining': '#2174bb',
-        };
+        colors =  task_state_colors;
     }
     else {
        let colors_all = [
