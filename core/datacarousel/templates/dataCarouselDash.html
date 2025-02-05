@@ -476,6 +476,13 @@
 
   function service($http){
     var get = function(requestparams) {
+      {# TODO remove it after migration #}
+      var tasktype_dict = {{ requestParams|safe }};
+      if (tasktype_dict && Object.keys(tasktype_dict).length > 0 &&
+          tasktype_dict.tasktype === 'analy' || tasktype_dict.tasktype === 'all' || tasktype_dict.tasktype === 'prod') {
+            requestparams += '&' + new URLSearchParams(tasktype_dict).toString();
+      }
+      {# endcode #}
       return $http({
         method: 'GET',
         url: '{% url 'datacardata' %}?json'+requestparams,
