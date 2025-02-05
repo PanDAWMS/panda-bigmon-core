@@ -8,6 +8,7 @@ from django.db.models import Count, Sum, Q
 
 from core.pandajob.models import Jobswaiting4, Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
 from core.libs.datetimestrings import parse_datetime
+from core.libs.exlib import round_to_n_digits
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
@@ -164,20 +165,21 @@ def wn_summary(wnname, query):
         fullsummary.append(avgwns)
 
     for wn in wnkeys:
-        outlier = ''
+        wns[wn]['outlier'] = ''
         wns[wn]['slotcount'] = len(wns[wn]['slotd'])
         wns[wn]['rminramcount'] = round(wns[wn]['rminramcount']*1.0/1000, 2)
         wns[wn]['pctfail'] = 0
         for state in const.JOB_STATES_SITE:
             wns[wn]['statelist'].append(wns[wn]['states'][state])
         if wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count'] > 0:
-            wns[wn]['pctfail'] = int(100. * float(wns[wn]['states']['failed']['count']) / (
-            wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count']))
-        if float(wns[wn]['states']['finished']['count']) < float(avgstates['finished']) / 5.:
-            outlier += " LowFinished "
-        if float(wns[wn]['states']['failed']['count']) > max(float(avgstates['failed']) * 3., 5.):
-            outlier += " HighFailed "
-        wns[wn]['outlier'] = outlier
+            wns[wn]['pctfail'] = round_to_n_digits(100. * float(wns[wn]['states']['failed']['count']) /
+                                     (wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count']), 0, method='ceil')
+        # tag outliers
+        if wn.lower() not in ('all', 'average', 'unknown' ) and wns[wn]['states']['failed']['count'] > 5 and wns[wn]['pctfail'] >= 20:
+            if wns[wn]['pctfail'] >= allwns['pctfail'] * 5 or wns[wn]['pctfail'] >= 75:
+                wns[wn]['outlier'] += " VeryHighFailed "
+            elif wns[wn]['pctfail'] >= allwns['pctfail'] * 3:
+                wns[wn]['outlier'] += " HighFailed "
         fullsummary.append(wns[wn])
 
     plots_data = {'finished': wnPlotFinished, 'failed': wnPlotFailed}
