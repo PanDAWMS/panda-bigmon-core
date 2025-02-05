@@ -120,7 +120,7 @@ def getStagingData(request):
             )
             """
         return selection
-    
+
     def execute_query(task_type):
         selection = build_selection(task_type)
         if task_type == 'prod':
@@ -179,7 +179,7 @@ def getStagingData(request):
 
     if task_type == 'prod':
         datasets = execute_query('prod')
-    elif task_type == 'analy':
+    elif task_type in ('analy', 'anal'):
         datasets = execute_query('analy')
     elif task_type == 'all':
         datasets_prod = execute_query('prod')
