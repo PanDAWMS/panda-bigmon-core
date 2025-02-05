@@ -56,7 +56,7 @@ sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
 stageProgressCollector = DataCarouselPrestageCollector()
 mlFlowCleanUp = MLFlowCleanup()
-ratedTasks = RatedTasks()
+ratedTasks = RatedTasks(EXECUTION_CAP_FOR_MAINMENUURLS)
 
 
 def run_threaded(job_func):
