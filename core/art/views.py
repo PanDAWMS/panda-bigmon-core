@@ -1601,24 +1601,10 @@ def remove_old_tests(request):
     """
     start = datetime.now()
     message = ''
-    # get max pandaid for tests older than retention policy
-    pandaid_max = None
-    pandaid = ARTTests.objects.filter(created__lte=(datetime.now() - timedelta(days=art_const.RETENTION_PERIOD_DAYS))).aggregate(Max('pandaid'))
-    if len(pandaid) > 0 and pandaid['pandaid__max'] is not None:
-        pandaid_max = int(pandaid['pandaid__max'])
-    else:
-        return JsonResponse({'message': f"No test for deletion found, it took {(datetime.now() - start).total_seconds()}s"}, status=200)
-
     # delete results and tests older than retention policy
     try:
-        res = ARTSubResult.objects.filter(pandaid__lte=pandaid_max).delete()
-        _logger.info(f"Deleted {res[0]} test results for tests,  older than {pandaid_max}")
-    except Exception as ex:
-        message += "Failed to delete test results"
-        _logger.exception(f"{message} with:\n{ex}")
-    try:
-        tests = ARTTests.objects.filter(pandaid__lte=pandaid_max).delete()
-        _logger.info(f"Deleted {tests[0]} tests, older than {pandaid_max}")
+        tests = ARTTests.objects.filter(created__lte=(datetime.now() - timedelta(days=art_const.RETENTION_PERIOD_DAYS))).delete()
+        _logger.info(f"Deleted {tests[0]} tests, older than {art_const.RETENTION_PERIOD_DAYS} days")
     except Exception as ex:
         message += "Failed to delete tests"
         _logger.exception(f"{message} with:\n{ex}")

@@ -35,7 +35,7 @@ class ARTTests(models.Model):
 
 class ARTSubResult(models.Model):
     pandaid = models.OneToOneField('ARTTests',
-        related_name='artsubresult', on_delete=models.DO_NOTHING, db_column='pandaid', primary_key=True)
+        related_name='artsubresult', on_delete=models.CASCADE, db_column='pandaid', primary_key=True)
     subresult = models.CharField(max_length=4000, db_column='subresult_json', null=True)
 
     class Meta:
