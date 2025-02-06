@@ -106,14 +106,18 @@ def get_data_carousel_data(request):
     timelistIntervalqueued = []
 
     dataset_list = []
+
+    task_type = request.GET.get('tasktype', '')
+    key_name = 'username' if task_type == 'analy' else 'campaign'
+
     summary = {
         'processingtype': {},
         'source_rse': {},
-        'campaign': {},
+        key_name: {},
         'destination_rse': {},
     }
     selection_options = {
-        'campaign': [],
+        key_name: [],
         'source_rse': [],
         'processingtype': [],
     }
@@ -173,7 +177,7 @@ def get_data_carousel_data(request):
 
         progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
         dataset_list.append({
-            'campaign': dsdata['campaign'],
+             key_name: dsdata[key_name],
             'pr_id': dsdata['pr_id'],
             'taskid': dsdata['taskid'],
             'dataset': dsdata['dataset'],
