@@ -1165,12 +1165,11 @@ def registerARTTest(request):
             return JsonResponse({"error": "Invalid ART API user!"}, status=403)
 
         # Generate job ID for ART Local
-        query = {'test_type': 'local'}
-        pandaid = ARTTests.objects.filter(test_type='local').aggregate(Max('pandaid'))
-        if len(pandaid) > 0 and pandaid['pandaid__max'] is not None:
-            pandaid = int(pandaid['pandaid__max']) + 1
-        else:
-            pandaid = art_const.INITIAL_LOCAL_ID
+        cursor = connection.cursor()
+        sqlArtTest = f"SELECT {settings.DB_SCHEMA}.ART_TESTS_SEQ.NEXTVAL as new_test_id FROM dual;"
+        cursor.execute(sqlArtTest)
+        pandaid = cursor.fetchall()[0][0]
+        cursor.close()
         _logger.info("JobID: {} was generated".format(pandaid))
         attemptnr = 1
         computingsite = "ART Local"
@@ -1334,6 +1333,7 @@ def registerARTTest(request):
         except Exception as e:
             data = {'exit_code': 0, 'message': "Failed to register test, can not save the row to DB"}
             _logger.error('{}\n{}\n{}'.format(data['message'], str(e), str(request.session['requestParams'])))
+            return JsonResponse(data, status=500)
     else:
         data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
