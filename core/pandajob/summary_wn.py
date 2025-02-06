@@ -76,12 +76,15 @@ def wn_summary(wnname, query):
         if wn.startswith('aipanda'):
             wn = 'Unknown'
             slot = ''
-        if jobstatus == 'failed':
-            if not wn in wnPlotFailed: wnPlotFailed[wn] = 0
-            wnPlotFailed[wn] += count
-        elif jobstatus == 'finished':
-            if not wn in wnPlotFinished: wnPlotFinished[wn] = 0
-            wnPlotFinished[wn] += count
+        if wn != 'Unknown':
+            if jobstatus == 'failed':
+                if not wn in wnPlotFailed:
+                    wnPlotFailed[wn] = 0
+                wnPlotFailed[wn] += count
+            elif jobstatus == 'finished':
+                if not wn in wnPlotFinished:
+                    wnPlotFinished[wn] = 0
+                wnPlotFinished[wn] += count
         totjobs += count
         if jobstatus not in totstates:
             totstates[jobstatus] = 0
