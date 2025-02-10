@@ -1628,7 +1628,11 @@ def fill_table(request):
     start = datetime.now()
     # get last ntag with empty new fields
     ntag = None
-    ntags = ARTTests.objects.filter(gitlabid__isnull=True,created__lt=(datetime.now() - timedelta(days=2))).aggregate(Max('nightly_tag'))
+    ntags = ARTTests.objects.filter(
+        test_type='grid',
+        gitlabid__isnull=True,
+        created__lt=(datetime.now() - timedelta(days=2))
+    ).aggregate(Max('nightly_tag'))
     if len(ntags) > 0:
         ntag = ntags['nightly_tag__max']
 
