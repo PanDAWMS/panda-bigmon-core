@@ -1628,7 +1628,11 @@ def fill_table(request):
     start = datetime.now()
     # get last ntag with empty new fields
     ntag = None
-    ntags = ARTTests.objects.filter(gitlabid__isnull=True,created__lt=(datetime.now() - timedelta(days=2))).aggregate(Max('nightly_tag'))
+    ntags = ARTTests.objects.filter(
+        test_type='grid',
+        gitlabid__isnull=True,
+        created__lt=(datetime.now() - timedelta(days=2))
+    ).aggregate(Max('nightly_tag'))
     if len(ntags) > 0:
         ntag = ntags['nightly_tag__max']
 
@@ -1650,8 +1654,10 @@ def fill_table(request):
         jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
         if len(jobs) == 0:
             jobs.extend(Jobsarchived.objects.filter(**query).values(*values))
-        job = jobs[0]
-
+        if len(jobs) > 0:
+            job = jobs[0]
+        else:
+            return JsonResponse({'message': f"No jobs found to update tests"}, status=200)
         try:
             gitlabid = int(re.search('.([0-9]{6,8}).', job['jobname']).group(1))
         except:
