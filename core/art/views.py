@@ -1654,8 +1654,10 @@ def fill_table(request):
         jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
         if len(jobs) == 0:
             jobs.extend(Jobsarchived.objects.filter(**query).values(*values))
-        job = jobs[0]
-
+        if len(jobs) > 0:
+            job = jobs[0]
+        else:
+            return JsonResponse({'message': f"No jobs found to update tests"}, status=200)
         try:
             gitlabid = int(re.search('.([0-9]{6,8}).', job['jobname']).group(1))
         except:
