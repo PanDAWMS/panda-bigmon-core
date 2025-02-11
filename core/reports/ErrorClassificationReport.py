@@ -18,13 +18,13 @@ class ErrorClassificationReport:
 
 
     def get_jobs(self):
-        self.jobs = get_job_list(self.query_jobs, extra_str=self.extra_query, error_info=True)
+        self.jobs = get_job_list(copy.deepcopy(self.query_jobs), extra_str=self.extra_query, error_info=True)
         _logger.info(f'Found jobs: {len(self.jobs)}')
 
 
     def get_job_counts_per_pq(self):
         job_counts = {}
-        job_summary_queues, _, _ = get_job_summary_region(self.query_jobs)
+        job_summary_queues, _, _ = get_job_summary_region(copy.deepcopy(self.query_jobs))
         for pq, counts in job_summary_queues.items():
             job_counts[pq] = counts['summary']['all']['all']
         return job_counts
