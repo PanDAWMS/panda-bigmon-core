@@ -30,7 +30,7 @@
     <thead class="section-emoji">
       <tr><th colspan="30">
         <div class="left">{{ jeditaskid }} task</div>
-        <div class="right">Rate task<sup><span class="bp-tooltip bottom"><i class="fi-info"></i><span class="bp-tooltip tooltip-text">Rate the task processing from 1 (very bad) to 5 (excellent). We are collecting statistics to be used for an analysis by experts. In the future, it could be used to report problems directly.</span></span></sup>: 
+        <div class="right" ng-show="rating.is_allowed">Rate task<sup><span class="bp-tooltip bottom"><i class="fi-info"></i><span class="bp-tooltip tooltip-text">Rate the task processing from 1 (very bad) to 5 (excellent). We are collecting statistics to be used for an analysis by experts. In the future, it could be used to report problems directly.</span></span></sup>: 
           <a ng-repeat="(key, value) in rating.emoji_desc" ng-click="rating.emojiButtonClick(key)" >{$ value $}</a></div>
       </th></tr>
     </thead>
@@ -221,8 +221,8 @@
         <a ng-click="rating.closeFeedbackModal()"><span class="close">&times;</span></a>
         <!-- Modal Content -->
         <div>
-            <label>Submit your feedback</label>
-            <textarea ng-model="rating.feedback" id="user-comment" placeholder="Write your feedback here..."></textarea>
+            <label>How did the task processing go? Share what went well or what could be improved. Your feedback will be submitted to the ATLAS Distributed Computing Operations Team!</label>
+            <textarea ng-model="rating.feedback" id="user-comment" placeholder="E.g., fast processing, delays, high failure rate, unclear errors, or suggestions for improvement..."></textarea>
             <p class="ng-hide alert" ng-show="rating.is_shown_modal_alert">{$ rating.modal_alert $}</p>
             <a class="bp-button submit" ng-click="rating.submitFeedback()" ng-disabled="rating.submitting">{$ rating.submit_button_text $}</a>
         </div>
@@ -771,6 +771,7 @@ if (document.getElementById("button-task-action-abort-panda")) {document.getElem
 if (document.getElementById("button-task-action-finish-prodsys")) {document.getElementById("button-task-action-finish-prodsys").addEventListener("click", killtasks.bind(null, jeditaskid, 0));}
 if (document.getElementById("button-task-action-abort-prodsys")) {document.getElementById("button-task-action-abort-prodsys").addEventListener("click", killtasks.bind(null, jeditaskid, 1));}
 
+const task_age = {{ task.age|safe }};
 const task_rating = {{ task.rating|safe }};
 const task_rating_feedback_messages = {% if 'rating_feedback' in task %} {{ task.rating_feedback|safe }} {% else %} "" {% endif %};
 
@@ -783,6 +784,7 @@ app.controller('taskInfoController', function($rootScope, $scope, $http) {
       $scope.idds.loading = false;
   });
   $scope.rating = {
+    is_allowed: (task_age <= 90),
     total: (task_rating > 0 && task_rating <= 5) ? task_rating : 0,
     new: -1,
     feedback: '',
