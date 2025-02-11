@@ -245,8 +245,8 @@ $(document).ready(function () {
 {% for state in wn.statelist %}
 <td class="num_dt {{ state.name }}_fill">{% if state.count > 0 %}<a href="{% url 'jobList' %}{{ jurl }}{% if wn.name != 'All' and wn.name != 'Average' %}&modificationhost={% if wn.name == 'Unknown' %}aipanda*{% else %}{{ wn.name }}{% endif %}{% endif %}&jobstatus={{ state.name }}">{{ state.count }}</a> {% else %} - {% endif %} </td>
 {% endfor %}
-<td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed">{{ wn.pctfail  }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
-<td> {% if wn.outlier != '' %} <span class="warning"> {{ wn.outlier }} </span> {% endif %} </td>
+<td class="num"> {% if wn.pctfail > errthreshold %} <span class="failed {% if 'outlier' in wn and 'HighFailed' in wn.outlier %}bold{% endif %}">{{ wn.pctfail  }}</span> {% else %} {{ wn.pctfail  }} {% endif %} </td>
+<td> {% if 'outlier' in wn and wn.outlier != '' %} <span class="{% if 'VeryHighFailed' in wn.outlier %}alarm{% elif 'HighFailed' in wn.outlier %}warning{% endif %}">{{ wn.outlier }}</span> {% endif %} </td>
 </tr>
 {% endfor %}
 </tbody>

@@ -392,38 +392,38 @@ LOGGING = {
             'level': 'CRITICAL',  # suppress autoreload logging
         },
         'django': {
-            'handlers': ['logfile-django', 'logfile-error', 'console'],
+            'handlers': ['logfile-django', 'logfile-error'],
             'propagate': True,
             'level': LOG_LEVEL,
         },
         'django.template': {
-            'handlers': ['logfile-template', 'console'],
+            'handlers': ['logfile-template'],
             'level': LOG_LEVEL,
             'propagate': False,
         },
         'bigpandamon': {
-            'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error', 'console'],
+            'handlers': ['logfile-bigpandamon', 'logfile-info', 'logfile-error'],
             'level': LOG_LEVEL,
         },
         'bigpandamon-error': {
-            'handlers': ['logfile-error', 'console'],
+            'handlers': ['logfile-error'],
             'level': 'ERROR',
             'formatter': 'custom',
         },
         'bigpandamon-art': {
-            'handlers': ['logfile-art', 'logfile-error', 'console'],
+            'handlers': ['logfile-art', 'logfile-error'],
             'level': LOG_LEVEL,
         },
         'bigpandamon-filebrowser': {
-            'handlers': ['logfile-filebrowser', 'logfile-error', 'logfile-info', 'console'],
+            'handlers': ['logfile-filebrowser', 'logfile-error', 'logfile-info'],
             'level': LOG_LEVEL,
         },
         'panda.client': {
             'handlers': ['panda-client'],
-            'level': 'DEBUG',
+            'level': LOG_LEVEL,
         },
         'social': {
-            'handlers': ['logfile-error', 'social', 'console'],
+            'handlers': ['logfile-error', 'social'],
             'level': LOG_LEVEL,
             'propagate': True,
         }
@@ -454,6 +454,11 @@ LOGGING = {
         'encoding': 'utf-8',
     },
 }
+
+if DEBUG is True:
+    for logger in LOGGING['loggers']:
+        LOGGING['loggers'][logger]['handlers'].append('console')
+
 
 ENV = {
     ### Application name
