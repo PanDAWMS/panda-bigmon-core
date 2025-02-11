@@ -12,20 +12,13 @@ class ErrorClassificationReport:
             raise ValueError('Query is not provided')
 
         self.query_jobs = copy.deepcopy(query)
-        # we change time param from modificationtime to :
-        timeparamname = 'statechangetime'
-        if 'modificationtime__castdate__range' in query:
-            query[timeparamname + '__castdate__range'] = query['modificationtime__castdate__range']
-            del query['modificationtime__castdate__range']
-        self.query_errors = copy.deepcopy(query)
         self.extra_query = "(" + " or ".join([f"({k['error']} is not null and {k['error']} > 0)" for k in list(const.JOB_ERROR_CATEGORIES)]) + ")"
         self.jobs = []
-        _logger.debug(self.query_jobs, self.query_errors, self.extra_query)
-
+        _logger.debug(f"{self.query_jobs}, {self.extra_query}")
 
 
     def get_jobs(self):
-        self.jobs = get_job_list(self.query_errors, extra_str=self.extra_query, error_info=True)
+        self.jobs = get_job_list(self.query_jobs, extra_str=self.extra_query, error_info=True)
         _logger.info(f'Found jobs: {len(self.jobs)}')
 
 
@@ -36,9 +29,10 @@ class ErrorClassificationReport:
             job_counts[pq] = counts['summary']['all']['all']
         return job_counts
 
+
     def prepare_report(self):
         """
-
+        Prepare error statistics report for jobs per PQ
         :return:
         """
         data = {}

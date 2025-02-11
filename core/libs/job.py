@@ -9,6 +9,7 @@ import logging
 from core.libs.exlib import convert_bytes
 from datetime import datetime, timedelta
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from core.pandajob.utils import is_archived_jobs
 from core.common.models import JediJobRetryHistory, Filestable4, FilestableArch, JediDatasetContents
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, drop_duplicates, convert_sec
 from core.libs.datetimestrings import parse_datetime
@@ -312,8 +313,8 @@ def get_job_list(query, **kwargs):
 
     if 'jeditaskid' in query or 'jeditaskid__in' in query or 'jeditaskid' in extra_str or (
             'pandaid' in query or 'pandaid__in' in query or 'pandaid' in extra_str) or  (
-                'modificationtime__castdate__range' in query and query['modificationtime__castdate__range'][0] < (
-                    datetime.now() - timedelta(days=3))) or (len(jobs) == 0 and 'pandaid' in query):
+                'modificationtime__castdate__range' in query and is_archived_jobs(query['modificationtime__castdate__range'])) or (
+                    len(jobs) == 0 and 'pandaid' in query):
         if 'modificationtime__castdate__range' in query:
             # jobsarchived table has index by statechangetime, use it instead of modificationtime
             query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']

@@ -8,7 +8,7 @@ from django.conf import settings
 from django.db import connection, connections
 
 from core.pandajob.models import PandaJob
-from core.pandajob.utils import identify_jobtype
+from core.pandajob.utils import identify_jobtype, is_archived_jobs, is_archived_only_jobs
 from core.schedresource.utils import get_panda_queues
 from core.libs.exlib import getPilotCounts, get_resource_types
 from core.libs.sqlsyntax import interval_to_sec
@@ -150,6 +150,10 @@ def get_job_summary_region(query, **kwargs):
     extra_metrics = copy.deepcopy(worker_metrics)
     extra_metrics.append('rcores')
 
+    if 'modificationtime__castdate__range' in query and is_archived_jobs(query['modificationtime__castdate__range']):
+        is_archived = True
+    else:
+        is_archived = False
     if 'extra' in kwargs and len(kwargs['extra']) > 1:
         extra = kwargs['extra']
     else:
@@ -210,7 +214,7 @@ def get_job_summary_region(query, **kwargs):
 
     # get workers info
     wsq = []
-    if 'core.harvester' in settings.INSTALLED_APPS:
+    if 'core.harvester' in settings.INSTALLED_APPS and not is_archived:
         from core.harvester.utils import get_workers_summary_split
         if 'computingsite__in' not in query:
             # put full list of compitingsites to use index in workers table
@@ -219,7 +223,7 @@ def get_job_summary_region(query, **kwargs):
 
     # get PanDA getJob, updateJob request counts
     psq_dict = {}
-    if split_by is None and jobtype == 'all' and resourcetype == 'all':
+    if split_by is None and jobtype == 'all' and resourcetype == 'all' and not is_archived:
         psq_dict = getPilotCounts('all')
 
     # create template structure for grouping by queue
@@ -378,10 +382,25 @@ def get_job_summary_split(query, extra):
             extra_str += " and (" + fields[qn] + "= '" + str(qvs) + "' )"
 
     # get jobs groupings, the jobsactive4 table can keep failed analysis jobs for up to 7 days, so splitting the query
-    query_raw = """
-        select j.computingsite, j.resource_type as resourcetype, j.prodsourcelabel, j.transform, j.jobstatus, 
-            count(j.pandaid) as count, sum(j.rcores) as rcores, round(sum(j.walltime)) as walltime
-        from  (
+    query_jobs_raw = ""
+    if is_archived_jobs(query['modificationtime__castdate__range']):
+        query_jobs_raw = """
+        select ja.pandaid, ja.resource_type, ja.computingsite, ja.prodsourcelabel, ja.jobstatus, ja.modificationtime, 0 as rcores,
+            case when jobstatus in ('finished', 'failed') then {walltime_sec} else 0 end as walltime,
+            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
+        from {db_scheme}.jobsarchived ja where statechangetime > TO_DATE('{date_from}', 'YYYY-MM-DD HH24:MI:SS') 
+            and statechangetime <= TO_DATE('{date_to}', 'YYYY-MM-DD HH24:MI:SS') and {extra_str}
+        """.format(
+            db_scheme=settings.DB_SCHEMA_PANDA_ARCH,
+            date_from=query['modificationtime__castdate__range'][0],
+            date_to=query['modificationtime__castdate__range'][1],
+            extra_str=extra_str,
+            walltime_sec=interval_to_sec('endtime-starttime', db=db)
+        )
+    if not is_archived_only_jobs(query['modificationtime__castdate__range']):
+        if len(query_jobs_raw) > 0:
+            query_jobs_raw += " union "
+        query_jobs_raw += """
         select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
             case when jobstatus in ('finished', 'failed') then {walltime_sec} else 0 end as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
@@ -404,7 +423,18 @@ def get_job_summary_split(query, extra):
         union
         select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from {db_scheme}.jobsdefined4 jd4  where {extra_str}
+        from {db_scheme}.jobsdefined4 jd4  where {extra_str}  
+        """.format(
+            db_scheme=settings.DB_SCHEMA_PANDA,
+            date_from=query['modificationtime__castdate__range'][0],
+            extra_str=extra_str,
+            walltime_sec=interval_to_sec('endtime-starttime', db=db)
+        )
+    query_raw = """
+        select j.computingsite, j.resource_type as resourcetype, j.prodsourcelabel, j.transform, j.jobstatus, 
+            count(j.pandaid) as count, sum(j.rcores) as rcores, round(sum(j.walltime)) as walltime
+        from  (
+        {query_jobs_raw}
         ) j
         GROUP BY j.computingsite, j.prodsourcelabel, j.transform, j.resource_type, j.jobstatus
         order by j.computingsite, j.prodsourcelabel, j.transform, j.resource_type, j.jobstatus
@@ -412,7 +442,8 @@ def get_job_summary_split(query, extra):
         date_from=query['modificationtime__castdate__range'][0],
         extra_str=extra_str,
         db_scheme=settings.DB_SCHEMA_PANDA,
-        walltime_sec=interval_to_sec('endtime-starttime', db=db)
+        walltime_sec=interval_to_sec('endtime-starttime', db=db),
+        query_jobs_raw=query_jobs_raw
     )
 
     cur = connection.cursor()
