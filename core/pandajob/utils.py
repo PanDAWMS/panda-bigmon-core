@@ -107,6 +107,21 @@ def is_archived_jobs(timerange):
     return False
 
 
+def is_archived_only_jobs(timerange):
+    """
+    Check ifonly  archived PanDA jobs are needed for the given time range as jobs go there after 4 days
+    :param timerange: list of datetime strings
+    :return: bool
+    """
+    if len(timerange) == 2 and isinstance(timerange[0], str):
+        timerange = [parse_datetime(t) for t in timerange]
+
+    # if start or end is older than 4 days - need to check archived
+    if (datetime.datetime.now() - timerange[0]).days > 4 and (datetime.datetime.now() - timerange[1]).days > 4:
+        return True
+
+    return False
+
 
 def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
     """

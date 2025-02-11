@@ -1165,12 +1165,11 @@ def registerARTTest(request):
             return JsonResponse({"error": "Invalid ART API user!"}, status=403)
 
         # Generate job ID for ART Local
-        query = {'test_type': 'local'}
-        pandaid = ARTTests.objects.filter(test_type='local').aggregate(Max('pandaid'))
-        if len(pandaid) > 0 and pandaid['pandaid__max'] is not None:
-            pandaid = int(pandaid['pandaid__max']) + 1
-        else:
-            pandaid = art_const.INITIAL_LOCAL_ID
+        cursor = connection.cursor()
+        sqlArtTest = f"SELECT {settings.DB_SCHEMA}.ART_TESTS_SEQ.NEXTVAL as new_test_id FROM dual;"
+        cursor.execute(sqlArtTest)
+        pandaid = cursor.fetchall()[0][0]
+        cursor.close()
         _logger.info("JobID: {} was generated".format(pandaid))
         attemptnr = 1
         computingsite = "ART Local"
@@ -1334,6 +1333,7 @@ def registerARTTest(request):
         except Exception as e:
             data = {'exit_code': 0, 'message': "Failed to register test, can not save the row to DB"}
             _logger.error('{}\n{}\n{}'.format(data['message'], str(e), str(request.session['requestParams'])))
+            return JsonResponse(data, status=500)
     else:
         data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
@@ -1601,24 +1601,10 @@ def remove_old_tests(request):
     """
     start = datetime.now()
     message = ''
-    # get max pandaid for tests older than retention policy
-    pandaid_max = None
-    pandaid = ARTTests.objects.filter(created__lte=(datetime.now() - timedelta(days=art_const.RETENTION_PERIOD_DAYS))).aggregate(Max('pandaid'))
-    if len(pandaid) > 0 and pandaid['pandaid__max'] is not None:
-        pandaid_max = int(pandaid['pandaid__max'])
-    else:
-        return JsonResponse({'message': f"No test for deletion found, it took {(datetime.now() - start).total_seconds()}s"}, status=200)
-
     # delete results and tests older than retention policy
     try:
-        res = ARTSubResult.objects.filter(pandaid__lte=pandaid_max).delete()
-        _logger.info(f"Deleted {res[0]} test results for tests,  older than {pandaid_max}")
-    except Exception as ex:
-        message += "Failed to delete test results"
-        _logger.exception(f"{message} with:\n{ex}")
-    try:
-        tests = ARTTests.objects.filter(pandaid__lte=pandaid_max).delete()
-        _logger.info(f"Deleted {tests[0]} tests, older than {pandaid_max}")
+        tests = ARTTests.objects.filter(created__lte=(datetime.now() - timedelta(days=art_const.RETENTION_PERIOD_DAYS))).delete()
+        _logger.info(f"Deleted {tests[0]} tests, older than {art_const.RETENTION_PERIOD_DAYS} days")
     except Exception as ex:
         message += "Failed to delete tests"
         _logger.exception(f"{message} with:\n{ex}")
@@ -1642,7 +1628,11 @@ def fill_table(request):
     start = datetime.now()
     # get last ntag with empty new fields
     ntag = None
-    ntags = ARTTests.objects.filter(gitlabid__isnull=True,created__lt=(datetime.now() - timedelta(days=2))).aggregate(Max('nightly_tag'))
+    ntags = ARTTests.objects.filter(
+        test_type='grid',
+        gitlabid__isnull=True,
+        created__lt=(datetime.now() - timedelta(days=2))
+    ).aggregate(Max('nightly_tag'))
     if len(ntags) > 0:
         ntag = ntags['nightly_tag__max']
 
@@ -1664,8 +1654,10 @@ def fill_table(request):
         jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
         if len(jobs) == 0:
             jobs.extend(Jobsarchived.objects.filter(**query).values(*values))
-        job = jobs[0]
-
+        if len(jobs) > 0:
+            job = jobs[0]
+        else:
+            return JsonResponse({'message': f"No jobs found to update tests"}, status=200)
         try:
             gitlabid = int(re.search('.([0-9]{6,8}).', job['jobname']).group(1))
         except:

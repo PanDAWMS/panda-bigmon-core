@@ -388,6 +388,9 @@ LOGGING = {
             'level': LOG_LEVEL,
             'propagate': True,
         },
+        'django.utils.autoreload': {
+            'level': 'CRITICAL',  # suppress autoreload logging
+        },
         'django': {
             'handlers': ['logfile-django', 'logfile-error'],
             'propagate': True,

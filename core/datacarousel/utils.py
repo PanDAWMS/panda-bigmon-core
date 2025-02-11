@@ -89,7 +89,7 @@ def getStagingData(request):
             destinationl = [destination] if ',' not in destination else [rse for rse in destination.split(',')]
             selection += " AND t1.DESTINATION_RSE in (" + ','.join('\'' + str(x) + '\'' for x in destinationl) + ")"
 
-        if campaign:
+        if campaign and task_type == "prod":
             campaignl = [campaign] if ',' not in campaign else [camp for camp in campaign.split(',')]
             if 'Unknown' in campaignl:
                 campaignl.remove('Unknown')
@@ -165,8 +165,8 @@ def getStagingData(request):
             t1.staged_size AS staged_bytes,
             t2.task_id AS taskid,
             t2.request_id as pr_id,
-            t3.campaign,
             t3.processingtype,
+            t3.username,
             row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
             (current_timestamp - t1.modification_time) AS update_time
             from {0}.data_carousel_requests t1
@@ -181,10 +181,10 @@ def getStagingData(request):
         datasets = execute_query('prod')
     elif task_type in ('analy', 'anal'):
         datasets = execute_query('analy')
-    elif task_type == 'all':
-        datasets_prod = execute_query('prod')
-        datasets_analy = execute_query('analy')
-        datasets = datasets_prod + datasets_analy
+    # elif task_type == 'all':
+    #     datasets_prod = execute_query('prod')
+    #     datasets_analy = execute_query('analy')
+    #     datasets = datasets_prod + datasets_analy
     else:
         datasets = execute_query('prod')
 
@@ -197,7 +197,10 @@ def getStagingData(request):
                 dataset['scope'] = datasetname.split(':')[0]
             else:
                 dataset['scope'] = datasetname.split('.')[0]
-            data[dataset['taskid']] = dataset
+            if task_type == 'prod':
+                data[dataset['taskid']] = dataset
+            else:
+                data[dataset['dataset']] = dataset
     return data
 
 def send_report_rse(rse, data, experts_only=True):
