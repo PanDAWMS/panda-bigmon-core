@@ -6,8 +6,8 @@ import logging
 import re
 import json
 import time
-from django.http import HttpResponse
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect
 from django.template import RequestContext
 from django.conf import settings
 from core.filebrowser.utils import get_rucio_file, remove_folder, get_job_log_file_properties, get_job_computingsite, get_s3_file, get_log_provider
@@ -180,14 +180,14 @@ def index(request):
         totalLogSize = round(convert_bytes(totalLogSize, output_unit='MB'), 2)
     _logger.debug('Data prepared to render - {}'.format(time.time() - request.session['req_init_time']))
 
+
+    media_path = f"{request.get_host()}/{settings.MEDIA_URL}{dirprefix}{tardir}"
+    if not media_path.endswith('/'):
+        media_path += '/'
+
     if not is_json_request(request):
 
-        request.session['urls_cut']['media_base_link'] = '{}/{}{}{}'.format(
-            request.get_host(), settings.MEDIA_URL, dirprefix, tardir
-        )
-        if not request.session['urls_cut']['media_base_link'].endswith('/'):
-            request.session['urls_cut']['media_base_link'] += '/'
-
+        request.session['urls_cut']['media_base_link'] = media_path
         data = {
             'request': request,
             'requestParams': request.session['requestParams'],
@@ -201,7 +201,16 @@ def index(request):
         _logger.debug('Rendered template - {}'.format(time.time() - request.session['req_init_time']))
         return response
     else:
-        response = HttpResponse(json.dumps(files, cls=DateTimeEncoder), content_type='application/json')
+        # add media path to each file
+        for file in files:
+            file['media_link'] = f"{media_path}{file['dirname']}{file['name']}"
+        if 'filename' in request.session['requestParams'] and request.session['requestParams']['filename'] is not None:
+            if request.session['requestParams']['filename'] in [f['name'] for f in files]:
+                response = redirect(f"https://{media_path}{request.session['requestParams']['filename']}", permanent=True)
+            else:
+                response = JsonResponse({'error': "No such log file found in tarball"}, status=404)
+        else:
+            response = HttpResponse(json.dumps(files, cls=DateTimeEncoder), content_type='application/json')
         return response
 
 
