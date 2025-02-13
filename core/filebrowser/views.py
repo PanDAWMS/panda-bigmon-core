@@ -6,7 +6,7 @@ import logging
 import re
 import json
 import time
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.template import RequestContext
 from django.conf import settings
@@ -208,7 +208,7 @@ def index(request):
             if request.session['requestParams']['filename'] in [f['name'] for f in files]:
                 response = redirect(f"https://{media_path}{request.session['requestParams']['filename']}", permanent=True)
             else:
-                response = HttpResponse(json.dumps({'error': "No such log file found in tarball"}, cls=DateTimeEncoder), content_type='application/json', status=404)
+                response = JsonResponse({'error': "No such log file found in tarball"}, status=404)
         else:
             response = HttpResponse(json.dumps(files, cls=DateTimeEncoder), content_type='application/json')
         return response
