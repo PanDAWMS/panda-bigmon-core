@@ -222,9 +222,9 @@
         <!-- Modal Content -->
         <div>
             <label>How did the task processing go? Share what went well or what could be improved. Your feedback will be submitted to the ATLAS Distributed Computing Operations Team!</label>
-            <textarea ng-model="rating.feedback" id="user-comment" placeholder="E.g., fast processing, delays, high failure rate, unclear errors, or suggestions for improvement..."></textarea>
+            <textarea ng-model="rating.feedback" ng-change="rating.validateFeedbackMessage()" id="user-comment" placeholder="E.g., fast processing, delays, high failure rate, unclear errors, or suggestions for improvement..."></textarea>
             <p class="ng-hide alert" ng-show="rating.is_shown_modal_alert">{$ rating.modal_alert $}</p>
-            <a class="bp-button submit" ng-click="rating.submitFeedback()" ng-disabled="rating.submitting">{$ rating.submit_button_text $}</a>
+            <a class="bp-button submit" ng-click="rating.submitFeedback()" ng-disabled="rating.submitting || (rating.new < 3 && !rating.isValidFeedbackMessage())">{$ rating.submit_button_text $}</a>
         </div>
     </div>
   </div>
@@ -817,10 +817,33 @@ app.controller('taskInfoController', function($rootScope, $scope, $http) {
   // Function to close the modal
   $scope.rating.closeFeedbackModal = function() {
       $scope.rating.is_shown_feedback_modal = false;
+      $scope.rating.is_shown_modal_alert = false;
+      $scope.rating.modal_alert = '';
   }
-  
+
+  // Function to check and validate feedback message
+  $scope.rating.validateFeedbackMessage = function () {
+    console.log($scope.rating.new);
+    if ($scope.rating.new < 3 && !$scope.rating.isValidFeedbackMessage()) {
+          $scope.rating.is_shown_modal_alert = true;
+          $scope.rating.modal_alert = 'Please write at least a few words...';
+    } else {
+        $scope.rating.is_shown_modal_alert = false;
+        $scope.rating.modal_alert = '';
+    }
+  };
+
+  $scope.rating.isValidFeedbackMessage = function () {
+    return $scope.rating.feedback.length > 10 || $scope.rating.feedback.split(/\s+/).length >= 2;
+  };
+
   // Function to handle feedback submission
   $scope.rating.submitFeedback = function () {
+    if ($scope.rating.new < 3 && !$scope.rating.isValidFeedbackMessage()) {
+        this.modal_alert = 'Feedback is required for low ratings (at least a few words).';
+        this.is_shown_modal_alert = true;
+        return;
+    }
     $scope.rating.submit_button_text = 'Submitting...';
     $scope.rating.submitting = true;
     $http({
