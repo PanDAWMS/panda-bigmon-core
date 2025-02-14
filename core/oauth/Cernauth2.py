@@ -34,12 +34,12 @@ class CernAuthOIDC(BaseOAuth2):
         """Return user details from CERN account"""
         _logger.debug([f"{k}: {v}" for k, v in response.items()])
         return {
-            'username': response.get('preferred_username'),
+            'username': response.get('username'),
             'email': response.get('email') or '',
-            'first_name': response.get('given_name'),
-            'last_name': response.get('family_name'),
+            'first_name': response.get('first_name'),
+            'last_name': response.get('last_name'),
             'name': response.get('name'),
-            'roles': response.get('cern_roles') or [],
+            'roles': response.get('roles') or [],
         }
 
     def user_data(self, access_token, *args, **kwargs):
@@ -66,12 +66,12 @@ class CernAuthOIDC(BaseOAuth2):
     def extra_data(self, user, uid, response, details=None, *args, **kwargs):
         """Return users extra data"""
         return {
-            'username': response.get('preferred_username'),
+            'username': response.get('username'),
             'email': response.get('email') or '',
-            'first_name': response.get('given_name'),
-            'last_name': response.get('family_name'),
+            'first_name': response.get('first_name'),
+            'last_name': response.get('last_name'),
             'name': response.get('name'),
-            'roles': response.get('cern_roles') or [],
+            'roles': response.get('roles') or [],
         }
 
     def uses_redirect(self):
