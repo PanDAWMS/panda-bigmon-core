@@ -627,23 +627,25 @@
   </table>
   </div>
 
-  {% if task.idds_info %}
+{% if task.idds_info %}
     <div id="iDDsDiv" class="table-scroll" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
-      <table class="fresh-table">
-        <thead>
-          <tr><th colspan=20>iDDS information</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-             <th ng-repeat="(key, value) in iddsjson" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ key $}</th>
-          </tr>
-          <tr>
-             <td ng-repeat="(key, value) in iddsjson" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ value $}</td>
-          </tr>
-        </tbody>
-      </table>
+        <table class="fresh-table">
+            <thead>
+                <tr>
+                    <th colspan="20">iDDS information</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th ng-repeat="(key, value) in iddsjson[0]" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ key $}</th>
+                </tr>
+                <tr ng-repeat="item in iddsjson">
+                    <td ng-repeat="(key, value) in item" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ value $}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
-  {% endif %}
+{% endif %}
 
   {% if inctrs or outctrs %}
     <table class="fresh-table unstriped slim">
@@ -876,23 +878,23 @@ app.controller('taskInfoController', function($rootScope, $scope, $http) {
   }  
 });
 app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
-    $scope.iddsjson = "";
+    $scope.iddsjson = [];
+
     $scope.getiDDs = function () {
-            $http({
-                    url: '/idds/getiddsfortask/',
-                    method: "GET",
-                    params: {'jeditaskid':{{ jeditaskid|safe }}}
-                }
-            ).then(function (res) {
-                var iddsjson = angular.fromJson(res.data);
-                if (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)) {
-                    $scope.iddsjson = iddsjson['data'];
-                    idds_data = iddsjson['data'];
-                    $rootScope.$emit('idds_info', idds_data);
-                    $('#iDDsDiv').show();
-                }
-            });
+        $http({
+            url: '/idds/getiddsfortask/',
+            method: "GET",
+            params: {'jeditaskid': {{ jeditaskid|safe }}}
+        }).then(function (res) {
+            var iddsjson = angular.fromJson(res.data);
+            if (iddsjson && 'data' in iddsjson && iddsjson['data'].length > 0) {
+                $scope.iddsjson = iddsjson['data'];
+                $rootScope.$emit('idds_info', $scope.iddsjson);
+                $('#iDDsDiv').show();
+            }
+        });
     };
+
     var init = function () {
         $scope.getiDDs();
     };
