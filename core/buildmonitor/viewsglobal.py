@@ -1,8 +1,11 @@
 from django.shortcuts import render
+
+from core.utils import is_json_request
 from core.views import initRequest
 from core.oauth.utils import login_customrequired
 from django.db import connection
 from django.urls import reverse
+from django.http import JsonResponse
 from django.core.cache import cache
 import json, re
 from collections import defaultdict
@@ -232,7 +235,13 @@ def globalviewDemo(request):
 #            print('L2',k47)
 #            pprint(v47)
 
-    data={'viewParams': request.session['viewParams'], 'reslt3':json.dumps(reslt3, cls=DateEncoder)}
-
-    return render(request,'globalviewDemo.html', data, content_type='text/html')
+    if is_json_request(request):
+        return JsonResponse(reslt3, safe=False)
+    else:
+        data = {
+            'request': request,
+            'viewParams': request.session['viewParams'],
+            'reslt3':json.dumps(reslt3, cls=DateEncoder)
+        }
+        return render(request,'globalviewDemo.html', data, content_type='text/html')
 
