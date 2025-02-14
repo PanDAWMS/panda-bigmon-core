@@ -691,7 +691,7 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   .data-table td.icons2 {
     padding-right: 2rem;
   }
-  .data-table td.icons1 {
+  .data-table td.icons1, .fresh-table td.icons1 {
     padding-right: 1rem;
   }
   .data-table tbody td > a.alert {
