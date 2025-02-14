@@ -1,5 +1,5 @@
 """
-URLs patterns for Drafana API app
+URLs patterns for Grafana API app
 """
 
 from django.urls import re_path

@@ -58,9 +58,11 @@ def get_staging_info_for_task(request):
         return response
     data_raw = getStagingData(request)
     # prepare data for template
-    data = {}
+    datasets = []
+
     if data_raw and len(data_raw) > 0:
         for task, dsdata in data_raw.items():
+            data = {}
             for key in ('taskid', 'status', 'scope', 'dataset', 'rse', 'source_rse', 'destination_rse', 'step_action_id'):
                 data[key] = dsdata[key] if key in dsdata else '---'
             for key in ('start_time', 'end_time'):
@@ -84,8 +86,10 @@ def get_staging_info_for_task(request):
                 data['staged_bytes_pct'] = round_to_n_digits(dsdata['staged_bytes'] * 100.0 / dsdata['dataset_bytes'], 1, method='floor')
             else:
                 data['staged_bytes_pct'] = 0
+            datasets.append(data)
 
-    response = JsonResponse(data, content_type='application/json')
+    response = JsonResponse(datasets, safe=isinstance(datasets, dict), content_type='application/json')
+
     return response
 
 
