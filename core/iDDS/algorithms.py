@@ -26,11 +26,9 @@ def parse_request(request):
 def getiDDSInfoForTask(jeditaskid):
     subtitleValue = SubstitleValue()
 
-    transformationWithNested = None
-
     new_cur = connection.cursor()
-    new_cur.execute("""
-    select r.request_id, r.scope, r.name, r.request_type, r.transform_tag, r.workload_id, r.status, 
+    query = """
+        select r.request_id, r.scope, r.name, r.request_type, r.transform_tag, r.workload_id, r.status, 
         r.created_at request_created_at, r.updated_at request_updated_at, tr.transform_id, tr.transform_status, 
         tr.in_status, tr.in_total_files, tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files, 
         tr.out_created_at, tr.out_updated_at
@@ -46,28 +44,35 @@ def getiDDSInfoForTask(jeditaskid):
       left join (select coll_id , transform_id, status, total_files, processed_files, created_at, updated_at 
                  from {0}.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
     ) tr on (r.request_id=tr.request_id and tr.workload_id={1})
-    """.format(settings.DB_SCHEMA_IDDS, int(jeditaskid)))
+    """.format(settings.DB_SCHEMA_IDDS, int(jeditaskid))
 
-    transformationWithNested = dictfetchall(new_cur)
+    new_cur.execute(query)
 
-    if len(transformationWithNested) > 0:
-        transformationWithNested = {k.lower(): v for k, v in transformationWithNested[0].items()}
-        map = subtitleValue.substitleMap
+    results = dictfetchall(new_cur)
 
-        transformationWithNested['status'] = map['requests']['status'][transformationWithNested['status']]
-        transformationWithNested['request_type'] = map['requests']['request_type'][
-            transformationWithNested['request_type']]
-        transformationWithNested['transform_status'] = map['requests']['transform_status'][
-            transformationWithNested['transform_status']]
-        if transformationWithNested['in_status'] is not None:
-            transformationWithNested['in_status'] = map['requests']['in_status'][transformationWithNested['in_status']]
-        if transformationWithNested['out_status'] is not None:
-            transformationWithNested['out_status'] = map['requests']['out_status'][transformationWithNested['out_status']]
-        if transformationWithNested['out_total_files'] != 0 and transformationWithNested['out_total_files'] is not None:
-            transformationWithNested['pctprocessed'] = int(100. * transformationWithNested['out_processed_files'] / transformationWithNested['out_total_files'])
+    transformed_results = []
+    map = subtitleValue.substitleMap
+
+    for row in results:
+        transformed_row = {k.lower(): v for k, v in row.items()}
+        transformed_row['status'] = map['requests']['status'][transformed_row['status']]
+        transformed_row['request_type'] = map['requests']['request_type'][transformed_row['request_type']]
+        transformed_row['transform_status'] = map['requests']['transform_status'][transformed_row['transform_status']]
+
+        if transformed_row['in_status'] is not None:
+            transformed_row['in_status'] = map['requests']['in_status'][transformed_row['in_status']]
+        if transformed_row['out_status'] is not None:
+            transformed_row['out_status'] = map['requests']['out_status'][transformed_row['out_status']]
+
+        if transformed_row['out_total_files'] and transformed_row['out_total_files'] != 0:
+            transformed_row['pctprocessed'] = int(
+                100. * transformed_row['out_processed_files'] / transformed_row['out_total_files'])
         else:
-            transformationWithNested['pctprocessed'] = 0
-    return transformationWithNested
+            transformed_row['pctprocessed'] = 0
+
+        transformed_results.append(transformed_row)
+
+    return transformed_results
 
 
 def checkIfIddsTask(taskinfo):
