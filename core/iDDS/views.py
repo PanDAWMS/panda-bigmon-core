@@ -44,13 +44,18 @@ def main(request):
         return response
 
     query_time = setupView(request, hours=24*7, querytype='idds')
-    condition = "r.created_at > to_date('{1}', '{0}') AND r.created_at <= to_date('{2}', '{0}')".format(
-        'YYYY-MM-DD',
-        query_time['modificationtime__castdate__range'][0][:10],
-        query_time['modificationtime__castdate__range'][1][:10]
-    )
+
+    if 'reqid' not in query_time:
+        condition = "r.created_at > to_date('{1}', '{0}') AND r.created_at <= to_date('{2}', '{0}')".format(
+            'YYYY-MM-DD',
+            query_time['modificationtime__castdate__range'][0][:10],
+            query_time['modificationtime__castdate__range'][1][:10]
+        )
+    else:
+        condition = ''
 
     query_params = parse_request(request)
+
     try:
         iDDSrequests = getRequests(query_params, condition=condition)
     except Exception as e:
@@ -60,6 +65,7 @@ def main(request):
     iDDSrequests = lower_dicts_in_list(iDDSrequests)
     subtitleValue.replace('requests', iDDSrequests)
     requests_summary = generate_requests_summary(iDDSrequests)
+
     if is_json_request(request):
         response = JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)
     else:

@@ -19,11 +19,74 @@ from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_d
 from core.libs.elasticsearch import create_os_connection
 from core.schedresource.utils import getCRICSEs
 from core.filebrowser.ruciowrapper import ruciowrapper
+from core.iDDS.useconstants import SubstitleValue
 
 from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
+tmpTableName = get_tmp_table_name()
+
+def _getiDDSInfoForTask(transactionKey):
+    subtitleValue = SubstitleValue()
+
+    new_cur = connection.cursor()
+
+    datasets = {}
+
+    query = """
+        SELECT
+            r.scope,
+            r.name as dataset,
+            r.status,
+            r.request_id,
+            tr.out_total_files,
+            tr.out_processed_files
+        FROM {0}.requests r
+        JOIN (
+            SELECT
+                t.request_id,
+                t.workload_id,
+                out_coll.total_files AS out_total_files,
+                out_coll.processed_files AS out_processed_files
+            FROM {0}.transforms t
+            LEFT JOIN (
+                SELECT
+                    transform_id,
+                    total_files,
+                    processed_files
+                FROM {0}.collections
+                WHERE relation_type = 1
+            ) out_coll ON t.transform_id = out_coll.transform_id
+        ) tr ON r.request_id = tr.request_id
+        WHERE tr.workload_id in (SELECT tmp.id FROM {1} tmp where transactionkey={2})
+    """.format(settings.DB_SCHEMA_IDDS, tmpTableName, int(transactionKey))
+
+    new_cur.execute(query)
+
+    results = dictfetchall(new_cur, style='lowercase')
+
+    map = subtitleValue.substitleMap
+
+    for row in results:
+        dataset_name = row['scope'] + ':' + row['dataset']
+
+        datasets[dataset_name] = {
+            'idds_status': map['requests']['status'].get(row['status'], 'Unknown'),
+            'idds_out_processed_files':  row['out_processed_files'],
+            'idds_out_total_files': row['out_total_files'],
+            'idds_request_id': row['request_id']
+        }
+
+        if 'out_total_files' in row and row['out_total_files']:
+            datasets[dataset_name]['idds_pctprocessed'] = (
+                int(100. * row['out_processed_files'] / row['out_total_files'])
+                if row['out_total_files'] != 0 else 0
+            )
+        else:
+            datasets[dataset_name]['idds_pctprocessed'] = 0
+
+    return datasets
 def getStagingData(request):
     valid, response = initRequest(request)
     if not valid:
@@ -58,9 +121,14 @@ def getStagingData(request):
         task_type = None
 
     data = {}
-    tmpTableName = get_tmp_table_name()
     new_cur = connection.cursor()
+    transactionKey = None
+    datasets_idds_info = None
 
+    if 'jeditaskid' in request.session['requestParams']:
+        jeditaskid = request.session['requestParams']['jeditaskid']
+        taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
+        transactionKey = insert_to_temp_table(taskl)
     def build_selection(task_type):
 
         selection = "where 1=1 "
@@ -73,11 +141,8 @@ def getStagingData(request):
         taskid_column = "taskid" if task_type == "prod" else "task_id"
         tasks_table = "ATLAS_DEFT.T_ACTION_STAGING" if task_type == "prod" else "ATLAS_PANDA.DATA_CAROUSEL_RELATIONS"
 
-        if 'jeditaskid' in request.session['requestParams']:
-            jeditaskid = request.session['requestParams']['jeditaskid']
-            taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
-            transactionKey = insert_to_temp_table(taskl)
-            selection += "and t2."+ taskid_column + " in (SELECT tmp.id FROM %s tmp where transactionkey=%i)" % (tmpTableName, transactionKey)
+        if transactionKey:
+            selection += "and t2." + taskid_column + " in (SELECT tmp.id FROM %s tmp where transactionkey=%i)" % (tmpTableName, transactionKey)
         else:
             selection += "and t2." + taskid_column + " in (select " + taskid_column + " from " + tasks_table + " )"
 
@@ -175,20 +240,22 @@ def getStagingData(request):
             """.format(settings.DB_SCHEMA_PANDA, selection)
 
         new_cur.execute(sql_query)
+
         return dictfetchall(new_cur, style='lowercase')
+
+    if transactionKey is not None:
+        datasets_idds_info = _getiDDSInfoForTask(transactionKey)
 
     if task_type == 'prod':
         datasets = execute_query('prod')
     elif task_type in ('analy', 'anal'):
         datasets = execute_query('analy')
-    # elif task_type == 'all':
-    #     datasets_prod = execute_query('prod')
-    #     datasets_analy = execute_query('analy')
-    #     datasets = datasets_prod + datasets_analy
     else:
         datasets = execute_query('prod')
 
     for dataset in datasets:
+        if datasets_idds_info is not None and len(datasets_idds_info) > 0 and dataset['dataset'] in datasets_idds_info:
+            dataset.update(datasets_idds_info[dataset['dataset']])
         # Sort out requests by request on February 19, 2020
         if dataset['status'] in ('staging', 'queued', 'done'):
             dataset = {k.lower(): v for k, v in dataset.items()}
@@ -201,6 +268,7 @@ def getStagingData(request):
                 data[dataset['taskid']] = dataset
             else:
                 data[dataset['dataset']] = dataset
+
     return data
 
 def send_report_rse(rse, data, experts_only=True):
