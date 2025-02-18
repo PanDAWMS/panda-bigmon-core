@@ -230,7 +230,7 @@ def report(request):
                 result['status'] = 'success'
                 result['message'] = 'The report is sent successfully!'
                 if cache_key:
-                    cache.set(cache_key, "1", days * 24 * 3600)
+                    cache.set(cache_key, "1", days * 24 * 3600 - 3600)
             else:
                 result['status'] = 'error'
                 result['message'] = 'Failed to send the report!'
