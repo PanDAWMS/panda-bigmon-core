@@ -86,6 +86,13 @@ def get_staging_info_for_task(request):
                 data['staged_bytes_pct'] = round_to_n_digits(dsdata['staged_bytes'] * 100.0 / dsdata['dataset_bytes'], 1, method='floor')
             else:
                 data['staged_bytes_pct'] = 0
+
+            data['idds_status'] = dsdata.get('idds_status', '---')
+            data['idds_request_id'] = dsdata.get('idds_request_id', 0)
+            data['idds_out_processed_files'] = dsdata.get('idds_out_processed_files', 0)
+            data['idds_out_total_files'] = dsdata.get('idds_out_total_files', 0)
+            data['idds_pctprocessed'] = dsdata.get('idds_pctprocessed', 0)
+
             datasets.append(data)
 
     response = JsonResponse(datasets, safe=isinstance(datasets, dict), content_type='application/json')

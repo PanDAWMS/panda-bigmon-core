@@ -20,8 +20,13 @@ def parse_request(request):
     if status:
         status = status.strip()
         retdict['reqstatus'] = status
-    return retdict
 
+    reqid = request.session['requestParams'].get('reqid', None)
+    if reqid:
+        reqid = reqid.strip()
+        retdict['reqid'] = reqid
+
+    return retdict
 
 def getiDDSInfoForTask(jeditaskid):
     subtitleValue = SubstitleValue()

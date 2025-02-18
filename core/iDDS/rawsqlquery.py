@@ -13,36 +13,44 @@ _logger = logging.getLogger('bigpandamon')
 
 
 def getRequests(query_params, condition='(1=1)'):
-
     sqlpar = {}
-    if query_params and len(query_params) > 0:
-        query_params = subtitleValue.replaceInverseKeys('requests', query_params)
 
+    if query_params and len(query_params) > 0:
         if 'reqstatus' in query_params:
+            query_params = subtitleValue.replaceInverseKeys('requests', query_params)
             sqlpar['rstatus'] = query_params['reqstatus']
-            condition += 'AND r.status = :rstatus'
+            if len(condition) > 0:
+                condition += ' AND r.status = :rstatus'
+            else:
+                condition += ' AND r.status = :rstatus'
+        if 'reqid' in query_params:
+            sqlpar['reqid'] = query_params['reqid']
+            if len(condition) > 0:
+                condition += ' AND r.request_id = :reqid'
+            else:
+                condition += 'r.request_id = :reqid'
 
     sql = f"""
-    select r.request_id, r.scope, r.name, r.status, tr.transform_id, tr.transform_status, tr.in_status, tr.in_total_files, 
+    SELECT r.request_id, r.scope, r.name, r.status, tr.transform_id, tr.transform_status, tr.in_status, tr.in_total_files, 
         tr.in_processed_files, tr.out_status, tr.out_total_files, tr.out_processed_files
-    from {settings.DB_SCHEMA_IDDS}.requests r
-    full outer join (
-        select t.request_id, t.transform_id, t.status transform_status, in_coll.status in_status, in_coll.total_files in_total_files,
-        in_coll.processed_files in_processed_files, out_coll.status out_status, out_coll.total_files out_total_files,
-        out_coll.processed_files out_processed_files
-        from {settings.DB_SCHEMA_IDDS}.transforms t
-        full outer join (select coll_id , transform_id, status, total_files, processed_files from {settings.DB_SCHEMA_IDDS}.collections where relation_type = 0) in_coll on (t.transform_id = in_coll.transform_id)
-        full outer join (select coll_id , transform_id, status, total_files, processed_files from {settings.DB_SCHEMA_IDDS}.collections where relation_type = 1) out_coll on (t.transform_id = out_coll.transform_id)
-    ) tr on (r.request_id=tr.request_id)
-    where {condition}
+    FROM {settings.DB_SCHEMA_IDDS}.requests r
+    FULL OUTER JOIN (
+        SELECT t.request_id, t.transform_id, t.status AS transform_status, in_coll.status AS in_status, in_coll.total_files AS in_total_files,
+        in_coll.processed_files AS in_processed_files, out_coll.status AS out_status, out_coll.total_files AS out_total_files,
+        out_coll.processed_files AS out_processed_files
+        FROM {settings.DB_SCHEMA_IDDS}.transforms t
+        FULL OUTER JOIN (SELECT coll_id, transform_id, status, total_files, processed_files FROM {settings.DB_SCHEMA_IDDS}.collections WHERE relation_type = 0) in_coll ON (t.transform_id = in_coll.transform_id)
+        FULL OUTER JOIN (SELECT coll_id, transform_id, status, total_files, processed_files FROM {settings.DB_SCHEMA_IDDS}.collections WHERE relation_type = 1) out_coll ON (t.transform_id = out_coll.transform_id)
+    ) tr ON (r.request_id = tr.request_id)
+    WHERE {condition}
     """
-    connection_name = get_connection_name()
-    cur = connections[connection_name].cursor()
-    cur.execute(sql, sqlpar)
-    rows = dictfetchall(cur)
-    cur.close()
-    return rows
 
+    connection_name = get_connection_name()
+    with connections[connection_name].cursor() as cur:
+        cur.execute(sql, sqlpar)
+        rows = dictfetchall(cur)
+
+    return rows
 
 def prepareSQLQueryParameters(request_params, **kwargs):
     db = 'oracle'
