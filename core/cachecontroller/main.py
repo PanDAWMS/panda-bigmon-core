@@ -21,6 +21,7 @@ from schedinstances.GrafanaPlots import GrafanaPlots
 from schedinstances.DataCarouselPrestageCollector import DataCarouselPrestageCollector
 from schedinstances.MLFlowCleanup import MLFlowCleanup
 from schedinstances.RatedTasks import RatedTasks
+from schedinstances.CacheCleanUp import CacheCleanUp
 
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
 try:
@@ -52,6 +53,7 @@ bigTasks = BigTasks(EXECUTION_CAP_FOR_MAINMENUURLS)
 harvester = Harvester(EXECUTION_CAP_FOR_MAINMENUURLS)
 grafanaPlots = GrafanaPlots(EXECUTION_CAP_FOR_MAINMENUURLS)
 cephCleanUp = PandaLogsStorageCleanUp()
+cacheCleanUp = CacheCleanUp()
 sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
 stageProgressCollector = DataCarouselPrestageCollector()
@@ -82,6 +84,7 @@ schedule.every().day.at("10:00").do(run_threaded, artMails.execute)  # UTC
 schedule.every(2).hours.do(run_threaded, stageProgressCollector.execute)
 schedule.every(10).minutes.do(run_threaded, mlFlowCleanUp.execute)
 schedule.every().monday.at("07:00").do(run_threaded, ratedTasks.execute)
+schedule.every(2).hours.do(run_threaded, cacheCleanUp.execute)
 
 while 1:
     schedule.run_pending()
