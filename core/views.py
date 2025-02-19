@@ -3452,8 +3452,6 @@ def wnInfo(request, site=None, wnname='all'):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    errthreshold = 15
-
     wnname_rgx = None
     if 'wnname' in request.session['requestParams'] and request.session['requestParams']['wnname']:
         wnname_rgx = request.session['requestParams']['wnname']
@@ -3519,7 +3517,6 @@ def wnInfo(request, site=None, wnname='all'):
             'wnPlotFailed': wnPlotFailedL,
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
-            'errthreshold': errthreshold,
             'time_locked_url': time_locked_url,
             'warning': warning,
             'built': datetime.now().strftime("%H:%M:%S"),
@@ -3541,7 +3538,6 @@ def wnInfo(request, site=None, wnname='all'):
             'wnPlotFailed': wnPlotFailedL,
             'wnPlotFinished': wnPlotFinishedL,
             'hours': hours,
-            'errthreshold': errthreshold,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')

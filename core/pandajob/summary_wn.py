@@ -178,10 +178,10 @@ def wn_summary(wnname, query):
             wns[wn]['pctfail'] = round_to_n_digits(100. * float(wns[wn]['states']['failed']['count']) /
                                      (wns[wn]['states']['finished']['count'] + wns[wn]['states']['failed']['count']), 0, method='ceil')
         # tag outliers
-        if wn.lower() not in ('all', 'average', 'unknown' ) and wns[wn]['states']['failed']['count'] > 5 and wns[wn]['pctfail'] >= 20:
-            if wns[wn]['pctfail'] >= allwns['pctfail'] * 5 or wns[wn]['pctfail'] >= 75:
+        if wn.lower() not in ('all', 'average', 'unknown' ) and wns[wn]['states']['failed']['count'] > 5 and wns[wn]['pctfail'] >= 10:
+            if wns[wn]['pctfail'] >= allwns['pctfail'] * 10 or wns[wn]['pctfail'] >= 50:
                 wns[wn]['outlier'] += " VeryHighFailed "
-            elif wns[wn]['pctfail'] >= allwns['pctfail'] * 3:
+            elif wns[wn]['pctfail'] >= allwns['pctfail'] * 5 or wns[wn]['pctfail'] >= 20:
                 wns[wn]['outlier'] += " HighFailed "
         fullsummary.append(wns[wn])
 
