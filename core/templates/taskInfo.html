@@ -565,68 +565,6 @@
   </div>
   </div>
 
-  <div id="dsStageDiv" class="table-scroll" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
-  <table class="fresh-table unstriped nowrap">
-    <thead>
-      <tr>
-        <th colspan="20">
-          Staging information
-          <span ng-if="datasets.length === 1">
-            {% if request.session.rucio_ui|length > 0 %}
-              for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
-               {$ datasets[0].dataset $}
-              </a>
-              <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
-                <i class="fi-graph-trend"></i>
-              </a>
-            {% else %}
-              {$ datasets[0].dataset $}
-            {% endif %}
-          </span>
-          <span ng-if="datasets.length > 1">
-          </span>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <th>Rucio rule</th>
-        <th>Source</th>
-        <th>Destination</th>
-        <th class="mid">Status</th>
-        <th class="num">Total files</th>
-        <th class="num">Staged files</th>
-        <th class="num">%</th>
-        <th class="num">Total volume [GB]</th>
-        <th class="num">Staged volume [GB]</th>
-        <th class="num">%</th>
-        <th>Started</th>
-        <th>Since last update</th>
-        <th ng-if="datasets.length > 1">Dataset</th>
-      </tr>
-      <tr ng-repeat="dataset in datasets">
-        <td class="icons1">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">{$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>{% else %}{$ dataset.rrule_cut $}{% endif %}</td>
-        <td>{$ dataset.source_rse $}</td>
-        <td>{$ dataset.destination_rse $}</td>
-        <td class="{$ dataset.status $}_fill">{% if viewParams.MON_VO == 'ATLAS' %}<a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json.step_action_id $}/">{$ dataset.status $}</a>{% else %}{$ dataset.status $}{% endif %}</td>
-        <td class="num">{$ dataset.total_files $}</td>
-        <td class="num">{$ dataset.staged_files $}</td>
-        <td class="num">{$ dataset.staged_files_pct $}</td>
-        <td class="num">{$ dataset.total_bytes $}</td>
-        <td class="num">{$ dataset.staged_bytes $}</td>
-        <td class="num">{$ dataset.staged_bytes_pct $}</td>
-        <td>{$ dataset.start_time $}</td>
-        <td>{$ dataset.update_time $}</td>
-        <td ng-if="datasets.length > 1">
-            <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.scope $}:{$ dataset.dataset $}">
-                {$ dataset.dataset $}
-            </a>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  </div>
-
 {% if task.idds_info %}
     <div id="iDDsDiv" class="table-scroll" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
         <table class="fresh-table">
@@ -701,7 +639,86 @@
   {% else %}
       <p>No datasets were found for this task</p>
   {% endif %}
-  
+  <div id="dsStageDiv" class="table-scroll" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
+  <table class="fresh-table unstriped">
+    <thead>
+      <tr>
+        <th colspan="20">
+          Staging information
+          <span ng-if="datasets.length === 1">
+            {% if request.session.rucio_ui|length > 0 %}
+              for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
+               {$ datasets[0].dataset $}
+              </a>
+              <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
+                <i class="fi-graph-trend"></i>
+              </a>
+            {% else %}
+              {$ datasets[0].dataset $}
+            {% endif %}
+          </span>
+          <span ng-if="datasets.length > 1">
+          </span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>Rucio rule</th>
+        <th>Source</th>
+        <th>Destination</th>
+        <th class="mid">Status</th>
+        <th class="num">Files <br> (staged | total | %)</th>
+        <th class="mid">iDDS request status</th>
+        <th class="num">iDDS files <br> (processed | total | %)</th>
+        <th>Started</th>
+        <th>Since last update [d:h:m:s]</th>
+        <th ng-if="datasets.length > 1">Dataset</th>
+      </tr>
+      <tr class="nowrap" ng-repeat="dataset in datasets">
+        <td class="icons1">
+          {% if request.session.rucio_ui|length > 0 %}
+            <a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
+              {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width=14 height=14 border=0>
+            </a>
+          {% else %}
+            {$ dataset.rrule_cut $}
+          {% endif %}
+        </td>
+        <td>{$ dataset.source_rse $}</td>
+        <td>{$ dataset.destination_rse $}</td>
+        <td class="{$ dataset.status $}_fill">
+          {% if viewParams.MON_VO == 'ATLAS' and task.tasktype != 'anal'%}
+            <a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ dataset.step_action_id $}/">
+              {$ dataset.status $}
+            </a>
+          {% else %}
+            {$ dataset.status $}
+          {% endif %}
+        </td>
+        <td class="num">
+          {$ dataset.staged_files $} | {$ dataset.total_files $}  | {$ dataset.staged_files_pct $}%
+        </td>
+        <td class="{$ dataset.idds_status.toLowerCase() $}_fill">
+          <a href="/idds/?reqid={$ dataset.idds_request_id $}">
+              {$ dataset.idds_status $}
+          </a>
+        </td>
+        <td class="num">
+          {$ dataset.idds_out_processed_files $} | {$ dataset.idds_out_total_files $} | {$ dataset.idds_pctprocessed $}%
+        </td>
+        <td>{$ dataset.start_time $}</td>
+        <td>{$ dataset.update_time $}</td>
+        <td ng-if="datasets.length > 1">
+            <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
+                {$ dataset.dataset $}
+            </a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
   {% if jobparams %}
     <a name="jobparams"></a>
     <table class="fresh-table">
@@ -1076,7 +1093,6 @@ app.controller('taskflowController', function ($scope, $http, $sce) {
         ).then(function success(response) {
             $scope.taskflow.message = "";
             $scope.taskflow.data = angular.fromJson(response.data.data);
-            console.log(response.data.data)
             if ($scope.taskflow.data.length > 0) {
               $scope.taskflow.buildPlot();
             }
