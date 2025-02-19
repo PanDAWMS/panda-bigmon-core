@@ -104,7 +104,7 @@ class TasksRatedReport:
 
         # add usernames, rating and feedback to the tasks
         for task in self.tasks:
-            task['traspath'] = task['transpath'].split('/')[-1]
+            task['transpath'] = task['transpath'].split('/')[-1]
             task['creationdate'] = datetime.strftime(task['creationdate'], self.date_format)
             task['modificationtime'] = datetime.strftime(task['modificationtime'], self.date_format)
             if task['tasktype'].startswith('ana'):
