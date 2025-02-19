@@ -3,6 +3,8 @@ Set of functions related to jobs metadata
 
 Created by Tatiana Korchuganova on 05.03.2020
 """
+import copy
+
 import math
 import statistics
 import logging
@@ -293,7 +295,7 @@ def get_job_list(query, **kwargs):
 
     extra_str = "(1=1)"
     if 'extra_str' in kwargs and kwargs['extra_str'] != '':
-        extra_str = kwargs['extra_str']
+        extra_str = copy.deepcopy(kwargs['extra_str'])
 
     id_in_params = []
     if 'pandaid__in' in query:

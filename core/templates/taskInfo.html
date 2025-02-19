@@ -222,9 +222,9 @@
         <!-- Modal Content -->
         <div>
             <label>How did the task processing go? Share what went well or what could be improved. Your feedback will be submitted to the ATLAS Distributed Computing Operations Team!</label>
-            <textarea ng-model="rating.feedback" id="user-comment" placeholder="E.g., fast processing, delays, high failure rate, unclear errors, or suggestions for improvement..."></textarea>
+            <textarea ng-model="rating.feedback" ng-change="rating.validateFeedbackMessage()" id="user-comment" placeholder="E.g., fast processing, delays, high failure rate, unclear errors, or suggestions for improvement..."></textarea>
             <p class="ng-hide alert" ng-show="rating.is_shown_modal_alert">{$ rating.modal_alert $}</p>
-            <a class="bp-button submit" ng-click="rating.submitFeedback()" ng-disabled="rating.submitting">{$ rating.submit_button_text $}</a>
+            <a class="bp-button submit" ng-click="rating.submitFeedback()" ng-disabled="rating.submitting || (rating.new < 3 && !rating.isValidFeedbackMessage())">{$ rating.submit_button_text $}</a>
         </div>
     </div>
   </div>
@@ -566,9 +566,27 @@
   </div>
 
   <div id="dsStageDiv" class="table-scroll" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
-  <table class="fresh-table unstriped">
+  <table class="fresh-table unstriped nowrap">
     <thead>
-      <tr><th colspan=20>Staging information for {% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}did?name={$ json.scope $}:{$ json.dataset $}">{$ json.dataset $}</a> <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}"><i class="fi-graph-trend"></i></a>{% else %}{$ json.dataset $}{% endif %} </th></tr>
+      <tr>
+        <th colspan="20">
+          Staging information
+          <span ng-if="datasets.length === 1">
+            {% if request.session.rucio_ui|length > 0 %}
+              for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
+               {$ datasets[0].dataset $}
+              </a>
+              <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
+                <i class="fi-graph-trend"></i>
+              </a>
+            {% else %}
+              {$ datasets[0].dataset $}
+            {% endif %}
+          </span>
+          <span ng-if="datasets.length > 1">
+          </span>
+        </th>
+      </tr>
     </thead>
     <tbody>
       <tr>
@@ -584,42 +602,50 @@
         <th class="num">%</th>
         <th>Started</th>
         <th>Since last update</th>
+        <th ng-if="datasets.length > 1">Dataset</th>
       </tr>
-      <tr>
-        <td>{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}rule?rule_id={$ json.rse $}">{$ json.rrule_cut $} <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>{% else %}{$ json.rrule_cut $}{% endif %}</td>
-        <td>{$ json.source_rse $}</td>
-        <td>{$ json.destination_rse $}</td>
-        <td class="{$ json.status $}_fill">{% if viewParams.MON_VO == 'ATLAS' %}<a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json.step_action_id $}/">{$ json.status $}</a>{% else %}{$ json.status $}{% endif %}</td>
-        <td class="num">{$ json.total_files $}</td>
-        <td class="num">{$ json.staged_files $}</td>
-        <td class="num">{$ json.staged_files_pct $}</td>
-        <td class="num">{$ json.total_bytes $}</td>
-        <td class="num">{$ json.staged_bytes $}</td>
-        <td class="num">{$ json.staged_bytes_pct $}</td>
-        <td>{$ json.start_time $}</td>
-        <td>{$ json.update_time $}</td>
+      <tr ng-repeat="dataset in datasets">
+        <td class="icons1">{% if request.session.rucio_ui|length > 0 %}<a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">{$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>{% else %}{$ dataset.rrule_cut $}{% endif %}</td>
+        <td>{$ dataset.source_rse $}</td>
+        <td>{$ dataset.destination_rse $}</td>
+        <td class="{$ dataset.status $}_fill">{% if viewParams.MON_VO == 'ATLAS' %}<a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ json.step_action_id $}/">{$ dataset.status $}</a>{% else %}{$ dataset.status $}{% endif %}</td>
+        <td class="num">{$ dataset.total_files $}</td>
+        <td class="num">{$ dataset.staged_files $}</td>
+        <td class="num">{$ dataset.staged_files_pct $}</td>
+        <td class="num">{$ dataset.total_bytes $}</td>
+        <td class="num">{$ dataset.staged_bytes $}</td>
+        <td class="num">{$ dataset.staged_bytes_pct $}</td>
+        <td>{$ dataset.start_time $}</td>
+        <td>{$ dataset.update_time $}</td>
+        <td ng-if="datasets.length > 1">
+            <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.scope $}:{$ dataset.dataset $}">
+                {$ dataset.dataset $}
+            </a>
+        </td>
       </tr>
     </tbody>
   </table>
   </div>
 
-  {% if task.idds_info %}
+{% if task.idds_info %}
     <div id="iDDsDiv" class="table-scroll" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
-      <table class="fresh-table">
-        <thead>
-          <tr><th colspan=20>iDDS information</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-             <th ng-repeat="(key, value) in iddsjson" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ key $}</th>
-          </tr>
-          <tr>
-             <td ng-repeat="(key, value) in iddsjson" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ value $}</td>
-          </tr>
-        </tbody>
-      </table>
+        <table class="fresh-table">
+            <thead>
+                <tr>
+                    <th colspan="20">iDDS information</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th ng-repeat="(key, value) in iddsjson[0]" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ key $}</th>
+                </tr>
+                <tr ng-repeat="item in iddsjson">
+                    <td ng-repeat="(key, value) in item" ng-if="key!='staged_files' && key!='total_files' && key!='taskid'">{$ value $}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
-  {% endif %}
+{% endif %}
 
   {% if inctrs or outctrs %}
     <table class="fresh-table unstriped slim">
@@ -817,10 +843,33 @@ app.controller('taskInfoController', function($rootScope, $scope, $http) {
   // Function to close the modal
   $scope.rating.closeFeedbackModal = function() {
       $scope.rating.is_shown_feedback_modal = false;
+      $scope.rating.is_shown_modal_alert = false;
+      $scope.rating.modal_alert = '';
   }
-  
+
+  // Function to check and validate feedback message
+  $scope.rating.validateFeedbackMessage = function () {
+    console.log($scope.rating.new);
+    if ($scope.rating.new < 3 && !$scope.rating.isValidFeedbackMessage()) {
+          $scope.rating.is_shown_modal_alert = true;
+          $scope.rating.modal_alert = 'Please write at least a few words...';
+    } else {
+        $scope.rating.is_shown_modal_alert = false;
+        $scope.rating.modal_alert = '';
+    }
+  };
+
+  $scope.rating.isValidFeedbackMessage = function () {
+    return $scope.rating.feedback.length > 10 || $scope.rating.feedback.split(/\s+/).length >= 2;
+  };
+
   // Function to handle feedback submission
   $scope.rating.submitFeedback = function () {
+    if ($scope.rating.new < 3 && !$scope.rating.isValidFeedbackMessage()) {
+        this.modal_alert = 'Feedback is required for low ratings (at least a few words).';
+        this.is_shown_modal_alert = true;
+        return;
+    }
     $scope.rating.submit_button_text = 'Submitting...';
     $scope.rating.submitting = true;
     $http({
@@ -852,23 +901,23 @@ app.controller('taskInfoController', function($rootScope, $scope, $http) {
   }  
 });
 app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope) {
-    $scope.iddsjson = "";
+    $scope.iddsjson = [];
+
     $scope.getiDDs = function () {
-            $http({
-                    url: '/idds/getiddsfortask/',
-                    method: "GET",
-                    params: {'jeditaskid':{{ jeditaskid|safe }}}
-                }
-            ).then(function (res) {
-                var iddsjson = angular.fromJson(res.data);
-                if (('data' in iddsjson) && (Object.keys(iddsjson['data']).length > 0)) {
-                    $scope.iddsjson = iddsjson['data'];
-                    idds_data = iddsjson['data'];
-                    $rootScope.$emit('idds_info', idds_data);
-                    $('#iDDsDiv').show();
-                }
-            });
+        $http({
+            url: '/idds/getiddsfortask/',
+            method: "GET",
+            params: {'jeditaskid': {{ jeditaskid|safe }}}
+        }).then(function (res) {
+            var iddsjson = angular.fromJson(res.data);
+            if (iddsjson && 'data' in iddsjson && iddsjson['data'].length > 0) {
+                $scope.iddsjson = iddsjson['data'];
+                $rootScope.$emit('idds_info', $scope.iddsjson);
+                $('#iDDsDiv').show();
+            }
+        });
     };
+
     var init = function () {
         $scope.getiDDs();
     };
@@ -876,31 +925,42 @@ app.controller('iDDSInfoForTaskController', function ($scope, $http, $rootScope)
 });
 
 app.controller('StagingDSController', function ($scope, $http) {
-  $scope.json = "";
+  $scope.datasets = [];
   $scope.MON_VO = MON_VO;
+
   $scope.getStagingDS = function () {
     $http({
-        url: '/api/dc/staginginfofortask/',
-        method: "GET",
-        params: {'jeditaskid':jeditaskid, tasktype:'{{task.tasktype|safe}}'}
+      url: '/api/dc/staginginfofortask/',
+      method: "GET",
+      params: { 'jeditaskid': jeditaskid, 'tasktype': '{{task.tasktype|safe}}' }
+    }).then(function (res) {
+      if (Array.isArray(res.data)) {
+        $scope.datasets = res.data;
+      } else {
+        $scope.datasets = [res.data];
       }
-    ).then(function (res) {
-      $scope.json = angular.fromJson(res.data);
-      if ($scope.json) {
-        if ('rse' in $scope.json) {
-          $scope.json.rrule_cut = $scope.json.rse.slice(0,3) + '...' + $scope.json.rse.slice($scope.json.rse.length-3, $scope.json.rse.length);
-          var displaydiv = document.getElementById('dsStageDiv');
+
+      if ($scope.datasets.length > 0) {
+        $scope.datasets.forEach(function (dataset) {
+          if ('rse' in dataset) {
+            dataset.rrule_cut = dataset.rse.slice(0, 3) + '...' + dataset.rse.slice(-3);
+          } else {
+            dataset.rrule_cut = '';
+          }
+        });
+
+        var displaydiv = document.getElementById('dsStageDiv');
+        if (displaydiv) {
           displaydiv.style.display = "";
-        }
-        else {
-          $scope.json.rrule_cut = '';
         }
       }
     });
   };
+
   var init = function () {
-      $scope.getStagingDS();
+    $scope.getStagingDS();
   };
+
   if (MON_VO === 'ATLAS') {
     init();
   }
