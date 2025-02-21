@@ -15,6 +15,7 @@ from django.db import connection
 from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView, initRequest
+
 from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime, insert_to_temp_table
 from core.libs.elasticsearch import create_os_connection
 from core.schedresource.utils import getCRICSEs
@@ -140,6 +141,7 @@ def getStagingData(request):
         endtime_column = "t4.endtime" if task_type == "prod" else "t3.endtime"
         taskid_column = "taskid" if task_type == "prod" else "task_id"
         tasks_table = "ATLAS_DEFT.T_ACTION_STAGING" if task_type == "prod" else "ATLAS_PANDA.DATA_CAROUSEL_RELATIONS"
+        source_rse = "RSE" if task_type == "prod" else "TAPE"
 
         if transactionKey:
             selection += "and t2." + taskid_column + " in (SELECT tmp.id FROM %s tmp where transactionkey=%i)" % (tmpTableName, transactionKey)
@@ -148,7 +150,7 @@ def getStagingData(request):
 
         if source:
             sourcel = [source] if ',' not in source else [rse for rse in source.split(',')]
-            selection += " AND t1.SOURCE_RSE in (" + ','.join('\''+str(x)+'\'' for x in sourcel) + ")"
+            selection += " AND t1.SOURCE_" + source_rse + " in (" + ','.join('\''+str(x)+'\'' for x in sourcel) + ")"
 
         if destination:
             destinationl = [destination] if ',' not in destination else [rse for rse in destination.split(',')]
@@ -224,7 +226,8 @@ def getStagingData(request):
             t1.ddm_rule_id AS rse,
             t1.total_files,
             t1.modification_time AS update_time,
-            t1.source_rse,
+            t1.source_tape as source_rse,
+            t1.source_rse as source_rse_old,
             t1.destination_rse,
             t1.dataset_size AS dataset_bytes,
             t1.staged_size AS staged_bytes,
@@ -460,7 +463,6 @@ def getBinnedData(timestamps_list, additional_timestamps_list_1 = None, addition
     for time, count in zip(index, values):
         data.append([time, count])
     return data
-
 
 def substitudeRSEbreakdown(rse):
     rses = getCRICSEs().get(rse, [])

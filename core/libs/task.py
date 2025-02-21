@@ -600,7 +600,7 @@ def get_task_params(jeditaskid):
 
     # protection against surrogates
     if 'cliParams' in taskparams:
-        taskparams['cliParams'] =taskparams['cliParams'].encode('utf-8', 'replace').decode("utf-8", 'surrogateescape')
+        taskparams['cliParams'] = taskparams['cliParams'].encode('utf-8', 'replace').decode("utf-8", 'surrogateescape')
 
     return taskparams
 
@@ -1061,3 +1061,20 @@ def get_task_rating(jeditaskid_list):
             'feedback': r['feedback']} for r in task_rating_list]
 
     return task_rating_list
+
+def checkIfDCTask(taskinfo):
+    if taskinfo['splitrule']:
+        split_rule = str(taskinfo['splitrule']).split(',')
+        if 'IS=1' in split_rule:
+            return 'dc'
+    return None
+
+def checkIfIddsTask(taskinfo):
+    if taskinfo['splitrule']:
+        split_rule = str(taskinfo['splitrule']).split(',')
+        if 'HO=1' in split_rule:
+            return 'hpo'
+    if taskinfo['tasktype']:
+        if taskinfo['tasktype'] == "prod" or taskinfo['tasktype'] == 'anal':
+            return 'idds'
+    return None

@@ -80,17 +80,6 @@ def getiDDSInfoForTask(jeditaskid):
     return transformed_results
 
 
-def checkIfIddsTask(taskinfo):
-    if taskinfo['splitrule']:
-        split_rule = str(taskinfo['splitrule']).split(',')
-        if 'HO=1' in split_rule:
-            return 'hpo'
-    if taskinfo['tasktype']:
-        if taskinfo['tasktype'] == "prod" or taskinfo['tasktype'] == 'anal':
-            return 'idds'
-    return None
-
-
 def get_connection_name():
     """
     Deciding which connection to use for raw SQL queries

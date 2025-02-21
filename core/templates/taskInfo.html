@@ -699,7 +699,8 @@
         </tbody>
       </table>
     </div>
-    {% if task.idds_info %}
+
+    {% if task.idds_info and not task.dc_info == "dc" %}
         <div id="iDDsDiv" class="table-scroll" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
             <table class="fresh-table">
                 <thead>
