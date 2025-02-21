@@ -127,27 +127,32 @@ def get_full_name(email):
     return list(set(full_names))
 
 
-def update_user_groups(username, user_roles):
+def update_user_groups(email, user_roles):
     """
     Update user groups
-    :param username: str
-    :param user_roles: list of user roles
+    :param email: str
+    :param user_roles: list of str, user roles = egroup names
     :return: bool
     """
+    # get users by email, there can be multiple users with the same email due to different auth providers
     try:
-        user = BPUser.objects.get(username=username)
+        users = BPUser.objects.filter(email=email)
     except:
         _logger.exception('Exception was caught while getting row from AUTH_USER by email')
         return False
 
-    if user:
-        groups_existing = [g['name'] for g in Group.objects.filter(name__in=user_roles).values('name')]
-        for role in list(set(user_roles) & set(groups_existing)):
-            if not user.groups.filter(name=role).exists():
-                user.groups.add(Group.objects.get(name=role))
-                user.save()
+    # get existing groups
+    groups_existing = [g['name'] for g in Group.objects.filter(name__in=user_roles).values('name')]
+
+    # update user groups
+    if len(users) > 0:
+        for user in users:
+            for role in list(set(user_roles) & set(groups_existing)):
+                if not user.groups.filter(name=role).exists():
+                    user.groups.add(Group.objects.get(name=role))
+                    user.save()
     else:
-        _logger.exception(f'There is no user with this email {username}')
+        _logger.exception(f'There is no user with this email {email}')
         return False
 
     return True
