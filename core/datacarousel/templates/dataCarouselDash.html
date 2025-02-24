@@ -650,11 +650,10 @@
             columnDefs: [{"type": "num-html", "targets": [5,6,7,8,11,14] }],
             data: response.data.detailstable,
             columns: [
-               {
-                data: null,
-                render: function(data, type, full, meta) {
-                    return taskType === 'analy' ? full['username'] : full['campaign'];
-              }},
+              {
+                title: taskType === 'analy' ? 'Username' : 'Campaign',
+                data: taskType === 'analy' ? 'username' : 'campaign',
+              },
               { title: 'Request ID', data: 'pr_id', className: 'num', name: 'request_id' },
               { title: 'Task ID', data: 'taskid',
                 className: 'text icons1',
