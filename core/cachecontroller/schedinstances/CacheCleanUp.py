@@ -18,7 +18,7 @@ class CacheCleanUp(BaseTasksProvider):
         while self.getNumberOfActiveDBSessions() > MAX_NUMBER_OF_ACTIVE_DB_SESSIONS:
             threading.sleep(TIMEOUT_WHEN_DB_LOADED)
 
-        datetime_threshold_str = (datetime.now(tz=timezone.utc) - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')
+        datetime_threshold_str = (datetime.now(tz=timezone.utc) - timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M:%S')
         self.logger.info(f"CacheCleanUp, DB sessions are low enough, deleting all cache entries expired before {datetime_threshold_str}")
         db = None
         try:
