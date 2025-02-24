@@ -56,7 +56,7 @@
     content: 'the task is ready to generate jobs. New jobs are generated once computing resources become available.';
   }
   .bp_tooltip.task_pending:after {
-    content: 'the task has a temporary problem';
+    content: 'the task has a temporary problem or is waiting for an input';
   }
   .bp_tooltip.task_scouting:after {
     content: 'the task is running scout jobs to collect job data';
@@ -80,7 +80,7 @@
     content: 'all inputs of the task were failed';
   }
   .bp_tooltip.task_finished:after {
-    content: 'some inputs of the task were successfully processed but others were failed or not processed since the task was terminated';
+    content: 'some inputs of the task were successfully processed but others were failed or not processed';
   }
   .bp_tooltip.task_aborting:after {
     content: 'the task is being killed';
@@ -119,7 +119,7 @@
     content: 'the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minites';
   }
   .bp_tooltip.task_exhausted:after {
-    content: 'all reattempts were done but some inputs were still unsuccessful, and the task is configured to go to this state instead of finished to wait for manual intervention or timeout of 10 days. Also, if cpuTime of scouts jobs > 2x cpuTime of task definition, the task goes to exhausted';
+    content: 'all reattempts were made, but some inputs failed, or cpuTime of scouts jobs > 2x cpuTime of task definition. The task is set to wait for manual intervention or a 10-day timeout';
   }
   .bp_tooltip.task_paused:after {
     content: 'the task is ready to go to a final state after manual intervention or timeout';
