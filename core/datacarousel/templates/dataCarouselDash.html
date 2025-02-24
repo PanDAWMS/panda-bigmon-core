@@ -650,12 +650,11 @@
             columnDefs: [{"type": "num-html", "targets": [5,6,7,8,11,14] }],
             data: response.data.detailstable,
             columns: [
-               {
-                data: null,
-                render: function(data, type, full, meta) {
-                    return taskType === 'analy' ? full['username'] : full['campaign'];
-              }},
-              { title: 'Request ID', data: 'pr_id', className: 'num' },
+              {
+                title: taskType === 'analy' ? 'Username' : 'Campaign',
+                data: taskType === 'analy' ? 'username' : 'campaign',
+              },
+              { title: 'Request ID', data: 'pr_id', className: 'num', name: 'request_id' },
               { title: 'Task ID', data: 'taskid',
                 className: 'text icons1',
                 "render": function(data, type, full, meta) {
@@ -664,7 +663,7 @@
                   return entry;
                 },
               },
-              { title: 'Status', data: 'status', className: 'state'},
+              { title: 'Status', data: 'status', className: 'state', name:'status'},
               { title: 'P-type', data: 'processingtype', className: 'state' },
               { title: 'Size [GB]', data: 'size', className: 'num' },
               { title: 'Total files', data: 'total_files', className: 'num' },
@@ -691,13 +690,29 @@
               },
               { title: 'Since last update [d:h:m:s]', data: 'update_time', defaultValue: '---',},
             ],
-            createdRow: function ( row, data, index ) {
-                $('td', row).eq(3).addClass(data['status'] + '_fill');
+            createdRow: function (row, data, index) {
+                var table = this.api();
+
+                var statusColumnIndex = table.column('status:name').index();
+
+                var requestColumnIndex = table.column('request_id:name').index();
+                var isRequestHidden = requestColumnIndex !== undefined && !table.column(requestColumnIndex).visible();
+
+                if (isRequestHidden && statusColumnIndex > requestColumnIndex) {
+                    statusColumnIndex--;
+                }
+
+                if (statusColumnIndex !== -1 && statusColumnIndex !== undefined) {
+                    $('td', row).eq(statusColumnIndex).addClass(data['status'] + '_fill');
+                }
+
                 $compile(angular.element(row).contents())($scope);
             },
             initComplete: function () {
-                if (taskType === 'analy') {
-                    this.api().column(1).visible(false);
+                var requestColumnIndex = this.api().column('request_id:name').index();
+                console.log(requestColumnIndex);
+                if (taskType === 'analy' && requestColumnIndex !== undefined) {
+                    this.api().column(requestColumnIndex).visible(false);
                 }
                 this.api().columns([0,3,4,9,10]).every( function () {
                     var column = this;
