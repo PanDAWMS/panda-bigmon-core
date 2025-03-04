@@ -38,6 +38,7 @@
 </div>
 
 <div class="bp-selected-params">
+  <p><b>Test type: {% if requestParams.test_type %}{{ requestParams.test_type }}{% else %} grid and local</b></p>{% endif %}
   {% if requestParams.package %}<p>Package: <b>{{ requestParams.package }}</b> </p>{% endif %}
   {% if requestParams.branch %}<p>Branch: <b>{{ requestParams.branch }}</b> </p>{% endif %}
   {% if viewParams.ntag %}<p>Listed tests are for builds done on <b>{{ viewParams.ntag }}</b> </p>{% endif %}
@@ -93,24 +94,54 @@ for (let i=1; i<table_data[0].length; i++) {
   columns.push({
     title: table_title[i].charAt(0).toUpperCase() + table_title[i].slice(1),
     render: function (data, type, row, meta) {
+      let gridData = (data.grid) ? data.grid : { active: 0, succeeded: 0, finished: 0, failed: 0, ntag: '' };
+      let localData = (data.local) ? data.local : { active: 0, succeeded: 0, finished: 0, failed: 0, ntag: '' };
+
       if (type === 'sort') {
-        return (data.active + data.succeeded + data.finished + data.failed > 0) ? data.failed : -1;
-      }
-      else {
-        if (data.active + data.succeeded + data.finished + data.failed === 0) {
-          return '<div class="nodata">---</div> '
-        }
-        else {
-          return '<div class="clickable traffic-lights"><div class="active">' + data.active + '</div>' +
-            '<div class="succeeded">' + data.succeeded + '</div>' +
-            '<div class="finished">' + data.finished + '</div>' +
-            '<div class="failed">' + data.failed + '</div>' +
-            '<a target="_blank" href="{% url 'artTasks' %}?' + table_title[0] + '=' + row[0] + '&ntag=' + data.ntag + `${(ao1 in request_params) ? '&' + ao1 + '=' + request_params[ao1] : ''}` + '"></a>' +
-            '</div>';
+        return (gridData.active + gridData.succeeded + gridData.finished + gridData.failed +
+                localData.active + localData.succeeded + localData.finished + localData.failed > 0)
+                ? (gridData.failed + localData.failed)
+                : -1;
+      } else {
+        if (gridData.active + gridData.succeeded + gridData.finished + gridData.failed === 0 &&
+            localData.active + localData.succeeded + localData.finished + localData.failed === 0) {
+          return '<div class="nodata">---</div>';
+        } else {
+          return `
+            <div class="data-container">
+             <div class="clickable traffic-lights">
+                 ${gridData ? formatTrafficLightsData(gridData, row, 'grid') : '<div class="nodata">---</div>'}
+             </div>
+             <div class="clickable traffic-lights">
+                 ${localData ? formatTrafficLightsData(localData, row, 'local') : '<div class="nodata">---</div>'}
+             </div>
+            </div>
+          `;
         }
       }
     }
   })
+}
+
+function formatTrafficLightsData(data, row, testType) {
+  const ao1 = (table_title[0] === 'package') ? 'branch' : 'package';
+  const requestParams = {{ requestParams | safe }};
+  const url = `{% url 'artTasks' %}?${table_title[0]}=${row[0]}&ntag=${data.ntag}&test_type=${testType}${(ao1 in requestParams) ? '&' + ao1 + '=' + requestParams[ao1] : ''}`;
+
+  njobs = data.active + data.succeeded + data.finished + data.failed
+  if (!data || njobs == 0) {
+    return '<div class="nodata">---</div>';
+  }
+
+  const baseClass = (testType === "local") ? "local-" : "";
+
+  return `
+    <div class="${baseClass}active">${data.active}</div>
+    <div class="${baseClass}succeeded">${data.succeeded}</div>
+    <div class="${baseClass}finished">${data.finished}</div>
+    <div class="${baseClass}failed">${data.failed}</div>
+    <a target="_blank" href="${url}"></a>
+  `;
 }
 
 let columnDefs =  [{"type": "num-html", "targets": [...Array(table_title.length).keys()].slice(1) }];
@@ -173,8 +204,14 @@ app.controller('artOverviewController', function($scope, $sce) {
         if (!(ntag in tmp_dict)) {
           tmp_dict[ntag] = $scope.art.test_states.reduce((a, c) => (a[c]=0, a), {});
         }
+
+        let gridData = $scope.art.data_raw[key][ntag].grid || {};
+        let localData = $scope.art.data_raw[key][ntag].local || {};
+
         $scope.art.test_states.forEach((v) => {
-          (v in $scope.art.data_raw[key][ntag]) ? tmp_dict[ntag][v] += $scope.art.data_raw[key][ntag][v] : tmp_dict[ntag][v] += 0;
+          let gridValue = gridData[v] || 0;
+          let localValue = localData[v] || 0;
+          tmp_dict[ntag][v] += gridValue + localValue;
         })
       })
     });

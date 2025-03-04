@@ -138,6 +138,47 @@ fieldset.artmenu li.input-group button.hollow.alert {
     background: #fadd6e;
   }
 
+  /* Lighter colors for Local Test Type */
+  .clickable .done,
+  .clickable .succeeded,
+  .clickable .failed,
+  .clickable .active,
+  .clickable .finished,
+  .clickable .local-done,
+  .clickable .local-succeeded,
+  .clickable .local-failed,
+  .clickable .local-active,
+  .clickable .local-finished {
+    text-align: center;
+    vertical-align: middle;
+    height: 100%;
+    width: 25%;
+    display: inline-block;
+    color: black;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .clickable .local-done {
+    background: #d7f8e1; /* Lighter Green */
+  }
+
+  .clickable .local-succeeded {
+    background: #d7f8e1; /* Lighter Green */
+  }
+
+  .clickable .local-failed {
+    background: #ffd8d2; /* Lighter Red */
+  }
+
+  .clickable .local-active {
+    background: #dcecff; /* Lighter Blue */
+  }
+
+  .clickable .local-finished {
+    background: #fdf1b5; /* Lighter Yellow */
+  }
+
 [class$="_job"] {
   font-weight: bold;
 }
@@ -156,6 +197,23 @@ fieldset.artmenu li.input-group button.hollow.alert {
   }
   .finished_job {
     background: #fadd6e;
+  }
+
+  /* Lighter job colors for test_type=local */
+  .local-done_job {
+    background: #d7f8e1;
+  }
+  .local-succeeded_job {
+    background: #d7f8e1;
+  }
+  .local-active_job {
+    background: #dcecff;
+  }
+  .local-failed_job {
+    background: #ffd8d2;
+  }
+  .local-finished_job {
+    background: #fef4d1;
   }
 
 /* extra links style */
@@ -223,6 +281,16 @@ fieldset.artmenu li.input-group button.hollow.alert {
   border-color: #0a0a0a;
 }
 
+.testsubresultbox.local-finishedtest {
+    background-color: #d7f8e1;
+}
+.testsubresultbox.local-failedtest {
+    background-color: #ffd8d2;
+}
+.testsubresultbox.local-tooltip:hover {
+    border-color: #505050;
+}
+
 .subresult_finished {
   color: #50a25f;
 }
@@ -286,3 +354,8 @@ a.away {
 .warning_b_fill { color:black;  background-color:#ecfeb8 }
 .warning_w_fill { color:black;  background-color:#fff0b3 }
 .ok_fill {color:black;  background-color:#d6f5d6}
+
+.gridDiv:hover, .localDiv:hover {
+    background-color: lightgray; 
+    cursor: pointer; 
+}
