@@ -156,3 +156,35 @@ def update_user_groups(email, user_roles):
         return False
 
     return True
+
+
+def get_username(user):
+    """
+    Getting true user name from social auth user table
+    :param user: request.user object
+    :return: username: str
+    """
+    if user.is_authenticated:
+        social_user = user.social_auth.get()
+        if social_user and social_user.extra_data and 'username' in social_user.extra_data:
+            username = social_user.extra_data['username']
+        else:
+            username = user.username
+    else:
+        username = None
+    return username
+
+
+def user_email_sort(email):
+    """"""
+    domain = email.split('@')[-1]
+    # sort order map (lower value = higher priority)
+    priority_map = {
+        "cern.ch": 1,
+        "gmail.com": 8,
+        "github.com": 9,
+    }
+    # decide priority, in case uni emails which are not in map -> middle
+    priority = priority_map.get(domain, 5)
+
+    return (priority, email)

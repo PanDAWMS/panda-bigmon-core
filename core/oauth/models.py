@@ -2,7 +2,7 @@
 
 """
 
-from django.contrib.auth.models import AbstractUser, Group
+from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.conf import settings
 
@@ -19,6 +19,12 @@ class BPUser(AbstractUser):
         related_name="bpuser_groups",
     )
 
+    user_permissions = models.ManyToManyField(
+        Permission,
+        through="UserPermissions",  # Custom through model
+        related_name="bpuser_permissions",
+    )
+
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."auth_user"'
 
@@ -30,6 +36,15 @@ class UserGroups(models.Model):
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."auth_user_groups"'
         unique_together = ("user", "group")
+
+
+class UserPermissions(models.Model):
+    user = models.ForeignKey(BPUser, on_delete=models.DO_NOTHING, db_column="user_id")
+    permission = models.ForeignKey(Permission, on_delete=models.DO_NOTHING, db_column="permission_id")
+
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA}"."auth_user_user_permissions"'
+        unique_together = ("user", "permission")
 
 
 class BPUserSettings(models.Model):

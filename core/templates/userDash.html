@@ -1,7 +1,7 @@
 {% extends "_base_core.html" %}
 {% load static %}{% load common_tags %}{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA user {{ user }} {% endblock %}
-{% block subtitle %}PanDA user <b>{{ user }}</b>{% endblock %}
+{% block subtitle %}PanDA user: <b>{{ user }}</b>{% endblock %}
 {% block time_window %}
     Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
     - <span class="time-window-range">{{ timerange.1 }}</span> UTC
@@ -36,13 +36,13 @@
 
 
 {% if request.user and request.user.is_authenticated and links and links|length > 0 %}
-
-  <div class="card bp-container-simple">
+  <div class="card bp-container-simple secondary">
   <div class="card-divider"><p>Inspired by your visits history:</p></div>
   <div class="card-section">
     {% for category, linkslist in links.items %}
-      <p><b>{{ category | title }}:</b></p>
-      <ul class="no-bullet uservisits">
+      <div class="uservisits">
+      <span class="title">{{ category | title }}:</span>
+      <ul class="no-bullet">
         {% for link in linkslist %}
           {% if link.keyparams|length > 0 %}
             <a href={{ link.url }}>
@@ -63,7 +63,7 @@
           {% endif %}
         {% if forloop.last %}{% else %},&emsp;{% endif %}
         {% endfor %}
-      </ul>
+      </ul></div>
     {% endfor %}
   </div>
   </div>
@@ -72,7 +72,7 @@
 {% if ntasks > 0 %}
   <div id="scope" data-ng-controller="userDashController" class="ng-cloak">
   <div class="card bp-container-simple secondary" id="plots">
-    <div class="card-divider"><p>User activity overview:</p></div>
+    <div class="card-divider with-right-section"><span>User activity overview:</span><span><a id="panda_user_contact" ng-if="bp_user.can_contact_users" ng-click="bp_user.getUserContact()" ng-bind-html="bp_user.link_text"></a></span></div>
     <div class="card-section">
       <p>
         <span class="label medium" ng-repeat="m in userinfo.metrics" ng-class="m.class">{$ m.title $}: <b>{$ m.value $}</b> {$ m.unit $}</span>
@@ -84,10 +84,6 @@
   <div class="card bp-container-simple secondary" id="container_tasks">
   <div class="card-divider"><p>{{ ntasks }} tasks:</p></div>
   <div class="card-section">
-    <div class="callout info" data-closable>
-      <h5>Long messages are shortened, and tails are hidden in tooltips. Click the button below to view the full text.</h5>
-      <button class="close-button small" aria-label="Dismiss alert" type="button" data-close><span aria-hidden="true">&times;</span></button>
-    </div>
     <p ng-bind-html="userinfo.message"></p>
     <table class="data-table hover" id="taskstable">
         <thead></thead>
@@ -122,7 +118,9 @@
   var metrics = {{ metrics|safe }};
   var request_params = {{ requestParams | safe }};
   var viewParams = {{ viewParams | safe }};
-  app.controller('userDashController', function($scope, $http, $sce) {
+  const userPermissions = {{ request.session.user_permissions | safe }};
+  const user = "{{ user|safe }}";
+  app.controller('userDashController', function($scope, $http, $sce, $timeout) {
     $scope.userinfo = {
       page: {
         width: getWidth(),
@@ -140,7 +138,7 @@
       uts_plots: {
         plot_data: plot_data,
         charts: {}
-      }
+      },
     };
 
     if ($scope.userinfo.page.vo === 'ATLAS') {
@@ -555,7 +553,42 @@
     };
     $scope.userinfo.init();
 
-
+    $scope.bp_user = {
+      can_contact_users: userPermissions.includes('oauth.can_contact_users'),
+      contact_link_text_default: $sce.trustAsHtml('copy user contact'),
+      link_text: $sce.trustAsHtml('copy user contact'),
+      tooltip: {
+        text: '',
+        is_shown: false,
+      },
+    }
+    $scope.bp_user.getUserContact = function () {
+      $scope.bp_user.link_text = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
+      $http({
+        url: '/api/oauth/user_contact/?json',
+        method: "POST",
+        data: {'user': user },
+      }).then(function success(res) {
+        if (res.data.email) {
+          // copy email to clipboard
+          try {
+            navigator.clipboard.writeText(res.data.email).then(() => {
+              console.log('copied!');
+              $scope.bp_user.link_text = $sce.trustAsHtml('copied!');
+            });
+          }
+          catch (err) {
+            console.error("Failed to copy with ", err.message);
+          }
+        } else {
+            console.error("Email not found.");
+        }
+        $timeout(() => {$scope.bp_user.link_text = $scope.bp_user.contact_link_text_default;}, 1000);
+      }, function error(res) {
+        console.log(res);
+        $timeout(() => {$scope.bp_user.link_text = $scope.bp_user.contact_link_text_default;}, 1000);
+      });
+    };
 
   })
   .directive('uaplotDirective', function ($timeout) {

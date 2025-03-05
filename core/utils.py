@@ -17,7 +17,6 @@ def is_json_request(request):
     :param request:
     :return: bool: True or False
     """
-
     if ('HTTP_ACCEPT' in request.META and request.META.get('HTTP_ACCEPT') in ('text/json', 'application/json')) or (
             'json' in request.GET or 'json' in request.POST):
         _logger.info("This is JSON request: {} ".format(request.get_full_path()))

@@ -1351,6 +1351,22 @@ canvas.full_screen_size {
     font-size: 0.875rem;
     justify-content: space-between;
   }
+    .card.bp-container-simple .card-divider.with-right-section span.left, .card.bp-container-simple .card-divider.with-right-section span:first-child {
+      display: inline-block;
+      width: 50%;
+      text-align: left;
+    }
+    .card.bp-container-simple .card-divider.with-right-section span.right, .card.bp-container-simple .card-divider.with-right-section span:last-child {
+      display: inline-block;
+      width: 50%;
+      text-align: right;
+    }
+    .card.bp-container-simple .card-divider.with-right-section span > a.with_img {
+      border-bottom: 0;
+    }
+    .card.bp-container-simple .card-divider.with-right-section span > a.with_img:hover {
+      border-bottom: 0;
+    }
   .card.bp-container-simple .card-section {
     padding: 0;
     margin: 0;
@@ -1471,17 +1487,27 @@ canvas.full_screen_size {
     padding: 0.3rem 0.7rem;
   }
 
-
-
-.card.bp-container-simple > .card-section > ul.uservisits a {
-  color: #272727;
-  font-weight: normal;
-  border-bottom: 1px dotted;
+.card.bp-container-simple > .card-section > div.uservisits {
+  margin: 0.3rem 0.7rem;
+  padding: 0;
 }
-  .card.bp-container-simple > .card-section > ul.uservisits a:hover {
-    color: #49668d;
-    border-bottom: none;
+  .card.bp-container-simple > .card-section > div.uservisits > span.title {
+    display: inline;
+    font-weight: bold;
   }
+  .card.bp-container-simple > .card-section > div.uservisits > ul {
+    display: inline;
+    padding: 0 0 0 0.7rem;
+  }
+  .card.bp-container-simple > .card-section > div.uservisits > ul > a {
+    color: #272727;
+    font-weight: normal;
+    border-bottom: 1px dotted;
+  }
+    .card.bp-container-simple > .card-section > div.uservisits > ul > a:hover {
+      color: #49668d;
+      border-bottom: none;
+    }
 
 
 .card.bp-container {

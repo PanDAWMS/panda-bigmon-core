@@ -6,15 +6,16 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import logout as auth_logout
 from django.views.decorators.cache import never_cache
 from django.utils.cache import patch_response_headers
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
+from django.db.models import Q
 from django.conf import settings
 
 import core.constants as const
-from core.utils import extensibleURL
+from core.utils import extensibleURL, error_response
 from core.views import initRequest
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.oauth.utils import login_customrequired, grant_rights, deny_rights
+from core.oauth.utils import login_customrequired, grant_rights, deny_rights, user_email_sort
 from core.oauth.models import BPUser, BPUserSettings, Visits
 
 
@@ -170,3 +171,34 @@ def saveSettings(request):
     else:
         data = {"error": "no jeditaskid supplied"}
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
+
+
+@login_customrequired
+def get_user_contact(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    # allow only POST requests
+    if request.META['REQUEST_METHOD'] != 'POST':
+        return error_response(request, message='only POST requests are allowed', status=405)
+
+    # allow only authenticated users with permission
+    if request.user.is_authenticated and request.user.has_perm('oauth.can_contact_users'):
+        if 'user' in request.session['requestParams']:
+            user_name_split = request.session['requestParams']['user'].split(' ')
+        else:
+            return error_response(request, message='no user name supplied', status=400)
+
+        emails = BPUser.objects.filter(
+            first_name__istartswith=user_name_split[0],
+            last_name__iendswith=user_name_split[-1]
+        ).values('email')
+        if len(emails) == 0:
+            return error_response(request, message='no user found', status=404)
+        elif len(emails) > 1:
+            # custom sorting, cern and edu emails first and gmail and other last
+            emails = sorted(list(set([e['email'] for e in emails if e['email'] != ''])), key=user_email_sort)
+        return JsonResponse({'email': emails[0]}, status=200)
+    else:
+        return error_response(request, message='No permission to ask this', status=403)

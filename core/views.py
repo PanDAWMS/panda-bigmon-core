@@ -49,7 +49,7 @@ from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
-from core.oauth.utils import login_customrequired, get_auth_provider, is_expert, get_full_name
+from core.oauth.utils import login_customrequired, get_auth_provider, is_expert, get_full_name, get_username
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
@@ -276,6 +276,10 @@ def initRequest(request, callselfmon=True):
         userrec = Users.objects.filter(dn__startswith=request.session['userdn']).values()
         if len(userrec) > 0:
             request.session['username'] = userrec[0]['name']
+
+    # add permissions to request session if user is authenticated
+    if 'user_permissions' not in request.session or len(request.session['user_permissions']) == 0:
+        request.session['user_permissions'] = list(request.user.get_all_permissions()) if request.user.is_authenticated else []
 
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
@@ -2754,37 +2758,6 @@ def userInfo(request, user=''):
     query_task = None
     query_job = None
 
-    if user == '':
-        if 'user' in request.session['requestParams']:
-            user = request.session['requestParams']['user']
-        if 'produsername' in request.session['requestParams']:
-            user = request.session['requestParams']['produsername']
-        if request.user.is_authenticated and user == '{} {}'.format(
-                request.user.first_name.replace('\'', ''),
-                request.user.last_name
-        ):
-            is_prepare_history_links = True
-
-        # Here we serve only personal user pages. No user parameter specified
-        if user == '':
-            if request.user.is_authenticated:
-                login = user = request.user.username
-                # replace middle name by wildcard if exists
-                first_name = str(request.user.first_name.replace('\'', ''))
-                last_name = str(request.user.last_name)
-                if ' ' not in first_name and ' ' not in last_name:
-                    query_task = Q(username=login) | Q(username=f"{first_name} {last_name}")
-                    query_job = Q(produsername=login) | Q(produsername=f"{first_name} {last_name}")
-                else:
-                    first_name = first_name.split(' ')[0] if ' ' in first_name else first_name
-                    query_task = Q(username=login) | (Q(username__istartswith=first_name) & Q(username__iendswith=last_name))
-                    query_job = Q(produsername=login) | (Q(produsername__istartswith=first_name) & Q(produsername__iendswith=last_name))
-                # add to query all known full names of a user email
-                for n in get_full_name(request.user.email):
-                    query_task |= Q(username=n)
-                    query_job |= Q(produsername=n)
-                is_prepare_history_links = True
-
     if 'days' in request.session['requestParams']:
         days = int(request.session['requestParams']['days'])
     else:
@@ -2796,25 +2769,43 @@ def userInfo(request, user=''):
 
     requestParams = {}
     for param in request.session['requestParams']:
-        requestParams[escape_input(param.strip())] = escape_input(
-            request.session['requestParams'][param.strip()].strip())
+        requestParams[escape_input(param.strip())] = escape_input(request.session['requestParams'][param.strip()].strip())
     request.session['requestParams'] = requestParams
-
-    # getting most relevant links based on visit statistics
-    links = {}
-    if 'ORACLE' in settings.DEPLOYMENT:
-        if is_prepare_history_links:
-            userids = BPUser.objects.filter(email=request.user.email).values('id')
-            userid = userids[0]['id']
-            fields = {
-                'job': copy.deepcopy(standard_fields),
-                'task': copy.deepcopy(standard_taskfields),
-                'site': copy.deepcopy(const.SITE_FIELDS_STANDARD),
-            }
-            links = get_relevant_links(userid, fields)
 
     # Tasks owned by the user
     query, extra_query_str, _ = setupView(request, hours=days * 24, limit=999999, querytype='task', wildCardExt=True)
+    # make query if no user provided
+    if user == '':
+        if 'user' in request.session['requestParams']:
+            user = request.session['requestParams']['user']
+        if 'produsername' in request.session['requestParams']:
+            user = request.session['requestParams']['produsername']
+        if request.user.is_authenticated and user == f"{request.user.first_name.replace('\'', '')} {request.user.last_name}":
+            is_prepare_history_links = True
+
+        # Here we serve only personal user pages. No user parameter specified
+        if user == '' and request.user.is_authenticated:
+            login = get_username(request.user)
+            if login is None:
+                login = request.user.username
+            full_name = f"{request.user.first_name} {request.user.last_name}"
+            # replace middle name by wildcard if exists
+            first_name = str(request.user.first_name.replace('\'', ''))
+            last_name = str(request.user.last_name)
+            if ' ' not in first_name and ' ' not in last_name:
+                query_task = Q(username=login) | Q(username=f"{first_name} {last_name}")
+                query_job = Q(produsername=login) | Q(produsername=f"{first_name} {last_name}")
+            else:
+                first_name = first_name.split(' ')[0] if ' ' in first_name else first_name
+                query_task = Q(username=login) | (Q(username__istartswith=first_name) & Q(username__iendswith=last_name))
+                query_job = Q(produsername=login) | (Q(produsername__istartswith=first_name) & Q(produsername__iendswith=last_name))
+            # add to query all known full names of a user email
+            for n in get_full_name(request.user.email):
+                query_task |= Q(username=n)
+                query_job |= Q(produsername=n)
+            is_prepare_history_links = True
+    else:
+        query['username__icontains'] = user.strip()
 
     # extend query if any idds-related params are present
     if any(['idds' in p for p in request.session['requestParams']]):
@@ -2827,7 +2818,6 @@ def userInfo(request, user=''):
             _logger.exception(f'Failed to extend query with idds related parameters with:\n{e}')
 
     if query_task is None:
-        query['username__icontains'] = user.strip()
         tasks = JediTasks.objects.filter(**query).extra(where=[extra_query_str]).values()
     else:
         tasks = JediTasks.objects.filter(**query).filter(query_task).extra(where=[extra_query_str]).values()
@@ -2843,6 +2833,11 @@ def userInfo(request, user=''):
         panda_user_name = fullname if fullname != '' else user.strip()
     userstats = get_panda_user_stats(panda_user_name)
     _logger.info('Got user statistics: {}'.format(time.time() - request.session['req_init_time']))
+
+    # getting most relevant links based on visit statistics
+    links = {}
+    if 'ORACLE' in settings.DEPLOYMENT and is_prepare_history_links and request.user.is_authenticated:
+        links = get_relevant_links(request.user.id)
 
     # old classic page
     if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'classic':
@@ -3056,7 +3051,7 @@ def userInfo(request, user=''):
                 'tk': tk_taskids,
                 'xurl': xurl,
                 'urlnoview': url_noview,
-                'user': user,
+                'user': panda_user_name,
                 'links': links,
                 'ntasks': len(tasks),
                 'plots': plots,
