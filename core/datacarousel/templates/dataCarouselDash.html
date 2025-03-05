@@ -70,7 +70,9 @@
           <thead>
             <tr>
                 <th>Source</th>
-                <th class="mid">Progress plot</th>
+                {% if request.GET.tasktype != 'analy' %}
+                    <th class="mid">Progress plot</th>
+                {% endif %}
                 <th class="mid">DDM Dash</th>
                 <th class="num">Datasets Queued</th>
                 <th class="num">Datasets Active</th>
@@ -86,9 +88,13 @@
             <tr ng-repeat="x in summary.source_rse" class="low-stat">
                 <th class="nowrap"> <a class="nowrap" href="{% url 'taskList' %}?tape=true&stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">{$ x.source_rse $}</a>
                 </th>
-                <td class="mid">
-                    <a target="_blank" href="/staginprogressplot/?stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}"><i class="fi-graph-trend"></i></a>
-                </td>
+                {% if request.GET.tasktype != 'analy' %}
+                    <td class="mid">
+                        <a target="_blank" href="/staginprogressplot/?stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">
+                            <i class="fi-graph-trend"></i>
+                        </a>
+                    </td>
+                {% endif %}
                 <td class="mid">
                   <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}"><img src="{% static 'images/grafana.png' %}" width=14 height=14 border=0></a>
                 </td>
