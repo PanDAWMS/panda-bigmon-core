@@ -1,15 +1,36 @@
 <div class="card bp-container-simple help">
-<div class="card-divider"><p>ART GRID jobs help</p></div>
+<div class="card-divider"><p>ART jobs help</p></div>
 <div class="card-section">
 
 <b>The color coding of test result is the following:</b>
 <ul class="no-bullet">
-    <li> <div class="art-legend active_job">Active</div> - PanDA job still running. </li>
-    <li> <div class="art-legend finished_job">Succeeded</div> - PanDA job finished, sub-steps results are not loaded yet;</li>
-    <li> <div class="art-legend succeeded_job">Succeeded</div> - Athena and sub-steps succeeded;</li>
-    <li> <div class="art-legend finished_job">Finished</div> - Athena succeeded, sub-steps failed; </li>
-    <li> <div class="art-legend failed_job">Failed</div> - Athena failed or PanDA job failed; </li>
+    <li>
+        <div class="art-legend grid-label">ART GRID</div>
+        <div class="art-legend local-label">ART LOCAL</div>
+    </li>
+    <li>
+        <div class="art-legend active_job">Active</div>
+        <div class="art-legend local-active_job">Active</div> - PanDA job still running.
+    </li>
+    <li>
+        <div class="art-legend finished_job">Succeeded</div>
+        <div class="art-legend local-finished_job">Succeeded</div> - PanDA job finished, sub-steps results are not loaded yet.
+    </li>
+    <li>
+        <div class="art-legend succeeded_job">Succeeded</div>
+        <div class="art-legend local-succeeded_job">Succeeded</div> - Athena and sub-steps succeeded.
+    </li>
+    <li>
+        <div class="art-legend finished_job">Finished</div>
+        <div class="art-legend local-finished_job">Finished</div> - Athena succeeded, sub-steps failed.
+    </li>
+    <li>
+        <div class="art-legend failed_job">Failed</div>
+        <div class="art-legend local-failed_job">Failed</div> - Athena failed or PanDA job failed.
+    </li>
 </ul>
+
+<p> In each cell, if there are two rows, the top row is for ART GRID tests, and the bottom row is for ART LOCAL tests. </p>
 
 <p>If you would like to get daily reports to email, please contact us via <a href="mailto:atlas-adc-pandamon-support@cern.ch">atlas-adc-pandamon-support@cern.ch</a>
 or </p>
