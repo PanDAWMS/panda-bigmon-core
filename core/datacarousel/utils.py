@@ -121,6 +121,11 @@ def getStagingData(request):
     else:
         task_type = None
 
+    if task_type == 'analy' and 'username' in request.GET:
+        username = request.GET['username']
+    else:
+        username = None
+
     data = {}
     new_cur = connection.cursor()
     transactionKey = None
@@ -177,6 +182,10 @@ def getStagingData(request):
                     selection += " AND " + tasktype_column + "='anal'"
             else:
                 selection += " AND " + processingtype_column + " in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
+
+        if username:
+            usernamel = [username] if ',' not in username else [user for user in username.split(',')]
+            selection += " AND t3.username in (" + ','.join('\'' + str(x) + '\'' for x in usernamel) + ")"
 
         if not jeditaskid:
             selection += f"""  
