@@ -40,7 +40,7 @@ def globalshares(request):
         shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
 
     for shareValue in tablerows:
-        shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
+        shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue and shareValue['ratio'] is not None else None
     ordtablerows ={}
     ordtablerows['childlist']=[]
     level1 = ''
