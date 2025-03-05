@@ -2804,6 +2804,8 @@ def userInfo(request, user=''):
                 query_task |= Q(username=n)
                 query_job |= Q(produsername=n)
             is_prepare_history_links = True
+        else:
+            query['username__icontains'] = user.strip()
     else:
         query['username__icontains'] = user.strip()
 
