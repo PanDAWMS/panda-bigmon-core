@@ -127,7 +127,7 @@
   var viewParams = {{ viewParams | safe }};
   const userPermissions = {{ request.session.user_permissions | safe }};
   const user = "{{ user|safe }}";
-  app.controller('userDashController', function($scope, $http, $sce, $window) {
+  app.controller('userDashController', function($scope, $http, $sce, $window, $timeout) {
     $scope.userinfo = {
       page: {
         width: getWidth(),
@@ -587,6 +587,8 @@
               $scope.bp_user.can_contact_users = false;
               $scope.bp_user.copy_contact.success = true;
               $scope.bp_user.copy_contact.tooltip_text = $sce.trustAsHtml('Copied successfully!');
+              // apply changes as they are inside non-angularjs event
+              $timeout(() => {$scope.$apply();}, 100);
             });
           }
           catch (err) {
