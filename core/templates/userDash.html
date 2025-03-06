@@ -560,8 +560,16 @@
     };
     $scope.userinfo.init();
 
+    $scope.getBrowser = function () {
+      if ("chrome" in $window) return "Chrome";
+      if ("InstallTrigger" in $window) return "Firefox";
+      if ("safari" in $window) return "Safari";
+      if ("StyleMedia" in $window) return "Edge";
+      if (!!$window.opr || !!$window.opera) return "Opera";
+      return "Unknown";
+    }
     $scope.bp_user = {
-      can_contact_users: (userPermissions.includes('oauth.can_contact_users') & !$window.navigator.userAgent.includes('Safari/')) ,
+      can_contact_users: (userPermissions.includes('oauth.can_contact_users') & $scope.getBrowser() !== 'Safari'),
       contact_link_text_default: $sce.trustAsHtml('copy user contact'),
       link_text: $sce.trustAsHtml('copy user contact'),
       link_class: {'with_img': false},
@@ -571,6 +579,7 @@
         tooltip_text: $sce.trustAsHtml(''),
       }
     }
+
     $scope.bp_user.getUserContact = function () {
       $scope.bp_user.link_text = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
       $scope.bp_user.link_class.with_img = true;
