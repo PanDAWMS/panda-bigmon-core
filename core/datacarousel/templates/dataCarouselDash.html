@@ -487,7 +487,6 @@
     var get = function(requestparams) {
       {# TODO remove it after migration #}
         var tasktype_dict = {{ requestParams|safe }};
-        var requestparams = '';
 
         if (tasktype_dict && Object.keys(tasktype_dict).length > 0) {
                 requestparams += '&' + new URLSearchParams(tasktype_dict).toString();
