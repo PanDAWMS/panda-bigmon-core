@@ -196,9 +196,14 @@ def get_user_contact(request):
         ).values('email')
         if len(emails) == 0:
             return error_response(request, message='no user found', status=404)
-        elif len(emails) > 1:
-            # custom sorting, cern and edu emails first and gmail and other last
-            emails = sorted(list(set([e['email'] for e in emails if e['email'] != ''])), key=user_email_sort)
+        elif len(emails) > 0:
+            # dict -> list and filter
+            emails = list(set([e['email'] for e in emails if e['email'] != '']))
+            if len(emails) > 0:
+                # custom sorting, cern and edu emails first and gmail and other last
+                emails = sorted(emails, key=user_email_sort)
+            else:
+                return error_response(request, message='no user found', status=404)
         return JsonResponse({'email': emails[0]}, status=200)
     else:
         return error_response(request, message='No permission to ask this', status=403)
