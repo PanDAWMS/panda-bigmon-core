@@ -72,7 +72,14 @@
 {% if ntasks > 0 %}
   <div id="scope" data-ng-controller="userDashController" class="ng-cloak">
   <div class="card bp-container-simple secondary" id="plots">
-    <div class="card-divider with-right-section"><span>User activity overview:</span><span><a id="panda_user_contact" ng-if="bp_user.can_contact_users" ng-click="bp_user.getUserContact()" ng-bind-html="bp_user.link_text"></a></span></div>
+    <div class="card-divider with-right-section">
+      <span>User activity overview:</span>
+      <span>
+        <a id="panda_user_contact" ng-show="bp_user.can_contact_users" ng-click="bp_user.getUserContact()" ng-bind-html="bp_user.link_text" ng-class="bp_user.link_class"></a>
+        <span class="ng-hide bp-tooltip left" ng-show="bp_user.copy_contact.success"><i class="fi-check done"></i><span class="tooltip-text" ng-bind-html="bp_user.copy_contact.tooltip_text"></span></span>
+        <span class="ng-hide bp-tooltip left" ng-show="bp_user.copy_contact.failed"><i class="fi-x alert"></i><span class="tooltip-text"  ng-bind-html="bp_user.copy_contact.tooltip_text"></span></span>
+      </span>
+    </div>
     <div class="card-section">
       <p>
         <span class="label medium" ng-repeat="m in userinfo.metrics" ng-class="m.class">{$ m.title $}: <b>{$ m.value $}</b> {$ m.unit $}</span>
@@ -120,7 +127,7 @@
   var viewParams = {{ viewParams | safe }};
   const userPermissions = {{ request.session.user_permissions | safe }};
   const user = "{{ user|safe }}";
-  app.controller('userDashController', function($scope, $http, $sce, $timeout) {
+  app.controller('userDashController', function($scope, $http, $sce, $window) {
     $scope.userinfo = {
       page: {
         width: getWidth(),
@@ -554,16 +561,19 @@
     $scope.userinfo.init();
 
     $scope.bp_user = {
-      can_contact_users: userPermissions.includes('oauth.can_contact_users'),
+      can_contact_users: (userPermissions.includes('oauth.can_contact_users') & !$window.navigator.userAgent.includes('Safari/')) ,
       contact_link_text_default: $sce.trustAsHtml('copy user contact'),
       link_text: $sce.trustAsHtml('copy user contact'),
-      tooltip: {
-        text: '',
-        is_shown: false,
-      },
+      link_class: {'with_img': false},
+      copy_contact: {
+        success: false,
+        failed: false,
+        tooltip_text: $sce.trustAsHtml(''),
+      }
     }
     $scope.bp_user.getUserContact = function () {
       $scope.bp_user.link_text = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
+      $scope.bp_user.link_class.with_img = true;
       $http({
         url: '/api/oauth/user_contact/?json',
         method: "POST",
@@ -573,20 +583,29 @@
           // copy email to clipboard
           try {
             navigator.clipboard.writeText(res.data.email).then(() => {
-              console.log('copied!');
-              $scope.bp_user.link_text = $sce.trustAsHtml('copied!');
+              $scope.bp_user.link_text = $sce.trustAsHtml('');
+              $scope.bp_user.can_contact_users = false;
+              $scope.bp_user.copy_contact.success = true;
+              $scope.bp_user.copy_contact.tooltip_text = $sce.trustAsHtml('Copied successfully!');
             });
           }
           catch (err) {
             console.error("Failed to copy with ", err.message);
+            $scope.bp_user.link_text = $sce.trustAsHtml('');
+            $scope.bp_user.can_contact_users = false;
+            $scope.bp_user.copy_contact.failed = true;
+            $scope.bp_user.copy_contact.tooltip_text = $sce.trustAsHtml('Failed to copy :(');
           }
         } else {
-            console.error("Email not found.");
+            console.log('No email found!');
+            $scope.bp_user.link_text = $sce.trustAsHtml('');
+            $scope.bp_user.can_contact_users = false;
+            $scope.bp_user.copy_contact.failed = true;
+            $scope.bp_user.copy_contact.tooltip_text = $sce.trustAsHtml('No email found!');
         }
-        $timeout(() => {$scope.bp_user.link_text = $scope.bp_user.contact_link_text_default;}, 1000);
       }, function error(res) {
-        console.log(res);
-        $timeout(() => {$scope.bp_user.link_text = $scope.bp_user.contact_link_text_default;}, 1000);
+        console.log("HTTP call to the server failed :(");
+        $scope.bp_user.link_text = $scope.bp_user.contact_link_text_default;
       });
     };
 

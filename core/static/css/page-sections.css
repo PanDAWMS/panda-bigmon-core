@@ -1351,20 +1351,20 @@ canvas.full_screen_size {
     font-size: 0.875rem;
     justify-content: space-between;
   }
-    .card.bp-container-simple .card-divider.with-right-section span.left, .card.bp-container-simple .card-divider.with-right-section span:first-child {
+    .card.bp-container-simple .card-divider.with-right-section > span.left, .card.bp-container-simple .card-divider.with-right-section > span:first-child {
       display: inline-block;
-      width: 50%;
+      width: 49%;
       text-align: left;
     }
-    .card.bp-container-simple .card-divider.with-right-section span.right, .card.bp-container-simple .card-divider.with-right-section span:last-child {
+    .card.bp-container-simple .card-divider.with-right-section > span.right, .card.bp-container-simple .card-divider.with-right-section > span:last-child {
       display: inline-block;
       width: 50%;
       text-align: right;
     }
-    .card.bp-container-simple .card-divider.with-right-section span > a.with_img {
+    .card.bp-container-simple .card-divider.with-right-section > span > a.with_img {
       border-bottom: 0;
     }
-    .card.bp-container-simple .card-divider.with-right-section span > a.with_img:hover {
+    .card.bp-container-simple .card-divider.with-right-section > span > a.with_img:hover {
       border-bottom: 0;
     }
   .card.bp-container-simple .card-section {
