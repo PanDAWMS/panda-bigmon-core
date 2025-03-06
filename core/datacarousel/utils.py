@@ -258,10 +258,13 @@ def getStagingData(request):
     if transactionKey is not None:
         datasets_idds_info = _getiDDSInfoForTask(transactionKey)
 
+    datasets_statuses = ('staging', 'queued', 'done')
+
     if task_type == 'prod':
         datasets = execute_query('prod')
     elif task_type in ('analy', 'anal'):
         datasets = execute_query('analy')
+        datasets_statuses += ('cancelled',)
     else:
         datasets = execute_query('prod')
 
@@ -269,7 +272,7 @@ def getStagingData(request):
         if datasets_idds_info is not None and len(datasets_idds_info) > 0 and dataset['dataset'] in datasets_idds_info:
             dataset.update(datasets_idds_info[dataset['dataset']])
         # Sort out requests by request on February 19, 2020
-        if dataset['status'] in ('staging', 'queued', 'done'):
+        if dataset['status'] in datasets_statuses:
             dataset = {k.lower(): v for k, v in dataset.items()}
             datasetname = dataset.get('dataset')
             if ':' in datasetname:
