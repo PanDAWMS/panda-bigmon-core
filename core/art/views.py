@@ -1162,6 +1162,7 @@ def registerARTTest(request):
             art_host = client_ip
 
         if art_host.split('.')[0] not in art_const.AUTHORIZED_HOSTS:
+            _logger.warning(f"Not autorized to register test from {client_ip} {art_host}") 
             return JsonResponse({"error": "Invalid ART API user!"}, status=403)
 
         # Generate job ID for ART Local
