@@ -463,7 +463,7 @@ def artJobs(request):
                 'inputfileid': job['inputfileid'],
                 'tarindex': job['tarindex'],
                 'finalresult': final_result_dict[job['status']] if job['status'] in final_result_dict else '---',
-                'gitlab': build_gitlab_link(job['package'], job['testname']),
+                'gitlab': build_gitlab_link(job['package'], job['nightly_release_short'], job['testname']),
                 'linktopreviousattemptlogs': job['linktopreviousattemptlogs'] if 'linktopreviousattemptlogs' in job else ''
             }
             # enrich with PanDA job metrics
@@ -692,7 +692,7 @@ def artTest(request, package=None, testname=None):
                 if branch not in art_branches:
                     art_branches[branch] = {'jobs': []}
                 if 'gitlab' not in art_test:
-                    art_test['gitlab'] = build_gitlab_link(job['package'], testname)
+                    art_test['gitlab'] = build_gitlab_link(job['package'], job['nightly_release_short'], testname)
                 art_branches[branch]['jobs'].append(job)
 
             # if failed test, find last successful one
