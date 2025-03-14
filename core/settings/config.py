@@ -43,10 +43,6 @@ if 'BIGMON_ASGI_PATH' in os.environ:
 if 'BIGMON_VO' in os.environ:
     MON_VO = os.environ['BIGMON_VO']
 
-# Authentication providers, supported: ['cern', 'google', 'github', 'indigoiam']
-if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
-    AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
-
 # PanDA server URL
 PANDA_SERVER_URL = os.environ.get('PANDA_SERVER_URL', 'https://pandaserver.cern.ch/server/panda')
 
@@ -135,6 +131,14 @@ except ImportError:
     dbaccess_oracle_doma = None
 
 DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
+
+# Authentication providers, supported: ['cern', 'google', 'github', 'indigoiam']
+AUTH_PROVIDER_LIST = ['cern', 'google', 'github', 'indigoiam']
+if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
+    AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
+# get the wlcg groups from indigoiam for ATLAS
+if 'indigoiam' in AUTH_PROVIDER_LIST and 'ATLAS' in DEPLOYMENT:
+    SOCIAL_AUTH_INDIGOIAM_SCOPE = ['wlcg.groups']
 
 if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA', 'ORACLE_ATLAS_TB'):
     try:
@@ -457,7 +461,8 @@ LOGGING = {
 
 if DEBUG is True:
     for logger in LOGGING['loggers']:
-        LOGGING['loggers'][logger]['handlers'].append('console')
+        if 'handlers' in LOGGING['loggers'][logger]:
+            LOGGING['loggers'][logger]['handlers'].append('console')
 
 
 ENV = {

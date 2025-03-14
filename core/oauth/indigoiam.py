@@ -1,5 +1,4 @@
 from social_core.backends.oauth import BaseOAuth2
-
 from urllib.parse import urljoin
 import logging
 
@@ -9,7 +8,7 @@ class IndigoIamOIDC(BaseOAuth2):
     ID_KEY = 'email'
     ACCESS_TOKEN_METHOD = 'POST'
     REFRESH_TOKEN_METHOD = 'POST'
-
+    DEFAULT_SCOPE = ['openid', 'profile', 'email', 'address', 'phone']
     EXTRA_DATA = [
         ('id_token', 'id_token', True),
         ('expires_in', 'expires_in'),
