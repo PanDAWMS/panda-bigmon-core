@@ -668,8 +668,8 @@ def artTest(request, package=None, testname=None):
                     job['cputype'] = panda_jobs[pid]['cpuconsumptionunit']
                     if 'actualcorecount' in panda_jobs[pid] and panda_jobs[pid]['actualcorecount'] is not None \
                             and panda_jobs[pid]['actualcorecount'] > 0 and isinstance(panda_jobs[pid]['maxpss'], int):
-                        job['maxpss_per_core_gb'] = round_to_n_digits(1.0*convert_bytes(
-                                1000*panda_jobs[pid]['maxpss'], output_unit='GB')/panda_jobs[pid]['actualcorecount'],
+                        job['maxpss_per_core_gb'] = round_to_n_digits(
+                            1.0*convert_bytes(1000*panda_jobs[pid]['maxpss'], output_unit='GB')/panda_jobs[pid]['actualcorecount'],
                             n=2, method='ceil'
                         )
                     job['duration_str'] = convert_sec(get_job_walltime(panda_jobs[pid]), out_unit='str')

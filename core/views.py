@@ -2782,7 +2782,7 @@ def userInfo(request, user=''):
             user = request.session['requestParams']['user']
         if 'produsername' in request.session['requestParams']:
             user = request.session['requestParams']['produsername']
-        if request.user.is_authenticated and user == f"{request.user.first_name.replace('\'', '')} {request.user.last_name}":
+        if request.user.is_authenticated and user == f'{request.user.first_name.replace("'", "")} {request.user.last_name}':
             is_prepare_history_links = True
 
         # Here we serve only personal user pages. No user parameter specified
