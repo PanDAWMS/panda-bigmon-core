@@ -621,84 +621,86 @@
       <p>No datasets were found for this task</p>
   {% endif %}
       <div id="dsStageDiv" class="table-scroll" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
-      <table class="fresh-table unstriped">
-        <thead>
-          <tr>
-            <th colspan="20">
-              Staging information
-              <span ng-if="datasets.length === 1">
+          <div class="card bp-container-simple secondary" id="container_dst">
+          <div class="card-divider"><p>Staging information</p></div>
+          <div class="card-section">
+          <table id="dsTable" class="data-table left-aligned nowrap">
+          <thead>
+            <tr>
+              <th colspan="10">
+                <span ng-if="datasets.length === 1">
+                  {% if request.session.rucio_ui|length > 0 %}
+                    for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
+                      {$ datasets[0].dataset $}
+                    </a>
+                    <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
+                      <i class="fi-graph-trend"></i>
+                    </a>
+                  {% else %}
+                    {$ datasets[0].dataset $}
+                  {% endif %}
+                </span>
+              </th>
+            </tr>
+            <tr>
+              <th>Rucio rule</th>
+              <th>Source</th>
+              <th>Destination</th>
+              <th class="mid">Status</th>
+              <th class="num">Files <br> (staged | total | %)</th>
+              <th class="mid">iDDS request status</th>
+              <th class="num">iDDS files <br> (processed | total | %)</th>
+              <th>Started</th>
+              <th>Since last update [d:h:m:s]</th>
+              <th ng-if="datasets.length > 1">Dataset</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="dataset in datasets">
+              <td class="icons1">
                 {% if request.session.rucio_ui|length > 0 %}
-                  for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
-                   {$ datasets[0].dataset $}
-                  </a>
-                  <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
-                    <i class="fi-graph-trend"></i>
+                  <a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
+                    {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width="14" height="14" border="0">
                   </a>
                 {% else %}
-                  {$ datasets[0].dataset $}
+                  {$ dataset.rrule_cut $}
                 {% endif %}
-              </span>
-              <span ng-if="datasets.length > 1">
-              </span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th>Rucio rule</th>
-            <th>Source</th>
-            <th>Destination</th>
-            <th class="mid">Status</th>
-            <th class="num">Files <br> (staged | total | %)</th>
-            <th class="mid">iDDS request status</th>
-            <th class="num">iDDS files <br> (processed | total | %)</th>
-            <th>Started</th>
-            <th>Since last update [d:h:m:s]</th>
-            <th ng-if="datasets.length > 1">Dataset</th>
-          </tr>
-          <tr class="nowrap" ng-repeat="dataset in datasets">
-            <td class="icons1">
-              {% if request.session.rucio_ui|length > 0 %}
-                <a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
-                  {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width=14 height=14 border=0>
-                </a>
-              {% else %}
-                {$ dataset.rrule_cut $}
-              {% endif %}
-            </td>
-            <td>{$ dataset.source_rse $}</td>
-            <td>{$ dataset.destination_rse $}</td>
-            <td class="{$ dataset.status $}_fill">
-              {% if viewParams.MON_VO == 'ATLAS' and task.tasktype != 'anal'%}
-                <a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ dataset.step_action_id $}/">
+              </td>
+              <td>{$ dataset.source_rse $}</td>
+              <td>{$ dataset.destination_rse $}</td>
+              <td class="{$ dataset.status $}_fill">
+                {% if viewParams.MON_VO == 'ATLAS' and task.tasktype != 'anal' %}
+                  <a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ dataset.step_action_id $}/">
+                    {$ dataset.status $}
+                  </a>
+                {% else %}
                   {$ dataset.status $}
-                </a>
-              {% else %}
-                {$ dataset.status $}
-              {% endif %}
-            </td>
-            <td class="num">
-              {$ dataset.staged_files $} | {$ dataset.total_files $}  | {$ dataset.staged_files_pct $}%
-            </td>
-            <td class="{$ dataset.idds_status.toLowerCase() $}_fill">
-              <a href="/idds/?reqid={$ dataset.idds_request_id $}">
+                {% endif %}
+              </td>
+              <td class="num">
+                {$ dataset.staged_files $} | {$ dataset.total_files $}  | {$ dataset.staged_files_pct $}%
+              </td>
+              <td class="{$ dataset.idds_status.toLowerCase() $}_fill">
+                <a href="/idds/?reqid={$ dataset.idds_request_id $}">
                   {$ dataset.idds_status $}
-              </a>
-            </td>
-            <td class="num">
-              {$ dataset.idds_out_processed_files $} | {$ dataset.idds_out_total_files $} | {$ dataset.idds_pctprocessed $}%
-            </td>
-            <td>{$ dataset.start_time $}</td>
-            <td>{$ dataset.update_time $}</td>
-            <td ng-if="datasets.length > 1">
-                <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
-                    {$ dataset.dataset $}
                 </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              </td>
+              <td class="num">
+                {$ dataset.idds_out_processed_files $} | {$ dataset.idds_out_total_files $} | {$ dataset.idds_pctprocessed $}%
+              </td>
+              <td>{$ dataset.start_time $}</td>
+              <td>{$ dataset.update_time $}</td>
+              <td ng-if="datasets.length > 1">
+                <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
+                  {$ dataset.dataset $}
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+       </div>
+      </div>
 
     {% if task.idds_info and not task.dc_info == "dc" %}
         <div id="iDDsDiv" class="table-scroll" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
@@ -1398,6 +1400,39 @@ $(document).ready(function () {
     if (url.indexOf("#datamovement") > -1) {
       toggleTaskDataMovement();
     }
+    var checkExist = setInterval(function () {
+        if ($('#dsTable tbody tr').length > 0) {
+            clearInterval(checkExist);
+
+            $('#dsTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true,
+                lengthMenu:  [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+                columns: [
+                    { data: 'rrule_cut' },
+                    { data: 'source_rse' },
+                    { data: 'destination_rse' },
+                    { data: 'status' },
+                    { data: 'staged_files' },
+                    { data: 'idds_status' },
+                    { data: 'idds_out_processed_files' },
+                    { data: 'start_time' },
+                    { data: 'update_time' },
+                    { data: 'dataset' }
+                ],
+                columnDefs: [
+                    {
+                        targets: [3, 5],
+                        createdCell: function (td, cellData, rowData, row, col) {
+                            $(td).css('text-align', 'center');
+                        }
+                    }
+                ]
+            });
+        }
+    }, 500);
 });
 
 function togglePlots() {
