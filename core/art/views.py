@@ -1160,6 +1160,13 @@ def registerARTTest(request):
         #session_id = request.COOKIES.get('sessionid')
         #if session_id:
         client_ip = get_client_ip(request)
+        alias_ips = []
+        for alias in art_const.AUTHORIZED_HOSTS[:2]:
+            try:
+                ip = socket.gethostbyname(alias)
+                alias_ips.append(ip)
+            except socket.gaierror:
+                _logger.warning(f"Could not resolve IP for: {alias}")
         try:
             # Perform reverse DNS lookup to get the client's hostname
             art_host = socket.gethostbyaddr(client_ip)[0]
@@ -1167,7 +1174,7 @@ def registerARTTest(request):
             # If reverse DNS lookup fails, return the IP address as fallback
             art_host = client_ip
 
-        if art_host.split('.')[0] not in art_const.AUTHORIZED_HOSTS:
+        if client_ip not in alias_ips and art_host.split('.')[0] not in art_const.AUTHORIZED_HOSTS:
             _logger.warning(f"Not autorized to register test from {client_ip} {art_host}") 
             return JsonResponse({"error": "Invalid ART API user!"}, status=403)
 
@@ -1219,6 +1226,9 @@ def registerARTTest(request):
         data = {'exit_code': -1, 'message': "No nightly_tag provided"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+
+    if 'gitlabid' in request.session['requestParams']:
+        gitlabid = request.session['requestParams']['gitlabid']
 
     ### Processing extra params
     if 'nightly_tag_display' in request.session['requestParams']:
