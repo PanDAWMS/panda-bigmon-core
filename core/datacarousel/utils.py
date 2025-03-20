@@ -15,6 +15,7 @@ from django.db import connection
 from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView, initRequest
+
 from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime, insert_to_temp_table
 from core.libs.elasticsearch import create_os_connection
 from core.schedresource.utils import getCRICSEs
@@ -120,6 +121,11 @@ def getStagingData(request):
     else:
         task_type = None
 
+    if task_type == 'analy' and 'username' in request.GET:
+        username = request.GET['username']
+    else:
+        username = None
+
     data = {}
     new_cur = connection.cursor()
     transactionKey = None
@@ -140,6 +146,7 @@ def getStagingData(request):
         endtime_column = "t4.endtime" if task_type == "prod" else "t3.endtime"
         taskid_column = "taskid" if task_type == "prod" else "task_id"
         tasks_table = "ATLAS_DEFT.T_ACTION_STAGING" if task_type == "prod" else "ATLAS_PANDA.DATA_CAROUSEL_RELATIONS"
+        source_rse = "RSE" if task_type == "prod" else "TAPE"
 
         if transactionKey:
             selection += "and t2." + taskid_column + " in (SELECT tmp.id FROM %s tmp where transactionkey=%i)" % (tmpTableName, transactionKey)
@@ -148,7 +155,7 @@ def getStagingData(request):
 
         if source:
             sourcel = [source] if ',' not in source else [rse for rse in source.split(',')]
-            selection += " AND t1.SOURCE_RSE in (" + ','.join('\''+str(x)+'\'' for x in sourcel) + ")"
+            selection += " AND t1.SOURCE_" + source_rse + " in (" + ','.join('\''+str(x)+'\'' for x in sourcel) + ")"
 
         if destination:
             destinationl = [destination] if ',' not in destination else [rse for rse in destination.split(',')]
@@ -175,6 +182,10 @@ def getStagingData(request):
                     selection += " AND " + tasktype_column + "='anal'"
             else:
                 selection += " AND " + processingtype_column + " in (" + ','.join('\''+str(x)+'\'' for x in processingtypel) + ")"
+
+        if username:
+            usernamel = [username] if ',' not in username else [user for user in username.split(',')]
+            selection += " AND t3.username in (" + ','.join('\'' + str(x) + '\'' for x in usernamel) + ")"
 
         if not jeditaskid:
             selection += f"""  
@@ -224,7 +235,8 @@ def getStagingData(request):
             t1.ddm_rule_id AS rse,
             t1.total_files,
             t1.modification_time AS update_time,
-            t1.source_rse,
+            t1.source_tape as source_rse,
+            t1.source_rse as source_rse_old,
             t1.destination_rse,
             t1.dataset_size AS dataset_bytes,
             t1.staged_size AS staged_bytes,
@@ -246,10 +258,13 @@ def getStagingData(request):
     if transactionKey is not None:
         datasets_idds_info = _getiDDSInfoForTask(transactionKey)
 
+    datasets_statuses = ('staging', 'queued', 'done')
+
     if task_type == 'prod':
         datasets = execute_query('prod')
     elif task_type in ('analy', 'anal'):
         datasets = execute_query('analy')
+        datasets_statuses += ('cancelled',)
     else:
         datasets = execute_query('prod')
 
@@ -257,7 +272,7 @@ def getStagingData(request):
         if datasets_idds_info is not None and len(datasets_idds_info) > 0 and dataset['dataset'] in datasets_idds_info:
             dataset.update(datasets_idds_info[dataset['dataset']])
         # Sort out requests by request on February 19, 2020
-        if dataset['status'] in ('staging', 'queued', 'done'):
+        if dataset['status'] in datasets_statuses:
             dataset = {k.lower(): v for k, v in dataset.items()}
             datasetname = dataset.get('dataset')
             if ':' in datasetname:
@@ -460,7 +475,6 @@ def getBinnedData(timestamps_list, additional_timestamps_list_1 = None, addition
     for time, count in zip(index, values):
         data.append([time, count])
     return data
-
 
 def substitudeRSEbreakdown(rse):
     rses = getCRICSEs().get(rse, [])

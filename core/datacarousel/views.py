@@ -63,7 +63,8 @@ def get_staging_info_for_task(request):
     if data_raw and len(data_raw) > 0:
         for task, dsdata in data_raw.items():
             data = {}
-            for key in ('taskid', 'status', 'scope', 'dataset', 'rse', 'source_rse', 'destination_rse', 'step_action_id'):
+            for key in ('taskid', 'status', 'scope', 'dataset', 'rse', 'source_rse', 'destination_rse',
+                        'step_action_id', 'source_rse_old'):
                 data[key] = dsdata[key] if key in dsdata else '---'
             for key in ('start_time', 'end_time'):
                 if key in dsdata and dsdata[key] and isinstance(dsdata[key], timezone.datetime):

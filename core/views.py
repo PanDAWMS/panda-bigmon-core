@@ -90,7 +90,9 @@ from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_user import user_summary_dict
 from core.pandajob.utils import job_summary_dict, is_archived_jobs
 
-from core.iDDS.algorithms import checkIfIddsTask
+from core.libs.task import checkIfIddsTask
+from core.libs.task import checkIfDCTask
+
 from core.iDDS.utils import add_idds_info_to_tasks
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
@@ -4910,13 +4912,15 @@ def taskInfo(request, jeditaskid=0):
         warning['archive'] = "The jobs data is moved to the archive, so the links to jobs page is unavailable"
 
     # iDDS section
-    task_type = checkIfIddsTask(taskrec)
-    idds_info = None
-    if task_type == 'hpo':
+    check_idds_task = checkIfIddsTask(taskrec)
+
+    if check_idds_task == 'hpo':
         mode = 'nodrop'
         idds_info = {'task_type': 'hpo'}
     else:
         idds_info = {'task_type': 'idds'}
+
+    taskrec['dc_info'] = checkIfDCTask(taskrec)
 
     # prepare ordered list of task params
     columns = []
@@ -5079,7 +5083,7 @@ def taskInfo(request, jeditaskid=0):
                     'message'] += 'We suspect there might be memory leaks or some misconfiguration.'
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
 
-        if task_type is not None and idds_info is not None:
+        if check_idds_task is not None and idds_info is not None:
             for itn in idds_info:
                 if itn in idds_info and isinstance(idds_info[itn], datetime):
                     idds_info[itn] = idds_info[itn].strftime(settings.DATETIME_FORMAT)

@@ -13,7 +13,7 @@ from core.libs.exlib import dictfetchall
 from core.views import initRequest, setupView
 
 from django.conf import settings
-
+from django.views.decorators.cache import never_cache
 
 def run_query(rules):
     base = "https://monit-grafana.cern.ch"
@@ -124,6 +124,7 @@ def getStageProfileData(request):
     return JsonResponse(result, safe=False)
 
 @login_customrequired
+@never_cache
 def getDATASetsProgressPlot(request):
     initRequest(request)
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
