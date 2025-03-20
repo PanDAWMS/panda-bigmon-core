@@ -472,7 +472,7 @@ def get_job_computingsite(pandaid):
     :return: computingsite: str or None
     """
     computingsite = None
-    joblist = get_job_list(query={"pandaid": pandaid})
+    joblist = get_job_list(query={"pandaid": pandaid}, values=['computingsite',])
     if joblist and len(joblist) > 0:
         computingsite = joblist[0].get('computingsite')
     return  computingsite

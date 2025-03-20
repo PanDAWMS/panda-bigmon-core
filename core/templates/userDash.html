@@ -89,7 +89,10 @@
   </div>
 
   <div class="card bp-container-simple secondary" id="container_tasks">
-  <div class="card-divider"><p>{{ ntasks }} tasks:</p></div>
+  <div class="card-divider">
+    <p ng-if="(userinfo.tasks.is_loaded&&(userinfo.tasks.ntasksshown!==userinfo.tasks.ntaskstotal))"><span ng-bind="userinfo.tasks.ntasksshown"></span> tasks listed out of <span ng-bind="userinfo.tasks.ntaskstotal"></span> in total:</p>
+    <p ng-if="!userinfo.tasks.is_loaded||(userinfo.tasks.is_loaded&&(userinfo.tasks.ntasksshown===userinfo.tasks.ntaskstotal))"><span ng-bind="userinfo.tasks.ntaskstotal"></span> tasks:</p>
+  </div>
   <div class="card-section">
     <p ng-bind-html="userinfo.message"></p>
     <table class="data-table hover" id="taskstable">
@@ -127,6 +130,7 @@
   var viewParams = {{ viewParams | safe }};
   const userPermissions = {{ request.session.user_permissions | safe }};
   const user = "{{ user|safe }}";
+  const ntasks = {{ ntasks }};
   app.controller('userDashController', function($scope, $http, $sce, $window, $timeout) {
     $scope.userinfo = {
       page: {
@@ -141,6 +145,8 @@
       tasks: {
         list: [],
         is_loaded: false,
+        ntaskstotal: ntasks,
+        ntasksshown: 0,
       },
       uts_plots: {
         plot_data: plot_data,
@@ -217,7 +223,9 @@
               $scope.userinfo.metrics.push(item);
             })
           }
+          $scope.userinfo.tasks.is_loaded = true;
           $scope.userinfo.tasks.list = angular.fromJson(res.data.data.tasks_metrics);
+          $scope.userinfo.tasks.ntasksshown = $scope.userinfo.tasks.list.length;
           $scope.userinfo.buildTasksTable();
         }
         else {

@@ -270,8 +270,9 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
                 if not job[f] in sumd[f]:
                     sumd[f][job[f]] = 0
                 sumd[f][job[f]] += 1
-        if job['specialhandling']:
-            if not 'specialhandling' in sumd: sumd['specialhandling'] = {}
+        if 'specialhandling' in job and job['specialhandling']:
+            if not 'specialhandling' in sumd:
+                sumd['specialhandling'] = {}
             shl = job['specialhandling'].split()
             for v in shl:
                 if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
