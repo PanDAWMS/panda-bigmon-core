@@ -165,7 +165,7 @@ def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
     return new_list_of_dict
 
 
-def job_summary_dict(request, jobs, fieldlist=None):
+def job_summary_dict(jobs, fieldlist=None, produsername=None, sortby='alpha'):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
     sumd = {}
     if fieldlist:
@@ -196,7 +196,7 @@ def job_summary_dict(request, jobs, fieldlist=None):
                         job[f] = job[f].replace('harvester-', '')
                     else:
                         job[f] = 'Not specified'
-            if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session['requestParams']:
+            if f == 'taskid' and int(job[f]) < 1000000 and produsername is None:
                 continue
             elif f == 'specialhandling':
                 if not 'specialhandling' in sumd:
@@ -293,7 +293,7 @@ def job_summary_dict(request, jobs, fieldlist=None):
                     iteml.append({'kname': 'Not specified', 'kvalue': sumd[f][ky]})
                 else:
                     iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
-            if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+            if sortby == 'count':
                 iteml = sorted(iteml, key=lambda x: x['kvalue'], reverse=True)
             elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
                 iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())

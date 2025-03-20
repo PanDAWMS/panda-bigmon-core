@@ -278,14 +278,16 @@ def get_job_list(query, **kwargs):
     :return: jobs: list of dicts - jobs
     """
     jobs = []
-    values = [
-        'actualcorecount', 'eventservice', 'specialhandling', 'modificationtime', 'jobsubstatus', 'pandaid',
-        'jobstatus', 'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite',
-        'jobsetid', 'jobmetrics', 'nevents', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'parentid', 'attemptnr',
-        'processingtype', 'transformation', 'creationtime', 'diskio', 'gco2_global', 'produsername'
-    ]
+    # minimum list of values needed for adding categories etc
+    values = ['pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'transformation', 'eventservice', 'computingsite', 'produsername']
     if 'values' in kwargs:
         values.extend(kwargs['values'])
+    else:
+        values.extend([
+            'actualcorecount', 'specialhandling', 'jobsubstatus', 'parentid', 'attemptnr', 'jobsetid',
+            'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime',
+            'jobmetrics', 'nevents', 'maxpss', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'cpuconsumptionunit', 'diskio', 'gco2_global',
+        ])
     if 'error_info' in kwargs and kwargs['error_info']:
         for c in const.JOB_ERROR_CATEGORIES:
             values.append(c['error'])

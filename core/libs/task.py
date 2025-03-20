@@ -1062,6 +1062,39 @@ def get_task_rating(jeditaskid_list):
 
     return task_rating_list
 
+def filter_task_list_by_relevance(tasks, n_tasks=1000):
+    """
+    Sort tasks and return only most relevant and problematic, based on errordialog, status, last update
+    :param tasks: list of dict
+    :param n_tasks: int - number of tasks to return
+    :return: tasks:
+    """
+    # custom order, active tasks first
+    status_relevance_order = {
+        'exhausted': 1,
+        'scouting': 2,
+        'scouted': 3,
+        'running': 4,
+        'broken': 5,
+        'pending': 6,
+        'assigning': 7,
+        'registered': 8,
+        'defined': 9,
+        'ready': 10,
+        'failed': 11,
+    }
+    tasks = sorted(
+        tasks,
+        key=lambda x: (
+            1 if 'errordialog' in x and x['errordialog'] and len(x['errordialog']) > 0 else 2,
+            status_relevance_order[x['status']] if 'status' in x and x['status'] in status_relevance_order else 100
+        )
+    )
+    if len(tasks) > n_tasks:
+        tasks = tasks[:n_tasks]
+    return tasks
+
+
 def checkIfDCTask(taskinfo):
     if taskinfo['splitrule']:
         split_rule = str(taskinfo['splitrule']).split(',')

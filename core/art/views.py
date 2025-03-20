@@ -640,7 +640,13 @@ def artTest(request, package=None, testname=None):
             jquery = {
                 'pandaid__in': [j['pandaid'] for j in art_jobs],
             }
-            panda_jobs = get_job_list(jquery, values=['cpuconsumptionunit',], error_info=True)
+            panda_jobs = get_job_list(
+                jquery,
+                values=[
+                    'cpuconsumptiontime', 'cpuconsumptionunit', 'attemptnr', 'computingsite', 'actualcorecount', 'maxpss',
+                    'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime'],
+                error_info=True
+            )
             panda_jobs = {j['pandaid']: j for j in panda_jobs}
             # combine info from ART and PanDA
             for job in art_jobs:

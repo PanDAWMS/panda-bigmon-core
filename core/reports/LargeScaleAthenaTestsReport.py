@@ -74,7 +74,11 @@ class LargeScaleAthenaTestsReport:
             tasks_list = get_datasets_for_tasklist(tasks_list)
 
             # get jobs data
-            values_extra = ('exeerrorcode', 'exeerrordiag')
+            values_extra = (
+                'exeerrorcode', 'exeerrordiag', 'pandaid', 'jobstatus', 'processingtype', 'jobsetid', 'specialhandling', 'nevents', 'maxpss',
+                'attemptnr', 'computingsite', 'actualcorecount', 'cpuconsumptiontime', 'cpuconsumptionunit', 'pilottiming', 'hs06sec',
+                'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime', 'jobmetrics',
+            )
             jobs = get_job_list(query=query, values=values_extra)
             # # add metadata from metatable
             # jobs = addJobMetadata(jobs)

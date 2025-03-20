@@ -64,7 +64,7 @@ from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist, get_task_name_by_taskid, get_task_rating
-from core.libs.task import get_dataset_locality, is_event_service_task, \
+from core.libs.task import get_dataset_locality, is_event_service_task, filter_task_list_by_relevance, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
 from core.libs.taskparams import analyse_task_submission_options
 from core.libs.job import get_job_list, calc_jobs_metrics, add_job_category, job_states_count_by_param, is_job_active, \
@@ -1581,12 +1581,14 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     sumd, esjobdict = job_summary_dict(
-        request,
         jobs,
         const.JOB_FIELDS_ATTR_SUMMARY + (
             'corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement',
             'container_name', 'nevents', 'processor_type'
-        ))
+        ),
+        produsername=user,
+        sortby=sortby
+    )
     # Sort in order to see the most important tasks
     if sumd:
         for item in sumd:
@@ -1790,14 +1792,12 @@ def jobList(request, mode=None, param=None):
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
-
         _logger.debug('Cache was set: {}'.format(time.time() - request.session['req_init_time']))
 
         if eventservice:
             response = render(request, 'jobListES.html', data, content_type='text/html')
         else:
             response = render(request, 'jobList.html', data, content_type='text/html')
-
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         request = complete_request(request)
 
@@ -2719,7 +2719,7 @@ def userList(request):
         else:
             sumparams.append('vo')
 
-        jobsumd = job_summary_dict(request, jobs, sumparams)[0]
+        jobsumd, _ = job_summary_dict(jobs, sumparams)
 
     if not is_json_request(request):
         data = {
@@ -2963,7 +2963,7 @@ def userInfo(request, user=''):
                 flist.append('vo')
             else:
                 flist.append('atlasrelease')
-            jobsumd, esjobssumd = job_summary_dict(request, jobs, flist)
+            jobsumd, esjobssumd = job_summary_dict(jobs, flist, produsername=user, sortby=sortby)
             njobsetmax = 100
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
@@ -3084,7 +3084,6 @@ def userDashApi(request, agg=None):
         data['msg'] += 'ERROR! Invalid agg passed.'
         return HttpResponse(json.dumps(data, default=datetime_handler), content_type='application/json')
 
-    tk = None
     if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
         tk = int(request.session['requestParams']['tk'])
     else:
@@ -3101,12 +3100,20 @@ def userDashApi(request, agg=None):
             tasks = []
         _logger.info('Got {} tasks from cache: {}'.format(len(tasks), time.time() - request.session['req_init_time']))
 
+        # get only the most relevent N tasks if prod user
+        n_tasks = 500
+        if len(tasks) > n_tasks and tasks[0]['tasktype'] == 'prod':
+            tasks = filter_task_list_by_relevance(tasks, n_tasks=n_tasks)
+
         # jobs summary
         jquery = {
             'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
         }
-
-        jobs = get_job_list(jquery, error_info=True)
+        values = [
+            'produsername', 'computingsite', 'jobstatus', 'specialhandling', 'attemptnr', 'nevents', 'maxpss',
+            'actualcorecount', 'cpuconsumptiontime', 'cpuconsumptionunit',  'hs06sec', 'gco2_global', 'diskio',
+            'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime', 'jobmetrics',]
+        jobs = get_job_list(jquery, values=values, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
         errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(
