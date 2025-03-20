@@ -1579,12 +1579,14 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     sumd, esjobdict = job_summary_dict(
-        request,
         jobs,
         const.JOB_FIELDS_ATTR_SUMMARY + (
             'corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement',
             'container_name', 'nevents', 'processor_type'
-        ))
+        ),
+        produsername=user,
+        sortby=sortby
+    )
     # Sort in order to see the most important tasks
     if sumd:
         for item in sumd:
@@ -1788,14 +1790,12 @@ def jobList(request, mode=None, param=None):
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
-
         _logger.debug('Cache was set: {}'.format(time.time() - request.session['req_init_time']))
 
         if eventservice:
             response = render(request, 'jobListES.html', data, content_type='text/html')
         else:
             response = render(request, 'jobList.html', data, content_type='text/html')
-
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         request = complete_request(request)
 
@@ -2717,7 +2717,7 @@ def userList(request):
         else:
             sumparams.append('vo')
 
-        jobsumd = job_summary_dict(request, jobs, sumparams)[0]
+        jobsumd, _ = job_summary_dict(jobs, sumparams)
 
     if not is_json_request(request):
         data = {
@@ -2961,7 +2961,7 @@ def userInfo(request, user=''):
                 flist.append('vo')
             else:
                 flist.append('atlasrelease')
-            jobsumd, esjobssumd = job_summary_dict(request, jobs, flist)
+            jobsumd, esjobssumd = job_summary_dict(jobs, flist, produsername=user, sortby=sortby)
             njobsetmax = 100
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
