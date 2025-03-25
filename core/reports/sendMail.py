@@ -4,6 +4,7 @@ Created on 04.06.2018
 A lib to send report by email
 """
 import logging
+import re
 from django.utils.html import strip_tags
 from smtplib import SMTPException
 from datetime import datetime
@@ -15,16 +16,18 @@ _logger = logging.getLogger('bigpandamon')
 
 
 def textify(html):
-    # Remove html tags and continuous whitespaces
+    # remove style
+    html = re.sub(r'<style.*?>.*?</style>', '', html, flags=re.DOTALL)
+    # remove html tags and continuous whitespaces
     text_only = strip_tags(html)
-    # Strip single spaces in the beginning of each line
-    text_only = text_only.replace('\n ', '\n').replace(';=', '=').strip()
+    # strip single spaces in the beginning of each line
+    text_only = text_only.replace('\n ', '\n').replace('\n\n', '\n').replace(';=', '=').strip()
     return text_only
 
 
 def send_mail_bp(template, subject, summary, recipient, send_html=False):
     # uncomment for debugging
-    # recipient = 'tatiana.korchuganova@cern.ch'
+    recipient = 'tatiana.korchuganova@cern.ch'
     # ----
     isSuccess = True
     nmails = 0
