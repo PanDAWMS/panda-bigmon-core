@@ -316,7 +316,9 @@ function DisplayErrorMessagesListTableData() {
                 className: "num",
                 render: function (data, type, row) {
                     let encdesc = encodeURIComponent(row['errmessage']);
-                    return '<a href="{{ jobsurl }}' + row['errcodename'] + '=' + row['errcodeval'] + '&errormessage=' + encdesc +'" target="_blank">' + data + '</a>'
+                    let params_str = `${row['errcodename']}=${row['errcodeval']}`;
+                    params_str += (row['errcodename'] !== 'transexitcode') ? `&errormessage=${encdesc}` : '';
+                    return '<a href="{{ xurl }}' + params_str +'" target="_blank">' + data + '</a>'
                 }
             },
         ],
