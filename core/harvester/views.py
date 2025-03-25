@@ -513,13 +513,6 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
             ) hj 
         where hj.pid=jd4.pandaid {3}
         union 
-        select {2} FROM {DB_SCHEMA_PANDA}.jobswaiting4 jw4, (
-            select pandaid as pid
-            from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers 
-            where harvesterid {0} and workerid {1}
-            ) hj 
-        where hj.pid=jw4.pandaid {3}
-        union 
         select {2} from {DB_SCHEMA_PANDA_ARCH}.jobsarchived ja, (
             select pandaid as pid
             from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers 
@@ -621,16 +614,6 @@ def getCeHarvesterJobs(request, computingelement, fields=''):
                 and w.computingelement like '%{0}%'
             ) hj 
         where hj.pid=jd4.pandaid
-        union all 
-        select {2} from {DB_SCHEMA_PANDA}.jobswaiting4 jw4, (
-            select jw.pandaid as pid 
-            from {DB_SCHEMA_PANDA}.harvester_rel_jobs_workers jw, {DB_SCHEMA_PANDA}.harvester_workers w
-            where jw.harvesterid=w.harvesterid and jw.workerid = w.workerid
-                and w.lastupdate >  {1}
-                and jw.lastupdate >  {1}
-                and w.computingelement like '%{0}%'
-            ) hj 
-        where hj.pid=jw4.pandaid 
         union all
         select {2} from {DB_SCHEMA_PANDA_ARCH}.jobsarchived ja, (
             select jw.pandaid as pid 

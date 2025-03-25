@@ -6,7 +6,7 @@ import copy
 from datetime import datetime, timedelta
 from django.db.models import Count, Sum, Q
 
-from core.pandajob.models import Jobswaiting4, Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
+from core.pandajob.models import Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
 from core.libs.datetimestrings import parse_datetime
 from core.libs.exlib import round_to_n_digits
 import core.constants as const
@@ -29,8 +29,6 @@ def wn_summary_data(query):
             _logger.warning('Failed to remove modificationtime range from query')
 
     summary.extend(Jobsdefined4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
-    summary.extend(Jobswaiting4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
         Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
     summary.extend(Jobsactive4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
         Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))

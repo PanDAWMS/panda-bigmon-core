@@ -13,7 +13,7 @@ from django.template import RequestContext, loader
 from django.http import HttpResponse
 
 from .utils import build_query, summarize_data
-from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4
+from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4
 
 from core.views import initRequest
 from core.oauth.utils import login_customrequired
@@ -97,12 +97,6 @@ def index_data(request):
         ).order_by('cloud', 'computingsite', 'jobstatus')
         qs.extend(qs_tmp)
 
-        qs_tmp = Jobswaiting4.objects.filter(**query).filter(~Q(**exclude_query)
-        ).values('jobstatus', 'cloud', 'computingsite'
-        ).annotate(njobs=Count('jobstatus')
-        ).order_by('cloud', 'computingsite', 'jobstatus')
-        qs.extend(qs_tmp)
-
         qs_tmp = Jobsarchived4.objects.filter(**query).filter(~Q(**exclude_query)
         ).values('jobstatus', 'cloud', 'computingsite'
         ).annotate(njobs=Count('jobstatus')
@@ -115,11 +109,6 @@ def index_data(request):
         qs.extend(qs_tmp)
     
         qs_tmp = Jobsdefined4.objects.filter(**query).values('jobstatus', 'cloud', 'computingsite'
-        ).annotate(njobs=Count('jobstatus')
-        ).order_by('cloud', 'computingsite', 'jobstatus')
-        qs.extend(qs_tmp)
-
-        qs_tmp = Jobswaiting4.objects.filter(**query).values('jobstatus', 'cloud', 'computingsite'
         ).annotate(njobs=Count('jobstatus')
         ).order_by('cloud', 'computingsite', 'jobstatus')
         qs.extend(qs_tmp)

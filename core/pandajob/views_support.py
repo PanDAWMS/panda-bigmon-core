@@ -7,7 +7,7 @@ from json import dumps as json_dumps  ### FIXME - cleanup
 import re
 from django.http import HttpResponse, JsonResponse
 
-from .models import Jobsarchived4, Jobsactive4, Jobsdefined4, Jobswaiting4
+from .models import Jobsarchived4, Jobsactive4, Jobsdefined4
 from core.common.utils import getPrefix, getContextVariables, subDictToStr
 from core.libs.DateEncoder import DateEncoder
 
@@ -79,10 +79,6 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
                 modificationtime__range=[startdate, enddate] \
     ).values())
     jobs.extend(Jobsdefined4.objects.filter(\
-                produsername=prodUserName, \
-                modificationtime__range=[startdate, enddate] \
-    ).values())
-    jobs.extend(Jobswaiting4.objects.filter(\
                 produsername=prodUserName, \
                 modificationtime__range=[startdate, enddate] \
     ).values())
@@ -190,10 +186,6 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
                 creationtime__range=[startdate, enddate] \
     ).values())
     jobs.extend(Jobsdefined4.objects.filter(\
-                vo=vo, \
-                creationtime__range=[startdate, enddate] \
-    ).values())
-    jobs.extend(Jobswaiting4.objects.filter(\
                 vo=vo, \
                 creationtime__range=[startdate, enddate] \
     ).values())

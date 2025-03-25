@@ -12,7 +12,7 @@ from django.db import connection
 from django.db.models import Count, Sum
 from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks, \
     JediJobRetryHistory, Rating
-from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4
 from core.oauth.models import BPUser
 
 
@@ -951,7 +951,6 @@ def get_task_flow_data(jeditaskid):
     jobs.extend(Jobsarchived.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
     jobs.extend(Jobsactive4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
     jobs.extend(Jobsdefined4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
-    jobs.extend(Jobswaiting4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
 
     if len(jobs) > 0:
         for j in jobs:

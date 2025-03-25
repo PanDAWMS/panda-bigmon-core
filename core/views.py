@@ -33,7 +33,7 @@ from django.template.context_processors import csrf
 import core.constants as const
 from core.common.utils import getPrefix, getContextVariables
 from core.pandajob.SQLLookups import CastDate
-from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, PandaJob
+from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4, Jobsarchived, PandaJob
 from core.schedresource.models import SchedconfigJson
 from core.common.models import Filestable4, FilestableArch, Datasets, Users, Jobparamstable, JobsStatuslog, Jobsdebug, ResourceTypes
 from core.common.models import JediJobRetryHistory, JediTasks, TasksStatusLog, JediEvents, JediDatasets, JediDatasetContents, JediWorkQueue
@@ -1396,10 +1396,9 @@ def jobList(request, mode=None, param=None):
 
         jobs.extend(Jobsdefined4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         jobs.extend(Jobsactive4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
-        listJobs = [Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4]
+        listJobs = [Jobsarchived4, Jobsactive4, Jobsdefined4]
 
         if not noarchjobs:
             queryFrozenStates = []
@@ -1906,8 +1905,8 @@ def jobList(request, mode=None, param=None):
 @never_cache
 def descendentjoberrsinfo(request):
     valid, response = initRequest(request)
-    if not valid: return response
-    data = {}
+    if not valid:
+        return response
 
     job_pandaid = job_jeditaskid = -1
     if 'pandaid' in request.session['requestParams']:
@@ -1915,21 +1914,14 @@ def descendentjoberrsinfo(request):
     if 'jeditaskid' in request.session['requestParams']:
         job_jeditaskid = int(request.session['requestParams']['jeditaskid'])
 
-    if (job_pandaid == -1) or (job_jeditaskid == -1):
+    if job_pandaid == -1 or job_jeditaskid == -1:
         data = {"error": "no pandaid or jeditaskid supplied"}
         del request.session['TFIRST']
         del request.session['TLAST']
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     query = setupView(request, hours=365 * 24)
-    jobs = []
-    jobs.extend(Jobsdefined4.objects.filter(**query).values())
-    jobs.extend(Jobsactive4.objects.filter(**query).values())
-    jobs.extend(Jobswaiting4.objects.filter(**query).values())
-    jobs.extend(Jobsarchived4.objects.filter(**query).values())
-    if len(jobs) == 0:
-        jobs.extend(Jobsarchived.objects.filter(**query).values())
-
+    jobs = get_job_list(query, values=('jeditaskid', 'pandaid', 'jobsetid'))
     if len(jobs) == 0:
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -1939,35 +1931,21 @@ def descendentjoberrsinfo(request):
     job = jobs[0]
     countOfInvocations = []
     if not is_event_service(job):
-        retryquery = {}
-        retryquery['jeditaskid'] = job['jeditaskid']
-        retryquery['oldpandaid'] = job['pandaid']
+        retryquery = {'jeditaskid': job['jeditaskid'], 'oldpandaid': job['pandaid']}
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
         pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations)
     else:
-        retryquery = {}
-        retryquery['jeditaskid'] = job['jeditaskid']
-        retryquery['oldpandaid'] = job['jobsetid']
-        retryquery['relationtype'] = 'jobset_retry'
+        retryquery = {'jeditaskid': job['jeditaskid'], 'oldpandaid': job['jobsetid'], 'relationtype': 'jobset_retry'}
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
         pretries = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
 
-    query = {'jeditaskid': job_jeditaskid}
-    jobslist = []
+    query = {'jeditaskid': job_jeditaskid, 'pandaid__in': []}
     for retry in pretries:
-        jobslist.append(retry['oldpandaid'])
+        query['pandaid__in'].append(retry['oldpandaid'])
     for retry in retries:
-        jobslist.append(retry['oldpandaid'])
-    query['pandaid__in'] = jobslist
-
-    jobs = []
-    jobs.extend(Jobsdefined4.objects.filter(**query).values())
-    jobs.extend(Jobsactive4.objects.filter(**query).values())
-    jobs.extend(Jobswaiting4.objects.filter(**query).values())
-    jobs.extend(Jobsarchived4.objects.filter(**query).values())
-    jobs.extend(Jobsarchived.objects.filter(**query).values())
+        query['pandaid__in'].append(retry['oldpandaid'])
+    jobs = get_job_list(query, error_info=True)
     jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
-
     errors = {job['pandaid']: job['errorinfo'] for job in jobs if job['jobstatus'] == 'failed'}
 
     response = render(request, 'jobDescentErrors.html', {'errors': errors}, content_type='text/html')
@@ -2048,10 +2026,8 @@ def jobInfo(request, pandaid=None, batchid=None):
 
     jobs = []
     if pandaid or batchid:
-        startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
         jobs.extend(Jobsdefined4.objects.filter(**query).values())
         jobs.extend(Jobsactive4.objects.filter(**query).values())
-        jobs.extend(Jobswaiting4.objects.filter(**query).values())
         jobs.extend(Jobsarchived4.objects.filter(**query).values())
         if len(jobs) == 0:
             try:
@@ -2360,19 +2336,12 @@ def jobInfo(request, pandaid=None, batchid=None):
     jobsetinfo = {}
     if ('jobset' in request.session['requestParams'] or is_event_service(job)) and (
             'jobsetid' in job and job['jobsetid'] and isinstance(job['jobsetid'], int) and job['jobsetid'] > 0):
-        jobs = []
         jsquery = {
             'jobsetid': job['jobsetid'],
             'produsername': job['produsername'],
         }
         jvalues = ['pandaid', 'prodsourcelabel', 'processingtype', 'transformation', 'eventservice', 'jobstatus']
-        jobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*jvalues))
-        jobs.extend(Jobsactive4.objects.filter(**jsquery).values(*jvalues))
-        jobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*jvalues))
-        jobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*jvalues))
-        jobs.extend(Jobsarchived.objects.filter(**jsquery).values(*jvalues))
-
-        jobs = add_job_category(jobs)
+        jobs = get_job_list(jsquery, values=jvalues)
         job_summary_list = job_states_count_by_param(jobs, param='category')
         for row in job_summary_list:
             jobsetinfo[row['value']] = sum([jss['count'] for jss in row['job_state_counts']])
@@ -2544,26 +2513,18 @@ def get_job_relationships(request, pandaid=-1):
     if 'direction' in request.session['requestParams'] and request.session['requestParams']['direction']:
         direction = request.session['requestParams']['direction']
 
-    job = {}
-    jobs = []
-    jquery = {
-        'pandaid': pandaid,
-    }
-    jvalues = ['pandaid', 'jeditaskid', 'jobsetid', 'specialhandling', 'eventservice']
-    jobs.extend(Jobsdefined4.objects.filter(**jquery).values(*jvalues))
-    jobs.extend(Jobsactive4.objects.filter(**jquery).values(*jvalues))
-    jobs.extend(Jobswaiting4.objects.filter(**jquery).values(*jvalues))
-    jobs.extend(Jobsarchived4.objects.filter(**jquery).values(*jvalues))
-    if len(jobs) == 0:
-        jobs.extend(Jobsarchived.objects.filter(**jquery).values(*jvalues))
+    jobs = get_job_list(
+        {'pandaid': pandaid,},
+        values=['pandaid', 'jeditaskid', 'jobsetid', 'specialhandling', 'eventservice']
+    )
     try:
         job = jobs[0]
     except IndexError:
+        job = {}
         _logger.exception('No job found with pandaid: {}'.format(pandaid))
 
     message = ''
     job_relationships = []
-
     countOfInvocations = []
     # look for job retries
     if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
@@ -2697,28 +2658,21 @@ def userList(request):
         # looking into user analysis jobs only
         query['prodsourcelabel'] = 'user'
         # dynamically assemble user summary info
-        values = ('eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
+        values = ['eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
                   'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'pandaid',
                   'starttime', 'endtime', 'modificationtime',
-                  'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig')
-        jobs = []
-        jobs.extend(Jobsdefined4.objects.filter(**query).values(*values))
-        jobs.extend(Jobsactive4.objects.filter(**query).values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**query).values(*values))
-        jobs.extend(Jobsarchived4.objects.filter(**query).values(*values))
-
+                  'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig']
+        jobs = get_job_list(query, values=values)
         jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=False)
         sumd = user_summary_dict(jobs)
         for user in sumd:
             if user['dict']['latest']:
                 user['dict']['latest'] = user['dict']['latest'].strftime(settings.DATETIME_FORMAT)
-        sumparams = ['jobstatus', 'prodsourcelabel', 'specialhandling', 'transformation', 'processingtype',
-                     'workinggroup', 'priorityrange']
+        sumparams = ['jobstatus', 'prodsourcelabel', 'specialhandling', 'transformation', 'processingtype', 'workinggroup', 'priorityrange']
         if VOMODE == 'atlas':
             sumparams.append('atlasrelease')
         else:
             sumparams.append('vo')
-
         jobsumd, _ = job_summary_dict(jobs, sumparams)
 
     if not is_json_request(request):
@@ -2859,8 +2813,13 @@ def userInfo(request, user=''):
 
         # Jobs
         limit = 5000
-        query, extra_query_str, LAST_N_HOURS_MAX = setupView(request, hours=72, limit=limit, querytype='job',
-                                                             wildCardExt=True)
+        query, extra_query_str, LAST_N_HOURS_MAX = setupView(
+            request,
+            hours=72,
+            limit=limit,
+            querytype='job',
+            wildCardExt=True
+        )
         jobs = []
         values = (
             'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation',
@@ -2871,45 +2830,9 @@ def userInfo(request, user=''):
             'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname',
             'proddblock', 'destinationdblock', 'container_name', 'cmtconfig'
         )
-
         if query_job is None:
             query['produsername__icontains'] = user.strip()
-            jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-                jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_query_str])[
-                            :request.session['JOB_LIMIT']].values(*values))
-        else:
-            jobs.extend(Jobsdefined4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsactive4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobswaiting4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsarchived4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-
-            # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
-            if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-                query['produsername__startswith'] = user.strip()  # .filter(query_job)
-                archjobs = []
-                # This two filters again to force Oracle search
-                archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip())).extra(
-                    where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
-                if len(archjobs) > 0:
-                    jobs = jobs + archjobs
-                elif len(fullname) > 0:
-                    # del query['produsername']
-                    query['produsername__startswith'] = fullname
-                    jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_query_str])[
-                                :request.session['JOB_LIMIT']].values(*values))
-
+        jobs = get_job_list(query, extra_str=extra_query_str, query_complex=query_job, values=list(values), error_info=True)
         jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
 
         # Divide up jobs by jobset and summarize
@@ -5737,7 +5660,7 @@ def errorSummary(request):
     panda_job_models = [Jobsarchived4,]
     # we add tables with active jobs for test jobs summary
     if testjobs:
-        panda_job_models.extend([Jobsactive4, Jobsdefined4, Jobswaiting4])
+        panda_job_models.extend([Jobsactive4, Jobsdefined4])
 
     # add big archived table if timewindow is more than 2 days
     is_archived = False
@@ -6664,11 +6587,19 @@ def workQueues(request):
         return HttpResponse(json.dumps(queues), content_type='application/json')
 
 
-def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=standard_fields, count=False,
-                    wildCardExtension='(1=1)'):
+def stateNotUpdated(
+        request,
+        state='transferring',
+        hoursSinceUpdate=36,
+        values=None,
+        count=False,
+        wildCardExtension='(1=1)'
+):
     valid, response = initRequest(request)
     if not valid:
         return response
+    if values is None:
+        values = copy.deepcopy(const.JOB_FIELDS)
     query = setupView(request, opmode='notime', limit=99999999)
     pq_clouds = get_pq_clouds()
     if 'jobstatus' in request.session['requestParams']:
@@ -6686,18 +6617,11 @@ def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=s
     query['jobstatus'] = state
     if count:
         jobs = []
-        jobs.extend(
-            Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension]).values('cloud', 'computingsite',
-                                                                                        'jobstatus').annotate(
-                Count('jobstatus')))
-        jobs.extend(
-            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension]).values('cloud', 'computingsite',
-                                                                                         'jobstatus').annotate(
-                Count('jobstatus')))
-        jobs.extend(
-            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension]).values('cloud', 'computingsite',
-                                                                                         'jobstatus').annotate(
-                Count('jobstatus')))
+        jvalues = ('cloud', 'computingsite', 'jobstatus')
+        for job_model in (Jobsactive4, Jobsdefined4):
+            jobs.extend(
+                job_model.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues).annotate(Count('jobstatus'))
+            )
         ncount = 0
         perCloud = {}
         perRCloud = {}
@@ -6728,10 +6652,7 @@ def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=s
         perRCloudl = sorted(perRCloudl, key=lambda x: x['name'])
         return ncount, perCloudl, perRCloudl
     else:
-        jobs = []
-        jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension]).values(*values))
-        jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension]).values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension]).values(*values))
+        jobs = get_job_list(query, extra_str=wildCardExtension, values=values)
         return jobs
 
 
@@ -6751,18 +6672,15 @@ def g4exceptions(request):
 
     jobs = []
     jobs.extend(
-        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
-            *values))
+        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
     jobs.extend(
-        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
-            *values))
+        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
     if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
                                              "%Y-%m-%d %H:%M:%S")).days > 1) or \
             ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
                                                  "%Y-%m-%d %H:%M:%S")).days > 1)):
         jobs.extend(
-            Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
-                *values))
+            Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
 
     if 'amitag' in request.session['requestParams']:
 
@@ -7278,11 +7196,8 @@ def get_hc_tests(request):
         is_archive = True
 
     if not is_archive_only:
-        jobs.extend(
-            Jobsdefined4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
+        jobs.extend(Jobsdefined4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
         jobs.extend(Jobsactive4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
-        jobs.extend(
-            Jobswaiting4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
     if is_archive_only or is_archive:
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
