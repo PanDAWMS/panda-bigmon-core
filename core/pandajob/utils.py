@@ -173,8 +173,9 @@ def job_summary_dict(jobs, fieldlist=None, produsername=None, sortby='alpha'):
     else:
         flist = const.JOB_FIELDS_ATTR_SUMMARY
 
-    numeric_fields = ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount',
-                      'reqid', 'jobsetid',)
+    numeric_fields = (
+        'attemptnr', 'jeditaskid', 'noutputdatafiles', 'actualcorecount', 'corecount', 'reqid', 'jobsetid',
+    )
     numeric_intervals = ('durationmin', 'nevents',)
 
     agg_fields = {
@@ -201,9 +202,13 @@ def job_summary_dict(jobs, fieldlist=None, produsername=None, sortby='alpha'):
             elif f == 'specialhandling':
                 if not 'specialhandling' in sumd:
                     sumd['specialhandling'] = {}
-                shl = job['specialhandling'].split() if job['specialhandling'] is not None else []
+                shl = job['specialhandling'].split(',') if job['specialhandling'] is not None else []
                 for v in shl:
-                    if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
+                    # ignore tq = taskQueuedTime timestamp
+                    if v.startswith('tq'):
+                        continue
+                    if not v in sumd['specialhandling']:
+                        sumd['specialhandling'][v] = 0
                     sumd['specialhandling'][v] += 1
             else:
                 if f not in sumd:

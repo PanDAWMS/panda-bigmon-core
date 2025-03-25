@@ -851,7 +851,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['%s__range' % param] = (int(leftlimit) * 1000, int(rightlimit) * 1000 - 1)
                         else:
                             query[param] = int(request.session['requestParams'][param])
-                    elif param == 'specialhandling' and not '*' in request.session['requestParams'][param]:
+                    elif param == 'specialhandling' and not is_wildcards(request.session['requestParams'][param]):
                         query['specialhandling__contains'] = request.session['requestParams'][param]
                     elif param == 'prodsourcelabel':
                         query['prodsourcelabel'] = request.session['requestParams'][param]
