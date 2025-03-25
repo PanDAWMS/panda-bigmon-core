@@ -74,6 +74,7 @@
 .alert { color: firebrick }
 .fatal {color:firebrick}
 .ok {color:#0a47ff}
+.retired { color: #4a4a4a; }
 
 [class$="_fill"] {
   color: #0a0a0a;
@@ -97,6 +98,7 @@
 .aborted_fill { color:black;  background-color:#FFABA2;  }
 .aborting_fill { color:black;  background-color:#FFABA2;  }
 .deleted_fill { color:black;  background-color:#FFABA2 }
+.retired_fill { color: black; background-color: #bdbdbd; }
 
 .info_fill { color:black; }
 .debug_fill { color:black;  background-color:darkgrey }
