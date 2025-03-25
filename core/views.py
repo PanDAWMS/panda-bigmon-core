@@ -1788,6 +1788,7 @@ def jobList(request, mode=None, param=None):
             'clist': clist,
             'pandaids': [j['pandaid'] for j in jobsToShow if 'pandaid' in j],
             'warning': warning,
+            'timerange': [],
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
