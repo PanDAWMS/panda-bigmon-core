@@ -8,9 +8,10 @@ import copy
 import math
 import statistics
 import logging
+from django.db.models import Q
 from core.libs.exlib import convert_bytes
-from datetime import datetime, timedelta
-from core.pandajob.models import Jobsactive4, Jobsarchived, Jobswaiting4, Jobsdefined4, Jobsarchived4
+from datetime import datetime
+from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4
 from core.pandajob.utils import is_archived_jobs
 from core.common.models import JediJobRetryHistory, Filestable4, FilestableArch, JediDatasetContents
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, drop_duplicates, convert_sec
@@ -274,6 +275,7 @@ def get_job_list(query, **kwargs):
     :param query: Django ORM query object for jobs* models
     :keyword: values: list - list of extra fields to be queried
     :keyword: error_info: bool - if True, to add error-related fields
+    :keyword: query_complex: expression with Q() objects
     :keyword: extra_str: str - custom where clause for query
     :return: jobs: list of dicts - jobs
     """
@@ -283,8 +285,9 @@ def get_job_list(query, **kwargs):
     if 'values' in kwargs:
         values.extend(kwargs['values'])
     else:
+        # these values should be enough for clean job list etc
         values.extend([
-            'actualcorecount', 'specialhandling', 'jobsubstatus', 'parentid', 'attemptnr', 'jobsetid',
+            'actualcorecount', 'specialhandling', 'jobsubstatus', 'parentid', 'attemptnr', 'jobsetid', 'currentpriority',
             'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime',
             'jobmetrics', 'nevents', 'maxpss', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'cpuconsumptionunit', 'diskio', 'gco2_global',
         ])
@@ -299,6 +302,10 @@ def get_job_list(query, **kwargs):
     if 'extra_str' in kwargs and kwargs['extra_str'] != '':
         extra_str = copy.deepcopy(kwargs['extra_str'])
 
+    query_complex = None
+    if 'query_complex' in kwargs:
+        query_complex = kwargs['query_complex']
+
     id_in_params = []
     if 'pandaid__in' in query:
         id_in_params.append('pandaid')
@@ -312,8 +319,13 @@ def get_job_list(query, **kwargs):
             extra_str += f" AND {idp} in (select ID from {tmp_table_name} where TRANSACTIONKEY={tks})"
             del query[idp + '__in']
 
-    for job_table in (Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4):
-        jobs.extend(job_table.objects.filter(**query).extra(where=[extra_str]).values(*values))
+    # in case there is a part of query with OR relation
+    if query_complex is not None:
+        query_general = Q(**query) & query_complex
+    else:
+        query_general = Q(**query)
+    for job_table in (Jobsdefined4, Jobsactive4, Jobsarchived4):
+        jobs.extend(job_table.objects.filter(query_general).extra(where=[extra_str]).values(*values))
 
     if 'jeditaskid' in query or 'jeditaskid__in' in query or 'jeditaskid' in extra_str or (
             'pandaid' in query or 'pandaid__in' in query or 'pandaid' in extra_str) or  (
@@ -323,7 +335,12 @@ def get_job_list(query, **kwargs):
             # jobsarchived table has index by statechangetime, use it instead of modificationtime
             query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
             del query['modificationtime__castdate__range']
-        jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_str]).values(*values))
+            # do query_general again, after changes to query
+            if query_complex is not None:
+                query_general = Q(**query) & query_complex
+            else:
+                query_general = Q(**query)
+        jobs.extend(Jobsarchived.objects.filter(query_general).extra(where=[extra_str]).values(*values))
 
     # drop duplicate jobs
     jobs = drop_duplicates(jobs, id='pandaid')
@@ -483,13 +500,13 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
 
     for job in jobs:
         # find max and min values of priority and modificationtime for current selection of jobs
-        if job['modificationtime'] > request.session['TLAST']:
+        if 'modificationtime' in job and job['modificationtime'] > request.session['TLAST']:
             request.session['TLAST'] = job['modificationtime']
-        if job['modificationtime'] < request.session['TFIRST']:
+        if 'modificationtime' in job and job['modificationtime'] < request.session['TFIRST']:
             request.session['TFIRST'] = job['modificationtime']
-        if job['currentpriority'] > request.session['PHIGH']:
+        if 'currentpriority' in job and job['currentpriority'] > request.session['PHIGH']:
             request.session['PHIGH'] = job['currentpriority']
-        if job['currentpriority'] < request.session['PLOW']:
+        if 'currentpriority' in job and job['currentpriority'] < request.session['PLOW']:
             request.session['PLOW'] = job['currentpriority']
 
         if is_event_service(job):
@@ -573,7 +590,7 @@ def getSequentialRetries(pandaid, jeditaskid, countOfInvocations):
                 jsquery = {'jeditaskid': jeditaskid, 'pandaid': retry['oldpandaid']}
                 values = ['pandaid', 'jobstatus', 'jeditaskid']
                 jsjobs = []
-                for jt in (Jobsdefined4, Jobsactive4, Jobswaiting4, Jobsarchived4, Jobsarchived):
+                for jt in (Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived):
                     jsjobs.extend(jt.objects.filter(**jsquery).values(*values))
                 for job in jsjobs:
                     for retry in newretries:
@@ -612,7 +629,6 @@ def getSequentialRetries_ES(pandaid, jobsetid, jeditaskid, countOfInvocations, r
             jsjobs = []
             jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
             jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
             jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
             jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
             for job in jsjobs:
@@ -655,7 +671,6 @@ def getSequentialRetries_ESupstream(pandaid, jobsetid, jeditaskid, countOfInvoca
             jsjobs = []
             jsjobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*values))
             jsjobs.extend(Jobsactive4.objects.filter(**jsquery).values(*values))
-            jsjobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*values))
             jsjobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*values))
             jsjobs.extend(Jobsarchived.objects.filter(**jsquery).values(*values))
             for job in jsjobs:

@@ -113,10 +113,6 @@ def event_summary_for_task(mode, query, **kwargs):
                     where jav4.jeditaskid = :tid and jav4.eventservice is not null and jav4.eventservice != 2 
                         and jav4.pandaid not in (select id from {3}.{4} where transactionkey = :tkdj)
                 union
-                select jw4.pandaid from {1}.jobswaiting4 jw4 
-                    where jw4.jeditaskid = :tid and jw4.eventservice is not null and jw4.eventservice != 2 
-                        and jw4.pandaid not in (select id from {3}.{4} where transactionkey = :tkdj)
-                union
                 select jd4.pandaid from {1}.jobsdefined4 jd4 
                     where jd4.jeditaskid = :tid and jd4.eventservice is not null and jd4.eventservice != 2 
                         and jd4.pandaid not in (select id from {3}.{4} where transactionkey = :tkdj)

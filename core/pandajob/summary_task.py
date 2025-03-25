@@ -15,7 +15,7 @@ from core.libs.jobconsumption import job_consumption_plots
 from core.libs.task import taskNameDict, get_task_timewindow, get_task_scouts, calculate_metrics, get_task_time_archive_flag
 
 from core.pandajob.utils import get_pandajob_models_by_year
-from core.pandajob.models import Jobswaiting4, Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
+from core.pandajob.models import Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
 
 from django.conf import settings
 import core.constants as const
@@ -54,7 +54,7 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
         values.append('hs06sec')
 
     if task_archive_flag >= 0:
-        for job_model in (Jobsdefined4, Jobswaiting4, Jobsactive4, Jobsarchived4, Jobsarchived):
+        for job_model in (Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived):
             try:
                 jobs.extend(job_model.objects.filter(**jquery_notime).extra(where=[extra]).values(*values))
             except Exception as ex:
@@ -393,8 +393,6 @@ def task_summary_data(query, limit=1000):
     summary.extend(Jobsactive4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus').annotate(
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
     summary.extend(Jobsdefined4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus').annotate(
-        Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
-    summary.extend(Jobswaiting4.objects.filter(**querynotime).values('jeditaskid', 'jobstatus').annotate(
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
     summary.extend(Jobsarchived4.objects.filter(**query).values('jeditaskid', 'jobstatus').annotate(
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])

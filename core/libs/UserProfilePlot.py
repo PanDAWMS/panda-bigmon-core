@@ -1,5 +1,5 @@
 
-from core.pandajob.models import Jobsarchived4, Jobsarchived, Jobsactive4, Jobsdefined4, Jobswaiting4
+from core.pandajob.models import Jobsarchived4, Jobsarchived, Jobsactive4, Jobsdefined4
 from core.libs.exlib import drop_duplicates
 from core.libs.job import add_job_category
 from django.conf import settings
@@ -28,7 +28,6 @@ class UserProfilePlot:
 
         jobs.extend(Jobsarchived4.objects.filter(**query).values(*jvalues))
         jobs.extend(Jobsactive4.objects.filter(**query).values(*jvalues))
-        jobs.extend(Jobswaiting4.objects.filter(**query).values(*jvalues))
         jobs.extend(Jobsdefined4.objects.filter(**query).values(*jvalues))
         _logger.info('Got info from Jobs*4')
         # change timewindow param to statechangetime asa it indexed

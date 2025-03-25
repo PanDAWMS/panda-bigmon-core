@@ -12,7 +12,7 @@ from django.core.cache import cache
 
 from core.schedresource.utils import getCRICSites, get_basic_info_for_pqs, get_pq_clouds, get_panda_queues
 from core.libs.exlib import getPilotCounts
-from core.pandajob.models import Jobswaiting4, Jobsdefined4, Jobsactive4, Jobsarchived4
+from core.pandajob.models import Jobsdefined4, Jobsactive4, Jobsarchived4
 
 import core.constants as const
 
