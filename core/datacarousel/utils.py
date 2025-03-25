@@ -264,7 +264,7 @@ def getStagingData(request):
         datasets = execute_query('prod')
     elif task_type in ('analy', 'anal'):
         datasets = execute_query('analy')
-        datasets_statuses += ('cancelled',)
+        datasets_statuses += ('cancelled','retired')
     else:
         datasets = execute_query('prod')
 
