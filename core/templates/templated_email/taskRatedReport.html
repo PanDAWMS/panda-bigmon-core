@@ -67,44 +67,27 @@
   .closed { color:#4a4a4a}
   .reassign { color:#FF8174 }
 </style>
-  
 </head>
 <body>
-{% if summary.tasks|length == 0 %}
-{% else %}
+{% if summary.tasks|length == 0 %}{% else %}
 <div class="container">
-  <h2>Task Ratings Report, {{ summary.stats.time_period.0 }} – {{ summary.stats.time_period.1 }}</h2>
-  <h3><strong>{{ summary.stats.tasks_count }}</strong> tasks were rated, the average rating is <strong>{{ summary.stats.rating_avg }}</strong> </h3>
-  {% for task in summary.tasks %}
-    <p>{{ task.tasktype|title }} task <a href="https://bigpanda.cern.ch/task/{{ task.jeditaskid }}/">{{ task.jeditaskid }}</a>,
-     submitted <strong>{{ task.creationdate }}</strong>  by <strong>{{ task.username }}</strong>
-      using <strong>{{ task.transpath }}</strong>  transformation {% if task.framework %} and <strong>{{ task.framework }}</strong> framework,{% endif %} 
-      and requiring <strong>{{ task.resourcetype }}</strong>. 
-      The current status is <strong class="{{ task.status }}">{{ task.status }}</strong> and the last time it has been modified on <strong>{{ task.modificationtime }}</strong>.
-    </p>
-    <table>
-        <thead>
-            <tr>
-                <th>Reporter</th>
-                <th>Rating</th>
-                <th>Feedback</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for rating in task.ratings %}
-            <tr>
-                <td>{{ rating.reporter }}</td>
-                <td {% if rating.value < 3 %}class="highlight"{% endif %}>{{ rating.emoji }}{{ rating.value }}</td>
-                <td>{{ rating.feedback }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <br>
-  {% endfor %}
-</div>
-{% endif %}
-  <p>Best Regards,<br>PanDA team</p>
+<h2>Task Ratings Report, {{ summary.stats.time_period.0 }} – {{ summary.stats.time_period.1 }}</h2>
+<h3><strong>{{ summary.stats.tasks_count }}</strong> tasks were rated, the average rating is <strong>{{ summary.stats.rating_avg }}</strong> </h3>
+
+{% for task in summary.tasks %}
+<p>{{ task.tasktype|title }} task <a href="https://bigpanda.cern.ch/task/{{ task.jeditaskid }}/">{{ task.jeditaskid }}</a>, submitted <strong>{{ task.creationdate }}</strong>  by <strong>{{ task.username }}</strong> using <strong>{{ task.transpath }}</strong>  transformation {% if task.framework %} and <strong>{{ task.framework }}</strong> framework,{% endif %} and requiring <strong>{{ task.resourcetype }}</strong>. The current status is <strong class="{{ task.status }}">{{ task.status }}</strong> and the last time it has been modified on <strong>{{ task.modificationtime }}</strong>.</p>
+<table><thead><tr>
+<th>Reporter</th>
+<th>Rating</th>
+<th>Feedback</th></tr></thead>
+<tbody>{% for rating in task.ratings %}
+<tr><td>{{ rating.reporter }}</td>
+<td {% if rating.value < 3 %}class="highlight"{% endif %}>{{ rating.emoji }}{{ rating.value }}</td>
+<td>{{ rating.feedback }}</td></tr>
+{% endfor %}</tbody></table>
+<br>{% endfor %}
+</div>{% endif %}
+<p>Best Regards,<br>PanDA team</p>
 </body>
 </html>
 {% endautoescape %}

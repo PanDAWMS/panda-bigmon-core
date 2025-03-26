@@ -150,19 +150,6 @@ _logger = logging.getLogger('bigpandamon')
 LAST_N_HOURS_MAX = 0
 PLOW = 1000000
 PHIGH = -1000000
-
-standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid',
-                   'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
-                   'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
-                   'jobsubstatus', 'nucleus', 'gshare', 'resourcetype']
-standard_taskfields = [
-    'workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'currentpriority', 'username',
-    'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
-    'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare', 'container_name', 'attemptnr', 'site']
-standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
-                        'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
-                        'workinggroup', 'reqid', 'computingelement']
-
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
 
@@ -440,7 +427,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     wildSearchFields.append(field.name)
 
     deepquery = False
-    fields = standard_fields
+    fields = list(copy.deepcopy(const.JOB_FIELDS_ATTR_SUMMARY))
     if 'limit' in request.session['requestParams']:
         request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
     elif limit != -99 and limit > 0:
@@ -4033,10 +4020,10 @@ def taskList(request):
         noerrordialogurl = removeParam(xurl, 'errordialog', mode='extensible')
 
         ntasks = len(tasks)
-        sumd = task_summary_dict(
-            request,
-            tasks,
-            copy.deepcopy(standard_taskfields) + ['stagesource'] if 'tape' in request.session['requestParams'] else copy.deepcopy(standard_taskfields))
+        task_attr_summary_fields = list(copy.deepcopy(const.TASK_FIELDS_STANDARD))
+        if 'tape' in request.session['requestParams']:
+            task_attr_summary_fields += ['stagesource',]
+        sumd = task_summary_dict(request, tasks, task_attr_summary_fields)
         _logger.info('Prepared attribute summary: {}'.format(time.time() - request.session['req_init_time']))
 
         # for tasks plots
