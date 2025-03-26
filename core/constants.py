@@ -201,7 +201,8 @@ TASK_FIELDS_STANDARD = (
     'gshare',
     'container_name',
     'attemptnr',
-    'site'
+    'site',
+    'framework'
 )
 
 JOB_FIELDS = (
