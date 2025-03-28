@@ -63,12 +63,15 @@ def get_staging_info_for_task(request):
     if data_raw and len(data_raw) > 0:
         for task, dsdata in data_raw.items():
             data = {}
+            data['start_time_ms'] = 0
             for key in ('taskid', 'status', 'scope', 'dataset', 'rse', 'source_rse', 'destination_rse',
                         'step_action_id', 'source_rse_old'):
                 data[key] = dsdata[key] if key in dsdata else '---'
             for key in ('start_time', 'end_time'):
                 if key in dsdata and dsdata[key] and isinstance(dsdata[key], timezone.datetime):
                     data[key] = dsdata[key].strftime(settings.DATETIME_FORMAT)
+                    if key == 'start_time':
+                        data['start_time_ms'] = int(dsdata[key].timestamp() * 1000)
                 else:
                     data[key] = '---'
             if 'update_time' in dsdata and dsdata['update_time'] is not None:

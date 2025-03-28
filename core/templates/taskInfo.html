@@ -653,6 +653,7 @@
               <th>Started</th>
               <th>Since last update [d:h:m:s]</th>
               <th ng-if="datasets.length > 1">Dataset</th>
+              <th class="mid">Errors</th>
             </tr>
           </thead>
           <tbody>
@@ -694,6 +695,11 @@
                 <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
                   {$ dataset.dataset $}
                 </a>
+              </td>
+               <td>
+                  <a target="_blank" href="https://monit-grafana.cern.ch/d/e77b84d4-d854-4a18-b2c6-5fb67f648832/ddm-transfers-errors?from={$ dataset.start_time_ms $}&orgId=17&to=now&var-bin=1h&var-dataset_name={$ dataset.dataset.split(':')[1] $}&var-dst_cloud=All&var-dst_country=All&var-dst_federation=All&var-dst_site=All&var-dst_tier=All&var-error_filter=&var-src_cloud=All&var-src_country=All&var-src_federation=All&var-src_site=All&var-src_tier=All&var-activity=Analysis%20Input&var-activity=Production%20Input&var-activity=Staging">
+                    <img src="{% static 'images/grafana.png' %}" width=14 height=14 border=0>
+                  </a>
               </td>
             </tr>
           </tbody>
@@ -1420,15 +1426,21 @@ $(document).ready(function () {
                     { data: 'idds_out_processed_files' },
                     { data: 'start_time' },
                     { data: 'update_time' },
-                    { data: 'dataset' }
+                    { data: 'dataset' },
+                    { data: 'errors_link' }
                 ],
                 columnDefs: [
                     {
-                        targets: [3, 5],
+                        targets: [3, 5, 10],
                         createdCell: function (td, cellData, rowData, row, col) {
                             $(td).css('text-align', 'center');
                         }
-                    }
+                    },
+                {
+                    targets: 10,
+                    orderable: false,
+                    searchable: false
+                }
                 ]
             });
         }
