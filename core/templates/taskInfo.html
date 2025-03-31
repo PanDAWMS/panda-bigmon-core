@@ -624,10 +624,11 @@
           <div class="card bp-container-simple secondary" id="container_dst">
           <div class="card-divider"><p>Staging information</p></div>
           <div class="card-section">
+          <span id="datasetCount" data-count="{$ datasets.length $}" style="display:none;"></span>
           <table id="dsTable" class="data-table left-aligned nowrap">
           <thead>
             <tr>
-              <th colspan="10">
+              <th colspan="11">
                 <span ng-if="datasets.length === 1">
                   {% if request.session.rucio_ui|length > 0 %}
                     for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
@@ -652,7 +653,7 @@
               <th class="num">iDDS files <br> (processed | total | %)</th>
               <th>Started</th>
               <th>Since last update [d:h:m:s]</th>
-              <th ng-if="datasets.length > 1">Dataset</th>
+              <th>Dataset</th>
               <th class="mid">Errors</th>
             </tr>
           </thead>
@@ -691,7 +692,7 @@
               </td>
               <td>{$ dataset.start_time $}</td>
               <td>{$ dataset.update_time $}</td>
-              <td ng-if="datasets.length > 1">
+              <td>
                 <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
                   {$ dataset.dataset $}
                 </a>
@@ -1409,8 +1410,9 @@ $(document).ready(function () {
     var checkExist = setInterval(function () {
         if ($('#dsTable tbody tr').length > 0) {
             clearInterval(checkExist);
+            var datasetCount = parseInt($('#datasetCount').attr('data-count')) || 0;
 
-            $('#dsTable').DataTable({
+            var table = $('#dsTable').DataTable({
                 paging: true,
                 searching: true,
                 ordering: true,
@@ -1437,13 +1439,21 @@ $(document).ready(function () {
                             $(td).css('text-align', 'center');
                         }
                     },
-                {
-                    targets: 10,
-                    orderable: false,
-                    searchable: false
-                }
+                    {
+                        targets: 10,
+                        orderable: false,
+                        searchable: false
+                    }
                 ]
             });
+            if (datasetCount === 1) {
+                table.column(9).visible(false);
+            } else {
+                table.column(9).visible(true);
+            }
+            $(table.column(10).header()).css('text-align', 'center');
+            $(table.column(3).header()).css('text-align', 'center');
+            $(table.column(5).header()).css('text-align', 'center');
         }
     }, 500);
 });
