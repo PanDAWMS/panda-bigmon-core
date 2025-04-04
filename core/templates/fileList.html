@@ -15,33 +15,33 @@
 {% endblock %}
 
 {% block body %}
+{% if dataset.nfilestotal > 0 %}
 
-{% if nfilestotal > 0 %}
-
-{% if requestParams.datasetname %}Files in dataset <b>{{ requestParams.datasetname }}</b> <br>{% endif %}
-{% if requestParams.datasetid %}Files in dataset ID: <b>{{ requestParams.datasetid }}</b>, name: <b>{{ datasetname }}</b>  <br>{% endif %}
-
-Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
-{% if nfilestotal != nfilesunique %}, whereas number of unique file names is <b>{{ nfilesunique }}</b> {% endif %}
+{% if requestParams.datasetname %}Dataset <b>{{ requestParams.datasetname }}</b> <br>{% endif %}
+{% if requestParams.datasetid %}Dataset ID: <b>{{ requestParams.datasetid }}</b>, name: <b>{{ dataset.name }}</b>  <br>{% endif %}
+{% if requestParams.containername %}Container: <b>{{ requestParams.containername }}</b> <br>{% endif %}
+{% if requestParams.procstatus %}Processing status: <span class="requestParams.procstatus"><b>{{ requestParams.procstatus }}</b></span> <br>{% endif %}
+{% if dataset.type == 'input' or dataset.type == 'pseudo_input' %}
+  Total number of inputs: <b>{{ dataset.nfilestotal }}</b>
+  {% if dataset.nfilestotal != dataset.nfilesunique %}, whereas number of unique file names is <b>{{ dataset.nfilesunique }}</b> {% endif %}
+{% else %}
+  Total number of files: <b>{{ dataset.nfilestotal }}</b>
+{% endif %}
 <p>
-{% if nfilestotal > 1000 %}
-    <div id="nlistedfiles" style="display: inline; font-weight: bold"> 1000 </div> event chunks listed below. If you want to see more, please input the desired number and press Reload button.
+{% if dataset.nfilestotal > limit %}
+    <div id="nlistedfiles" style="display: inline; font-weight: bold"> Only 1000 </div> {% if dataset.type == 'input' or dataset.type == 'pseudo_input'  %}event chunks{% else %}files{% endif %} listed below. If you want to see more, please type the desired number and press Reload button.
     <div class="row" style="max-width: 100%; font-size: 0.85rem; margin-top: 0.5rem">
       <div class="small-12 medium-6 large-4 xlarge-2 columns" style="padding-left: 0">
         <div class="input-group">
           <span class="input-group-label">Number of files</span>
-          <input class="input-group-field" id="nfilestoload" type="number" placeholder="1000">
+          <input class="input-group-field" id="nfilestoload" type="number" placeholder="1000" value="1000">
           <div class="input-group-button">
             <input type="submit" class="button secondary" value="Reload" id="reloadfilelist" style="font-size: 0.85rem">
           </div>
         </div>
       </div>
     </div>
-
-{% else %}
-    <b>{{ nfilestotal }}</b> files listed below
 {% endif %}
-
 
 <table id = 'filelist' class="data-table nowrap">
     <thead>
@@ -63,55 +63,63 @@ Total number of inputs in dataset: <b> {{ nfilestotal }} </b>
         <th>RAM count [MB]</th>
         <th>Created</th>
         <th>Lumi block</th>
-        <th>Rucio link</th>
     </tr>
     </thead>
 <tbody>
 </tbody>
 </table>
 
-
 {% else %}
-
-No files matching selection were found.
-
+  <p>No files matching selection were found.</p>
 {% endif %}
 
 {% endblock %}
 
 {% block js_body_page %}
 <script nonce={{request.csp_nonce}}>
+var dataset = {{ dataset|safe }};
 $(document).ready(function () {
-    var extraparams = '{{ extraparams | safe }}';
-    fileListTable(extraparams);
+  var dataset = {{ dataset|safe }};
+  var extraparams = '{{ extraparams | safe }}';
+  fileListTable(extraparams, dataset);
 });
 
 $("#reloadfilelist").click(function () {
     $('#nlistedfiles').html("<img src='{% static "images/load.gif" %}'>  ");
     var nfilestoload = $('#nfilestoload').val();
-    var nfilestotal = {{ nfilestotal }};
-    if (nfilestoload > nfilestotal) {
-        nfilestoload = nfilestotal;
+    if (nfilestoload > dataset.nfilestotal) {
+        nfilestoload = dataset.nfilestotal;
     }
-    var url =  "{% url 'loadFileList' datasetid %}?json&limit=" + nfilestoload;
-    $('#filelist').DataTable().ajax.url(url).load(function(){ $('#nlistedfiles').html(nfilestoload);});
-
+    $('#filelist').DataTable().ajax.reload();
+    $('#nlistedfiles').html(nfilestoload)
 });
 
-
-function fileListTable(extraparams) {
+function fileListTable(extraparams, dataset) {
       filelisttable = $('#filelist').dataTable({
-        //"bRetrieve": true,
-        {#"iDisplayLength": -1,#}
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
         "scrollX": true,
         "aaSorting": [[0,'asc']],
-
         "ajax": {
             "processing": true,
-            "url": "{% url 'loadFileList' datasetid %}?json" + extraparams,
-            "dataSrc" : ''},
+            "url": "{% url 'loadFileList' %}?json",
+            "type": "POST",
+            "data": function(d) {
+              d.datasetid = dataset.id;
+              extraparams = extraparams.startsWith('&') ? extraparams.substring(1) : extraparams;
+              new URLSearchParams(extraparams).forEach((value, key) => {
+                d[key] = value;
+              });
+              // Get value from the input field and add it to the request
+              let nfilestoload = $('#nfilestoload').val()|| {{ limit }};
+              if (nfilestoload > dataset.nfilestotal) {
+                  nfilestoload = dataset.nfilestotal;
+              }
+              d.limit = nfilestoload;
+            },
+            "dataSrc" : '',
+            'headers': {'X-CSRFToken': '{{ csrf_token }}'},
+        },
         "columnDefs": [
             {"type": "num-html", "targets": [1,3,4,5,6,9,10,12] }
         ],
@@ -119,8 +127,11 @@ function fileListTable(extraparams) {
             {
                 "data": "lfn",
                 sDefaultContent: "---",
+                className: 'icons1',
                 "render": function(data, type, full) {
-                    return '<a href = "{% url 'fileInfo' %}?lfn=' + full['lfn'] + '&datasetid=' + full['datasetid'] + '&date_from=' + full['creationdatecut'] + '">'+full['lfn']+'</a>'
+                    let out = '<a href = "{% url 'fileInfo' %}?lfn=' + full['lfn'] + '&datasetid=' + full['datasetid'] + '&date_from=' + full['creationdatecut'] + '">'+full['lfn']+'</a>';
+                    out += (full['ruciolink']) ? ' <a href = "' + full['ruciolink'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>' : '';
+                    return out
                  }
             },
             {
@@ -232,19 +243,6 @@ function fileListTable(extraparams) {
                 sDefaultContent: "---",
                 className: 'num',
             },
-            {
-                "data": "ruciolink",
-                sDefaultContent: "---",
-                "render": function ( data, type, full ) {
-                    if (data) {
-                        return '<a href = "' + full['ruciolink'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>'
-                    }
-                    else {
-                        return '---'
-                    }
-                }
-            },
-
         ],
         "createdRow": function ( row, data, index ) {
             $('td', row).eq(8).addClass(data['status'] + '_fill');
