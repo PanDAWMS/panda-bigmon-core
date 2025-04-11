@@ -6405,52 +6405,58 @@ def fileList(request):
     if not valid:
         return response
 
-    setupView(request, hours=365 * 24, limit=999999999)
-    query = {}
-    files = []
     defaultlimit = 1000
-    datasetname = ''
-    datasetid = 0
+    dataset = {
+        'name': '',
+        'id': '',
+        'type': '',
+        'nfilestotal': 0,
+        'nfilesunique': 0,
+    }
 
-    # It's dangerous when dataset name is not unique over table
-    if 'datasetname' in request.session['requestParams']:
-        datasetname = request.session['requestParams']['datasetname']
-        dsets = JediDatasets.objects.filter(datasetname=datasetname).values()
-        if len(dsets) > 0:
-            datasetid = dsets[0]['datasetid']
-    elif 'datasetid' in request.session['requestParams']:
-        datasetid = request.session['requestParams']['datasetid']
-        dsets = JediDatasets.objects.filter(datasetid=datasetid).values()
-        if len(dsets) > 0:
-            datasetname = dsets[0]['datasetname']
+    # get datasetids to extract files down the line
+    dvalues = ('datasetid', 'type', 'datasetname')
+    dquery = {}
+    if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+        dquery['jeditaskid'] = request.session['requestParams']['jeditaskid']
+    if 'datasetname' in request.session['requestParams'] and request.session['requestParams']['datasetname']:
+        dataset['name'] = request.session['requestParams']['datasetname']
+        dquery['datasetname'] = dataset['name']
+    elif 'containername' in request.session['requestParams'] and request.session['requestParams']['containername']:
+        dataset['name'] = request.session['requestParams']['containername']
+        dquery['containername'] = dataset['name']
+    elif 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+        dataset['id'] = request.session['requestParams']['datasetid']
+        dquery['datasetid'] = dataset['id']
     else:
-        return error_response(request, message='No datasetid or datasetname was provided', status=400)
+        return error_response(request, message='No datasetid, datasetname or containername was provided', status=400)
+    dsets = JediDatasets.objects.filter(**dquery).values(*dvalues)
 
+    #  form query for files
+    query = {}
+    if len(dsets) > 0:
+        query['datasetid__in'] = [d['datasetid'] for d in dsets]
+        dataset['id'] = ','.join([str(d['datasetid']) for d in dsets])
+        dataset['type'] = list(set([d['type'] for d in dsets]))[0] if len(set([d['type'] for d in dsets])) > 0 else 'Unknown'
+        dataset['name'] = dsets[0]['datasetname'] if len(dsets) == 1 else ''
     extraparams = ''
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
         extraparams += '&procstatus=' + request.session['requestParams']['procstatus']
 
-    nfilestotal = 0
-    nfilesunique = 0
-    if int(datasetid) > 0:
-        query['datasetid'] = datasetid
-        nfilestotal = JediDatasetContents.objects.filter(**query).count()
-        nfilesunique = JediDatasetContents.objects.filter(**query).values('lfn').distinct().count()
+    # get file counts, the list itself will be loaded via special API
+    if len(query) > 0 and 'datasetid__in' in query:
+        dataset['nfilestotal'] = JediDatasetContents.objects.filter(**query).count()
+        dataset['nfilesunique'] = JediDatasetContents.objects.filter(**query).values('lfn').distinct().count()
 
-    del request.session['TFIRST']
-    del request.session['TLAST']
     if not is_json_request(request):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'limit': defaultlimit,
-            'datasetid': datasetid,
-            'nfilestotal': nfilestotal,
-            'nfilesunique': nfilesunique,
+            'dataset': dataset,
             'extraparams': extraparams,
-            'datasetname': datasetname,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
@@ -6458,12 +6464,14 @@ def fileList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(files), content_type='application/json')
+        return JsonResponse({'dataset': dataset})
 
 
-def loadFileList(request, datasetid=-1):
+@never_cache
+def loadFileList(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     setupView(request, hours=365 * 24, limit=999999999)
     query = {}
     files = []
@@ -6474,9 +6482,17 @@ def loadFileList(request, datasetid=-1):
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
 
+    if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+        datasetid = request.session['requestParams']['datasetid']
+    else:
+        return JsonResponse({}, status=400)
+
     sortOrder = 'lfn'
-    if int(datasetid) > 0:
+    if isinstance(datasetid, int) and int(datasetid) > 0:
         query['datasetid'] = datasetid
+    elif isinstance(datasetid, str) and datasetid and len(datasetid) > 0:
+        query['datasetid__in'] = datasetid.split(',')
+    if len(query) > 0:
         files.extend(JediDatasetContents.objects.filter(**query).values().order_by(sortOrder)[:limit])
 
     pandaids = []
@@ -6503,7 +6519,6 @@ def loadFileList(request, datasetid=-1):
     if len(files_ft) > 0:
         for f in files_ft:
             files_ft_dict[f['fileid']] = f
-
 
     for f in files:
         f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
