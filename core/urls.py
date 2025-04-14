@@ -79,7 +79,7 @@ urlpatterns = [
     re_path(r'^fileList/$', coremon_views.fileList, name='fileListLegacy'),
     re_path(r'^file/$', coremon_views.fileInfo, name='fileInfo'),
     re_path(r'^files/$', coremon_views.fileList, name='fileList'),
-    re_path(r'^loadFileList/(?P<datasetid>.*)/$', coremon_views.loadFileList, name='loadFileList'),
+    re_path(r'^loadFileList/$', coremon_views.loadFileList, name='loadFileList'),
 
     re_path(r'^datasetInfo/$', coremon_views.datasetInfo, name='datasetInfoLegacy'),
     re_path(r'^datasetList/$', coremon_views.datasetList, name='datasetListLegacy'),
