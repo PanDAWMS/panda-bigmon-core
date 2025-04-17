@@ -26,8 +26,7 @@ _logger = logging.getLogger('bigpandamon')
 class DDOSMiddleware(object):
 
     sleepInterval = 5  # sec
-
-    max_allowed_requests_per_hour = 600
+    max_allowed_requests_per_hour = 1000
     notcachedRemoteAddress = [
         '188.184.185.129', '188.185.80.72', '188.184.116.46', '188.184.28.86', '144.206.131.154',
         '188.184.90.172'  # J..h M......n request
@@ -44,7 +43,7 @@ class DDOSMiddleware(object):
         '/art/registerarttest/',
         '/art/uploadtestresult/',
     ]
-    blacklist = ['130.132.21.90', '192.170.227.149']
+    blacklist = ['130.132.21.90', '192.170.227.149', '194.182.78.12']
 
     useragent_parallel_limit_applied = ["EI-monitor/0.0.1",]
     max_allowed_parallel_requests = 2
@@ -139,8 +138,8 @@ class DDOSMiddleware(object):
             _logger.exception("Rejecting request since failed to save metadata to DB table because of \n{}".format(ex))
             return HttpResponse(json.dumps({'message': 'rejected'}), status=400, content_type='application/json')
 
-        # do not check requests from excepted views and not JSON requests
-        if request.path not in self.excepted_views and is_json_request(request):
+        # do not check requests from excepted views
+        if request.path not in self.excepted_views:
 
             # Check against number of unprocessed requests to filebrowser from ART subsystem
             if request.path == '/filebrowser/' and x_forwarded_for in self.listOfServerBackendNodesIPs:
@@ -158,14 +157,11 @@ class DDOSMiddleware(object):
                     if countRequest[0]['urlview__count'] > self.max_allowed_parallel_requests or x_forwarded_for in self.blacklist:
                         reqs.is_rejected = 1
                         reqs.save()
+                        _logger.info(f'[DDOS protection] reject request {request.get_full_path()} from agent: {useragent} with 429')
                         return HttpResponse(
                             json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
                             status=429,
                             content_type='application/json')
-                response = self.get_response(request)
-                reqs.rtime = timezone.now()
-                reqs.save()
-                return response
 
             # restrict number of parallel requests for some user agents
             if useragent is not None and useragent in self.useragent_parallel_limit_applied:
@@ -186,14 +182,11 @@ class DDOSMiddleware(object):
                     if count_parallel_requests > self.max_allowed_parallel_requests:
                         reqs.is_rejected = 1
                         reqs.save()
+                        _logger.info(f'[DDOS protection] reject request {request.get_full_path()} from agent {useragent} with 429')
                         return HttpResponse(
                             json.dumps({'message': 'you produce too many parallel requests'}),
                             status=429,
                             content_type='application/json')
-                response = self.get_response(request)
-                reqs.rtime = timezone.now()
-                reqs.save()
-                return response
 
             # We restrict number of requests per hour
             if x_forwarded_for is not None and x_forwarded_for not in self.notcachedRemoteAddress:
@@ -203,19 +196,20 @@ class DDOSMiddleware(object):
                     'remote': x_forwarded_for,
                     'qtime__range': [startdate, enddate],
                     'is_rejected': 0,
-                     }
+                }
                 countRequest = []
                 countRequest.extend(AllRequests.objects.filter(**query).values('remote').annotate(Count('remote')))
 
                 # Check against general number of request
-                if len(countRequest) > 0:
-                    if countRequest[0]['remote__count'] > self.max_allowed_requests_per_hour or x_forwarded_for in self.blacklist:
-                        reqs.is_rejected = 1
-                        reqs.save()
-                        return HttpResponse(
-                            json.dumps({'message': 'your IP produces too many requests per hour, please try later'}),
-                            status=429,
-                            content_type='application/json')
+                if len(countRequest) > 0 and (
+                        countRequest[0]['remote__count'] > self.max_allowed_requests_per_hour or x_forwarded_for in self.blacklist):
+                    reqs.is_rejected = 1
+                    reqs.save()
+                    _logger.info(f'[DDOS protection] reject request {request.get_full_path()} from {x_forwarded_for} with 429')
+                    return HttpResponse(
+                        json.dumps({'message': 'too many requests per hour, please try later'}),
+                        status=429,
+                        content_type='application/json')
 
         response = self.get_response(request)
         reqs.rtime = timezone.now()
