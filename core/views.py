@@ -268,7 +268,10 @@ def initRequest(request, callselfmon=True):
 
     # add permissions to request session if user is authenticated
     if 'user_permissions' not in request.session or len(request.session['user_permissions']) == 0:
-        request.session['user_permissions'] = list(request.user.get_all_permissions()) if request.user.is_authenticated else []
+        if request.user.is_authenticated and 'ATLAS' in settings.DEPLOYMENT:
+            request.session['user_permissions'] = list(request.user.get_all_permissions())
+        else:
+            request.session['user_permissions'] = []
 
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
