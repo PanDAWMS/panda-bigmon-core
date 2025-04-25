@@ -104,12 +104,17 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     if db == 'postgresql':
         style = 'uppercase'
     sqlpar, condition = prepareSQLQueryParameters(request_params, db=db)
+    columns = "r.request_id, r.name as r_name, r.status as r_STATUS, r.created_at as r_created_at, "
+    extra_cols = "r.cloud, r.site, "
+    if 'ATLAS' in settings.DEPLOYMENT:
+        extra_cols = "NULL as cloud, r.site, "
+    columns += extra_cols
+    columns += "c.total_files, c.processed_files, c.processing_files, c.transform_id, t.workload_id, t.transform_type, t.transform_tag, p.status as p_status, r.username"
     sql = f"""
-    select r.request_id, r.name as r_name, r.status as r_STATUS, r.created_at as r_created_at, c.total_files, 
-    c.processed_files, c.processing_files, c.transform_id, t.workload_id, t.transform_type, t.transform_tag, p.status as p_status, r.username 
-    from {settings.DB_SCHEMA_IDDS}.requests r 
+    select {columns}
+    from {settings.DB_SCHEMA_IDDS}.requests r
     left join {settings.DB_SCHEMA_IDDS}.collections c on r.request_id=c.request_id
-    left join {settings.DB_SCHEMA_IDDS}.transforms t on t.transform_id=c.transform_id 
+    left join {settings.DB_SCHEMA_IDDS}.transforms t on t.transform_id=c.transform_id
     left join {settings.DB_SCHEMA_IDDS}.processings p on p.transform_id=t.transform_id
     where (c.relation_type=0 or c.relation_type is null) and {condition} order by r.request_id desc
     """

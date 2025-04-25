@@ -68,6 +68,7 @@
         <th>Unreleased files</th>
         <th>Finished files</th>
 	<th>Failed files</th>
+	<th>Cloud.Site</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -170,6 +171,16 @@ var requests_table = $('#requests_table').DataTable({
 	      return retVal;
           }
         },
+	{ data: null, title: "cloud.site", className: "num",
+	  render: function ( data, type, row, meta ) {
+	      let site  = (typeof row['site'] === 'string' && row['site'].trim()) ? row['site'].trim() : '';
+	      let cloud = (typeof row['cloud'] === 'string' && row['cloud'].trim()) ? row['cloud'].trim() : '';
+	      if (!cloud && !site) {
+	          return '-';
+	      }
+	      return `${cloud}&nbsp;&nbsp;${site}`;
+	  }
+	},
     ],
     data: preprocData(iDDSrequests),
     selectable: true,
