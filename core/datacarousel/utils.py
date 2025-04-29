@@ -17,6 +17,8 @@ from core.reports.models import ReportEmails
 from core.views import setupView, initRequest
 
 from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime, insert_to_temp_table
+from core.libs.task import get_task_params
+
 from core.libs.elasticsearch import create_os_connection
 from core.schedresource.utils import getCRICSEs
 from core.filebrowser.ruciowrapper import ruciowrapper
@@ -130,11 +132,14 @@ def getStagingData(request):
     new_cur = connection.cursor()
     transactionKey = None
     datasets_idds_info = None
+    task_params = None
 
     if 'jeditaskid' in request.session['requestParams']:
         jeditaskid = request.session['requestParams']['jeditaskid']
         taskl = [int(jeditaskid)] if '|' not in jeditaskid else [int(taskid) for taskid in jeditaskid.split('|')]
         transactionKey = insert_to_temp_table(taskl)
+        task_params = get_task_params(jeditaskid)
+
     def build_selection(task_type):
 
         selection = "where 1=1 "
@@ -260,9 +265,9 @@ def getStagingData(request):
 
     datasets_statuses = ('staging', 'queued', 'done')
 
-    if task_type == 'prod':
+    if task_type == 'prod' and (task_params is not None and not task_params.get('panda_data_carousel', False)):
         datasets = execute_query('prod')
-    elif task_type in ('analy', 'anal'):
+    elif task_type in ('analy', 'anal') or (task_params is not None and task_params.get('panda_data_carousel', True)):
         datasets = execute_query('analy')
         datasets_statuses += ('cancelled','retired')
     else:
