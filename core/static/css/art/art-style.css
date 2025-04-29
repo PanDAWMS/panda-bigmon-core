@@ -240,6 +240,22 @@ fieldset.artmenu li.input-group button.hollow.alert {
   font-size: 14px;
 }
 
+.nodata-center {
+  text-align: center;
+  margin: 0;
+  background-color: transparent;
+  width: 120px;
+  height: 21px;
+  position: relative;
+  font-size: 14px;
+  display: inline-block;
+}
+
+.data-container .bp-tooltip .tooltip-text {
+  min-width: 80px;
+  max-width: 200px;
+}
+
 /* test sub results traffic lights */
 /* --------------------------------------------------------------------------------------------------- */
 

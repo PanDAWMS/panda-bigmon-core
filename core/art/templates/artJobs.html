@@ -14,6 +14,17 @@
 {% block body %}
 
 <a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
+{% if not requestParams.test_type %}
+  <a href="?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}test_type=grid" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Grid Tests</a>
+  <a href="?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}test_type=local" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Local Tests</a>
+{% elif requestParams.test_type %}
+  <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{% if not forloop.first %}&{% endif %}{{ key }}={{ value }}{% endif %}{% endfor %}" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Grid + Local Tests</a>
+  {% if requestParams.test_type == 'grid' %}
+    <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{{ key }}={{ value }}&{% endif %}{% endfor %}test_type=local" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Local Tests</a>
+  {% elif requestParams.test_type == 'local' %}
+    <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{{ key }}={{ value }}&{% endif %}{% endfor %}test_type=grid" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Grid Tests</a>
+  {% endif %}
+{% endif %}
 
 {% if taskids|length > 0 and taskids|length < 10 %}
 <div style="float: right">
@@ -175,10 +186,13 @@ for (let i=0; i<table_data[0].length; i++) {
                     '<a href="{% url 'artTest' %}' + row[table_title.indexOf('package')] + '/' + row[2] + '/?ntag_full=' + item.ntag + '&branch=' + row[table_title.indexOf('branch')] + '">' + '</a>' +
                   '</div>' +
                   '<div class="extra-links">' +
-                    ntag_time + tarindex 
+                    ntag_time
 		    if (item.computingsite != "ART Local") {
-                        result += '<span class="attempt bp-tooltip left">' + item.attemptnr + '/' + item.maxattempt + '<span class="tooltip-text">Attempt number / max attempts</span></span>' +
+                        result += tarindex +
+                          '<span class="attempt bp-tooltip left">' + item.attemptnr + '/' + item.maxattempt + '<span class="tooltip-text">Attempt number / max attempts</span></span>' +
                                   '<a class="blacklink" target="_blank" href="{% url "filebrowser" %}?pandaid=' + item.origpandaid + '"><i class="fi-link bp-tooltip left"><span class="tooltip-text">Link to logs of last attempt</span></i></a>' + link_previous_attempt_logs
+		    } else {
+                        result += '<span class="attempt bp-tooltip left">' + '---&nbsp---&nbsp---</span>'
 		    }
                     result += link_eos +link_html +link_gitlab +
                   '</div>' +
@@ -229,7 +243,7 @@ let columnDefs =  [];
 
 var art_table = $('#art_table').DataTable({
   lengthChange: true,
-  lengthMenu: lengthMenu,
+  pageLength: -1,
   iDisplayLength: iDisplayLength,
   paging: true,
   bFilter: true,
