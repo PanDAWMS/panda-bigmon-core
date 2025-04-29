@@ -89,15 +89,15 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  \
     Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
     olefile openshift oracledb packaging pandas paramiko patterns pep8 Pillow pip pluggy prettytable progressbar2 psutil psycopg2-binary \
     py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyOpenSSL pyparsing pyrebase4 pytest \
-    python-dateutil python-dotenv python-magic python-openid python-social-auth python-string-utils python-utils python3-openid \
+    python-dateutil python-dotenv python-magic python-openid python-string-utils python-utils python3-openid \
     pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
-    schedule scikit-learn scipy six scikit-learn social-auth-core soupsieve sqlparse \
+    schedule scikit-learn scipy six scikit-learn social-auth-core==4.5.3 social-auth-app-django==5.4.0 soupsieve sqlparse \
     stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
     urllib3 webencodings websocket-client Werkzeug xlrd zipp \
     django-bower django-cors-headers django-csp \
     django-datatables-view django-render-block django-tables2 django-templated-email djangorestframework \
     django-debug-toolbar django-extensions django-htmlmin django-mathfilters django-redis \
-    django-redis-cache social-auth-app-django
+    django-redis-cache
 
 RUN mkdir -p ${BIGMON_WSGI_PATH}
 RUN mkdir ${BIGMON_WSGI_PATH}/config
