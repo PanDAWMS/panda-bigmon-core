@@ -149,6 +149,7 @@ def getStagingData(request):
         processingtype_column = "t4.processingtype" if task_type == "prod" else "t3.processingtype"
         tasktype_column = "t4.tasktype" if task_type == "prod" else "t3.tasktype"
         endtime_column = "t4.endtime" if task_type == "prod" else "t3.endtime"
+        starttime_column = "t1.start_time" if task_type == "prod" else "t1.creation_time "
         taskid_column = "taskid" if task_type == "prod" else "task_id"
         tasks_table = "ATLAS_DEFT.T_ACTION_STAGING" if task_type == "prod" else "ATLAS_PANDA.DATA_CAROUSEL_RELATIONS"
         source_rse = "RSE" if task_type == "prod" else "TAPE"
@@ -194,7 +195,7 @@ def getStagingData(request):
 
         if not jeditaskid:
             selection += f"""  
-            and not (nvl({endtime_column}, current_timestamp) < t1.start_time) 
+            and not (nvl({endtime_column}, current_timestamp) < {starttime_column}) 
             and (
                 t1.end_time between to_date('{timewindow[0]}', 'YYYY-mm-dd HH24:MI:SS') and to_date('{timewindow[1]}', 'YYYY-mm-dd HH24:MI:SS') 
                 or (t1.end_time is null and not (t1.status = 'done'))
@@ -235,7 +236,7 @@ def getStagingData(request):
             t1.dataset,
             t1.status,
             t1.staged_files,
-            t1.start_time,
+            t1.creation_time as start_time,
             t1.end_time,
             t1.ddm_rule_id AS rse,
             t1.total_files,
@@ -249,7 +250,7 @@ def getStagingData(request):
             t2.request_id as pr_id,
             t3.processingtype,
             t3.username,
-            row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
+            row_number() over(partition by t1.request_id order by t1.creation_time desc) as occurence,
             (current_timestamp - t1.modification_time) AS update_time
             from {0}.data_carousel_requests t1
             inner join {0}.data_carousel_relations t2 on t1.request_id = t2.request_id
