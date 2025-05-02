@@ -660,7 +660,7 @@
           <tbody>
             <tr ng-repeat="dataset in datasets">
               <td class="icons1">
-                {% if request.session.rucio_ui|length > 0 %}
+                {% if request.session.rucio_ui|length > 0 and dataset.rse %}
                   <a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
                     {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width="14" height="14" border="0">
                   </a>
@@ -968,7 +968,7 @@ app.controller('StagingDSController', function ($scope, $http) {
 
       if ($scope.datasets.length > 0) {
         $scope.datasets.forEach(function (dataset) {
-          if ('rse' in dataset) {
+          if ('rse' in dataset && dataset.rse != null) {
             dataset.rrule_cut = dataset.rse.slice(0, 3) + '...' + dataset.rse.slice(-3);
           } else {
             dataset.rrule_cut = '';
