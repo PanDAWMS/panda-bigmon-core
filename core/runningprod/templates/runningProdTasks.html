@@ -36,6 +36,8 @@
         <th>Selection Preset</th>
         <th>Working group</th>
         <th>Processing type</th>
+        <th>Input</th>
+        <th>Output</th>
         <th>Campaign</th>
         <th>Status</th>
         <th></th>
@@ -103,10 +105,26 @@
           >reprocessing</option>
 
           {% if requestParams.preset != 'DATA' %}
-            {% for ptype in sumd.1.list %}
-              <option value={{ ptype.kname }} {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>{{ ptype.kname }}</option>
-            {% endfor %}
+            {% for f in sumd %}{% if f.field == 'processingtype' %}{% for v in f.list %}
+              <option value={{ v.kname }} {% if v.kname == requestParams.processingtype %} selected="selected" {% endif %}>{{ v.kname }}</option>
+            {% endfor %}{% endif %}{% endfor %}
           {% endif %}
+        </select>
+      </td>
+      <td>
+        <select id="inputdatasettype">
+          <option value=""  selected="selected">All</option>
+          {% for f in sumd %}{% if f.field == 'inputdatasettype' %}{% for v in f.list %}
+            <option value="{{ v.kname }}" {% if v.kname == requestParams.inputdatasettype %} selected="selected" {% endif %}>{{ v.kname }}</option>
+          {% endfor %}{% endif %}{% endfor %}
+        </select>
+      </td>
+      <td>
+        <select id="outputdatasettype">
+          <option value=""  selected="selected">All</option>
+          {% for f in sumd %}{% if f.field == 'outputdatasettype' %}{% for v in f.list %}
+            <option value="{{ v.kname }}" {% if v.kname == requestParams.outputdatasettype %} selected="selected" {% endif %}>{{ v.kname }}</option>
+          {% endfor %}{% endif %}{% endfor %}
         </select>
       </td>
       <td>
@@ -121,17 +139,14 @@
                 {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
             >{{ campaign.kname }} </option>
           {% endfor %}
-
         </select>
       </td>
       <td>
         <select id="status">
           <option value=""  selected="selected">All</option>
-          {% for status in sumd.2.list %}
-            <option value={{ status.kname }}
-                {% if status.kname == requestParams.status %} selected="selected" {% endif %}
-            > {{ status.kname }} </option>
-          {% endfor %}
+          {% for f in sumd %}{% if f.field == 'status' %}{% for v in f.list %}
+            <option value={{ v.kname }} {% if v.kname == requestParams.status %} selected="selected" {% endif %}>{{ v.kname }}</option>
+          {% endfor %}{% endif %}{% endfor %}
         </select>
       </td>
       <td>
@@ -255,6 +270,8 @@
   {% endif %}
   {% if requestParams.preset == 'MC' %}
     <th>Sim</th>
+    <th>Input</th>
+    <th>Output</th>
     <th>aTag</th>
   {% endif %}
   {% if requestParams.preset == 'DATA' %}
@@ -300,14 +317,21 @@ var charts = {};
 var requestParams = {{ requestParams | safe }};
 var ntasks = {{ gsum.ntasks | safe }};
 
-document.getElementById("button-go").addEventListener("click", go);
-document.getElementById("button-extra-plots").addEventListener("click", toggleByID.bind(null, 'extraplots', 'plussign'));
-document.getElementById("nEventsTrendLink").addEventListener("click", toggleHistoricalTrend.bind(null, 'nEventsLineChart', 'nEventsTrendLink'));
+if (document.getElementById("button-go")) {
+  document.getElementById("button-go").addEventListener("click", go);
+}
+if (document.getElementById("button-extra-plots"))  {
+  document.getElementById("button-extra-plots").addEventListener("click", toggleByID.bind(null, 'extraplots', 'plussign'));
+}
+if (document.getElementById("nEventsTrendLink")) {
+  document.getElementById("nEventsTrendLink").addEventListener("click", toggleHistoricalTrend.bind(null, 'nEventsLineChart', 'nEventsTrendLink'));
+}
 
 document.getElementById("presetChoice").addEventListener("change", onPresetChoice);
 document.getElementById("workinggroup").addEventListener("change",onSubElementChoice);
 document.getElementById("processingtype").addEventListener("change",onSubElementChoice);
-
+document.getElementById("inputdatasettype").addEventListener("change",onSubElementChoice);
+document.getElementById("outputdatasettype").addEventListener("change",onSubElementChoice);
 document.getElementById("campaign").addEventListener("change", onSubElementChoice);
 document.getElementById("status").addEventListener("change",onSubElementChoice);
 document.getElementById("hpc").addEventListener("change",onSubElementChoice);
@@ -495,6 +519,8 @@ $(document).ready(function () {
     var processingtype = document.getElementById ("processingtype");
     var campaign = document.getElementById ("campaign");
     var status = document.getElementById ("status");
+    var inputdatasettype = document.getElementById ("inputdatasettype");
+    var outputdatasettype = document.getElementById ("outputdatasettype");
     var warning = document.getElementById ("warning");
 
     if (presetChoice.value == 'MC') {
@@ -502,6 +528,8 @@ $(document).ready(function () {
         processingtype.selectedIndex = 1;
         campaign.selectedIndex = 1;
         status.selectedIndex = 0;
+        inputdatasettype.selectedIndex = 0;
+        outputdatasettype.selectedIndex = 0;
     }
 
     if (presetChoice.value == 'DPD') {
@@ -509,6 +537,8 @@ $(document).ready(function () {
         processingtype.selectedIndex = 2;
         campaign.selectedIndex = 0;
         status.selectedIndex = 0;
+        inputdatasettype.selectedIndex = 0;
+        outputdatasettype.selectedIndex = 0;
     }
 
     if (presetChoice.value == 'DATA') {
@@ -516,6 +546,8 @@ $(document).ready(function () {
         processingtype.selectedIndex =3;
         campaign.selectedIndex =0;
         status.selectedIndex = 0;
+        inputdatasettype.selectedIndex = 0;
+        outputdatasettype.selectedIndex = 0;
     }
 
 
@@ -524,6 +556,8 @@ $(document).ready(function () {
         processingtype.selectedIndex = 0;
         campaign.selectedIndex = 0;
         status.selectedIndex = 0;
+        inputdatasettype.selectedIndex = 0;
+        outputdatasettype.selectedIndex = 0;
     }
     warning.style.display = '';
   }
@@ -534,73 +568,49 @@ $(document).ready(function () {
   }
 
   function go() {
+      const queryBase = "{% url 'runningProdTasks' %}";
+      const params = new URLSearchParams();
+      const fields = [
+          ["workinggroup", "workinggroup"],
+          ["processingtype", "processingtype"],
+          ["inputdatasettype", "inputdatasettype"],
+          ["outputdatasettype", "outputdatasettype"],
+          ["campaign", "campaign"],
+          ["presetChoice", "preset"],
+          ["status", "status"]
+      ];
+      fields.forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el && el.value.trim()) {
+              params.append(key, el.value.trim());
+          }
+      });
+      const checkboxes = [
+          ["hpc", "site"],
+          ["es", "eventservice"],
+          ["jumbo", "jumbo"]
+      ];
+      checkboxes.forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el && el.checked) {
+              params.append(key, el.value);
+          }
+      });
 
-      var workinggroupQ = "";
-      var processingtypeQ = "";
-      var campaignQ = "";
-      var presetQ = "";
-      var statusQ = "";
-      var hpcsitesQ = "";
-      var esQ = "";
-      var jumboQ = "";
-      var workinggroup = document.getElementById ("workinggroup");
-      var processingtype = document.getElementById ("processingtype");
-      var campaign = document.getElementById ("campaign");
-      var presetChoice = document.getElementById ("presetChoice");
-      var query = {% url 'runningProdTasks' %} ;
-      var status = document.getElementById ("status");
-      var hpcsites = document.getElementById('hpc');
-      var es = document.getElementById('es');
-      var jumbo = document.getElementById('jumbo');
-
-      if (workinggroup.value.length > 0) workinggroupQ = "workinggroup="+workinggroup.value;
-      if (processingtype.value.length > 0) processingtypeQ = "processingtype="+processingtype.value;
-      if (campaign.value.length > 0) campaignQ = "campaign="+campaign.value;
-      if (presetChoice.value.length > 0) presetQ = "preset="+presetChoice.value;
-      if (status.value.length > 0) statusQ = "status="+status.value;
-      if (hpcsites.checked) hpcsitesQ = "site="+hpcsites.value;
-      if (es.checked) esQ = "eventservice="+es.value;
-      if (jumbo.checked) jumboQ = "jumbo="+jumbo.value;
-
-      if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1) || (hpcsitesQ.length > 1) || (esQ.length > 1) || (jumboQ.length > 1)) {
-          if ('days' in requestParams ) {
-            query += "?days=" + requestParams.days + '&';
-          }
-          else if ('hours' in requestParams ) {
-            query += "?hours=" + requestParams.hours + '&';
-          }
-          else if ('date_from' in requestParams && 'date_to' in requestParams ) {
-            query += "?date_from=" + requestParams.date_from + '&date_to=' + requestParams.date_to + '&';
-          }
-          else {
-            query += "?";
-          }
-          if (presetQ.length > 1) {
-              query += presetQ+"&";
-          }
-          if (workinggroupQ.length > 1) {
-              query += workinggroupQ+"&";
-          }
-          if (processingtypeQ.length > 1) {
-              query += processingtypeQ+"&";
-          }
-          if (campaignQ.length > 1) {
-              query += campaignQ+"&";
-          }
-          if (statusQ.length > 1) {
-              query += statusQ+"&";
-          }
-          if (hpcsitesQ.length > 1) {
-              query += hpcsitesQ+"&";
-          }
-          if (esQ.length > 1) {
-              query += esQ+"&";
-          }
-          if (jumboQ.length > 1) {
-              query += jumboQ+"&";
-          }
-          query = query.substring(0, query.length - 1);
+      // Handle time filters
+      if ('days' in requestParams) {
+          params.append('days', requestParams.days);
+      } else if ('hours' in requestParams) {
+          params.append('hours', requestParams.hours);
+      } else if ('date_from' in requestParams && 'date_to' in requestParams) {
+          params.append('date_from', requestParams.date_from);
+          params.append('date_to', requestParams.date_to);
       }
+
+      const query = params.toString()
+          ? `${queryBase}?${params.toString()}`
+          : queryBase;
+
       window.location = query;
   }
 
@@ -733,6 +743,30 @@ $(document).ready(function () {
               sDefaultContent: "",
               "render": function(data, type, full, meta) {
                   return '<a href = "{{ xurl }}simtype=' + full['simtype'] + '">' + full['simtype'] + '</a>'
+              }
+          },
+          {
+              "data": "inputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                if (data && data !== '') {
+                  return '<a href = "{{ xurl }}inputdatasettype=' + full['inputdatasettype'] + '">' + full['inputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}inputdatasettype=Not+specified">---</a>'
+                }
+              }
+          },
+          {
+              "data": "outputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data && data !== '') {
+                  return '<a href = "{{ xurl }}outputdatasettype=' + full['outputdatasettype'] + '">' + full['outputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}outputdatasettype=Not+specified">---</a>'
+                }
               }
           },
           {
