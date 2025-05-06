@@ -68,7 +68,7 @@ def updateView(request, query, exquery, wild_card_str):
     ])).difference(set(jedi_tasks_fields))
 
     for f in running_prod_fields:
-        if f in request.session['requestParams'] and request.session['requestParams'][f] and f not in query and f not in wild_card_str:
+        if f in request.session['requestParams'] and request.session['requestParams'][f] and f not in query and f not in wild_card_str and 'datasettype' not in f:
             if f == 'hashtags':
                 wild_card_str += ' and ('
                 wildCards = request.session['requestParams'][f].split(',')
@@ -93,6 +93,30 @@ def updateView(request, query, exquery, wild_card_str):
                 query[f] = request.session['requestParams'][f]
 
     return query, exquery, wild_card_str
+
+
+def filter_running_task_list(task_list, request_params):
+    """
+    Filter out tasks for too heavy filters on database side
+    :param task_list: list of dicts
+    :param request_params: dict of params
+    :return: task_list_filtered: list of dicts - filtered
+    """
+    heavy_filters = ('inputdatasettype', 'outputdatasettype')
+    filters_to_apply = list(set([p for p, v in request_params.items()]) & set(heavy_filters))
+    task_list_filtered = []
+    jeditaskid_to_remove = {}
+    if len(filters_to_apply) > 0:
+        for task in task_list:
+            for f in filters_to_apply:
+                if f in task and request_params[f] != 'Not specified' and task[f] != request_params[f]:
+                    jeditaskid_to_remove[task['jeditaskid']] = 1
+                elif f in task and request_params[f] == 'Not specified' and (task[f] is not None and task[f] != ''):
+                    jeditaskid_to_remove[task['jeditaskid']] = 1
+
+    task_list_filtered = [t for t in task_list if t['jeditaskid'] not in jeditaskid_to_remove]
+    return task_list_filtered
+
 
 
 def clean_running_task_list(task_list):
