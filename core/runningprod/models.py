@@ -47,6 +47,7 @@ class RunningProdTasksModel(models.Model):
     neventsfinished = models.BigIntegerField(db_column='nfinishedevents')
     neventsfailed = models.BigIntegerField(db_column='nfailedevents')
     neventswaiting = models.BigIntegerField(db_column='nwaitingevents')
+    neventsrequested = models.BigIntegerField(db_column='neventsrequested')
     jumbo = models.IntegerField(null=True, db_column='jumbo', blank=True)
     container_name = models.BigIntegerField(db_column='container_name')
     stepid = models.IntegerField(null=True, db_column='stepid', blank=True)
