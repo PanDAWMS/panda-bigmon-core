@@ -110,7 +110,8 @@ def filter_running_task_list(task_list, request_params):
     if len(filters_to_apply) > 0:
         for task in task_list:
             for f in filters_to_apply:
-                if f in task and request_params[f] != 'Not specified' and task[f] != request_params[f]:
+                v_list = request_params[f].split('|') if '|' in request_params[f] else [request_params[f],]
+                if f in task and request_params[f] != 'Not specified' and task[f] not in v_list:
                     jeditaskid_to_remove[task['jeditaskid']] = 1
                 elif f in task and request_params[f] == 'Not specified' and (task[f] is not None and task[f] != ''):
                     jeditaskid_to_remove[task['jeditaskid']] = 1

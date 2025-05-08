@@ -9,6 +9,7 @@ from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.utils.cache import patch_response_headers
+from django.template.defaulttags import register
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import round_to_n_digits, convert_grams
@@ -26,6 +27,11 @@ from django.conf import settings
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
+
+@register.filter(takes_context=True)
+def split(input_str, key='|'):
+    return input_str.split(key)
+
 
 @login_customrequired
 def runningProdTasks(request):
