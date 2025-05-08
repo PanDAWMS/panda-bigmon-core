@@ -11,6 +11,7 @@ from django.db import transaction, DatabaseError
 from core.runningprod.models import ProdNeventsHistory, RunningProdTasksModel
 from core.common.models import JediTasks
 import core.constants as const
+from core.libs.exlib import round_to_n_digits
 
 from core.libs.sqlcustom import preprocess_wild_card_string
 
@@ -127,7 +128,7 @@ def clean_running_task_list(task_list):
     """
     for task in task_list:
         task['rjobs'] = 0 if task['rjobs'] is None else task['rjobs']
-        task['percentage'] = 0 if task['percentage'] is None else round(100 * task['percentage'], 1)
+        task['percentage'] = 0 if task['percentage'] is None else round_to_n_digits(100 * task['percentage'], n=1, method='floor')
         task['nevents'] = task['nevents'] if task['nevents'] is not None else 0
         task['neventsused'] = task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
         task['neventstobeused'] = task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
@@ -138,10 +139,15 @@ def clean_running_task_list(task_list):
             task['neventsdone'] = task['neventsused']
             task['neventswaiting'] = task['neventstobeused']
 
-        # # check if running + waiting + done = total
-        # if task['neventsdone'] + task['neventsrunning'] + task['neventswaiting'] > task['nevents'] and \
-        #         task['neventsdone'] + task['neventswaiting'] == task['nevents']:
-        #     task['neventswaiting'] -= task['neventsrunning']
+        # adjust nevents for some evgen tasks filtering events, i.e. input events != output events
+        if (task['processingtype'] == 'evgen' and 'neventsrequested' in task and isinstance(task['neventsrequested'], int)
+                and task['neventsrequested'] > 0 and task['nevents'] > task['neventsrequested']):
+            coef = task['neventsrequested']/task['nevents']
+            task['nevents'] = task['neventsrequested']
+            task['neventsrunning'] = round_to_n_digits(coef * task['neventsrunning'], n=0)
+            task['neventswaiting'] = round_to_n_digits(coef * task['neventswaiting'], n=0)
+            task['neventsdone'] = round_to_n_digits(coef * task['neventsdone'], n=0)
+            task['neventsfailed'] = round_to_n_digits(coef * task['neventsfailed'], n=0)
 
         task['slots'] = task['slots'] if task['slots'] else 0
         task['aslots'] = task['aslots'] if task['aslots'] else 0
