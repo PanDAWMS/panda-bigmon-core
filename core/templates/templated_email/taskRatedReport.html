@@ -69,7 +69,7 @@
 </style>
 </head>
 <body>
-{% if summary.tasks|length == 0 %}{% else %}
+{% if summary.tasks|length == 0 %}<p>No task were rated.</p>{% else %}
 <div class="container">
 <h2>Task Ratings Report, {{ summary.stats.time_period.0 }} – {{ summary.stats.time_period.1 }}</h2>
 <h3><strong>{{ summary.stats.tasks_count }}</strong> tasks were rated, the average rating is <strong>{{ summary.stats.rating_avg }}</strong> </h3>
