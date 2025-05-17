@@ -76,15 +76,21 @@ def get_staging_info_for_task(request):
                 data['update_time'] = convert_sec(dsdata['update_time'].total_seconds(), out_unit='str')
             else:
                 data['update_time'] = '---'
-            data['total_files'] = dsdata['total_files']
-            data['staged_files'] = dsdata['staged_files']
-            if isinstance(dsdata['total_files'], int) and dsdata['total_files'] > 0:
+            data['total_files'] = dsdata['total_files'] if is_positive_int_field(dsdata, 'total_files') else 0
+            data['staged_files'] = dsdata['staged_files'] if is_positive_int_field(dsdata, 'staged_files') else 0
+            if is_positive_int_field(dsdata, 'total_files' ) and is_positive_int_field(dsdata, 'staged_files'):
                 data['staged_files_pct'] = round_to_n_digits(dsdata['staged_files'] * 100.0 / dsdata['total_files'], 1, method='floor')
             else:
                 data['staged_files_pct'] = 0
-            data['total_bytes'] = round_to_n_digits(convert_bytes(dsdata['dataset_bytes'], output_unit='GB'), 2)
-            data['staged_bytes'] = round_to_n_digits(convert_bytes(dsdata['staged_bytes'], output_unit='GB'), 2)
-            if isinstance(dsdata['dataset_bytes'], int) and dsdata['dataset_bytes'] > 0:
+            if is_positive_int_field(dsdata, 'dataset_bytes'):
+                data['total_bytes'] = round_to_n_digits(convert_bytes(dsdata['dataset_bytes'], output_unit='GB'), 2)
+            else:
+                data['total_bytes'] = 0
+            if is_positive_int_field(dsdata, 'staged_bytes'):
+                data['staged_bytes'] = round_to_n_digits(convert_bytes(dsdata['staged_bytes'], output_unit='GB'), 2)
+            else:
+                data['staged_bytes'] = 0
+            if is_positive_int_field(dsdata, 'dataset_bytes' ) and is_positive_int_field(dsdata, 'staged_bytes'):
                 data['staged_bytes_pct'] = round_to_n_digits(dsdata['staged_bytes'] * 100.0 / dsdata['dataset_bytes'], 1, method='floor')
             else:
                 data['staged_bytes_pct'] = 0
@@ -190,12 +196,12 @@ def get_data_carousel_data(request):
                     summary[key][dsdata[key]]["ds_active"] += 1
                     summary[key][dsdata[key]]['files_active'] += (
                             dsdata['total_files'] - dsdata['staged_files']
-                    ) if is_positive_int_field(dsdata, 'total_files' ) and is_positive_int_field(dsdata, 'staged_files') else 0
+                    ) if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') else 0
                     summary[key][dsdata[key]]['bytes_active'] += convert_bytes(
                         dsdata['dataset_bytes'] - dsdata['staged_bytes'],
                         output_unit='GB'
                     ) if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes') else 0
-                    if (is_positive_int_field(dsdata, 'total_files' ) and is_positive_int_field(dsdata, 'staged_files') and
+                    if (is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') and
                             dsdata['staged_files'] >= dsdata['total_files'] * 0.9):
                         summary[key][dsdata[key]]["ds_90pdone"] += 1
                 elif dsdata['status'] == 'queued':
@@ -204,7 +210,7 @@ def get_data_carousel_data(request):
                     summary[key][dsdata[key]]["ds_queued"] += 1
                     summary[key][dsdata[key]]["files_queued"] += (
                             dsdata['total_files'] - dsdata['staged_files']
-                    ) if is_positive_int_field(dsdata, 'total_files' ) and is_positive_int_field(dsdata, 'staged_files') else 0
+                    ) if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') else 0
                     summary[key][dsdata[key]]["bytes_queued"] += convert_bytes(
                         dsdata['dataset_bytes'] - dsdata['staged_bytes'],
                         output_unit='GB'
