@@ -9,18 +9,16 @@ import time
 
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.utils.cache import patch_response_headers
 from django.views.decorators.cache import never_cache
 from django.utils import timezone
-from django.db import connection
 
 from core.libs.checks import is_positive_int_field
-from core.libs.exlib import build_time_histogram, dictfetchall, convert_bytes, convert_sec, round_to_n_digits
+from core.libs.exlib import build_time_histogram, convert_bytes, convert_sec, round_to_n_digits
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
-from core.datacarousel.utils import getBinnedData, getStagingData, send_report_rse, substitudeRSEbreakdown, staging_rule_verification, \
-    get_stuck_files_data
+from core.datacarousel.utils import getBinnedData, get_staging_data, send_report_rse, substitudeRSEbreakdown, staging_rule_verification, \
+    get_stuck_files_data, setup_view_dc
 
 from django.conf import settings
 
@@ -57,10 +55,16 @@ def get_staging_info_for_task(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    data_raw = getStagingData(request)
+
+    if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype']:
+        task_type = request.session['requestParams']['tasktype']
+    else:
+        task_type = None
+    extra_query_str = setup_view_dc(request)
+    data_raw = get_staging_data(extra_query_str, task_type=task_type, add_idds_data=True)
+
     # prepare data for template
     datasets = []
-
     if data_raw and len(data_raw) > 0:
         for task, dsdata in data_raw.items():
             data = {}
@@ -117,7 +121,13 @@ def get_data_carousel_data(request):
     if not valid:
         return response
 
-    staginData = getStagingData(request)
+    if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype']:
+        task_type = request.session['requestParams']['tasktype']
+    else:
+        task_type = 'prod'
+    extra_query_str = setup_view_dc(request)
+
+    staginData = get_staging_data(extra_query_str, task_type=task_type, add_idds_data=False)
     _logger.debug('Got data: {}'.format(time.time() - request.session['req_init_time']))
 
     timelistSubmitted = []
@@ -318,6 +328,11 @@ def get_stuck_files(request):
 
 @never_cache
 def send_stalled_requests_report(request):
+    """
+    Send report about stalled requests to Data Carousel experts
+    :param request:
+    :return:
+    """
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -325,60 +340,47 @@ def send_stalled_requests_report(request):
     # it is ATLAS specific view -> return no content
     if 'ATLAS' not in settings.DEPLOYMENT:
         return JsonResponse({'sent': 0}, status=204)
-    DB_SCHEMA_DEFT = 'atlas_deft'
-    # get data
-    try:
-        query = """
-        select t1.dataset, t1.status, t1.staged_files, t1.start_time, t1.end_time, t1.rse as rse, t1.total_files, 
-            t1.update_time, t1.source_rse, t2.taskid, t3.campaign, t3.pr_id, 
-            row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence, 
-            (current_timestamp-t1.update_time) as update_time, t4.processingtype 
-        from {2}.t_dataset_staging t1
-        inner join {2}.t_action_staging t2 on t1.dataset_staging_id=t2.dataset_staging_id
-        inner join {2}.t_production_task t3 on t2.taskid=t3.taskid 
-        inner join {1}.jedi_tasks t4 on t2.taskid=t4.jeditaskid 
-        where end_time is null and (t1.status = 'staging') and t1.update_time <= trunc(sysdate) - {0} 
-            and t4.status not in ('cancelled','failed','broken','aborted','finished','done')
-        """.format(settings.DATA_CAROUSEL_MAIL_DELAY_DAYS, settings.DB_SCHEMA_PANDA, DB_SCHEMA_DEFT)
-        cursor = connection.cursor()
-        cursor.execute(query)
-        rows = dictfetchall(cursor)
-    except Exception as e:
-        _logger.error(e)
-        rows = []
 
-    rows = sorted(rows, key=lambda x: x['UPDATE_TIME'], reverse=True)
+    # get data
+    extra_query_str = setup_view_dc(request)
+    extra_query_str += f"""
+        and t1.end_time is null and t1.status = 'staging' and t1.modification_time <= trunc(sysdate) - {settings.DATA_CAROUSEL_MAIL_DELAY_DAYS} 
+            and t3.status not in ('cancelled','failed','broken','aborted','finished','done')
+    """
+    rows = get_staging_data(extra_query_str, add_idds_data=False)
+    rows = sorted(rows.values(), key=lambda x: x['update_time'], reverse=True)
     ds_per_rse = {}
     for r in rows:
-        if r['SOURCE_RSE'] not in ds_per_rse:
-            ds_per_rse[r['SOURCE_RSE']] = {}
-        if r['RSE'] not in ds_per_rse[r['SOURCE_RSE']]:
-            ds_per_rse[r['SOURCE_RSE']][r['RSE']] = {
-                "SE": r['SOURCE_RSE'],
-                "RR": r['RSE'],
-                "START_TIME": r['START_TIME'].strftime(settings.DATETIME_FORMAT),
-                "TOT_FILES": r['TOTAL_FILES'],
-                "STAGED_FILES": r['STAGED_FILES'],
-                "UPDATE_TIME": str(r['UPDATE_TIME']).split('.')[0] if r['UPDATE_TIME'] is not None else '',
-                "TASKS": [],
-                "IS_TAPE_PROBLEM": False,
-                "STUCK_FILES": [],
+        if r['source_rse'] not in ds_per_rse:
+            ds_per_rse[r['source_rse']] = {}
+        if r['rse'] not in ds_per_rse[r['source_rse']]:
+            ds_per_rse[r['source_rse']][r['rse']] = {
+                "se": r['source_rse'],
+                "rr": r['rse'],
+                "dataset": r['dataset'] if ':' not in r['dataset'] else r['dataset'].split(':')[1],
+                "start_time": r['start_time'].strftime(settings.DATETIME_FORMAT),
+                "tot_files": r['total_files'],
+                "staged_files": r['staged_files'],
+                "update_time": str(r['update_time']).split('.')[0] if r['update_time'] is not None else '',
+                "tasks": [],
+                "is_tape_problem": False,
+                "stuck_files": [],
             }
-        if r['TASKID'] not in ds_per_rse[r['SOURCE_RSE']][r['RSE']]['TASKS']:
-            ds_per_rse[r['SOURCE_RSE']][r['RSE']]['TASKS'].append(r['TASKID'])
+        if r['taskid'] not in ds_per_rse[r['source_rse']][r['rse']]['tasks']:
+            ds_per_rse[r['source_rse']][r['rse']]['tasks'].append(r['taskid'])
 
     # check if a tape is a reason of stalled staging
     for source_rse, rucio_rules in ds_per_rse.items():
         for rule in rucio_rules:
-            rucio_rules[rule]["IS_TAPE_PROBLEM"], rucio_rules[rule]["STUCK_FILES"] = staging_rule_verification(rule, source_rse)
+            rucio_rules[rule]["is_tape_problem"], rucio_rules[rule]["stuck_files"] = staging_rule_verification(rule, source_rse)
 
     # dict -> list of rules & send
     for rse, rucio_rules in ds_per_rse.items():
         _logger.debug("DataCarouselMails processes this RSE: {}".format(rse))
         # divide into 2 categories, one sent only to DC&DDM experts, the other is for site admins
         data_email_categories = {
-            'experts_only': [rule for r_uid, rule in rucio_rules.items() if rule['IS_TAPE_PROBLEM'] is False],
-            'site_admins': [rule for r_uid, rule in rucio_rules.items() if rule['IS_TAPE_PROBLEM'] is True]
+            'experts_only': [rule for r_uid, rule in rucio_rules.items() if rule['is_tape_problem'] is False],
+            'site_admins': [rule for r_uid, rule in rucio_rules.items() if rule['is_tape_problem'] is True]
         }
         if len(data_email_categories['experts_only']) > 0:
             send_report_rse(

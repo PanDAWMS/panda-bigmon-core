@@ -27,7 +27,7 @@ def textify(html):
 
 def send_mail_bp(template, subject, summary, recipient, send_html=False):
     # uncomment for debugging
-    # recipient = 'tatiana.korchuganova@cern.ch'
+    # recipient = '<login>@cern.ch'
     # ----
     isSuccess = True
     nmails = 0
@@ -70,44 +70,6 @@ def send_mail_bp(template, subject, summary, recipient, send_html=False):
         msg += '\n' + str(e)
         _logger.exception(msg)
         isSuccess = False
-
-    if nmails == 0:
-        isSuccess = False
-    return isSuccess
-
-
-def send_mails(template, subject, summary):
-    isSuccess = True
-    nmails = 0
-    connection = mail.get_connection()
-
-    # Manually open the connection
-    connection.open()
-    emails = []
-
-    # Construct  messages
-    for recipient, sum in summary.items():
-        html_message = loader.render_to_string(
-            template,
-            {
-                'subject': subject,
-                'summary': sum,
-                'built': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
-        )
-        email = mail.EmailMessage(
-            subject=subject,
-            from_email='atlas.pandamon@cern.ch',
-            to=[recipient],
-            body=textify(html_message),
-        )
-        emails.append(email)
-
-    # Send the two emails in a single call -
-    nmails = connection.send_messages(emails)
-    # The connection was already open so send_messages() doesn't close it.
-    # We need to manually close the connection.
-    connection.close()
 
     if nmails == 0:
         isSuccess = False
