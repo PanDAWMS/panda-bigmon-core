@@ -40,7 +40,7 @@ def globalshares(request):
         shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
 
     for shareValue in tablerows:
-        shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue else None
+        shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue and shareValue['ratio'] is not None else None
     ordtablerows ={}
     ordtablerows['childlist']=[]
     level1 = ''
@@ -439,16 +439,7 @@ def detailedInformationJSON(request):
          WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
         END) as jobstatus,HS06
         from
-        {0}.JOBSDEFINED4
-        UNION ALL
-        select gshare,  (CASE 
-           WHEN corecount is null THEN 1 else corecount END  
-        ) as corecount, (CASE 
-         WHEN jobstatus in ('defined','waiting','pending','assigned','throttled','activated','merging','starting','holding','transferring') THEN 'scheduled'
-         WHEN jobstatus in ('sent','running') THEN 'running'
-         WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
-        END) as jobstatus,HS06 from
-        {0}.JOBSWAITING4) 
+        {0}.JOBSDEFINED4) 
         group by gshare, corecount, jobstatus
         order by gshare, corecount, jobstatus
     """.format(settings.DB_SCHEMA_PANDA)
@@ -495,14 +486,6 @@ def sharesDistributionJSON(request):
         END) as jobstatus, HS06
         from
         {0}.JOBSDEFINED4
-        UNION ALL
-        select gshare,COMPUTINGSITE, (CASE 
-         WHEN corecount is null THEN 1 else corecount END   
-        ) as corecount, (CASE jobstatus
-          WHEN 'running' THEN 'running'
-          ELSE 'scheduled'
-        END) as jobstatus, HS06 from
-        {0}.JOBSWAITING4
         ) group by gshare,COMPUTINGSITE, corecount, jobstatus
         order by gshare,COMPUTINGSITE, corecount, jobstatus
     '''.format(settings.DB_SCHEMA_PANDA)
@@ -558,14 +541,6 @@ def siteWorkQueuesJSON(request):
         END) as jobstatus
         from
         {0}.JOBSDEFINED4
-        UNION ALL
-        select COMPUTINGSITE,gshare, (CASE 
-        WHEN corecount is null THEN 1 else corecount END  
-        ) as corecount, (CASE jobstatus
-          WHEN 'running' THEN 'running'
-          ELSE 'scheduled'
-        END) as jobstatus from
-        {0}.JOBSWAITING4
         ) group by COMPUTINGSITE,gshare, corecount, jobstatus
         order by COMPUTINGSITE,gshare, corecount, jobstatus
     '''.format(settings.DB_SCHEMA_PANDA)

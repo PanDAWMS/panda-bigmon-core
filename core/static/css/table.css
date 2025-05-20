@@ -341,18 +341,24 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 
 .minimalistic-table > tbody > tr > td {
     border: none;
-    padding: 0.3rem 0.3rem 0.3rem 0 ;
+    padding: 0 0.3rem 0 0 ;
 }
 
 .minimalistic-table th.mid,  .minimalistic-table td.mid {
   text-align: center;
 }
-
 .minimalistic-table td > select, .minimalistic-table td label > input, .minimalistic-table a.button {
   margin-bottom: 0;
 }
+.minimalistic-table td > select[multiple] {
+  height: 5rem;
+  padding: 0.1rem 0.7rem 0.1rem 0.1rem;
+}
+.minimalistic-table td > label {
+  white-space: nowrap;
+}
 .minimalistic-table input[type="checkbox"] {
-  margin-right: 0.3rem;
+  margin-right: 0.2rem;
 }
 
 .minimalistic-table div.c3-chart-block {

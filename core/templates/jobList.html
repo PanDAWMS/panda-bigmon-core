@@ -156,7 +156,7 @@
             {% if fdict.field == 'jeditaskid' and item.kname != 'Not specified' %} <a href="{% url 'taskInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'jobsetid'%} <a href="{% url 'jobList' %}?jobsetid={{ item.kname }}"> {{ item.kname }}</a> <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field  == 'harvesterinstance' %} {{ item.kname }} <a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
-            {% elif fdict.field  == 'durationmin' %} {% if item.kvalue > 0 %} {{ item.kname }} <a href="{{nodurminurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a> {% endif %}
+            {% elif fdict.field  == 'durationmin' %} {% if item.kvalue > 0 or item.kvalue|length > 0 %} {{ item.kname }} <a href="{{nodurminurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a> {% endif %}
             {% elif fdict.field == 'produsername' %} <a href="{% url 'userInfo' item.kname %}"> {{ item.kname }} </a><a href="{{xurl}}{{fdict.field}}={{item.kname}}" >({{ item.kvalue }})</a>
             {% elif fdict.field == 'eventservicestatus' %} <span class='{{item.kname}} item'>{{ item.kname }}</span> ({{ item.kvalue }})
             {% elif fdict.field == 'container_name' and request.session.xurls and fdict.field in request.session.xurls %} {{ item.kname }} <a href="{{ request.session.xurls.container_name }}{{ fdict.field }}={{ item.kname }}">({{ item.kvalue }})</a>
@@ -310,7 +310,7 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
   <th>Max PSS/core, GB</th>
 	<th>Job info</th>
 </tr>
-    {% for job in jobList %}
+  {% for job in jobList %}
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>
 		<td rowspan=3><a href="{% url 'jobInfo' %}?pandaid={{ job.pandaid }}">{{ job.pandaid }}</a><br>Attempt {{ job.attemptnr }}
 			{% if requestParams.fileid %}<br><span style="color: gray">FileAttempt {% if job.fileattemptnr %}{{ job.fileattemptnr }}{% endif %}</span>{% endif %}
@@ -423,7 +423,9 @@ function DisplayErrorMessagesListTableData() {
                 className: "num",
                 render: function (data, type, row) {
                     let encdesc = encodeURIComponent(row['errmessage']);
-                    return '<a href="{{ xurl }}' + row['errcodename'] + '=' + row['errcodeval'] + '&errormessage=' + encdesc +'" target="_blank">' + data + '</a>'
+                    let params_str = `${row['errcodename']}=${row['errcodeval']}`;
+                    params_str += (row['errcodename'] !== 'transexitcode') ? `&errormessage=${encdesc}` : '';
+                    return '<a href="{{ xurl }}' + params_str +'" target="_blank">' + data + '</a>'
                 }
             },
         ],

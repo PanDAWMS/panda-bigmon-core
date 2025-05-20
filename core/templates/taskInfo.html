@@ -621,84 +621,93 @@
       <p>No datasets were found for this task</p>
   {% endif %}
       <div id="dsStageDiv" class="table-scroll" ng-app="taskInfoAppAJS" ng-controller="StagingDSController" style="display:none;">
-      <table class="fresh-table unstriped">
-        <thead>
-          <tr>
-            <th colspan="20">
-              Staging information
-              <span ng-if="datasets.length === 1">
-                {% if request.session.rucio_ui|length > 0 %}
-                  for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
-                   {$ datasets[0].dataset $}
-                  </a>
-                  <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
-                    <i class="fi-graph-trend"></i>
+          <div class="card bp-container-simple secondary" id="container_dst">
+          <div class="card-divider"><p>Staging information</p></div>
+          <div class="card-section">
+          <span id="datasetCount" data-count="{$ datasets.length $}" style="display:none;"></span>
+          <table id="dsTable" class="data-table left-aligned nowrap">
+          <thead>
+            <tr>
+              <th colspan="11">
+                <span ng-if="datasets.length === 1">
+                  {% if request.session.rucio_ui|length > 0 %}
+                    for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
+                      {$ datasets[0].dataset $}
+                    </a>
+                    <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
+                      <i class="fi-graph-trend"></i>
+                    </a>
+                  {% else %}
+                    {$ datasets[0].dataset $}
+                  {% endif %}
+                </span>
+              </th>
+            </tr>
+            <tr>
+              <th>Rucio rule</th>
+              <th>Source</th>
+              <th>Destination</th>
+              <th class="mid">Status</th>
+              <th class="num">Files <br> (staged | total | %)</th>
+              <th class="mid">iDDS request status</th>
+              <th class="num">iDDS files <br> (processed | total | %)</th>
+              <th>Started</th>
+              <th>Since last update [d:h:m:s]</th>
+              <th>Dataset</th>
+              <th class="mid">Errors</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="dataset in datasets">
+              <td class="icons1">
+                {% if request.session.rucio_ui|length > 0 and dataset.rse %}
+                  <a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
+                    {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width="14" height="14" border="0">
                   </a>
                 {% else %}
-                  {$ datasets[0].dataset $}
+                  {$ dataset.rrule_cut $}
                 {% endif %}
-              </span>
-              <span ng-if="datasets.length > 1">
-              </span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th>Rucio rule</th>
-            <th>Source</th>
-            <th>Destination</th>
-            <th class="mid">Status</th>
-            <th class="num">Files <br> (staged | total | %)</th>
-            <th class="mid">iDDS request status</th>
-            <th class="num">iDDS files <br> (processed | total | %)</th>
-            <th>Started</th>
-            <th>Since last update [d:h:m:s]</th>
-            <th ng-if="datasets.length > 1">Dataset</th>
-          </tr>
-          <tr class="nowrap" ng-repeat="dataset in datasets">
-            <td class="icons1">
-              {% if request.session.rucio_ui|length > 0 %}
-                <a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
-                  {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width=14 height=14 border=0>
-                </a>
-              {% else %}
-                {$ dataset.rrule_cut $}
-              {% endif %}
-            </td>
-            <td>{$ dataset.source_rse $}</td>
-            <td>{$ dataset.destination_rse $}</td>
-            <td class="{$ dataset.status $}_fill">
-              {% if viewParams.MON_VO == 'ATLAS' and task.tasktype != 'anal'%}
-                <a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ dataset.step_action_id $}/">
+              </td>
+              <td>{$ dataset.source_rse $}</td>
+              <td>{$ dataset.destination_rse $}</td>
+              <td class="{$ dataset.status $}_fill">
+                {% if viewParams.MON_VO == 'ATLAS' and task.tasktype != 'anal' %}
+                  <a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ dataset.step_action_id $}/">
+                    {$ dataset.status $}
+                  </a>
+                {% else %}
                   {$ dataset.status $}
-                </a>
-              {% else %}
-                {$ dataset.status $}
-              {% endif %}
-            </td>
-            <td class="num">
-              {$ dataset.staged_files $} | {$ dataset.total_files $}  | {$ dataset.staged_files_pct $}%
-            </td>
-            <td class="{$ dataset.idds_status.toLowerCase() $}_fill">
-              <a href="/idds/?reqid={$ dataset.idds_request_id $}">
+                {% endif %}
+              </td>
+              <td class="num">
+                {$ dataset.staged_files $} | {$ dataset.total_files $}  | {$ dataset.staged_files_pct $}%
+              </td>
+              <td class="{$ dataset.idds_status.toLowerCase() $}_fill">
+                <a href="/idds/?reqid={$ dataset.idds_request_id $}">
                   {$ dataset.idds_status $}
-              </a>
-            </td>
-            <td class="num">
-              {$ dataset.idds_out_processed_files $} | {$ dataset.idds_out_total_files $} | {$ dataset.idds_pctprocessed $}%
-            </td>
-            <td>{$ dataset.start_time $}</td>
-            <td>{$ dataset.update_time $}</td>
-            <td ng-if="datasets.length > 1">
-                <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
-                    {$ dataset.dataset $}
                 </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              </td>
+              <td class="num">
+                {$ dataset.idds_out_processed_files $} | {$ dataset.idds_out_total_files $} | {$ dataset.idds_pctprocessed $}%
+              </td>
+              <td>{$ dataset.start_time $}</td>
+              <td>{$ dataset.update_time $}</td>
+              <td>
+                <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
+                  {$ dataset.dataset $}
+                </a>
+              </td>
+               <td>
+                  <a target="_blank" href="https://monit-grafana.cern.ch/d/e77b84d4-d854-4a18-b2c6-5fb67f648832/ddm-transfers-errors?from={$ dataset.start_time_ms $}&orgId=17&to=now&var-bin=1h&var-dataset_name={$ dataset.dataset.split(':')[1] $}&var-dst_cloud=All&var-dst_country=All&var-dst_federation=All&var-dst_site=All&var-dst_tier=All&var-error_filter=&var-src_cloud=All&var-src_country=All&var-src_federation=All&var-src_site=All&var-src_tier=All&var-activity=Analysis%20Input&var-activity=Production%20Input&var-activity=Staging">
+                    <img src="{% static 'images/grafana.png' %}" width=14 height=14 border=0>
+                  </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+       </div>
+      </div>
 
     {% if task.idds_info and not task.dc_info == "dc" %}
         <div id="iDDsDiv" class="table-scroll" ng-app="iDDsInfoAppAJS" ng-controller="iDDSInfoForTaskController" style="display:none;">
@@ -946,10 +955,12 @@ app.controller('StagingDSController', function ($scope, $http) {
   $scope.MON_VO = MON_VO;
 
   $scope.getStagingDS = function () {
+    // !!!FIXME!!! TEMPORARY until full migration of DC from ProdSys to PanDA
+    let task_type = ({{ task.age }} > 7 && '{{ task.tasktype|safe }}' == 'prod') ? 'prod': 'analy';
     $http({
       url: '/api/dc/staginginfofortask/',
       method: "GET",
-      params: { 'jeditaskid': jeditaskid, 'tasktype': '{{task.tasktype|safe}}' }
+      params: { 'jeditaskid': jeditaskid, 'tasktype': task_type }
     }).then(function (res) {
       if (Array.isArray(res.data)) {
         $scope.datasets = res.data;
@@ -959,7 +970,7 @@ app.controller('StagingDSController', function ($scope, $http) {
 
       if ($scope.datasets.length > 0) {
         $scope.datasets.forEach(function (dataset) {
-          if ('rse' in dataset) {
+          if ('rse' in dataset && dataset.rse != null) {
             dataset.rrule_cut = dataset.rse.slice(0, 3) + '...' + dataset.rse.slice(-3);
           } else {
             dataset.rrule_cut = '';
@@ -1398,6 +1409,55 @@ $(document).ready(function () {
     if (url.indexOf("#datamovement") > -1) {
       toggleTaskDataMovement();
     }
+    var checkExist = setInterval(function () {
+        if ($('#dsTable tbody tr').length > 0) {
+            clearInterval(checkExist);
+            var datasetCount = parseInt($('#datasetCount').attr('data-count')) || 0;
+
+            var table = $('#dsTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true,
+                scrollX: true,
+                lengthMenu:  [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+                columns: [
+                    { data: 'rrule_cut' },
+                    { data: 'source_rse' },
+                    { data: 'destination_rse' },
+                    { data: 'status' },
+                    { data: 'staged_files' },
+                    { data: 'idds_status' },
+                    { data: 'idds_out_processed_files' },
+                    { data: 'start_time' },
+                    { data: 'update_time' },
+                    { data: 'dataset' },
+                    { data: 'errors_link' }
+                ],
+                columnDefs: [
+                    {
+                        targets: [3, 5, 10],
+                        createdCell: function (td, cellData, rowData, row, col) {
+                            $(td).css('text-align', 'center');
+                        }
+                    },
+                    {
+                        targets: 10,
+                        orderable: false,
+                        searchable: false
+                    }
+                ]
+            });
+            if (datasetCount === 1) {
+                table.column(9).visible(false);
+            } else {
+                table.column(9).visible(true);
+            }
+            $(table.column(10).header()).css('text-align', 'center');
+            $(table.column(3).header()).css('text-align', 'center');
+            $(table.column(5).header()).css('text-align', 'center');
+        }
+    }, 500);
 });
 
 function togglePlots() {

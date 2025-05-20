@@ -120,4 +120,5 @@ GITLAB_PATH_PER_PACKAGE =  MappingProxyType({
     "egammaValidation": "Reconstruction/egamma/egammaValidation/test"
 })
 
-AUTHORIZED_HOSTS = ['aibuild16-025', 'aibuild16-026']
+#AUTHORIZED_HOSTS = ['aibuild16-025', 'aibuild16-026', 'atlas-art-local-01', 'atlas-art-local-02']
+AUTHORIZED_HOSTS = ['atlas-art-local-01', 'atlas-art-local-02', 'aibuild16-025', 'aibuild16-026', 'aibuild-art-c4x2eph-001', 'aibuild-art-c4x2eph-002']

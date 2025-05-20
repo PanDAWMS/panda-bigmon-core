@@ -55,7 +55,7 @@ class CernAuthOIDC(BaseOAuth2):
             'roles': token_dict.get('resource_access').get(settings.SOCIAL_AUTH_CERNOIDC_KEY).get('roles') or [],
         }
         if user_data['roles'] and len(user_data['roles']) > 0:
-            is_success = update_user_groups(user_data['username'], user_data['roles'])
+            is_success = update_user_groups(user_data['email'], user_data['roles'])
             _logger.info(f"User groups update status: {is_success}, user: {user_data['email']}, groups: {user_data['roles']}")
         return user_data
 

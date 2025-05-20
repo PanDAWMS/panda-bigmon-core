@@ -417,10 +417,6 @@ def get_job_summary_split(query, extra):
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from {db_scheme}.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {extra_str}
         union
-        select jw4.pandaid, jw4.resource_type, jw4.computingsite, jw4.prodsourcelabel, jw4.jobstatus, jw4.modificationtime, 0 as rcores, 0 as walltime,
-            case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
-        from {db_scheme}.jobswaiting4 jw4 where {extra_str}
-        union
         select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from {db_scheme}.jobsdefined4 jd4  where {extra_str}  

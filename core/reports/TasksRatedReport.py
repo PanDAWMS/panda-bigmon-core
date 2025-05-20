@@ -122,12 +122,22 @@ class TasksRatedReport:
 
         # calculate average rating and count of ratings for each task
         for task in self.tasks:
-            task['rating_avg'] = sum([r['value'] for r in task['ratings']]) / len(task['ratings'])
-            task['rating_avg_emoji'] = self.emojis_dict[round_to_n_digits(task['rating_avg'], 0, method='floor')]
-            task['rating_count'] = len(task['ratings'])
+            if len(task['ratings']) > 0:
+                task['rating_avg'] = sum([r['value'] for r in task['ratings']]) / len(task['ratings'])
+                task['rating_avg_emoji'] = self.emojis_dict[round_to_n_digits(task['rating_avg'], 0, method='floor')]
+                task['rating_count'] = len(task['ratings'])
+            else:
+                task.update({
+                    'rating_avg': 0,
+                    'rating_avg_emoji': '',
+                    'rating_count': 0
+                })
 
         # calculate overall stats
-        self.overall_stats['rating_avg'] = round_to_n_digits(sum([task['rating_avg'] for task in self.tasks]) / len(self.tasks), 2, method='normal')
+        self.overall_stats['rating_avg'] = round_to_n_digits(
+            sum([task['rating_avg'] for task in self.tasks]) / len(self.tasks),
+            n=2, method='normal'
+        ) if len(self.tasks) > 0 else 0
         self.overall_stats['ratings_count'] = sum([task['rating_count'] for task in self.tasks])
         self.overall_stats['tasks_count'] = len(self.tasks)
         self.overall_stats['reporter_count'] = len(self.user_names)

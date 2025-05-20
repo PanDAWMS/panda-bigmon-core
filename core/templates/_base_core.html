@@ -681,7 +681,7 @@
 
       function clearComparisonList() {
           let object_name = 'job';
-          var newURL = '{{ request.session.notimestampurl|safe }}';
+          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/clearcomparison/',
               data: 'object='+object_name,
@@ -725,7 +725,7 @@
       }
 
       function grantRights() {
-          var newURL = '{{ request.session.notimestampurl|safe }}';
+          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/grantrights/',
               data: 'type=tester',
@@ -737,7 +737,7 @@
       }
 
       function denyRights() {
-          var newURL = '{{ request.session.notimestampurl|safe }}';
+          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/denyrights/',
               data: 'type=tester',
@@ -763,7 +763,7 @@
               data: url,
               async: true,
               success: function() {
-                  window.location = '{{ request.session.notimestampurl|safe }}timestamp={% now "H:i:s" %}'
+                  window.location = '{{ request.session.urls_cut.notimestampurl|safe }}timestamp={% now "H:i:s" %}'
               }
           });
       }

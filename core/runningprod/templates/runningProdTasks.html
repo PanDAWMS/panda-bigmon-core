@@ -33,13 +33,13 @@
 <table class="minimalistic-table">
   <thead>
     <tr>
-        <th>Selection Preset</th>
+        <th>Preset</th>
         <th>Working group</th>
         <th>Processing type</th>
+        <th>Input</th>
+        <th>Output</th>
         <th>Campaign</th>
         <th>Status</th>
-        <th></th>
-        <th></th>
         <th></th>
         <th></th>
     </tr>
@@ -55,11 +55,11 @@
         </select>
       </td>
       <td>
-        <select id="workinggroup">
-          <option value=""  selected="selected" {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}>All</option>
+        <select multiple id="workinggroup">
+          <option value=""  {% if 'workinggroup' not in requestParams and 'preset' not in requestParams %} selected="selected" {% endif %}>All</option>
           <option value="!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT"
             {% if requestParams.workinggroup == '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
-            {% if requestParams.preset == 'MC' and requestParams.workinggroup != '!AP_REPR,!AP_VALI,!GP_PHYS,!GP_THLT' %} selected="selected" {% endif %}
+            {% if requestParams.preset == 'MC' and 'workinggroup' not in requestParams %} selected="selected" {% endif %}
             {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
           >NOT IN ('AP_REPR', 'AP_VALI', 'GP_PHYS', 'GP_THLT')</option>
           <option value="GP_*"
@@ -76,7 +76,7 @@
             {% for field in sumd %}
               {% if field.field == 'workinggroup' %}
                 {% for wg in field.list %}
-                  <option value={{ wg.kname }} {% if wg.kname == requestParams.workinggroup %} selected="selected" {% endif %}>{{ wg.kname }}</option>
+                  <option value={{ wg.kname }} {% if wg.kname in requestParams.workinggroup|split %} selected="selected" {% endif %}>{{ wg.kname }}</option>
                 {% endfor %}
               {% endif %}
             {% endfor %}
@@ -84,67 +84,77 @@
         </select>
       </td>
       <td>
-        <select id="processingtype">
-          <option value=""  selected="selected"
-              {% if requestParams.preset == 'MC' %} disabled="disabled" {% endif %}
-          >All</option>
+        <select multiple id="processingtype">
+          <option value=""  {% if 'processingtype' not in requestParams and 'preset' not in requestParams %} selected="selected" {% endif %}>All</option>
           <option value="evgen|pile|simul|recon"
-              {% if requestParams.preset == 'MC'  or requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'MC' and 'processingtype' not in requestParams %} selected="selected" {% endif %}
+                {% if 'processingtype' in requestParams and requestParams.processingtype == 'evgen|pile|simul|recon' %} selected="selected" {% endif %}
               {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
           >evgen|pile|simul|recon</option>
           <option value="merge|deriv"
-              {% if requestParams.preset == 'DPD' or requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'DPD' and 'processingtype' not in requestParams %} selected="selected" {% endif %}
+                {% if 'processingtype' in requestParams and requestParams.processingtype == 'merge|deriv' %} selected="selected" {% endif %}
               {% if requestParams.preset == 'MC' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
           >merge|deriv</option>
 
           <option value="reprocessing"
-              {% if requestParams.processingtype == 'reprocessing' or requestParams.preset == 'DATA' %} selected="selected" {% endif %}
+              {% if requestParams.preset == 'DATA' and 'processingtype' not in requestParams %} selected="selected" {% endif %}
+                {% if 'processingtype' in requestParams and requestParams.processingtype == 'reprocessing' %} selected="selected" {% endif %}
               {% if requestParams.preset == 'MC' or requestParams.preset == 'DPD' %} disabled="disabled" {% endif %}
           >reprocessing</option>
 
           {% if requestParams.preset != 'DATA' %}
-            {% for ptype in sumd.1.list %}
-              <option value={{ ptype.kname }} {% if ptype.kname == requestParams.processingtype %} selected="selected" {% endif %}>{{ ptype.kname }}</option>
-            {% endfor %}
+            {% for f in sumd %}{% if f.field == 'processingtype' %}{% for v in f.list %}
+              <option value={{ v.kname }} {% if v.kname in requestParams.processingtype|split %} selected="selected" {% endif %}>{{ v.kname }}</option>
+            {% endfor %}{% endif %}{% endfor %}
           {% endif %}
         </select>
       </td>
       <td>
-        <select id="campaign">
-          <option value=""  selected="selected">All</option>
+        <select multiple id="inputdatasettype">
+          <option value="" {% if 'inputdatasettype' not in requestParams %} selected="selected" {% endif %}>All</option>
+          {% for f in sumd %}{% if f.field == 'inputdatasettype' %}{% for v in f.list %}
+            <option value="{{ v.kname }}" {% if v.kname in requestParams.inputdatasettype|split %} selected="selected" {% endif %}>{{ v.kname }}</option>
+          {% endfor %}{% endif %}{% endfor %}
+        </select>
+      </td>
+      <td>
+        <select multiple id="outputdatasettype">
+          <option value="" {% if 'outputdatasettype' not in requestParams %}selected="selected"{% endif %}>All</option>
+          {% for f in sumd %}{% if f.field == 'outputdatasettype' %}{% for v in f.list %}
+            <option value="{{ v.kname }}" {% if v.kname in requestParams.outputdatasettype|split %} selected="selected" {% endif %}>{{ v.kname }}</option>
+          {% endfor %}{% endif %}{% endfor %}
+        </select>
+      </td>
+      <td>
+        <select multiple id="campaign">
+          <option value="" {% if 'campaign' not in requestParams %} selected="selected"{% endif %}>All</option>
           <option value="MC*"
             {% if requestParams.preset == 'MC' or requestParams.campaign == 'MC*' %} selected="selected" {% endif %}
             {% if requestParams.preset == 'DPD' or requestParams.preset == 'DATA' %} disabled="disabled" {% endif %}
           > like 'MC%'</option>
           {% for campaign in sumd.0.list %}
             <option value="*{{ campaign.kname }}*"
-                {% if campaign.kname in requestParams.campaign %} selected="selected" {% endif %}
+                {% if campaign.kname in requestParams.campaign or campaign.kname in requestParams.campaign|split %} selected="selected" {% endif %}
             >{{ campaign.kname }} </option>
           {% endfor %}
-
         </select>
       </td>
       <td>
-        <select id="status">
-          <option value=""  selected="selected">All</option>
-          {% for status in sumd.2.list %}
-            <option value={{ status.kname }}
-                {% if status.kname == requestParams.status %} selected="selected" {% endif %}
-            > {{ status.kname }} </option>
-          {% endfor %}
+        <select multiple id="status">
+          <option value="" {% if 'status' not in requestParams %} selected="selected"{% endif %}>All</option>
+          {% for f in sumd %}{% if f.field == 'status' %}{% for v in f.list %}
+            <option value={{ v.kname }} {% if v.kname in requestParams.status|split %} selected="selected" {% endif %}>{{ v.kname }}</option>
+          {% endfor %}{% endif %}{% endfor %}
+          {% if requestParams.preset == 'MC' %}
+            <option value="!paused" {% if 'status' in requestParams and requestParams.status == '!paused' %} selected="selected"{% endif %}>!paused</option>
+          {% endif %}
         </select>
       </td>
       <td>
-        <label><input type="checkbox" id="hpc" name="hpc" value="hpc"
-                  {% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
-      </td>
-      <td>
-        <label><input type="checkbox" id="es" name="es" value="1"
-                  {% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
-      </td>
-      <td>
-          <label><input type="checkbox" id="jumbo" name="jumbo" value="1"
-                  {% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
+        <label><input type="checkbox" id="hpc" name="hpc" value="hpc"{% if requestParams.site == 'hpc' %} checked {% endif %}>HPC</label>
+        <label><input type="checkbox" id="es" name="es" value="1"{% if requestParams.eventservice == '1' %} checked {% endif %}>ES</label>
+        <label><input type="checkbox" id="jumbo" name="jumbo" value="1"{% if requestParams.jumbo == '1' %} checked {% endif %}>Jumbo</label>
       </td>
       <td>
           <a id="button-go" class="button primary">Go!</a>
@@ -251,7 +261,6 @@
   <th>Priority</th>
   {% if requestParams.preset == 'DPD' %}
     <th>pTag</th>
-    <th>Output types</th>
   {% endif %}
   {% if requestParams.preset == 'MC' %}
     <th>Sim</th>
@@ -260,6 +269,8 @@
   {% if requestParams.preset == 'DATA' %}
       <th>rTag</th>
   {% endif %}
+  <th>Input</th>
+  <th>Output</th>
   <th>Age</th>
   <th>Cores</th>
   {% if requestParams.preset == 'MC' or requestParams.preset == '' %}
@@ -300,14 +311,21 @@ var charts = {};
 var requestParams = {{ requestParams | safe }};
 var ntasks = {{ gsum.ntasks | safe }};
 
-document.getElementById("button-go").addEventListener("click", go);
-document.getElementById("button-extra-plots").addEventListener("click", toggleByID.bind(null, 'extraplots', 'plussign'));
-document.getElementById("nEventsTrendLink").addEventListener("click", toggleHistoricalTrend.bind(null, 'nEventsLineChart', 'nEventsTrendLink'));
+if (document.getElementById("button-go")) {
+  document.getElementById("button-go").addEventListener("click", go);
+}
+if (document.getElementById("button-extra-plots"))  {
+  document.getElementById("button-extra-plots").addEventListener("click", toggleByID.bind(null, 'extraplots', 'plussign'));
+}
+if (document.getElementById("nEventsTrendLink")) {
+  document.getElementById("nEventsTrendLink").addEventListener("click", toggleHistoricalTrend.bind(null, 'nEventsLineChart', 'nEventsTrendLink'));
+}
 
 document.getElementById("presetChoice").addEventListener("change", onPresetChoice);
 document.getElementById("workinggroup").addEventListener("change",onSubElementChoice);
 document.getElementById("processingtype").addEventListener("change",onSubElementChoice);
-
+document.getElementById("inputdatasettype").addEventListener("change",onSubElementChoice);
+document.getElementById("outputdatasettype").addEventListener("change",onSubElementChoice);
 document.getElementById("campaign").addEventListener("change", onSubElementChoice);
 document.getElementById("status").addEventListener("change",onSubElementChoice);
 document.getElementById("hpc").addEventListener("change",onSubElementChoice);
@@ -495,6 +513,8 @@ $(document).ready(function () {
     var processingtype = document.getElementById ("processingtype");
     var campaign = document.getElementById ("campaign");
     var status = document.getElementById ("status");
+    var inputdatasettype = document.getElementById ("inputdatasettype");
+    var outputdatasettype = document.getElementById ("outputdatasettype");
     var warning = document.getElementById ("warning");
 
     if (presetChoice.value == 'MC') {
@@ -502,6 +522,8 @@ $(document).ready(function () {
         processingtype.selectedIndex = 1;
         campaign.selectedIndex = 1;
         status.selectedIndex = 0;
+        inputdatasettype.selectedIndex = 0;
+        outputdatasettype.selectedIndex = 0;
     }
 
     if (presetChoice.value == 'DPD') {
@@ -509,6 +531,8 @@ $(document).ready(function () {
         processingtype.selectedIndex = 2;
         campaign.selectedIndex = 0;
         status.selectedIndex = 0;
+        inputdatasettype.selectedIndex = 0;
+        outputdatasettype.selectedIndex = 0;
     }
 
     if (presetChoice.value == 'DATA') {
@@ -516,6 +540,8 @@ $(document).ready(function () {
         processingtype.selectedIndex =3;
         campaign.selectedIndex =0;
         status.selectedIndex = 0;
+        inputdatasettype.selectedIndex = 0;
+        outputdatasettype.selectedIndex = 0;
     }
 
 
@@ -524,6 +550,8 @@ $(document).ready(function () {
         processingtype.selectedIndex = 0;
         campaign.selectedIndex = 0;
         status.selectedIndex = 0;
+        inputdatasettype.selectedIndex = 0;
+        outputdatasettype.selectedIndex = 0;
     }
     warning.style.display = '';
   }
@@ -534,73 +562,57 @@ $(document).ready(function () {
   }
 
   function go() {
+      const queryBase = "{% url 'runningProdTasks' %}";
+      const params = new URLSearchParams();
+      const select_single = [
+          ["presetChoice", "preset"],
+      ]
+      const select_multi = [
+          ["workinggroup", "workinggroup"],
+          ["processingtype", "processingtype"],
+          ["inputdatasettype", "inputdatasettype"],
+          ["outputdatasettype", "outputdatasettype"],
+          ["campaign", "campaign"],
+          ["status", "status"]
+      ];
+      select_single.forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el && el.value.trim()) {
+              params.append(key, el.value.trim());
+          }
+      });
+      select_multi.forEach(([id, key]) => {
+        const values = Array.from(document.getElementById(id).selectedOptions).map(({ value }) => value).filter(value => value.trim() !== '');
+        if (values && values.length > 0) {
+          params.append(key, values.join('|'));
+        }
+      })
+      const checkboxes = [
+          ["hpc", "site"],
+          ["es", "eventservice"],
+          ["jumbo", "jumbo"]
+      ];
+      checkboxes.forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el && el.checked) {
+              params.append(key, el.value);
+          }
+      });
 
-      var workinggroupQ = "";
-      var processingtypeQ = "";
-      var campaignQ = "";
-      var presetQ = "";
-      var statusQ = "";
-      var hpcsitesQ = "";
-      var esQ = "";
-      var jumboQ = "";
-      var workinggroup = document.getElementById ("workinggroup");
-      var processingtype = document.getElementById ("processingtype");
-      var campaign = document.getElementById ("campaign");
-      var presetChoice = document.getElementById ("presetChoice");
-      var query = {% url 'runningProdTasks' %} ;
-      var status = document.getElementById ("status");
-      var hpcsites = document.getElementById('hpc');
-      var es = document.getElementById('es');
-      var jumbo = document.getElementById('jumbo');
-
-      if (workinggroup.value.length > 0) workinggroupQ = "workinggroup="+workinggroup.value;
-      if (processingtype.value.length > 0) processingtypeQ = "processingtype="+processingtype.value;
-      if (campaign.value.length > 0) campaignQ = "campaign="+campaign.value;
-      if (presetChoice.value.length > 0) presetQ = "preset="+presetChoice.value;
-      if (status.value.length > 0) statusQ = "status="+status.value;
-      if (hpcsites.checked) hpcsitesQ = "site="+hpcsites.value;
-      if (es.checked) esQ = "eventservice="+es.value;
-      if (jumbo.checked) jumboQ = "jumbo="+jumbo.value;
-
-      if ((workinggroupQ.length>1) || (processingtypeQ.length>1) || (campaignQ.length>1) || (presetQ.length > 1) || (statusQ.length > 1) || (hpcsitesQ.length > 1) || (esQ.length > 1) || (jumboQ.length > 1)) {
-          if ('days' in requestParams ) {
-            query += "?days=" + requestParams.days + '&';
-          }
-          else if ('hours' in requestParams ) {
-            query += "?hours=" + requestParams.hours + '&';
-          }
-          else if ('date_from' in requestParams && 'date_to' in requestParams ) {
-            query += "?date_from=" + requestParams.date_from + '&date_to=' + requestParams.date_to + '&';
-          }
-          else {
-            query += "?";
-          }
-          if (presetQ.length > 1) {
-              query += presetQ+"&";
-          }
-          if (workinggroupQ.length > 1) {
-              query += workinggroupQ+"&";
-          }
-          if (processingtypeQ.length > 1) {
-              query += processingtypeQ+"&";
-          }
-          if (campaignQ.length > 1) {
-              query += campaignQ+"&";
-          }
-          if (statusQ.length > 1) {
-              query += statusQ+"&";
-          }
-          if (hpcsitesQ.length > 1) {
-              query += hpcsitesQ+"&";
-          }
-          if (esQ.length > 1) {
-              query += esQ+"&";
-          }
-          if (jumboQ.length > 1) {
-              query += jumboQ+"&";
-          }
-          query = query.substring(0, query.length - 1);
+      // Handle time filters
+      if ('days' in requestParams) {
+          params.append('days', requestParams.days);
+      } else if ('hours' in requestParams) {
+          params.append('hours', requestParams.hours);
+      } else if ('date_from' in requestParams && 'date_to' in requestParams) {
+          params.append('date_from', requestParams.date_from);
+          params.append('date_to', requestParams.date_to);
       }
+
+      const query = params.toString()
+          ? `${queryBase}?${params.toString()}`
+          : queryBase;
+
       window.location = query;
   }
 
@@ -746,6 +758,30 @@ $(document).ready(function () {
                       return '---';
                   }
               },
+          },
+          {
+              "data": "inputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                if (data && data !== '') {
+                  return '<a href = "{{ xurl }}inputdatasettype=' + full['inputdatasettype'] + '">' + full['inputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}inputdatasettype=Not+specified">---</a>'
+                }
+              }
+          },
+          {
+              "data": "outputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data && data !== '') {
+                  return '<a href = "{{ xurl }}outputdatasettype=' + full['outputdatasettype'] + '">' + full['outputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}outputdatasettype=Not+specified">---</a>'
+                }
+              }
           },
           {
               "data": "age",
@@ -992,8 +1028,28 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "inputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                if (data && data !== '') {
+                  return '<a href = "{{ xurl }}inputdatasettype=' + full['inputdatasettype'] + '">' + full['inputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}inputdatasettype=Not+specified">---</a>'
+                }
+              }
+          },
+          {
               "data": "outputtypes",
               sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                if (data && data !== '' && data !== 'N/A') {
+                  return '<a href = "{{ xurl }}outputdatasettype=' + full['outputdatasettype'] + '">' + full['outputtypes'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}outputdatasettype=Not+specified">---</a>'
+                }
+              }
           },
           {
               "data": "age",
@@ -1230,6 +1286,30 @@ $(document).ready(function () {
               }
           },
           {
+              "data": "inputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                if (data && data !== '') {
+                  return '<a href = "{{ xurl }}inputdatasettype=' + full['inputdatasettype'] + '">' + full['inputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}inputdatasettype=Not+specified">---</a>'
+                }
+              }
+          },
+          {
+              "data": "outputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data && data !== '') {
+                  return '<a href = "{{ xurl }}outputdatasettype=' + full['outputdatasettype'] + '">' + full['outputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}outputdatasettype=Not+specified">---</a>'
+                }
+              }
+          },
+          {
               "data": "age",
               sDefaultContent: "",
               className: 'num',
@@ -1454,6 +1534,30 @@ $(document).ready(function () {
               "data": "priority",
               sDefaultContent: "",
               className: 'num'
+          },
+          {
+              "data": "inputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                if (data && data !== '') {
+                  return '<a href = "{{ xurl }}inputdatasettype=' + full['inputdatasettype'] + '">' + full['inputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}inputdatasettype=Not+specified">---</a>'
+                }
+              }
+          },
+          {
+              "data": "outputdatasettype",
+              sDefaultContent: "",
+              "render": function(data, type, full, meta) {
+                  if (data && data !== '') {
+                  return '<a href = "{{ xurl }}outputdatasettype=' + full['outputdatasettype'] + '">' + full['outputdatasettype'] + '</a>'
+                }
+                else {
+                  return '<a href = "{{ xurl }}outputdatasettype=Not+specified">---</a>'
+                }
+              }
           },
           {
               "data": "age",

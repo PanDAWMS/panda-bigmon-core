@@ -587,7 +587,7 @@ def round_to_n_digits(x, n=0, method='normal'):
     Round float to n decimals.
     :param x: float number
     :param n: decimals
-    :param method: str: normal, up or down
+    :param method: str: normal, ceil or floor
     :return:
     """
     if not x:

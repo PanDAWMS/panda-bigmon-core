@@ -11,6 +11,7 @@ from django.db import transaction, DatabaseError
 from core.runningprod.models import ProdNeventsHistory, RunningProdTasksModel
 from core.common.models import JediTasks
 import core.constants as const
+from core.libs.exlib import round_to_n_digits
 
 from core.libs.sqlcustom import preprocess_wild_card_string
 
@@ -68,7 +69,7 @@ def updateView(request, query, exquery, wild_card_str):
     ])).difference(set(jedi_tasks_fields))
 
     for f in running_prod_fields:
-        if f in request.session['requestParams'] and request.session['requestParams'][f] and f not in query and f not in wild_card_str:
+        if f in request.session['requestParams'] and request.session['requestParams'][f] and f not in query and f not in wild_card_str and 'datasettype' not in f:
             if f == 'hashtags':
                 wild_card_str += ' and ('
                 wildCards = request.session['requestParams'][f].split(',')
@@ -95,6 +96,31 @@ def updateView(request, query, exquery, wild_card_str):
     return query, exquery, wild_card_str
 
 
+def filter_running_task_list(task_list, request_params):
+    """
+    Filter out tasks for too heavy filters on database side
+    :param task_list: list of dicts
+    :param request_params: dict of params
+    :return: task_list_filtered: list of dicts - filtered
+    """
+    heavy_filters = ('inputdatasettype', 'outputdatasettype')
+    filters_to_apply = list(set([p for p, v in request_params.items()]) & set(heavy_filters))
+    task_list_filtered = []
+    jeditaskid_to_remove = {}
+    if len(filters_to_apply) > 0:
+        for task in task_list:
+            for f in filters_to_apply:
+                v_list = request_params[f].split('|') if '|' in request_params[f] else [request_params[f],]
+                if f in task and request_params[f] != 'Not specified' and task[f] not in v_list:
+                    jeditaskid_to_remove[task['jeditaskid']] = 1
+                elif f in task and request_params[f] == 'Not specified' and (task[f] is not None and task[f] != ''):
+                    jeditaskid_to_remove[task['jeditaskid']] = 1
+
+    task_list_filtered = [t for t in task_list if t['jeditaskid'] not in jeditaskid_to_remove]
+    return task_list_filtered
+
+
+
 def clean_running_task_list(task_list):
     """
     Cleaning task list
@@ -103,7 +129,7 @@ def clean_running_task_list(task_list):
     """
     for task in task_list:
         task['rjobs'] = 0 if task['rjobs'] is None else task['rjobs']
-        task['percentage'] = 0 if task['percentage'] is None else round(100 * task['percentage'], 1)
+        task['percentage'] = 0 if task['percentage'] is None else round_to_n_digits(100 * task['percentage'], n=1, method='floor')
         task['nevents'] = task['nevents'] if task['nevents'] is not None else 0
         task['neventsused'] = task['neventsused'] if 'neventsused' in task and task['neventsused'] is not None else 0
         task['neventstobeused'] = task['neventstobeused'] if 'neventstobeused' in task and task['neventstobeused'] is not None else 0
@@ -114,10 +140,15 @@ def clean_running_task_list(task_list):
             task['neventsdone'] = task['neventsused']
             task['neventswaiting'] = task['neventstobeused']
 
-        # # check if running + waiting + done = total
-        # if task['neventsdone'] + task['neventsrunning'] + task['neventswaiting'] > task['nevents'] and \
-        #         task['neventsdone'] + task['neventswaiting'] == task['nevents']:
-        #     task['neventswaiting'] -= task['neventsrunning']
+        # adjust nevents for some evgen tasks filtering events, i.e. input events != output events
+        if (task['processingtype'] == 'evgen' and 'neventsrequested' in task and isinstance(task['neventsrequested'], int)
+                and task['neventsrequested'] > 0 and task['nevents'] > task['neventsrequested']):
+            coef = task['neventsrequested']/task['nevents']
+            task['nevents'] = task['neventsrequested']
+            task['neventsrunning'] = round_to_n_digits(coef * task['neventsrunning'], n=0)
+            task['neventswaiting'] = round_to_n_digits(coef * task['neventswaiting'], n=0)
+            task['neventsdone'] = round_to_n_digits(coef * task['neventsdone'], n=0)
+            task['neventsfailed'] = round_to_n_digits(coef * task['neventsfailed'], n=0)
 
         task['slots'] = task['slots'] if task['slots'] else 0
         task['aslots'] = task['aslots'] if task['aslots'] else 0

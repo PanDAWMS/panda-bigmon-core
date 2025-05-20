@@ -42,10 +42,12 @@ def get_workflow_progress_data(request_params, **kwargs):
     if not workflows_items.empty:
         workflows_items.USERNAME.fillna(value='', inplace=True)
         workflows_items.R_NAME.fillna(value='', inplace=True)
+        workflows_items.CLOUD.fillna(value='', inplace=True)
+        workflows_items.SITE.fillna(value='', inplace=True)
         workflows_items.WORKLOAD_ID = workflows_items.WORKLOAD_ID.astype('Int64')
         # workflows_items.PROCESSING_FILES.fillna(value=0, inplace=True)
         workflows_pd = workflows_items.astype({"R_CREATED_AT":str}).groupby(
-            ['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'USERNAME', 'TRANSFORM_TYPE', 'TRANSFORM_TAG'],
+            ['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'CLOUD', 'SITE', 'USERNAME', 'TRANSFORM_TYPE', 'TRANSFORM_TAG'],
             dropna=False
         ).agg(
             PROCESSING_FILES_SUM=pd.NamedAgg(column="PROCESSING_FILES", aggfunc="sum"),
@@ -81,7 +83,7 @@ def get_workflow_progress_data(request_params, **kwargs):
             "R_STATUS": subtitleValue.substitleValue("requests", "status")[workflow_group[1]] if \
                 workflow_group[1] in subtitleValue.substitleValue("requests", "status") else \
                 'N/A',
-            "CREATED_AT":workflow_group[8],
+            "CREATED_AT":workflow_group[10],
             "TOTAL_TASKS": 0,
             "TASKS_STATUSES": {},
             "FINISHED_FILES": 0,
@@ -94,25 +96,27 @@ def get_workflow_progress_data(request_params, **kwargs):
             "TRANSFORM_TYPE": 99,
             "TRANSFOMR_TAG": '',
             })
-        workflow['TRANSFORM_TYPE'] = subtitleValue.substitleValue("transforms", "type")[workflow_group[5]] if \
-            workflow_group[5] in subtitleValue.substitleValue("transforms", "type") else \
+        workflow['TRANSFORM_TYPE'] = subtitleValue.substitleValue("transforms", "type")[workflow_group[7]] if \
+            workflow_group[7] in subtitleValue.substitleValue("transforms", "type") else \
             'N/A'
-        workflow['TRANSFORM_TAG'] = workflow_group[6]
-        workflow['TOTAL_TASKS'] += workflow_group[10]
+        workflow['TRANSFORM_TAG'] = workflow_group[8]
+        workflow['TOTAL_TASKS'] += workflow_group[12]
         workflow['R_NAME'] = workflow_group[3]
-        workflow['USERNAME'] = workflow_group[4]
-        workflow['CREATED_AT'] = workflow_group[11]
+        workflow['CLOUD'] = workflow_group[4]
+        workflow['SITE'] = workflow_group[5]
+        workflow['USERNAME'] = workflow_group[6]
+        workflow['CREATED_AT'] = workflow_group[13]
         processing_status_name = subtitleValue.substitleValue("processings", "status")[workflow_group[2]] if \
             workflow_group[2] in subtitleValue.substitleValue("processings", "status") else \
             'N/A'
-        workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[10]
-        workflow['RELEASED_FILES'] += workflow_group[8]
-        workflow['PROCESSING_FILES'] += workflow_group[7]
-        workflow['TOTAL_FILES'] += workflow_group[9]
+        workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[12]
+        workflow['RELEASED_FILES'] += workflow_group[10]
+        workflow['PROCESSING_FILES'] += workflow_group[9]
+        workflow['TOTAL_FILES'] += workflow_group[11]
         workflow['UNRELEASED_FILES'] = workflow['TOTAL_FILES'] - workflow['RELEASED_FILES']
 
         # get data from JEDI of N processed files
-        tasks = workflow_group[12]
+        tasks = workflow_group[14]
         tasks = [{'jeditaskid': task} for task in tasks]
         tasks = get_datasets_for_tasklist(tasks)
         for task in tasks:

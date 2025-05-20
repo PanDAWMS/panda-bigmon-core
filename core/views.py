@@ -33,7 +33,7 @@ from django.template.context_processors import csrf
 import core.constants as const
 from core.common.utils import getPrefix, getContextVariables
 from core.pandajob.SQLLookups import CastDate
-from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobswaiting4, Jobsarchived4, Jobsarchived, PandaJob
+from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4, Jobsarchived, PandaJob
 from core.schedresource.models import SchedconfigJson
 from core.common.models import Filestable4, FilestableArch, Datasets, Users, Jobparamstable, JobsStatuslog, Jobsdebug, ResourceTypes
 from core.common.models import JediJobRetryHistory, JediTasks, TasksStatusLog, JediEvents, JediDatasets, JediDatasetContents, JediWorkQueue
@@ -49,7 +49,7 @@ from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
-from core.oauth.utils import login_customrequired, get_auth_provider, is_expert, get_full_name
+from core.oauth.utils import login_customrequired, get_auth_provider, is_expert, get_full_name, get_username
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
@@ -64,7 +64,7 @@ from core.libs.flowchart import buildGoogleFlowDiagram
 from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
     get_datasets_for_tasklist, get_task_name_by_taskid, get_task_rating
-from core.libs.task import get_dataset_locality, is_event_service_task, \
+from core.libs.task import get_dataset_locality, is_event_service_task, filter_task_list_by_relevance, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
 from core.libs.taskparams import analyse_task_submission_options
 from core.libs.job import get_job_list, calc_jobs_metrics, add_job_category, job_states_count_by_param, is_job_active, \
@@ -150,19 +150,6 @@ _logger = logging.getLogger('bigpandamon')
 LAST_N_HOURS_MAX = 0
 PLOW = 1000000
 PHIGH = -1000000
-
-standard_fields = ['processingtype', 'computingsite', 'jobstatus', 'prodsourcelabel', 'produsername', 'jeditaskid',
-                   'workinggroup', 'transformation', 'cloud', 'homepackage', 'inputfileproject', 'inputfiletype',
-                   'attemptnr', 'specialhandling', 'priorityrange', 'reqid', 'minramcount', 'eventservice',
-                   'jobsubstatus', 'nucleus', 'gshare', 'resourcetype']
-standard_taskfields = [
-    'workqueue_id', 'tasktype', 'superstatus', 'status', 'corecount', 'taskpriority', 'currentpriority', 'username',
-    'transuses', 'transpath', 'workinggroup', 'processingtype', 'cloud', 'campaign', 'project', 'stream', 'tag',
-    'reqid', 'ramcount', 'nucleus', 'eventservice', 'gshare', 'container_name', 'attemptnr', 'site']
-standard_errorfields = ['cloud', 'computingsite', 'eventservice', 'produsername', 'jeditaskid', 'jobstatus',
-                        'processingtype', 'prodsourcelabel', 'specialhandling', 'taskid', 'transformation',
-                        'workinggroup', 'reqid', 'computingelement']
-
 VONAME = {'atlas': 'ATLAS', 'bigpanda': 'BigPanDA', 'htcondor': 'HTCondor', 'core': 'LSST', '': ''}
 VOMODE = ' '
 
@@ -278,6 +265,13 @@ def initRequest(request, callselfmon=True):
         userrec = Users.objects.filter(dn__startswith=request.session['userdn']).values()
         if len(userrec) > 0:
             request.session['username'] = userrec[0]['name']
+
+    # add permissions to request session if user is authenticated
+    if 'user_permissions' not in request.session or len(request.session['user_permissions']) == 0:
+        if request.user.is_authenticated and 'ATLAS' in settings.DEPLOYMENT:
+            request.session['user_permissions'] = list(request.user.get_all_permissions())
+        else:
+            request.session['user_permissions'] = []
 
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
@@ -436,7 +430,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     wildSearchFields.append(field.name)
 
     deepquery = False
-    fields = standard_fields
+    fields = list(copy.deepcopy(const.JOB_FIELDS_ATTR_SUMMARY))
     if 'limit' in request.session['requestParams']:
         request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
     elif limit != -99 and limit > 0:
@@ -847,7 +841,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['%s__range' % param] = (int(leftlimit) * 1000, int(rightlimit) * 1000 - 1)
                         else:
                             query[param] = int(request.session['requestParams'][param])
-                    elif param == 'specialhandling' and not '*' in request.session['requestParams'][param]:
+                    elif param == 'specialhandling' and not is_wildcards(request.session['requestParams'][param]):
                         query['specialhandling__contains'] = request.session['requestParams'][param]
                     elif param == 'prodsourcelabel':
                         query['prodsourcelabel'] = request.session['requestParams'][param]
@@ -1392,10 +1386,9 @@ def jobList(request, mode=None, param=None):
 
         jobs.extend(Jobsdefined4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         jobs.extend(Jobsactive4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
-        listJobs = [Jobsarchived4, Jobsactive4, Jobswaiting4, Jobsdefined4]
+        listJobs = [Jobsarchived4, Jobsactive4, Jobsdefined4]
 
         if not noarchjobs:
             queryFrozenStates = []
@@ -1577,12 +1570,14 @@ def jobList(request, mode=None, param=None):
         showwarn = 1
 
     sumd, esjobdict = job_summary_dict(
-        request,
         jobs,
         const.JOB_FIELDS_ATTR_SUMMARY + (
             'corecount', 'noutputdatafiles', 'actualcorecount', 'schedulerid', 'pilotversion', 'computingelement',
             'container_name', 'nevents', 'processor_type'
-        ))
+        ),
+        produsername=user,
+        sortby=sortby
+    )
     # Sort in order to see the most important tasks
     if sumd:
         for item in sumd:
@@ -1783,17 +1778,16 @@ def jobList(request, mode=None, param=None):
             'clist': clist,
             'pandaids': [j['pandaid'] for j in jobsToShow if 'pandaid' in j],
             'warning': warning,
+            'timerange': [],
         }
         data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
-
         _logger.debug('Cache was set: {}'.format(time.time() - request.session['req_init_time']))
 
         if eventservice:
             response = render(request, 'jobListES.html', data, content_type='text/html')
         else:
             response = render(request, 'jobList.html', data, content_type='text/html')
-
         _logger.info('Rendered template: {}'.format(time.time() - request.session['req_init_time']))
         request = complete_request(request)
 
@@ -1902,8 +1896,8 @@ def jobList(request, mode=None, param=None):
 @never_cache
 def descendentjoberrsinfo(request):
     valid, response = initRequest(request)
-    if not valid: return response
-    data = {}
+    if not valid:
+        return response
 
     job_pandaid = job_jeditaskid = -1
     if 'pandaid' in request.session['requestParams']:
@@ -1911,21 +1905,14 @@ def descendentjoberrsinfo(request):
     if 'jeditaskid' in request.session['requestParams']:
         job_jeditaskid = int(request.session['requestParams']['jeditaskid'])
 
-    if (job_pandaid == -1) or (job_jeditaskid == -1):
+    if job_pandaid == -1 or job_jeditaskid == -1:
         data = {"error": "no pandaid or jeditaskid supplied"}
         del request.session['TFIRST']
         del request.session['TLAST']
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
     query = setupView(request, hours=365 * 24)
-    jobs = []
-    jobs.extend(Jobsdefined4.objects.filter(**query).values())
-    jobs.extend(Jobsactive4.objects.filter(**query).values())
-    jobs.extend(Jobswaiting4.objects.filter(**query).values())
-    jobs.extend(Jobsarchived4.objects.filter(**query).values())
-    if len(jobs) == 0:
-        jobs.extend(Jobsarchived.objects.filter(**query).values())
-
+    jobs = get_job_list(query, values=('jeditaskid', 'pandaid', 'jobsetid'))
     if len(jobs) == 0:
         del request.session['TFIRST']
         del request.session['TLAST']
@@ -1935,35 +1922,21 @@ def descendentjoberrsinfo(request):
     job = jobs[0]
     countOfInvocations = []
     if not is_event_service(job):
-        retryquery = {}
-        retryquery['jeditaskid'] = job['jeditaskid']
-        retryquery['oldpandaid'] = job['pandaid']
+        retryquery = {'jeditaskid': job['jeditaskid'], 'oldpandaid': job['pandaid']}
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
         pretries = getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations)
     else:
-        retryquery = {}
-        retryquery['jeditaskid'] = job['jeditaskid']
-        retryquery['oldpandaid'] = job['jobsetid']
-        retryquery['relationtype'] = 'jobset_retry'
+        retryquery = {'jeditaskid': job['jeditaskid'], 'oldpandaid': job['jobsetid'], 'relationtype': 'jobset_retry'}
         retries = JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values()
         pretries = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
 
-    query = {'jeditaskid': job_jeditaskid}
-    jobslist = []
+    query = {'jeditaskid': job_jeditaskid, 'pandaid__in': []}
     for retry in pretries:
-        jobslist.append(retry['oldpandaid'])
+        query['pandaid__in'].append(retry['oldpandaid'])
     for retry in retries:
-        jobslist.append(retry['oldpandaid'])
-    query['pandaid__in'] = jobslist
-
-    jobs = []
-    jobs.extend(Jobsdefined4.objects.filter(**query).values())
-    jobs.extend(Jobsactive4.objects.filter(**query).values())
-    jobs.extend(Jobswaiting4.objects.filter(**query).values())
-    jobs.extend(Jobsarchived4.objects.filter(**query).values())
-    jobs.extend(Jobsarchived.objects.filter(**query).values())
+        query['pandaid__in'].append(retry['oldpandaid'])
+    jobs = get_job_list(query, error_info=True)
     jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
-
     errors = {job['pandaid']: job['errorinfo'] for job in jobs if job['jobstatus'] == 'failed'}
 
     response = render(request, 'jobDescentErrors.html', {'errors': errors}, content_type='text/html')
@@ -2044,10 +2017,8 @@ def jobInfo(request, pandaid=None, batchid=None):
 
     jobs = []
     if pandaid or batchid:
-        startdate = timezone.now() - timedelta(hours=LAST_N_HOURS_MAX)
         jobs.extend(Jobsdefined4.objects.filter(**query).values())
         jobs.extend(Jobsactive4.objects.filter(**query).values())
-        jobs.extend(Jobswaiting4.objects.filter(**query).values())
         jobs.extend(Jobsarchived4.objects.filter(**query).values())
         if len(jobs) == 0:
             try:
@@ -2356,19 +2327,12 @@ def jobInfo(request, pandaid=None, batchid=None):
     jobsetinfo = {}
     if ('jobset' in request.session['requestParams'] or is_event_service(job)) and (
             'jobsetid' in job and job['jobsetid'] and isinstance(job['jobsetid'], int) and job['jobsetid'] > 0):
-        jobs = []
         jsquery = {
             'jobsetid': job['jobsetid'],
             'produsername': job['produsername'],
         }
         jvalues = ['pandaid', 'prodsourcelabel', 'processingtype', 'transformation', 'eventservice', 'jobstatus']
-        jobs.extend(Jobsdefined4.objects.filter(**jsquery).values(*jvalues))
-        jobs.extend(Jobsactive4.objects.filter(**jsquery).values(*jvalues))
-        jobs.extend(Jobswaiting4.objects.filter(**jsquery).values(*jvalues))
-        jobs.extend(Jobsarchived4.objects.filter(**jsquery).values(*jvalues))
-        jobs.extend(Jobsarchived.objects.filter(**jsquery).values(*jvalues))
-
-        jobs = add_job_category(jobs)
+        jobs = get_job_list(jsquery, values=jvalues)
         job_summary_list = job_states_count_by_param(jobs, param='category')
         for row in job_summary_list:
             jobsetinfo[row['value']] = sum([jss['count'] for jss in row['job_state_counts']])
@@ -2540,26 +2504,18 @@ def get_job_relationships(request, pandaid=-1):
     if 'direction' in request.session['requestParams'] and request.session['requestParams']['direction']:
         direction = request.session['requestParams']['direction']
 
-    job = {}
-    jobs = []
-    jquery = {
-        'pandaid': pandaid,
-    }
-    jvalues = ['pandaid', 'jeditaskid', 'jobsetid', 'specialhandling', 'eventservice']
-    jobs.extend(Jobsdefined4.objects.filter(**jquery).values(*jvalues))
-    jobs.extend(Jobsactive4.objects.filter(**jquery).values(*jvalues))
-    jobs.extend(Jobswaiting4.objects.filter(**jquery).values(*jvalues))
-    jobs.extend(Jobsarchived4.objects.filter(**jquery).values(*jvalues))
-    if len(jobs) == 0:
-        jobs.extend(Jobsarchived.objects.filter(**jquery).values(*jvalues))
+    jobs = get_job_list(
+        {'pandaid': pandaid,},
+        values=['pandaid', 'jeditaskid', 'jobsetid', 'specialhandling', 'eventservice']
+    )
     try:
         job = jobs[0]
     except IndexError:
+        job = {}
         _logger.exception('No job found with pandaid: {}'.format(pandaid))
 
     message = ''
     job_relationships = []
-
     countOfInvocations = []
     # look for job retries
     if 'jeditaskid' in job and job['jeditaskid'] and job['jeditaskid'] > 0:
@@ -2693,29 +2649,22 @@ def userList(request):
         # looking into user analysis jobs only
         query['prodsourcelabel'] = 'user'
         # dynamically assemble user summary info
-        values = ('eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
+        values = ['eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
                   'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'pandaid',
                   'starttime', 'endtime', 'modificationtime',
-                  'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig')
-        jobs = []
-        jobs.extend(Jobsdefined4.objects.filter(**query).values(*values))
-        jobs.extend(Jobsactive4.objects.filter(**query).values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**query).values(*values))
-        jobs.extend(Jobsarchived4.objects.filter(**query).values(*values))
-
+                  'atlasrelease', 'processingtype', 'workinggroup', 'currentpriority', 'container_name', 'cmtconfig']
+        jobs = get_job_list(query, values=values)
         jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=False)
         sumd = user_summary_dict(jobs)
         for user in sumd:
             if user['dict']['latest']:
                 user['dict']['latest'] = user['dict']['latest'].strftime(settings.DATETIME_FORMAT)
-        sumparams = ['jobstatus', 'prodsourcelabel', 'specialhandling', 'transformation', 'processingtype',
-                     'workinggroup', 'priorityrange']
+        sumparams = ['jobstatus', 'prodsourcelabel', 'specialhandling', 'transformation', 'processingtype', 'workinggroup', 'priorityrange']
         if VOMODE == 'atlas':
             sumparams.append('atlasrelease')
         else:
             sumparams.append('vo')
-
-        jobsumd = job_summary_dict(request, jobs, sumparams)[0]
+        jobsumd, _ = job_summary_dict(jobs, sumparams)
 
     if not is_json_request(request):
         data = {
@@ -2756,37 +2705,6 @@ def userInfo(request, user=''):
     query_task = None
     query_job = None
 
-    if user == '':
-        if 'user' in request.session['requestParams']:
-            user = request.session['requestParams']['user']
-        if 'produsername' in request.session['requestParams']:
-            user = request.session['requestParams']['produsername']
-        if request.user.is_authenticated and user == '{} {}'.format(
-                request.user.first_name.replace('\'', ''),
-                request.user.last_name
-        ):
-            is_prepare_history_links = True
-
-        # Here we serve only personal user pages. No user parameter specified
-        if user == '':
-            if request.user.is_authenticated:
-                login = user = request.user.username
-                # replace middle name by wildcard if exists
-                first_name = str(request.user.first_name.replace('\'', ''))
-                last_name = str(request.user.last_name)
-                if ' ' not in first_name and ' ' not in last_name:
-                    query_task = Q(username=login) | Q(username=f"{first_name} {last_name}")
-                    query_job = Q(produsername=login) | Q(produsername=f"{first_name} {last_name}")
-                else:
-                    first_name = first_name.split(' ')[0] if ' ' in first_name else first_name
-                    query_task = Q(username=login) | (Q(username__istartswith=first_name) & Q(username__iendswith=last_name))
-                    query_job = Q(produsername=login) | (Q(produsername__istartswith=first_name) & Q(produsername__iendswith=last_name))
-                # add to query all known full names of a user email
-                for n in get_full_name(request.user.email):
-                    query_task |= Q(username=n)
-                    query_job |= Q(produsername=n)
-                is_prepare_history_links = True
-
     if 'days' in request.session['requestParams']:
         days = int(request.session['requestParams']['days'])
     else:
@@ -2798,25 +2716,48 @@ def userInfo(request, user=''):
 
     requestParams = {}
     for param in request.session['requestParams']:
-        requestParams[escape_input(param.strip())] = escape_input(
-            request.session['requestParams'][param.strip()].strip())
+        requestParams[escape_input(param.strip())] = escape_input(request.session['requestParams'][param.strip()].strip())
     request.session['requestParams'] = requestParams
-
-    # getting most relevant links based on visit statistics
-    links = {}
-    if 'ORACLE' in settings.DEPLOYMENT:
-        if is_prepare_history_links:
-            userids = BPUser.objects.filter(email=request.user.email).values('id')
-            userid = userids[0]['id']
-            fields = {
-                'job': copy.deepcopy(standard_fields),
-                'task': copy.deepcopy(standard_taskfields),
-                'site': copy.deepcopy(const.SITE_FIELDS_STANDARD),
-            }
-            links = get_relevant_links(userid, fields)
 
     # Tasks owned by the user
     query, extra_query_str, _ = setupView(request, hours=days * 24, limit=999999, querytype='task', wildCardExt=True)
+    # make query if no user provided
+    if user == '':
+        if 'user' in request.session['requestParams']:
+            user = request.session['requestParams']['user']
+        if 'produsername' in request.session['requestParams']:
+            user = request.session['requestParams']['produsername']
+        if request.user.is_authenticated:
+            first_name = str(request.user.first_name.replace("'", ""))
+            last_name = str(request.user.last_name)
+            if user == f"{first_name} {last_name}":
+                is_prepare_history_links = True
+
+        # Here we serve only personal user pages. No user parameter specified
+        if user == '' and request.user.is_authenticated:
+            login = get_username(request.user)
+            if login is None:
+                login = request.user.username
+            full_name = f"{request.user.first_name} {request.user.last_name}"
+            # replace middle name by wildcard if exists
+            first_name = str(request.user.first_name.replace('\'', ''))
+            last_name = str(request.user.last_name)
+            if ' ' not in first_name and ' ' not in last_name:
+                query_task = Q(username=login) | Q(username=f"{first_name} {last_name}")
+                query_job = Q(produsername=login) | Q(produsername=f"{first_name} {last_name}")
+            else:
+                first_name = first_name.split(' ')[0] if ' ' in first_name else first_name
+                query_task = Q(username=login) | (Q(username__istartswith=first_name) & Q(username__iendswith=last_name))
+                query_job = Q(produsername=login) | (Q(produsername__istartswith=first_name) & Q(produsername__iendswith=last_name))
+            # add to query all known full names of a user email
+            for n in get_full_name(request.user.email):
+                query_task |= Q(username=n)
+                query_job |= Q(produsername=n)
+            is_prepare_history_links = True
+        else:
+            query['username__icontains'] = user.strip()
+    else:
+        query['username__icontains'] = user.strip()
 
     # extend query if any idds-related params are present
     if any(['idds' in p for p in request.session['requestParams']]):
@@ -2829,7 +2770,6 @@ def userInfo(request, user=''):
             _logger.exception(f'Failed to extend query with idds related parameters with:\n{e}')
 
     if query_task is None:
-        query['username__icontains'] = user.strip()
         tasks = JediTasks.objects.filter(**query).extra(where=[extra_query_str]).values()
     else:
         tasks = JediTasks.objects.filter(**query).filter(query_task).extra(where=[extra_query_str]).values()
@@ -2845,6 +2785,11 @@ def userInfo(request, user=''):
         panda_user_name = fullname if fullname != '' else user.strip()
     userstats = get_panda_user_stats(panda_user_name)
     _logger.info('Got user statistics: {}'.format(time.time() - request.session['req_init_time']))
+
+    # getting most relevant links based on visit statistics
+    links = {}
+    if 'ORACLE' in settings.DEPLOYMENT and is_prepare_history_links and request.user.is_authenticated:
+        links = get_relevant_links(request.user.id)
 
     # old classic page
     if 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'classic':
@@ -2862,8 +2807,13 @@ def userInfo(request, user=''):
 
         # Jobs
         limit = 5000
-        query, extra_query_str, LAST_N_HOURS_MAX = setupView(request, hours=72, limit=limit, querytype='job',
-                                                             wildCardExt=True)
+        query, extra_query_str, LAST_N_HOURS_MAX = setupView(
+            request,
+            hours=72,
+            limit=limit,
+            querytype='job',
+            wildCardExt=True
+        )
         jobs = []
         values = (
             'eventservice', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus', 'transformation',
@@ -2874,45 +2824,9 @@ def userInfo(request, user=''):
             'taskbuffererrordiag', 'transexitcode', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr', 'jobname',
             'proddblock', 'destinationdblock', 'container_name', 'cmtconfig'
         )
-
         if query_job is None:
             query['produsername__icontains'] = user.strip()
-            jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-                jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_query_str])[
-                            :request.session['JOB_LIMIT']].values(*values))
-        else:
-            jobs.extend(Jobsdefined4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsactive4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobswaiting4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-            jobs.extend(Jobsarchived4.objects.filter(**query).filter(query_job).extra(where=[extra_query_str])[
-                        :request.session['JOB_LIMIT']].values(*values))
-
-            # Here we go to an archive. Separation OR condition is done to enforce Oracle to perform indexed search.
-            if len(jobs) == 0 or (len(jobs) < limit and LAST_N_HOURS_MAX > 72):
-                query['produsername__startswith'] = user.strip()  # .filter(query_job)
-                archjobs = []
-                # This two filters again to force Oracle search
-                archjobs.extend(Jobsarchived.objects.filter(**query).filter(Q(produsername=user.strip())).extra(
-                    where=[extra_query_str])[:request.session['JOB_LIMIT']].values(*values))
-                if len(archjobs) > 0:
-                    jobs = jobs + archjobs
-                elif len(fullname) > 0:
-                    # del query['produsername']
-                    query['produsername__startswith'] = fullname
-                    jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[extra_query_str])[
-                                :request.session['JOB_LIMIT']].values(*values))
-
+        jobs = get_job_list(query, extra_str=extra_query_str, query_complex=query_job, values=list(values), error_info=True)
         jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
 
         # Divide up jobs by jobset and summarize
@@ -2966,7 +2880,7 @@ def userInfo(request, user=''):
                 flist.append('vo')
             else:
                 flist.append('atlasrelease')
-            jobsumd, esjobssumd = job_summary_dict(request, jobs, flist)
+            jobsumd, esjobssumd = job_summary_dict(jobs, flist, produsername=user, sortby=sortby)
             njobsetmax = 100
             xurl = extensibleURL(request)
             nosorturl = removeParam(xurl, 'sortby', mode='extensible')
@@ -3058,7 +2972,7 @@ def userInfo(request, user=''):
                 'tk': tk_taskids,
                 'xurl': xurl,
                 'urlnoview': url_noview,
-                'user': user,
+                'user': panda_user_name,
                 'links': links,
                 'ntasks': len(tasks),
                 'plots': plots,
@@ -3087,7 +3001,6 @@ def userDashApi(request, agg=None):
         data['msg'] += 'ERROR! Invalid agg passed.'
         return HttpResponse(json.dumps(data, default=datetime_handler), content_type='application/json')
 
-    tk = None
     if 'tk' in request.session['requestParams'] and request.session['requestParams']['tk']:
         tk = int(request.session['requestParams']['tk'])
     else:
@@ -3104,12 +3017,20 @@ def userDashApi(request, agg=None):
             tasks = []
         _logger.info('Got {} tasks from cache: {}'.format(len(tasks), time.time() - request.session['req_init_time']))
 
+        # get only the most relevent N tasks if prod user
+        n_tasks = 500
+        if len(tasks) > n_tasks and tasks[0]['tasktype'] == 'prod':
+            tasks = filter_task_list_by_relevance(tasks, n_tasks=n_tasks)
+
         # jobs summary
         jquery = {
             'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
         }
-
-        jobs = get_job_list(jquery, error_info=True)
+        values = [
+            'produsername', 'computingsite', 'jobstatus', 'specialhandling', 'attemptnr', 'nevents', 'maxpss',
+            'actualcorecount', 'cpuconsumptiontime', 'cpuconsumptionunit',  'hs06sec', 'gco2_global', 'diskio',
+            'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime', 'jobmetrics',]
+        jobs = get_job_list(jquery, values=values, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
         errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(
@@ -4105,10 +4026,10 @@ def taskList(request):
         noerrordialogurl = removeParam(xurl, 'errordialog', mode='extensible')
 
         ntasks = len(tasks)
-        sumd = task_summary_dict(
-            request,
-            tasks,
-            copy.deepcopy(standard_taskfields) + ['stagesource'] if 'tape' in request.session['requestParams'] else copy.deepcopy(standard_taskfields))
+        task_attr_summary_fields = list(copy.deepcopy(const.TASK_FIELDS_STANDARD))
+        if 'tape' in request.session['requestParams']:
+            task_attr_summary_fields += ['stagesource',]
+        sumd = task_summary_dict(request, tasks, task_attr_summary_fields)
         _logger.info('Prepared attribute summary: {}'.format(time.time() - request.session['req_init_time']))
 
         # for tasks plots
@@ -5733,7 +5654,7 @@ def errorSummary(request):
     panda_job_models = [Jobsarchived4,]
     # we add tables with active jobs for test jobs summary
     if testjobs:
-        panda_job_models.extend([Jobsactive4, Jobsdefined4, Jobswaiting4])
+        panda_job_models.extend([Jobsactive4, Jobsdefined4])
 
     # add big archived table if timewindow is more than 2 days
     is_archived = False
@@ -6490,52 +6411,58 @@ def fileList(request):
     if not valid:
         return response
 
-    setupView(request, hours=365 * 24, limit=999999999)
-    query = {}
-    files = []
     defaultlimit = 1000
-    datasetname = ''
-    datasetid = 0
+    dataset = {
+        'name': '',
+        'id': '',
+        'type': '',
+        'nfilestotal': 0,
+        'nfilesunique': 0,
+    }
 
-    # It's dangerous when dataset name is not unique over table
-    if 'datasetname' in request.session['requestParams']:
-        datasetname = request.session['requestParams']['datasetname']
-        dsets = JediDatasets.objects.filter(datasetname=datasetname).values()
-        if len(dsets) > 0:
-            datasetid = dsets[0]['datasetid']
-    elif 'datasetid' in request.session['requestParams']:
-        datasetid = request.session['requestParams']['datasetid']
-        dsets = JediDatasets.objects.filter(datasetid=datasetid).values()
-        if len(dsets) > 0:
-            datasetname = dsets[0]['datasetname']
+    # get datasetids to extract files down the line
+    dvalues = ('datasetid', 'type', 'datasetname')
+    dquery = {}
+    if 'jeditaskid' in request.session['requestParams'] and request.session['requestParams']['jeditaskid']:
+        dquery['jeditaskid'] = request.session['requestParams']['jeditaskid']
+    if 'datasetname' in request.session['requestParams'] and request.session['requestParams']['datasetname']:
+        dataset['name'] = request.session['requestParams']['datasetname']
+        dquery['datasetname'] = dataset['name']
+    elif 'containername' in request.session['requestParams'] and request.session['requestParams']['containername']:
+        dataset['name'] = request.session['requestParams']['containername']
+        dquery['containername'] = dataset['name']
+    elif 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+        dataset['id'] = request.session['requestParams']['datasetid']
+        dquery['datasetid'] = dataset['id']
     else:
-        return error_response(request, message='No datasetid or datasetname was provided', status=400)
+        return error_response(request, message='No datasetid, datasetname or containername was provided', status=400)
+    dsets = JediDatasets.objects.filter(**dquery).values(*dvalues)
 
+    #  form query for files
+    query = {}
+    if len(dsets) > 0:
+        query['datasetid__in'] = [d['datasetid'] for d in dsets]
+        dataset['id'] = ','.join([str(d['datasetid']) for d in dsets])
+        dataset['type'] = list(set([d['type'] for d in dsets]))[0] if len(set([d['type'] for d in dsets])) > 0 else 'Unknown'
+        dataset['name'] = dsets[0]['datasetname'] if len(dsets) == 1 else ''
     extraparams = ''
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
         extraparams += '&procstatus=' + request.session['requestParams']['procstatus']
 
-    nfilestotal = 0
-    nfilesunique = 0
-    if int(datasetid) > 0:
-        query['datasetid'] = datasetid
-        nfilestotal = JediDatasetContents.objects.filter(**query).count()
-        nfilesunique = JediDatasetContents.objects.filter(**query).values('lfn').distinct().count()
+    # get file counts, the list itself will be loaded via special API
+    if len(query) > 0 and 'datasetid__in' in query:
+        dataset['nfilestotal'] = JediDatasetContents.objects.filter(**query).count()
+        dataset['nfilesunique'] = JediDatasetContents.objects.filter(**query).values('lfn').distinct().count()
 
-    del request.session['TFIRST']
-    del request.session['TLAST']
     if not is_json_request(request):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'limit': defaultlimit,
-            'datasetid': datasetid,
-            'nfilestotal': nfilestotal,
-            'nfilesunique': nfilesunique,
+            'dataset': dataset,
             'extraparams': extraparams,
-            'datasetname': datasetname,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
         data.update(getContextVariables(request))
@@ -6543,12 +6470,14 @@ def fileList(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
     else:
-        return HttpResponse(json.dumps(files), content_type='application/json')
+        return JsonResponse({'dataset': dataset})
 
 
-def loadFileList(request, datasetid=-1):
+@never_cache
+def loadFileList(request):
     valid, response = initRequest(request)
-    if not valid: return response
+    if not valid:
+        return response
     setupView(request, hours=365 * 24, limit=999999999)
     query = {}
     files = []
@@ -6559,9 +6488,17 @@ def loadFileList(request, datasetid=-1):
     if 'procstatus' in request.session['requestParams'] and request.session['requestParams']['procstatus']:
         query['procstatus'] = request.session['requestParams']['procstatus']
 
+    if 'datasetid' in request.session['requestParams'] and request.session['requestParams']['datasetid']:
+        datasetid = request.session['requestParams']['datasetid']
+    else:
+        return JsonResponse({}, status=400)
+
     sortOrder = 'lfn'
-    if int(datasetid) > 0:
+    if isinstance(datasetid, int) and int(datasetid) > 0:
         query['datasetid'] = datasetid
+    elif isinstance(datasetid, str) and datasetid and len(datasetid) > 0:
+        query['datasetid__in'] = datasetid.split(',')
+    if len(query) > 0:
         files.extend(JediDatasetContents.objects.filter(**query).values().order_by(sortOrder)[:limit])
 
     pandaids = []
@@ -6588,7 +6525,6 @@ def loadFileList(request, datasetid=-1):
     if len(files_ft) > 0:
         for f in files_ft:
             files_ft_dict[f['fileid']] = f
-
 
     for f in files:
         f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
@@ -6660,11 +6596,19 @@ def workQueues(request):
         return HttpResponse(json.dumps(queues), content_type='application/json')
 
 
-def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=standard_fields, count=False,
-                    wildCardExtension='(1=1)'):
+def stateNotUpdated(
+        request,
+        state='transferring',
+        hoursSinceUpdate=36,
+        values=None,
+        count=False,
+        wildCardExtension='(1=1)'
+):
     valid, response = initRequest(request)
     if not valid:
         return response
+    if values is None:
+        values = copy.deepcopy(const.JOB_FIELDS)
     query = setupView(request, opmode='notime', limit=99999999)
     pq_clouds = get_pq_clouds()
     if 'jobstatus' in request.session['requestParams']:
@@ -6682,18 +6626,11 @@ def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=s
     query['jobstatus'] = state
     if count:
         jobs = []
-        jobs.extend(
-            Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension]).values('cloud', 'computingsite',
-                                                                                        'jobstatus').annotate(
-                Count('jobstatus')))
-        jobs.extend(
-            Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension]).values('cloud', 'computingsite',
-                                                                                         'jobstatus').annotate(
-                Count('jobstatus')))
-        jobs.extend(
-            Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension]).values('cloud', 'computingsite',
-                                                                                         'jobstatus').annotate(
-                Count('jobstatus')))
+        jvalues = ('cloud', 'computingsite', 'jobstatus')
+        for job_model in (Jobsactive4, Jobsdefined4):
+            jobs.extend(
+                job_model.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues).annotate(Count('jobstatus'))
+            )
         ncount = 0
         perCloud = {}
         perRCloud = {}
@@ -6724,10 +6661,7 @@ def stateNotUpdated(request, state='transferring', hoursSinceUpdate=36, values=s
         perRCloudl = sorted(perRCloudl, key=lambda x: x['name'])
         return ncount, perCloudl, perRCloudl
     else:
-        jobs = []
-        jobs.extend(Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension]).values(*values))
-        jobs.extend(Jobsdefined4.objects.filter(**query).extra(where=[wildCardExtension]).values(*values))
-        jobs.extend(Jobswaiting4.objects.filter(**query).extra(where=[wildCardExtension]).values(*values))
+        jobs = get_job_list(query, extra_str=wildCardExtension, values=values)
         return jobs
 
 
@@ -6747,18 +6681,15 @@ def g4exceptions(request):
 
     jobs = []
     jobs.extend(
-        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
-            *values))
+        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
     jobs.extend(
-        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
-            *values))
+        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
     if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
                                              "%Y-%m-%d %H:%M:%S")).days > 1) or \
             ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
                                                  "%Y-%m-%d %H:%M:%S")).days > 1)):
         jobs.extend(
-            Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(
-                *values))
+            Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
 
     if 'amitag' in request.session['requestParams']:
 
@@ -7274,11 +7205,8 @@ def get_hc_tests(request):
         is_archive = True
 
     if not is_archive_only:
-        jobs.extend(
-            Jobsdefined4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
+        jobs.extend(Jobsdefined4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
         jobs.extend(Jobsactive4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
-        jobs.extend(
-            Jobswaiting4.objects.filter(**excluded_time_query).extra(where=[wildCardExtension]).values(*jvalues))
         jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))
     if is_archive_only or is_archive:
         jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).values(*jvalues))

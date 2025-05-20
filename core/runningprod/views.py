@@ -9,6 +9,7 @@ from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.utils.cache import patch_response_headers
+from django.template.defaulttags import register
 
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import round_to_n_digits, convert_grams
@@ -19,13 +20,18 @@ from core.libs.DateEncoder import DateEncoder
 from core.views import initRequest, setupView
 from core.utils import is_json_request, removeParam
 
-from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots, updateView
+from core.runningprod.utils import saveNeventsByProcessingType, prepareNeventsByProcessingType, clean_running_task_list, prepare_plots, filter_running_task_list, updateView
 from core.runningprod.models import RunningProdTasksModel, FrozenProdTasksModel, ProdNeventsHistory
 
 from django.conf import settings
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
+
+@register.filter(takes_context=True)
+def split(input_str, key='|'):
+    return input_str.split(key)
+
 
 @login_customrequired
 def runningProdTasks(request):
@@ -108,8 +114,9 @@ def runningProdTasks(request):
             FrozenProdTasksModel.objects.filter(**tquery_timelimited).extra(where=[extra_str]).exclude(**exquery).values())
         _logger.debug("Got frozen tasks, N={} : {}".format(len(tasks), time.time() - request.session['req_init_time']))
     qtime = datetime.now()
-    task_list = [t for t in tasks]
-    ntasks = len(tasks)
+
+    # apply too heavy for database filters
+    task_list = filter_running_task_list(tasks, copy.deepcopy(request.session['requestParams']))
 
     # clean task list
     task_list = clean_running_task_list(task_list)
@@ -118,7 +125,11 @@ def runningProdTasks(request):
     plots_dict = prepare_plots(task_list, productiontype=productiontype)
 
     # get param summaries for select drop down menus
-    sumd = task_summary_dict(request, task_list, ['status', 'workinggroup', 'cutcampaign', 'processingtype'])
+    sumd = task_summary_dict(
+        request,
+        task_list,
+        fieldlist=['status', 'workinggroup', 'cutcampaign', 'processingtype', 'inputdatasettype', 'outputdatasettype']
+    )
 
     # get global sum
     gsum = {

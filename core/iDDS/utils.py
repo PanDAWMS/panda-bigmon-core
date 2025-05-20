@@ -2,9 +2,9 @@
 :author Tatiana Korchuganova
 """
 import logging
-
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name
+from django.db import connection
 from django.conf import settings
+from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, dictfetchall
 from core.iDDS.models import Transforms
 from core.iDDS.useconstants import SubstitleValue
 
@@ -87,3 +87,73 @@ def add_idds_info_to_tasks(tasks):
                 task['idds_request_id'] = None
 
     return tasks
+
+
+def get_idds_data_for_tasks(jeditaskid_list):
+    """
+    Get iDDS data for tasks
+    :param jeditaskid_list:
+    :return: data: dict
+    """
+    extra_str = '(1=1)'
+    datasets = {}
+    if len(jeditaskid_list) == 0:
+        return datasets
+    elif len(jeditaskid_list) > settings.DB_N_MAX_IN_QUERY:
+        transactionKey = insert_to_temp_table(jeditaskid_list)
+        extra_str += f" and tr.workload_id in (select id from {get_tmp_table_name()} where transactionkey = {transactionKey})"
+    else:
+        extra_str += f" and tr.workload_id in ({','.join([str(x) for x in jeditaskid_list])})"
+    query = """
+        SELECT
+            r.scope,
+            r.name as dataset,
+            r.status,
+            r.request_id,
+            tr.out_total_files,
+            tr.out_processed_files
+        FROM {0}.requests r
+        JOIN (
+            SELECT
+                t.request_id,
+                t.workload_id,
+                out_coll.total_files AS out_total_files,
+                out_coll.processed_files AS out_processed_files
+            FROM {0}.transforms t
+            LEFT JOIN (
+                SELECT
+                    transform_id,
+                    total_files,
+                    processed_files
+                FROM {0}.collections
+                WHERE relation_type = 1
+            ) out_coll ON t.transform_id = out_coll.transform_id
+        ) tr ON r.request_id = tr.request_id
+        WHERE {1}
+    """.format(settings.DB_SCHEMA_IDDS, extra_str)
+
+    new_cur = connection.cursor()
+    new_cur.execute(query)
+    results = dictfetchall(new_cur, style='lowercase')
+    new_cur.close()
+
+    map = subtitleValue.substitleMap
+    for row in results:
+        dataset_name = row['scope'] + ':' + row['dataset']
+
+        datasets[dataset_name] = {
+            'idds_status': map['requests']['status'].get(row['status'], 'Unknown'),
+            'idds_out_processed_files':  row['out_processed_files'],
+            'idds_out_total_files': row['out_total_files'],
+            'idds_request_id': row['request_id']
+        }
+
+        if 'out_total_files' in row and row['out_total_files']:
+            datasets[dataset_name]['idds_pctprocessed'] = (
+                int(100. * row['out_processed_files'] / row['out_total_files'])
+                if row['out_total_files'] != 0 else 0
+            )
+        else:
+            datasets[dataset_name]['idds_pctprocessed'] = 0
+
+    return datasets

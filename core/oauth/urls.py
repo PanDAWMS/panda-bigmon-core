@@ -18,4 +18,6 @@ urlpatterns = [
     re_path(r'^savesettings/$', auth_views.saveSettings, name='saveSettings'),
 
     re_path(r'^statpixel/$', auth_views.statpixel, name='statpixel'),
+
+    re_path(r'^api/oauth/user_contact/$', auth_views.get_user_contact, name='get_user_contact'),
 ]

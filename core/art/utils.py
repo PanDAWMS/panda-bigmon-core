@@ -224,10 +224,18 @@ def getjflag(job):
     return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
 
 
-def build_gitlab_link(package, testname):
-    if package and len(package) > 0 and testname and len(testname) > 0 and package in art_const.GITLAB_PATH_PER_PACKAGE:
+def build_gitlab_link(package, nightly_release_short,  testname):
+    """
+    Compose link to test code in GitLab
+    :param package: str
+    :param nightly_release_short: str
+    :param testname: str
+    :return: https_link: str
+    """
+    if (package and len(package) > 0 and testname and len(testname) > 0 and nightly_release_short and len(nightly_release_short) > 0
+            and package in art_const.GITLAB_PATH_PER_PACKAGE):
         gitlab_path = art_const.GITLAB_PATH_PER_PACKAGE[package]
-        return f'https://gitlab.cern.ch/atlas/athena/blob/main/{gitlab_path}/{testname}'
+        return f'https://gitlab.cern.ch/atlas/athena/blob/{nightly_release_short}/{gitlab_path}/{testname}'
     else:
         return None
 

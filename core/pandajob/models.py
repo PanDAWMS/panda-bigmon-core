@@ -260,12 +260,6 @@ class Jobsdefined4(PandaJob):
         return self.__dict__[name]
 
 
-class Jobswaiting4(PandaJob):
-    class Meta:
-        db_table = f'"{settings.DB_SCHEMA_PANDA}"."jobswaiting4"'
-        app_label = 'panda'
-
-
 # ATLARC DB
 
 class PandaJobArch(models.Model):

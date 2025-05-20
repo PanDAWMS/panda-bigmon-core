@@ -4,17 +4,26 @@ Created on 18.12.2018
 User specific functions
 """
 import json
-
-from django.db import connection
+import copy
 from urllib.parse import unquote, urlparse
-
+from django.db import connection
 from core.oauth.models import BPUser, BPUserSettings
 
 from django.conf import settings
+import core.constants as const
 
 
-def get_relevant_links(userid, fields):
-
+def get_relevant_links(userid):
+    """
+    Getting most relevant links by user, i.e. once user used recently or regularly
+    :param userid:
+    :return:
+    """
+    fields = {
+        'job': list(copy.deepcopy(const.JOB_FIELDS)),
+        'task': list(copy.deepcopy(const.TASK_FIELDS_STANDARD)),
+        'site': list(copy.deepcopy(const.SITE_FIELDS_STANDARD)),
+    }
     links = {'task': [], 'job': [], 'other': []}
     sqlquerystr = """
         select pagegroup, pagename,visitrank, url
@@ -156,7 +165,7 @@ def filterErrorData(request, data, **kwargs):
 
     userPreferences['defaulttables'] = defaultErrorsPreferences['tables']
     userPreferences['defaultjobattr'] = defaultErrorsPreferences['jobattr']
-    ###TODO Temporary fix. Need to redesign
+    ### TODO Temporary fix. Need to redesign
     userPreferences['jobattr'].append('reqid')
     userPreferences['jobattr'].append('computingelement')
 

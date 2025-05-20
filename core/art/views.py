@@ -486,7 +486,7 @@ def artJobs(request):
                 'inputfileid': job['inputfileid'],
                 'tarindex': job['tarindex'],
                 'finalresult': final_result_dict[job['status']] if job['status'] in final_result_dict else '---',
-                'gitlab': build_gitlab_link(job['package'], job['testname']),
+                'gitlab': build_gitlab_link(job['package'], job['nightly_release_short'], job['testname']),
                 'linktopreviousattemptlogs': job['linktopreviousattemptlogs'] if 'linktopreviousattemptlogs' in job else ''
             }
             # enrich with PanDA job metrics
@@ -663,7 +663,13 @@ def artTest(request, package=None, testname=None):
             jquery = {
                 'pandaid__in': [j['pandaid'] for j in art_jobs],
             }
-            panda_jobs = get_job_list(jquery, values=['cpuconsumptionunit',], error_info=True)
+            panda_jobs = get_job_list(
+                jquery,
+                values=[
+                    'cpuconsumptiontime', 'cpuconsumptionunit', 'attemptnr', 'computingsite', 'actualcorecount', 'maxpss',
+                    'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime'],
+                error_info=True
+            )
             panda_jobs = {j['pandaid']: j for j in panda_jobs}
             # combine info from ART and PanDA
             for job in art_jobs:
@@ -694,8 +700,8 @@ def artTest(request, package=None, testname=None):
                     job['cputype'] = panda_jobs[pid]['cpuconsumptionunit']
                     if 'actualcorecount' in panda_jobs[pid] and panda_jobs[pid]['actualcorecount'] is not None \
                             and panda_jobs[pid]['actualcorecount'] > 0 and isinstance(panda_jobs[pid]['maxpss'], int):
-                        job['maxpss_per_core_gb'] = round_to_n_digits(1.0*convert_bytes(
-                                1000*panda_jobs[pid]['maxpss'], output_unit='GB')/panda_jobs[pid]['actualcorecount'],
+                        job['maxpss_per_core_gb'] = round_to_n_digits(
+                            1.0*convert_bytes(1000*panda_jobs[pid]['maxpss'], output_unit='GB')/panda_jobs[pid]['actualcorecount'],
                             n=2, method='ceil'
                         )
                     job['duration_str'] = convert_sec(get_job_walltime(panda_jobs[pid]), out_unit='str')
@@ -718,7 +724,7 @@ def artTest(request, package=None, testname=None):
                 if branch not in art_branches:
                     art_branches[branch] = {'jobs': []}
                 if 'gitlab' not in art_test:
-                    art_test['gitlab'] = build_gitlab_link(job['package'], testname)
+                    art_test['gitlab'] = build_gitlab_link(job['package'], job['nightly_release_short'], testname)
                 art_branches[branch]['jobs'].append(job)
 
             # if failed test, find last successful one
@@ -1180,6 +1186,13 @@ def registerARTTest(request):
         #session_id = request.COOKIES.get('sessionid')
         #if session_id:
         client_ip = get_client_ip(request)
+        alias_ips = []
+        for alias in art_const.AUTHORIZED_HOSTS[:2]:
+            try:
+                ip = socket.gethostbyname(alias)
+                alias_ips.append(ip)
+            except socket.gaierror:
+                _logger.warning(f"Could not resolve IP for: {alias}")
         try:
             # Perform reverse DNS lookup to get the client's hostname
             art_host = socket.gethostbyaddr(client_ip)[0]
@@ -1187,7 +1200,8 @@ def registerARTTest(request):
             # If reverse DNS lookup fails, return the IP address as fallback
             art_host = client_ip
 
-        if art_host.split('.')[0] not in art_const.AUTHORIZED_HOSTS:
+        if client_ip not in alias_ips and art_host.split('.')[0] not in art_const.AUTHORIZED_HOSTS:
+            _logger.warning(f"Not autorized to register test from {client_ip} {art_host}") 
             return JsonResponse({"error": "Invalid ART API user!"}, status=403)
 
         # Generate job ID for ART Local
@@ -1238,6 +1252,9 @@ def registerARTTest(request):
         data = {'exit_code': -1, 'message': "No nightly_tag provided"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+
+    if 'gitlabid' in request.session['requestParams']:
+        gitlabid = request.session['requestParams']['gitlabid']
 
     ### Processing extra params
     if 'nightly_tag_display' in request.session['requestParams']:

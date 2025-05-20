@@ -165,7 +165,7 @@ def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
     return new_list_of_dict
 
 
-def job_summary_dict(request, jobs, fieldlist=None):
+def job_summary_dict(jobs, fieldlist=None, produsername=None, sortby='alpha'):
     """ Return a dictionary summarizing the field values for the chosen most interesting fields """
     sumd = {}
     if fieldlist:
@@ -173,8 +173,9 @@ def job_summary_dict(request, jobs, fieldlist=None):
     else:
         flist = const.JOB_FIELDS_ATTR_SUMMARY
 
-    numeric_fields = ('attemptnr', 'jeditaskid', 'taskid', 'noutputdatafiles', 'actualcorecount', 'corecount',
-                      'reqid', 'jobsetid',)
+    numeric_fields = (
+        'attemptnr', 'jeditaskid', 'noutputdatafiles', 'actualcorecount', 'corecount', 'reqid', 'jobsetid',
+    )
     numeric_intervals = ('durationmin', 'nevents',)
 
     agg_fields = {
@@ -196,14 +197,18 @@ def job_summary_dict(request, jobs, fieldlist=None):
                         job[f] = job[f].replace('harvester-', '')
                     else:
                         job[f] = 'Not specified'
-            if f == 'taskid' and int(job[f]) < 1000000 and 'produsername' not in request.session['requestParams']:
+            if f == 'taskid' and int(job[f]) < 1000000 and produsername is None:
                 continue
             elif f == 'specialhandling':
                 if not 'specialhandling' in sumd:
                     sumd['specialhandling'] = {}
-                shl = job['specialhandling'].split() if job['specialhandling'] is not None else []
+                shl = job['specialhandling'].split(',') if job['specialhandling'] is not None else []
                 for v in shl:
-                    if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
+                    # ignore tq = taskQueuedTime timestamp
+                    if v.startswith('tq'):
+                        continue
+                    if not v in sumd['specialhandling']:
+                        sumd['specialhandling'][v] = 0
                     sumd['specialhandling'][v] += 1
             else:
                 if f not in sumd:
@@ -293,7 +298,7 @@ def job_summary_dict(request, jobs, fieldlist=None):
                     iteml.append({'kname': 'Not specified', 'kvalue': sumd[f][ky]})
                 else:
                     iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
-            if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
+            if sortby == 'count':
                 iteml = sorted(iteml, key=lambda x: x['kvalue'], reverse=True)
             elif f not in ('priorityrange', 'jobsetrange', 'attemptnr', 'jeditaskid', 'taskid','noutputdatafiles','actualcorecount'):
                 iteml = sorted(iteml, key=lambda x: str(x['kname']).lower())
