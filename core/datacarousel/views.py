@@ -342,6 +342,7 @@ def send_stalled_requests_report(request):
         return JsonResponse({'sent': 0}, status=204)
 
     # get data
+    request.session['requestParams']['tasktype'] = 'anal'  # FIXME mimic analy tasks to get data from PanDA DC tables
     extra_query_str = setup_view_dc(request)
     extra_query_str += f"""
         and t1.end_time is null and t1.status = 'staging' and t1.modification_time <= trunc(sysdate) - {settings.DATA_CAROUSEL_MAIL_DELAY_DAYS} 
