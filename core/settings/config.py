@@ -457,7 +457,8 @@ LOGGING = {
 
 if DEBUG is True:
     for logger in LOGGING['loggers']:
-        LOGGING['loggers'][logger]['handlers'].append('console')
+        if 'handlers' in LOGGING['loggers'][logger]:
+            LOGGING['loggers'][logger]['handlers'].append('console')
 
 
 ENV = {
