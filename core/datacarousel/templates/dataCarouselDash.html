@@ -651,7 +651,6 @@ Object.keys(charts).forEach(name => {
 
       $scope.selection.options = response.data.selection;
 
-
       if ( $.fn.DataTable.isDataTable('#stagingdatasetstable') ) {
         $scope.data_table.clear();
         $scope.data_table.rows.add(response.data.detailstable).draw();
@@ -660,10 +659,21 @@ Object.keys(charts).forEach(name => {
 
         $('#stagingdatasetstable thead th').eq(0).text(newTitle);
 
+        $.fn.dataTable.ext.type.order['duration-dhms-pre'] = function (d) {
+            if (!d || d === '---') return -1;
+            const parts = d.split(':').map(x => parseInt(x, 10));
+            if (parts.length !== 4) return -1;
+            const [days, hours, minutes, seconds] = parts;
+            return (((days * 24 + hours) * 60 + minutes) * 60) + seconds;
+        };
+
         $scope.data_table = $('#stagingdatasetstable').DataTable({
             scrollX: true,
             autoWidth: true,
-            columnDefs: [{"type": "num-html", "targets": [5,6,7,8,11,14] }],
+            columnDefs: [
+                {"type": "num-html", "targets": [5,6,7,8] },
+                {"type": "duration-dhms", "targets": [11, 14]}
+            ],
             data: response.data.detailstable,
             columns: [
               {
@@ -674,8 +684,8 @@ Object.keys(charts).forEach(name => {
               { title: 'Task ID', data: 'taskid',
                 className: 'text icons1',
                 "render": function(data, type, full, meta) {
-                  let entry = '<a href="{% url 'taskInfo' %}'+full['taskid']+'">'+full['taskid']+'</a> ';
-                  entry += '<a target="_blank" href="/staginprogressplot/?jeditaskid='+full['taskid']+'"><i class="fi-graph-trend"></i></a>';
+                  let entry = '<a href="{% url 'taskInfo' %}' + full['taskid'] + '">' + full['taskid'] + '</a> ';
+                  entry += '<a target="_blank" href="/staginprogressplot/?jeditaskid=' + full['taskid'] + '"><i class="fi-graph-trend"></i></a>';
                   return entry;
                 },
               },
