@@ -27,6 +27,18 @@
     <a href="{{ noviewurl }}view=branches" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i> Switch to branches view</a>
 {% endif %}
 
+{% if not requestParams.test_type %}
+   <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{{ key }}={{ value }}&{% endif %}{% endfor %}test_type=grid" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Grid Tests</a>
+   <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{{ key }}={{ value }}&{% endif %}{% endfor %}test_type=local" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Local Tests</a>
+{% elif requestParams.test_type %}
+   <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{% if not forloop.first %}&{% endif %}{{ key }}={{ value }}{% endif %}{% endfor %}" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Grid + Local Tests</a>
+   {% if requestParams.test_type == 'grid' %}
+     <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{{ key }}={{ value }}&{% endif %}{% endfor %}test_type=local" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Local Tests</a>
+   {% elif requestParams.test_type == 'local' %}
+     <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{{ key }}={{ value }}&{% endif %}{% endfor %}test_type=grid" class="button back-to-home"><i class="fi-arrow-right"></i>Switch to Grid Tests</a>
+   {% endif %}
+{% endif %}
+
 <div style="float: right">
   <a class="button back-to-home" ng-click="art.plot.toggle()">Show results plot</a>
 </div>
@@ -85,6 +97,7 @@ var request_params = {{ requestParams|safe }};
 var ao1 = (table_title[0] === 'package') ? 'branch' : 'package';
 var order = (ao1 === 'package') ? [[0, "asc"]] : [[0, "desc"]];
 var columns = []
+let test_type = request_params.test_type || '';
 columns.push({
   title: table_title[0],
   render: function (data, type, row, meta) {
@@ -105,16 +118,24 @@ for (let i=1; i<table_data[0].length; i++) {
       } else {
         if (gridData.active + gridData.succeeded + gridData.finished + gridData.failed === 0 &&
             localData.active + localData.succeeded + localData.finished + localData.failed === 0) {
-          return '<div class="nodata">---</div>';
+          return '<div class="nodata-center">---</div>';
         } else {
           return `
             <div class="data-container">
-             <div class="clickable traffic-lights">
-                 ${gridData ? formatTrafficLightsData(gridData, row, 'grid') : '<div class="nodata">---</div>'}
-             </div>
-             <div class="clickable traffic-lights">
-                 ${localData ? formatTrafficLightsData(localData, row, 'local') : '<div class="nodata">---</div>'}
-             </div>
+             ${test_type !== "local" && gridData ? `
+             <div class="bp-tooltip left">
+               <div class="clickable traffic-lights">
+                 ${formatTrafficLightsData(gridData, row, 'grid')}
+	       </div>
+	       <span class="tooltip-text">Grid Test</span>
+             </div>` : (test_type !== "local" ? '<div class="nodata-center">---</div>' : '')}
+             ${test_type !== "grid" && localData ? `
+             <div class="bp-tooltip left">
+               <div class="clickable traffic-lights">
+                 ${formatTrafficLightsData(localData, row, 'local')}
+	       </div>
+	       <span class="tooltip-text">Local Test</span>
+             </div>` : (test_type !== "grid" ? '<div class="nodata-center">---</div>' : '')}
             </div>
           `;
         }
@@ -130,7 +151,7 @@ function formatTrafficLightsData(data, row, testType) {
 
   njobs = data.active + data.succeeded + data.finished + data.failed
   if (!data || njobs == 0) {
-    return '<div class="nodata">---</div>';
+    return '<div class="nodata-center">---</div>';
   }
 
   const baseClass = (testType === "local") ? "local-" : "";

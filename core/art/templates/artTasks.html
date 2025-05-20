@@ -14,6 +14,11 @@
 {% block body %}
 
 <a href="{% url 'art-mainPage' %}" class="button back-to-home"><i class="fi-home"></i> Back to main page</a>
+{% if not requestParams.test_type or requestParams.test_type == 'local' %}
+  <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{{ key }}={{ value }}&{% endif %}{% endfor %}test_type=grid" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i>Switch to Grid Tests</a>
+{% elif requestParams.test_type and requestParams.test_type == 'grid' %}
+  <a href="?{% for key, value in request.GET.items %}{% if key != 'test_type' %}{{ key }}={{ value }}&{% endif %}{% endfor %}test_type=local" class="button back-to-home"><i class="fi-arrow-left"></i><i class="fi-arrow-right"></i>Switch to Local Tests</a>
+{% endif %}
 
 <div class="bp-selected-params">
   <p><b>Test type: {% if requestParams.test_type %}{{ requestParams.test_type }}{% else %} grid and local</b></p>{% endif %}
@@ -86,6 +91,7 @@ if ('display_limit' in request_params) {
   }
 
 var columns = []
+let test_type = request_params.test_type || '';
 for (let i=0; i<table_data[0].length; i++) {
   if (i <= 1) {
     columns.push({
@@ -112,6 +118,10 @@ for (let i=0; i<table_data[0].length; i++) {
           }
           else {
                 ['grid', 'local'].forEach(testType => {
+		  if (test_type !== '' && test_type !== testType) {
+                    return;
+                  }
+
                   if (!data[testType] || (data[testType].active + data[testType].succeeded + data[testType].finished + data[testType].failed === 0)) {
                     result += '---<br>';
                   } else {
