@@ -110,6 +110,10 @@ fieldset.artmenu li.input-group button.hollow.alert {
     font-weight: bold;
   }
 
+  .clickable > .bold {
+    font-weight: bold;
+  }
+
   .clickable .done, .clickable .succeeded, .clickable .failed, .clickable .active, .clickable .finished {
     text-align: center;
     vertical-align: middle;
@@ -118,7 +122,6 @@ fieldset.artmenu li.input-group button.hollow.alert {
     display: inline-block;
     color: black;
     font-size: 14px;
-    font-weight: bold;
   }
 
   .clickable .done {
@@ -156,7 +159,6 @@ fieldset.artmenu li.input-group button.hollow.alert {
     display: inline-block;
     color: black;
     font-size: 14px;
-    font-weight: bold;
   }
 
   .clickable .local-done {
@@ -374,4 +376,8 @@ a.away {
 .gridDiv:hover, .localDiv:hover {
     background-color: lightgray; 
     cursor: pointer; 
+}
+
+div.bp-tooltip {
+  border-bottom: none;
 }

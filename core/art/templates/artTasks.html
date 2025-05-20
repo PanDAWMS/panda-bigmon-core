@@ -130,10 +130,10 @@ for (let i=0; i<table_data[0].length; i++) {
                     result += `
                       <div class="with-ntagfull">
                           <div class="clickable traffic-lights">
-                            <div class="${baseClass}active">${data[testType].active}</div>
-                            <div class="${baseClass}succeeded">${data[testType].succeeded}</div>
-                            <div class="${baseClass}finished">${data[testType].finished}</div>
-                            <div class="${baseClass}failed">${data[testType].failed}</div>
+                            <div class="${baseClass}active ${(data[testType].active>0) ? 'bold': ''}">${data[testType].active}</div>
+                            <div class="${baseClass}succeeded ${(data[testType].succeeded>0) ? 'bold': ''}">${data[testType].succeeded}</div>
+                            <div class="${baseClass}finished ${(data[testType].finished>0) ? 'bold': ''}">${data[testType].finished}</div>
+                            <div class="${baseClass}failed ${(data[testType].failed>0) ? 'bold': ''}">${data[testType].failed}</div>
                             <a target="_blank" href="{% url 'artJobs' %}?${table_title[0]}=${row[0]}&${table_title[1]}=${row[1]}&ntag_full=${data[testType].ntag_full}&test_type=${testType}"></a>
                           </div>
                           ${ntag_time}
