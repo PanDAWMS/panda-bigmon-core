@@ -246,7 +246,11 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
     is_tape_problem = False
     rucio = ruciowrapper()
     # Get list of files which are not yet staged
-    stuck_files = [{'name':file_lock['name'], 'errors': []} for file_lock in rucio.client.list_replica_locks(rule_id) if file_lock['state'] != 'OK']
+    stuck_files = [{
+        'name':file_lock['name'],
+        'scope': file_lock['scope'],
+        'errors': []
+    } for file_lock in rucio.client.list_replica_locks(rule_id) if file_lock['state'] != 'OK']
     # Check rucio claims it's Tape problem:
     rule_info = rucio.client.get_replication_rule(rule_id)
     if rule_info.get('error') and ('[TAPE SOURCE]' in rule_info.get('error')):
@@ -275,7 +279,7 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
                 file_errors[r['name']] = []
             file_errors[r['name']].append(r['reason'])
         stuck_files = [{
-            'name': f"{rule_info['scope']}:{f['name']}",
+            'name': f"{f['scope']}:{f['name']}",
             'errors': file_errors[f['name']][:3] if len(file_errors[f['name']]) > 3 else file_errors[f['name']]
         } for f in stuck_files if f['name'] in file_errors]
         if len(stuck_files) > 0:
