@@ -128,6 +128,7 @@ RUN chmod 777 /run/httpd
 RUN chmod -R 777 /var/cache
 RUN chmod -R 777 ${BIGMON_WSGI_PATH}/config
 RUN chmod -R 777 /etc/httpd/conf.d
+RUN chown -R apache.apache /data/bigmon/logs/
 
 # to be removed for prodiction
 RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
