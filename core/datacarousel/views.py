@@ -56,12 +56,8 @@ def get_staging_info_for_task(request):
     if not valid:
         return response
 
-    if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype']:
-        task_type = request.session['requestParams']['tasktype']
-    else:
-        task_type = None
     extra_query_str = setup_view_dc(request)
-    data_raw = get_staging_data(extra_query_str, task_type=task_type, add_idds_data=True)
+    data_raw = get_staging_data(extra_query_str, add_idds_data=True)
 
     # prepare data for template
     datasets = []
@@ -121,13 +117,9 @@ def get_data_carousel_data(request):
     if not valid:
         return response
 
-    if 'tasktype' in request.session['requestParams'] and request.session['requestParams']['tasktype']:
-        task_type = request.session['requestParams']['tasktype']
-    else:
-        task_type = 'prod'
     extra_query_str = setup_view_dc(request)
 
-    staginData = get_staging_data(extra_query_str, task_type=task_type, add_idds_data=False)
+    staginData = get_staging_data(extra_query_str, add_idds_data=False)
     _logger.debug('Got data: {}'.format(time.time() - request.session['req_init_time']))
 
     timelistSubmitted = []
@@ -139,17 +131,16 @@ def get_data_carousel_data(request):
 
     dataset_list = []
 
-    task_type = request.GET.get('tasktype', '')
-    key_name = 'username' if task_type == 'analy' else 'campaign'
-
     summary = {
         'processingtype': {},
         'source_rse': {},
-        key_name: {},
+        'campaign': {},
+        'username': {},
         'destination_rse': {},
     }
     selection_options = {
-        key_name: [],
+        'campaign': [],
+        'username': [],
         'source_rse': [],
         'processingtype': [],
     }
@@ -161,14 +152,17 @@ def get_data_carousel_data(request):
 
     for task, dsdata in staginData.items():
         epltime = None
-        timelistSubmitted.append(dsdata['start_time'])
-        timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
+
+        if dsdata['start_time'] is not None:
+            timelistSubmitted.append(dsdata['start_time'])
+            timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
 
         # workaround for analysis tasks
         if 'processingtype' in dsdata and dsdata['processingtype'] and dsdata['processingtype'].startswith('panda-client'):
             dsdata['processingtype'] = 'analysis'
 
         for key in summary:
+
             if dsdata[key] is None:
                 dsdata[key] = 'Unknown'
             if dsdata[key] not in summary[key]:
@@ -218,7 +212,7 @@ def get_data_carousel_data(request):
                             dsdata['staged_files'] >= dsdata['total_files'] * 0.9):
                         summary[key][dsdata[key]]["ds_90pdone"] += 1
                 elif dsdata['status'] == 'queued':
-                    epltime = timezone.now() - dsdata['start_time']
+                    epltime = timezone.now() - dsdata['creation_time']
                     timelistIntervalqueued.append(epltime)
                     summary[key][dsdata[key]]["ds_queued"] += 1
                     summary[key][dsdata[key]]["files_queued"] += (
@@ -231,8 +225,10 @@ def get_data_carousel_data(request):
 
         if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
             progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
+
         dataset_list.append({
-             key_name: dsdata[key_name],
+            'campaign': dsdata['campaign'],
+            'username': dsdata['username'],
             'pr_id': dsdata['pr_id'],
             'taskid': dsdata['taskid'],
             'dataset': dsdata['dataset'],
