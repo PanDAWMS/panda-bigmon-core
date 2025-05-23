@@ -167,12 +167,6 @@ def get_staging_data(extra_str, add_idds_data=False):
                 dataset['scope'] = datasetname.split('.')[0]
 
             data.append(dataset)
-            # if dataset['dataset'] not in data:
-            #     data[dataset['dataset']] = dataset
-            # elif dataset['dataset'] in data:
-            #     print(dataset['dataset'])
-            #     if dataset['status'] != 'retired':
-            #         data[dataset['dataset']] = dataset
 
     return data
 
