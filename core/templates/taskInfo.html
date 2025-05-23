@@ -955,12 +955,10 @@ app.controller('StagingDSController', function ($scope, $http) {
   $scope.MON_VO = MON_VO;
 
   $scope.getStagingDS = function () {
-    // !!!FIXME!!! TEMPORARY until full migration of DC from ProdSys to PanDA
-    let task_type = ({{ task.age }} > 7 && '{{ task.tasktype|safe }}' == 'prod') ? 'prod': 'analy';
     $http({
       url: '/api/dc/staginginfofortask/',
       method: "GET",
-      params: { 'jeditaskid': jeditaskid, 'tasktype': task_type }
+      params: { 'jeditaskid': jeditaskid }
     }).then(function (res) {
       if (Array.isArray(res.data)) {
         $scope.datasets = res.data;

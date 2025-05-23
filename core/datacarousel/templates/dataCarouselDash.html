@@ -110,10 +110,10 @@
                     {$ x.files_done $}
                 </td>
                 <td class="num">
-                    {$ x.bytes_total $}
+                    {$ x.bytes_total | number:0 $}
                 </td>
                 <td class="num done_fill">
-                    {$ x.bytes_done $}
+                    {$ x.bytes_done | number:0 $}
                 </td>
             </tr>
           </tbody>
@@ -335,7 +335,7 @@
         chartArea: {width: '100%', height: '70%', left: 130,},
         legend: {position: 'top'},
         vAxis: {textStyle: {fontSize: 11}},
-        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, format: '#,###'},
         colors: ['#2174bb', '#934fff', '#207f20'],
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],

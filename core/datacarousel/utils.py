@@ -109,37 +109,39 @@ def get_staging_data(extra_str, add_idds_data=False):
     :param add_idds_data:
     :return:
     """
-    data = {}
+    data = []
 
 
-    sql_query = """
-        select
-        t1.dataset,
-        t1.status,
-        t1.staged_files,
-        t1.start_time,
-        t1.creation_time,
-        t1.end_time,
-        t1.ddm_rule_id AS rse,
-        t1.total_files,
-        t1.modification_time AS update_time,
-        t1.source_tape as source_rse,
-        t1.source_rse as source_rse_old,
-        t1.destination_rse,
-        t1.dataset_size AS dataset_bytes,
-        t1.staged_size AS staged_bytes,
-        t2.task_id AS taskid,
-        t3.reqid as pr_id,
-        t3.processingtype,
-        t3.username,
-        t3.tasktype,
-        t3.campaign,
-        row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
-        (current_timestamp - t1.modification_time) AS update_time
-        from {0}.data_carousel_requests t1
-        inner join {0}.data_carousel_relations t2 on t1.request_id = t2.request_id
-        inner join {0}.jedi_tasks t3 on t2.task_id = t3.jeditaskid {1}
-        """.format(settings.DB_SCHEMA_PANDA, extra_str)
+    sql_query = f"""
+        SELECT
+            t1.request_id,
+            t1.dataset,
+            t1.status,
+            t1.staged_files,
+            t1.start_time,
+            t1.creation_time,
+            t1.end_time,
+            t1.ddm_rule_id AS rse,
+            t1.total_files,
+            t1.modification_time AS update_time,
+            t1.source_tape as source_rse,
+            t1.source_rse as source_rse_old,
+            t1.destination_rse,
+            t1.dataset_size AS dataset_bytes,
+            t1.staged_size AS staged_bytes,
+            t2.task_id AS taskid,
+            t3.reqid as pr_id,
+            t3.processingtype,
+            t3.username,
+            t3.tasktype,
+            t3.campaign,
+            row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
+            (current_timestamp - t1.modification_time) AS update_time
+        FROM {settings.DB_SCHEMA_PANDA}.data_carousel_requests t1
+        INNER JOIN {settings.DB_SCHEMA_PANDA}.data_carousel_relations t2 ON t1.request_id = t2.request_id
+        INNER JOIN {settings.DB_SCHEMA_PANDA}.jedi_tasks t3 ON t2.task_id = t3.jeditaskid
+        {extra_str}
+    """
 
     new_cur = connection.cursor()
     new_cur.execute(sql_query)
@@ -164,11 +166,13 @@ def get_staging_data(extra_str, add_idds_data=False):
             else:
                 dataset['scope'] = datasetname.split('.')[0]
 
-            if dataset['dataset'] not in data:
-                data[dataset['dataset']] = dataset
-            elif dataset['dataset'] in data:
-                if dataset['status'] != 'retired':
-                    data[dataset['dataset']] = dataset
+            data.append(dataset)
+            # if dataset['dataset'] not in data:
+            #     data[dataset['dataset']] = dataset
+            # elif dataset['dataset'] in data:
+            #     print(dataset['dataset'])
+            #     if dataset['status'] != 'retired':
+            #         data[dataset['dataset']] = dataset
 
     return data
 
