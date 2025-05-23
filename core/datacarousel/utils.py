@@ -129,7 +129,7 @@ def get_staging_data(extra_str, add_idds_data=False):
         t1.dataset_size AS dataset_bytes,
         t1.staged_size AS staged_bytes,
         t2.task_id AS taskid,
-        t2.request_id as pr_id,
+        t3.reqid as pr_id,
         t3.processingtype,
         t3.username,
         t3.tasktype,
