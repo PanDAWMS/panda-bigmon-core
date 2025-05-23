@@ -482,11 +482,9 @@
 
     var get = function(requestParams) {
       var url = '{% url "datacardata" %}?json';
-      console.log(url);
       if (requestParams && requestParams.length > 0) {
         url += requestParams.startsWith('&') ? requestParams : '&' + requestParams;
       }
-      console.log(url)
       return $http({
         method: 'GET',
         url: url,
@@ -564,7 +562,6 @@
           request += '&' + key + '=' + encodeURIComponent($scope.selection.selected[key]);
         }
       });
-
       Service.get(request).then($scope.processResponce);
     };
 
