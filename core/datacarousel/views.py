@@ -166,6 +166,9 @@ def get_data_carousel_data(request):
             dsdata['processingtype'] = 'analysis'
 
         for key in summary:
+            if key == 'destination_rse' and dsdata['status'] == 'queued':
+                continue
+
             if dsdata.get(key) is None:
                 dsdata[key] = 'Unknown'
             if dsdata[key] not in summary[key]:

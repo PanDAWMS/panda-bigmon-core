@@ -420,7 +420,7 @@
         legend: {position: 'top'},
         vAxis: {textStyle: {fontSize: 9}},
         hAxis: {title: 'Number of datasets', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
-        colors: ['#2174bb', '#934fff', '#207f20'],
+        colors: ['#934fff', '#207f20'],
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
           axis: 'horizontal',
@@ -441,7 +441,7 @@
         legend: {position: 'top'},
         vAxis: {textStyle: {fontSize: 9}},
         hAxis: {title: 'Number of files', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
-        colors: ['#2174bb', '#934fff', '#207f20'],
+        colors: ['#934fff', '#207f20'],
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
           axis: 'horizontal',
@@ -462,7 +462,7 @@
         legend: {position: 'top'},
         vAxis: {textStyle: {fontSize: 9}},
         hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
-        colors: ['#2174bb', '#934fff', '#207f20'],
+        colors: ['#934fff', '#207f20'],
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
           axis: 'horizontal',
@@ -615,13 +615,13 @@
         $scope.bytesperactivity.push([row['processingtype'], row['bytes_queued'], row['bytes_active'], row['bytes_done']]);
       });
 
-      $scope.datasetperdestination = [['Processing Type', 'Queued', 'Staging', 'Done']];
-      $scope.filesperdestination = [['Processing Type', 'Queued', 'Active', 'Done']];
-      $scope.bytesperdestination = [['Processing Type', 'Queued', 'Active', 'Done']];
+      $scope.datasetperdestination = [['Processing Type', 'Staging', 'Done']];
+      $scope.filesperdestination = [['Processing Type', 'Active', 'Done']];
+      $scope.bytesperdestination = [['Processing Type', 'Active', 'Done']];
       $scope.summary.destination_rse.forEach(row => {
-        $scope.datasetperdestination.push([row['destination_rse'], row['ds_queued'], row['ds_active'], row['ds_done']]);
-        $scope.filesperdestination.push([row['destination_rse'], row['files_queued'], row['files_active'], row['files_done']]);
-        $scope.bytesperdestination.push([row['destination_rse'], row['bytes_queued'], row['bytes_active'], row['bytes_done']]);
+        $scope.datasetperdestination.push([row['destination_rse'], row['ds_active'], row['ds_done']]);
+        $scope.filesperdestination.push([row['destination_rse'], row['files_active'], row['files_done']]);
+        $scope.bytesperdestination.push([row['destination_rse'], row['bytes_active'], row['bytes_done']]);
       });
 
       charts.submittime.obj = new google.visualization.ColumnChart(document.getElementById('chartACTCH_div'));
