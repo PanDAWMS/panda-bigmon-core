@@ -105,7 +105,6 @@ def get_staging_data(extra_str, add_idds_data=False):
     """
     Get staging data from the database
     :param extra_str:
-    :param task_type:
     :param add_idds_data:
     :return:
     """
