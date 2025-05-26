@@ -324,7 +324,6 @@ def send_stalled_requests_report(request):
     """
     rows = get_staging_data(extra_query_str, add_idds_data=False)
 
-    # теперь rows — это список, сортируем его по update_time
     rows = sorted(rows, key=lambda x: x['update_time'], reverse=True)
 
     ds_per_rse = {}
