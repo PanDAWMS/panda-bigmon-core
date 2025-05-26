@@ -71,18 +71,19 @@ def art(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    tquery = {'platform__endswith': 'opt'}
+    tquery = {'platform__endswith': 'opt', 'test_type': 'grid'}
 
     # limit results by N days
     if 'days' in request.session['requestParams']:
         n_days_limit = int(request.session['requestParams']['days'])
     else:
-        n_days_limit = 90
+        n_days_limit = art_const.N_DAYS_DEFAULT['main']
     tquery['created__castdate__range'] = [timezone.now() - timedelta(days=n_days_limit), timezone.now()]
 
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
     branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
     ntags = ARTTests.objects.values('nightly_tag_display').annotate(nightly_tag_date=Substr('nightly_tag_display', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
+    _logger.debug(f"{len(packages)} packages and {len(branches)} branches")
 
     if not is_json_request(request):
         # a workaround for the DF split into a lot of separate packages
@@ -1356,6 +1357,7 @@ def registerARTTest(request):
         _logger.warning(data['message'] + str(request.session['requestParams']))
 
     return HttpResponse(json.dumps(data), status=200, content_type='application/json')
+
 
 @csrf_exempt
 def upload_test_result(request):

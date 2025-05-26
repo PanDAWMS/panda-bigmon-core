@@ -1418,6 +1418,7 @@ canvas.full_screen_size {
 .card.bp-container-simple.help {
   border: 1px solid #bce0cd;
   font-size: 0.875rem;
+  margin: 0.7rem 0;
 }
   .card.bp-container-simple.help .card-divider {
     background-color: #bce0cd;

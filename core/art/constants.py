@@ -7,7 +7,7 @@ from types import MappingProxyType
 
 # vars
 CACHE_TIMEOUT_MINUTES = 15
-RETENTION_PERIOD_DAYS = 179  # 6 months
+RETENTION_PERIOD_DAYS = 180
 EOS_PREFIX = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
 EOS_PREFIX_LOCAL = 'https://atlas-art-data.web.cern.ch/atlas-art-data/local-output/'
 INITIAL_LOCAL_ID = 1
@@ -24,6 +24,7 @@ N_DAYS_MAX = MappingProxyType({
     'updatejoblist': 30,
     'stability': 15,
     'errors': 6,
+    'main': 180,
     'other':  6
 })
 
@@ -32,6 +33,7 @@ N_DAYS_DEFAULT = MappingProxyType({
     'updatejoblist': 30,
     'stability': 8,
     'errors': 1,
+    'main': 30,
     'other':  6
 })
 
