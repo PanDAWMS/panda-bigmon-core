@@ -25,24 +25,27 @@
 {% block body %}
   <div data-ng-controller="dataviewctrl" id="datacar">
     <div class="row">
-      <div class="columns medium-8">
+      <div class="columns medium-9">
         <div id="chartACTCH_div"><p ng-bind-html="loading_placeholder"></p></div>
         <div id="chartACTFILECH_div"><p ng-bind-html="loading_placeholder"></p></div>
       </div>
 
-      <div id="selectionpane" class="columns medium-4">
-        <b>{% if request.GET.tasktype == "analy" %}Username{% else %}Campaign{% endif %}:</b>
+      <div id="selectionpane" class="columns medium-3 selection-panel">
+        <b>Campaign:</b>
          <select id="campaign"
-                ng-model="selection.selected.{% if request.GET.tasktype == 'analy' %}username{% else %}campaign{% endif %}"
-                ng-options="campitem.value as campitem.name for campitem in selection.options.{% if request.GET.tasktype == 'analy' %}username{% else %}campaign{% endif %}"
+                ng-model="selection.selected.campaign"
+                ng-options="campitem.value as campitem.name for campitem in selection.options.campaign"
                 multiple>
             <option value="" selected="selected">All</option>
+          </select>
+         <b>Username:</b>
+          <select id="source" ng-model="selection.selected.username" ng-options="pt.value as pt.name for pt in selection.options.username" multiple>
+             <option value="" selected="selected">All</option>
           </select>
           <b>Source:</b>
           <select id="source" ng-model="selection.selected.source_rse" ng-options="source.value as source.name for source in selection.options.source_rse" multiple>
              <option value="" selected="selected">All</option>
           </select>
-
           <b>Processing type:</b>
           <select id="source" ng-model="selection.selected.processingtype" ng-options="pt.value as pt.name for pt in selection.options.processingtype" multiple>
              <option value="" selected="selected">All</option>
@@ -70,9 +73,6 @@
           <thead>
             <tr>
                 <th>Source</th>
-                {% if request.GET.tasktype != 'analy' %}
-                    <th class="mid">Progress plot</th>
-                {% endif %}
                 <th class="mid">DDM Dash</th>
                 <th class="num">Datasets Queued</th>
                 <th class="num">Datasets Active</th>
@@ -88,13 +88,6 @@
             <tr ng-repeat="x in summary.source_rse" class="low-stat">
                 <th class="nowrap"> <a class="nowrap" href="{% url 'taskList' %}?tape=true&stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">{$ x.source_rse $}</a>
                 </th>
-                {% if request.GET.tasktype != 'analy' %}
-                    <td class="mid">
-                        <a target="_blank" href="/staginprogressplot/?stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">
-                            <i class="fi-graph-trend"></i>
-                        </a>
-                    </td>
-                {% endif %}
                 <td class="mid">
                   <a target="_blank" href="https://monit-grafana.cern.ch/d/FtSFfwdmk/ddm-transfers?orgId=17&var-binning=$__auto_interval_binning&var-groupby=dst_cloud&var-activity=Staging&var-src_tier=All&var-src_country=All&var-src_cloud=All&var-src_site=All{$ x.source_rse_breakdown $}&var-src_token=All&var-columns=src_cloud&var-dst_tier=All&var-dst_country=All&var-dst_cloud=All&var-dst_site=All&var-dst_endpoint=All&var-dst_token=All&var-rows=dst_cloud&var-measurement=ddm_transfer&var-retention_policy=raw&var-include=&var-exclude=none&var-exclude_es=All&var-include_es_dst=All&var-include_es_src=All&{$ getTimeForQuery(true) $}"><img src="{% static 'images/grafana.png' %}" width=14 height=14 border=0></a>
                 </td>
@@ -117,10 +110,10 @@
                     {$ x.files_done $}
                 </td>
                 <td class="num">
-                    {$ x.bytes_total $}
+                    {$ x.bytes_total | number:0 $}
                 </td>
                 <td class="num done_fill">
-                    {$ x.bytes_done $}
+                    {$ x.bytes_done | number:0 $}
                 </td>
             </tr>
           </tbody>
@@ -175,11 +168,13 @@
              <th></th>
              <th></th>
              <th></th>
+             <th></th>
           </tr>
          </thead>
          <tbody></tbody>
          <tfoot>
           <tr>
+             <th></th>
              <th></th>
              <th></th>
              <th></th>
@@ -340,7 +335,7 @@
         chartArea: {width: '100%', height: '70%', left: 130,},
         legend: {position: 'top'},
         vAxis: {textStyle: {fontSize: 11}},
-        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}},
+        hAxis: {title: 'Volume, GB', titleTextStyle: {color: 'black'}, textStyle: {fontSize: 11}, format: '#,###'},
         colors: ['#2174bb', '#934fff', '#207f20'],
         explorer: {
           actions: ['dragToZoom', 'rightClickToReset'],
@@ -484,19 +479,19 @@
      .controller('dataviewctrl', ['$scope', '$sce', '$compile', '$location', '$timeout', '$anchorScroll', 'Service', controller]);
 
   function service($http){
-    var get = function(requestparams) {
-      {# TODO remove it after migration #}
-        var tasktype_dict = {{ requestParams|safe }};
 
-        if (tasktype_dict && Object.keys(tasktype_dict).length > 0) {
-                requestparams += '&' + new URLSearchParams(tasktype_dict).toString();
-        }
-      {# endcode #}
+    var get = function(requestParams) {
+      var url = '{% url "datacardata" %}?json';
+      if (requestParams && requestParams.length > 0) {
+        url += requestParams.startsWith('&') ? requestParams : '&' + requestParams;
+      }
       return $http({
         method: 'GET',
-        url: '{% url 'datacardata' %}?json' + requestparams,
+        url: url,
         cache: false
-      })};
+      });
+    };
+
     var get_stuck_files = function(rule_id, source_rse) {
       return $http({
         method: 'GET',
@@ -510,9 +505,8 @@
   }
 
   function controller($scope, $sce, $compile, $location, $timeout, $anchorScroll, Service){
-    const urlParams = new URLSearchParams(window.location.search);
-    const taskType = urlParams.get('tasktype');
-    const newTitle = taskType === 'analy' ? 'Username' : 'Campaign';
+
+    const Title = 'Campaign';
 
     $scope.is_hidden = true;
     $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
@@ -534,9 +528,10 @@
       is_disabled: false,
     };
     $scope.request_params = {{ requestParams|safe }};
+
     $scope.selection = {
       options: {},
-      selected: {[newTitle]: [], processingtype: [], source_rse: [], destination_rse: [], jeditaskid: []},
+      selected: {[Title]: [], processingtype: [], source_rse: [], destination_rse: [], jeditaskid: []},
     }
     Object.keys($scope.selection.selected).forEach(key => {
       if (key in $scope.request_params) {
@@ -555,14 +550,18 @@
 
     $scope.gog = function() {
       var request = "";
+
+      Object.keys($scope.request_params).forEach(key => {
+        if ($scope.request_params[key]) {
+          request += '&' + key + '=' + encodeURIComponent($scope.request_params[key]);
+        }
+      });
+
       Object.keys($scope.selection.selected).forEach(key => {
         if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
-          request += '&' + key + '=' + $scope.selection.selected[key]
-        } else if (key in $scope.request_params) {
-          request += '&' + key + '=' + $scope.request_params[key]
+          request += '&' + key + '=' + encodeURIComponent($scope.selection.selected[key]);
         }
-      })
-
+      });
       Service.get(request).then($scope.processResponce);
     };
 
@@ -651,31 +650,44 @@ Object.keys(charts).forEach(name => {
 
       $scope.selection.options = response.data.selection;
 
-
       if ( $.fn.DataTable.isDataTable('#stagingdatasetstable') ) {
         $scope.data_table.clear();
         $scope.data_table.rows.add(response.data.detailstable).draw();
       }
       else {
 
-        $('#stagingdatasetstable thead th').eq(0).text(newTitle);
+
+        $.fn.dataTable.ext.type.order['duration-dhms-pre'] = function (d) {
+            if (!d || d === '---') return -1;
+            const parts = d.split(':').map(x => parseInt(x, 10));
+            if (parts.length !== 4) return -1;
+            const [days, hours, minutes, seconds] = parts;
+            return (((days * 24 + hours) * 60 + minutes) * 60) + seconds;
+        };
 
         $scope.data_table = $('#stagingdatasetstable').DataTable({
             scrollX: true,
             autoWidth: true,
-            columnDefs: [{"type": "num-html", "targets": [5,6,7,8,11,14] }],
+            columnDefs: [
+                {"type": "num-html", "targets": [6,7,8,9] },
+                {"type": "duration-dhms", "targets": [12, 15]}
+            ],
             data: response.data.detailstable,
             columns: [
               {
-                title: taskType === 'analy' ? 'Username' : 'Campaign',
-                data: taskType === 'analy' ? 'username' : 'campaign',
+                title: 'Campaign',
+                data:  'campaign',
+              },
+                {
+                title:'Username' ,
+                data: 'username' ,
               },
               { title: 'Request ID', data: 'pr_id', className: 'num', name: 'request_id' },
               { title: 'Task ID', data: 'taskid',
                 className: 'text icons1',
                 "render": function(data, type, full, meta) {
-                  let entry = '<a href="{% url 'taskInfo' %}'+full['taskid']+'">'+full['taskid']+'</a> ';
-                  entry += '<a target="_blank" href="/staginprogressplot/?jeditaskid='+full['taskid']+'"><i class="fi-graph-trend"></i></a>';
+                  let entry = '<a href="{% url 'taskInfo' %}' + full['taskid'] + '">' + full['taskid'] + '</a> ';
+                  entry += '<a target="_blank" href="/staginprogressplot/?jeditaskid=' + full['taskid'] + '"><i class="fi-graph-trend"></i></a>';
                   return entry;
                 },
               },
@@ -707,30 +719,16 @@ Object.keys(charts).forEach(name => {
               { title: 'Since last update [d:h:m:s]', data: 'update_time', defaultValue: '---',},
             ],
             createdRow: function (row, data, index) {
-                var table = this.api();
+                const statusColumnIndex = 4;
 
-                var statusColumnIndex = table.column('status:name').index();
-
-                var requestColumnIndex = table.column('request_id:name').index();
-                var isRequestHidden = requestColumnIndex !== undefined && !table.column(requestColumnIndex).visible();
-
-                if (isRequestHidden && statusColumnIndex > requestColumnIndex) {
-                    statusColumnIndex--;
-                }
-
-                if (statusColumnIndex !== -1 && statusColumnIndex !== undefined) {
+                if (data['status']) {
                     $('td', row).eq(statusColumnIndex).addClass(data['status'] + '_fill');
                 }
-
-                $compile(angular.element(row).contents())($scope);
+                $compile(angular.element(row).contents())($scope)
             },
             initComplete: function () {
-                var requestColumnIndex = this.api().column('request_id:name').index();
 
-                if (taskType === 'analy' && requestColumnIndex !== undefined) {
-                    this.api().column(requestColumnIndex).visible(false);
-                }
-                this.api().columns([0,3,4,9,10]).every( function () {
+                this.api().columns([0,1,4,5,10,11]).every( function () {
                     var column = this;
                     var select = $('<select><option value="">All</option></select>')
                         .appendTo( $(column.footer()).empty() )

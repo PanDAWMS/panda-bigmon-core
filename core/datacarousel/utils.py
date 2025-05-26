@@ -38,19 +38,13 @@ def setup_view_dc(request):
     time_window = query['modificationtime__castdate__range']
 
     request_params = copy.deepcopy(request.session['requestParams'])
-    if 'tasktype' in request_params:
-        task_type = request_params['tasktype']
-    else:
-        task_type = 'prod'
 
-    # temporary while DC migration to PanDA
-    campaign_column = "t3.campaign" if task_type == "prod" else "t4.campaign"
-    processingtype_column = "t4.processingtype" if task_type == "prod" else "t3.processingtype"
-    tasktype_column = "t4.tasktype" if task_type == "prod" else "t3.tasktype"
-    endtime_column = "t4.endtime" if task_type == "prod" else "t3.endtime"
-    taskid_column = "taskid" if task_type == "prod" else "task_id"
-    tasks_table = "ATLAS_DEFT.T_ACTION_STAGING" if task_type == "prod" else "ATLAS_PANDA.DATA_CAROUSEL_RELATIONS"
-    source_rse = "RSE" if task_type == "prod" else "TAPE"
+    campaign_column = "t3.campaign"
+    processingtype_column = "t3.processingtype"
+    tasktype_column = "t3.tasktype"
+    taskid_column = "task_id"
+    tasks_table = "ATLAS_PANDA.DATA_CAROUSEL_RELATIONS"
+    source_rse = "TAPE"
 
     if 'jeditaskid' in request_params:
         taskl = request_params['jeditaskid'].split('|')
@@ -62,8 +56,7 @@ def setup_view_dc(request):
     else:
         extra_str += f" and t2.{taskid_column} in (select {taskid_column} from {tasks_table})"
 
-        extra_str += f"""  
-        and not (nvl({endtime_column}, current_timestamp) < t1.start_time) 
+        extra_str += f""" 
         and (
             t1.end_time between to_date('{time_window[0]}', 'YYYY-mm-dd HH24:MI:SS') and to_date('{time_window[1]}', 'YYYY-mm-dd HH24:MI:SS') 
             or (t1.end_time is null and not (t1.status = 'done'))
@@ -77,7 +70,7 @@ def setup_view_dc(request):
     if 'destination' in request_params:
         extra_str += f" AND t1.DESTINATION_RSE in ({','.join('\'' + str(x) + '\'' for x in request_params['destination'].split(','))})"
 
-    if 'campaign' in request_params and task_type == "prod":
+    if 'campaign' in request_params:
         campaignl = request_params['campaign'].split(',')
         if 'Unknown' in campaignl:
             campaignl.remove('Unknown')
@@ -108,7 +101,7 @@ def setup_view_dc(request):
     return extra_str
 
 
-def get_staging_data(extra_str, task_type=None, add_idds_data=False):
+def get_staging_data(extra_str, add_idds_data=False):
     """
     Get staging data from the database
     :param extra_str:
@@ -116,59 +109,39 @@ def get_staging_data(extra_str, task_type=None, add_idds_data=False):
     :param add_idds_data:
     :return:
     """
-    data = {}
+    data = []
 
-    if task_type == 'prod':
-        sql_query = """
-            select 
-            t1.dataset, 
-            t1.status, 
-            t1.staged_files, 
-            t1.start_time, 
-            t1.end_time, 
-            t1.rse as rse, 
-            t1.total_files, 
-            t1.update_time, 
-            t1.source_rse, 
-            t1.destination_rse, 
-            t1.dataset_bytes, 
-            t1.staged_bytes,
-            t2.taskid, 
-            t3.campaign, 
-            t3.pr_id,
-                row_number() over(partition by t1.dataset_staging_id order by t1.start_time desc) as occurence, 
-                (current_timestamp-t1.update_time) as update_time, t4.processingtype, t2.step_action_id 
-            from {0}.t_dataset_staging t1
-            inner join {0}.t_action_staging t2 on t1.dataset_staging_id=t2.dataset_staging_id
-            inner join {0}.t_production_task t3 on t2.taskid=t3.taskid 
-            inner join {1}.jedi_tasks t4 on t2.taskid=t4.jeditaskid {2} 
-            """.format('atlas_deft', settings.DB_SCHEMA_PANDA, extra_str)
-    else:
-        sql_query = """
-        select
-        t1.dataset,
-        t1.status,
-        t1.staged_files,
-        t1.start_time,
-        t1.end_time,
-        t1.ddm_rule_id AS rse,
-        t1.total_files,
-        t1.modification_time AS update_time,
-        t1.source_tape as source_rse,
-        t1.source_rse as source_rse_old,
-        t1.destination_rse,
-        t1.dataset_size AS dataset_bytes,
-        t1.staged_size AS staged_bytes,
-        t2.task_id AS taskid,
-        t2.request_id as pr_id,
-        t3.processingtype,
-        t3.username,
-        row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
-        (current_timestamp - t1.modification_time) AS update_time
-        from {0}.data_carousel_requests t1
-        inner join {0}.data_carousel_relations t2 on t1.request_id = t2.request_id
-        inner join {0}.jedi_tasks t3 on t2.task_id = t3.jeditaskid {1}
-        """.format(settings.DB_SCHEMA_PANDA, extra_str)
+
+    sql_query = f"""
+        SELECT
+            t1.request_id,
+            t1.dataset,
+            t1.status,
+            t1.staged_files,
+            t1.start_time,
+            t1.creation_time,
+            t1.end_time,
+            t1.ddm_rule_id AS rse,
+            t1.total_files,
+            t1.modification_time AS update_time,
+            t1.source_tape as source_rse,
+            t1.source_rse as source_rse_old,
+            t1.destination_rse,
+            t1.dataset_size AS dataset_bytes,
+            t1.staged_size AS staged_bytes,
+            t2.task_id AS taskid,
+            t3.reqid as pr_id,
+            t3.processingtype,
+            t3.username,
+            t3.tasktype,
+            t3.campaign,
+            row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
+            (current_timestamp - t1.modification_time) AS update_time
+        FROM {settings.DB_SCHEMA_PANDA}.data_carousel_requests t1
+        INNER JOIN {settings.DB_SCHEMA_PANDA}.data_carousel_relations t2 ON t1.request_id = t2.request_id
+        INNER JOIN {settings.DB_SCHEMA_PANDA}.jedi_tasks t3 ON t2.task_id = t3.jeditaskid
+        {extra_str}
+    """
 
     new_cur = connection.cursor()
     new_cur.execute(sql_query)
@@ -179,9 +152,7 @@ def get_staging_data(extra_str, task_type=None, add_idds_data=False):
     if add_idds_data:
         datasets_idds_info = get_idds_data_for_tasks([d['taskid'] for d in datasets])
 
-    datasets_statuses = ('staging', 'queued', 'done')
-    if task_type in ('analy', 'anal'):
-        datasets_statuses += ('cancelled','retired')
+    datasets_statuses = ('staging', 'queued', 'done', 'cancelled', 'retired')
 
     for dataset in datasets:
         if datasets_idds_info is not None and len(datasets_idds_info) > 0 and dataset['dataset'] in datasets_idds_info:
@@ -194,10 +165,8 @@ def get_staging_data(extra_str, task_type=None, add_idds_data=False):
                 dataset['scope'] = datasetname.split(':')[0]
             else:
                 dataset['scope'] = datasetname.split('.')[0]
-            if task_type == 'prod':
-                data[dataset['taskid']] = dataset
-            else:
-                data[dataset['dataset']] = dataset
+
+            data.append(dataset)
 
     return data
 
