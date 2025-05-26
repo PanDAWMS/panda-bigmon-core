@@ -36,7 +36,7 @@ def setupView(request):
     enddate = None
     datelist = []
 
-    art_view = str(request.path).split('/')[2]
+    art_view = str(request.path).split('/')[2] if len(request.path.split('/')) > 2 else 'main'
     days_max = art_const.N_DAYS_MAX[art_view] if art_view in art_const.N_DAYS_MAX else art_const.N_DAYS_MAX['other']
     days_default = art_const.N_DAYS_DEFAULT[art_view] if art_view in art_const.N_DAYS_DEFAULT else art_const.N_DAYS_DEFAULT['other']
 
