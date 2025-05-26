@@ -62,12 +62,13 @@ def get_staging_info_for_task(request):
     # prepare data for template
     datasets = []
     if data_raw and len(data_raw) > 0:
-        for task, dsdata in data_raw.items():
+        for dsdata in data_raw:
             data = {}
             data['start_time_ms'] = 0
             for key in ('taskid', 'status', 'scope', 'dataset', 'rse', 'source_rse', 'destination_rse',
                         'step_action_id', 'source_rse_old'):
                 data[key] = dsdata[key] if key in dsdata else '---'
+
             for key in ('start_time', 'end_time'):
                 if key in dsdata and dsdata[key] and isinstance(dsdata[key], timezone.datetime):
                     data[key] = dsdata[key].strftime(settings.DATETIME_FORMAT)
@@ -75,41 +76,47 @@ def get_staging_info_for_task(request):
                         data['start_time_ms'] = int(dsdata[key].timestamp() * 1000)
                 else:
                     data[key] = '---'
+
             if 'update_time' in dsdata and dsdata['update_time'] is not None:
                 data['update_time'] = convert_sec(dsdata['update_time'].total_seconds(), out_unit='str')
             else:
                 data['update_time'] = '---'
+
             data['total_files'] = dsdata['total_files'] if is_positive_int_field(dsdata, 'total_files') else 0
             data['staged_files'] = dsdata['staged_files'] if is_positive_int_field(dsdata, 'staged_files') else 0
-            if is_positive_int_field(dsdata, 'total_files' ) and is_positive_int_field(dsdata, 'staged_files'):
-                data['staged_files_pct'] = round_to_n_digits(dsdata['staged_files'] * 100.0 / dsdata['total_files'], 1, method='floor')
+
+            if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
+                data['staged_files_pct'] = round_to_n_digits(
+                    dsdata['staged_files'] * 100.0 / dsdata['total_files'], 1, method='floor')
             else:
                 data['staged_files_pct'] = 0
+
             if is_positive_int_field(dsdata, 'dataset_bytes'):
                 data['total_bytes'] = round_to_n_digits(convert_bytes(dsdata['dataset_bytes'], output_unit='GB'), 2)
             else:
                 data['total_bytes'] = 0
+
             if is_positive_int_field(dsdata, 'staged_bytes'):
                 data['staged_bytes'] = round_to_n_digits(convert_bytes(dsdata['staged_bytes'], output_unit='GB'), 2)
             else:
                 data['staged_bytes'] = 0
-            if is_positive_int_field(dsdata, 'dataset_bytes' ) and is_positive_int_field(dsdata, 'staged_bytes'):
-                data['staged_bytes_pct'] = round_to_n_digits(dsdata['staged_bytes'] * 100.0 / dsdata['dataset_bytes'], 1, method='floor')
+
+            if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
+                data['staged_bytes_pct'] = round_to_n_digits(
+                    dsdata['staged_bytes'] * 100.0 / dsdata['dataset_bytes'], 1, method='floor')
             else:
                 data['staged_bytes_pct'] = 0
 
-            data['idds_status'] = dsdata.get('idds_status', '---')
-            data['idds_request_id'] = dsdata.get('idds_request_id', 0)
-            data['idds_out_processed_files'] = dsdata.get('idds_out_processed_files', 0)
-            data['idds_out_total_files'] = dsdata.get('idds_out_total_files', 0)
-            data['idds_pctprocessed'] = dsdata.get('idds_pctprocessed', 0)
+            data['idds_status'] = dsdata['idds_status'] if 'idds_status' in dsdata else '---'
+            data['idds_request_id'] = dsdata['idds_request_id'] if 'idds_request_id' in dsdata else 0
+            data['idds_out_processed_files'] = dsdata['idds_out_processed_files'] if 'idds_out_processed_files' in dsdata else 0
+            data['idds_out_total_files'] = dsdata['idds_out_total_files'] if 'idds_out_total_files' in dsdata else 0
+            data['idds_pctprocessed'] = dsdata['idds_pctprocessed'] if 'idds_pctprocessed' in dsdata else 0
 
             datasets.append(data)
 
     response = JsonResponse(datasets, safe=isinstance(datasets, dict), content_type='application/json')
-
     return response
-
 
 @never_cache
 def get_data_carousel_data(request):
@@ -118,7 +125,6 @@ def get_data_carousel_data(request):
         return response
 
     extra_query_str = setup_view_dc(request)
-
     staginData = get_staging_data(extra_query_str, add_idds_data=False)
     _logger.debug('Got data: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -128,7 +134,6 @@ def get_data_carousel_data(request):
     timelistIntervalfin = []
     timelistIntervalact = []
     timelistIntervalqueued = []
-
     dataset_list = []
 
     summary = {
@@ -150,78 +155,63 @@ def get_data_carousel_data(request):
         'bytes_total': 0, 'bytes_done': 0, "bytes_queued": 0, 'bytes_rem': 0, 'bytes_active': 0,
     }
 
-    for task, dsdata in staginData.items():
+    for dsdata in staginData:
         epltime = None
 
         if dsdata['start_time'] is not None:
             timelistSubmitted.append(dsdata['start_time'])
             timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
 
-        # workaround for analysis tasks
         if 'processingtype' in dsdata and dsdata['processingtype'] and dsdata['processingtype'].startswith('panda-client'):
             dsdata['processingtype'] = 'analysis'
 
         for key in summary:
+            if key == 'destination_rse' and dsdata['status'] == 'queued':
+                continue
 
-            if dsdata[key] is None:
+            if dsdata.get(key) is None:
                 dsdata[key] = 'Unknown'
             if dsdata[key] not in summary[key]:
-                summary[key][dsdata[key]] = {
-                    key: dsdata[key],
-                }
+                summary[key][dsdata[key]] = {key: dsdata[key]}
                 summary[key][dsdata[key]].update(calc_temp)
                 if key == "source_rse":
                     summary[key][dsdata[key]]['source_rse_breakdown'] = substitudeRSEbreakdown(dsdata['source_rse'])
 
-            if dsdata['occurence'] == 1:
-                summary[key][dsdata[key]]['files_total'] += dsdata['total_files'] if is_positive_int_field(dsdata, 'total_files') else 0
-                summary[key][dsdata[key]]['files_done'] += dsdata['staged_files'] if is_positive_int_field(dsdata, 'staged_files') else 0
-                summary[key][dsdata[key]]['files_rem'] += (
-                        dsdata['total_files'] - dsdata['staged_files']
-                ) if is_positive_int_field(dsdata, 'total_files' ) and is_positive_int_field(dsdata, 'staged_files') else 0
-                summary[key][dsdata[key]]['bytes_total'] += convert_bytes(
-                    dsdata['dataset_bytes'],
-                    output_unit='GB'
-                ) if is_positive_int_field(dsdata, 'dataset_bytes' ) else 0
-                summary[key][dsdata[key]]['bytes_done'] += convert_bytes(
-                    dsdata['staged_bytes'],
-                    output_unit='GB'
-                ) if is_positive_int_field(dsdata, 'staged_bytes' ) else 0
-                summary[key][dsdata[key]]['bytes_rem'] += convert_bytes(
-                    dsdata['dataset_bytes'] - dsdata['staged_bytes'],
-                    output_unit='GB'
-                ) if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes') else 0
+            if is_positive_int_field(dsdata, 'total_files'):
+                summary[key][dsdata[key]]['files_total'] += dsdata['total_files']
+            if is_positive_int_field(dsdata, 'staged_files'):
+                summary[key][dsdata[key]]['files_done'] += dsdata['staged_files']
+            if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
+                summary[key][dsdata[key]]['files_rem'] += dsdata['total_files'] - dsdata['staged_files']
+            if is_positive_int_field(dsdata, 'dataset_bytes'):
+                summary[key][dsdata[key]]['bytes_total'] += convert_bytes(dsdata['dataset_bytes'], 'GB')
+            if is_positive_int_field(dsdata, 'staged_bytes'):
+                summary[key][dsdata[key]]['bytes_done'] += convert_bytes(dsdata['staged_bytes'], 'GB')
+            if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
+                summary[key][dsdata[key]]['bytes_rem'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
 
-                # Build the summary by SEs and create lists for histograms
-                if dsdata['end_time'] is not None:
-                    summary[key][dsdata[key]]["ds_done"] += 1
-                    epltime = dsdata['end_time'] - dsdata['start_time']
-                    timelistIntervalfin.append(epltime)
-                elif dsdata['status'] != 'queued':
-                    epltime = timezone.now() - dsdata['start_time']
-                    timelistIntervalact.append(epltime)
-                    summary[key][dsdata[key]]["ds_active"] += 1
-                    summary[key][dsdata[key]]['files_active'] += (
-                            dsdata['total_files'] - dsdata['staged_files']
-                    ) if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') else 0
-                    summary[key][dsdata[key]]['bytes_active'] += convert_bytes(
-                        dsdata['dataset_bytes'] - dsdata['staged_bytes'],
-                        output_unit='GB'
-                    ) if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes') else 0
-                    if (is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') and
-                            dsdata['staged_files'] >= dsdata['total_files'] * 0.9):
-                        summary[key][dsdata[key]]["ds_90pdone"] += 1
-                elif dsdata['status'] == 'queued':
-                    epltime = timezone.now() - dsdata['creation_time']
-                    timelistIntervalqueued.append(epltime)
-                    summary[key][dsdata[key]]["ds_queued"] += 1
-                    summary[key][dsdata[key]]["files_queued"] += (
-                            dsdata['total_files'] - dsdata['staged_files']
-                    ) if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') else 0
-                    summary[key][dsdata[key]]["bytes_queued"] += convert_bytes(
-                        dsdata['dataset_bytes'] - dsdata['staged_bytes'],
-                        output_unit='GB'
-                    ) if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes') else 0
+            if dsdata['end_time'] is not None:
+                summary[key][dsdata[key]]['ds_done'] += 1
+                epltime = dsdata['end_time'] - dsdata['start_time']
+                timelistIntervalfin.append(epltime)
+            elif dsdata['status'] != 'queued':
+                epltime = timezone.now() - dsdata['start_time']
+                timelistIntervalact.append(epltime)
+                summary[key][dsdata[key]]['ds_active'] += 1
+                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
+                    summary[key][dsdata[key]]['files_active'] += dsdata['total_files'] - dsdata['staged_files']
+                if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
+                    summary[key][dsdata[key]]['bytes_active'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
+                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') and dsdata['staged_files'] >= dsdata['total_files'] * 0.9:
+                    summary[key][dsdata[key]]['ds_90pdone'] += 1
+            elif dsdata['status'] == 'queued':
+                epltime = timezone.now() - dsdata['creation_time']
+                timelistIntervalqueued.append(epltime)
+                summary[key][dsdata[key]]['ds_queued'] += 1
+                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
+                    summary[key][dsdata[key]]['files_queued'] += dsdata['total_files'] - dsdata['staged_files']
+                if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
+                    summary[key][dsdata[key]]['bytes_queued'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
 
         if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
             progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
@@ -235,22 +225,17 @@ def get_data_carousel_data(request):
             'status': dsdata['status'],
             'total_files': dsdata['total_files'] if is_positive_int_field(dsdata, 'total_files') else 0,
             'staged_files': dsdata['staged_files'] if is_positive_int_field(dsdata, 'staged_files') else 0,
-            'size': round(
-                convert_bytes(dsdata['dataset_bytes'], output_unit='GB'), 2
-            ) if is_positive_int_field(dsdata, 'dataset_bytes') else 0,
-            'progress': int(
-                math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])
-            ) if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') else 0,
+            'size': int(round(convert_bytes(dsdata['dataset_bytes'], 'GB'))) if is_positive_int_field(dsdata, 'dataset_bytes') else "0",
+            'progress': int(math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])) if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') else 0,
             'source_rse': dsdata['source_rse'],
-            'destination_rse': dsdata['destination_rse'] if 'destination_rse' in dsdata and dsdata['destination_rse'] else '---',
-            'elapsedtime': convert_sec(epltime.total_seconds(), out_unit='str') if epltime is not None else '---',
+            'destination_rse': dsdata['destination_rse'] if dsdata.get('destination_rse') else '---',
+            'elapsedtime': convert_sec(epltime.total_seconds(), 'str') if epltime is not None else '---',
             'start_time': dsdata['start_time'].strftime(settings.DATETIME_FORMAT) if dsdata['start_time'] else '---',
             'rrule': dsdata['rse'],
-            'update_time': convert_sec(dsdata['update_time'].total_seconds(), out_unit='str') if dsdata['update_time'] is not None else '---',
+            'update_time': convert_sec(dsdata['update_time'].total_seconds(), 'str') if dsdata.get('update_time') else '---',
             'processingtype': dsdata['processingtype']
         })
 
-    # fill options for selection menus
     for key in selection_options:
         if key in summary:
             selection_options[key] = sorted(
@@ -258,25 +243,22 @@ def get_data_carousel_data(request):
                 key=lambda x: x['name'].lower()
             )
 
-    # round bytes
     for param in summary:
         for value in summary[param]:
             for key in summary[param][value]:
-                if key.startswith('bytes') and is_positive_int_field(summary[param][value],key):
-                    summary[param][value][key] = round(summary[param][value][key], 2)
+                if key.startswith('bytes'):
+                    summary[param][value][key] = int(round(summary[param][value][key]))
 
-    # dict -> list for summary + sorting
     for param in summary:
         summary[param] = sorted(list(summary[param].values()), key=lambda x: x[param].lower())
 
-    binned_subm_datasets = build_time_histogram(timelistSubmitted) if len(timelistSubmitted) > 0 else {}
-    binned_subm_files = build_time_histogram(timelistSubmittedFiles) if len(timelistSubmittedFiles) > 0 else {}
-
+    binned_subm_datasets = build_time_histogram(timelistSubmitted) if timelistSubmitted else {}
+    binned_subm_files = build_time_histogram(timelistSubmittedFiles) if timelistSubmittedFiles else {}
     binnedActFinData = getBinnedData(timelistIntervalact, timelistIntervalfin, timelistIntervalqueued)
-    eplTime = (
-        [['Time', 'Active staging', 'Finished staging', 'Queued staging']] +
-        [[round(time_str, 1), data[0], data[1], data[2]] for (time_str, data) in binnedActFinData]
-    )
+    eplTime = [['Time', 'Active staging', 'Finished staging', 'Queued staging']] + [
+        [round(time_str, 1), data[0], data[1], data[2]] for (time_str, data) in binnedActFinData
+    ]
+
     _logger.debug('Prepared data: {}'.format(time.time() - request.session['req_init_time']))
 
     finalvalue = {
@@ -290,7 +272,6 @@ def get_data_carousel_data(request):
     }
     response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
     return response
-
 
 def get_stuck_files(request):
     """
@@ -338,14 +319,13 @@ def send_stalled_requests_report(request):
         return JsonResponse({'sent': 0}, status=204)
 
     # get data
-    request.session['requestParams']['tasktype'] = 'anal'  # FIXME mimic analy tasks to get data from PanDA DC tables
     extra_query_str = setup_view_dc(request)
     extra_query_str += f"""
         and t1.end_time is null and t1.status = 'staging' and t1.modification_time <= sysdate - {settings.DATA_CAROUSEL_MAIL_DELAY_DAYS} 
             and t3.status not in ('cancelled','failed','broken','aborted','finished','done')
     """
     rows = get_staging_data(extra_query_str, add_idds_data=False)
-    rows = sorted(rows.values(), key=lambda x: x['update_time'], reverse=True)
+    rows = sorted(rows, key=lambda x: x['update_time'], reverse=True)
     ds_per_rse = {}
     for r in rows:
         if r['source_rse'] not in ds_per_rse:
@@ -374,11 +354,11 @@ def send_stalled_requests_report(request):
     # dict -> list of rules & send
     for rse, rucio_rules in ds_per_rse.items():
         _logger.debug("DataCarouselMails processes this RSE: {}".format(rse))
-        # divide into 2 categories, one sent only to DC&DDM experts, the other is for site admins
         data_email_categories = {
             'experts_only': [rule for r_uid, rule in rucio_rules.items() if rule['is_tape_problem'] is False],
             'site_admins': [rule for r_uid, rule in rucio_rules.items() if rule['is_tape_problem'] is True]
         }
+
         if len(data_email_categories['experts_only']) > 0:
             send_report_rse(
                 rse,
