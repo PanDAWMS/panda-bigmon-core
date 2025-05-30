@@ -65,9 +65,13 @@ def get_staging_info_for_task(request):
         for dsdata in data_raw:
             data = {}
             data['start_time_ms'] = 0
+
             for key in ('taskid', 'status', 'scope', 'dataset', 'rse', 'source_rse', 'destination_rse',
                         'step_action_id', 'source_rse_old'):
                 data[key] = dsdata[key] if key in dsdata else '---'
+                if key == 'dataset':
+                    val = dsdata[key]
+                    data[key] = val.split(':', 1)[1] if ':' in val else val
 
             for key in ('start_time', 'end_time'):
                 if key in dsdata and dsdata[key] and isinstance(dsdata[key], timezone.datetime):
