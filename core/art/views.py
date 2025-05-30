@@ -680,7 +680,7 @@ def artTest(request, package=None, testname=None):
                             n=2, method='ceil'
                         )
                     job['duration_str'] = convert_sec(get_job_walltime(panda_jobs[pid]), out_unit='str')
-                    job['errorinfo'] = panda_jobs[pid]['errorinfo']
+                    job['errorinfo'] = panda_jobs[pid]['error_info']
 
                     finalresult, extraparams = get_final_result(job)
                     if 'status' in job and isinstance(job['status'], int):
