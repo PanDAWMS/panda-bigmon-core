@@ -631,7 +631,7 @@
               <th colspan="11">
                 <span ng-if="datasets.length === 1">
                   {% if request.session.rucio_ui|length > 0 %}
-                    for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
+                    for <a href="{{ request.session.rucio_ui }}did?scope={$ datasets[0].scope $}&name={$ datasets[0].dataset $}">
                       {$ datasets[0].dataset $}
                     </a>
                     <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
@@ -671,13 +671,7 @@
               <td>{$ dataset.source_rse $}</td>
               <td>{$ dataset.destination_rse $}</td>
               <td class="{$ dataset.status $}_fill">
-                {% if viewParams.MON_VO == 'ATLAS' and task.tasktype != 'anal' %}
-                  <a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ dataset.step_action_id $}/">
                     {$ dataset.status $}
-                  </a>
-                {% else %}
-                  {$ dataset.status $}
-                {% endif %}
               </td>
               <td class="num">
                 {$ dataset.staged_files $} | {$ dataset.total_files $}  | {$ dataset.staged_files_pct $}%
