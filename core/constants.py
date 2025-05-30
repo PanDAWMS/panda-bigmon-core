@@ -123,18 +123,57 @@ JOB_FIELDS_ERROR_VIEW = (
     'workinggroup',
 )
 
-
-JOB_ERROR_CATEGORIES = (
-    {'name': 'brokerage', 'error': 'brokerageerrorcode', 'diag': 'brokerageerrordiag', 'title': 'Brokerage error'},
-    {'name': 'ddm', 'error': 'ddmerrorcode', 'diag': 'ddmerrordiag', 'title': 'DDM error'},
-    {'name': 'exe', 'error': 'exeerrorcode', 'diag': 'exeerrordiag', 'title': 'Executable error'},
-    {'name': 'jobdispatcher', 'error': 'jobdispatchererrorcode', 'diag': 'jobdispatchererrordiag',
-        'title': 'Dispatcher error'},
-    {'name': 'pilot', 'error': 'piloterrorcode', 'diag': 'piloterrordiag', 'title': 'Pilot error'},
-    {'name': 'sup', 'error': 'superrorcode', 'diag': 'superrordiag', 'title': 'Sup error'},
-    {'name': 'taskbuffer', 'error': 'taskbuffererrorcode', 'diag': 'taskbuffererrordiag', 'title': 'Task buffer error'},
-    {'name': 'transformation', 'error': 'transexitcode', 'diag': None, 'title': 'Trf exit code'},
+JOB_ERROR_COMPONENTS = (
+    {
+        'name': 'brokerage',
+        'error': 'brokerageerrorcode',
+        'diag': 'brokerageerrordiag',
+        'title': 'Brokerage error',
+    },
+    {
+        'name': 'dataservice',
+        'error': 'ddmerrorcode',
+        'diag': 'ddmerrordiag',
+        'title': 'DDM error',
+    },
+    {
+        'name': 'executor',
+        'error': 'exeerrorcode',
+        'diag': 'exeerrordiag',
+        'title': 'Executable error',
+    },
+    {
+        'name': 'jobdispatcher',
+        'error': 'jobdispatchererrorcode',
+        'diag': 'jobdispatchererrordiag',
+        'title': 'Dispatcher error',
+    },
+    {
+        'name': 'pilot',
+        'error': 'piloterrorcode',
+        'diag': 'piloterrordiag',
+        'title': 'Pilot error',
+    },
+    {
+        'name': 'taskbuffer',
+        'error': 'taskbuffererrorcode',
+        'diag': 'taskbuffererrordiag',
+        'title': 'Task buffer error',
+    },
+    {
+        'name': 'transform',
+        'error': 'transexitcode',
+        'diag': None,
+        'title': 'Transformation exit code',
+    },
+    {
+        'name': 'supervisor',
+        'error': 'superrorcode',
+        'diag': 'superrordiag',
+        'title': 'Supervisor error',
+    },
 )
+
 
 JOB_FIELDS_ATTR_SUMMARY = (
     'processingtype',
