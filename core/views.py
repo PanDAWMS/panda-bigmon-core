@@ -1942,7 +1942,6 @@ def descendentjoberrsinfo(request):
 @csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None):
     valid, response = initRequest(request)
-
     if not valid:
         return response
 
@@ -2035,8 +2034,6 @@ def jobInfo(request, pandaid=None, batchid=None):
         request = complete_request(request)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
-
-
 
     job = {}
     try:
@@ -2273,6 +2270,7 @@ def jobInfo(request, pandaid=None, batchid=None):
         del request.session['TFIRST']
         del request.session['TLAST']
 
+        # prepare error summary data for table
         error_summary = []
         if job['jobstatus'] in ('failed', 'holding'):
             for comp in const.JOB_ERROR_COMPONENTS:
@@ -2283,6 +2281,13 @@ def jobInfo(request, pandaid=None, batchid=None):
                         'code': job[comp['error']],
                         'diagnostics': job['transformerrordiag'] if comp['name'] == 'transform' and 'transformerrordiag' in job else job[comp['diag']],
                         'description': job[f"{comp['name']}_error_desc"] if f"{comp['name']}_error_desc" in job else '',
+                    })
+            if 'harvesterInfo' in job and 'errorcode' in job['harvesterInfo'] and job['harvesterInfo']['errorcode'] > 0:
+                    error_summary.append({
+                        'component': 'Harvester worker',
+                        'code': job['harvesterInfo']['errorcode'],
+                        'diagnostics': job['harvesterInfo']['diagmessage'] if 'diagmessage' in job['harvesterInfo'] else '',
+                        'description': '-',
                     })
 
         data = {
@@ -2391,14 +2396,17 @@ def get_job_relationships(request, pandaid=-1):
                 job_relationships.extend(
                     JediJobRetryHistory.objects.filter(**retryquery).order_by('newpandaid').reverse().values())
             else:
-                job_relationships = getSequentialRetries_ESupstream(job['pandaid'], job['jobsetid'], job['jeditaskid'],
-                                                                    countOfInvocations)
+                job_relationships = getSequentialRetries_ESupstream(
+                    job['pandaid'],
+                    job['jobsetid'],
+                    job['jeditaskid'],
+                    countOfInvocations
+                )
         elif direction == 'upstream':
             if not is_event_service(job):
                 job_relationships = getSequentialRetries(job['pandaid'], job['jeditaskid'], countOfInvocations)
             else:
-                job_relationships = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'],
-                                                            countOfInvocations)
+                job_relationships = getSequentialRetries_ES(job['pandaid'], job['jobsetid'], job['jeditaskid'], countOfInvocations)
         else:
             message = 'Wrong direction provided, it should be up or down stream.'
     else:

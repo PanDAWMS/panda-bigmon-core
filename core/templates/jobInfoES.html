@@ -137,9 +137,6 @@
             <td>{% if row.description and row.description|length > 0 %}{{ row.description|force_escape|safe }}{% else %}-{% endif %}</td>
           </tr>
       {% endfor %}
-      {% if job.harvesterInfo.diagmessage %}
-        <tr><td>Harvester worker</td><td>{{ job.harvesterInfo.errorcode }}</td><td>{{ job.harvesterInfo.diagmessage|force_escape|safe }}</td><td>-</td></tr>
-      {% endif %}
     </tbody>
   </table>
 {% endif %}

@@ -67,7 +67,10 @@ def add_error_info_to_job(job, n_chars=300, mode='html', do_add_desc=False, erro
             # there is no error diag for transformations, get it from error_desc
             comp_code_str = f"{comp['name']}:{job[comp['error']]}"
             if comp['name'] == 'transform':
-                diag = error_desc[comp_code_str]['diagnostics'] if comp_code_str in error_desc else ''
+                if comp_code_str in error_desc:
+                    diag = error_desc[comp_code_str]['diagnostics']
+                else:
+                    diag = f"Unknown transformation exit code {job[comp['error']]}"
                 job['transformerrordiag'] = diag
             else:
                 diag = job[comp['diag']]
@@ -89,7 +92,7 @@ def add_error_info_to_job(job, n_chars=300, mode='html', do_add_desc=False, erro
     if mode == 'str' and len(error_info_str) > n_chars:
         error_info_str = error_info_str[:n_chars] + '...'
 
-    job['error_info'] = error_info_str
+    job['errorinfo'] = error_info_str  # keep it as it is used by API clients
     job['error_desc'] = error_desc_str
     return job
 
@@ -135,6 +138,6 @@ def get_job_errors(pandaids):
     error_desc = get_job_error_descriptions()
     for job in jobs:
         job_with_error_info = add_error_info_to_job(job, n_chars=1000, mode='str', do_add_desc=False, error_desc=error_desc)
-        errors_dict[job['pandaid']] = job_with_error_info['error_info']
+        errors_dict[job['pandaid']] = job_with_error_info['errorinfo']
 
     return errors_dict
