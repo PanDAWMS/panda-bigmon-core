@@ -39,6 +39,7 @@ class BPCoreTest(unittest.TestCase):
                 cls.test_data['lfn'] = data['jobs'][0]['datasets'][0]['lfn']
                 cls.test_data['datasetid'] = data['jobs'][0]['datasets'][0]['datasetid']
                 cls.test_data['datasetname'] = data['jobs'][0]['datasets'][0]['datasetname']
+        print('Test data for views:', cls.test_data)
 
     def setUp(self):
         # Every test needs a client
@@ -259,7 +260,7 @@ class BPCoreTest(unittest.TestCase):
 
     def test_api_files(self):
         self.assertIsInstance(self.test_data['datasetid'], int)
-        response = self.client.get('/loadFileList/' + str(self.test_data['datasetid']) + '/?' + self.timestamp_str)
+        response = self.client.get('/loadFileList/?datasetid=' + str(self.test_data['datasetid']) + '&' + self.timestamp_str)
         self.assertEqual(response.status_code, 200)
         # expecting list of files
         data = json.loads(response.content)

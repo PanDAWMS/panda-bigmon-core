@@ -16,7 +16,7 @@
 {% if show == 'all' or  job.jobstatus == 'transferring' %} <li>  Status <b class='transferring'>transferring</b> indicates that transferring of outputs to their final destination after job completion is underway. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'merging' %} <li>  Status <b class='transferring'>merging</b> indicates that job is waiting while the correspondent merge job is done and merged files are transferred to the final destination. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'finished' %} <li>  Status <b class='finished'>finished</b> indicates that the job has successfully completed. {% endif %}
-{% if show == 'all' or  job.jobstatus == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates that the job has failed at some stage. Information on where the error occurred and with what error condition can be found in the job parameters table. {% endif %}
+{% if show == 'all' or  job.jobstatus == 'failed' %} <li>  Status <b class='failed'>failed</b> indicates that the job has failed at some stage. Information on where the error occurred and with what error condition can be found in the job error summary or parameters tables. Also, we generated the descriptions of errors using a LLM based on the documentation and source code of system components. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'cancelled' %} <li>  Status <b class='cancelled'>cancelled</b> indicates that the job has been cancelled, either by the user or by the system. Further information may be available in the job parameters table. {% endif %}
 {% if show == 'all' or  job.jobstatus == 'closed' %} <li>  Status <b class='closed'>closed</b> terminated by the system before completing the allocated workload. E.g., killed to be reassigned to another site.{% endif %}
 </ul>
@@ -34,13 +34,7 @@ Re-attempts of a job share the same job name. To see all attempts, click the job
 
 <p>
 For information on PanDA job states and their transitions <a href='https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#job'>see here</a>.
-</p>
-
-<p>
-If you're wondering how job priority is calculated, <a href="https://panda-wms.readthedocs.io/en/latest/client/pathena.html#how-job-priorities-are-calculated">see here</a>.
-</p>
-
-<p>
+  If you're wondering how job priority is calculated, <a href="https://panda-wms.readthedocs.io/en/latest/client/pathena.html#how-job-priorities-are-calculated">see here</a>.
 For interpretation of event range status <a href="https://panda-wms.readthedocs.io/en/latest/architecture/jedi.html#event">see here</a>.
 </p>
 
@@ -58,7 +52,7 @@ Note that the --debugMode option is available as a pathena/prun option, it cause
 <p>
   Job data can be retrieved in JSON format with <code>curl</code> so that it can be used programmatically.
   See <a href="{% url 'helpPage' %}?#apiHelp">API section</a> in complete help page how to do it from either lxplus or outside CERN.
-  <b>Use this carefully</b>, do not for example put scripts in crons that do heavy retrieval of job data this way.
+  <b>Use this carefully</b>, for example do not put scripts in crons that do heavy retrieval of job data.
   If you have systematic needs for PanDA job data, tell us what they are. Do <b>*not*</b> use web page scraping.
 </p>
 

@@ -16,6 +16,7 @@ from core.libs.job import get_job_list
 from core.libs.exlib import convert_bytes
 from core.schedresource.utils import get_panda_queues
 
+
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
 

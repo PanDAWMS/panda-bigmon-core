@@ -4,7 +4,6 @@ import logging
 import pandas as pd
 import time
 
-from core.libs.error import get_job_error_desc
 from core.libs.task import taskNameDict
 from core.libs.job import get_job_walltime
 from core.libs.exlib import calc_freq_time_series
@@ -22,21 +21,18 @@ def get_error_message_summary(jobs):
     :return: list of rows for datatable
     """
     error_message_summary_list = []
-    errorMessageSummary = {}
+    error_message_summary = {}
     N_SAMPLE_JOBS = 3
 
-    # codes = ErrorCodes()
-    # errorFields, errorCodes, errorStages = codes.getErrorCodes()
-    errorCodes = get_job_error_desc()
-    errorcodelist = copy.deepcopy(const.JOB_ERROR_CATEGORIES)
+    error_components = copy.deepcopy(const.JOB_ERROR_COMPONENTS)
 
     for job in jobs:
-        for errortype in errorcodelist:
-            if errortype['error'] in job and job[errortype['error']] is not None and job[errortype['error']] != '' and int(job[errortype['error']]) > 0:
-                errorcodestr = errortype['name'] + ':' + str(job[errortype['error']])
-                if not errorcodestr in errorMessageSummary:
-                    errorMessageSummary[errorcodestr] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
-                errorMessageSummary[errorcodestr]['count'] += 1
+        for comp in error_components:
+            if comp['error'] in job and job[comp['error']] is not None and job[comp['error']] != '' and int(job[comp['error']]) > 0:
+                comp_code_str = f"{comp['name']}:{str(job[comp['error']])}"
+                if not comp_code_str in error_message_summary:
+                    error_message_summary[comp_code_str] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
+                error_message_summary[comp_code_str]['count'] += 1
                 try:
                     corecount = int(job['actualcorecount'])
                 except:
@@ -45,28 +41,25 @@ def get_error_message_summary(jobs):
                     walltime = int(get_job_walltime(job))
                 except:
                     walltime = 0
-                errorMessageSummary[errorcodestr]['walltimeloss'] += walltime * corecount
-                # transexitcode has no diag field in DB, so we get it from ErrorCodes class
-                if errortype['name'] != 'transformation':
-                    errordiag = job[errortype['diag']] if len(job[errortype['diag']]) > 0 else '---'
+                error_message_summary[comp_code_str]['walltimeloss'] += walltime * corecount
+                # transexitcode has no related diag field, but we already added it from ErrorDescriptions
+                if comp['name'] != 'transform':
+                    diag = job[comp['diag']] if len(job[comp['diag']]) > 0 else '---'
                 else:
-                    try:
-                        errordiag = errorCodes[errortype['error']][int(job[errortype['error']])]
-                    except:
-                        errordiag = '--'
-                if not errordiag in errorMessageSummary[errorcodestr]['messages']:
-                    errorMessageSummary[errorcodestr]['messages'][errordiag] = {'count': 0, 'pandaids': []}
-                errorMessageSummary[errorcodestr]['messages'][errordiag]['count'] += 1
-                if len(errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids']) < N_SAMPLE_JOBS:
-                    errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids'].append(job['pandaid'])
+                    diag = job['transformerrordiag'] if 'transformerrordiag' in job and len(job['transformerrordiag']) > 0 else '---'
+                if not diag in error_message_summary[comp_code_str]['messages']:
+                    error_message_summary[comp_code_str]['messages'][diag] = {'count': 0, 'pandaids': []}
+                error_message_summary[comp_code_str]['messages'][diag]['count'] += 1
+                if len(error_message_summary[comp_code_str]['messages'][diag]['pandaids']) < N_SAMPLE_JOBS:
+                    error_message_summary[comp_code_str]['messages'][diag]['pandaids'].append(job['pandaid'])
 
     # form a dict for mapping error code name and field in panda db in order to prepare links to job selection
     errname2dbfield = {}
-    for errortype in errorcodelist:
-        errname2dbfield[errortype['name']] = errortype['error']
+    for comp in error_components:
+        errname2dbfield[comp['name']] = comp['error']
 
     # dict -> list
-    for errcode, errinfo in errorMessageSummary.items():
+    for errcode, errinfo in error_message_summary.items():
         errcodename = errname2dbfield[errcode.split(':')[0]]
         errcodeval = errcode.split(':')[1]
         for errmessage, errmessageinfo in errinfo['messages'].items():
@@ -91,7 +84,7 @@ def get_job_error_categories(job):
     :return: error_category_list: list of str, shortened error category string
     """
     error_category_list = []
-    for k in list(const.JOB_ERROR_CATEGORIES):
+    for k in list(const.JOB_ERROR_COMPONENTS):
         if k['error'] in job and job[k['error']] is not None and job[k['error']] != '' and int(job[k['error']]) > 0:
             error_category_list.append(f"{k['name']}:{job[k['error']]}")
 
@@ -237,9 +230,7 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
         tasknamedict = taskNameDict(jobs)
         _logger.debug('Got tasknames for summary by task: {}'.format(time.time() - start_time))
 
-    # get error codes and description
-    errorCodes = get_job_error_desc()
-    errorcodelist = copy.deepcopy(const.JOB_ERROR_CATEGORIES)
+    error_components = copy.deepcopy(const.JOB_ERROR_COMPONENTS)
 
     for job in jobs:
         if not is_test_jobs and job['jobstatus'] not in ['failed', 'holding']:
@@ -279,24 +270,21 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
                 sumd['specialhandling'][v] += 1
 
         errsByList = {}
-        for err in errorcodelist:
-            if job[err['error']] != 0 and job[err['error']] != '' and job[err['error']] is not None:
-                errval = job[err['error']]
-                # error code of zero is not an error
-                if errval == 0 or errval == '0' or errval is None:
-                    continue
+        for err in error_components:
+            # error code of zero is not an error
+            if job[err['error']] != 0 and job[err['error']] != '' and job[err['error']] != '0' and job[err['error']] is not None:
                 errdiag = ''
                 try:
-                    errnum = int(errval)
-                    if err['error'] in errorCodes and errnum in errorCodes[err['error']]:
-                        errdiag = errorCodes[err['error']][errnum]
-                except:
-                    errnum = errval
-                errcode = "%s:%s" % (err['name'], errnum)
+                    errnum = int(job[err['error']])
+                except ValueError:
+                    continue
                 if err['diag']:
                     errdiag = job[err['diag']]
-                errsByList[job['pandaid']]=errdiag
+                elif err['name'] == 'transform':
+                    errdiag = job['transformerrordiag'] if 'transformerrordiag' in job and len(job['transformerrordiag']) > 0 else ''
 
+                errsByList[job['pandaid']] = errdiag
+                errcode = f"{err['name']}:{str(errnum)}"
                 if errcode not in errsByCount:
                     errsByCount[errcode] = {}
                     errsByCount[errcode]['error'] = errcode

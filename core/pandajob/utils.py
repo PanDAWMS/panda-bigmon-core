@@ -2,8 +2,10 @@
 import datetime
 import logging
 import collections, functools, operator
+from django.core.cache import cache
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
-    Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021, Jobsarchived_y2022, Jobsarchived, Jobsarchived4
+    Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021, Jobsarchived_y2022, Jobsarchived, Jobsarchived4, \
+    ErrorDescription
 from core.libs.datetimestrings import parse_datetime
 from core.libs.eventservice import is_event_service, get_event_status_summary
 from core.libs.exlib import split_into_intervals, get_maxrampercore_dict
@@ -329,3 +331,29 @@ def job_summary_dict(jobs, fieldlist=None, produsername=None, sortby='alpha'):
         suml.append(itemd)
         suml = sorted(suml, key=lambda x: x['field'])
     return suml, esjobdict
+
+
+def get_job_error_descriptions():
+    """
+    Retrieves error descriptions from the cache or database. Firstly it attempts to fetch error descriptions from the cache.
+    If the cache is unavailable or empty, it loads the error descriptions directly from the database and stores them in the cache
+    for future use.
+
+    :return: dict - A dictionary containing error descriptions, where the keys are formatted as
+             "component:code" and the values are the corresponding error description objects.
+    """
+    error_descriptions = {}
+    try:
+        error_descriptions = cache.get('error_descriptions', None)
+    except Exception as e:
+        _logger.debug('Can not get error codes from cache: \n{} \nLoading directly from DB instead...'.format(e))
+        error_descriptions = None
+    if not error_descriptions:
+        error_descriptions_list = list(ErrorDescription.objects.values())
+        error_descriptions = {f"{d['component']}:{d['code']}": d for d in error_descriptions_list}
+        cache.set('error_descriptions', error_descriptions, 60*60*24)
+    return error_descriptions
+
+
+def error_description(job):
+    pass

@@ -3,7 +3,6 @@ Set of functions related to job errors parsing and extracting descriptions
 
 Created by Tatiana Korchuganova on 05.03.2020
 """
-import json
 import logging
 from html import escape
 
@@ -11,151 +10,91 @@ from django.core.cache import cache
 from django.conf import settings
 
 from core.pandajob.models import Jobsarchived4, Jobsarchived
+from core.pandajob.utils import get_job_error_descriptions
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table
-from core.libs.ErrorCodes import ErrorCodes, ErrorCodesAtlas
 import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
 
 
-def get_job_error_desc():
+def format_error(component, code, diag=None, output_format='html'):
     """
-    Get ErrorCodes and put into cache
-    :return:
+    Format error code and diagnostic message
+    :param component: str, name of the component (e.g., 'brokerage', 'exe', etc.)
+    :param code: int, error code
+    :param diag: str, diagnostic message (optional)
+    :param output_format: str, 'html' or 'str'
+    :return: formatted error string
     """
-    try:
-        error_desc_dict = cache.get('errorCodes', None)
-    except Exception as e:
-        _logger.warning('Can not get error codes from cache: \n{} \nLoading directly instead...'.format(e))
-        error_desc_dict = None
-    error_desc_dict = None
-    if not error_desc_dict:
-        if 'ATLAS' in settings.DEPLOYMENT:
-            codes = ErrorCodesAtlas()
-        else:
-            codes = ErrorCodes()
-        error_desc_dict = codes.getErrorCodes()
-        cache.set('errorCodes', error_desc_dict, 60*60*24)
-    return error_desc_dict
+    if diag is None and component == 'transformation':
+        diag = f"Unknown transformation exit code {code}"
+    elif diag is None:
+        diag = ''
+    # remove timestamp from diag for lost heartbeat errors
+    if 'lost heartbeat' in diag:
+        diag = 'lost heartbeat'
+    if ' at ' in diag:
+        diag = diag[:diag.find(' at ') - 1]
+    diag = diag.replace('\n', ' ')
 
-
-def getErrorDescription(job, mode='html', provideProcessedCodes = False, **kwargs):
-    txt = ''
-    codesDescribed = []
-
-    if 'errorCodes' in kwargs:
-        errorCodes = kwargs['errorCodes']
+    #  format the error string based on the output format
+    if output_format == 'html':
+        error_str = f"<b>{component}:{code}</b> {escape(diag, quote=True)} "
     else:
-        errorCodes = get_job_error_desc()
+        error_str = f"{component}:{code} {diag} "
+    return error_str
 
-    if 'metastruct' in job:
-        if type(job['metastruct']) is str:
-            try:
-                meta = json.loads(job['metastruct'])
-            except:
-                _logger.exception('Meta type: ' + str(type(job['metastruct'])))
-                meta = job['metastruct']
-            if 'exitCode' in meta and meta['exitCode'] != 0:
-                txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
-                if provideProcessedCodes:
-                    return txt, codesDescribed
+
+
+def add_error_info_to_job(job, n_chars=300, mode='html', do_add_desc=False, error_desc=None):
+    """
+    Concat all error codes and diagnostics into a single string and add to job dict
+    :param job: dict
+    :param n_chars: int, max length of the error string to return
+    :param mode: str, 'html' or 'string'
+    :param do_add_desc: bool, if True, add long description of errors
+    :param error_desc: dict, if provided, use this instead of fetching from cache
+    :return: job: dict with 'error_info' key added
+    """
+    error_info_str = ''
+    error_desc_str = ''
+    if error_desc is None:
+        error_desc = get_job_error_descriptions()
+
+    for comp in const.JOB_ERROR_COMPONENTS:
+        if (comp['error'] in job and job[comp['error']] != '' and job[comp['error']] is not None
+                and int(job[comp['error']]) != 0):
+            # there is no error diag for transformations, get it from error_desc
+            comp_code_str = f"{comp['name']}:{job[comp['error']]}"
+            if comp['name'] == 'transform':
+                if comp_code_str in error_desc:
+                    diag = error_desc[comp_code_str]['diagnostics']
                 else:
-                    return txt
+                    diag = f"Unknown transformation exit code {job[comp['error']]}"
+                job['transformerrordiag'] = diag
             else:
-                if provideProcessedCodes:
-                    return '-', codesDescribed
-                else:
-                    return '-'
-        else:
-            meta = job['metastruct']
-            if 'exitCode' in meta and meta['exitCode'] != 0:
-                txt += "%s: %s" % (meta['exitAcronym'], meta['exitMsg'])
-                if provideProcessedCodes:
-                    return txt, codesDescribed
-                else:
-                    return txt
+                diag = job[comp['diag']]
+            if comp['name'] == 'supervisor' and len(error_info_str) > 0:
+                # supervisor error is not added to the error_info_str if errors from other components are already there
+                continue
+            error_info_str += format_error(
+                comp['name'],
+                job[comp['error']],
+                diag,
+                output_format=mode
+            )
 
-    for errcode in errorCodes:
-        errval = 0
-        if errcode in job:
-            errval = job[errcode]
-            if errval != 0 and errval != '0' and errval != None and errval != '':
-                try:
-                    errval = int(errval)
-                except:
-                    pass  # errval = -1
-                codesDescribed.append(errval)
-                errdiag = errcode.replace('errorcode', 'errordiag')
-                if errcode.find('errorcode') > 0:
-                    if job[errdiag] is not None:
-                        diagtxt = str(job[errdiag])
-                    else:
-                        diagtxt = ''
-                else:
-                    diagtxt = ''
-                if len(diagtxt) > 0:
-                    desc = diagtxt
-                elif errval in errorCodes[errcode]:
-                    desc = errorCodes[errcode][errval]
-                else:
-                    desc = "Unknown %s error code %s" % (errcode, errval)
-                errname = errcode.replace('errorcode', '')
-                errname = errname.replace('exitcode', '')
-                if mode == 'html':
-                    txt += " <b>%s, %d:</b> %s" % (errname, errval, desc)
-                else:
-                    txt = "%s, %d: %s" % (errname, errval, desc)
-    if provideProcessedCodes:
-        return txt, codesDescribed
-    else:
-        return txt
+            if do_add_desc:
+                job[f"{comp['name']}_error_desc"] = error_desc[comp_code_str]['description'] if comp_code_str in error_desc else ''
+                if len(job[f"{comp['name']}_error_desc"]) > 0:
+                    error_desc_str += f"{comp_code_str} - {job[f'{comp['name']}_error_desc']} <br>"
 
+    if mode == 'str' and len(error_info_str) > n_chars:
+        error_info_str = error_info_str[:n_chars] + '...'
 
-def errorInfo(job, nchars=300, mode='html', **kwargs):
-    errtxt = ''
-    err1 = ''
-    if 'errorCodes' in kwargs:
-        errorCodes = kwargs['errorCodes']
-    else:
-        errorCodes = get_job_error_desc()
-
-    desc, codesDescribed = getErrorDescription(job, provideProcessedCodes=True, errorCodes=errorCodes)
-
-    for error_cat in const.JOB_ERROR_CATEGORIES:
-        if (error_cat['error'] in job and job[error_cat['error']] != '' and job[error_cat['error']] is not None
-                and int(job[error_cat['error']]) != 0 and int(job[error_cat['error']]) not in codesDescribed):
-            if error_cat['diag'] is not None:
-                errtxt += '{} {}: {} <br>'.format(
-                    error_cat['title'],
-                    job[error_cat['error']],
-                    escape(job[error_cat['diag']], quote=True)
-                )
-                if err1 == '':
-                    err1 = "{}: {}".format(error_cat['name'], escape(job[error_cat['diag']], quote=True))
-            else:
-                errtxt += '{} {} <br>'.format(error_cat['title'], job[error_cat['error']])
-                if err1 == '':
-                    err1 = "{}: {}".format(error_cat['name'], job[error_cat['error']])
-
-    if len(desc) > 0:
-        errtxt += '%s<br>' % desc
-        if err1 == '':
-            err1 = getErrorDescription(job, mode='string', errorCodes=errorCodes)
-
-    if err1.find('lost heartbeat') >= 0:
-        err1 = 'lost heartbeat'
-    if err1.lower().find('unknown transexitcode') >= 0:
-        err1 = 'unknown transexit'
-    if err1.find(' at ') >= 0:
-        err1 = err1[:err1.find(' at ') - 1]
-    if errtxt.find('lost heartbeat') >= 0:
-        err1 = 'lost heartbeat'
-    err1 = err1.replace('\n', ' ')
-
-    if mode == 'html':
-        return errtxt
-    else:
-        return err1[:nchars]
+    job['errorinfo'] = error_info_str  # keep it as it is used by API clients
+    job['error_desc'] = error_desc_str
+    return job
 
 
 def get_job_errors(pandaids):
@@ -179,7 +118,7 @@ def get_job_errors(pandaids):
         'exeerrorcode', 'exeerrordiag',
         'jobdispatchererrorcode', 'jobdispatchererrordiag',
         'piloterrorcode', 'piloterrordiag',
-        # 'superrorcode', 'superrordiag',
+        'superrorcode', 'superrordiag',
         'taskbuffererrorcode', 'taskbuffererrordiag'
         )
 
@@ -196,7 +135,9 @@ def get_job_errors(pandaids):
     jobs.extend(Jobsarchived4.objects.filter(**jquery).extra(where=[extra_str]).values(*values))
     jobs.extend(Jobsarchived.objects.filter(**jquery).extra(where=[extra_str]).values(*values))
 
+    error_desc = get_job_error_descriptions()
     for job in jobs:
-        errors_dict[job['pandaid']] = errorInfo(job)
+        job_with_error_info = add_error_info_to_job(job, n_chars=1000, mode='str', do_add_desc=False, error_desc=error_desc)
+        errors_dict[job['pandaid']] = job_with_error_info['errorinfo']
 
     return errors_dict
