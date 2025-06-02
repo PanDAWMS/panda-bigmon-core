@@ -198,15 +198,15 @@
         <table id="errorsummary_groupbycode" class="data-table left-aligned">
         <thead>
         <tr>
-            <th>Category:code</th>
+            <th>Component:code</th>
             <th>Nerrors</th>
-            <th>Sample error description</th>
+            <th>Sample error diagnostic message</th>
         </tr>
         </thead>
         <tbody>
         {% for errval in errsByCount %}
         <tr>
-            <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
+            <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100">{{ errval.error }}</a> {% if errval.desc|length > 0 %} <span class="bp-tooltip long right"><i class="fi-info"></i><span class="tooltip-text">{{ errval.desc|escape|safe }}</span></span>{% endif %}</td>
             <td> {{ errval.count }} </td>
             <td> {{ errval.diag|force_escape|safe }}
             </td>
@@ -222,8 +222,8 @@
         <table id="errorsummary_groupbymessage" class="data-table left-aligned">
         <thead>
           <tr>
-            <th>Category:code</th>
-            <th>Error message</th>
+            <th>Component:code</th>
+            <th>Diagnostic message</th>
             <th class="num">Number of error message</th>
           </tr>
         </thead>

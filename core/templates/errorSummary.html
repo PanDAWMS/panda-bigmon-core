@@ -150,7 +150,7 @@
         <tbody>
         {% for errval in errsByCount %}
         <tr>
-            <td> <a href="{{ xurl }}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
+            <td> <a href="{{ xurl }}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> {% if errval.desc|length > 0 %} <span class="bp-tooltip long right"><i class="fi-info"></i><span class="tooltip-text">{{ errval.desc|escape|safe }}</span></span>{% endif %}</td>
             <td> <a href="{% url 'jobList' %}?{{ requestString }}&hours={{ hours }}&jobstatus=failed&{{errval.codename}}={{errval.codeval}}">{{ errval.count }}</a></td>
             <td> {{ errval.diag|force_escape|safe }}</td>
         </tr>
