@@ -2949,16 +2949,14 @@ def userDashApi(request, agg=None):
                     '<a href="{}{}={}">{}</a>'.format(link_jobs_base, err['codename'], err['codeval'], err['count']),
                     ' [{}]'.format(err['error']),
                     ' "{}"'.format(err['diag']),
-                    ' <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(link_logs_base, err['example_pandaid'])
+                    ' <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(link_logs_base, err['example_pandaid']),
+                    ' <span class="bp-tooltip long left"><i class="fi-info alert"></i><span class="tooltip-text">{}</span></span>'.format(
+                        err['desc']
+                    ) if 'desc' in err and err['desc'] and len(err['desc']) > 1 else ''
                     ] for err in errs_by_task_dict[t['jeditaskid']]['errorlist'] if len(err['diag']) > 0
                 ][:2]
-                t['top_errors'] = '<br>'.join(
-                    ['<a href="{}{}={}">{}</a> [{}] "{}" <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(
-                        link_jobs_base, err['codename'], err['codeval'], err['count'], err['error'], err['diag'],
-                        link_logs_base, err['example_pandaid'],
-                    ) for err in errs_by_task_dict[t['jeditaskid']]['errorlist'] if len(err['diag']) > 0][:2])
             else:
-                t['top_errors'] = -1
+                t['top_errors_list'] = []
         _logger.info('Jobs metrics added to tasks: {}'.format(time.time() - request.session['req_init_time']))
 
         # prepare relevant metrics to show

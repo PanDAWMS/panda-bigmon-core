@@ -191,7 +191,7 @@ def add_error_info(jobs):
     error_desc = get_job_error_descriptions()
     jobs_new = []
     for job in jobs:
-        jobs_new.append(add_error_info_to_job(job, mode='str', do_add_desc=False, error_desc=error_desc))
+        jobs_new.append(add_error_info_to_job(job, mode='str', do_add_desc=True, error_desc=error_desc))
 
     return jobs
 

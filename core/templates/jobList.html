@@ -339,8 +339,8 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
 		<td>{{ job.currentpriority }}</td>
     <td>{{ job.nevents }} ({{ job.ninputs }})</td>
     <td>{% if 'maxpssgbpercore' in job and job.maxpssgbpercore %}{{ job.maxpssgbpercore }}{% endif %}</td>
-		<td class="wrap small">{% if job.jobinfo != '' %}{{job.jobinfo|force_escape|safe}}<br>{% endif %}
-      {% if job.errorinfo != '' %}<span class='alert'>{{job.errorinfo|safe}}</span>{% if job.error_desc|length > 0 %} <span class="bp-tooltip long left"><i class="fi-info alert"></i><span class="tooltip-text">{{ job.error_desc|safe }}</span></span>{% endif %}{% else %}-{% endif %}
+		<td class="wrap small">{% if job.jobinfo != '' %}{{job.jobinfo|escape|safe}}<br>{% endif %}
+      {% if job.errorinfo != '' %}<span class='alert'>{{job.errorinfo|escape|safe}}</span>{% if job.error_desc|length > 0 %} <span class="bp-tooltip long left"><i class="fi-info alert"></i><span class="tooltip-text">{{ job.error_desc|escape|safe }}</span></span>{% endif %}{% else %}-{% endif %}
     {% if 'is_log_available' in job %}Log files: {% if job.is_log_available == 1 %} available <a href="{% url 'filebrowser' %}?pandaid={{ job.pandaid }}">here</a>. {% elif job.is_log_available == -1 %} not available.{% endif %} {% endif %}
 		</td>
 	<tr {% if job.jobstatus == 'failed'%} class="failedjob" {% endif %}>

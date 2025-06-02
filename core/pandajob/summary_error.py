@@ -192,6 +192,7 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
 
 
 def create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid):
+    """Create a structured error entry for the error summary."""
     return {
         'error': errcode,
         'codename': err['error'],
@@ -202,14 +203,18 @@ def create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid):
         'count': 0
     }
 
+
 def update_error_summary(error_summary_dict, key, errcode, error_entry):
+    """Update the error summary dictionary with a new error entry."""
     error_summary_dict[key]['name'] = key
     if errcode not in error_summary_dict[key]['errors']:
         error_summary_dict[key]['errors'][errcode] = error_entry.copy()
     error_summary_dict[key]['errors'][errcode]['count'] += 1
     error_summary_dict[key]['toterrors'] += 1
 
+
 def to_sorted_list(d, errsort=False, totalkey=None):
+    """Convert a dictionary to a sorted list of dictionaries."""
     out = []
     for key in sorted(d):
         item = d[key]
@@ -326,8 +331,7 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
         {
             'field': f,
             'list': sorted(
-                [{'kname': k, 'kvalue': v} for k, v in sumd[f].items()],
-                key=lambda x: -x['kvalue'] if sortby == 'count' else x['kname']
+                [{'kname': k, 'kvalue': v} for k, v in sumd[f].items()], key=lambda x: -x['kvalue'] if sortby == 'count' else x['kname']
             )
         }
         for f in sorted(sumd)
