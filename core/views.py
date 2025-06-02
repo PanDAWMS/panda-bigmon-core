@@ -40,7 +40,6 @@ from core.common.models import JediJobRetryHistory, JediTasks, TasksStatusLog, J
 from core.common.models import Rating
 from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
-from core.filebrowser.ruciowrapper import ruciowrapper
 from core.filebrowser.rucioutils import get_rucio_username_by_produserid
 from core.filebrowser.utils import get_log_provider
 
@@ -55,6 +54,7 @@ from core.oauth.utils import login_customrequired, get_auth_provider, is_expert,
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
+from core.libs.checks import is_positive_int_field
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid, get_prod_request_info
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
@@ -96,8 +96,8 @@ from core.iDDS.utils import add_idds_info_to_tasks
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
-from core.schedresource.utils import get_pq_atlas_sites, get_panda_queues, get_basic_info_for_pqs, \
-    get_panda_resource, get_pq_clouds, get_pq_object_store_path, filter_pq_json
+from core.schedresource.utils import get_panda_queues, get_basic_info_for_pqs, get_panda_resource, get_pq_clouds, get_pq_object_store_path, \
+    filter_pq_json
 
 tcount = {}
 lock = Lock()
@@ -2282,7 +2282,7 @@ def jobInfo(request, pandaid=None, batchid=None):
                         'diagnostics': job['transformerrordiag'] if comp['name'] == 'transform' and 'transformerrordiag' in job else job[comp['diag']],
                         'description': job[f"{comp['name']}_error_desc"] if f"{comp['name']}_error_desc" in job else '',
                     })
-            if 'harvesterInfo' in job and 'errorcode' in job['harvesterInfo'] and job['harvesterInfo']['errorcode'] > 0:
+            if 'harvesterInfo' in job and is_positive_int_field(job['harvesterInfo'], 'errorcode'):
                     error_summary.append({
                         'component': 'Harvester worker',
                         'code': job['harvesterInfo']['errorcode'],
