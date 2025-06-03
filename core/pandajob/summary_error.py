@@ -10,6 +10,7 @@ from core.libs.exlib import calc_freq_time_series
 
 from django.conf import settings
 import core.constants as const
+from core.pandajob.utils import get_job_error_descriptions
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -77,18 +78,62 @@ def get_error_message_summary(jobs):
     return error_message_summary_list
 
 
-def get_job_error_categories(job):
+def get_job_error_component_code_list(job):
     """
-    Get shortened error category string by error field and error code
+    Get shortened error component:code string by error field and error code
     :param job: dict, name of error field
-    :return: error_category_list: list of str, shortened error category string
+    :return: error_list: list of str, shortened error category string
     """
-    error_category_list = []
+    error_list = []
     for k in list(const.JOB_ERROR_COMPONENTS):
         if k['error'] in job and job[k['error']] is not None and job[k['error']] != '' and int(job[k['error']]) > 0:
-            error_category_list.append(f"{k['name']}:{job[k['error']]}")
+            error_list.append(f"{k['name']}:{job[k['error']]}")
 
-    return error_category_list
+    return error_list
+
+
+def get_job_error_category(job, error_descriptions=None):
+    """
+    Get error category for a job
+    :param job: dict, job data
+    :param error_descriptions: dict, error descriptions mapping
+    :return: str, error category name
+    """
+    error_cat_desc = {
+        '0': '0. Uncategorized',
+        '1': '1. File and Storage Issues',
+        '2': '2. Execution and Payload Failures',
+        '3': '3. Network and Communication Errors',
+        '4': '4. Job Termination and Kill Signals',
+        '5': '5. Software and Environment Issues',
+        '6': '6. Internal and Unknown Errors',
+        '7': '7. Brokerage Errors',
+        '8': '8. DDM Errors',
+        '9': '9. Task Buffer Errors',
+        '10': '10. PanDA Job Dispatcher Errors',
+        '11': '11. PanDA Supervisor Errors',
+        '12': '12. Transformation Errors',
+    }
+
+    if not error_descriptions:
+        error_descriptions = get_job_error_descriptions()
+
+    error_list = get_job_error_component_code_list(job)
+    if len(error_list) == 0:
+        return None
+
+    # use the first error code as the category
+    error_categories = list(set([error_descriptions.get(err, {}).get('category', 0) for err in error_list]))
+
+    if len(error_categories) > 1 and 0 in error_categories:
+        # if 'Uncategorized' is present but there are other categories, we remove 'Uncategorized' from the list
+        error_categories.remove(0)
+
+    if len(error_categories) == 1:
+        return error_cat_desc[str(error_categories[0])] if str(error_categories[0]) in error_cat_desc else 'Uncategorized'
+    else:
+        _logger.debug(f"Multiple error categories found for job {job['pandaid']}: {error_categories}. Defaulting to 'Uncategorized'.")
+        return f"Uncategorized ({','.join([str(c) for c in error_categories if c != 0])})"
 
 
 def prepare_binned_and_total_data(df, column, freq='10T'):
@@ -144,20 +189,22 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
     """
     Prepare histograms data by different categories
     :param jobs:
+    :param is_wn_instead_of_site : bool, if True, use worker node instead of site
     :return: error_histograms: dict of data for histograms by different categories
     """
     threshold_percent = 2  # % threshold for low-impact values
-
+    error_descriptions = get_job_error_descriptions()
     timestamp_list = []
     data = []
     for job in jobs:
         data.append({
             'modificationtime': job['modificationtime'],
             'site': job['computingsite'] if not is_wn_instead_of_site else job['wn'],
-            'code': ','.join(sorted(get_job_error_categories(job))),
+            'code': ','.join(sorted(get_job_error_component_code_list(job))),
             'task': str(job['jeditaskid']),
             'user': job['produsername'],
             'request': str(job['reqid']) if 'reqid' in job else 'None',
+            'category': get_job_error_category(job, error_descriptions),
         })
         timestamp_list.append(job['modificationtime'])
 
@@ -174,7 +221,7 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
 
         # Generate JSON-ready data for each column
         output_data = {}
-        for column in ['site', 'code', 'task', 'user', 'request']:
+        for column in ['site', 'code', 'task', 'user', 'request', 'category']:
             output_data[column] = prepare_binned_and_total_data(df, column, freq=freq)
 
         total_jobs_per_bin = df.resample(freq).size().reset_index(name='total')
