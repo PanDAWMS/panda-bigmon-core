@@ -322,34 +322,39 @@ def get_rucio_file(scope, lfn, guid, unpack=True, listfiles=True, limit=1000):
     # urlbase
     urlbase = '{}/{}/{}/'.format(get_filebrowser_directory(), guid.lower(), scope)
 
-    # create directory for files of guid
-    dir, err = create_directory(fpath)
-    if len(err) > 0:
-        err_txt += err
+    # check if file already exists
+    if not os.path.exists(fpath):
+        # create directory for files of guid
+        dir, err = create_directory(fpath)
+        if len(err) > 0:
+            err_txt += err
 
-    # get command to copy file
-    cmd = 'export RUCIO_ACCOUNT=%s; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase; source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh; source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh "python pilot-default"; source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_rucio_account(),get_x509_proxy(),logdir,scope,lfn)
-    if not len(cmd):
-        _logger.warning('Command to fetch the file is empty!')
+        # get command to copy file
+        cmd = 'export RUCIO_ACCOUNT=%s; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase; source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh; source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh "python pilot-default"; source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_rucio_account(),get_x509_proxy(),logdir,scope,lfn)
+        if not len(cmd):
+            _logger.warning('Command to fetch the file is empty!')
 
-    # download the file
-    status, err = execute_cmd(cmd)
-    if status != 0:
-        msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
-        _logger.error(msg)
-        if 'No valid proxy present' in err or 'certificate expired' in err:
-            _logger.error("Internal Server Error: x509 proxy expired, can not connect to rucio")
-        err_txt += '\n '.join([err_txt, msg])
-    _logger.debug("get_rucio_file rucio download - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
-    if unpack and len(err_txt) == 0:
-        # untar the file
-        status, err = unpack_file(fpath)
+        # download the file
+        status, err = execute_cmd(cmd)
         if status != 0:
-            msg = 'File unpacking failed for file [%s].' % (fname)
-            _logger.error('{} File path is {}.'.format(msg, fpath))
-            err_txt = '\n '.join([err_txt, msg])
-        _logger.debug("get_rucio_file untar - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+            msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
+            _logger.error(msg)
+            if 'No valid proxy present' in err or 'certificate expired' in err:
+                _logger.error("Internal Server Error: x509 proxy expired, can not connect to rucio")
+            err_txt += '\n '.join([err_txt, msg])
+        _logger.debug("get_rucio_file rucio download - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+
+        if unpack and len(err_txt) == 0:
+            # untar the file
+            status, err = unpack_file(fpath)
+            if status != 0:
+                msg = 'File unpacking failed for file [%s].' % (fname)
+                _logger.error('{} File path is {}.'.format(msg, fpath))
+                err_txt = '\n '.join([err_txt, msg])
+            _logger.debug("get_rucio_file untar - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+    else:
+        _logger.info('File {} already exists, skipping download.'.format(fpath))
+        dir = os.path.dirname(fpath)
 
     if listfiles and len(err_txt) == 0:
         # list the files
