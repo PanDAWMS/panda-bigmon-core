@@ -64,6 +64,7 @@
   <li class="tabs-title"><a href="#panel_es_user" ng-click="es.enable_panel('user')">User</a></li>
   <li class="tabs-title"><a href="#panel_es_request" ng-click="es.enable_panel('request')">Request</a></li>
   <li class="tabs-title"><a href="#panel_es_task" ng-click="es.enable_panel('task')">Task</a></li>
+  <li class="tabs-title"><a href="#panel_es_category" ng-click="es.enable_panel('category')">Category</a></li>
 </ul>
 <div class="tabs-content" data-tabs-content="es-tabs">
   <div class="tabs-panel is-active" id="panel_es_total">
@@ -99,6 +100,12 @@
     <div class="c3-plots-row row fixed-height">
       <div class="column medium-8 xlarge-10"><canvas class="chartjs_block" id="barChartErrSplit_task"></canvas></div>
       <div class="column medium-4 xlarge-2"><canvas class="chartjs_block" id="pieChartErr_task"></canvas></div>
+    </div>
+  </div>
+  <div class="tabs-panel" id="panel_es_category">
+    <div class="c3-plots-row row fixed-height">
+      <div class="column medium-8 xlarge-10"><canvas class="chartjs_block" id="barChartErrSplit_category"></canvas></div>
+      <div class="column medium-4 xlarge-2"><canvas class="chartjs_block" id="pieChartErr_category"></canvas></div>
     </div>
   </div>
 </div>
@@ -150,7 +157,7 @@
         <tbody>
         {% for errval in errsByCount %}
         <tr>
-            <td> <a href="{{ xurl }}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
+            <td> <a href="{{ xurl }}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> {% if errval.desc|length > 0 %} <span class="bp-tooltip long right"><i class="fi-info"></i><span class="tooltip-text">{{ errval.desc|escape|safe }}</span></span>{% endif %}</td>
             <td> <a href="{% url 'jobList' %}?{{ requestString }}&hours={{ hours }}&jobstatus=failed&{{errval.codename}}={{errval.codeval}}">{{ errval.count }}</a></td>
             <td> {{ errval.diag|force_escape|safe }}</td>
         </tr>

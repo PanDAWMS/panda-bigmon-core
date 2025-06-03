@@ -198,15 +198,15 @@
         <table id="errorsummary_groupbycode" class="data-table left-aligned">
         <thead>
         <tr>
-            <th>Category:code</th>
+            <th>Component:code</th>
             <th>Nerrors</th>
-            <th>Sample error description</th>
+            <th>Sample error diagnostic message</th>
         </tr>
         </thead>
         <tbody>
         {% for errval in errsByCount %}
         <tr>
-            <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> </td>
+            <td> <a href="{{xurl}}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100">{{ errval.error }}</a> {% if errval.desc|length > 0 %} <span class="bp-tooltip long right"><i class="fi-info"></i><span class="tooltip-text">{{ errval.desc|escape|safe }}</span></span>{% endif %}</td>
             <td> {{ errval.count }} </td>
             <td> {{ errval.diag|force_escape|safe }}
             </td>
@@ -222,8 +222,8 @@
         <table id="errorsummary_groupbymessage" class="data-table left-aligned">
         <thead>
           <tr>
-            <th>Category:code</th>
-            <th>Error message</th>
+            <th>Component:code</th>
+            <th>Diagnostic message</th>
             <th class="num">Number of error message</th>
           </tr>
         </thead>
@@ -339,7 +339,7 @@ time since last state change, <a href="{{nosorturl}}sortby=create-ascending">asc
 		<td>{{ job.currentpriority }}</td>
     <td>{{ job.nevents }} ({{ job.ninputs }})</td>
     <td>{% if 'maxpssgbpercore' in job and job.maxpssgbpercore %}{{ job.maxpssgbpercore }}{% endif %}</td>
-		<td class="wrap small">{% if job.jobinfo != '' %}{{job.jobinfo|force_escape|safe}}<br>{% endif %}
+		<td class="wrap small">{% if job.jobinfo != '' %}{{job.jobinfo|escape|safe}}<br>{% endif %}
       {% if job.errorinfo != '' %}<span class='alert'>{{job.errorinfo|safe}}</span>{% if job.error_desc|length > 0 %} <span class="bp-tooltip long left"><i class="fi-info alert"></i><span class="tooltip-text">{{ job.error_desc|safe }}</span></span>{% endif %}{% else %}-{% endif %}
     {% if 'is_log_available' in job %}Log files: {% if job.is_log_available == 1 %} available <a href="{% url 'filebrowser' %}?pandaid={{ job.pandaid }}">here</a>. {% elif job.is_log_available == -1 %} not available.{% endif %} {% endif %}
 		</td>
