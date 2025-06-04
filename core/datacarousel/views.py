@@ -122,23 +122,7 @@ def get_staging_info_for_task(request):
     response = JsonResponse(datasets, safe=isinstance(datasets, dict), content_type='application/json')
     return response
 
-@never_cache
-def get_data_carousel_data(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    extra_query_str = setup_view_dc(request)
-    staginData = get_staging_data(extra_query_str, add_idds_data=False)
-    _logger.debug('Got data: {}'.format(time.time() - request.session['req_init_time']))
-
-    timelistSubmitted = []
-    timelistSubmittedFiles = []
-    progressDistribution = []
-    timelistIntervalfin = []
-    timelistIntervalact = []
-    timelistIntervalqueued = []
-    dataset_list = []
+def build_summary_data(staginData):
 
     summary = {
         'processingtype': {},
@@ -147,12 +131,14 @@ def get_data_carousel_data(request):
         'username': {},
         'destination_rse': {},
     }
-    selection_options = {
-        'campaign': [],
-        'username': [],
-        'source_rse': [],
-        'processingtype': [],
-    }
+    timelistSubmitted = []
+    timelistSubmittedFiles = []
+    timelistIntervalfin = []
+    timelistIntervalact = []
+    timelistIntervalqueued = []
+    progressDistribution = []
+    seen_request_ids = set()
+
     calc_temp = {
         "ds_active": 0, "ds_done": 0, "ds_queued": 0, "ds_90pdone": 0,
         'files_total': 0, "files_rem": 0, "files_queued": 0, "files_done": 0, 'files_active': 0,
@@ -160,21 +146,14 @@ def get_data_carousel_data(request):
     }
 
     for dsdata in staginData:
-        epltime = None
-
-        if dsdata['start_time'] is not None:
-            timelistSubmitted.append(dsdata['start_time'])
-            timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
-
-        if 'processingtype' in dsdata and dsdata['processingtype'] and dsdata['processingtype'].startswith('panda-client'):
-            dsdata['processingtype'] = 'analysis'
+        if dsdata.get('request_id') in seen_request_ids:
+            continue
+        seen_request_ids.add(dsdata.get('request_id'))
 
         for key in summary:
             if key == 'destination_rse' and dsdata['status'] == 'queued':
                 continue
 
-            if dsdata.get(key) is None:
-                dsdata[key] = 'Unknown'
             if dsdata[key] not in summary[key]:
                 summary[key][dsdata[key]] = {key: dsdata[key]}
                 summary[key][dsdata[key]].update(calc_temp)
@@ -196,12 +175,10 @@ def get_data_carousel_data(request):
 
             if dsdata['end_time'] is not None:
                 summary[key][dsdata[key]]['ds_done'] += 1
-                epltime = dsdata['end_time'] - dsdata['start_time']
-                timelistIntervalfin.append(epltime)
+                timelistIntervalfin.append(dsdata['end_time'] - dsdata['start_time'])
             elif dsdata['status'] != 'queued':
-                epltime = timezone.now() - dsdata['start_time']
-                timelistIntervalact.append(epltime)
                 summary[key][dsdata[key]]['ds_active'] += 1
+                timelistIntervalact.append(timezone.now() - dsdata['start_time'])
                 if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
                     summary[key][dsdata[key]]['files_active'] += dsdata['total_files'] - dsdata['staged_files']
                 if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
@@ -209,16 +186,32 @@ def get_data_carousel_data(request):
                 if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') and dsdata['staged_files'] >= dsdata['total_files'] * 0.9:
                     summary[key][dsdata[key]]['ds_90pdone'] += 1
             elif dsdata['status'] == 'queued':
-                epltime = timezone.now() - dsdata['creation_time']
-                timelistIntervalqueued.append(epltime)
                 summary[key][dsdata[key]]['ds_queued'] += 1
+                timelistIntervalqueued.append(timezone.now() - dsdata['creation_time'])
                 if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
                     summary[key][dsdata[key]]['files_queued'] += dsdata['total_files'] - dsdata['staged_files']
                 if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
                     summary[key][dsdata[key]]['bytes_queued'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
 
+        if dsdata['start_time'] is not None:
+            timelistSubmitted.append(dsdata['start_time'])
+            timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
         if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
             progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
+
+    return summary, timelistSubmitted, timelistSubmittedFiles, timelistIntervalact, timelistIntervalfin, timelistIntervalqueued, progressDistribution
+
+def build_dataset_list(staginData):
+    dataset_list = []
+
+    for dsdata in staginData:
+        epltime = None
+        if dsdata.get('end_time') and dsdata.get('start_time'):
+            epltime = dsdata['end_time'] - dsdata['start_time']
+        elif dsdata.get('start_time'):
+            epltime = timezone.now() - dsdata['start_time']
+        elif dsdata.get('creation_time'):
+            epltime = timezone.now() - dsdata['creation_time']
 
         dataset_list.append({
             'campaign': dsdata['campaign'],
@@ -239,26 +232,37 @@ def get_data_carousel_data(request):
             'update_time': convert_sec(dsdata['update_time'].total_seconds(), 'str') if dsdata.get('update_time') else '---',
             'processingtype': dsdata['processingtype']
         })
+    return dataset_list
 
-    for key in selection_options:
-        if key in summary:
-            selection_options[key] = sorted(
-                [{"name": value, "value": value, "selected": "0"} for value in summary[key]],
-                key=lambda x: x['name'].lower()
-            )
+@never_cache
+def get_data_carousel_data(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    extra_query_str = setup_view_dc(request)
+    staginData = get_staging_data(extra_query_str, add_idds_data=False)
+
+    summary, time_subm, time_subm_files, t_act, t_fin, t_queued, progress = build_summary_data(staginData)
+    dataset_list = build_dataset_list(staginData)
+
+    selection_options = {}
+    for key in summary:
+        selection_options[key] = sorted(
+            [{"name": value, "value": value, "selected": "0"} for value in summary[key]],
+            key=lambda x: x['name'].lower()
+        )
 
     for param in summary:
         for value in summary[param]:
             for key in summary[param][value]:
                 if key.startswith('bytes'):
                     summary[param][value][key] = int(round(summary[param][value][key]))
-
-    for param in summary:
         summary[param] = sorted(list(summary[param].values()), key=lambda x: x[param].lower())
 
-    binned_subm_datasets = build_time_histogram(timelistSubmitted) if timelistSubmitted else {}
-    binned_subm_files = build_time_histogram(timelistSubmittedFiles) if timelistSubmittedFiles else {}
-    binnedActFinData = getBinnedData(timelistIntervalact, timelistIntervalfin, timelistIntervalqueued)
+    binned_subm_datasets = build_time_histogram(time_subm) if time_subm else {}
+    binned_subm_files = build_time_histogram(time_subm_files) if time_subm_files else {}
+    binnedActFinData = getBinnedData(t_act, t_fin, t_queued)
     eplTime = [['Time', 'Active staging', 'Finished staging', 'Queued staging']] + [
         [round(time_str, 1), data[0], data[1], data[2]] for (time_str, data) in binnedActFinData
     ]
@@ -269,13 +273,12 @@ def get_data_carousel_data(request):
         "elapsedtime": eplTime,
         "submittime": [['Time', 'Count']] + [[time_str, data[0]] for time_str, data in binned_subm_datasets],
         "submittimefiles": [['Time', 'Count']] + [[time_str, data[0]] for time_str, data in binned_subm_files],
-        "progress": [["Progress"]] + [[x * 100] for x in progressDistribution],
+        "progress": [["Progress"]] + [[x * 100] for x in progress],
         "summary": summary,
         "selection": selection_options,
         "detailstable": dataset_list
     }
-    response = HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
-    return response
+    return HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
 
 def get_stuck_files(request):
     """

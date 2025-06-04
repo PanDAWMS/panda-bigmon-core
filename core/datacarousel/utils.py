@@ -100,7 +100,14 @@ def setup_view_dc(request):
 
     return extra_str
 
-
+def prepare_dsdata(dsdata):
+    for key in ['processingtype', 'source_rse', 'campaign', 'username', 'destination_rse']:
+        if dsdata.get(key) is None:
+            dsdata[key] = 'Unknown'
+        if key == "source_rse" and 'source_rse_breakdown' not in dsdata:
+            dsdata['source_rse_breakdown'] = substitudeRSEbreakdown(dsdata['source_rse'])
+        if dsdata.get('processingtype', '').startswith('panda-client'):
+            dsdata['processingtype'] = 'analysis'
 def get_staging_data(extra_str, add_idds_data=False):
     """
     Get staging data from the database
@@ -165,6 +172,7 @@ def get_staging_data(extra_str, add_idds_data=False):
             else:
                 dataset['scope'] = datasetname.split('.')[0]
 
+            prepare_dsdata(dataset)
             data.append(dataset)
 
     return data
