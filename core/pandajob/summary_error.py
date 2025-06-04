@@ -253,11 +253,18 @@ def create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid):
 
 def update_error_summary(error_summary_dict, key, errcode, error_entry):
     """Update the error summary dictionary with a new error entry."""
-    error_summary_dict[key]['name'] = key
-    if errcode not in error_summary_dict[key]['errors']:
-        error_summary_dict[key]['errors'][errcode] = error_entry.copy()
-    error_summary_dict[key]['errors'][errcode]['count'] += 1
-    error_summary_dict[key]['toterrors'] += 1
+    if key not in error_summary_dict:
+        error_summary_dict[key] = {
+            'errors': {},
+            'toterrors': 0,
+            'toterrjobs': 0,
+            'name': key
+        }
+    if errcode is not None:
+        if errcode not in error_summary_dict[key]['errors']:
+            error_summary_dict[key]['errors'][errcode] = copy.deepcopy(error_entry)
+        error_summary_dict[key]['errors'][errcode]['count'] += 1
+        error_summary_dict[key]['toterrors'] += 1
 
 
 def to_sorted_list(d, errsort=False, totalkey=None):
@@ -309,9 +316,9 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
     error_components = copy.deepcopy(const.JOB_ERROR_COMPONENTS)
 
     errsByCount = {}
-    errsByUser = defaultdict(lambda: {'errors': {}, 'toterrors': 0})
-    errsBySite = defaultdict(lambda: {'errors': {}, 'toterrors': 0, 'toterrjobs': 0})
-    errsByTask = defaultdict(lambda: {'errors': {}, 'toterrors': 0, 'toterrjobs': 0})
+    errsByUser = defaultdict(lambda: {'name': '', 'errors': {}, 'toterrors': 0, 'toterrjobs': 0})
+    errsBySite = defaultdict(lambda: {'name': '', 'errors': {}, 'toterrors': 0, 'toterrjobs': 0})
+    errsByTask = defaultdict(lambda: {'name': '', 'errors': {}, 'toterrors': 0, 'toterrjobs': 0})
     sumd = defaultdict(lambda: defaultdict(int))
 
     for job in jobs:
@@ -334,7 +341,7 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
 
         for err in error_components:
             errval = job.get(err['error'])
-            if not errval or str(errval) == '0':
+            if not errval or str(errval) == '0' or errval == 0:
                 continue
             try:
                 errnum = int(errval)
@@ -364,8 +371,12 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
                     errsByTask[taskid]['tasktype'] = tasktype
                 update_error_summary(errsByTask, taskid, errcode, errsByCount[errcode])
 
-        errsBySite[site]['toterrjobs'] += 1
-        if taskid in errsByTask:
+        if job['jobstatus'] == 'failed':
+            if site not in errsBySite:
+                update_error_summary(errsBySite, site, None, None)
+            errsBySite[site]['toterrjobs'] += 1
+            if taskid not in errsByTask:
+                update_error_summary(errsByTask, taskid, None, None)
             errsByTask[taskid]['toterrjobs'] += 1
 
     # Convert summaries to sorted lists
