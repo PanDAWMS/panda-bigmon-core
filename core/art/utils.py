@@ -139,7 +139,7 @@ def setupView(request):
                 query[f] = v
 
     # For transiton period to integrate ART Local tests, temporarily requiring test_type=grid to only show ART Grid test
-    query['test_type'] = "grid"
+    # query['test_type'] = "grid"
 
     return query, query_str
 
