@@ -660,13 +660,14 @@
           <tbody>
             <tr ng-repeat="dataset in datasets">
               <td class="icons1">
-                {% if request.session.rucio_ui|length > 0 and dataset.rse %}
-                  <a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
+                <span ng-if="dataset.rse && '{{ request.session.rucio_ui|escapejs }}'.length > 0">
+                  <a ng-href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
                     {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width="14" height="14" border="0">
                   </a>
-                {% else %}
+                </span>
+                <span ng-if="!dataset.rse || '{{ request.session.rucio_ui|escapejs }}'.length == 0">
                   {$ dataset.rrule_cut $}
-                {% endif %}
+                </span>
               </td>
               <td>{$ dataset.source_rse $}</td>
               <td>{$ dataset.destination_rse $}</td>
