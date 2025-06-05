@@ -59,6 +59,14 @@
   </div>
   <div class="large-2 columns">
       <fieldset class="fieldset artmenu">
+        <legend>Choose test type</legend>
+        <ul class="no-bullet">
+            <li class="artmenu-item"><input type="radio" name="test_type" class="test_type" value="" id="" checked ><label for="">Grid and Local</label></li>
+            <li class="artmenu-item"><input type="radio" name="test_type" class="test_type" value="grid" id="grid" ><label for="grid">Grid</label></li>
+            <li class="artmenu-item"><input type="radio" name="test_type" class="test_type" value="local" id="local"><label for="local">Local</label></li>
+        </ul>
+      </fieldset>
+      <fieldset class="fieldset artmenu">
         <legend>Choose view level</legend>
         <ul class="no-bullet">
             <li class="artmenu-item"><input type="radio" name="view" class="view" value="overview" id="overview" checked ><label for="overview">Overview</label></li>
@@ -110,6 +118,7 @@ function searchResults() {
     var ntag_to = getDateFromInput('ntag_to');
     var extraoptionStr = getParamStr('extraoption');
     var viewAggStr = getParamStr('view_agg');
+    var testTypeStr = getParamStr("test_type");
     var query = '';
     switch(viewStr) {
         case "overview": {
@@ -127,7 +136,7 @@ function searchResults() {
         default:
             query = '{% url 'art-mainPage' %}';
     }
-    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1) || (nlastnightlies.length>0) || (extraoptionStr.length>1) || (viewAggStr.length>1)  ) {
+    if ((packageStr.length>1) || (branchStr.length>1) || (ntagStr.length>1) || (ntag_from.length>1) || (ntag_to.length>1) || (nlastnightlies.length>0) || (extraoptionStr.length>1) || (viewAggStr.length>1) || (testTypeStr.length)>1) {
         query += "?";
         if (packageStr.length > 1) {
             query += "package=" + packageStr + "&"
@@ -157,6 +166,9 @@ function searchResults() {
         }
         if (viewAggStr.length > 1) {
             query += 'view=' + viewAggStr + "&";
+        }
+        if (testTypeStr.length > 1 && !testTypeStr.includes(",")) {
+            query += 'test_type=' + testTypeStr + "&";
         }
 
         query = query.substring(0, query.length - 1);

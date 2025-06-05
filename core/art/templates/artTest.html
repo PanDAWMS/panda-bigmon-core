@@ -51,7 +51,7 @@
 <tbody>
 <tr>
   <th>Nightly</th>
-  <th>PanDA ID</th>
+  <th>Job ID (Grid | Local)</th>
   <th>Attempt</th>
   <th class="state">Status</th>
   <th>Sub-step name : exit code</th>
@@ -70,17 +70,19 @@
   {% for j in branch.1 %}
     <tr>
       <td>{{ j.nightly_tag }}</td>
-      <td><a href="{% url 'jobInfo' %}/{{ j.pandaid }}/">{{ j.pandaid }}</a></td>
+      <td>{% if j.computingsite == "ART Local" %}{{ j.pandaid }}{% else %}<a href="{% url 'jobInfo' %}/{{ j.pandaid }}/">{{ j.pandaid }}</a>{% endif %}</td>
       <td>{{ j.attemptnr }}</td>
-      <td class="state {{ j.finalresult }}_job">{{ j.finalresult }}</td>
+      <td class="state {% if j.computingsite == 'ART Local' %}local-{% endif %}{{ j.finalresult }}_job">{{ j.finalresult }}</td>
       <td>{% if j.subresults %}<ol>{% for r in j.subresults %}<li class="nowrap subresult_{% if r.result == 0 %}finished{% else %}failed{% endif %}">{{ r.name }} : {{ r.result }}</li>{% endfor %}</ol>{% else %}-{% endif %}</td>
       <td class="nowrap">
+        {% if j.computingsite != "ART Local" %}
         <a class="bp-tooltip upper" href="{% url 'filebrowser' %}?pandaid={{ j.pandaid }}"><i class="fi-link"></i><span class="tooltip-text">PanDA job logs</span></a>
+        {% endif %}
         {% if j.eos %} <a class="bp-tooltip upper away" href="{{ j.eos }}"><i class="fi-clipboard"></i><span class="tooltip-text">EOS directory</span></a>{% endif %}
         {% if j.htmllink %} <a class="bp-tooltip upper away" href="{{ j.htmllink }}"><i class="fi-graph-bar"></i><span class="tooltip-text">Result HTML</span></a>{% endif %}
       </td>
-      <td><a href="{% url 'siteInfo' %}{{ j.computingsite }}/">{{ j.computingsite }}</a></td>
-      <td>{{ j.duration_str }}</td>
+      <td>{% if j.computingsite == "ART Local" %}{{ j.computingsite }}{% else %}<a href="{% url 'siteInfo' %}{{ j.computingsite }}/">{{ j.computingsite }}</a>{% endif %}</td>
+      <td>{% if j.duration_str %}{{ j.duration_str }}{% else %}-{% endif %}</td>
       <td class="num">{% if j.maxpss_per_core_gb %}{{ j.maxpss_per_core_gb }}{% else %}-{% endif %}</td>
       <td class="num">{% if j.cpuconsumptiontime %}{{ j.cpuconsumptiontime }}{% else %}-{% endif %}</td>
       <td>{{ j.cputype }}</td>
