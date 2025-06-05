@@ -144,12 +144,13 @@ def artOverview(request):
     query, extra_str = setupView(request)
     # getting tests
     values = ('package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
-              'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date')
+              'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date', 'test_type')
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values))
     # filter out previous attempts, concat branch etc
     jobs = clean_tests_list(tests)
 
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
+    testtypelist = ['grid', 'local']
     _logger.info("Got ART tests: {}".format(time.time() - request.session['req_init_time']))
 
     # temporary art_jobs_dict for agg by both package and branch.
@@ -163,32 +164,37 @@ def artOverview(request):
             art_summary_dict[j[ao[0]]] = {}
             for n in ntagslist:
                 art_summary_dict[j[ao[0]]][n.strftime(art_const.DATETIME_FORMAT['default'])] = {}
-                art_summary_dict[j[ao[0]]][n.strftime(art_const.DATETIME_FORMAT['default'])]['ntag'] = n.strftime(
-                    art_const.DATETIME_FORMAT['default']
-                )
-                for state in art_const.TEST_STATUS:
-                    art_summary_dict[j[ao[0]]][n.strftime(art_const.DATETIME_FORMAT['default'])][state] = 0
+                for testtype in testtypelist:
+                    art_summary_dict[j[ao[0]]][n.strftime(art_const.DATETIME_FORMAT['default'])][testtype] = {}
+                    ntag = n.strftime(art_const.DATETIME_FORMAT['default'])
+                    art_summary_dict[j[ao[0]]][n.strftime(art_const.DATETIME_FORMAT['default'])][testtype]['ntag'] = ntag
+                    art_summary_dict[j[ao[0]]][n.strftime(art_const.DATETIME_FORMAT['default'])][testtype]['test_type'] = testtype
+                    for state in art_const.TEST_STATUS:
+                        art_summary_dict[j[ao[0]]][n.strftime(art_const.DATETIME_FORMAT['default'])][testtype][state] = 0
 
         if j[ao[1]] not in art_jobs_dict[j[ao[0]]]:
             art_jobs_dict[j[ao[0]]][j[ao[1]]] = {}
         if j['ntag'] not in art_jobs_dict[j[ao[0]]][j[ao[1]]]:
             art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']] = {}
         if j['testname'] not in art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']]:
-            art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']] = []
+            art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']] = {}
+        if j['test_type'] not in art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']]:
+            art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']][j['test_type']] = []
 
         if 'status' in j and isinstance(j['status'], int):
             finalresult = final_result_dict[j['status']]
         else:
             finalresult, _ = get_final_result(j)
-        art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']].append(finalresult)
+        art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']][j['test_type']].append(finalresult)
 
     # for multi job test, choose the worst result across them
     for ao0, ao0_dict in art_jobs_dict.items():
         for ao1, ao1_dict in ao0_dict.items():
             for ntag, tests in ao1_dict.items():
-                for test, job_states in tests.items():
-                    if len(job_states) > 0:
-                        art_summary_dict[ao0][ntag.strftime(art_const.DATETIME_FORMAT['default'])][get_result_for_multijob_test(job_states)] += 1
+                for test, test_types in tests.items():
+                    for test_type, job_states in test_types.items():
+                        if len(job_states) > 0:
+                            art_summary_dict[ao0][ntag.strftime(art_const.DATETIME_FORMAT['default'])][test_type][get_result_for_multijob_test(job_states)] += 1
     _logger.info("Prepared summary data dict: {}".format(time.time() - request.session['req_init_time']))
 
     if is_json_request(request):
@@ -203,13 +209,15 @@ def artOverview(request):
                     art_overview_per_nightly_tag[j['nightly_tag']] = {}
                 if j[ao[0]] not in art_overview_per_nightly_tag[j['nightly_tag']]:
                     art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]] = {}
-                    for state in art_const.TEST_STATUS:
-                        art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]][state] = 0
+                    for test_type in ['grid', 'local']:
+                        art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]][test_type]={}
+                        for state in art_const.TEST_STATUS:
+                            art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]][test_type][state] = 0
                 if 'status' in j and isinstance(j['status'], int):
                     finalresult = final_result_dict[j['status']]
                 else:
                     finalresult, _ = get_final_result(j)
-                art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]][finalresult] += 1
+                art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]][j['test_type']][finalresult] += 1
             data['art_overview_per_nightly_tag'] = art_overview_per_nightly_tag
 
         dump = json.dumps(data, cls=DateEncoder)
@@ -217,7 +225,7 @@ def artOverview(request):
     else:
         # dict -> list for datatable
         art_overview = [[ao[0]] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist] ]
-        art_overview.extend([[k,]+[j for i, j in v.items()] for k, v in art_summary_dict.items()])
+        art_overview.extend([[key] + list(value.values()) for key, value in art_summary_dict.items()])
         xurl = extensibleURL(request)
         noviewurl = removeParam(xurl, 'view', mode='extensible')
 
@@ -273,13 +281,15 @@ def artTasks(request):
     query, extra_str = setupView(request)
     # getting tests
     values = ('package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
-              'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date')
+              'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date', 'test_type')
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values))
     # filter out previous attempts, add branch etc
     jobs = clean_tests_list(tests)
 
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
     _logger.info("Got ART tests: {}".format(time.time() - request.session['req_init_time']))
+
+    testtypelist = ['grid', 'local']
 
     art_jobs_dict = {}
     arttasksdict = {}
@@ -294,29 +304,37 @@ def artTasks(request):
             arttasksdict[job[ao[0]]][job[ao[1]]] = {}
             for n in ntagslist:
                 arttasksdict[job[ao[0]]][job[ao[1]]][n.strftime(art_const.DATETIME_FORMAT['default'])] = {}
-                arttasksdict[job[ao[0]]][job[ao[1]]][n.strftime(art_const.DATETIME_FORMAT['default'])]['ntag_hf'] = n.strftime(art_const.DATETIME_FORMAT['humanized'])
+                for testtype in testtypelist:
+                    arttasksdict[job[ao[0]]][job[ao[1]]][n.strftime(art_const.DATETIME_FORMAT['default'])][testtype] = {}
+                    arttasksdict[job[ao[0]]][job[ao[1]]][n.strftime(art_const.DATETIME_FORMAT['default'])][testtype]['ntag_hf'] = n.strftime(art_const.DATETIME_FORMAT['humanized'])
         if job['nightly_tag'] not in art_jobs_dict[job[ao[0]]][job[ao[1]]]:
             art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']] = {}
 
-            arttasksdict[job[ao[0]]][job[ao[1]]][job['ntag'].strftime(art_const.DATETIME_FORMAT['default'])][job['nightly_tag']] = {}
-            for state in art_const.TEST_STATUS:
-                arttasksdict[job[ao[0]]][job[ao[1]]][job['ntag'].strftime(art_const.DATETIME_FORMAT['default'])][job['nightly_tag']][state] = 0
+            for testtype in testtypelist:
+                arttasksdict[job[ao[0]]][job[ao[1]]][job['ntag'].strftime(art_const.DATETIME_FORMAT['default'])][testtype][job['nightly_tag']] = {}
+                for state in art_const.TEST_STATUS:
+                    arttasksdict[job[ao[0]]][job[ao[1]]][job['ntag'].strftime(art_const.DATETIME_FORMAT['default'])][testtype][job['nightly_tag']][state] = 0
+
         if job['testname'] not in art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']]:
-            art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']][job['testname']] = []
+            art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']][job['testname']] = {}
+
+        if job['test_type'] not in art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']][job['testname']]:
+            art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']][job['testname']][job['test_type']] = []
 
         if 'status' in job and isinstance(job['status'], int):
             finalresult = final_result_dict[job['status']]
         else:
             finalresult, _ = get_final_result(job)
 
-        art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']][job['testname']].append(finalresult)
+        art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']][job['testname']][job['test_type']].append(finalresult)
 
     for ao0, ao0_dict in art_jobs_dict.items():
         for ao1, ao1_dict in ao0_dict.items():
             for ntag, tests in ao1_dict.items():
-                for test, job_states in tests.items():
-                    if len(job_states) > 0:
-                        arttasksdict[ao0][ao1][ntag[:-5]][ntag][get_result_for_multijob_test(job_states)] += 1
+                for test, test_types in tests.items():
+                    for test_type, job_states in test_types.items():
+                        if len(job_states) > 0:
+                            arttasksdict[ao0][ao1][ntag[:-5]][test_type][ntag][get_result_for_multijob_test(job_states)] += 1
     _logger.info("Prepared summary: {}".format(time.time() - request.session['req_init_time']))
 
     if is_json_request(request):
@@ -333,14 +351,15 @@ def artTasks(request):
         for ao0, ao0_dict in arttasksdict.items():
             for ao1, ao1_dict in ao0_dict.items():
                 tmp_nightlies = []
-                for n, v in ao1_dict.items():
-                    tmp = []
-                    for s, results in v.items():
-                        if s != 'ntag_hf':
-                            res_dict = results
-                            res_dict['ntag_time'] = s[-5:]
-                            res_dict['ntag_full'] = s
-                            tmp.append(res_dict)
+                for n, types in ao1_dict.items():
+                    tmp = {}
+                    for type, v in types.items():
+                        for s, results in v.items():
+                            if s != 'ntag_hf':
+                                res_dict = results
+                                res_dict['ntag_time'] = s[-5:]
+                                res_dict['ntag_full'] = s
+                                tmp[type]=res_dict
                     tmp_nightlies.append(tmp)
                 art_tasks.append([ao0, ao1] + tmp_nightlies)
 
@@ -440,6 +459,9 @@ def artJobs(request):
     artjobsdict={}
 
     for job in art_jobs:
+        if job['test_type'] == 'local':
+            link_prefix = art_const.EOS_PREFIX_LOCAL
+
         if job[ao[0]] not in artjobsdict:
             artjobsdict[job[ao[0]]] = {}
         if job[ao[1]] not in artjobsdict[job[ao[0]]]:
@@ -654,6 +676,9 @@ def artTest(request, package=None, testname=None):
                 pid = job['pandaid']
                 job['eos'] = '{}{}/{}/{}/{}/'.format(
                     art_const.EOS_PREFIX, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
+                if job['test_type'] == 'local':
+                    job['eos'] = '{}{}/{}/{}/{}/'.format(
+                    art_const.EOS_PREFIX_LOCAL, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
                 if len(job['extrainfo']) > 0:
                     try:
                         extrainfo_json = json.loads(job['extrainfo'])
@@ -682,11 +707,11 @@ def artTest(request, package=None, testname=None):
                     job['duration_str'] = convert_sec(get_job_walltime(panda_jobs[pid]), out_unit='str')
                     job['errorinfo'] = panda_jobs[pid]['errorinfo']
 
-                    finalresult, extraparams = get_final_result(job)
-                    if 'status' in job and isinstance(job['status'], int):
-                        finalresult = final_result_dict[job['status']]
-                    job['finalresult'] = finalresult
-                    job.update(extraparams)
+                finalresult, extraparams = get_final_result(job)
+                if 'status' in job and isinstance(job['status'], int):
+                    finalresult = final_result_dict[job['status']]
+                job['finalresult'] = finalresult
+                job.update(extraparams)
 
             # prepare data for template
             art_test['testname'] =  testname
