@@ -200,7 +200,7 @@
     <col class="w5"/>
     <col class="w80"/>
 </colgroup>
-<tr class='tablesection'><th colspan=3> {% if 'computingsite' in requestParams %}WN{% else %}Site{% endif %} error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}.{% endif %}</th></tr>
+<tr class='tablesection'><th colspan=3> {% if 'computingsite' in requestParams %}WN{% else %}Site{% endif %} error summary{% if 'display_limit' in requestParams %}, limited to top-{{ requestParams.display_limit }}.{% endif %}</th></tr>
 {% for site in errsBySite %}
 <tr><th class="wrap-words"> <a href="{{xurlsubstNoSite}}computingsite={{ site.name }}"> {{ site.name }} </a> </th>
 <th> {{ site.toterrors }} </th>
@@ -223,7 +223,7 @@
     <col class="w5"/>
     <col class="w80"/>
 </colgroup>
-<tr class='tablesection'><th colspan=3> User error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
+<tr class='tablesection'><th colspan=3> User error summary{% if 'display_limit' in requestParams %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for user in errsByUser %}
 <tr><th class="wrap-words"> <a href="{{xurl}}produsername={{ user.name }}"> {{ user.name }} </a> </th> <th> {{ user.toterrors }} </th> <th> Total errors </th>  </tr>
 {% for errval in user.errorlist %}
@@ -240,15 +240,15 @@
     <col class="w10"/>
     <col class="w90"/>
 </colgroup>
-<tr class='tablesection'><th colspan=2> Task error summary{% if requestParams.display_limit %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
+<tr class='tablesection'><th colspan=2> Task error summary{% if 'display_limit' in requestParams %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for task in errsByTask %}
-<tr><th colspan=10> <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}"> {{ task.tasktype }}     {{ task.name }} </a>         {% if task.longname != '' %} <a href="{{xurlsubst}}{{task.tasktype}}={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
+<tr><th colspan=10><a href="{{xurlsubst}}jeditaskid={{ task.name }}">{{ task.name }}</a>,{% if task.longname != '' %} <a href="{{xurlsubst}}jeditaskid={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
 <tr>
 <th> {{ task.toterrors }} </th>
 <th> Total errors in {{ task.toterrjobs }} jobs.     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a>     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a>     % failed: {{ task.pctfail }}     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ task.holding }} </span></a>      <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
 </tr>
 {% for errval in task.errorlist %}
-<tr><td> <a href="{{jobsurl}}{{task.tasktype}}={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>      {{ errval.diag|force_escape|safe }} </td>  </tr>
+<tr><td> <a href="{{jobsurl}}jeditaskid={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>      {{ errval.diag|force_escape|safe }} </td>  </tr>
 {% endfor %}
 {% endfor %}
 </table>
@@ -404,7 +404,6 @@ app.controller('chartController', function($scope, $window) {
     if (ctx_pie) {
       ctx_pie.width = $scope.es.charts.pie.options.size[0];
       ctx_pie.height = $scope.es.charts.pie.options.size[1];
-      console.log(ctx_pie);
       let config_pie = prepare_pie_chart($scope.es.charts.pie.data, $scope.es.charts.pie.options);
       // extract color schema so colors in pie and bar chart are the same
       $scope.es.charts.barSplit.options.color_schema = config_pie.data.labels.reduce((acc, label, index) => {
@@ -419,6 +418,9 @@ app.controller('chartController', function($scope, $window) {
     ctx = document.getElementById("barChartErrSplit_" + $scope.es.selection.tab);
     ctx.width = $scope.es.charts.barSplit.options.size[0];
     ctx.height = $scope.es.charts.barSplit.options.size[1];
+    if ($scope.es.selection.tab === 'total') {
+      $scope.es.charts.barSplit.options.color_schema = {"total": "#b22222"};
+    }
     let config = prepare_stacked_timeseries_chart($scope.es.charts.barSplit.data, $scope.es.charts.barSplit.options);
     $scope.es.charts.barSplit.chart = new Chart(ctx, config);
     setTimeout(function() {
