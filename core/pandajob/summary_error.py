@@ -193,10 +193,13 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
     :return: error_histograms: dict of data for histograms by different categories
     """
     threshold_percent = 2  # % threshold for low-impact values
+    plots = ['site', 'code', 'task', 'user', 'request', 'category']
     error_descriptions = get_job_error_descriptions()
     timestamp_list = []
     data = []
     for job in jobs:
+        if job['jobstatus'] not in ['failed', 'holding']:
+            continue
         data.append({
             'modificationtime': job['modificationtime'],
             'site': job['computingsite'] if not is_wn_instead_of_site else job['wn'],
@@ -216,12 +219,12 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
         df.set_index('modificationtime', inplace=True)
 
         # Apply the function to each column where you want low-impact values grouped
-        for column in ['site', 'code', 'task', 'user', 'request']:
+        for column in plots:
             df = categorize_low_impact_by_percentage(df, column, threshold_percent)
 
         # Generate JSON-ready data for each column
         output_data = {}
-        for column in ['site', 'code', 'task', 'user', 'request', 'category']:
+        for column in plots:
             output_data[column] = prepare_binned_and_total_data(df, column, freq=freq)
 
         total_jobs_per_bin = df.resample(freq).size().reset_index(name='total')
@@ -249,15 +252,6 @@ def create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid):
         'example_pandaid': pandaid,
         'count': 0
     }
-
-
-def update_error_summary(error_summary_dict, key, errcode, error_entry):
-    """Update the error summary dictionary with a new error entry."""
-    error_summary_dict[key]['name'] = key
-    if errcode not in error_summary_dict[key]['errors']:
-        error_summary_dict[key]['errors'][errcode] = error_entry.copy()
-    error_summary_dict[key]['errors'][errcode]['count'] += 1
-    error_summary_dict[key]['toterrors'] += 1
 
 
 def to_sorted_list(d, errsort=False, totalkey=None):
@@ -308,80 +302,90 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
 
     error_components = copy.deepcopy(const.JOB_ERROR_COMPONENTS)
 
-    errsByCount = {}
-    errsByUser = defaultdict(lambda: {'errors': {}, 'toterrors': 0})
-    errsBySite = defaultdict(lambda: {'errors': {}, 'toterrors': 0, 'toterrjobs': 0})
-    errsByTask = defaultdict(lambda: {'errors': {}, 'toterrors': 0, 'toterrjobs': 0})
-    sumd = defaultdict(lambda: defaultdict(int))
+    fields = ['user', 'site', 'task']
+    error_count_dict = {}
+    summary_attribute = {}
+    summary_field = {}
+    for f in fields:
+        summary_field[f] = {}
 
     for job in jobs:
+        # attribute summary aggregation
+        for f in flist:
+            if f not in summary_attribute:
+                summary_attribute[f] = defaultdict(int)
+            if f == 'specialhandling':
+                shl = job['specialhandling'].split(',') if 'specialhandling' in job and job['specialhandling'] is not None else []
+                for v in shl:
+                    # ignore tq = taskQueuedTime timestamp
+                    if v.startswith('tq'):
+                        continue
+                    if v not in summary_attribute['specialhandling']:
+                        summary_attribute['specialhandling'][v] = 0
+                    summary_attribute['specialhandling'][v] += 1
+            else:
+                summary_attribute[f][job[f]] += 1 if job.get(f) else 0
+
+
         if not is_test_jobs and job['jobstatus'] not in ['failed', 'holding']:
             continue
 
-        site = job['wn'] if is_site_req else job['computingsite']
-        user = job['produsername']
-        taskid = job.get('jeditaskid') or job.get('taskid') or 0
-        tasktype = 'jeditaskid' if job.get('jeditaskid') else 'taskid'
-        taskname = tasknamedict.get(taskid, '')
-
-        # Summary aggregation
-        for f in flist:
-            if job.get(f):
-                sumd[f][job[f]] += 1
-        for sh in job.get('specialhandling', '').split():
-            if sh:
-                sumd['specialhandling'][sh] += 1
+        fields_values = {
+            'user': job['produsername'],
+            'site': job['wn'] if is_site_req else job['computingsite'],
+            'task': job.get('jeditaskid') or job.get('taskid') or None
+        }
+        taskname = tasknamedict.get(fields_values['task'], '')
 
         for err in error_components:
             errval = job.get(err['error'])
-            if not errval or str(errval) == '0':
+            if not errval or str(errval) == '0' or errval == 0:
                 continue
             try:
                 errnum = int(errval)
             except ValueError:
                 continue
-            if err['name'] == 'transform':
-                # for transformation errors, we do not have a related diag field, we added it from ErrorDescriptions already
-                errdiag = job.get('transformerrordiag', '')
-            else:
-                errdiag = job.get(err['diag']) or ''
             errcode = f"{err['name']}:{errnum}"
+            # for transform errors, we do not have a related diag field, but we added one from ErrorDescriptions already
+            errdiag = job.get(err['diag'], '') if err['name'] != 'transform' else job.get('transformerrordiag', '')
             errdesc = job.get(f"{err['name']}_error_desc", '')
             pandaid = job['pandaid']
 
-            if errcode not in errsByCount:
-                errsByCount[errcode] = create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid)
-                errsByCount[errcode]['pandalist'] = {}
-            errsByCount[errcode]['count'] += 1
-            errsByCount[errcode]['pandalist'][pandaid] = errdiag
+            if errcode not in error_count_dict:
+                error_count_dict[errcode] = create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid)
+                error_count_dict[errcode]['pandalist'] = {}
+            error_count_dict[errcode]['count'] += 1
 
-            update_error_summary(errsByUser, user, errcode, errsByCount[errcode])
-            update_error_summary(errsBySite, site, errcode, errsByCount[errcode])
-            if taskid > 1000000 or tasktype == 'jeditaskid':
-                if 'name' not in errsByTask[taskid]:
-                    errsByTask[taskid]['name'] = taskid
-                    errsByTask[taskid]['longname'] = taskname
-                    errsByTask[taskid]['tasktype'] = tasktype
-                update_error_summary(errsByTask, taskid, errcode, errsByCount[errcode])
+            for f in fields_values:
+                if f == 'task' and fields_values[f] is None:
+                    continue
+                if f not in summary_field:
+                    summary_field[f] = {}
+                if fields_values[f] not in summary_field[f]:
+                    summary_field[f][fields_values[f]] = {'name': fields_values[f], 'errors': {}, 'toterrors': 0, 'toterrjobs': 0}
+                    if f == 'task':
+                        summary_field[f][fields_values[f]]['longname'] = taskname
+                if errcode not in summary_field[f][fields_values[f]]['errors']:
+                    summary_field[f][fields_values[f]]['errors'][errcode] = create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid)
+                summary_field[f][fields_values[f]]['errors'][errcode]['count'] += 1
+                summary_field[f][fields_values[f]]['toterrors'] += 1
 
-        errsBySite[site]['toterrjobs'] += 1
-        if taskid in errsByTask:
-            errsByTask[taskid]['toterrjobs'] += 1
+        # count job with error just once
+        if job['jobstatus'] == 'failed':
+            for f in fields_values:
+                if f in summary_field and fields_values[f] and fields_values[f] in summary_field[f]:
+                    summary_field[f][fields_values[f]]['toterrjobs'] += 1
 
     # Convert summaries to sorted lists
-    errsByUserL = to_sorted_list(errsByUser, errsort=True, totalkey='toterrors')
-    errsBySiteL = to_sorted_list(errsBySite, errsort=True, totalkey='toterrors')
-    errsByTaskL = to_sorted_list(errsByTask, errsort=True, totalkey='toterrors')
-    errsByCountL = sorted(errsByCount.values(), key=lambda x: -x['count'])
-
-    suml = [
-        {
-            'field': f,
-            'list': sorted(
-                [{'kname': k, 'kvalue': v} for k, v in sumd[f].items()], key=lambda x: -x['kvalue'] if sortby == 'count' else x['kname']
-            )
-        }
-        for f in sorted(sumd)
+    for f, data in summary_field.items():
+        summary_field[f] = to_sorted_list(data, errsort=True, totalkey='toterrors')
+    error_count = sorted(error_count_dict.values(), key=lambda x: -x['count'])
+    suml = [{
+        'field': f,
+        'list': sorted(
+            [{'kname': k, 'kvalue': v} for k, v in summary_attribute[f].items()],
+            key=lambda x: -x['kvalue'] if sortby == 'count' else x['kname']
+        )} for f in sorted(summary_attribute)
     ]
     _logger.debug('Dict -> list & sorting are done: {}'.format(time.time() - start_time))
 
@@ -389,5 +393,5 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
         error_histograms = build_error_histograms(jobs, is_wn_instead_of_site=is_site_req)
     _logger.debug('Built errHist: {}'.format(time.time() - start_time))
 
-    return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, error_histograms
+    return error_count, summary_field['site'], summary_field['user'], summary_field['task'], suml, error_histograms
 

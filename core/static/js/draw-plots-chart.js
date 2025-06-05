@@ -148,8 +148,8 @@ function prepare_stacked_timeseries_chart(rawdata, options) {
   };
   var datasets = {};
   var color_schema = {};
-  if ("color_schema" in options && options.color_schema.length > 0) {
-    color_schema = options.colors;
+  if ("color_schema" in options) {
+    color_schema = options.color_schema;
   }
   else {
     color_schema = labels.reduce((acc, label, index) => {acc[label] = colors[index]; return acc; }, {});
@@ -263,7 +263,7 @@ function prepare_pie_chart(raw_data, options) {
   Object.keys(raw_data).forEach((key, index) => {
     data.labels.push(key);
     data.datasets[0].data.push(raw_data[key]);
-    data.datasets[0].backgroundColor.push(colors[index]);
+    data.datasets[0].backgroundColor.push((key !== 'Other') ? colors[index] : "#d3d3d3");
   });
 
   var config = {
