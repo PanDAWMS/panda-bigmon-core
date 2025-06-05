@@ -687,7 +687,7 @@
               <td>{$ dataset.start_time $}</td>
               <td>{$ dataset.update_time $}</td>
               <td>
-                <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
+                <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.scope $}:{$ dataset.dataset $}">
                   {$ dataset.dataset $}
                 </a>
               </td>
