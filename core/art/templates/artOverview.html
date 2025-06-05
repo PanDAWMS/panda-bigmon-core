@@ -122,21 +122,25 @@ for (let i=1; i<table_data[0].length; i++) {
         } else {
           return `
             <div class="data-container">
-             ${test_type !== "local" && gridData ? `
-             <div class="bp-tooltip left">
-               <div class="clickable traffic-lights">
-                 ${formatTrafficLightsData(gridData, row, 'grid')}
-               </div>
-               <span class="tooltip-text">Grid Test</span>
-             </div>` : (test_type !== "local" ? '<div class="nodata-center">---</div>' : '')}
-             ${test_type !== "grid" && localData ? `
-             <div class="bp-tooltip left">
-               <div class="clickable traffic-lights">
-                 ${formatTrafficLightsData(localData, row, 'local')}
-               </div>
-               <span class="tooltip-text">Local Test</span>
-             </div>` : (test_type !== "grid" ? '<div class="nodata-center">---</div>' : '')}
-            </div>
+	      <div>
+                ${test_type !== "local" && gridData ? `
+                <div class="bp-tooltip left">
+                  <div class="clickable traffic-lights">
+                    ${formatTrafficLightsData(gridData, row, 'grid')}
+                  </div>
+                  <span class="tooltip-text">Grid Test</span>
+                </div>` : (test_type !== "local" ? '<div class="nodata-center">---</div>' : '')}
+	      </div>
+              <div>
+                ${test_type !== "grid" && localData ? `
+                <div class="bp-tooltip left">
+                  <div class="clickable traffic-lights">
+                    ${formatTrafficLightsData(localData, row, 'local')}
+                  </div>
+                  <span class="tooltip-text">Local Test</span>
+                </div>` : (test_type !== "grid" ? '<div class="nodata-center">---</div>' : '')}
+              </div>
+	    </div>
           `;
         }
       }
