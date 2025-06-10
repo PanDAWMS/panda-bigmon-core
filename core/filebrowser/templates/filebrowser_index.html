@@ -22,57 +22,98 @@
 
 <div class="bp-selected-params">{% for p, v in viewParams.items %}{% if p != 'MON_VO' %}<p>{{ p }}: <b>{{ v }}</b></p>{% endif %}{% endfor %}</div>
 
-{% if files %}
-  {% if errors.download %}
-    <div class="callout warning" data-closable>
-    <h5><b>Warning</b></h5>
-    <p><pre>{{errors.download}}</pre></p>
-    </div>
-  {% endif %}
-<table id="filelist" class="data-table left-aligned nowrap">
-<caption>{{ nfiles }} files listed, total size is {{ totalLogSize }} MB</caption>
-<thead>
-<tr>
-<th>Modification time</th>
-<th>Size [B]</th>
-<th>File</th>
-</tr>
-</thead>
-<tbody>
-{% for f in files %}
-<tr>
-<td>{{ f.modification }}</td>
-<td>{{ f.size }}</td>
-<td>
-  <a href="http://{{ request.session.urls_cut.media_base_link }}{% if f.dirname %}{{ f.dirname }}/{% endif %}{{ f.name }}">{% if f.dirname %}{{ f.dirname }}/{% endif %}{{ f.name }}</a>
-</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-{% else %}
-  {% if errors.missingparameter %}<div><span style="color: red; font-weight: bold;">Query error.</span> {{errors.missingparameter}}</div>{% endif %}
-  {% if errors.improperformat %}<div><span style="color: red; font-weight: bold;">Improperly formatted parameters.</span> {{errors.improperformat}}</div>{% endif %}
-  {% if errors.lookup %}<div><span style="color: red; font-weight: bold;">Lookup error.</span> {{errors.lookup}}</div>{% endif %}
-  {% if errors.download %}<div class="card bp-container-simple warning"><div class="card-divider"><h5>Failed to list log files</h5></div>
-      <div class="card-section scrollable"><pre class="wrap">{{errors.download}}</pre></div></div>
-  {% endif %}
+{% if 'slow_downloading' in errors %}
+  <div id="slow_downloading" class="callout warning">
+    <h5><b>Warning!</b>{{errors.slow_downloading}} Please be patient while it is being downloaded, and do NOT refresh the page.</h5>
+  </div>
 {% endif %}
+{% if 'too_big_tarball' in errors %}
+  <div id="too_big_tarball" class="callout alert"><h5><b>We can not download logs for this job :(</b></h5><p>{{ errors.too_big_tarball }}</p></div>
+{% endif %}
+{% if 'missingparameter' in errors %}<div class="callout warning"><h5><b>Query error.!</b> {{errors.missingparameter}}</h5></div>{% endif %}
+{% if 'improperformat' in errors %}<div><span style="color: red; font-weight: bold;">Improperly formatted parameters.</span> {{errors.improperformat}}</div>{% endif %}
+{% if 'lookup' in errors %}<div><span style="color: red; font-weight: bold;">Lookup error.</span> {{errors.lookup}}</div>{% endif %}
+{% if errors.download %}<div class="card bp-container-simple warning"><div class="card-divider"><h5>Failed to list log files</h5></div>
+    <div class="card-section scrollable"><pre class="wrap">{{errors.download}}</pre></div></div>
+{% endif %}
+
+<div id="loading"></div>
+
+<table id="filelist" class="data-table left-aligned nowrap">
+<thead></thead>
+<tbody></tbody>
+</table>
+
 
 {% endblock %}
 
 {% block js_body_page %}
 <script nonce={{request.csp_nonce}}>
-    $(document).ready(function () {
-        $.fn.dataTable.moment('YYYY MMM DD HH:mm:ss');
-        $('#filelist').DataTable({
-            "columnDefs": [
-                {"type": "num-html", "targets": [1] }
-            ],
-            "iDisplayLength": 100,
-            "lengthMenu" : [[25, 50, 100, -1], [25, 50, 100, "All"]],
-            "aaSorting": [[0,'desc']]
+var errors = {{ errors|safe }};
+$(document).ready(function () {
+  if ('missingparameter' in errors || 'improperformat' in errors || 'too_big_tarball' in errors) {}
+  else {
+    $('#loading').html("<img src='{% static "images/load.gif" %}'> Loading job logs...  ");
+    $.ajax({
+      url: '{{ api_url|safe }}',
+      method: 'GET',
+      dataType: 'json',
+      headers: {
+        'X-Custom-Header': '{{ csrf_token }}'
+      },
+      success: function(data) {
+        const mediaPath = data.media_path;
+        const file_list = data.files;
+        var table = $('#filelist').dataTable({
+          "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+          "paging": true,
+          "scrollX": true,
+          "aaSorting": [[0,'desc']],
+          "data": file_list,
+          "columnDefs": [
+              {"type": "num-html", "targets": [1] }
+          ],
+          "aoColumns": [
+            {
+              title: "Modification time",
+              data: "modification",
+              sDefaultContent: "",
+              className: 'date',
+            },
+            {
+              title: "Size, B",
+              data: "size",
+              sDefaultContent: "",
+              className: 'num',
+              render: function (data) {
+                return Humanize.formatNumber(data, 0);
+              }
+            },
+            {
+              title: "File",
+              data: "name",
+              sDefaultContent: "---",
+              render: function(data, type, full) {
+                let path = full['dirname'] ? full['dirname'] + '/' : '';
+                return '<a href="http://' + mediaPath + path + data + '">' + path + data + '</a>';
+              }
+            },
+          ],
         });
+        $('#filelist caption').remove();
+        $('#filelist').prepend('<caption>' + (data.files.length + ' files listed, total size is ' + data.total_unpacked_size + ' MB' || '') + '</caption>');
+        $('#loading').html('');
+        if (document.getElementById('slow_downloading')) {
+          $('#slow_downloading').remove();
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        console.error('Error:', textStatus, errorThrown);
+        $('#loading').html("<span style='color: red; font-weight: bold;'>Error loading file list: " + textStatus + "</span>");
+      }
     });
+  }
+});
+
 </script>
 {% endblock %}
