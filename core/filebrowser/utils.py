@@ -11,6 +11,7 @@ import shutil
 from datetime import datetime
 from django.conf import settings
 from core.filebrowser.ObjectStoreWrapper import ObjectStore
+import core.filebrowser.constants as const
 from core.common.models import Filestable4, FilestableArch
 from core.libs.job import get_job_list
 from core.libs.exlib import convert_bytes
@@ -18,7 +19,7 @@ from core.schedresource.utils import get_panda_queues
 
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
-filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
+
 
 def get_filebrowser_vo():
     """
@@ -282,7 +283,7 @@ def list_file_directory(logdir, limit=1000, log_provider='rucio'):
             f_content = {}
             if f in fileStats:
                 if fileStats[f] is not None and f in isFile and isFile[f]:
-                    f_content['modification'] = str(time.strftime(filebrowserDateTimeFormat, time.gmtime(fileStats[f][8])))
+                    f_content['modification'] = str(time.strftime(const.DATE_TIME_FORMAT, time.gmtime(fileStats[f][8])))
                     f_content['size'] = fileStats[f][6]
                     f_content['name'] = os.path.basename(f)
                     f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f) + '/')
@@ -464,7 +465,7 @@ def get_job_log_file_properties(pandaid=None, lfn=None, fileid=None):
             except:
                 pass
         try:
-            fsize_mb = round(convert_bytes(int(file_properties['fsize']), output_unit='MB'))
+            fsize_mb = round(convert_bytes(int(file_properties['fsize']), output_unit='MB'), 2)
         except:
             pass
 

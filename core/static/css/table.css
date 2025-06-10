@@ -521,7 +521,6 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 
 
 /* New style for dataTables */
-
 .dataTables_wrapper {
   width: 100%;
   margin: 0;
@@ -572,6 +571,62 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
   background-color: #5e789a;
   color: #fefefe;
 }
+
+/* DataTables v2 updated their css classes names */
+
+/* New style for dataTables */
+.dt-container {
+  width: 100%;
+  margin: 0;
+  padding: 0.7rem 0.3rem;
+}
+.dt-container .grid-x {
+  max-width: 100%;
+}
+.dt-container .grid-x .cell {
+  padding: 0.3rem 0;
+}
+
+.dt-container .dt-buttons {
+  margin-bottom: 0;
+}
+.dt-container .dt-buttons > a.button {
+  color: #fefefe;
+}
+
+.dt-container .dt-length label {
+  margin-right: 1rem;
+}
+.dt-container .dt-length label select {
+  height: 1.75rem;
+  padding: 0 1.4rem 0 0.3rem;
+}
+
+.dt-container .dt-filter label input {
+  height: 1.75rem;
+  padding: 0.3rem 0.7rem;
+}
+
+.dt-info {
+  color: #272727;
+  font-size: inherit;
+}
+
+.dt-paginate ul.pagination {
+  margin-bottom: 0;
+}
+.dt-paginate .paginate_button.current {
+  background-color: #333333;
+  color: #fefefe;
+  font-weight: bold;
+}
+
+.dt-paginate > ul.pagination > li.paginate_button > a {
+  background-color: #5e789a;
+  color: #fefefe;
+}
+
+
 
 .data-table {
   width: 100% !important;
