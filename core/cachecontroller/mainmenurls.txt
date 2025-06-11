@@ -23,7 +23,7 @@
 /runningprodtasks/?preset=DATA
 /art/
 /art/filltable/
-/artmonitview/
+/globalpage/
 /dash/region/
 /dash/region/?jobtype=analy&splitby=jobtype
 /dash/region/?jobtype=prod&splitby=jobtype

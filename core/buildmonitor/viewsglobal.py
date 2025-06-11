@@ -1,12 +1,16 @@
-from django.shortcuts import render
-from core.views import initRequest
-from core.oauth.utils import login_customrequired
-from django.db import connection
-from django.urls import reverse
-from django.core.cache import cache
-import json, re
+import json
+import re
 from collections import defaultdict
+
+from core.buildmonitor.utils import get_art_test_results
 from core.libs.DateEncoder import DateEncoder
+from core.oauth.utils import login_customrequired
+from core.utils import is_json_request
+from core.views import initRequest
+from django.db import connection
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.urls import reverse
 
 
 @login_customrequired
@@ -16,15 +20,7 @@ def globalviewDemo(request):
     if not valid:
         return response
 
-    new_cur = connection.cursor()
-    dict_from_cache = cache.get('art-monit-dict')
-    check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span style="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-check">ICON33</span></div>'
-    clock_icon='<div class="ui-widget ui-state-hover" style="display:inline-block;"> <span style="display:inline-block;" title="UPDATING" class="DataTables_sort_icon css_right ui-icon ui-icon-clock">ICON39</span></div>'
-    minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;"> <span style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-alert">ICON34</span></div>'
-    majorwarn_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="WARNING" class="DataTables_sort_icon css_right ui-icon ui-icon-lightbulb">ICON35</span></div>'
-    error_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span style="display:inline-block;" title="ERROR" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-close">ICON36</span></div>'
-    radiooff_icon='<div class="ui-widget ui-state-default" style="display:inline-block";> <span title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
-    di_res = {'-1': clock_icon, 'N/A': radiooff_icon, '0': check_icon, '1': error_icon, '2': majorwarn_icon,'3': error_icon, '4': minorwarn_icon, '10': clock_icon}
+    art_results_dict = get_art_test_results()
 
     query = """
     select n.nname as \"BRANCH\", n.ngroup as \"GROUP\", platf.pl,
@@ -62,16 +58,16 @@ def globalviewDemo(request):
      AND j.jid = ts.jid and j.projid = ts.projid
      AND j.begdate between sysdate-10 and sysdate
      AND j.eb is not  NULL order by j.eb desc
-          """
+    """
+    new_cur = connection.cursor()
     new_cur.execute(query)
     result = new_cur.fetchall()
-    first_row = result[0]
-    rows_s = []
+    new_cur.close()
     dd = defaultdict(list)
     for row1 in result:
-# row1[22] is the numner of timed-out test - row added in Jan 2025 - needed redefinition from None for old entries
-        row122=row1[22]
-        if row122 is None or row122 == None:
+        # row1[22] is the number of timed-out test - row added in Jan 2025 - needed redefinition from None for old entries
+        row122 = row1[22]
+        if row122 is None or row122 is None:
             row122 = 0
         if row1[0] not in dd:
             if row1[24] == 1:  # LAST PROJECT
@@ -86,153 +82,144 @@ def globalviewDemo(request):
                 dd[row1[0]][19] += row1[20]
                 dd[row1[0]][20] += row1[21]
                 dd[row1[0]][21] += row122
+
+    # add str for custom sorting
     reslt2 = []
-    dict_g = {'CI': 'AA0', r'^[\d_\-]*PRODUCTION.*$': 'AA01', r'^[\d_\-]*DEVELOP.*$': 'AA02',
-              r'^[\d_\-]*MAIN.*$': 'AA03',
-              r'^[\d_\-]*ARM.*$': 'AA05', 'LANG': 'AA06', 'CENTOS': 'AA07', 'NEXT': 'AA08', 'LCG': 'AA1', 'BRAN': 'AA2',
-              'CONSTR': 'Z1', 'LEGACY': 'B1', 'ANALYSIS': 'B2', 'UPGRADE': 'B3', 'BUG': 'B4', 'GAUDI': 'C0',
-              'EXP': 'C2', 'OTHER': 'C9', 'TEST': 'Z7', 'TRAIN': 'Z8', 'DOXYGEN': 'Z9'}
+    dict_g = {
+        "CI": "AA0",
+        r"^[\d_\-]*PRODUCTION.*$": "AA01",
+        r"^[\d_\-]*DEVELOP.*$": "AA02",
+        r"^[\d_\-]*MAIN.*$": "AA03",
+        r"^[\d_\-]*ARM.*$": "AA05",
+        "LANG": "AA06",
+        "CENTOS": "AA07",
+        "NEXT": "AA08",
+        "LCG": "AA1",
+        "BRAN": "AA2",
+        "CONSTR": "Z1",
+        "LEGACY": "B1",
+        "ANALYSIS": "B2",
+        "UPGRADE": "B3",
+        "BUG": "B4",
+        "GAUDI": "C0",
+        "EXP": "C2",
+        "OTHER": "C9",
+        "TEST": "Z7",
+        "TRAIN": "Z8",
+        "DOXYGEN": "Z9",
+    }
     for k, v in dd.items():
-        ar1 = []
-        ar1.append(k)
+        ar1 = [
+            k,
+        ]
         row10u = v[0].upper()
         keyList = [k for k in dict_g.keys() if re.search(k, row10u)]
-        key_name_code = next(iter(keyList),'Y')
-        name_code = dict_g.get(key_name_code, 'Y' + row10u)
+        key_name_code = next(iter(keyList), "Y")
+        name_code = dict_g.get(key_name_code, "Y" + row10u)
         v[0] = row10u
-        #        v[13]='<a href="http://atlas-nightlies-browser.cern.ch/~platinum/nightlies/info?tp=g&nightly='+k+'&rel='+v[13]+'&ar=*">'+v[13]+'</a>'
         ar1.extend(v)
-    #   Next 3 commented out lines are useless since "a1" has been extended above with 'v'
-    #    m_tcompl = v[17]
-    #    if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
-    #        v[18]='N/A'; v[19]='N/A'
         ar1.append(name_code)
         reslt2.append(ar1)
-        lar1 = len(ar1)
-    #    print(reslt2)
-    dict_cache_transf={}
-    if dict_from_cache:
-        for k46, v46 in dict_from_cache.items():
-            for kk, vv in v46.items():
-                kk_transf = re.sub('/','_',k46) 
-                key_transf = kk_transf+'_'+kk
-                string_vv = '<B><span style="color: blue">' + str(vv['active']) + '</span></B>'
-                string_vv = string_vv + ',<B><span style="color: green">'+ str(vv['succeeded']) +'</span></B>,'
-                string_vv = string_vv + '<B><span style="color: brown">' + str(vv['finished']) + '</span></B>'
-                string_vv = string_vv +',<B><span style="color: red">' + str(vv['failed']) + '</span></B>'
-                dict_cache_transf[key_transf] = [string_vv, k46]
-#    pprint(dict_cache_transf)
+
+    # prepare data for data table
+    res_dict = {}
+    is_json_output = is_json_request(request)
     reslt3 = []
     for row in reslt2:
-        list9 = []
-        m_ncompl =  row[16]
-        if m_ncompl == None or m_ncompl == 'N/A' or m_ncompl <= 0:
-            row[17]='N/A'; row[18]='N/A';
-        a0001 = str(row[17]) + ' (' + str(row[18]) + ')'
+        m_ncompl = row[16]
+        if m_ncompl is None or m_ncompl == "N/A" or m_ncompl <= 0:
+            row[17] = "N/A"
+            row[18] = "N/A"
+        a0001 = f"{str(row[17])} ({str(row[18])})"
         m_tcompl = row[19]
-        if m_tcompl == None or m_tcompl == 'N/A' or m_tcompl <= 0:
-            row[20]='N/A'; row[21]='N/A'; row[22]='N/A';
-        a0002 = str(row[20]) + ' (' + str(row[21]) + ') ' + str(row[22])
-        
-        t_cv_clie=row[28];s_cv_clie=row[29]
-        t_cv_serv=row[11];s_cv_serv=row[12]
-        tt_cv_serv='N/A' 
-        if t_cv_serv != None and t_cv_serv != '': tt_cv_serv=t_cv_serv
-        tt_cv_clie='N/A'
-        if t_cv_clie != None and t_cv_clie != '': tt_cv_clie=t_cv_clie
-        ss_cv_serv='N/A'
-        if s_cv_serv != None and s_cv_serv != '': ss_cv_serv=str(s_cv_serv)
-        ss_cv_clie='N/A'
-        if s_cv_clie != None and s_cv_clie != '': ss_cv_clie=str(s_cv_clie)
-        [i_cv_serv,i_cv_clie]=map(lambda x: di_res.get(str(x),str(x)), [ss_cv_serv,ss_cv_clie])
-        if tt_cv_serv != 'N/A' : i_combo_cv_serv=tt_cv_serv+i_cv_serv
-        else: i_combo_cv_serv=i_cv_serv
-        if tt_cv_clie != 'N/A' : i_combo_cv_clie=tt_cv_clie+i_cv_clie
-        else: i_combo_cv_clie=i_cv_clie
+        if m_tcompl is None or m_tcompl == "N/A" or m_tcompl <= 0:
+            row[20] = "N/A"
+            row[21] = "N/A"
+            row[22] = "N/A"
+        a0002 = f"{str(row[20])} ({str(row[21])}) {str(row[22])}"
 
-        lartwebarea=row[30]
-        if lartwebarea is None or lartwebarea == '':
-            lartwebarea = "https://atlas-art-data.web.cern.ch/atlas-art-data/local-output"
-        erla=row[32];sula=row[33]; wala=row[34]; eim=row[35]; sim=row[36]; vext=row[37]; area_suffix=row[38]; webarea_cur=row[39]
-        if erla == None or erla == '': erla='N/A'
-        if sula == None or sula == '': sula='N/A'
-        if wala == None or wala == '': wala = 'N/A'
-        if wala.isdigit() and sula.isdigit():
-            sula=str(int(sula)-int(wala))
-        if eim == None or eim == '': eim='N/A'
-        if sim == None or sim == '': sim='N/A'
-        if vext == None or vext == '': vext = '0'
-        if webarea_cur == None: webarea_cur = ''
-        if area_suffix == None: area_suffix = '';
+        t_cv_clie = row[28] if row[28] is not None and row[28] != "" else "N/A"
+
         brname = row[0]
-        link_brname = brname
-        link_to_ciInfo = reverse('BuildCI')
-        link_to_nInfo = reverse('BuildN')
-        if re.match('^.*CI.*$', brname):
-            link_brname = "<a href=\"" + link_to_ciInfo + "\">" + brname + "</a>"
+        link_to_ciInfo = reverse("BuildCI")
+        link_to_nInfo = reverse("BuildN")
+        if re.match("^.*CI.*$", brname):
+            link_brname = '<a href="' + link_to_ciInfo + '">' + brname + "</a>"
         else:
-            link_brname = "<a href=\"" + link_to_nInfo + "?nightly=" + brname + "\">" + brname + "</a>"
+            link_brname = f'<a href="{link_to_nInfo}?nightly={brname}">{brname}</a>'
 
-        rname=row[14]
-        rname_trun = re.sub(r'\([^)]*\)', '', rname)
-        key_cache_transf = brname + '_' + rname
-        val_cache_transf, nightly_name_art=dict_cache_transf.get(key_cache_transf,['N/A','N/A'])
-        if val_cache_transf != 'N/A' and nightly_name_art != 'N/A': 
-            vacasf = "<a href=\"https://bigpanda.cern.ch/art/overview/?branch=" 
-            val_cache_transf = vacasf + nightly_name_art + "&ntag_full=" + rname + "\">" + val_cache_transf + "</a>"
+        rname = row[14]
+        nightly_name_art = re.sub("_", "/", brname, 2)
+        art_results = art_results_dict.get(f"{brname}_{rname}", "N/A")
+        art_results_grid_str = "N/A"
+        art_results_local_str = "N/A"
+        if isinstance(art_results, dict) and len(art_results) > 0:
+            art_results_grid_str = (
+                (
+                    f'<a href="https://bigpanda.cern.ch/art/overview/?test_type=grid&branch={nightly_name_art}&ntag_full={rname}">'
+                    f'<b><span style="color: blue">{art_results["grid"]["active"]}</span></b>,'
+                    f'<b><span style="color: green">{art_results["grid"]["succeeded"]}</span></b>,'
+                    f'<b><span style="color: brown">{art_results["grid"]["finished"]}</span></b>,'
+                    f'<b><span style="color: red">{art_results["grid"]["failed"]}</span></b>'
+                    "</a>"
+                )
+                if "grid" in art_results
+                else "N/A"
+            )
+            art_results_local_str = (
+                (
+                    f'<a href="https://bigpanda.cern.ch/art/overview/?test_type=local&branch={nightly_name_art}&ntag_full={rname}">'
+                    f'<b><span style="color: blue">{art_results["local"]["active"]}</span></b>,'
+                    f'<b><span style="color: green">{art_results["local"]["succeeded"]}</span></b>,'
+                    f'<b><span style="color: brown">{art_results["local"]["finished"]}</span></b>,'
+                    f'<b><span style="color: red">{art_results["local"]["failed"]}</span></b>'
+                    "</a>"
+                )
+                if "local" in art_results
+                else "N/A"
+            )
 
-        local_art_res=''
-        if sula == 'N/A' and erla == 'N/A':
-            local_art_res='N/A'
-        elif sula == '0' and erla == '0':
-            local_art_res='N/A'
+        if is_json_output:
+            res_dict[brname] = {
+                "nightly_group": row[1],
+                "branch_name": brname,
+                "release": rname,
+                "build_date": row[9],
+                "compilation_results": {
+                    "errors": row[17] if row[17] is not None else "N/A",
+                    "warnings": row[18] if row[18] is not None else "N/A",
+                },
+                "ctest_results": {
+                    "errors": row[20] if row[20] is not None else "N/A",
+                    "warnings": row[21] if row[21] is not None else "N/A",
+                    "timeouts": row[22] if row[22] is not None else "N/A",
+                },
+                "art_results_local": art_results["local"] if isinstance(art_results, dict) and "local" in art_results else "N/A",
+                "art_results_grid": art_results["grid"] if isinstance(art_results, dict) and "grid" in art_results else "N/A",
+                "cvmfs_publication_time": t_cv_clie,
+            }
         else:
-            local_art_res += '<B><span style="color: green">'+ str(sula)+'</span></B>,'
-            local_art_res += '<B><span style="color: brown">' + str(wala) + '</span></B>,'
-            local_art_res += '<B><span style="color: red">'+ str(erla)+'</span></B>'
-            branch = re.split('_',brname)[0]
-            # Local art results template: https://atlas-art-data.web.cern.ch/atlas-art-data/local-output/<branch>/<nightly_tag>/
-            loares = '<a href="' + lartwebarea + "/" + branch + "/" + row[15] + "/" + row[2] + "/" + rname + '/">'
-            local_art_res = loares + local_art_res + "</a>"
+            reslt3.append(
+                [
+                    row[1],
+                    link_brname,
+                    rname,
+                    row[9],
+                    a0001,
+                    a0002,
+                    art_results_local_str,
+                    art_results_grid_str,
+                    t_cv_clie,
+                    row[40],
+                ]
+            )
 
-        image_res='N/A'
-#        if sim == 'N/A' or eim == 'N/A':
-#            image_res='N/A'
-#        elif sim == 0 or sim == 1 or sim == 2 or sim == 3 or sim == 4:
-#            image_res = di_res.get(str(sim), str(sim))
-#            if str(vext) == '1' :
-#                image_res= "<a href=\"" + webarea_cur + os.sep + 'ardoc_web_area' + area_suffix + os.sep + 'ARDOC_Log_' + rname_trun + os.sep + 'ardoc_image_build.html' + "\">" + image_res + "</a>"
-#            if isinstance(eim, datetime):
-#                image_res = image_res+" "+eim.strftime('%d-%b %H:%M').upper()
-#        else:
-#            image_res = di_res.get(str(sim), str(sim))
-        list9.append(row[1])
-        list9.append(link_brname)
-        list9.append(rname)
-        list9.append(row[9])
-        list9.append(a0001)
-        list9.append(a0002)
-        list9.append(local_art_res)
-        list9.append(val_cache_transf)
-        list9.append(tt_cv_clie)
-        list9.append(row[40])
-
-        reslt3.append(list9)
-
-#    if dict_from_cache:
-#        for k46, v46 in dict_from_cache.items():
-#            for kk, vv in v46.items():
-#                l1=[k46]
-#                l1.append(kk)
-#                l1.extend([vv['active'], vv['done'], vv['failed'], vv['finished']])
-#                print('L1 ',l1)    
-#    dict_from_local_cache = cache.get('art-local-dict')
-#    if dict_from_local_cache:
-#        for k47, v47 in dict_from_local_cache.items():
-#            print('L2',k47)
-#            pprint(v47)
-
-    data={'viewParams': request.session['viewParams'], 'reslt3':json.dumps(reslt3, cls=DateEncoder)}
-
-    return render(request,'globalviewDemo.html', data, content_type='text/html')
-
+    if is_json_output:
+        return JsonResponse(res_dict, safe=False)
+    else:
+        data = {
+            "request": request,
+            "viewParams": request.session["viewParams"],
+            "reslt3": json.dumps(reslt3, cls=DateEncoder),
+        }
+        return render(request, "globalviewDemo.html", data, content_type="text/html")
