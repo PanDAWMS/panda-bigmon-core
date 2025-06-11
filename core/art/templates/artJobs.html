@@ -90,6 +90,7 @@ for (let i=3; i<table_title.length; i++) {
 
 let lengthMenu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]];
 let iDisplayLength = lengthMenu[0][0];
+const pageLength = 'ntag_full' in request_params ? -1 : iDisplayLength;
 if ('display_limit' in request_params) {
     let display_limit = parseInt(request_params.display_limit);
     if (lengthMenu[0].findIndex((x) => x === display_limit) > 0) {
@@ -243,7 +244,8 @@ let columnDefs =  [];
 
 var art_table = $('#art_table').DataTable({
   lengthChange: true,
-  pageLength: -1,
+  lengthMenu: lengthMenu,
+  pageLength: pageLength,
   iDisplayLength: iDisplayLength,
   paging: true,
   bFilter: true,
