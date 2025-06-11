@@ -1509,6 +1509,7 @@ def sendArtReport(request):
     final_result_dict = {v: k for k, v in art_const.TEST_STATUS_INDEX.items()}
     # process URL params to query params
     query, extra_str = setupView(request)
+    query['test_type'] = 'grid'
     _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
 
     # getting tests
@@ -1533,7 +1534,7 @@ def sendArtReport(request):
                 artjobsdictpackage[job['package']]['branch'] = job['branch']
                 artjobsdictpackage[job['package']]['ntag_full'] = job['nightly_tag']
                 artjobsdictpackage[job['package']]['ntag'] = job['ntag'].strftime(art_const.DATETIME_FORMAT['default'])
-                artjobsdictpackage[job['package']]['link'] = 'https://bigpanda.cern.ch/art/tasks/?package={}&ntag={}'.format(
+                artjobsdictpackage[job['package']]['link'] = 'https://bigpanda.cern.ch/art/tasks/?package={}&ntag={}&test_type=grid'.format(
                     job['package'], job['ntag'].strftime(art_const.DATETIME_FORMAT['default']))
                 artjobsdictpackage[job['package']]['branches'] = {}
             if job['branch'] not in artjobsdictpackage[job['package']]['branches'].keys():

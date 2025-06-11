@@ -110,35 +110,34 @@ for (let i=1; i<table_data[0].length; i++) {
       let gridData = (data.grid) ? data.grid : { active: 0, succeeded: 0, finished: 0, failed: 0, ntag: '' };
       let localData = (data.local) ? data.local : { active: 0, succeeded: 0, finished: 0, failed: 0, ntag: '' };
 
+      const gridJobs = gridData.active + gridData.succeeded + gridData.finished + gridData.failed;
+      const localJobs = localData.active + localData.succeeded + localData.finished + localData.failed;
+
       if (type === 'sort') {
-        return (gridData.active + gridData.succeeded + gridData.finished + gridData.failed +
-                localData.active + localData.succeeded + localData.finished + localData.failed > 0)
-                ? (gridData.failed + localData.failed)
-                : -1;
+        return (gridJobs + localJobs > 0) ? (gridData.failed + localData.failed) : -1;
       } else {
-        if (gridData.active + gridData.succeeded + gridData.finished + gridData.failed === 0 &&
-            localData.active + localData.succeeded + localData.finished + localData.failed === 0) {
+        if (gridJobs === 0 && localJobs === 0) {
           return '<div class="nodata-center">---</div>';
         } else {
           return `
             <div class="data-container">
 	      <div>
-                ${test_type !== "local" && gridData ? `
+                ${test_type !== "local" && gridJobs > 0 ? `
                 <div class="bp-tooltip left">
                   <div class="clickable traffic-lights">
                     ${formatTrafficLightsData(gridData, row, 'grid')}
                   </div>
                   <span class="tooltip-text">Grid Test</span>
-                </div>` : (test_type !== "local" ? '<div class="nodata-center">---</div>' : '')}
+                </div>` : ''}
 	      </div>
               <div>
-                ${test_type !== "grid" && localData ? `
+                ${test_type !== "grid" && localJobs > 0 ? `
                 <div class="bp-tooltip left">
                   <div class="clickable traffic-lights">
                     ${formatTrafficLightsData(localData, row, 'local')}
                   </div>
                   <span class="tooltip-text">Local Test</span>
-                </div>` : (test_type !== "grid" ? '<div class="nodata-center">---</div>' : '')}
+                </div>` : ''}
               </div>
 	    </div>
           `;
