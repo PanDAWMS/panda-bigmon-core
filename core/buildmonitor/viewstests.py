@@ -1,12 +1,14 @@
-import json, re
+import json
+import re
 
-from django.shortcuts import render
-from core.views import initRequest
+from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
+from core.utils import is_json_request
+from core.views import initRequest
 from django.db import connection
 from django.http import JsonResponse
-from core.libs.DateEncoder import DateEncoder
-from core.utils import is_json_request
+from django.shortcuts import render
+
 
 @login_customrequired
 def testviewDemo(request):
@@ -14,140 +16,179 @@ def testviewDemo(request):
     if not valid:
         return response
 
-    if 'nightly' in request.session['requestParams'] and len(request.session['requestParams']['nightly']) < 100:
-        nname = request.session['requestParams']['nightly']
+    if "nightly" in request.session["requestParams"] and len(request.session["requestParams"]["nightly"]) < 100:
+        nname = request.session["requestParams"]["nightly"]
     else:
-        nname = 'MR-CI-builds'
-    if 'rel' in request.session['requestParams'] and len(request.session['requestParams']['rel']) < 100:
-        relname = request.session['requestParams']['rel']
+        nname = "MR-CI-builds"
+    if "rel" in request.session["requestParams"] and len(request.session["requestParams"]["rel"]) < 100:
+        relname = request.session["requestParams"]["rel"]
     else:
-        relname = 'unknown'
-    if 'ar' in request.session['requestParams'] and len(request.session['requestParams']['ar']) < 100:
-        arname = request.session['requestParams']['ar']
+        relname = "unknown"
+    if "ar" in request.session["requestParams"] and len(request.session["requestParams"]["ar"]) < 100:
+        arname = request.session["requestParams"]["ar"]
     else:
-        arname = 'x86_64-centos7-gcc11-opt'
-    if 'proj' in request.session['requestParams'] and len(request.session['requestParams']['proj']) < 100:
-        pjname = request.session['requestParams']['proj']
+        arname = "x86_64-centos7-gcc11-opt"
+    if "proj" in request.session["requestParams"] and len(request.session["requestParams"]["proj"]) < 100:
+        pjname = request.session["requestParams"]["proj"]
     else:
-        pjname = 'all'
+        pjname = "all"
 
     new_cur = connection.cursor()
-    check_icon='<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
+    check_icon = '<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-ico\
 n-circle-check">ICON33</span></div>'
-    clock_icon='<div class="ui-widget ui-state-active" style="display:inline-block;backgroun\
+    clock_icon = '<div class="ui-widget ui-state-active" style="display:inline-block;backgroun\
 d:#bc0000;"> <span style="display:inline-block;" title="UPDATING" class="DataTables_sort_ico\
 n css_right ui-icon ui-icon-clock">ICON39</span></div>'
-    minorwarn_icon='<div class="ui-widget ui-state-highlight" style="display:inline-block;">\
+    minorwarn_icon = '<div class="ui-widget ui-state-highlight" style="display:inline-block;">\
  <span style="display:inline-block;" title="MINOR WARNING" class="DataTables_sort_icon css_r\
 ight ui-icon ui-icon-alert">ICON34</span></div>'
-    warn_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span st\
+    warn_icon = '<div class="ui-widget ui-state-error" style="display:inline-block;"> <span st\
 yle="display:inline-block;" title="WARNING" class="DataTables_sort_icon css_right ui-icon ui\
 -icon-lightbulb">ICON35</span></div>'
-    error_icon='<div class="ui-widget ui-state-error" style="display:inline-block;"> <span s\
+    error_icon = '<div class="ui-widget ui-state-error" style="display:inline-block;"> <span s\
 tyle="display:inline-block;" title="ERROR" class="DataTables_sort_icon css_right ui-icon ui-\
 icon-circle-close">ICON36</span></div>'
-    help_icon='<span style="display:inline-block;" title="HELP" class="DataTables_sort_icon \
+    help_icon = '<span style="display:inline-block;" title="HELP" class="DataTables_sort_icon \
 css_right ui-icon ui-icon-help">ICONH</span>'
-    person_icon='<span style="display:inline-block; float: left; margin-right: .9em;" title=\
+    person_icon = '<span style="display:inline-block; float: left; margin-right: .9em;" title=\
 "MASTER ROLE" class="DataTables_sort_icon ui-icon ui-icon-person">ICONP</span>'
-    person_icon1='<span style="display:inline-block;" title="MASTER ROLE" class="DataTables_\
+    person_icon1 = '<span style="display:inline-block;" title="MASTER ROLE" class="DataTables_\
 sort_icon ui-icon ui-icon-person">ICONP1</span>'
-    mailyes_icon='<span style="cursor:pointer; display:inline-block; " title="MAIL ENABLED" \
+    mailyes_icon = '<span style="cursor:pointer; display:inline-block; " title="MAIL ENABLED" \
 class="ui-icon ui-icon-mail-closed"> ICON1</span>'
-    radiooff_icon='<div class="ui-widget ui-state-default" style="display:inline-block";> <s\
+    radiooff_icon = '<div class="ui-widget ui-state-default" style="display:inline-block";> <s\
 pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
-    blank_icon='<div class="ui-widget ui-state-disabled" style="display:inline-block";> <span\
+    blank_icon = '<div class="ui-widget ui-state-disabled" style="display:inline-block";> <span\
  title="N/A" class="ui-icon ui-icon-blank">ICONBL</span></div>'
-    note_icon='<div class="ui-widget ui-state-disabled" style="display:inline-block";> <span \
+    note_icon = '<div class="ui-widget ui-state-disabled" style="display:inline-block";> <span \
 title="N/A" class="ui-icon ui-icon-note">ICONNT</span></div>'
-    cancel_icon='<div class="ui-widget ui-state-check" style="display:inline-block";> <span \
+    cancel_icon = '<div class="ui-widget ui-state-check" style="display:inline-block";> <span \
 title="N/A" class="ui-icon ui-icon-cancel">ICON20</span></div>'
-    majorwarn_icon=warn_icon
-    di_res={'-1':clock_icon,'N/A':radiooff_icon,'0':check_icon,'1':minorwarn_icon,'2':majorwarn_icon,'3':error_icon,'10':clock_icon}
-    di_excess={'N/A':radiooff_icon,'0':blank_icon,'1':note_icon,'2':cancel_icon}
-    query="select * from (select to_char(j.jid),j.arch||'-'||os||'-'||comp||'-'||opt as AA, j.tstamp, n.nname as nname, r.name as RNAME, s.hname, j.buildarea, j.copyarea, r.relnstamp, j.gitbr, n.ntype from nightlies@ATLR.CERN.CH n inner join ( releases@ATLR.CERN.CH r inner join ( jobs@ATLR.CERN.CH j inner join jobstat@ATLR.CERN.CH s on j.jid=s.jid ) on r.nid=j.nid and r.relid=j.relid ) on n.nid=r.nid where nname ='%s' and j.tstamp between sysdate-11+1/24 and sysdate order by j.tstamp asc) where RNAME ='%s' and AA='%s'" % (nname,relname,arname)
-#    print("Q ",query)
+    majorwarn_icon = warn_icon
+    di_res = {
+        "-1": clock_icon,
+        "N/A": radiooff_icon,
+        "0": check_icon,
+        "1": minorwarn_icon,
+        "2": majorwarn_icon,
+        "3": error_icon,
+        "10": clock_icon,
+    }
+    di_excess = {
+        "N/A": radiooff_icon,
+        "0": blank_icon,
+        "1": note_icon,
+        "2": cancel_icon,
+    }
+    query = (
+        "select * from (select to_char(j.jid),j.arch||'-'||os||'-'||comp||'-'||opt as AA, j.tstamp, n.nname as nname, r.name as RNAME, s.hname, j.buildarea, j.copyarea, r.relnstamp, j.gitbr, n.ntype from nightlies@ATLR.CERN.CH n inner join ( releases@ATLR.CERN.CH r inner join ( jobs@ATLR.CERN.CH j inner join jobstat@ATLR.CERN.CH s on j.jid=s.jid ) on r.nid=j.nid and r.relid=j.relid ) on n.nid=r.nid where nname ='%s' and j.tstamp between sysdate-11+1/24 and sysdate order by j.tstamp asc) where RNAME ='%s' and AA='%s'"
+        % (nname, relname, arname)
+    )
+    #    print("Q ",query)
     new_cur.execute(query)
     reslt = new_cur.fetchall()
     reslt1 = {}
-    host='N/A'
-    buildareaSS='N/A'
-    copyareaSS='N/A'
-    gitbrSS='N/A'
-    ntype='N/A'
-    relnstamp=''
-    lllr=len(reslt)
+    host = "N/A"
+    buildareaSS = "N/A"
+    copyareaSS = "N/A"
+    gitbrSS = "N/A"
+    ntype = "N/A"
+    relnstamp = ""
+    lllr = len(reslt)
     if lllr > 0:
-        rowmax=reslt[-1]
-        host=re.split('\\.',rowmax[5])[0]
+        rowmax = reslt[-1]
+        host = re.split("\\.", rowmax[5])[0]
         jid_top = rowmax[0]
         buildareaSS = rowmax[6]
         copyareaSS = rowmax[7]
         relnstamp = rowmax[8]
         ntype = rowmax[10]
-        if gitbrSS != None : gitbrSS=rowmax[9]
-        tabname='testresults'
-        if pjname == '*' or re.match('^all$', pjname, re.IGNORECASE):
-            query1 = "select res,projname,nameln,pname,mngrs,contname,to_char(tstamp, 'RR/MM/DD HH24:MI'),\
-             fname as tstamp,wdirln,excess from " + tabname + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH\
-             natural join projects@ATLR.CERN.CH natural join packages@ATLR.CERN.CH where jid ='%s'" % jid_top
+        if gitbrSS != None:
+            gitbrSS = rowmax[9]
+        tabname = "testresults"
+        if pjname == "*" or re.match("^all$", pjname, re.IGNORECASE):
+            query1 = (
+                "select res,projname,nameln,pname,mngrs,contname,to_char(tstamp, 'RR/MM/DD HH24:MI'),\
+             fname as tstamp,wdirln,excess from "
+                + tabname
+                + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH\
+             natural join projects@ATLR.CERN.CH natural join packages@ATLR.CERN.CH where jid ='%s'"
+                % jid_top
+            )
         else:
-            query1 = "select res,projname,nameln,pname,mngrs,contname,to_char(tstamp, 'RR/MM/DD HH24:MI'),\
-             fname as tstamp,wdirln,excess from " + tabname + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH\
-             natural join projects@ATLR.CERN.CH natural join packages@ATLR.CERN.CH where jid ='%s' and projname ='%s'" % (jid_top, pjname)
+            query1 = (
+                "select res,projname,nameln,pname,mngrs,contname,to_char(tstamp, 'RR/MM/DD HH24:MI'),\
+             fname as tstamp,wdirln,excess from "
+                + tabname
+                + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH\
+             natural join projects@ATLR.CERN.CH natural join packages@ATLR.CERN.CH where jid ='%s' and projname ='%s'"
+                % (jid_top, pjname)
+            )
         new_cur.execute(query1)
         reslt1 = new_cur.fetchall()
-    relextend=relname
-    if re.search('ATN',nname): relextend=relnstamp+'('+relname+')'
-    CI_flag=False
-    if re.search('CI',nname):
+    relextend = relname
+    if re.search("ATN", nname):
+        relextend = relnstamp + "(" + relname + ")"
+    CI_flag = False
+    if re.search("CI", nname):
         CI_flag = True
-        sComm='git branch '+gitbrSS
-        cmmnt='ATLAS CI %s, release %s, platform %s (on %s)<BR><span style="font-size:  smaller">%s</span>' % ( nname, relextend, arname, host, sComm )
+        sComm = "git branch " + gitbrSS
+        cmmnt = 'ATLAS CI %s, release %s, platform %s (on %s)<BR><span style="font-size:  smaller">%s</span>' % (
+            nname,
+            relextend,
+            arname,
+            host,
+            sComm,
+        )
     else:
-        cmmnt='ATLAS nightly %s, release %s, platform %s (on %s)' % ( nname, relextend, arname, host)
+        cmmnt = "ATLAS nightly %s, release %s, platform %s (on %s)" % (
+            nname,
+            relextend,
+            arname,
+            host,
+        )
 
     header = [
-        'RES',
-        'PROJECT',
-        'Test name',
-        'Optional or Required',
-        'Container',
-        'Time',
+        "RES",
+        "PROJECT",
+        "Test name",
+        "Optional or Required",
+        "Container",
+        "Time",
     ]
-    i=0
+    i = 0
     rows_s = []
     for row in reslt1:
-        i+=1
+        i += 1
         if i > 10000:
             break
-        result=row[0]
-        proj=row[1]
-        nameln=row[2]
-        category='Required'
-        if row[3] == 'OptionalTests':
-            category='Optional'
-        container=row[5]
-        ttime=row[6]
-        fname=row[7]
-        excess_flag=row[9]
-        i_result=di_res.get(str(result),result)
-        if i_result == None or i_result == "None" :
-            i_result=radiooff_icon
+        result = row[0]
+        proj = row[1]
+        nameln = row[2]
+        category = "Required"
+        if row[3] == "OptionalTests":
+            category = "Optional"
+        container = row[5]
+        ttime = row[6]
+        fname = row[7]
+        excess_flag = row[9]
+        i_result = di_res.get(str(result), result)
+        if i_result == None or i_result == "None":
+            i_result = radiooff_icon
         elif CI_flag:
-          exc_result=di_excess.get(str(excess_flag),excess_flag)
-          if exc_result == None or exc_result == "None":
-              exc_result = blank_icon
-          if exc_result == cancel_icon:
-              i_result = exc_result
-          else:
-              i_result=i_result+blank_icon+exc_result
-        nameln1=nameln
-        if fname != None and fname != '':
-          nameln1=re.sub(fname+'#','',nameln,1)
-        nameln3=nameln1
-        row_cand=[i_result,proj,nameln3,category,container,ttime]
+            exc_result = di_excess.get(str(excess_flag), excess_flag)
+            if exc_result == None or exc_result == "None":
+                exc_result = blank_icon
+            if exc_result == cancel_icon:
+                i_result = exc_result
+            else:
+                i_result = i_result + blank_icon + exc_result
+        nameln1 = nameln
+        if fname != None and fname != "":
+            nameln1 = re.sub(fname + "#", "", nameln, 1)
+        nameln3 = nameln1
+        row_cand = [i_result, proj, nameln3, category, container, ttime]
         rows_s.append(row_cand)
 
     if is_json_request(request):
@@ -156,22 +197,27 @@ title="N/A" class="ui-icon ui-icon-cancel">ICON20</span></div>'
             "rel": relname,
             "ar": arname,
             "proj": pjname,
-            'rows_s': [header, ] + rows_s if len(rows_s) > 0 else []
+            "rows_s": (
+                [
+                    header,
+                ]
+                + rows_s
+                if len(rows_s) > 0
+                else []
+            ),
         }
         return JsonResponse(data, encoder=DateEncoder, safe=False)
     else:
         data = {
-            'request': request,
-            'requestParams': request.session['requestParams'],
-            'viewParams': request.session['viewParams'],
+            "request": request,
+            "requestParams": request.session["requestParams"],
+            "viewParams": request.session["viewParams"],
             "nightly": nname,
             "rel": relname,
             "ar": arname,
             "proj": pjname,
             "cicon": cancel_icon,
             "nicon": note_icon,
-            'rows_s': json.dumps(rows_s, cls=DateEncoder)
+            "rows_s": json.dumps(rows_s, cls=DateEncoder),
         }
-        return render(request,'testviewDemo.html', data, content_type='text/html')
-
-
+        return render(request, "testviewDemo.html", data, content_type="text/html")
