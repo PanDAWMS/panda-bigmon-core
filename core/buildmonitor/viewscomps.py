@@ -1,8 +1,11 @@
 import json
 import re
 
+from django.http import JsonResponse
+import core.buildmonitor.constants as const
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
+from core.utils import is_json_request
 from core.views import initRequest
 from django.db import connection
 from django.shortcuts import render
@@ -29,6 +32,9 @@ def compviewDemo(request):
         pjname = request.session["requestParams"]["proj"]
     else:
         pjname = "all"
+
+    is_json_output = is_json_request(request)
+    output_dict = {'nightly': nname, 'platform': arname, 'proj': pjname, 'data': {}}
 
     new_cur = connection.cursor()
     check_icon = '<div class="ui-widget ui-state-check" style="display:inline-block;"> <span s\
@@ -93,13 +99,12 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
             copyareaSS = rowmax[7]
             relnstamp = rowmax[8]
             ntype = rowmax[10]
-            if gitbrSS != None:
+            if gitbrSS is not None:
                 gitbrSS = rowmax[9]
             tabname = "compresults"
             if pjname == "*" or re.match("^all$", pjname, re.IGNORECASE):
                 query1 = (
-                    "select res,projname,nameln,contname,corder \
-            from "
+                    "select res,projname,nameln,contname,corder from "
                     + tabname
                     + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH \
             natural join packages@ATLR.CERN.CH where jid ='%s'"
@@ -107,8 +112,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                 )
             else:
                 query1 = (
-                    "select res,projname,nameln,contname,corder \
-            from "
+                    "select res,projname,nameln,contname,corder from "
                     + tabname
                     + "@ATLR.CERN.CH natural join jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH \
             natural join packages@ATLR.CERN.CH where jid ='%s' and projname ='%s'"
@@ -153,18 +157,36 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
             container = row[3]
             corder = row[4]
             i_result = di_res.get(str(result), str(result))
-            if i_result == None or i_result == "None":
+            if i_result is None or i_result == "None":
                 i_result = radiooff_icon
-            nameln3 = nameln1
-            row_cand = [i_result, proj, nameln3, container]
-            rows_s.append(row_cand)
 
-    data = {
-        "nightly": nname,
-        "rel": relname,
-        "ar": arname,
-        "proj": pjname,
-        "viewParams": request.session["viewParams"],
-        "rows_s": json.dumps(rows_s, cls=DateEncoder),
-    }
-    return render(request, "compviewDemo.html", data, content_type="text/html")
+            if not is_json_output:
+                rows_s.append([i_result, proj, nameln1, container])
+            else:
+                match = re.search(r'<a\s+href="([^"]+)">([^<]+)</a>', nameln1)
+                if match:
+                    link_log = match.group(1)
+                    package = match.group(2)
+                else:
+                    link_log = "N/A"
+                    package = "N/A"
+                output_dict['data'][package] = {
+                    'result': const.STATUS_DESC.get(str(result), "N/A"),
+                    'package': package,
+                    'link_log': link_log,
+                    'container': container,
+                }
+
+    if not is_json_output:
+        data = {
+            "nightly": nname,
+            "rel": relname,
+            "ar": arname,
+            "proj": pjname,
+            "viewParams": request.session["viewParams"],
+            "rows_s": json.dumps(rows_s, cls=DateEncoder),
+        }
+        return render(request, "compviewDemo.html", data, content_type="text/html")
+    else:
+        return JsonResponse(output_dict)
+

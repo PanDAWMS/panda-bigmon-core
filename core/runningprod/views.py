@@ -168,7 +168,7 @@ def runningProdTasks(request):
     else:
         # putting list of tasks to cache separately for dataTables plugin
         transactionKey = random.randrange(100000000)
-        setCacheEntry(request, transactionKey, json.dumps(task_list, cls=DateEncoder), 60 * 30, isData=True)
+        setCacheEntry(request, transactionKey, json.dumps(task_list, cls=DateEncoder), 60 * 30, is_data=True)
 
         xurl = request.get_full_path()
         if xurl.find('?') > 0:

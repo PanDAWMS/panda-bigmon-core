@@ -2819,7 +2819,7 @@ def userInfo(request, user=''):
 
         # put list of tasks to cache for further usage
         tk_taskids = random.randrange(100000000)
-        setCacheEntry(request, tk_taskids, json.dumps(tasks, cls=DateTimeEncoder), 60 * 30, isData=True)
+        setCacheEntry(request, tk_taskids, json.dumps(tasks, cls=DateTimeEncoder), 60 * 30, is_data=True)
 
         metrics_total = {}
         if userstats:
@@ -3903,7 +3903,7 @@ def taskList(request):
         # for tasks plots
         taskl = [task['jeditaskid'] for task in tasks]
         transaction_key = insert_to_temp_table(taskl)
-        setCacheEntry(request, transaction_key, taskl, 60 * 20, isData=True)
+        setCacheEntry(request, transaction_key, taskl, 60 * 20, is_data=True)
 
         # get results from error diag analyser
         error_summary_table = error_codes_analyser.get_errors_table()
@@ -4557,7 +4557,7 @@ def userProfileData(request):
     user_Dataprofile_data = [v for k, v in user_Dataprofile_data_dict.items()]
 
     data = {'plotData': user_Dataprofile_data, 'error': ''}
-    setCacheEntry(request, "userProfileData", json.dumps(data, cls=DateEncoder), 60 * 30, isData=True)
+    setCacheEntry(request, "userProfileData", json.dumps(data, cls=DateEncoder), 60 * 30, is_data=True)
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
@@ -4582,7 +4582,7 @@ def taskInfo(request, jeditaskid=0):
         return HttpResponse(data, content_type='application/json')
 
     # Here we try to get cached data. We get any cached data is available
-    data = getCacheEntry(request, "taskInfo", skipCentralRefresh=True)
+    data = getCacheEntry(request, "taskInfo", skip_central_refresh=True)
     # Get the current AUTH type
     auth = get_auth_provider(request)
 
@@ -5026,7 +5026,7 @@ def taskInfo(request, jeditaskid=0):
                 # Putting list of inputs to cache separately for dataTables plugin
                 transactionKeyIEC = random.randrange(100000000)
                 setCacheEntry(request, transactionKeyIEC, json.dumps(inputfiles_list, cls=DateTimeEncoder), 60 * 30,
-                              isData=True)
+                              is_data=True)
                 _logger.info("Inputs states summary: {}".format(time.time() - request.session['req_init_time']))
 
                 # get lighted job summary
@@ -5292,7 +5292,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         'plotsDict': plotsDict,
     }
     setCacheEntry(request, 'jobSummaryForTask' + str(jeditaskid) + mode, json.dumps(alldata, cls=DateEncoder), 60 * 10,
-                  isData=True)
+                  is_data=True)
 
     if infotype == 'jobsummary':
         data = {
