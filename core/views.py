@@ -1931,7 +1931,7 @@ def descendentjoberrsinfo(request):
         query['pandaid__in'].append(retry['oldpandaid'])
     jobs = get_job_list(query, error_info=True)
     jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
-    errors = {job['pandaid']: job['error_info'] for job in jobs if job['jobstatus'] == 'failed'}
+    errors = {job['pandaid']: job['errorinfo'] for job in jobs if job['jobstatus'] == 'failed'}
 
     response = render(request, 'jobDescentErrors.html', {'errors': errors}, content_type='text/html')
     request = complete_request(request)
@@ -7088,7 +7088,7 @@ def get_hc_tests(request):
     jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
 
     for job in jobs:
-        test = {'errorinfo': job['error_info']}
+        test = {'errorinfo': job['errorinfo']}
         try:
             hctestid = job['destinationdblock'].split('.')[2][2:]
         except:
