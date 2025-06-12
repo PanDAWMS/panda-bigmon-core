@@ -5555,7 +5555,7 @@ def errorSummary(request):
         is_test_jobs=testjobs,
         sortby=sortby,
         is_user_req=True if 'produsername' in request.session['requestParams'] else False,
-        is_site_req=True if 'computingsite' in request.session['requestParams'] else False,
+        is_site_req=True if 'computingsite' in request.session['requestParams'] or 'site' in request.session['requestParams'] else False,
         errHist=True,
     )
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
