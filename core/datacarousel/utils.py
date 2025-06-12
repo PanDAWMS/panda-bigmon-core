@@ -302,11 +302,11 @@ def get_stuck_files_data(rule_id, source_rse):
                     'dst': hit['data']['dst_rse'],
                     'transfer_link': hit['data']['transfer_link'],
                     'submitted_at': convert_epoch_to_datetime(
-                        hit['data']['submitted_at']).strftime(settings.DATETIME_FORMAT),
+                        hit['data']['submitted_at']).strftime(settings.DATETIME_FORMAT) if 'submitted_at' in hit['data'] else '-',
                     'started_at': convert_epoch_to_datetime(
-                        hit['data']['started_at']).strftime(settings.DATETIME_FORMAT),
+                        hit['data']['started_at']).strftime(settings.DATETIME_FORMAT) if 'started_at' in hit['data'] else '-',
                     'transferred_at': convert_epoch_to_datetime(
-                        hit['data']['transferred_at']).strftime(settings.DATETIME_FORMAT),
+                        hit['data']['transferred_at']).strftime(settings.DATETIME_FORMAT) if 'transferred_at' in hit['data'] else '-',
                     'duration': hit['data']['duration'],
                     'reason': hit['data']['reason'],
                     'transfer_id': hit['data']['transfer_id'],
