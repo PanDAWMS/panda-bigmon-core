@@ -60,7 +60,7 @@
 <ul class="tabs primary" data-tabs data-active-collapse="true" id="es-tabs">
   <li class="tabs-title is-active"><a href="#panel_es_total" ng-click="es.enable_panel('total')">Total</a></li>
   <li class="tabs-title"><a href="#panel_es_code" ng-click="es.enable_panel('code')">Error code</a></li>
-  <li class="tabs-title"><a href="#panel_es_site" ng-click="es.enable_panel('site')">{% if 'computingsite' in requestParams %}WN{% else %}Site{% endif %}</a></li>
+  <li class="tabs-title"><a href="#panel_es_site" ng-click="es.enable_panel('site')">{% if 'computingsite' in requestParams or 'site' in requestParams %}WN{% else %}Site{% endif %}</a></li>
   <li class="tabs-title"><a href="#panel_es_user" ng-click="es.enable_panel('user')">User</a></li>
   <li class="tabs-title"><a href="#panel_es_request" ng-click="es.enable_panel('request')">Request</a></li>
   <li class="tabs-title"><a href="#panel_es_task" ng-click="es.enable_panel('task')">Task</a></li>
