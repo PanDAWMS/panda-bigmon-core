@@ -17,7 +17,7 @@ def getJobsData(request):
         'data': [],
     }
     idList = request.GET.get('idtasks', '')
-    tasksList = getCacheEntry(request, idList, isData=True)
+    tasksList = getCacheEntry(request, idList, is_data=True)
     if tasksList is None or len(tasksList) == 0:
         return error_response(request, message='No tasks found in cache', status=404)
     else:

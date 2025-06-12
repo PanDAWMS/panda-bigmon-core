@@ -125,7 +125,7 @@ def compareJobs(request):
     # Looking for a job in cache
     pandaidsToBeLoad = []
     for pandaid in pandaids:
-        data = getCacheEntry(request, "compareJob_" + str(pandaid), isData=True)
+        data = getCacheEntry(request, "compareJob_" + str(pandaid), is_data=True)
         # data = None
         if data is not None:
             jobInfoJSON.append(json.loads(data))
@@ -195,7 +195,7 @@ def compareJobs(request):
     # #Put loaded jobs info to cache
     # for job in jobInfoJSON:
     #     setCacheEntry(request, "compareJob_" + str(job.keys()[0]),
-    #                   json.dumps(job.values()[0], cls=DateEncoder), 60 * 30, isData=True)
+    #                   json.dumps(job.values()[0], cls=DateEncoder), 60 * 30, is_data=True)
 
     xurl = extensibleURL(request)
     data = {

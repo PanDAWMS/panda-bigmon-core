@@ -315,7 +315,7 @@ def pledges(request):
 
         key = hashlib.md5(encoding.force_bytes("{0}_{1}_federation".format(starttime, endtime)))
         key = key.hexdigest()
-        federations = getCacheEntry(request, key, isData=True)
+        federations = getCacheEntry(request, key, is_data=True)
         if federations is not None:
             federations = json.loads(federations)
             return HttpResponse(json.dumps(federations), content_type='text/json')
@@ -372,7 +372,7 @@ def pledges(request):
 
         key = hashlib.md5(encoding.force_bytes("{0}_{1}_country".format(starttime, endtime)))
         key = key.hexdigest()
-        countries = getCacheEntry(request, key, isData=True)
+        countries = getCacheEntry(request, key, is_data=True)
         if countries is not None:
             countries = json.loads(countries)
             return HttpResponse(json.dumps(countries), content_type='text/json')

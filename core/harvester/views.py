@@ -339,7 +339,7 @@ def get_harvester_workers(request):
         xurl = xurl.replace('_={0}&'.format(request.session['requestParams']['_']), '')
 
     # data = None
-    data = getCacheEntry(request, xurl, isData=True)
+    data = getCacheEntry(request, xurl, is_data=True)
     if data is not None:
         data = json.loads(data)
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
