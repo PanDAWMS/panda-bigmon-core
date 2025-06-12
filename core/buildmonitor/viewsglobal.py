@@ -163,7 +163,7 @@ def globalviewDemo(request):
                     f'<b><span style="color: red">{art_results["grid"]["failed"]}</span></b>'
                     "</a>"
                 )
-                if "grid" in art_results
+                if "grid" in art_results and sum(art_results["grid"].values()) > 0
                 else "N/A"
             )
             art_results_local_str = (
@@ -175,7 +175,7 @@ def globalviewDemo(request):
                     f'<b><span style="color: red">{art_results["local"]["failed"]}</span></b>'
                     "</a>"
                 )
-                if "local" in art_results
+                if "local" in art_results and sum(art_results["local"].values()) > 0
                 else "N/A"
             )
 
@@ -215,7 +215,7 @@ def globalviewDemo(request):
             )
 
     if is_json_output:
-        return JsonResponse(res_dict, safe=False)
+        return JsonResponse(res_dict)
     else:
         data = {
             "request": request,

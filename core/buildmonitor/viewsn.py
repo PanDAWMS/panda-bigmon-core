@@ -2,10 +2,14 @@ import json
 import os
 import re
 from datetime import datetime
+
+from django.http import JsonResponse
+
 import core.buildmonitor.constants as const
 from core.buildmonitor.utils import get_art_test_results
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.utils import login_customrequired
+from core.utils import is_json_request
 from core.views import initRequest
 from django.db import connection
 from django.shortcuts import render
@@ -25,8 +29,8 @@ def nviewDemo(request):
         rname = request.session["requestParams"]["rel"]
     else:
         rname = "*"
-    ar_sel = "unknown"
-    pjname = "unknown"
+    is_json_output = is_json_request(request)
+    output_dict = {'nightly': nname, 'rel': rname, 'data': {}}
 
     # get art test results from cache or DB
     art_results_dict = get_art_test_results(request)
@@ -42,29 +46,29 @@ def nviewDemo(request):
         "10": const.CLOCK_ICON,
     }
     new_cur = connection.cursor()
-    query = (
-        "select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,lartwebarea from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-11+1/24 and sysdate order by tstamp desc"
-        % nname
-    )
-    if rname != "*":
-        query = (
-            "select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,lartwebarea from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and name ='%s' and tstamp between sysdate-11+1/24 and sysdate order by tstamp desc"
-            % (nname, rname)
-        )
-    ####HEADERS      <th>Release</th>
-    #                <th>Platform</th>
-    #                <th>Project</th>
-    #                <th>Job time stamp</th>
-    #                <th>git clone</th>
-    #                <th>Externals<BR>build</th>
-    #                <th>CMake<BR>config</th>
-    #                <th>Build time</th>
-    #                <th>Comp. Errors<BR>(w/warnings)</th>
-    #                <th>Test time</th>
-    #                <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
-    #                <th>CVMFS time</th>
-    #                <th>Host</th>
-    #                <th>CPack</th>
+    query_rname_str = f" and name = '{rname}'" if rname != "*" else ""
+    query = f"""
+        select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, 
+            webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,lartwebarea 
+        from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH 
+        where nname ='{nname}' {query_rname_str} and tstamp between sysdate-11+1/24 and sysdate 
+        order by tstamp desc
+    """
+    # ###HEADERS
+    # <th>Release</th>
+    # <th>Platform</th>
+    # <th>Project</th>
+    # <th>Job time stamp</th>
+    # <th>git clone</th>
+    # <th>Externals<BR>build</th>
+    # <th>CMake<BR>config</th>
+    # <th>Build time</th>
+    # <th>Comp. Errors<BR>(w/warnings)</th>
+    # <th>Test time</th>
+    # <th>Pct. of Successful<BR>CTest tests<BR>(no warnings)</th>
+    # <th>CVMFS time</th>
+    # <th>Host</th>
+    # <th>CPack</th>
     new_cur.execute(query)
     result = new_cur.fetchall()
 
@@ -87,21 +91,16 @@ def nviewDemo(request):
         t_start = "N/A"
         if job_start is not None:
             t_start = job_start.strftime("%Y/%m/%d %H:%M")
-        ##      mrlink = row[7]
-        gitbr = row[13]
-        lartwebarea = row[14]
-        if lartwebarea is None or lartwebarea == "":
-            lartwebarea = "https://atlas-art-data.web.cern.ch/atlas-art-data/local-output"
-        #      print("JIDX",jid_sel)
-        #
+
         query01 = f"""
             select to_char(jid),projname,stat,eb,sb,ei,si,ecv,ecvkv,suff,scv,scvkv,scb,sib,sco,ela,sla,erla,sula,wala,ecp,scp,eext,sext,vext,hname 
             from jobstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH 
             where jid = '{str(jid_sel)}' order by projname"""
         new_cur.execute(query01)
         reslt1 = new_cur.fetchall()
+        # taking care of cancelled/aborted jobs
         lenres = len(reslt1)
-        if lenres != 0 and (reslt1[0][2] == "cancel" or reslt1[0][2] == "CANCEL" or reslt1[0][2] == "ABORT" or reslt1[0][2] == "abort"):
+        if lenres != 0 and reslt1[0][2].lower() in ('cancel', 'abort'):
             pjname = reslt1[0][1]
             s_ext = reslt1[0][23]
             if s_ext is None or s_ext == "":
@@ -174,22 +173,15 @@ def nviewDemo(request):
                     or ii_config == const.MINORWARN_ICON
                 ):
                     ii_config = f'<a href="{webarea_cur}{os.sep}ardoc_web_area{area_suffix}{os.sep}ARDOC_Log_{rname_trun}{os.sep}ardoc_cmake_config.html">{i_config}</a>'
-                if (
-                    ii_cpack == const.CHECK_ICON
-                    or ii_cpack == const.ERROR_ICON
-                    or ii_cpack == const.MAJORWARN_ICON
-                    or ii_cpack == const.MINORWARN_ICON
-                ):
-                    ii_cpack = f'<a href="{webarea_cur}{os.sep}ardoc_web_area{area_suffix}{os.sep}ARDOC_Log_{rname_trun}{os.sep}ardoc_cpack_combined.html">{i_cpack}</a>'
 
-            if reslt1[0][2] == "ABORT" or reslt1[0][2] == "abort":
-                row_cand = [
+            if not is_json_output:
+                rows_s.append([
                     rname,
                     t_start,
-                    ii_checkout,
-                    ii_ext,
-                    ii_config,
-                    "ABORTED",
+                    ii_checkout if reslt1[0][2].lower() == "abort" else "NO NEW<BR>CODE",
+                    ii_ext if reslt1[0][2].lower() == "abort" else "N/A",
+                    ii_config if reslt1[0][2].lower() == "abort" else "N/A",
+                    "ABORTED" if reslt1[0][2].lower() == "abort" else "CANCELLED",
                     "N/A",
                     "N/A",
                     "N/A",
@@ -199,37 +191,33 @@ def nviewDemo(request):
                     "N/A",
                     "N/A",
                     hname,
-                ]
-                rows_s.append(row_cand)
+                ])
             else:
-                row_cand = [
-                    rname,
-                    t_start,
-                    "NO NEW<BR>CODE",
-                    "N/A",
-                    "N/A",
-                    "CANCELLED",
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    "N/A",
-                    hname,
-                ]
-                rows_s.append(row_cand)
+                output_dict['data'][rname] = {
+                    'release': rname,
+                    'job_start': t_start,
+                    'git_clone_status': const.STATUS_DESC.get(str(s_checkout), 'unknown') if reslt1[0][2].lower() == "abort" else "NO NEW CODE",
+                    'externals_build_status': const.STATUS_DESC.get(str(s_ext), 'unknown'),
+                    'cmake_config_status': const.STATUS_DESC.get(str(s_config), 'unknown'),
+                    'build_end': "ABORTED" if reslt1[0][2].lower() == "abort" else "CANCELLED",
+                    'compilation': {'errors': "N/A", 'warnings': "N/A"},
+                    'cpack_status': "N/A",
+                    'test_time': "N/A",
+                    'ctest_results': {'errors': "N/A", 'warnings': "N/A", 'timeouts': "N/A"},
+                    'art_results_local': "N/A",
+                    'art_results_grid': "N/A",
+                    'cvmfs_server_publication_time': "N/A",
+                    'cvmfs_client_publication_time': "N/A",
+                    'host': hname,
+                }
         else:
             query1 = f"""
                 select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer 
                 from cstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '{str(jid_sel)}' order by projname
             """
-
             new_cur.execute(query1)
             reslt_addtl = new_cur.fetchall()
-            lenres_addtl = len(reslt_addtl)
-            if lenres_addtl != 0:
+            if len(reslt_addtl) != 0:
                 dict_jid01 = {}
                 for row02 in reslt_addtl:
                     #                  print("------", row02[0],row02[1],row02[2])
@@ -244,10 +232,14 @@ def nviewDemo(request):
                         row02[7],
                         row02[6],
                     ]
-                #
+
                 query2 = (
-                    "select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer,nto,pcto from tstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH where jid = '%s' order by projname"
-                    % (jid_sel)
+                    f"""
+                    select to_char(jid),projname,ncompl,pccompl,npb,ner,pcpb,pcer,nto,pcto 
+                    from tstat@ATLR.CERN.CH natural join projects@ATLR.CERN.CH 
+                    where jid = '{str(jid_sel)}' 
+                    order by projname
+                    """
                 )
                 new_cur.execute(query2)
                 reslt2 = new_cur.fetchall()
@@ -267,27 +259,14 @@ def nviewDemo(request):
                         row02[6],
                         row02[9],
                     ]
-                reslt2 = {}
                 for row01 in reslt1:
                     #                  print("JID",row01[0])
                     pjname = row01[1]
                     erla = row01[17]
-                    if erla is None or erla == "":
-                        erla = "N/A"
                     sula = row01[18]
-                    if sula is None or sula == "":
-                        sula = "N/A"
                     wala = row01[19]
-                    if wala is None or wala == "":
-                        wala = "N/A"
-                    if wala.isdigit() and sula.isdigit():
-                        sula = str(int(sula) - int(wala))
                     e_cpack = row01[20]
-                    if e_cpack is None or e_cpack == "":
-                        e_cpack = "N/A"
                     s_cpack = row01[21]
-                    if s_cpack is None or s_cpack == "":
-                        s_cpack = "N/A"
                     s_ext = row01[23]
                     if s_ext is None or s_ext == "":
                         s_ext = "N/A"
@@ -304,33 +283,20 @@ def nviewDemo(request):
                     t_cv_clie = row01[8]
                     s_cv_serv = row01[10]
                     s_cv_clie = row01[11]
-                    nccompl = "0"
-                    cpccompl = "0"
                     nc_er = "0"
                     nc_pb = "0"
-                    cpcer = "0"
-                    cpcpb = "0"
                     if pjname in dict_jid01:
                         nccompl = dict_jid01[pjname][0]
-                        cpccompl = dict_jid01[pjname][1]
                         nc_er = dict_jid01[pjname][2]
                         nc_pb = dict_jid01[pjname][3]
                         if nccompl is None or nccompl == "N/A" or nccompl <= 0:
                             nc_er = "N/A"
                             nc_pb = "N/A"
-                        cpcer = dict_jid01[pjname][4]
-                        cpcpb = dict_jid01[pjname][5]
-                    ntcompl = "0"
-                    tpccompl = "0"
                     nt_er = "0"
                     nt_pb = "0"
                     nt_to = "0"
-                    tpcer = "0"
-                    tpcpb = "0"
-                    tpcto = "0"
                     if pjname in dict_jid02:
                         ntcompl = dict_jid02[pjname][0]
-                        tpccompl = dict_jid02[pjname][1]
                         nt_er = dict_jid02[pjname][2]
                         nt_pb = dict_jid02[pjname][3]
                         nt_to = dict_jid02[pjname][4]
@@ -340,11 +306,6 @@ def nviewDemo(request):
                             nt_er = "N/A"
                             nt_pb = "N/A"
                             nt_to = "N/A"
-                        tpcer = dict_jid02[pjname][5]
-                        tpcpb = dict_jid02[pjname][6]
-                        tpcto = dict_jid02[pjname][7]
-                        if tpcto is None:
-                            tpcto = "0"
                     #                  [tpcer_s,tpcpb_s]=map(lambda c: 100 - c, [tpcer,tpcpb])
                     #                  [tpcer_sf,tpcpb_sf]=map(lambda c: format(c,'.1f'), [tpcer_s,tpcpb_s])
                     s_checkout = "N/A"
@@ -461,16 +422,16 @@ def nviewDemo(request):
                             or ii_cpack == const.MINORWARN_ICON
                         ):
                             ii_cpack = f'<a href="{webarea_cur}{os.sep}ardoc_web_area{area_suffix}{os.sep}ARDOC_Log_{rname_trun}{os.sep}ardoc_cpack_combined.html">{i_cpack}</a>'
-                    #                         DO NOT DISPLAY CPack completion time as its accuracy in the db is not guaranteed
-                    #                          if e_cpack != 'N/A':
-                    #                              if isinstance(e_cpack, datetime):
-                    #                                  ii_cpack = ii_cpack + " " + e_cpack.strftime('%d-%b %H:%M').upper()
+                            # DO NOT DISPLAY CPack completion time as its accuracy in the db is not guaranteed
+                            #  if e_cpack != 'N/A':
+                            #      if isinstance(e_cpack, datetime):
+                            #          ii_cpack = ii_cpack + " " + e_cpack.strftime('%d-%b %H:%M').upper()
                     link_to_testsRes = reverse("TestsRes")
                     link_to_compsRes = reverse("CompsRes")
                     i_combo_t = f'<a href="{link_to_testsRes}?nightly={nname}&rel={rname}&ar={ar_sel}&proj={pjname}">{combo_t}</a>'
                     if combo_t == "N/A(N/A)N/A":
                         i_combo_t = combo_t
-                    i_combo_c = f'<a href="{link_to_compsRes}?nightly={nname}&rel={rname}&ar={ar_sel}&proj={pjname}">' f"{combo_c}</a>"
+                    i_combo_c = f'<a href="{link_to_compsRes}?nightly={nname}&rel={rname}&ar={ar_sel}&proj={pjname}">{combo_c}</a>'
                     if tt_cv_serv != "N/A":
                         i_combo_cv_serv = tt_cv_serv + i_cv_serv
                     else:
@@ -490,7 +451,7 @@ def nviewDemo(request):
                                 f'<b><span style="color: red">{art_results["grid"]["failed"]}</span></b>'
                                 "</a>"
                             )
-                            if "grid" in art_results
+                            if "grid" in art_results  and sum(art_results["grid"].values()) > 0
                             else "N/A"
                         )
                         art_results_local_str = (
@@ -502,35 +463,56 @@ def nviewDemo(request):
                                 f'<b><span style="color: red">{art_results["local"]["failed"]}</span></b>'
                                 "</a>"
                             )
-                            if "local" in art_results
+                            if "local" in art_results  and sum(art_results["local"].values()) > 0
                             else "N/A"
                         )
 
-                    row_cand = [
-                        rname,
-                        t_start,
-                        ii_checkout,
-                        ii_ext,
-                        ii_config,
-                        t_build,
-                        i_combo_c,
-                        ii_cpack,
-                        t_test,
-                        i_combo_t,
-                        art_results_local_str,
-                        art_results_grid_str,
-                        i_combo_cv_serv,
-                        tt_cv_clie,
-                        hname,
-                    ]
-                    rows_s.append(row_cand)
+                    if not is_json_output:
+                        rows_s.append([
+                            rname,
+                            t_start,
+                            ii_checkout,
+                            ii_ext,
+                            ii_config,
+                            t_build,
+                            i_combo_c,
+                            ii_cpack,
+                            t_test,
+                            i_combo_t,
+                            art_results_local_str,
+                            art_results_grid_str,
+                            i_combo_cv_serv,
+                            tt_cv_clie,
+                            hname,
+                        ])
+                    else:
+                        output_dict['data'][rname] = {
+                            'release': rname,
+                            'job_start': t_start,
+                            'git_clone_status': const.STATUS_DESC.get(str(s_checkout), 'unknown'),
+                            'externals_build_status': const.STATUS_DESC.get(str(s_ext), 'unknown'),
+                            'cmake_config_status': const.STATUS_DESC.get(str(s_config), 'unknown'),
+                            'build_end': str(t_build),
+                            'compilation': {'errors': nc_er, 'warnings': nc_pb},
+                            'cpack_status': s_cpack,
+                            'test_time': t_test,
+                            'ctest_results': {'errors': nt_er, 'warnings': nt_pb, 'timeouts': nt_to},
+                            "art_results_local": art_results["local"] if isinstance(art_results, dict) and "local" in art_results else "N/A",
+                            "art_results_grid": art_results["grid"] if isinstance(art_results, dict) and "grid" in art_results else "N/A",
+                            'cvmfs_server_publication_time': tt_cv_serv,
+                            'cvmfs_client_publication_time': tt_cv_clie,
+                            'host': hname,
+                        }
 
-    data = {
-        "nightly": nname,
-        "rel": rname,
-        "platform": ar_sel,
-        "project": pjname,
-        "viewParams": request.session["viewParams"],
-        "rows_s": json.dumps(rows_s, cls=DateEncoder),
-    }
-    return render(request, "nviewDemo.html", data, content_type="text/html")
+    if not is_json_output:
+        data = {
+            "nightly": nname,
+            "rel": rname,
+            "platform": ar_sel,
+            "project": pjname,
+            "viewParams": request.session["viewParams"],
+            "rows_s": json.dumps(rows_s, cls=DateEncoder),
+        }
+        return render(request, "nviewDemo.html", data, content_type="text/html")
+    else:
+        return JsonResponse(output_dict)
