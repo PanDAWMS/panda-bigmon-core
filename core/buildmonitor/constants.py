@@ -1,7 +1,7 @@
 
 DATETIME_FORMAT = "%Y/%m/%d %H:%M"
 N_DAYS_ART_RESULTS = 10
-CACHE_TIMEOUT_MINUTES_ART_RESULTS = 30
+CACHE_TIMEOUT_SECONDS_ART_RESULTS = 30*60 # 30 minutes
 
 CHECK_ICON = '<div class="ui-widget ui-state-check" style="display:inline-block;"> <span style="display:inline-block;" title="OK" class="DataTables_sort_icon css_right ui-icon ui-icon-circle-check">ICON33</span></div>'
 CLOCK_ICON = '<div class="ui-widget ui-state-hover" style="display:inline-block;"> <span style="display:inline-block;" title="UPDATING" class="DataTables_sort_icon css_right ui-icon ui-icon-clock">ICON39</span></div>'

@@ -355,7 +355,7 @@ def get_harvester_workers(request):
         worker_list.extend(list(HarvesterWorkers.objects.filter(**wquery).extra(where=[extra]).order_by('-lastupdate')[:display_limit_workers].values()))
 
         if 'key' not in request.session['requestParams']:
-            setCacheEntry(request, xurl, json.dumps(worker_list, cls=DateTimeEncoder), 60 * 20, isData=True)
+            setCacheEntry(request, xurl, json.dumps(worker_list, cls=DateTimeEncoder), 60 * 20, is_data=True)
 
         return HttpResponse(json.dumps(worker_list, cls=DateTimeEncoder), content_type='application/json')
     else:

@@ -29,9 +29,7 @@ def nviewDemo(request):
     pjname = "unknown"
 
     # get art test results from cache or DB
-    art_results_dict = get_art_test_results()
-
-
+    art_results_dict = get_art_test_results(request)
 
     di_res = {
         "-1": const.CLOCK_ICON,

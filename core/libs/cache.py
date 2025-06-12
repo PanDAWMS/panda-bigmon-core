@@ -13,26 +13,56 @@ from core.utils import is_json_request
 from core.libs.DateEncoder import DateEncoder
 
 
-def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False):
+def getCacheEntry(request, view_type, skip_central_refresh=False, is_data=False):
     """
     Getting cache entry
-    :param request:
-    :param viewType:
-    :param skipCentralRefresh:
-    :param isData:
+    :param request: Django request object
+    :param view_type: string, to build cache key an identity for the view
+    :param skip_central_refresh: bool, if True, it means that the cache should not be refreshed even if the request is from a crawler
+    :param is_data: bool, if True, it means that the data is not a view but some data to cache 
     :return:
     """
-    isCache = True
-    if isCache:
+    is_json = is_json_request(request)
+
+    # We do this check to always rebuild cache for the page when it called from the crawler
+    if (('HTTP_X_FORWARDED_FOR' in request.META) and (request.META['HTTP_X_FORWARDED_FOR'] in settings.CACHING_CRAWLER_HOSTS) and
+            skip_central_refresh == False):
+        return None
+
+    request._cache_update_cache = False
+    if is_data is False:
+        try:
+            if request.method == "POST":
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
+            else:
+                path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        except:
+            path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
+        cache_key = '{}_{}_{}_.{}'.format(is_json, settings.CACHE_MIDDLEWARE_KEY_PREFIX, view_type, path.hexdigest())
+        return cache.get(cache_key, None)
+    else:
+        cache_key = '{}_{}'.format(settings.CACHE_MIDDLEWARE_KEY_PREFIX, view_type)
+        return cache.get(cache_key, None)
+
+
+def setCacheEntry(request, view_type, data, timeout, is_data=False):
+    """
+    Putting data to cache
+    :param request: Django request object
+    :param view_type: string, to build cache key an identity for the view
+    :param data: data to cache, can be any serializable object
+    :param timeout: int, cache timeout in seconds
+    :param is_data: bool, if True, it means that the data is not a view but some data to cache (e.g. ART results)
+    :return:
+    """
+    is_cache = True
+    # do not cache data for 'refreshed' pages
+    if 'requestParams' in request.session and 'timestamp' in request.session['requestParams'] and not is_data:
+        is_cache = False
+    if is_cache:
         is_json = is_json_request(request)
-
-        # We do this check to always rebuild cache for the page when it called from the crawler
-        if (('HTTP_X_FORWARDED_FOR' in request.META) and (request.META['HTTP_X_FORWARDED_FOR'] in settings.CACHING_CRAWLER_HOSTS) and
-                skipCentralRefresh == False):
-            return None
-
         request._cache_update_cache = False
-        if isData is False:
+        if is_data is False:
             try:
                 if request.method == "POST":
                     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
@@ -40,42 +70,9 @@ def getCacheEntry(request, viewType, skipCentralRefresh = False, isData = False)
                     path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
             except:
                 path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-            cache_key = '{}_{}_{}_.{}'.format(is_json, settings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType, path.hexdigest())
-            return cache.get(cache_key, None)
+            cache_key = '{}_{}_{}_.{}'.format(is_json, settings.CACHE_MIDDLEWARE_KEY_PREFIX, view_type, path.hexdigest())
         else:
-            cache_key = '{}_{}'.format(settings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
-            return cache.get(cache_key, None)
-    else:
-        return None
-
-
-def setCacheEntry(request, viewType, data, timeout, isData = False):
-    """
-    Putting data to cache
-    :param request:
-    :param viewType:
-    :param data:
-    :param timeout:
-    :param isData:
-    :return:
-    """
-    isCache = True
-    # do not cache data for 'refreshed' pages
-    if 'requestParams' in request.session and 'timestamp' in request.session['requestParams'] and not isData:
-        isCache = False
-    if isCache:
-        is_json = is_json_request(request)
-        request._cache_update_cache = False
-        if isData == False:
-            try:
-                if request.method == "POST":
-                    path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path() + '?' + request.body)))
-                else:
-                    path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-            except: path = hashlib.md5(encoding.force_bytes(encoding.iri_to_uri(request.get_full_path())))
-            cache_key = '{}_{}_{}_.{}'.format(is_json, settings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType, path.hexdigest())
-        else:
-            cache_key = '{}_{}'.format(settings.CACHE_MIDDLEWARE_KEY_PREFIX, viewType)
+            cache_key = '{}_{}'.format(settings.CACHE_MIDDLEWARE_KEY_PREFIX, view_type)
         cache.set(cache_key, data, timeout)
 
 
@@ -87,7 +84,7 @@ def setCacheData(request,lifetime=60*120,**parametrlist):
     for key in keys:
         dictinoary[transactionKey][key] = str(parametrlist[key])
     data = json.dumps(dictinoary, cls=DateEncoder)
-    setCacheEntry(request, str(transactionKey), data, lifetime,isData=True)
+    setCacheEntry(request, str(transactionKey), data, lifetime, is_data=True)
 
     return transactionKey
 

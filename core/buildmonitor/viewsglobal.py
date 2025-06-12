@@ -20,7 +20,7 @@ def globalviewDemo(request):
     if not valid:
         return response
 
-    art_results_dict = get_art_test_results()
+    art_results_dict = get_art_test_results(request)
 
     query = """
     select n.nname as \"BRANCH\", n.ngroup as \"GROUP\", platf.pl,

@@ -365,7 +365,7 @@ def pledges(request):
                                      'tier': pledges_dict[pledges]['tier'],
                                      'federation_info': federations_info[pledges] if pledges in federations_info else None}
                                     )
-        setCacheEntry(request, key, json.dumps(pledges_list), 60 * 60 * 24 * 30, isData=True)
+        setCacheEntry(request, key, json.dumps(pledges_list), 60 * 60 * 24 * 30, is_data=True)
         return HttpResponse(json.dumps(pledges_list), content_type='text/json')
     elif 'type' in request.session['requestParams'] and request.session['requestParams'] \
             ['type'] == 'country':
@@ -412,7 +412,7 @@ def pledges(request):
                     {"dst_country": pledges, "hs06sec": int(round(float(pledges_dict[pledges]['hs06sec']) / 86400, 2)),
                      'pledges': int(round(float(pledges_dict[pledges]['pledges']) / 86400, 2))})
         setCacheEntry(request, key, json.dumps(pledges_list),
-                      60 * 60 * 24 * 30, isData=True)
+                      60 * 60 * 24 * 30, is_data=True)
         return HttpResponse(json.dumps(pledges_list), content_type='text/json')
     else:
         data = getCacheEntry(request, "pledges")
@@ -426,8 +426,8 @@ def pledges(request):
             key_country = hashlib.md5(encoding.force_bytes("{0}_{1}_country".format(starttime, endtime)))
             key_fed = key_fed.hexdigest()
             key_country = key_country.hexdigest()
-            setCacheEntry(request, key_fed, None, 60, isData=True)
-            setCacheEntry(request, key_country, None, 60, isData=True)
+            setCacheEntry(request, key_fed, None, 60, is_data=True)
+            setCacheEntry(request, key_country, None, 60, is_data=True)
 
         t = loader.get_template('grafana-pledges.html')
         data = {
