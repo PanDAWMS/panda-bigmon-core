@@ -17,6 +17,12 @@ Click the cloud name in the overall summary to go to the cloud's site summary.
 Click the job counts to go to job listings.
 </p>
 
+<p><b>Identifiable outliers:</b><br>
+  Only for WNs which have a failure rate of more than <b>10%</b> and absolute number of failures is more than <b>5</b>:<br>
+  <span class="warning">HighFailed</span> - if failure rate of a WN is <b>5 times</b>  higher than the average, or failure rate is more than <b>20%</b><br>
+  <span class="alarm">VeryHighFailed</span> - if failure rate of a WN is <b>10 times</b> higher than the average, or failure rate is more than <b>50%</b><br>
+</p>
+
 {% endif %}
 
 {% if wnname != 'all' or show == 'all' %}

@@ -60,7 +60,7 @@ def wn_summary(wnname, query):
         count = rec['jobstatus__count']
         rcores = rec['rcores'] if rec['rcores'] is not None else 0
         rminramcount = rec['rminramcount'] if rec['rminramcount'] is not None else 0
-        wnfull = rec['modificationhost']
+        wnfull = rec['modificationhost'] if rec['modificationhost'] is not None else 'Unknown'
         wnsplit = wnfull.split('@')
         if len(wnsplit) == 2:
             if wnname == 'all':
