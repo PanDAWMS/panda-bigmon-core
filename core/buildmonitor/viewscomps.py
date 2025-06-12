@@ -171,7 +171,7 @@ pan title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
                     link_log = "N/A"
                     package = "N/A"
                 output_dict['data'][package] = {
-                    'result': const.STATUS_DESC.get(str(result), "N/A"),
+                    'result': str(result),
                     'package': package,
                     'link_log': link_log,
                     'container': container,

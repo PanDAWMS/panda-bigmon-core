@@ -17,12 +17,3 @@ MAILYES_ICON = '<span style="cursor:pointer; display:inline-block; " title="MAIL
 RADIOOFF_ICON = '<div class="ui-widget ui-state-default" style="display:inline-block";> <span title="N/A" class="ui-icon ui-icon-radio-off">ICONRO</span></div>'
 MAJORWARN_ICON = WARN_ICON
 
-STATUS_DESC = MappingProxyType({
-    "-1": "active",
-    "N/A": "N/A",
-    "0": "ok",
-    "1": "minor_warning",
-    "2": "major_warning",
-    "3": "error",
-    "10": "timeout",
-})
