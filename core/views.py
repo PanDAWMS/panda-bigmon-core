@@ -2880,7 +2880,7 @@ def userDashApi(request, agg=None):
     # getting top errors by task and metrics for labels
     if agg == 'initial':
         # get taskids from cache
-        tasks_str = getCacheEntry(request, tk, isData=True)
+        tasks_str = getCacheEntry(request, tk, is_data=True)
         if tasks_str is not None:
             tasks = json.loads(tasks_str)
         else:
@@ -4434,7 +4434,7 @@ def userProfileData(request):
         return response
 
     # Here we try to get cached data
-    data = getCacheEntry(request, "userProfileData", isData=True)
+    data = getCacheEntry(request, "userProfileData", is_data=True)
     data = None
     if data is not None:
         data = json.loads(data)
@@ -4578,7 +4578,7 @@ def taskInfo(request, jeditaskid=0):
     # return json for dataTables if dt in request params
     if 'dt' in request.session['requestParams'] and 'tkiec' in request.session['requestParams']:
         tkiec = request.session['requestParams']['tkiec']
-        data = getCacheEntry(request, tkiec, isData=True)
+        data = getCacheEntry(request, tkiec, is_data=True)
         return HttpResponse(data, content_type='application/json')
 
     # Here we try to get cached data. We get any cached data is available
@@ -5253,7 +5253,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
     else:
         mode = 'nodrop'
 
-    data = getCacheEntry(request, "jobSummaryForTask" + str(jeditaskid) + mode, isData=True)
+    data = getCacheEntry(request, "jobSummaryForTask" + str(jeditaskid) + mode, is_data=True)
     data = None
     if data is not None:
         data = json.loads(data)

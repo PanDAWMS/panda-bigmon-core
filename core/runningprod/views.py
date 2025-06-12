@@ -41,7 +41,7 @@ def runningProdTasks(request):
 
     if 'dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']:
         tk = request.session['requestParams']['tk']
-        data = getCacheEntry(request, tk, isData=True)
+        data = getCacheEntry(request, tk, is_data=True)
         return HttpResponse(data, content_type='application/json')
 
     # Here we try to get cached data
