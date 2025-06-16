@@ -89,8 +89,8 @@ def setCacheData(request,lifetime=60*120,**parametrlist):
     return transactionKey
 
 
-def getCacheData(request,requestid):
-    data = getCacheEntry(request, str(requestid), isData=True)
+def getCacheData(request, requestid):
+    data = getCacheEntry(request, str(requestid), is_data=True)
     if data is not None:
         data = json.loads(data)
         if 'childtk'in data[requestid]:
@@ -98,7 +98,7 @@ def getCacheData(request,requestid):
             data = str(data[requestid]['childtk']).split(',')
             if data is not None:
                 for child in data:
-                    ch = getCacheEntry(request, str(child), isData=True)
+                    ch = getCacheEntry(request, str(child), is_data=True)
                     if ch is not None:
                         ch = json.loads(ch)
                         # merge data
