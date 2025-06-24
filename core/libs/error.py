@@ -87,7 +87,8 @@ def add_error_info_to_job(job, n_chars=300, mode='html', do_add_desc=False, erro
             if do_add_desc:
                 job[f"{comp['name']}_error_desc"] = error_desc[comp_code_str]['description'] if comp_code_str in error_desc else ''
                 if len(job[f"{comp['name']}_error_desc"]) > 0:
-                    error_desc_str += f"{comp_code_str} - {job[f'{comp['name']}_error_desc']} <br>"
+                    error_key = f"{comp['name']}_error_desc"
+                    error_desc_str += f"{comp_code_str} - {job[error_key]} <br>"
 
     if mode == 'str' and len(error_info_str) > n_chars:
         error_info_str = error_info_str[:n_chars] + '...'

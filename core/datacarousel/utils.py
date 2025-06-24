@@ -65,7 +65,8 @@ def setup_view_dc(request):
 
     if 'source' in request_params or 'source_rse' in request_params:
         source = request_params['source'] if 'source' in request_params else request_params['source_rse']
-        extra_str += f" AND t1.SOURCE_{source_rse} in ({','.join('\'' + str(x) + '\'' for x in source.split(','))})"
+        quoted_values = ",".join(f"'{str(x)}'" for x in source.split(","))
+        extra_str += f" AND t1.SOURCE_{source_rse} in ({quoted_values})"
 
     if 'destination' in request_params:
         extra_str += f" AND t1.DESTINATION_RSE in ({','.join('\'' + str(x) + '\'' for x in request_params['destination'].split(','))})"
