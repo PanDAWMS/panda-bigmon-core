@@ -581,8 +581,6 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         request.session['viewParams']['selection'] += " <b>%s=</b>%s " % (
             param, request.session['requestParams'][param])
 
-
-
     # add min/max values to session
     request.session['TFIRST'] = startdate
     request.session['TLAST'] = enddate
@@ -852,6 +850,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                             query['reqid__in'] = values
                         else:
                             query['reqid'] = int(val)
+                    elif param == 'batchid' and not is_wildcards(request.session['requestParams'][param]):
+                        query['batchid'] = request.session['requestParams'][param]
                     elif param == 'transformation' or param == 'transpath':
                         # we cut the transformation path and show only tail
                         query[param + '__contains'] = request.session['requestParams'][param].replace('*', '')
