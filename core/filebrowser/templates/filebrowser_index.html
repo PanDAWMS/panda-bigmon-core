@@ -24,7 +24,7 @@
 
 {% if 'slow_downloading' in errors %}
   <div id="slow_downloading" class="callout warning">
-    <h5><b>Warning!</b>{{errors.slow_downloading}} Please be patient while it is being downloaded, and do NOT refresh the page.</h5>
+    <h5><b>Warning!</b> {{errors.slow_downloading}} Please be patient while it is being downloaded, and do NOT refresh the page.</h5>
   </div>
 {% endif %}
 {% if 'too_big_tarball' in errors %}
@@ -43,7 +43,6 @@
 <thead></thead>
 <tbody></tbody>
 </table>
-
 
 {% endblock %}
 
@@ -64,47 +63,55 @@ $(document).ready(function () {
       success: function(data) {
         const mediaPath = data.media_path;
         const file_list = data.files;
-        var table = $('#filelist').dataTable({
-          "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
-          "paging": true,
-          "scrollX": true,
-          "aaSorting": [[0,'desc']],
-          "data": file_list,
-          "columnDefs": [
-              {"type": "num-html", "targets": [1] }
-          ],
-          "aoColumns": [
-            {
-              title: "Modification time",
-              data: "modification",
-              sDefaultContent: "",
-              className: 'date',
-            },
-            {
-              title: "Size, B",
-              data: "size",
-              sDefaultContent: "",
-              className: 'num',
-              render: function (data) {
-                return Humanize.formatNumber(data, 0);
-              }
-            },
-            {
-              title: "File",
-              data: "name",
-              sDefaultContent: "---",
-              render: function(data, type, full) {
-                let path = full['dirname'] ? full['dirname'] + '/' : '';
-                return '<a href="http://' + mediaPath + path + data + '">' + path + data + '</a>';
-              }
-            },
-          ],
-        });
-        $('#filelist caption').remove();
-        $('#filelist').prepend('<caption>' + (data.files.length + ' files listed, total size is ' + data.total_unpacked_size + ' MB' || '') + '</caption>');
-        $('#loading').html('');
-        if (document.getElementById('slow_downloading')) {
-          $('#slow_downloading').remove();
+        const errors_load = data.errors || {};
+        if (errors_load.download) {
+          $('#loading').html(
+            '<div class="callout alert"><h5><b>Failed to list log files</b></h5><p><pre class="wrap">' + errors_load.download + '</pre></p></div>'
+          );
+        }
+        else {
+          $('#filelist').dataTable({
+            "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
+            "paging": true,
+            "scrollX": true,
+            "aaSorting": [[0,'desc']],
+            "data": file_list,
+            "columnDefs": [
+                {"type": "num-html", "targets": [1] }
+            ],
+            "aoColumns": [
+              {
+                title: "Modification time",
+                data: "modification",
+                sDefaultContent: "",
+                className: 'date',
+              },
+              {
+                title: "Size, B",
+                data: "size",
+                sDefaultContent: "",
+                className: 'num',
+                render: function (data) {
+                  return Humanize.formatNumber(data, 0);
+                }
+              },
+              {
+                title: "File",
+                data: "name",
+                sDefaultContent: "---",
+                render: function(data, type, full) {
+                  let path = full['dirname'] ? full['dirname'] + '/' : '';
+                  return '<a href="http://' + mediaPath + path + data + '">' + path + data + '</a>';
+                }
+              },
+            ],
+          });
+          $('#filelist caption').remove();
+          $('#filelist').prepend('<caption>' + (data.files.length + ' files listed, total size is ' + data.total_unpacked_size + ' MB' || '') + '</caption>');
+          $('#loading').html('');
+          if (document.getElementById('slow_downloading')) {
+            $('#slow_downloading').remove();
+          }
         }
       },
       error: function(jqXHR, textStatus, errorThrown) {

@@ -13,12 +13,13 @@ from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 
-from core.filebrowser.utils import get_rucio_file, remove_folder, get_job_log_file_properties, get_job_computingsite, get_s3_file, get_log_provider
+from core.filebrowser.utils import (get_rucio_file, remove_folder, get_job_log_file_properties, get_job_computingsite, get_s3_file,
+                                    get_log_provider, extract_rucio_errors)
 from core.oauth.utils import login_customrequired
 from core.views import initRequest
 from core.libs.exlib import convert_bytes
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.utils import is_json_request, error_response
+from core.utils import is_json_request
 import core.filebrowser.constants as const
 
 _logger = logging.getLogger('bigpandamon-filebrowser')
@@ -258,7 +259,8 @@ def load_log_file_list(request, provider="rucio", guid=None, scope=None, lfn=Non
         errors['download'] = f'Can not load log files using {provider}'
 
     if 'download' in errors:
-        errors["download"] = f'Something went wrong while the log file downloading: \n{errors["download"]}'
+        extracted_errors = extract_rucio_errors(errors["download"], include_warnings=False)
+        errors["download"] = f'Something went wrong while the log file downloading: \n{extracted_errors if len(extracted_errors) > 0 else errors["download"]}'
 
     media_path = f"{request.get_host()}/{settings.MEDIA_URL}{dirprefix}{tardir}"
     if not media_path.endswith('/'):

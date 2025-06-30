@@ -573,3 +573,38 @@ def get_job_log_file_path(pandaid, filename=''):
 
     _logger.debug('Final path of {} file: {}'.format(filename, file_path))
     return file_path
+
+
+def extract_rucio_errors(output: str, include_warnings=False):
+    """
+    Extract Rucio errors or warnings from command output.
+
+    Args:
+        output (str): Full stdout/stderr from `rucio download`
+        include_warnings (bool): Whether to also return warnings
+
+    Returns:
+        extracted_str (str): List of error (or warning) messages
+    """
+    error_pattern = r'(ERROR|WARNING)\s+(.*)'
+    matches = re.findall(error_pattern, output)
+
+    # Optional filter to exclude noisy or known unimportant messages
+    ignore_patterns = [
+        r'.*\.rootrc is missing.*',  # known warning from ROOT setup
+        r'.*None of the requested files.*',  # consequence of earlier error
+    ]
+
+    extracted = []
+    for level, msg in matches:
+        if not include_warnings and level == 'WARNING':
+            continue
+        if any(re.search(p, msg) for p in ignore_patterns):
+            continue
+        extracted.append(f"{level}: {msg.strip()}")
+
+    extracted_str = ""
+    if len(extracted) > 0:
+        extracted_str = '; '.join(extracted)
+
+    return extracted_str
