@@ -208,10 +208,12 @@ def send_report_rse(rse: str, data, experts_only:bool=True) -> int:
     cache_key = f"dc_stalled_alert_{rse}"
     data_cached = cache.get(cache_key, None)
     rules_cached = json.loads(data_cached) if data_cached else {}
+    # clean up cache from rules that are not stuck anymore
+    rules_cached = {k: v for k, v in rules_cached.items() if k in {r['rr'] for r in data['rules']}}
     for rule in data['rules']:
         cached_rule = rules_cached.get(rule['rr'], None)
         if cached_rule is None or cached_rule['mail_delay_till'] < time_epoch_now:
-            # new or expired - set expiration and send alert
+            # new or expired rule - set expiration and send alert
             rule['mail_delay_till'] = time_epoch_now + const.DATA_CAROUSEL_MAIL_REPEAT * 24 * 3600
             data_to_send['rules'].append(rule)
             rules_cached[rule['rr']] = rule
