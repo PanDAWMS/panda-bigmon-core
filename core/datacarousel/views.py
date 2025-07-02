@@ -15,10 +15,12 @@ from django.utils import timezone
 from core.libs.checks import is_positive_int_field
 from core.libs.exlib import build_time_histogram, convert_bytes, convert_sec, round_to_n_digits
 from core.libs.DateEncoder import DateEncoder
+from core.libs.task import get_datasets_for_tasklist
 from core.oauth.utils import login_customrequired
 from core.views import initRequest, setupView
 from core.datacarousel.utils import getBinnedData, get_staging_data, send_report_rse, substitudeRSEbreakdown, staging_rule_verification, \
     get_stuck_files_data, setup_view_dc
+import core.datacarousel.constants as const
 
 from django.conf import settings
 
@@ -325,14 +327,31 @@ def send_stalled_requests_report(request):
     if 'ATLAS' not in settings.DEPLOYMENT:
         return JsonResponse({'sent': 0}, status=204)
 
+    output_stats = {}
+
     # get data
     extra_query_str = setup_view_dc(request)
     extra_query_str += f"""
-        and t1.end_time is null and t1.status = 'staging' and t1.modification_time <= sysdate - {settings.DATA_CAROUSEL_MAIL_DELAY_DAYS} 
-            and t3.status not in ('cancelled','failed','broken','aborted','finished','done')
+        and t1.end_time is null and t1.status = 'staging' and t3.status not in ('cancelled','failed','broken','aborted','finished','done') 
+        and (t1.last_staged_time <= sysdate - {const.DATA_CAROUSEL_MAIL_DELAY_DAYS} 
+            or (t1.last_staged_time is null and t1.start_time <= sysdate - {const.DATA_CAROUSEL_MAIL_DELAY_DAYS}))
     """
     rows = get_staging_data(extra_query_str, add_idds_data=False)
     rows = sorted(rows, key=lambda x: x['update_time'], reverse=True)
+
+    # check if nfiles in files == staged_files to avoid lost files case
+    jedi_datasets_dict = {}
+    jedi_datasets = get_datasets_for_tasklist([{'jeditaskid': r['taskid']} for r in rows])
+    for task in jedi_datasets:
+        for ds in task['datasets']:
+            if ds['type'] == 'input' and ds['datasetname'] not in jedi_datasets_dict:
+                jedi_datasets_dict[ds['datasetname']] = {
+                    'dataset': ds['datasetname'],
+                    'nfiles': ds['nfiles'],
+                    'taskid': task['jeditaskid'],
+                }
+    rows = [r for r in rows if r['dataset'] in jedi_datasets_dict and jedi_datasets_dict[r['dataset']]['nfiles'] >= r['staged_files']]
+
     ds_per_rse = {}
     for r in rows:
         if r['source_rse'] not in ds_per_rse:
@@ -361,13 +380,15 @@ def send_stalled_requests_report(request):
     # dict -> list of rules & send
     for rse, rucio_rules in ds_per_rse.items():
         _logger.debug("DataCarouselMails processes this RSE: {}".format(rse))
+        if rse not in output_stats:
+            output_stats[rse] = {0:0, 1:0, 2:0}
         data_email_categories = {
             'experts_only': [rule for r_uid, rule in rucio_rules.items() if rule['is_tape_problem'] is False],
             'site_admins': [rule for r_uid, rule in rucio_rules.items() if rule['is_tape_problem'] is True]
         }
 
         if len(data_email_categories['experts_only']) > 0:
-            send_report_rse(
+            result = send_report_rse(
                 rse,
                 {
                     'rse': rse,
@@ -376,8 +397,9 @@ def send_stalled_requests_report(request):
                 },
                 experts_only=True
             )
+            output_stats[rse][result] += 1
         if len(data_email_categories['site_admins']) > 0:
-            send_report_rse(
+            result = send_report_rse(
                 rse,
                 {
                     'rse': rse,
@@ -386,6 +408,7 @@ def send_stalled_requests_report(request):
                 },
                 experts_only=False
             )
+            output_stats[rse][result] += 1
 
-    return JsonResponse({'sent': len(rows)})
+    return JsonResponse({'sent': output_stats})
 
