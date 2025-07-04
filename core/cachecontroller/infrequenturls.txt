@@ -1,5 +1,3 @@
-/sites/
 /slowtasks/
 /users/?sortby=date&view=database
 /users/?sortby=date&view=dynamic
-/dc/sendstalledreport/
