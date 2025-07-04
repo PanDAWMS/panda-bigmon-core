@@ -1,12 +1,31 @@
-from BaseTasksProvider import BaseTasksProvider
-import threading
+import json
 import logging
-import pandas as pd
+import queue
+import threading
 import urllib.request as urllibr
 from urllib.error import HTTPError
-import json
-from settingscron import TIME_OUT_FOR_QUERY
+
 import oracledb
+import pandas as pd
+from BaseTasksProvider import BaseTasksProvider
+from BaseURLTasksProvider import BaseURLTasksProvider
+from settingscron import TIME_OUT_FOR_QUERY
+
+
+class DataCarouselAlert(BaseURLTasksProvider):
+
+    BASIC_PRIORITY = 1
+    lock = threading.RLock()
+    logger = logging.getLogger(__name__ + ' DataCarouselAlert')
+
+    def getpayload(self):
+        self.logger.info("getpayload started")
+        urlsQueue = queue.PriorityQueue(-1)
+        urlsQueue.put(
+            (self.BASIC_PRIORITY, '/dc/sendstalledreport/?json=1')
+        )
+        return urlsQueue
+
 
 class DataCarouselPrestageCollector(BaseTasksProvider):
     BASE_STAGE_INFO_URL = 'https://bigpanda.cern.ch/staginprogress/?jeditaskid='
