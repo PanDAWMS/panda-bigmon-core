@@ -134,7 +134,7 @@ def get_staging_data(extra_str, add_idds_data=False):
             t1.end_time,
             t1.ddm_rule_id AS rse,
             t1.total_files,
-            t1.modification_time AS update_time,
+            t1.modification_time AS modification_time,
             t1.last_staged_time,
             t1.source_tape as source_rse,
             t1.source_rse as source_rse_old,
