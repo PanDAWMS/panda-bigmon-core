@@ -74,8 +74,9 @@ def add_error_info_to_job(job, n_chars=300, mode='html', do_add_desc=False, erro
                 job['transformerrordiag'] = diag
             else:
                 diag = job[comp['diag']]
-            if comp['name'] == 'supervisor' and len(error_info_str) > 0:
-                # supervisor error is not added to the error_info_str if errors from other components are already there
+
+            # taskbuffer and supervisor error diagnostics almost the same, so skip taskbuffer
+            if comp['name'] == 'taskbuffer' and 'superrorcode' in job and job['superrorcode'] and int(job['superrorcode']) != 0:
                 continue
             error_info_str += format_error(
                 comp['name'],
@@ -83,7 +84,7 @@ def add_error_info_to_job(job, n_chars=300, mode='html', do_add_desc=False, erro
                 diag,
                 output_format=mode
             )
-
+            # longer LLM generated error description
             if do_add_desc:
                 job[f"{comp['name']}_error_desc"] = error_desc[comp_code_str]['description'] if comp_code_str in error_desc else ''
                 if len(job[f"{comp['name']}_error_desc"]) > 0:

@@ -9,6 +9,7 @@ from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarc
 from core.libs.datetimestrings import parse_datetime
 from core.libs.eventservice import is_event_service, get_event_status_summary
 from core.libs.exlib import split_into_intervals, get_maxrampercore_dict
+from core.libs.checks import is_positive_int_field
 
 from django.conf import settings
 import core.constants as const
@@ -355,5 +356,26 @@ def get_job_error_descriptions():
     return error_descriptions
 
 
-def error_description(job):
-    pass
+def error_summary_for_job(job):
+    """
+    Prepare error summary for a job
+    :param job: dict, job data
+    :return: list of dicts with error summary
+    """
+    error_summary = []
+    for comp in const.JOB_ERROR_COMPONENTS:
+        if is_positive_int_field(job, comp['error']) and job[comp['error']] > 0:
+            error_summary.append({
+                'component': comp['title'],
+                'code': job[comp['error']],
+                'diagnostics': job['transformerrordiag'] if comp['name'] == 'transform' and 'transformerrordiag' in job else job[
+                    comp['diag']],
+                'description': job[f"{comp['name']}_error_desc"] if f"{comp['name']}_error_desc" in job else '',
+            })
+    if 'harvesterInfo' in job and is_positive_int_field(job['harvesterInfo'], 'errorcode') and job['harvesterInfo']['errorcode'] > 0:
+        error_summary.append({
+            'component': 'Harvester worker',
+            'code': job['harvesterInfo']['errorcode'],
+            'diagnostics': job['harvesterInfo']['diagmessage'] if 'diagmessage' in job['harvesterInfo'] else '',
+            'description': '-',
+        })
