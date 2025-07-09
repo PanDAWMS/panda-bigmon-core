@@ -2083,9 +2083,18 @@ def jobInfo(request, pandaid=None, batchid=None):
 
 
     files, file_stats = get_files_for_job(pandaid)
-    job['file_summary_str'] = '; '.join([
-        f"{t}: {str(stats['n'])}{', size: '+str(stats['size_mb'])+'(MB)' if type=='input' else ''}" for t, stats in file_stats.items()
-    ])
+    summary_items = []
+    for t, stats in file_stats.items():
+        base = f"{t}: {stats['n']}"
+        if t == 'input':
+            extra = (
+                f", size: {round(stats['size_mb'] / 1000.0, 2)}GB"
+                f", #events: {stats['nevents']}"
+            )
+        else:
+            extra = ""
+        summary_items.append(base + extra)
+    job['file_summary_str'] = '; '.join(summary_items)
 
     # get log provider
     request.session['viewParams']['log_provider'] = get_log_provider(pandaid)

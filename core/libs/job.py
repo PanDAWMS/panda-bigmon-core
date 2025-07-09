@@ -9,6 +9,8 @@ import math
 import statistics
 import logging
 from django.db.models import Q
+
+from core.libs.checks import is_positive_int_field
 from core.libs.exlib import convert_bytes
 from datetime import datetime
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4
@@ -792,7 +794,7 @@ def get_files_for_job(pandaid):
     :return file_stats: dict
     """
     files = []
-    file_stats = {type: {'n': 0, 'size_mb': 0} for type in ('input', 'output', 'pseudo_input', 'log')}
+    file_stats = {ftype: {'n': 0, 'size_mb': 0, 'nevents': 0} for ftype in ('input', 'output', 'pseudo_input', 'log')}
 
     # get job files from filestable
     files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
@@ -807,7 +809,6 @@ def get_files_for_job(pandaid):
 
         # get dataset contents
         dcquery = copy.deepcopy(dquery)
-        dcquery['pandaid'] = pandaid
         dcfiles = JediDatasetContents.objects.filter(**dcquery).values()
         dcfiles_dict = {}
         if len(dcfiles) > 0:
@@ -856,6 +857,8 @@ def get_files_for_job(pandaid):
         if f['type'] in file_stats:
             file_stats[f['type']]['n'] += 1
             file_stats[f['type']]['size_mb'] += f['fsizemb']
+            file_stats[f['type']]['nevents'] += dcfiles_dict[f['fileid']]['nevents'] if (
+                    f['fileid'] in dcfiles_dict and is_positive_int_field(dcfiles_dict[f['fileid']], 'nevents')) else 0
         # save log file info separately
         if f['type'] == 'log':
             file_stats['log']['details'] = {
