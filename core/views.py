@@ -54,7 +54,6 @@ from core.oauth.utils import login_customrequired, get_auth_provider, is_expert,
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
-from core.libs.checks import is_positive_int_field
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid, get_prod_request_info
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
@@ -87,7 +86,7 @@ from core.pandajob.summary_task import task_summary, job_summary_for_task, job_s
 from core.pandajob.summary_site import site_summary_dict
 from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_user import user_summary_dict
-from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions
+from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, error_summary_for_job
 
 from core.libs.task import checkIfIddsTask
 from core.libs.task import checkIfDCTask
@@ -2273,22 +2272,7 @@ def jobInfo(request, pandaid=None, batchid=None):
         # prepare error summary data for table
         error_summary = []
         if job['jobstatus'] in ('failed', 'holding'):
-            for comp in const.JOB_ERROR_COMPONENTS:
-                if comp['error'] in job and job[comp['error']] and (
-                        job[comp['error']] != '0' or (isinstance(job[comp['error']], int) and job[comp['error']] > 0)):
-                    error_summary.append({
-                        'component': comp['title'],
-                        'code': job[comp['error']],
-                        'diagnostics': job['transformerrordiag'] if comp['name'] == 'transform' and 'transformerrordiag' in job else job[comp['diag']],
-                        'description': job[f"{comp['name']}_error_desc"] if f"{comp['name']}_error_desc" in job else '',
-                    })
-            if 'harvesterInfo' in job and is_positive_int_field(job['harvesterInfo'], 'errorcode'):
-                    error_summary.append({
-                        'component': 'Harvester worker',
-                        'code': job['harvesterInfo']['errorcode'],
-                        'diagnostics': job['harvesterInfo']['diagmessage'] if 'diagmessage' in job['harvesterInfo'] else '',
-                        'description': '-',
-                    })
+            error_summary = error_summary_for_job(job)
 
         data = {
             'prefix': getPrefix(request),
