@@ -379,3 +379,4 @@ def error_summary_for_job(job):
             'diagnostics': job['harvesterInfo']['diagmessage'] if 'diagmessage' in job['harvesterInfo'] else '',
             'description': '-',
         })
+    return error_summary
