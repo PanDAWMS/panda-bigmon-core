@@ -406,9 +406,7 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
     # calc metrics
     for job in jobs:
         if group_by in job and job[group_by]:
-
             job['failed'] = 100 if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
-            job['attemptnr'] = job['attemptnr'] + 1
             # protection if cpuconsumptiontime is decimal in non Oracle DBs
             if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
                 job['cpuconsumptiontime'] = float(job['cpuconsumptiontime'])
