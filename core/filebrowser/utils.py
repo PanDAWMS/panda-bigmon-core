@@ -557,8 +557,8 @@ def get_job_log_file_path(pandaid, filename=''):
             files, err, tardir = list_file_directory(tarball_path, 100)
             _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
             if len(files) == 0 and len(err) > 0:
-                # check size of tarball and download it if it less than 1GB - protection against huge load
-                if fsize_mb and fsize_mb > 1024:
+                # check size of tarball and download it if it less than limit - protection against huge load
+                if fsize_mb and fsize_mb > const.LOG_SIZE_MB_MAX:
                     _logger.error('Size of log tarball too big to download')
                 else:
                     _logger.debug('log tarball has not been downloaded, so downloading it now')
