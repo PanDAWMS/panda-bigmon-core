@@ -25,8 +25,12 @@ class PandaLogsStorageCleanUp(BaseTasksProvider):
                         continue
                     dirs.append((dirpath, size))
             dirs.sort(key=lambda x: x[1], reverse=True)
-            for dirpath, size in dirs[:20]:
-                self.logger.info("Removing directory: %s, size: %s", dirpath, size)
+            if len(dirs) > 50:
+                n_dirs_to_remove = 50
+            else:
+                n_dirs_to_remove = len(dirs)
+            for dirpath, size in dirs[:n_dirs_to_remove]:
+                self.logger.info(f"Removing directory: {dirpath}, size: {size}")
                 shutil.rmtree(dirpath)
 
         # remove old logs
