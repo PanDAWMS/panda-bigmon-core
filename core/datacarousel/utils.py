@@ -66,7 +66,8 @@ def setup_view_dc(request):
 
     if 'source' in request_params or 'source_rse' in request_params:
         source = request_params['source'] if 'source' in request_params else request_params['source_rse']
-        extra_str += f" AND t1.SOURCE_{source_rse} in ({','.join('\'' + str(x) + '\'' for x in source.split(','))})"
+        quoted_values = ",".join(f"'{str(x)}'" for x in source.split(","))
+        extra_str += f" AND t1.SOURCE_{source_rse} in ({quoted_values})"
 
     if 'destination' in request_params:
         extra_str += f" AND t1.DESTINATION_RSE in ({','.join('\'' + str(x) + '\'' for x in request_params['destination'].split(','))})"
@@ -133,7 +134,7 @@ def get_staging_data(extra_str, add_idds_data=False):
             t1.end_time,
             t1.ddm_rule_id AS rse,
             t1.total_files,
-            t1.modification_time AS update_time,
+            t1.modification_time AS modification_time,
             t1.last_staged_time,
             t1.source_tape as source_rse,
             t1.source_rse as source_rse_old,

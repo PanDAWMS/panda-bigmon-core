@@ -613,8 +613,20 @@ def humanize_task_params(taskparams):
     """
     taskparams_list = []
     jobparams_list = []
+    pfn_limit = 4000
 
     for k in taskparams:
+        if "pfnList" in k:
+            truncated_pfn = []
+            total_len = 0
+            for item in taskparams[k]:
+                if total_len > pfn_limit:
+                    hidden_count = len(taskparams[k]) - len(truncated_pfn)
+                    truncated_pfn.append(f"... (truncated, {hidden_count} more files)")
+                    break
+                truncated_pfn.append(item)
+                total_len += len(item)
+            taskparams[k] = truncated_pfn
         rec = {'name': k, 'value': taskparams[k]}
         taskparams_list.append(rec)
     taskparams_list = sorted(taskparams_list, key=lambda x: x['name'].lower())
