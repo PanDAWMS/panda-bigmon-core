@@ -9,5 +9,5 @@ HARVESTER_LIST_URL = '/harvester/instances/?days=7&json'
 LOG_PATH = "/tmp/cachecontroller.log"
 PANDA_LOGGER_PATH = "/cephfs/atlpan/filebrowser"
 MAX_LOG_AGE_DAYS = 14
-PANDA_LOGGER_PATH_ANALYTICS = "/cephfs/atlpan/pandajoblogs"
-MAX_LOG_AGE_DAYS_ANALYTICS = 14
+DISK_USAGE_THRESHOLD_PERCENT = 80
+N_TOP_DIRS_TO_REMOVE = 50
