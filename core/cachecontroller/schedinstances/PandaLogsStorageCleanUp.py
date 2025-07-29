@@ -4,9 +4,6 @@ import threading, os, time, shutil, psutil
 import settingscron as settings
 
 
-
-
-
 class PandaLogsStorageCleanUp(BaseTasksProvider):
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' PandaLogsStorageCleanUp')
@@ -23,7 +20,6 @@ class PandaLogsStorageCleanUp(BaseTasksProvider):
                     except Exception as e:
                         self.logger.debug(f"Warning: Could not access file {fp}: {e}")
         return total_size
-
 
     def processPayload(self):
         self.logger.info("PandaLogsStorageCleanUp started")
