@@ -7,9 +7,9 @@ import socket
 import numpy as np
 from datetime import datetime, timezone
 
-from utils import get_settings_path, servers_configs, monit_sls_configs, cpu_info, memory_info, disk_info, volume_use, \
-    process_availability, subprocess_availability, DateTimeEncoder, send_data, service_availability, \
-    make_db_connection, db_sessions, db_cache_entries, is_any_requests_lately
+from utils import get_settings_path, servers_configs, monit_sls_configs, post_mm_message
+from utils import cpu_info, memory_info, disk_info, volume_use, process_availability, subprocess_availability, service_availability
+from utils import DateTimeEncoder, send_data, make_db_connection, db_sessions, db_cache_entries, is_any_requests_lately
 from sls_document import SlsDocument
 from logger import ServiceLogger
 
@@ -133,10 +133,23 @@ def main():
             status, desc = service_availability(dict_metrics)
             sls_doc.set_status(status)
             sls_doc.set_avail_desc(desc)
-
             sls_doc.send_document(collector_endpoint=f'http://{monit_host}:{monit_port}')
+
+            # send alert to mattermost ops channel in case of degraded or unavailable service
+            availability = int(status)
+            if availability < 100:
+                desc = f"The availability of {service_name} on {hostname} is {status} ({desc})"
+                if 80 <= availability < 100:
+                    desc = f"\U000026A0\uFE0F {desc}"
+                elif 50 < availability < 80:
+                    desc = f"\u2757 {desc}"
+                else:
+                    desc = f"\U0001F198 {desc}"
+                post_mm_message(desc, settings_path)
         else:
             _logger.error("No Monit SLS settings found, can not send anything")
+
+
 
 
 if __name__ == '__main__':

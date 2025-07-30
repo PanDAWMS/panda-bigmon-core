@@ -11,3 +11,5 @@ metrics: cpu,memory,disk,volume,process,dbsession,dbcache,dbrequests
 disk: data
 process: httpd
 volume: cephfs
+[mattermost]
+webhookurl: mattermost_webhook_url
