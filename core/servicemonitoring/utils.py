@@ -187,18 +187,17 @@ def monit_sls_configs(cfg):
 
 
 def mattermost_configs(cfg):
-    if cfg.has_section('mattermost'):
-        try:
-            webhook_url = cfg.get('mattermost', 'webhookurl')
-            _logger.debug(
-                f'Mattermost settings have been read successfully.')
-            return webhook_url
-        except:
-            _logger.error('Settings for Mattermost not found')
-            return None
-    else:
-        _logger.warn('No section with Mattermost settings in the .ini file')
-        return None
+    try:
+        from core import settings
+        mm_webhook_url = settings.local.MM_WEBHOOK_URL
+    except ImportError as e:
+        _logger.error(f"Failed to import settings: {e}")
+        mm_webhook_url = None
+    except Exception as ex:
+        _logger.error(f"An unexpected error occurred while getting Mattermost settings: {ex}")
+        mm_webhook_url = None
+
+    return mm_webhook_url
 
 
 def servers_configs(cfg):
