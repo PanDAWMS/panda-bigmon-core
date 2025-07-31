@@ -31,6 +31,7 @@ urlpatterns = [
     re_path(r'^descendentjoberrsinfo/$', coremon_views.descendentjoberrsinfo, name='descendentjoberrsinfo'),
     re_path(r'^jobrelationships/(?P<pandaid>.*)/$', coremon_views.get_job_relationships, name='jobrelationships'),
     re_path(r'^jobstatuslog/(?P<pandaid>.*)/$', coremon_views.getJobStatusLog, name='getjobstatuslog'),
+    re_path(r'^api/joberrordescriptions/$', coremon_views.error_descriptions, name='jobErrorDescriptions'),
 
     re_path(r'^users/$', coremon_views.userList, name='userList'),
     re_path(r'^user/(?P<user>.*)/$', coremon_views.userInfo, name='userInfo'),
