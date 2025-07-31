@@ -33,7 +33,7 @@ from django.template.context_processors import csrf
 import core.constants as const
 from core.common.utils import getPrefix, getContextVariables
 from core.pandajob.SQLLookups import CastDate
-from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4, Jobsarchived, PandaJob
+from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4, Jobsarchived, PandaJob, ErrorDescription
 from core.schedresource.models import SchedconfigJson
 from core.common.models import Filestable4, FilestableArch, Datasets, Users, Jobparamstable, JobsStatuslog, Jobsdebug, ResourceTypes
 from core.common.models import JediJobRetryHistory, JediTasks, TasksStatusLog, JediEvents, JediDatasets, JediDatasetContents, JediWorkQueue
@@ -7229,3 +7229,17 @@ def resourceTypeList(request):
     return response
 
 
+def error_descriptions(request):
+    """
+    Get error descriptions from the database
+    :return: JsonResponse of error descriptions
+    """
+    if not is_json_request(request):
+        return error_response(request, message="This endpoint only supports JSON output", status=400)
+
+    error_descriptions_list = list(
+        ErrorDescription.objects.filter().values(
+        'component', 'code', 'acronym', 'diagnostics', 'description', 'category')
+    )
+
+    return JsonResponse({'error_descriptions': error_descriptions_list})
