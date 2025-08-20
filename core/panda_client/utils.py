@@ -2,7 +2,7 @@ import os
 import time
 import logging
 import jwt
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional, List, Union
 
 from requests import post
 from core.oauth.utils import get_auth_provider
@@ -43,6 +43,7 @@ def get_auth_indigoiam(request) -> Dict[str, str]:
     organisation = "atlas"
 
     auth_provider = get_auth_provider(request)
+
     if not auth_provider:
         return {"detail": "Authentication is required. Please sign in with IAM (green button)."}
 
@@ -216,13 +217,13 @@ def finish_task(
 
 def set_debug_mode(auth: Dict[str, str], **kwargs) -> str:
     """
-    Legacy Panda server endpoint: set debug mode for a job.
+    PanDA API (v1): POST /job/set_debug_mode
+    Toggle debug mode for a job. Keeps string return for backward-compat with views.py.
 
     Kwargs:
-        pandaid (int): ID of the job to debug (required)
-        modeOn (bool): True/False to enable/disable debug (required)
-        user_id (int): For logging only (optional)
-        groups (Iterable[str]): User groups, may affect Origin (optional)
+        pandaid (int): required
+        modeOn (bool): required
+        user_id (int), groups (Iterable[str]) — optional
     """
     pandaid = kwargs.get("pandaid")
     mode_on = kwargs.get("modeOn")
@@ -232,40 +233,61 @@ def set_debug_mode(auth: Dict[str, str], **kwargs) -> str:
     if mode_on is None:
         return "ModeOn is not defined"
 
-    data = {"pandaID": pandaid, "modeOn": bool(mode_on)}
-
-    groups = set(kwargs.get("groups") or [])
-    if groups:
-        auth = dict(auth)  # copy to avoid mutating caller's dict
-        auth["Origin"] = "atlas.production" if "atlas/production" in groups else "atlas"
-
-    url = _get_full_url("setDebugMode")
-
-    headers = auth if auth and (auth.get("Authorization") or auth.get("Origin")) else None
+    data = {"panda_id": int(pandaid), "mode_on": bool(mode_on)}
 
     try:
-        resp = post(url, headers=headers, data=data, timeout=30)
-        text = resp.text
-        status = resp.status_code
+        status, output = _http_post(auth, "/job/set_debug_mode", data)
+        if status != 0:
+            return f"ERROR to set debug mode: {output}"
+
+        if isinstance(output, dict) and ("success" in output or "message" in output):
+            success = bool(output.get("success"))
+            message = output.get("message") or ""
+            text = "Succeeded" if success else "Failed"
+            if message:
+                text = f"{text}: {message}"
+            return text
+
+        return f"ERROR to set debug mode: {output}"
     except Exception as ex:
-        text = f"ERROR to set debug mode: {ex}"
-        status = -1
+        return f"ERROR to set debug mode: {str(ex)}"
 
-    try:
-        _logger.debug(
-            "SetDebugMode | URL: %s | HTTP: %s | Response: %s | user_id: %s | Origin: %s | PandaID: %s | ModeOn: %s | Groups: %s",
-            url,
-            status,
-            (text[:500] + "...") if len(text) > 500 else text,
-            kwargs.get("user_id"),
-            (auth or {}).get("Origin") if headers else None,
-            data["pandaID"],
-            data["modeOn"],
-            sorted(groups) if groups else [],
-        )
-    except Exception:
-        pass
-    return text
+def get_worker_stats(auth: Optional[Dict[str, str]] = None, **params) -> Tuple[int, Dict[str, Any]]:
+    return _http_get(auth, "/harvester/get_worker_statistics", params)
+
+def kill_jobs(
+    auth: Optional[Dict[str, str]] = None,
+    job_ids: Union[int, str, List[Union[int, str]], None] = None,
+    code: Optional[int] = None,
+    use_email_as_id: bool = False,
+    kill_options: Optional[List[str]] = None,
+) -> Tuple[int, Dict[str, Any]]:
+    if job_ids is None:
+        ids: List[int] = []
+    elif isinstance(job_ids, (list, tuple, set)):
+        ids = [int(x) for x in job_ids]
+    else:
+        ids = [int(job_ids)]
+
+    payload: Dict[str, Any] = {
+        "job_ids": ids,
+        "use_email_as_id": bool(use_email_as_id),
+        "kill_options": list(kill_options or []),
+    }
+    if code is not None:
+        payload["code"] = int(code)
+
+    return _http_post(auth, "/job/kill", payload)
+
+
+def get_job_status(auth: Optional[Dict[str, str]] = None, pandaid: Union[int, str] = 0) -> Tuple[int, Dict[str, Any]]:
+    params = {"panda_id": int(pandaid)}
+    return _http_get(auth, "/job/get_description", params)
+
+
+def get_script_offline_running(auth: Optional[Dict[str, str]] = None, pandaid: Union[int, str] = 0) -> Tuple[int, Dict[str, Any]]:
+    params = {"panda_id": int(pandaid)}
+    return _http_get(auth, "/job/get_offline_execution_script", params)
 
 
 def get_user_groups(idtoken: str):
