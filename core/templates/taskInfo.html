@@ -1533,7 +1533,7 @@ function operationtask_token(taskID, action) {
     if (confirm(message)) {
 
         $.ajax({
-            url: 'panda_client/',
+            url: '/panda_client/',
             data: {taskID: taskID, action: action},
             async: false,
             type: "POST",
