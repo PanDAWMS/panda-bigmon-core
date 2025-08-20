@@ -10,7 +10,7 @@ from smtplib import SMTPException
 from datetime import datetime
 from django.core.mail import send_mail
 from django.template import loader
-from django.core import mail
+from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -26,9 +26,17 @@ def textify(html):
 
 
 def send_mail_bp(template, subject, summary, recipient, send_html=False):
-    # uncomment for debugging
-    # recipient = '<login>@cern.ch'
-    # ----
+    """
+    Send an email using a template.
+
+    Args:
+        template (str): The name of the template to use for the email body.
+        subject (str): The subject of the email.
+        summary (str): A summary to include in the email.
+        recipient (str or list): The recipient(s) of the email. Can be a single email address or a list of addresses.
+        send_html (bool): If True, send the email as HTML; otherwise, send as plain text.
+    :return:
+    """
     isSuccess = True
     nmails = 0
     if isinstance(recipient, str):
@@ -37,6 +45,13 @@ def send_mail_bp(template, subject, summary, recipient, send_html=False):
         recipients = recipient
     else:
         recipients = []
+
+    # if debug send to the first dev admin
+    if settings.DEBUG:
+        if len(settings.ADMINS) > 0 and settings.ADMINS[0][0] == 'dev':
+            recipients = [settings.ADMINS[0][1]]
+        else:
+            recipients = []
 
     html_message = loader.render_to_string(
         template,

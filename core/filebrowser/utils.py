@@ -11,13 +11,15 @@ import shutil
 from datetime import datetime
 from django.conf import settings
 from core.filebrowser.ObjectStoreWrapper import ObjectStore
+import core.filebrowser.constants as const
 from core.common.models import Filestable4, FilestableArch
 from core.libs.job import get_job_list
 from core.libs.exlib import convert_bytes
 from core.schedresource.utils import get_panda_queues
 
+
 _logger = logging.getLogger('bigpandamon-filebrowser')
-filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
+
 
 def get_filebrowser_vo():
     """
@@ -281,7 +283,7 @@ def list_file_directory(logdir, limit=1000, log_provider='rucio'):
             f_content = {}
             if f in fileStats:
                 if fileStats[f] is not None and f in isFile and isFile[f]:
-                    f_content['modification'] = str(time.strftime(filebrowserDateTimeFormat, time.gmtime(fileStats[f][8])))
+                    f_content['modification'] = str(time.strftime(const.DATE_TIME_FORMAT, time.gmtime(fileStats[f][8])))
                     f_content['size'] = fileStats[f][6]
                     f_content['name'] = os.path.basename(f)
                     f_content['dirname'] = re.sub(os.path.join(logdir, tardir), '', os.path.dirname(f) + '/')
@@ -321,34 +323,39 @@ def get_rucio_file(scope, lfn, guid, unpack=True, listfiles=True, limit=1000):
     # urlbase
     urlbase = '{}/{}/{}/'.format(get_filebrowser_directory(), guid.lower(), scope)
 
-    # create directory for files of guid
-    dir, err = create_directory(fpath)
-    if len(err) > 0:
-        err_txt += err
+    # check if file already exists
+    if not os.path.exists(fpath):
+        # create directory for files of guid
+        dir, err = create_directory(fpath)
+        if len(err) > 0:
+            err_txt += err
 
-    # get command to copy file
-    cmd = 'export RUCIO_ACCOUNT=%s; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase; source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh; source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh "python pilot-default"; source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_rucio_account(),get_x509_proxy(),logdir,scope,lfn)
-    if not len(cmd):
-        _logger.warning('Command to fetch the file is empty!')
+        # get command to copy file
+        cmd = 'export RUCIO_ACCOUNT=%s; export X509_USER_PROXY=%s;export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase; source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh; source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh "python pilot-default"; source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh rucio; rucio download --dir=%s %s:%s' % (get_rucio_account(),get_x509_proxy(),logdir,scope,lfn)
+        if not len(cmd):
+            _logger.warning('Command to fetch the file is empty!')
 
-    # download the file
-    status, err = execute_cmd(cmd)
-    if status != 0:
-        msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
-        _logger.error(msg)
-        if 'No valid proxy present' in err or 'certificate expired' in err:
-            _logger.error("Internal Server Error: x509 proxy expired, can not connect to rucio")
-        err_txt += '\n '.join([err_txt, msg])
-    _logger.debug("get_rucio_file rucio download - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
-
-    if unpack and len(err_txt) == 0:
-        # untar the file
-        status, err = unpack_file(fpath)
+        # download the file
+        status, err = execute_cmd(cmd)
         if status != 0:
-            msg = 'File unpacking failed for file [%s].' % (fname)
-            _logger.error('{} File path is {}.'.format(msg, fpath))
-            err_txt = '\n '.join([err_txt, msg])
-        _logger.debug("get_rucio_file untar - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+            msg = 'File download failed with command [%s]. Output: [%s].' % (cmd, err)
+            _logger.error(msg)
+            if 'No valid proxy present' in err or 'certificate expired' in err:
+                _logger.error("Internal Server Error: x509 proxy expired, can not connect to rucio")
+            err_txt += '\n '.join([err_txt, msg])
+        _logger.debug("get_rucio_file rucio download - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+
+        if unpack and len(err_txt) == 0:
+            # untar the file
+            status, err = unpack_file(fpath)
+            if status != 0:
+                msg = 'File unpacking failed for file [%s].' % (fname)
+                _logger.error('{} File path is {}.'.format(msg, fpath))
+                err_txt = '\n '.join([err_txt, msg])
+            _logger.debug("get_rucio_file untar - " + datetime.now().strftime("%H:%M:%S") + "  " + guid)
+    else:
+        _logger.info('File {} already exists, skipping download.'.format(fpath))
+        dir = os.path.dirname(fpath)
 
     if listfiles and len(err_txt) == 0:
         # list the files
@@ -458,7 +465,7 @@ def get_job_log_file_properties(pandaid=None, lfn=None, fileid=None):
             except:
                 pass
         try:
-            fsize_mb = round(convert_bytes(int(file_properties['fsize']), output_unit='MB'))
+            fsize_mb = round(convert_bytes(int(file_properties['fsize']), output_unit='MB'), 2)
         except:
             pass
 
@@ -550,8 +557,8 @@ def get_job_log_file_path(pandaid, filename=''):
             files, err, tardir = list_file_directory(tarball_path, 100)
             _logger.debug('tarball path is {} \nError message is {} \nGot tardir: {}'.format(tarball_path, err, tardir))
             if len(files) == 0 and len(err) > 0:
-                # check size of tarball and download it if it less than 1GB - protection against huge load
-                if fsize_mb and fsize_mb > 1024:
+                # check size of tarball and download it if it less than limit - protection against huge load
+                if fsize_mb and fsize_mb > const.LOG_SIZE_MB_MAX:
                     _logger.error('Size of log tarball too big to download')
                 else:
                     _logger.debug('log tarball has not been downloaded, so downloading it now')
@@ -566,3 +573,38 @@ def get_job_log_file_path(pandaid, filename=''):
 
     _logger.debug('Final path of {} file: {}'.format(filename, file_path))
     return file_path
+
+
+def extract_rucio_errors(output: str, include_warnings=False):
+    """
+    Extract Rucio errors or warnings from command output.
+
+    Args:
+        output (str): Full stdout/stderr from `rucio download`
+        include_warnings (bool): Whether to also return warnings
+
+    Returns:
+        extracted_str (str): List of error (or warning) messages
+    """
+    error_pattern = r'(ERROR|WARNING)\s+(.*)'
+    matches = re.findall(error_pattern, output)
+
+    # Optional filter to exclude noisy or known unimportant messages
+    ignore_patterns = [
+        r'.*\.rootrc is missing.*',  # known warning from ROOT setup
+        r'.*None of the requested files.*',  # consequence of earlier error
+    ]
+
+    extracted = []
+    for level, msg in matches:
+        if not include_warnings and level == 'WARNING':
+            continue
+        if any(re.search(p, msg) for p in ignore_patterns):
+            continue
+        extracted.append(f"{level}: {msg.strip()}")
+
+    extracted_str = ""
+    if len(extracted) > 0:
+        extracted_str = '; '.join(extracted)
+
+    return extracted_str

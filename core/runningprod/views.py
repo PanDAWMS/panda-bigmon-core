@@ -41,7 +41,7 @@ def runningProdTasks(request):
 
     if 'dt' in request.session['requestParams'] and 'tk' in request.session['requestParams']:
         tk = request.session['requestParams']['tk']
-        data = getCacheEntry(request, tk, isData=True)
+        data = getCacheEntry(request, tk, is_data=True)
         return HttpResponse(data, content_type='application/json')
 
     # Here we try to get cached data
@@ -168,7 +168,7 @@ def runningProdTasks(request):
     else:
         # putting list of tasks to cache separately for dataTables plugin
         transactionKey = random.randrange(100000000)
-        setCacheEntry(request, transactionKey, json.dumps(task_list, cls=DateEncoder), 60 * 30, isData=True)
+        setCacheEntry(request, transactionKey, json.dumps(task_list, cls=DateEncoder), 60 * 30, is_data=True)
 
         xurl = request.get_full_path()
         if xurl.find('?') > 0:

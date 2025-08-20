@@ -11,7 +11,7 @@ from django.db.models.functions import Substr
 
 from core.libs.sqlcustom import preprocess_wild_card_string
 from core.art.modelsART import ARTTests
-from core.art.jobSubResults import analize_test_subresults
+from core.art.jobSubResults import analize_test_subresults, get_final_result
 
 from core.libs.job import get_job_list
 
@@ -36,7 +36,7 @@ def setupView(request):
     enddate = None
     datelist = []
 
-    art_view = str(request.path).split('/')[2]
+    art_view = str(request.path).split('/')[2] if len(request.path.split('/')) > 2 else 'main'
     days_max = art_const.N_DAYS_MAX[art_view] if art_view in art_const.N_DAYS_MAX else art_const.N_DAYS_MAX['other']
     days_default = art_const.N_DAYS_DEFAULT[art_view] if art_view in art_const.N_DAYS_DEFAULT else art_const.N_DAYS_DEFAULT['other']
 
@@ -350,3 +350,49 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
 
     return ip
+
+
+def get_test_results(n_days, test_type='grid', agg_by='branch'):
+    """
+    Get test results from ARTTests model
+    :param n_days: int - number of days to look back for tests
+    :param test_type: str - type of test, default is 'grid'
+    :param agg_by: str - aggregation field, default is 'branch'
+    :return: list of dicts with test results
+    """
+    if agg_by not in ['branch', 'package']:
+        raise ValueError("agg_by must be one of ['branch', 'package']")
+
+    results_aggregated = {}
+    query = {}
+    if test_type == 'all':
+        query['test_type__in'] = ['grid', 'local']
+    elif test_type in ['grid', 'local']:
+        query['test_type__in'] = [test_type,]
+    else:
+        raise ValueError("test_type must be one of ['grid', 'local', 'all']")
+    if n_days is None or not isinstance(n_days, int) or n_days <= 0:
+        raise ValueError("n_days must be an integer and greater than 0")
+    elif n_days > art_const.N_DAYS_MAX['main']:
+        raise ValueError("n_days must be less than or equal to {}".format(art_const.N_DAYS_MAX))
+    else:
+        query['nightly_tag_date__gte'] = datetime.now() - timedelta(days=n_days)
+
+    tests = ARTTests.objects.filter(**query).values(
+        'package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
+        'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date', 'test_type'
+    )
+    tests = clean_tests_list(tests)
+    final_result_dict = {v: k for k, v in art_const.TEST_STATUS_INDEX.items()}
+    for test in tests:
+        if 'status' in test and isinstance(test['status'], int):
+            result = final_result_dict[test['status']]
+        else:
+            result = 'active'  # default to active if status is not set or not an int
+        if test[agg_by] not in results_aggregated:
+            results_aggregated[test[agg_by]] = {}
+        if test['nightly_tag'] not in results_aggregated[test[agg_by]]:
+            results_aggregated[test[agg_by]][test['nightly_tag']] = {t: {x: 0 for x in art_const.TEST_STATUS} for t in query['test_type__in']}
+        results_aggregated[test[agg_by]][test['nightly_tag']][test['test_type']][result] += 1
+
+    return results_aggregated

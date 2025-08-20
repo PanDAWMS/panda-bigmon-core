@@ -9,7 +9,7 @@
 {% for row in summary.rules %}
 <p>The Rucio rule <b><a href="https://rucio-ui.cern.ch/rule?rule_id={{ row.rr }}">{{ row.rr }}</a></b> started on
   <b>{{ row.start_time }}</b>, updated last time <b>{{ row.update_time }}</b> ago, and is needed for <b>{{ row.tasks|length }}</b> task(s): {% for taskid in row.tasks %} <b><a href="https://bigpanda.cern.ch/task/{{ taskid }}/">{{ taskid }}</a></b>{% if not forloop.last %}, {% endif %} {% endfor %} is still lasting. Current progress is <b>{{ row.staged_files }}</b> out of <b>{{ row.tot_files }}</b> files.
-  The problematic file(s) listed below [{{ forloop.counter }}], look for errors in <a target="_blank" href="https://monit-grafana.cern.ch/d/e77b84d4-d854-4a18-b2c6-5fb67f648832/ddm-transfers-errors?from=now-10d&orgId=17&to=now&var-activity=Analysis%20Input&var-activity=Production%20Input&var-activity=Staging&var-bin=1h&var-dataset_name={{ row.dataset }}&var-dst_cloud=All&var-dst_country=All&var-dst_federation=All&var-dst_site=All&var-dst_tier=All&var-error_filter=&var-src_cloud=All&var-src_country=All&var-src_federation=All&var-src_site=All&var-src_tier=All">the DDM Transfer Errors dashboard</a>.</p>
+  The problematic file(s) listed below [{{ forloop.counter }}], look for errors on <a target="_blank" href="https://prodtask-dev.cern.ch/ng/dataset/{{ row.dataset }}">ProdSys dataset page</a>.</p>
 {% endfor %}
 
 <p>Please perform necessary interventions if you found it wrong.</p>
@@ -18,7 +18,7 @@ Truly yours,<br>
 Data Carousel Team
 
 {% for row in summary.rules %}
-<p>[{{ forloop.counter }}] {% for f in row.stuck_files %}{{ f.name }}{% if f.errors|length > 0 %}, last errors: {% for error in f.errors %}{{ error }};&nbsp{% endfor %}{% endif %}{% if not forloop.last %},<br> {% endif %} {% endfor %}</p>
+<p>[{{ forloop.counter }}] {% for f in row.stuck_files %}<b>{{ f.name }}</b>{% if f.errors|length > 0 %}, last errors: {% for error in f.errors %}{{ error }};&nbsp{% endfor %}{% endif %}{% if not forloop.last %},<br> {% endif %} {% endfor %}</p>
 {% endfor %}
 
 </body>

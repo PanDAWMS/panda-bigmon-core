@@ -94,26 +94,20 @@ var globaldisplayTable = $('#firstGlobalExample').dataTable({
                 "searchable": false
        }],
 "rowCallback": function( row, data, displayIndex ) {
-                 var v4=($('td:eq(4)',row).text().split(" "))[0];
-                 var v5=($('td:eq(5)',row).text().split(" "))[0];
-                 var v52=($('td:eq(5)',row).text().split(" "))[2];
-                 if ( /\D/.test(v52) ) { v52 = 0; }
-                 if ( v4 > 6 ) { $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( /\s/.test(v4) )  { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( ! /\D/.test(v4) ) { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
-                 else { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
-                 if ( v5 > 0 && v5 <= 5 && v52 >= 0 && v52 <= 3 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v5 == 0 && v52 > 0 && v52 <= 3 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( v5 > 5 || v52 > 3 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
-                 else if ( ! /\D/.test(v5) )  { $('td:eq(5)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
-                 else { $('td:eq(5)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
-
-/*
-                 if (v4 >= 0) {
-                 $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");
-                 };
-*/
+  var v4=($('td:eq(4)',row).text().split(" "))[0];
+  var v5=($('td:eq(5)',row).text().split(" "))[0];
+  var v52=($('td:eq(5)',row).text().split(" "))[2];
+  if ( /\D/.test(v52) ) { v52 = 0; }
+  if ( v4 > 6 ) { $('td:eq(4)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+  else if ( v4 > 0 ) { $('td:eq(4)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+  else if ( /\s/.test(v4) )  { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+  else if ( ! /\D/.test(v4) ) { $('td:eq(4)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+  else { $('td:eq(4)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
+  if ( v5 > 0 && v5 <= 5 && v52 >= 0 && v52 <= 3 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+  else if ( v5 == 0 && v52 > 0 && v52 <= 3 ) { $('td:eq(5)', row).css("background-color", "#FFFF99").css("border", "1px solid rgb(197, 219, 236)");}
+  else if ( v5 > 5 || v52 > 3 ) { $('td:eq(5)', row).css("background-color", "#FF9933").css("border", "1px solid rgb(197, 219, 236)");}
+  else if ( ! /\D/.test(v5) )  { $('td:eq(5)', row).css("background-color", "#66FF33").css("border", "1px solid rgb(197, 219, 236)");}
+  else { $('td:eq(5)', row).css("background-color", "#FFFFFF").css("border", "1px solid rgb(197, 219, 236)");}
 },
 });
 

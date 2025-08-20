@@ -9,20 +9,23 @@ import math
 import statistics
 import logging
 from django.db.models import Q
+
+from core.libs.checks import is_positive_int_field
 from core.libs.exlib import convert_bytes
 from datetime import datetime
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4
-from core.pandajob.utils import is_archived_jobs
-from core.common.models import JediJobRetryHistory, Filestable4, FilestableArch, JediDatasetContents
+from core.pandajob.utils import is_archived_jobs, get_job_error_descriptions
+from core.common.models import JediJobRetryHistory, Filestable4, FilestableArch, JediDatasetContents, JediDatasets
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, drop_duplicates, convert_sec
 from core.libs.datetimestrings import parse_datetime
 from core.libs.jobmetadata import addJobMetadata
-from core.libs.error import errorInfo, get_job_error_desc
+from core.libs.error import add_error_info_to_job
 from core.libs.eventservice import add_event_service_info_to_job, is_event_service
-from core.schedresource.utils import get_pq_clouds
+from core.schedresource.utils import get_pq_clouds, get_panda_queues, get_pq_atlas_sites
 
 from django.conf import settings
 import core.constants as const
+from core.utils import is_json_request
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -143,7 +146,7 @@ def get_job_info(job):
     # add diag with error code = 0 or any error code for not failed jobs
     diag_no_error_list = [
         (c['name'], job[c['error']], job[c['diag']])
-        for c in const.JOB_ERROR_CATEGORIES
+        for c in const.JOB_ERROR_COMPONENTS
         if c['error'] in job and c['diag'] and c['diag'] in job and job[c['diag']] and len(job[c['diag']]) > 0
         and (
             job[c['error']] in (0, '0') or ('jobstatus' in job and job['jobstatus'] not in ('failed', 'holding'))
@@ -187,9 +190,10 @@ def add_error_info(jobs):
     :return: jobs: list of dicts
     """
 
-    errorCodes = get_job_error_desc()
+    error_desc = get_job_error_descriptions()
+    jobs_new = []
     for job in jobs:
-        job['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
+        jobs_new.append(add_error_info_to_job(job, mode='str', do_add_desc=True, error_desc=error_desc))
 
     return jobs
 
@@ -292,7 +296,7 @@ def get_job_list(query, **kwargs):
             'jobmetrics', 'nevents', 'maxpss', 'hs06', 'hs06sec', 'cpuconsumptiontime', 'cpuconsumptionunit', 'diskio', 'gco2_global',
         ])
     if 'error_info' in kwargs and kwargs['error_info']:
-        for c in const.JOB_ERROR_CATEGORIES:
+        for c in const.JOB_ERROR_COMPONENTS:
             values.append(c['error'])
             if c['diag'] is not None:
                 values.append(c['diag'])
@@ -402,9 +406,7 @@ def calc_jobs_metrics(jobs, group_by='jeditaskid'):
     # calc metrics
     for job in jobs:
         if group_by in job and job[group_by]:
-
             job['failed'] = 100 if 'jobstatus' in job and job['jobstatus'] == 'failed' else 0
-            job['attemptnr'] = job['attemptnr'] + 1
             # protection if cpuconsumptiontime is decimal in non Oracle DBs
             if 'cpuconsumptiontime' in job and job['cpuconsumptiontime'] is not None:
                 job['cpuconsumptiontime'] = float(job['cpuconsumptiontime'])
@@ -486,9 +488,8 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
 
     pq_clouds = get_pq_clouds()
 
-    errorCodes = {}
     if do_add_errorinfo:
-        errorCodes = get_job_error_desc()
+        error_descriptions = get_job_error_descriptions()
 
     # drop duplicate jobs
     jobs = drop_duplicates(jobl, id='pandaid')
@@ -516,7 +517,12 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
 
         # add error info only for failed and holding jobs
         if do_add_errorinfo and 'jobstatus' in job and job['jobstatus'] in ('failed', 'holding'):
-            job['errorinfo'] = errorInfo(job, errorCodes=errorCodes)
+            job = add_error_info_to_job(
+                job,
+                mode='html' if not is_json_request(request) else 'str',
+                do_add_desc=True if not is_json_request(request) else False,
+                error_desc=error_descriptions
+            )
 
         job['jobinfo'] = get_job_info(job)
 
@@ -776,3 +782,90 @@ def add_files_info_to_jobs(jobs):
 
 
     return jobs
+
+
+def get_files_for_job(pandaid):
+    """
+    Get files for a job. There are 2 sources for it, filestable and JEDI dataset content, we query both and merge it.
+    :param pandaid: int
+    :return files: list[dict]
+    :return file_stats: dict
+    """
+    files = []
+    file_stats = {ftype: {'n': 0, 'size_mb': 0, 'nevents': 0} for ftype in ('input', 'output', 'pseudo_input', 'log')}
+
+    # get job files from filestable
+    files.extend(Filestable4.objects.filter(pandaid=pandaid).order_by('type').values())
+    if len(files) == 0:
+        files.extend(FilestableArch.objects.filter(pandaid=pandaid).order_by('type').values())
+
+    if len(files) > 0:
+        # get datasets
+        dquery = {'datasetid__in': [f['datasetid'] for f in files]}
+        dsets = JediDatasets.objects.filter(**dquery).values('datasetid', 'datasetname')
+        datasets_dict = {ds['datasetid']: ds['datasetname'] for ds in dsets}
+
+        # get dataset contents
+        dcquery = copy.deepcopy(dquery)
+        dcfiles = JediDatasetContents.objects.filter(**dcquery).values()
+        dcfiles_dict = {}
+        if len(dcfiles) > 0:
+            for dcf in dcfiles:
+                dcfiles_dict[dcf['fileid']] = dcf
+    else:
+        datasets_dict = {}
+        dcfiles_dict = {}
+
+    # prepare files data for the template
+    for f in files:
+        f['fsizemb'] = round(convert_bytes(f['fsize'], output_unit='MB'), 2)
+        f['fsize'] = int(f['fsize'])
+        if 'creationdate' not in f:
+            f['creationdate'] = f['modificationtime']
+        if 'fileid' not in f:
+            f['fileid'] = f['row_id']
+        if 'datasetname' not in f:
+            if f['scope'] and f['scope'] + ":" in f['dataset']:
+                f['datasetname'] = f['dataset']
+                f['ruciodatasetname'] = f['dataset'].split(":")[1]
+            else:
+                f['datasetname'] = f['dataset']
+                f['ruciodatasetname'] = f['dataset']
+        if 'modificationtime' in f:
+            f['oldfiletable'] = 1
+        if 'destinationdblock' in f and f['destinationdblock'] is not None:
+            f['destinationdblock_vis'] = f['destinationdblock'].split('_')[-1]
+        # add info from datasets
+        if f['datasetid'] in datasets_dict:
+            f['datasetname'] = datasets_dict[f['datasetid']]
+            if f['scope'] and f['scope'] + ":" in f['datasetname']:
+                f['ruciodatasetname'] = f['datasetname'].split(":")[1]
+            else:
+                f['ruciodatasetname'] = f['datasetname']
+        if f['destinationdblocktoken'] and 'dst' in f['destinationdblocktoken']:
+            parced = f['destinationdblocktoken'].split("_")
+            f['ddmsite'] = parced[0][4:] if len(parced) > 0 and len(parced[0]) > 4 else ''
+            f['dsttoken'] = 'ATLAS' + parced[1] if len(parced) > 1 else ''
+        # add info from dataset contents
+        if f['type'] == 'input':
+            f['attemptnr'] = dcfiles_dict[f['fileid']]['attemptnr'] if f['fileid'] in dcfiles_dict else f['attemptnr']
+            f['maxattempt'] = dcfiles_dict[f['fileid']]['maxattempt'] if f['fileid'] in dcfiles_dict else None
+
+        # collect stats
+        if f['type'] in file_stats:
+            file_stats[f['type']]['n'] += 1
+            file_stats[f['type']]['size_mb'] += f['fsizemb']
+            file_stats[f['type']]['nevents'] += dcfiles_dict[f['fileid']]['nevents'] if (
+                    f['fileid'] in dcfiles_dict and is_positive_int_field(dcfiles_dict[f['fileid']], 'nevents')) else 0
+        # save log file info separately
+        if f['type'] == 'log':
+            file_stats['log']['details'] = {
+                'lfn': f['lfn'],
+                'guid': f['guid'],
+                'scope': f['scope'],
+                'fileid': f['fileid'],
+                'site': f['destinationse'] if 'destinationse' in f else ''
+            }
+
+    files = sorted(files, key=lambda x: x['type'])
+    return files, file_stats

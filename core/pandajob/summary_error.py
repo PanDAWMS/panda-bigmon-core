@@ -1,16 +1,16 @@
-
 import copy
 import logging
 import pandas as pd
 import time
+from collections import defaultdict
 
-from core.libs.error import get_job_error_desc
 from core.libs.task import taskNameDict
 from core.libs.job import get_job_walltime
 from core.libs.exlib import calc_freq_time_series
 
 from django.conf import settings
 import core.constants as const
+from core.pandajob.utils import get_job_error_descriptions
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -22,21 +22,18 @@ def get_error_message_summary(jobs):
     :return: list of rows for datatable
     """
     error_message_summary_list = []
-    errorMessageSummary = {}
+    error_message_summary = {}
     N_SAMPLE_JOBS = 3
 
-    # codes = ErrorCodes()
-    # errorFields, errorCodes, errorStages = codes.getErrorCodes()
-    errorCodes = get_job_error_desc()
-    errorcodelist = copy.deepcopy(const.JOB_ERROR_CATEGORIES)
+    error_components = copy.deepcopy(const.JOB_ERROR_COMPONENTS)
 
     for job in jobs:
-        for errortype in errorcodelist:
-            if errortype['error'] in job and job[errortype['error']] is not None and job[errortype['error']] != '' and int(job[errortype['error']]) > 0:
-                errorcodestr = errortype['name'] + ':' + str(job[errortype['error']])
-                if not errorcodestr in errorMessageSummary:
-                    errorMessageSummary[errorcodestr] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
-                errorMessageSummary[errorcodestr]['count'] += 1
+        for comp in error_components:
+            if comp['error'] in job and job[comp['error']] is not None and job[comp['error']] != '' and int(job[comp['error']]) > 0:
+                comp_code_str = f"{comp['name']}:{str(job[comp['error']])}"
+                if not comp_code_str in error_message_summary:
+                    error_message_summary[comp_code_str] = {'count': 0, 'walltimeloss': 0, 'messages': {}}
+                error_message_summary[comp_code_str]['count'] += 1
                 try:
                     corecount = int(job['actualcorecount'])
                 except:
@@ -45,28 +42,25 @@ def get_error_message_summary(jobs):
                     walltime = int(get_job_walltime(job))
                 except:
                     walltime = 0
-                errorMessageSummary[errorcodestr]['walltimeloss'] += walltime * corecount
-                # transexitcode has no diag field in DB, so we get it from ErrorCodes class
-                if errortype['name'] != 'transformation':
-                    errordiag = job[errortype['diag']] if len(job[errortype['diag']]) > 0 else '---'
+                error_message_summary[comp_code_str]['walltimeloss'] += walltime * corecount
+                # transexitcode has no related diag field, but we already added it from ErrorDescriptions
+                if comp['name'] != 'transform':
+                    diag = job[comp['diag']] if len(job[comp['diag']]) > 0 else '---'
                 else:
-                    try:
-                        errordiag = errorCodes[errortype['error']][int(job[errortype['error']])]
-                    except:
-                        errordiag = '--'
-                if not errordiag in errorMessageSummary[errorcodestr]['messages']:
-                    errorMessageSummary[errorcodestr]['messages'][errordiag] = {'count': 0, 'pandaids': []}
-                errorMessageSummary[errorcodestr]['messages'][errordiag]['count'] += 1
-                if len(errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids']) < N_SAMPLE_JOBS:
-                    errorMessageSummary[errorcodestr]['messages'][errordiag]['pandaids'].append(job['pandaid'])
+                    diag = job['transformerrordiag'] if 'transformerrordiag' in job and len(job['transformerrordiag']) > 0 else '---'
+                if not diag in error_message_summary[comp_code_str]['messages']:
+                    error_message_summary[comp_code_str]['messages'][diag] = {'count': 0, 'pandaids': []}
+                error_message_summary[comp_code_str]['messages'][diag]['count'] += 1
+                if len(error_message_summary[comp_code_str]['messages'][diag]['pandaids']) < N_SAMPLE_JOBS:
+                    error_message_summary[comp_code_str]['messages'][diag]['pandaids'].append(job['pandaid'])
 
     # form a dict for mapping error code name and field in panda db in order to prepare links to job selection
     errname2dbfield = {}
-    for errortype in errorcodelist:
-        errname2dbfield[errortype['name']] = errortype['error']
+    for comp in error_components:
+        errname2dbfield[comp['name']] = comp['error']
 
     # dict -> list
-    for errcode, errinfo in errorMessageSummary.items():
+    for errcode, errinfo in error_message_summary.items():
         errcodename = errname2dbfield[errcode.split(':')[0]]
         errcodeval = errcode.split(':')[1]
         for errmessage, errmessageinfo in errinfo['messages'].items():
@@ -84,18 +78,62 @@ def get_error_message_summary(jobs):
     return error_message_summary_list
 
 
-def get_job_error_categories(job):
+def get_job_error_component_code_list(job):
     """
-    Get shortened error category string by error field and error code
+    Get shortened error component:code string by error field and error code
     :param job: dict, name of error field
-    :return: error_category_list: list of str, shortened error category string
+    :return: error_list: list of str, shortened error category string
     """
-    error_category_list = []
-    for k in list(const.JOB_ERROR_CATEGORIES):
+    error_list = []
+    for k in list(const.JOB_ERROR_COMPONENTS):
         if k['error'] in job and job[k['error']] is not None and job[k['error']] != '' and int(job[k['error']]) > 0:
-            error_category_list.append(f"{k['name']}:{job[k['error']]}")
+            error_list.append(f"{k['name']}:{job[k['error']]}")
 
-    return error_category_list
+    return error_list
+
+
+def get_job_error_category(job, error_descriptions=None):
+    """
+    Get error category for a job
+    :param job: dict, job data
+    :param error_descriptions: dict, error descriptions mapping
+    :return: str, error category name
+    """
+    error_cat_desc = {
+        '0': '0. Uncategorized',
+        '1': '1. File and Storage Issues',
+        '2': '2. Execution and Payload Failures',
+        '3': '3. Network and Communication Errors',
+        '4': '4. Job Termination and Kill Signals',
+        '5': '5. Software and Environment Issues',
+        '6': '6. Internal and Unknown Errors',
+        '7': '7. Brokerage Errors',
+        '8': '8. DDM Errors',
+        '9': '9. Task Buffer Errors',
+        '10': '10. PanDA Job Dispatcher Errors',
+        '11': '11. PanDA Supervisor Errors',
+        '12': '12. Transformation Errors',
+    }
+
+    if not error_descriptions:
+        error_descriptions = get_job_error_descriptions()
+
+    error_list = get_job_error_component_code_list(job)
+    if len(error_list) == 0:
+        return None
+
+    # use the first error code as the category
+    error_categories = list(set([error_descriptions.get(err, {}).get('category', 0) for err in error_list]))
+
+    if len(error_categories) > 1 and 0 in error_categories:
+        # if 'Uncategorized' is present but there are other categories, we remove 'Uncategorized' from the list
+        error_categories.remove(0)
+
+    if len(error_categories) == 1:
+        return error_cat_desc[str(error_categories[0])] if str(error_categories[0]) in error_cat_desc else 'Uncategorized'
+    else:
+        _logger.debug(f"Multiple error categories found for job {job['pandaid']}: {error_categories}. Defaulting to 'Uncategorized'.")
+        return f"Uncategorized ({','.join([str(c) for c in error_categories if c != 0])})"
 
 
 def prepare_binned_and_total_data(df, column, freq='10T'):
@@ -151,20 +189,25 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
     """
     Prepare histograms data by different categories
     :param jobs:
+    :param is_wn_instead_of_site : bool, if True, use worker node instead of site
     :return: error_histograms: dict of data for histograms by different categories
     """
     threshold_percent = 2  # % threshold for low-impact values
-
+    plots = ['site', 'code', 'task', 'user', 'request', 'category']
+    error_descriptions = get_job_error_descriptions()
     timestamp_list = []
     data = []
     for job in jobs:
+        if job['jobstatus'] not in ['failed', 'holding']:
+            continue
         data.append({
             'modificationtime': job['modificationtime'],
             'site': job['computingsite'] if not is_wn_instead_of_site else job['wn'],
-            'code': ','.join(sorted(get_job_error_categories(job))),
+            'code': ','.join(sorted(get_job_error_component_code_list(job))),
             'task': str(job['jeditaskid']),
             'user': job['produsername'],
             'request': str(job['reqid']) if 'reqid' in job else 'None',
+            'category': get_job_error_category(job, error_descriptions),
         })
         timestamp_list.append(job['modificationtime'])
 
@@ -176,12 +219,12 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
         df.set_index('modificationtime', inplace=True)
 
         # Apply the function to each column where you want low-impact values grouped
-        for column in ['site', 'code', 'task', 'user', 'request']:
+        for column in plots:
             df = categorize_low_impact_by_percentage(df, column, threshold_percent)
 
         # Generate JSON-ready data for each column
         output_data = {}
-        for column in ['site', 'code', 'task', 'user', 'request']:
+        for column in plots:
             output_data[column] = prepare_binned_and_total_data(df, column, freq=freq)
 
         total_jobs_per_bin = df.resample(freq).size().reset_index(name='total')
@@ -198,6 +241,31 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
     return output_data
 
 
+def create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid):
+    """Create a structured error entry for the error summary."""
+    return {
+        'error': errcode,
+        'codename': err['error'],
+        'codeval': errnum,
+        'diag': errdiag,
+        'desc': errdesc,
+        'example_pandaid': pandaid,
+        'count': 0
+    }
+
+
+def to_sorted_list(d, errsort=False, totalkey=None):
+    """Convert a dictionary to a sorted list of dictionaries."""
+    out = []
+    for key in sorted(d):
+        item = d[key]
+        item['errorlist'] = sorted(item['errors'].values(), key=lambda x: -x['count']) if errsort else list(item['errors'].values())
+        out.append(item)
+    if totalkey:
+        out = sorted(out, key=lambda x: -x[totalkey])
+    return out
+
+
 def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False, is_site_req=False, **kwargs):
     """
     Takes a job list and produce error summaries from it
@@ -211,12 +279,7 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
     """
 
     start_time = time.time()
-    errsByCount = {}
-    errsBySite = {}
-    errsByUser = {}
-    errsByTask = {}
     error_histograms = {}
-    sumd = {}
 
     if 'flist' in kwargs:
         flist = kwargs['flist']
@@ -237,213 +300,98 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
         tasknamedict = taskNameDict(jobs)
         _logger.debug('Got tasknames for summary by task: {}'.format(time.time() - start_time))
 
-    # get error codes and description
-    errorCodes = get_job_error_desc()
-    errorcodelist = copy.deepcopy(const.JOB_ERROR_CATEGORIES)
+    error_components = copy.deepcopy(const.JOB_ERROR_COMPONENTS)
+
+    fields = ['user', 'site', 'task']
+    error_count_dict = {}
+    summary_attribute = {}
+    summary_field = {}
+    for f in fields:
+        summary_field[f] = {}
 
     for job in jobs:
+        # attribute summary aggregation
+        for f in flist:
+            if f not in summary_attribute:
+                summary_attribute[f] = defaultdict(int)
+            if f == 'specialhandling':
+                shl = job['specialhandling'].split(',') if 'specialhandling' in job and job['specialhandling'] is not None else []
+                for v in shl:
+                    # ignore tq = taskQueuedTime timestamp
+                    if v.startswith('tq'):
+                        continue
+                    if v not in summary_attribute['specialhandling']:
+                        summary_attribute['specialhandling'][v] = 0
+                    summary_attribute['specialhandling'][v] += 1
+            else:
+                summary_attribute[f][job[f]] += 1 if job.get(f) else 0
+
+
         if not is_test_jobs and job['jobstatus'] not in ['failed', 'holding']:
             continue
-        # if specific site, we do summary per worker node
-        if is_site_req:
-            site = job['wn']
-        else:
-            site = job['computingsite']
-        user = job['produsername']
-        taskname = ''
-        if job['jeditaskid'] is not None and job['jeditaskid'] > 0:
-            taskid = job['jeditaskid']
-            if taskid in tasknamedict:
-                taskname = tasknamedict[taskid]
-            tasktype = 'jeditaskid'
-        else:
-            taskid = job['taskid'] if not job['taskid'] is None else 0
-            if taskid in tasknamedict:
-                taskname = tasknamedict[taskid]
-            tasktype = 'taskid'
 
-        ## Overall summary
-        for f in flist:
-            if f in job and job[f]:
-                if not f in sumd:
-                    sumd[f] = {}
-                if not job[f] in sumd[f]:
-                    sumd[f][job[f]] = 0
-                sumd[f][job[f]] += 1
-        if 'specialhandling' in job and job['specialhandling']:
-            if not 'specialhandling' in sumd:
-                sumd['specialhandling'] = {}
-            shl = job['specialhandling'].split()
-            for v in shl:
-                if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
-                sumd['specialhandling'][v] += 1
+        fields_values = {
+            'user': job['produsername'],
+            'site': job['wn'] if is_site_req else job['computingsite'],
+            'task': job.get('jeditaskid') or job.get('taskid') or None
+        }
+        taskname = tasknamedict.get(fields_values['task'], '')
 
-        errsByList = {}
-        for err in errorcodelist:
-            if job[err['error']] != 0 and job[err['error']] != '' and job[err['error']] is not None:
-                errval = job[err['error']]
-                # error code of zero is not an error
-                if errval == 0 or errval == '0' or errval is None:
+        for err in error_components:
+            errval = job.get(err['error'])
+            if not errval or str(errval) == '0' or errval == 0:
+                continue
+            try:
+                errnum = int(errval)
+            except ValueError:
+                continue
+            errcode = f"{err['name']}:{errnum}"
+            # for transform errors, we do not have a related diag field, but we added one from ErrorDescriptions already
+            errdiag = job.get(err['diag'], '') if err['name'] != 'transform' else job.get('transformerrordiag', '')
+            errdesc = job.get(f"{err['name']}_error_desc", '')
+            pandaid = job['pandaid']
+
+            if errcode not in error_count_dict:
+                error_count_dict[errcode] = create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid)
+                error_count_dict[errcode]['pandalist'] = {}
+            error_count_dict[errcode]['count'] += 1
+
+            for f in fields_values:
+                if f == 'task' and fields_values[f] is None:
                     continue
-                errdiag = ''
-                try:
-                    errnum = int(errval)
-                    if err['error'] in errorCodes and errnum in errorCodes[err['error']]:
-                        errdiag = errorCodes[err['error']][errnum]
-                except:
-                    errnum = errval
-                errcode = "%s:%s" % (err['name'], errnum)
-                if err['diag']:
-                    errdiag = job[err['diag']]
-                errsByList[job['pandaid']]=errdiag
+                if f not in summary_field:
+                    summary_field[f] = {}
+                if fields_values[f] not in summary_field[f]:
+                    summary_field[f][fields_values[f]] = {'name': fields_values[f], 'errors': {}, 'toterrors': 0, 'toterrjobs': 0}
+                    if f == 'task':
+                        summary_field[f][fields_values[f]]['longname'] = taskname
+                if errcode not in summary_field[f][fields_values[f]]['errors']:
+                    summary_field[f][fields_values[f]]['errors'][errcode] = create_error_entry(errcode, err, errnum, errdiag, errdesc, pandaid)
+                summary_field[f][fields_values[f]]['errors'][errcode]['count'] += 1
+                summary_field[f][fields_values[f]]['toterrors'] += 1
 
-                if errcode not in errsByCount:
-                    errsByCount[errcode] = {}
-                    errsByCount[errcode]['error'] = errcode
-                    errsByCount[errcode]['codename'] = err['error']
-                    errsByCount[errcode]['codeval'] = errnum
-                    errsByCount[errcode]['diag'] = errdiag
-                    errsByCount[errcode]['example_pandaid'] = job['pandaid']
-                    errsByCount[errcode]['count'] = 0
-                    errsByCount[errcode]['pandalist'] = {}
-                errsByCount[errcode]['count'] += 1
-                errsByCount[errcode]['pandalist'].update(errsByList)
-                if user not in errsByUser:
-                    errsByUser[user] = {}
-                    errsByUser[user]['name'] = user
-                    errsByUser[user]['errors'] = {}
-                    errsByUser[user]['toterrors'] = 0
-                if errcode not in errsByUser[user]['errors']:
-                    errsByUser[user]['errors'][errcode] = {}
-                    errsByUser[user]['errors'][errcode]['error'] = errcode
-                    errsByUser[user]['errors'][errcode]['codename'] = err['error']
-                    errsByUser[user]['errors'][errcode]['codeval'] = errnum
-                    errsByUser[user]['errors'][errcode]['diag'] = errdiag
-                    errsByUser[user]['errors'][errcode]['example_pandaid'] = job['pandaid']
-                    errsByUser[user]['errors'][errcode]['count'] = 0
-                errsByUser[user]['errors'][errcode]['count'] += 1
-                errsByUser[user]['toterrors'] += 1
+        # count job with error just once
+        if job['jobstatus'] == 'failed':
+            for f in fields_values:
+                if f in summary_field and fields_values[f] and fields_values[f] in summary_field[f]:
+                    summary_field[f][fields_values[f]]['toterrjobs'] += 1
 
-                if site not in errsBySite:
-                    errsBySite[site] = {}
-                    errsBySite[site]['name'] = site
-                    errsBySite[site]['errors'] = {}
-                    errsBySite[site]['toterrors'] = 0
-                    errsBySite[site]['toterrjobs'] = 0
-                if errcode not in errsBySite[site]['errors']:
-                    errsBySite[site]['errors'][errcode] = {}
-                    errsBySite[site]['errors'][errcode]['error'] = errcode
-                    errsBySite[site]['errors'][errcode]['codename'] = err['error']
-                    errsBySite[site]['errors'][errcode]['codeval'] = errnum
-                    errsBySite[site]['errors'][errcode]['diag'] = errdiag
-                    errsBySite[site]['errors'][errcode]['example_pandaid'] = job['pandaid']
-                    errsBySite[site]['errors'][errcode]['count'] = 0
-                errsBySite[site]['errors'][errcode]['count'] += 1
-                errsBySite[site]['toterrors'] += 1
-
-                if tasktype == 'jeditaskid' or (taskid is not None and taskid > 1000000):
-                    if taskid not in errsByTask:
-                        errsByTask[taskid] = {}
-                        errsByTask[taskid]['name'] = taskid
-                        errsByTask[taskid]['longname'] = taskname
-                        errsByTask[taskid]['errors'] = {}
-                        errsByTask[taskid]['toterrors'] = 0
-                        errsByTask[taskid]['toterrjobs'] = 0
-                        errsByTask[taskid]['tasktype'] = tasktype
-                    if errcode not in errsByTask[taskid]['errors']:
-                        errsByTask[taskid]['errors'][errcode] = {}
-                        errsByTask[taskid]['errors'][errcode]['error'] = errcode
-                        errsByTask[taskid]['errors'][errcode]['codename'] = err['error']
-                        errsByTask[taskid]['errors'][errcode]['codeval'] = errnum
-                        errsByTask[taskid]['errors'][errcode]['diag'] = errdiag
-                        errsByTask[taskid]['errors'][errcode]['example_pandaid'] = job['pandaid']
-                        errsByTask[taskid]['errors'][errcode]['count'] = 0
-                    errsByTask[taskid]['errors'][errcode]['count'] += 1
-                    errsByTask[taskid]['toterrors'] += 1
-
-        if site in errsBySite: errsBySite[site]['toterrjobs'] += 1
-        if taskid in errsByTask: errsByTask[taskid]['toterrjobs'] += 1
-    _logger.debug('Built summary dicts: {}'.format(time.time() - start_time))
-
-    # reorganize as sorted lists
-    errsByCountL = []
-    errsBySiteL = []
-    errsByUserL = []
-    errsByTaskL = []
-    esjobs = []
-    kys = errsByCount.keys()
-    kys = sorted(kys)
-    for err in kys:
-        for key, value in sorted(errsByCount[err]['pandalist'].items()):
-            if value == '':
-                value = 'None'
-            esjobs.append(key)
-        errsByCountL.append(errsByCount[err])
-
-    kys = list(errsByUser.keys())
-    kys = sorted(kys)
-    for user in kys:
-        errsByUser[user]['errorlist'] = []
-        errkeys = errsByUser[user]['errors'].keys()
-        errkeys = sorted(errkeys)
-        for err in errkeys:
-            errsByUser[user]['errorlist'].append(errsByUser[user]['errors'][err])
-        if sortby == 'count':
-            errsByUser[user]['errorlist'] = sorted(errsByUser[user]['errorlist'], key=lambda x: -x['count'])
-        errsByUserL.append(errsByUser[user])
-
-    kys = list(errsBySite.keys())
-    kys = sorted(kys)
-    for site in kys:
-        errsBySite[site]['errorlist'] = []
-        errkeys = errsBySite[site]['errors'].keys()
-        errkeys = sorted(errkeys)
-        for err in errkeys:
-            errsBySite[site]['errorlist'].append(errsBySite[site]['errors'][err])
-        if sortby == 'count':
-            errsBySite[site]['errorlist'] = sorted(errsBySite[site]['errorlist'], key=lambda x: -x['count'])
-        errsBySiteL.append(errsBySite[site])
-
-    kys = list(errsByTask.keys())
-    kys = sorted(kys)
-    for taskid in kys:
-        errsByTask[taskid]['errorlist'] = []
-        errkeys = errsByTask[taskid]['errors'].keys()
-        errkeys = sorted(errkeys)
-        for err in errkeys:
-            errsByTask[taskid]['errorlist'].append(errsByTask[taskid]['errors'][err])
-        if sortby == 'count':
-            errsByTask[taskid]['errorlist'] = sorted(errsByTask[taskid]['errorlist'], key=lambda x: -x['count'])
-        errsByTaskL.append(errsByTask[taskid])
-
-
-    suml = []
-    for f in sumd:
-        itemd = {}
-        itemd['field'] = f
-        iteml = []
-        kys = sorted(sumd[f].keys())
-
-        for ky in kys:
-            iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
-        itemd['list'] = iteml
-        suml.append(itemd)
-    suml = sorted(suml, key=lambda x: x['field'])
-
-    if sortby == 'count':
-        for item in suml:
-            item['list'] = sorted(item['list'], key=lambda x: -x['kvalue'])
-
-        errsByCountL = sorted(errsByCountL, key=lambda x: -x['count'])
-        errsByTaskL = sorted(errsByTaskL, key=lambda x: -x['toterrors'])
-        errsBySiteL = sorted(errsBySiteL, key=lambda x: -x['toterrors'])
-        errsByUserL = sorted(errsByUserL, key=lambda x: -x['toterrors'])
-
+    # Convert summaries to sorted lists
+    for f, data in summary_field.items():
+        summary_field[f] = to_sorted_list(data, errsort=True, totalkey='toterrors')
+    error_count = sorted(error_count_dict.values(), key=lambda x: -x['count'])
+    suml = [{
+        'field': f,
+        'list': sorted(
+            [{'kname': k, 'kvalue': v} for k, v in summary_attribute[f].items()],
+            key=lambda x: -x['kvalue'] if sortby == 'count' else x['kname']
+        )} for f in sorted(summary_attribute)
+    ]
     _logger.debug('Dict -> list & sorting are done: {}'.format(time.time() - start_time))
 
     if 'errsHist' in outputs:
         error_histograms = build_error_histograms(jobs, is_wn_instead_of_site=is_site_req)
     _logger.debug('Built errHist: {}'.format(time.time() - start_time))
 
-    return errsByCountL, errsBySiteL, errsByUserL, errsByTaskL, suml, error_histograms
+    return error_count, summary_field['site'], summary_field['user'], summary_field['task'], suml, error_histograms
 

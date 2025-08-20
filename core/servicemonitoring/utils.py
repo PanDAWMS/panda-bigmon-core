@@ -162,7 +162,7 @@ def logstash_configs(cfg):
         port = cfg.get('logstash', 'port')
         auth = [x.strip() for x in cfg.get('logstash', 'auth').split(',')]
         auth = (auth[0], auth[1])
-        _logger.debug('Logstash settings have been read. "{0}" "{1}" "{2}"'.format(url, port, auth))
+        _logger.debug('Logstash settings have been read successfully.')
         return url, port, auth
     except:
         _logger.error('Settings for logstash not found')
@@ -184,6 +184,20 @@ def monit_sls_configs(cfg):
     else:
         _logger.warn('No section with Monit SLS settings in the .ini file')
         return None, None, None
+
+
+def mattermost_configs(cfg):
+    try:
+        from core import settings
+        mm_webhook_url = settings.local.MM_WEBHOOK_URL
+    except ImportError as e:
+        _logger.error(f"Failed to import settings: {e}")
+        mm_webhook_url = None
+    except Exception as ex:
+        _logger.error(f"An unexpected error occurred while getting Mattermost settings: {ex}")
+        mm_webhook_url = None
+
+    return mm_webhook_url
 
 
 def servers_configs(cfg):
@@ -289,12 +303,20 @@ def service_availability(metrics:dict) -> tuple[str, str]:
             availability_desc += ', no requests processed in last 10 minutes'
             return str(availability), availability_desc
         elif metrics['requests_last_10min_count'] <= 10:
-            availability -= 50
+            availability = min(availability - 20, 0)
             availability_desc += ', low number of requests processed lately'
     if 'requests_last_10min_duration_median' in metrics and metrics['requests_last_10min_duration_median'] is not None:
         if metrics['requests_last_10min_duration_median'] > threshold_ttr:
-            availability -= 20
+            availability = min(availability - 20, 0)
             availability_desc += f', median TTR is more than {threshold_ttr} sec'
+    if ('cephfs_used_pc' in metrics and metrics['cephfs_used_pc'] is not None and
+            isinstance(metrics['cephfs_used_pc'], (int, float)) and metrics['cephfs_used_pc'] > 90):
+        availability = min(availability - 20, 0)
+        availability_desc += ', shared /cephfs/ volume usage is more than 90%'
+    if ('memory_usage_pc' in metrics and metrics['memory_usage_pc'] is not None and
+            isinstance(metrics['memory_usage_pc'], (int, float)) and metrics['memory_usage_pc'] > 0.9):
+        availability = min(availability - 20, 0)
+        availability_desc += ', memory usage is more than 90%'
 
     return str(availability), availability_desc
 
@@ -336,4 +358,21 @@ def get_settings_path(argv):
     else:
         _logger.error('Settings file not found. {0}'.format(path))
     return None, None
+
+
+def post_mm_message(message, settings):
+    """
+    Post a message to Mattermost using the webhook URL from the config file.
+    :return:
+    """
+    mm_webhook_url = mattermost_configs(settings)
+    if mm_webhook_url is None:
+        _logger.error("Mattermost webhook URL not found in settings.")
+
+    mm_message = {"text": f"{message}",}
+    headers = {"Content-Type": "application/json"}
+    try:
+        requests.post(mm_webhook_url, data=json.dumps(mm_message), headers=headers)
+    except requests.exceptions.RequestException as e:
+        _logger.error(f"Failed to post message to Mattermost: {e}")
 

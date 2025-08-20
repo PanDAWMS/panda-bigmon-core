@@ -12,7 +12,7 @@ class ErrorClassificationReport:
             raise ValueError('Query is not provided')
 
         self.query_jobs = copy.deepcopy(query)
-        self.extra_query = "(" + " or ".join([f"({k['error']} is not null and {k['error']} > 0)" for k in list(const.JOB_ERROR_CATEGORIES)]) + ")"
+        self.extra_query = "(" + " or ".join([f"({k['error']} is not null and {k['error']} > 0)" for k in list(const.JOB_ERROR_COMPONENTS)]) + ")"
         self.jobs = []
         _logger.debug(f"{self.query_jobs}, {self.extra_query}")
 
@@ -41,7 +41,7 @@ class ErrorClassificationReport:
         error_per_site = {}
         error_code_dist = {}
         for j in self.jobs:
-            for k in list(const.JOB_ERROR_CATEGORIES):
+            for k in list(const.JOB_ERROR_COMPONENTS):
                 if k['error'] in j and j[k['error']] is not None and j[k['error']] != '' and int(j[k['error']]) > 0:
                     error_category = f"{k['name']}:{j[k['error']]}"
                     if error_category not in error_code_dist:

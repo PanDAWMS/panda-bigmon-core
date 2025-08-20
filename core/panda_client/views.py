@@ -11,7 +11,7 @@ from core.oauth.utils import is_expert
 
 _logger = logging.getLogger('panda.client')
 @csrf_exempt
-def client(request):
+def client(request, task_id=None):
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -32,10 +32,10 @@ def client(request):
 
             ###Finish Task
             if data['action'] == 'finishtask' and jeditaskid is not None:
-                info['text'] = finish_task(auth=auth, jeditaskid=jeditaskid)
+                info['text'] = finish_task(request=request, auth=auth, jeditaskid=jeditaskid)
             ### Kill Task
             elif data['action'] == 'killtask' and  jeditaskid is not None:
-                info['text'] = kill_task(auth=auth, jeditaskid=jeditaskid)
+                info['text'] = kill_task(request=request, auth=auth, jeditaskid=jeditaskid)
             ### Set debug mode
             elif data['action'] == 'setdebugmode' and ('pandaid' in data and data['pandaid'] is not None):
                 if ('params' in data and data['params'] is not None):

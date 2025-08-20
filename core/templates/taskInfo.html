@@ -631,7 +631,7 @@
               <th colspan="11">
                 <span ng-if="datasets.length === 1">
                   {% if request.session.rucio_ui|length > 0 %}
-                    for <a href="{{ request.session.rucio_ui }}did?name={$ datasets[0].scope $}:{$ datasets[0].dataset $}">
+                    for <a href="{{ request.session.rucio_ui }}did?scope={$ datasets[0].scope $}&name={$ datasets[0].dataset $}">
                       {$ datasets[0].dataset $}
                     </a>
                     <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
@@ -660,24 +660,19 @@
           <tbody>
             <tr ng-repeat="dataset in datasets">
               <td class="icons1">
-                {% if request.session.rucio_ui|length > 0 and dataset.rse %}
-                  <a href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
+                <span ng-if="dataset.rse && '{{ request.session.rucio_ui|escapejs }}'.length > 0">
+                  <a ng-href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
                     {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width="14" height="14" border="0">
                   </a>
-                {% else %}
+                </span>
+                <span ng-if="!dataset.rse || '{{ request.session.rucio_ui|escapejs }}'.length == 0">
                   {$ dataset.rrule_cut $}
-                {% endif %}
+                </span>
               </td>
               <td>{$ dataset.source_rse $}</td>
               <td>{$ dataset.destination_rse $}</td>
               <td class="{$ dataset.status $}_fill">
-                {% if viewParams.MON_VO == 'ATLAS' and task.tasktype != 'anal' %}
-                  <a href="https://prodtask-dev.cern.ch/prestage/step_action/{$ dataset.step_action_id $}/">
                     {$ dataset.status $}
-                  </a>
-                {% else %}
-                  {$ dataset.status $}
-                {% endif %}
               </td>
               <td class="num">
                 {$ dataset.staged_files $} | {$ dataset.total_files $}  | {$ dataset.staged_files_pct $}%
@@ -693,7 +688,7 @@
               <td>{$ dataset.start_time $}</td>
               <td>{$ dataset.update_time $}</td>
               <td>
-                <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.dataset $}">
+                <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.scope $}:{$ dataset.dataset $}">
                   {$ dataset.dataset $}
                 </a>
               </td>
@@ -1538,7 +1533,7 @@ function operationtask_token(taskID, action) {
     if (confirm(message)) {
 
         $.ajax({
-            url: 'panda_client/',
+            url: '/panda_client/',
             data: {taskID: taskID, action: action},
             async: false,
             type: "POST",
@@ -1644,16 +1639,35 @@ function buildDatasetsTable(data) {
             sDefaultContent: "-",
             "render": function(data, type, row, meta) {
                 var links = '';
-                if ("{{ request.session.rucio_ui }}".length > 0) {
-                  links += '<a href="{{ request.session.rucio_ui }}did?scope=' + row['scope'] + '&name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+
+                if ("{{ request.session.rucio_ui }}".length > 0 && row['datasetname']) {
+                    var scope = row['scope'];
+                    var name = row['datasetname'];
+
+                    if (name.includes(':')) {
+                        var didParts = name.split(':');
+                        if (didParts.length === 2) {
+                            scope = didParts[0];
+                            name = didParts[0] +':'+ didParts[1];
+                        }
+                    } else if (name.startsWith('group.')) {
+                        var parts = name.split('.');
+                        if (parts.length >= 3) {
+                            scope = parts.slice(0, 2).join('.');
+                        }
+                    }
+
+                    links += '<a href="{{ request.session.rucio_ui }}did?scope=' + encodeURIComponent(scope) + '&name=' + encodeURIComponent(name) + '" target="_blank">' +
+                             '<img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
                 }
+
                 if (row['type'] === 'input') {
-                  links += (links.length > 0) ? ', ': '';
-                  links += '<a href = "{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>'
+                    links += (links.length > 0) ? ', ' : '';
+                    links += '<a href="{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>';
                 }
+
                 return links;
             }
-
         },
         {
             "data": "rse",

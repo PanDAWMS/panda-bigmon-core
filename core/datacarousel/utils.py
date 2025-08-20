@@ -3,7 +3,7 @@
 """
 import copy
 import logging
-import random
+import json
 import time
 import datetime
 import pandas as pd
@@ -13,6 +13,7 @@ from opensearchpy import Search
 from django.core.cache import cache
 from django.db import connection
 
+import core.datacarousel.constants as const
 from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView
@@ -65,7 +66,8 @@ def setup_view_dc(request):
 
     if 'source' in request_params or 'source_rse' in request_params:
         source = request_params['source'] if 'source' in request_params else request_params['source_rse']
-        extra_str += f" AND t1.SOURCE_{source_rse} in ({','.join('\'' + str(x) + '\'' for x in source.split(','))})"
+        quoted_values = ",".join(f"'{str(x)}'" for x in source.split(","))
+        extra_str += f" AND t1.SOURCE_{source_rse} in ({quoted_values})"
 
     if 'destination' in request_params:
         extra_str += f" AND t1.DESTINATION_RSE in ({','.join('\'' + str(x) + '\'' for x in request_params['destination'].split(','))})"
@@ -101,11 +103,20 @@ def setup_view_dc(request):
     return extra_str
 
 
+def prepare_dsdata(dsdata):
+    for key in ['processingtype', 'source_rse', 'campaign', 'username', 'destination_rse']:
+        if dsdata.get(key) is None:
+            dsdata[key] = 'Unknown'
+        if key == "source_rse" and 'source_rse_breakdown' not in dsdata:
+            dsdata['source_rse_breakdown'] = substitudeRSEbreakdown(dsdata['source_rse'])
+        if dsdata.get('processingtype', '').startswith('panda-client'):
+            dsdata['processingtype'] = 'analysis'
+
+
 def get_staging_data(extra_str, add_idds_data=False):
     """
     Get staging data from the database
     :param extra_str:
-    :param task_type:
     :param add_idds_data:
     :return:
     """
@@ -123,7 +134,8 @@ def get_staging_data(extra_str, add_idds_data=False):
             t1.end_time,
             t1.ddm_rule_id AS rse,
             t1.total_files,
-            t1.modification_time AS update_time,
+            t1.modification_time AS modification_time,
+            t1.last_staged_time,
             t1.source_tape as source_rse,
             t1.source_rse as source_rse_old,
             t1.destination_rse,
@@ -136,7 +148,8 @@ def get_staging_data(extra_str, add_idds_data=False):
             t3.tasktype,
             t3.campaign,
             row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
-            (current_timestamp - t1.modification_time) AS update_time
+            (current_timestamp - t1.modification_time) AS update_time,
+            (current_timestamp - t1.last_staged_time) as since_last_staged_file
         FROM {settings.DB_SCHEMA_PANDA}.data_carousel_requests t1
         INNER JOIN {settings.DB_SCHEMA_PANDA}.data_carousel_relations t2 ON t1.request_id = t2.request_id
         INNER JOIN {settings.DB_SCHEMA_PANDA}.jedi_tasks t3 ON t2.task_id = t3.jeditaskid
@@ -166,12 +179,17 @@ def get_staging_data(extra_str, add_idds_data=False):
             else:
                 dataset['scope'] = datasetname.split('.')[0]
 
+            prepare_dsdata(dataset)
             data.append(dataset)
 
     return data
 
 
-def send_report_rse(rse, data, experts_only=True):
+def send_report_rse(rse: str, data, experts_only:bool=True) -> int:
+    """
+    Send email alert about stalled Data Carousel rules
+    :return: 0 if email sent successfully, 1 if email sending failed, 2 if no rules to send
+    """
     mail_template = "templated_email/dataCarouselStagingAlert.html"
     max_mail_attempts = 10
     subject = "{} Data Carousel Alert for {} {}".format(
@@ -185,8 +203,29 @@ def send_report_rse(rse, data, experts_only=True):
     recipient_list = list(ReportEmails.objects.filter(**rquery).values('email', 'type'))
     recipient_list = list(set([r['email'] for r in recipient_list]))
 
-    cache_key = "mail_sent_flag_{RSE}".format(RSE=rse)
-    if not cache.get(cache_key, False):
+    # get rules from cache and filter if it is expired and need to send again or not
+    time_epoch_now = int(datetime.datetime.now().timestamp())
+    data_to_send = {'rse': rse, 'name': data['name'], 'rules': []}
+    cache_key = f"dc_stalled_alert_{rse}_{str(experts_only)}"
+    data_cached = cache.get(cache_key, None)
+    rules_cached = json.loads(data_cached) if data_cached else {}
+    # clean up cache from rules that are not stuck anymore
+    rules_currently_stuck = {r['rr'] for r in data['rules']}
+    rules_cached = {k: v for k, v in rules_cached.items() if k in rules_currently_stuck}
+    for rule in data['rules']:
+        cached_rule = rules_cached.get(rule['rr'], None)
+        if cached_rule is None or cached_rule['mail_delay_till'] < time_epoch_now:
+            # new or expired rule - set expiration and send alert
+            rule['mail_delay_till'] = time_epoch_now + const.DATA_CAROUSEL_MAIL_REPEAT * 24 * 3600
+            data_to_send['rules'].append(rule)
+            rules_cached[rule['rr']] = rule
+
+    # save updated cache if any
+    if len(data_to_send['rules']) > 0:
+        cache.set(cache_key, json.dumps(rules_cached), const.DATA_CAROUSEL_MAIL_REPEAT * 24 * 3600)
+
+    # sort rules, newest first
+    if len(data_to_send) > 0 and len(data_to_send['rules']) > 0:
         is_sent = False
         i = 0
         while not is_sent:
@@ -194,13 +233,20 @@ def send_report_rse(rse, data, experts_only=True):
             if i > 1:
                 # put 10 seconds delay to bypass the message rate limit of smtp server
                 time.sleep(10)
-            is_sent = send_mail_bp(mail_template, subject, data, recipient_list, send_html=True)
+            is_sent = send_mail_bp(mail_template, subject, data_to_send, recipient_list, send_html=True)
             _logger.debug("Email to {} attempted to send with result {}".format(','.join(recipient_list), is_sent))
             if i >= max_mail_attempts:
                 break
 
         if is_sent:
-            cache.set(cache_key, "1", settings.DATA_CAROUSEL_MAIL_REPEAT*24*3600)
+            return 0
+        else:
+            _logger.error("Failed to send email to {} after {} attempts".format(','.join(recipient_list), max_mail_attempts))
+            return 1
+
+    _logger.info(f"The delay between emails {const.DATA_CAROUSEL_MAIL_REPEAT} days not reached, not sending email")
+    return 2
+
 
 
 def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
@@ -215,7 +261,11 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
     is_tape_problem = False
     rucio = ruciowrapper()
     # Get list of files which are not yet staged
-    stuck_files = [{'name':file_lock['name'], 'errors': []} for file_lock in rucio.client.list_replica_locks(rule_id) if file_lock['state'] != 'OK']
+    stuck_files = [{
+        'name':file_lock['name'],
+        'scope': file_lock['scope'],
+        'errors': []
+    } for file_lock in rucio.client.list_replica_locks(rule_id) if file_lock['state'] != 'OK']
     # Check rucio claims it's Tape problem:
     rule_info = rucio.client.get_replication_rule(rule_id)
     if rule_info.get('error') and ('[TAPE SOURCE]' in rule_info.get('error')):
@@ -223,7 +273,7 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
     # Check in ES that files have failed attempts from tape. Limit to 1000 files, should be enough
     os_conn = create_os_connection(instance='monit-opensearch', timeout=10000)
     start_time = rule_info.get('created_at', None)
-    days_since_start = (datetime.datetime.now() - start_time).days if start_time else settings.DATA_CAROUSEL_MAIL_REPEAT
+    days_since_start = (datetime.datetime.now() - start_time).days if start_time else const.DATA_CAROUSEL_MAIL_REPEAT
     sources = list(getCRICSEs().get(rse, []))
     s = Search(using=os_conn, index='monit_prod_ddm_enr_*').\
         query("terms", data__name=[f['name'] for f in stuck_files[:1000]]).\
@@ -244,7 +294,7 @@ def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
                 file_errors[r['name']] = []
             file_errors[r['name']].append(r['reason'])
         stuck_files = [{
-            'name': f"{rule_info['scope']}:{f['name']}",
+            'name': f"{f['scope']}:{f['name']}",
             'errors': file_errors[f['name']][:3] if len(file_errors[f['name']]) > 3 else file_errors[f['name']]
         } for f in stuck_files if f['name'] in file_errors]
         if len(stuck_files) > 0:
@@ -270,7 +320,7 @@ def get_stuck_files_data(rule_id, source_rse):
         # Check in ES that files have failed attempts from tape. Limit to 1000 files, should be enough
         os_conn = create_os_connection(instance='monit-opensearch', timeout=10000)
         start_time = rule_info.get('created_at', None)
-        days_since_start = (datetime.datetime.now() - start_time).days if start_time else settings.DATA_CAROUSEL_MAIL_REPEAT
+        days_since_start = (datetime.datetime.now() - start_time).days if start_time else const.DATA_CAROUSEL_MAIL_REPEAT
         sources = list(getCRICSEs().get(source_rse, []))
         s = Search(using=os_conn, index='monit_prod_ddm_enr_*').\
             query("terms", data__name=stuck_files[:1000]).\
@@ -291,17 +341,18 @@ def get_stuck_files_data(rule_id, source_rse):
                     'dst': hit['data']['dst_rse'],
                     'transfer_link': hit['data']['transfer_link'],
                     'submitted_at': convert_epoch_to_datetime(
-                        hit['data']['submitted_at']).strftime(settings.DATETIME_FORMAT),
+                        hit['data']['submitted_at']).strftime(settings.DATETIME_FORMAT) if 'submitted_at' in hit['data'] else '-',
                     'started_at': convert_epoch_to_datetime(
-                        hit['data']['started_at']).strftime(settings.DATETIME_FORMAT),
+                        hit['data']['started_at']).strftime(settings.DATETIME_FORMAT) if 'started_at' in hit['data'] else '-',
                     'transferred_at': convert_epoch_to_datetime(
-                        hit['data']['transferred_at']).strftime(settings.DATETIME_FORMAT),
+                        hit['data']['transferred_at']).strftime(settings.DATETIME_FORMAT) if 'transferred_at' in hit['data'] else '-',
                     'duration': hit['data']['duration'],
                     'reason': hit['data']['reason'],
                     'transfer_id': hit['data']['transfer_id'],
                 })
 
     return stuck_files_info
+
 
 def getBinnedData(timestamps_list, additional_timestamps_list_1 = None, additional_timestamps_list_2 = None):
     isTimeNotDelta = True
@@ -367,6 +418,7 @@ def getBinnedData(timestamps_list, additional_timestamps_list_1 = None, addition
     for time, count in zip(index, values):
         data.append([time, count])
     return data
+
 
 def substitudeRSEbreakdown(rse):
     rses = getCRICSEs().get(rse, [])
