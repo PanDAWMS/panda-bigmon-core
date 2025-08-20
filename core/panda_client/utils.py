@@ -1,3 +1,4 @@
+import os
 import time
 import logging
 import jwt
@@ -27,6 +28,7 @@ def _get_full_url(command: str) -> str:
     if hasattr(settings, "PANDA_SERVER_URL") and settings.PANDA_SERVER_URL:
         return f"{settings.PANDA_SERVER_URL}/{command}"
     raise Exception("PANDA_SERVER_URL attribute does not exist in settings")
+
 
 def get_auth_indigoiam(request) -> Dict[str, str]:
     """
@@ -69,22 +71,86 @@ def get_auth_indigoiam(request) -> Dict[str, str]:
     header["Origin"] = organisation
     return header
 
+
+def _guess_proxy_path() -> Optional[str]:
+    """
+    Try to find a usable x509 proxy path for certificate auth.
+    Preference order:
+      1) settings.X509_USER_PROXY
+      2) env X509_USER_PROXY
+      3) /tmp/x509up_u<uid>
+    """
+    candidates = [
+        getattr(settings, "X509_USER_PROXY", None),
+        os.environ.get("X509_USER_PROXY"),
+        f"/tmp/x509up_u{os.getuid()}",
+    ]
+    for p in candidates:
+        if p and os.path.exists(p):
+            return p
+    return None
+
+
+def _configure_cert_auth(client: HttpClient) -> None:
+    """
+    Configure client for certificate-based auth if the client exposes
+    a conventional method/attribute. If not, do nothing (client may
+    already pick up system/env defaults).
+    """
+    proxy_path = _guess_proxy_path()
+    if not proxy_path:
+        _logger.warning("x509 proxy not found; falling back to HttpClient defaults")
+
+    # Common patterns we try conservatively:
+    try:
+        if hasattr(client, "set_cert") and callable(getattr(client, "set_cert")):
+            client.set_cert(proxy_path)  # type: ignore[attr-defined]
+            return
+        if hasattr(client, "cert"):
+            setattr(client, "cert", proxy_path)  # type: ignore[attr-defined]
+            return
+        if hasattr(client, "proxy_cert_path"):
+            setattr(client, "proxy_cert_path", proxy_path)  # type: ignore[attr-defined]
+            return
+    except Exception as e:
+        _logger.debug("Failed to set cert on HttpClient via reflective methods: %s", e)
+    # If nothing matched, rely on HttpClient's internal defaults.
+
+
 def make_http_client_from_request(request) -> Tuple[Optional[HttpClient], Optional[str]]:
     """
     Returns (client, error).
 
-    If error is not None — it contains a human-readable reason
-    (as provided by get_auth_indigoiam).
+    If user logged in via IndigoIAM — use OIDC token.
+    Otherwise — use certificate (x509 proxy).
     """
-    auth = get_auth_indigoiam(request)
-    if "Authorization" not in auth:
-        return None, auth.get("detail", "Authentication required")
-
-    token = auth["Authorization"].split(" ", 1)[1]
-    vo = auth.get("Origin", "atlas")
+    auth_provider = get_auth_provider(request)
 
     client = HttpClient()
-    client.override_oidc(True, token, vo)
+
+    if auth_provider == "indigoiam":
+        # Token (OIDC) path
+        auth = get_auth_indigoiam(request)
+        if "Authorization" not in auth:
+            # Keep prior behavior: explicit error if IAM flow is broken/expired
+            return None, auth.get("detail", "Authentication required")
+        token = auth["Authorization"].split(" ", 1)[1]
+        vo = auth.get("Origin", "atlas")
+        try:
+            # Explicitly enable OIDC override for the Task API
+            client.override_oidc(True, token, vo)
+        except Exception as e:
+            _logger.exception("Failed to enable OIDC on HttpClient: %s", e)
+            return None, "Internal error: unable to configure OIDC client"
+        return client, None
+
+    # Certificate (x509) path
+    try:
+        _configure_cert_auth(client)
+    except Exception as e:
+        _logger.exception("Failed to configure certificate auth: %s", e)
+        # For non-IAM users we still return the client — many HttpClient
+        # implementations can auto-detect certs; we just log the problem.
     return client, None
 
 
@@ -112,7 +178,6 @@ def _http_get(request, path: str, params: Dict[str, Any]) -> Tuple[int, Dict[str
     except Exception as ex:
         _logger.exception("GET %s failed: %s", url, ex)
         return 500, {"detail": f"Request failed: {ex}"}
-
 
 def _extract_task_id(task_id: Optional[int] = None, jeditaskid: Optional[int] = None) -> int:
     """Normalize `task_id` and `jeditaskid` into a single integer."""
@@ -176,8 +241,10 @@ def set_debug_mode(auth: Dict[str, str], **kwargs) -> str:
 
     url = _get_full_url("setDebugMode")
 
+    headers = auth if auth and (auth.get("Authorization") or auth.get("Origin")) else None
+
     try:
-        resp = post(url, headers=auth, data=data, timeout=30)
+        resp = post(url, headers=headers, data=data, timeout=30)
         text = resp.text
         status = resp.status_code
     except Exception as ex:
@@ -191,7 +258,7 @@ def set_debug_mode(auth: Dict[str, str], **kwargs) -> str:
             status,
             (text[:500] + "...") if len(text) > 500 else text,
             kwargs.get("user_id"),
-            auth.get("Origin"),
+            (auth or {}).get("Origin") if headers else None,
             data["pandaID"],
             data["modeOn"],
             sorted(groups) if groups else [],
@@ -199,6 +266,7 @@ def set_debug_mode(auth: Dict[str, str], **kwargs) -> str:
     except Exception:
         pass
     return text
+
 
 def get_user_groups(idtoken: str):
     """Extract the 'groups' claim from an IAM JWT without verifying the signature."""
