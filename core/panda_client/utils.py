@@ -22,6 +22,14 @@ def to_bool(value: Any) -> bool:
         return False
     raise ValueError(f"Invalid value for boolean conversion: {value!r}")
 
+def _ok(status, output) -> bool:
+    return status == 0 and isinstance(output, dict) and output.get("success") is True
+
+def _msg(output) -> str:
+    if isinstance(output, dict):
+        return str(output.get("message") or output.get("data") or "")
+    return str(output)
+
 
 def _get_full_url(command: str) -> str:
     """Build a legacy Panda server URL (non-Task-API endpoints)."""
@@ -194,10 +202,19 @@ def pause_task(request, *, task_id: Optional[int] = None, jeditaskid: Optional[i
     return _http_post(request, "/task/pause", {"task_id": tid})
 
 
-def kill_task(request, *, task_id: Optional[int] = None, jeditaskid: Optional[int] = None, **_kwargs):
-    """Kill a JEDI task."""
+def kill_task(
+    request,
+    *,
+    task_id: Optional[int] = None,
+    jeditaskid: Optional[int] = None,
+    **_kwargs,
+) -> str:
+    """Kill a JEDI task and return a human-friendly message."""
     tid = _extract_task_id(task_id, jeditaskid)
-    return _http_post(request, "/task/kill", {"task_id": tid})
+    status, output = _http_post(request, "/task/kill", {"task_id": tid})
+    if _ok(status, output):
+        return f"Succeeded: task {tid} killed"
+    return f"Failed: task {tid} kill — {_msg(output)}"
 
 
 def finish_task(
@@ -208,14 +225,17 @@ def finish_task(
     soft: bool = False,
     broadcast: bool = False,
     **_kwargs,
-):
-    """Finish a JEDI task."""
+) -> str:
+    """Finish a JEDI task and return a human-friendly message."""
     tid = _extract_task_id(task_id, jeditaskid)
     payload = {"task_id": tid, "soft": bool(soft), "broadcast": bool(broadcast)}
-    return _http_post(request, "/task/finish", payload)
+    status, output = _http_post(request, "/task/finish", payload)
+    if _ok(status, output):
+        return f"Succeeded: task {tid} finished"
+    return f"Failed: task {tid} finish — {_msg(output)}"
 
 
-def set_debug_mode(auth: Dict[str, str], **kwargs) -> str:
+def set_debug_mode(request, **kwargs) -> str:
     """
     PanDA API (v1): POST /job/set_debug_mode
     Toggle debug mode for a job. Keeps string return for backward-compat with views.py.
@@ -236,19 +256,13 @@ def set_debug_mode(auth: Dict[str, str], **kwargs) -> str:
     data = {"panda_id": int(pandaid), "mode_on": bool(mode_on)}
 
     try:
-        status, output = _http_post(auth, "/job/set_debug_mode", data)
-        if status != 0:
-            return f"ERROR to set debug mode: {output}"
-
-        if isinstance(output, dict) and ("success" in output or "message" in output):
-            success = bool(output.get("success"))
-            message = output.get("message") or ""
-            text = "Succeeded" if success else "Failed"
-            if message:
-                text = f"{text}: {message}"
-            return text
-
-        return f"ERROR to set debug mode: {output}"
+        status, output = _http_post(request, "/job/set_debug_mode", data)
+        if _ok(status, output):
+            text = "Succeeded"
+        else:
+            text = "Failed"
+        extra = _msg(output)
+        return f"{text}: {extra}" if extra else text
     except Exception as ex:
         return f"ERROR to set debug mode: {str(ex)}"
 

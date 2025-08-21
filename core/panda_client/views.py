@@ -15,50 +15,58 @@ def client(request, task_id=None):
     valid, response = initRequest(request)
     if not valid:
         return response
-    auth = get_auth_indigoiam(request)
-    info = {}
 
-    info['redirect'] = 'false'
-    if auth is not None and ('Authorization' in auth and 'Origin' in auth):
-        if len(request.session['requestParams']) > 0:
-            data = request.session['requestParams']
+    auth = get_auth_indigoiam(request) or {}
+    bearer = auth.get('Authorization')
 
-            if 'taskID' in data and data['taskID'] is not None:
-                jeditaskid = data['taskID']
-            elif 'taskid' in data and data['taskid'] is not None:
-                jeditaskid = data['taskid']
+    info = {'redirect': 'false'}
+
+    data = request.session.get('requestParams') or {}
+
+    if not data:
+        info['text'] = 'Request body is empty'
+        return HttpResponse(json.dumps(info), content_type='text/html')
+
+    jeditaskid = data.get('taskID') or data.get('taskid')
+
+    action = data.get('action')
+
+    try:
+        if action == 'finishtask' and jeditaskid:
+            info['text'] = finish_task(request=request, jeditaskid=jeditaskid)
+
+        elif action == 'killtask' and jeditaskid:
+            info['text'] = kill_task(request=request, jeditaskid=jeditaskid)
+
+        elif action == 'setdebugmode' and data.get('pandaid') is not None:
+            modeOn = False
+            if data.get('params'):
+                params = json.loads(data['params'])
+                if params.get('modeOn') is not None:
+                    modeOn = to_bool(params['modeOn'])
+
+            groups = get_user_groups(bearer) if bearer else []
+
+            info['text'] = set_debug_mode(
+                request=request,
+                pandaid=data['pandaid'],
+                modeOn=modeOn,
+                user_id=getattr(request.user, 'id', None),
+                groups=groups,
+            )
+            if 'Succeeded' in (info['text'] or '') and modeOn:
+                info['redirect'] = 'true'
             else:
-                jeditaskid = None
+                info['redirect'] = 'false'
 
-            ###Finish Task
-            if data['action'] == 'finishtask' and jeditaskid is not None:
-                info['text'] = finish_task(request=request, auth=auth, jeditaskid=jeditaskid)
-            ### Kill Task
-            elif data['action'] == 'killtask' and  jeditaskid is not None:
-                info['text'] = kill_task(request=request, auth=auth, jeditaskid=jeditaskid)
-            ### Set debug mode
-            elif data['action'] == 'setdebugmode' and ('pandaid' in data and data['pandaid'] is not None):
-                if ('params' in data and data['params'] is not None):
-                    params = json.loads(data['params'])
-                    if ('modeOn' in params and params['modeOn'] is not None):
-                        modeOn = to_bool(params['modeOn'])
-                    else:
-                        modeOn = False
-
-                info['text'] = set_debug_mode(auth, pandaid=data['pandaid'], modeOn=modeOn,
-                                            user_id=request.user.id, groups=get_user_groups(auth['Authorization']))
-                if (info['text'].find('Succeeded') != -1 and modeOn):
-                    info['redirect'] = 'true'
-                else:
-                    info['redirect'] = 'false'
-            else:
-                if jeditaskid is None:
-                    info['text'] = 'Error! JeditaskID is none'
-                else:
-                    info['text'] = 'Operation error'
         else:
-            info['text'] = 'Request body is empty'
-    else:
-        info['text'] = auth['detail']
+            if not jeditaskid and action in ('finishtask', 'killtask'):
+                info['text'] = 'Error! JeditaskID is none'
+            else:
+                info['text'] = 'Operation error'
+
+    except Exception as e:
+        _logger.exception("Error in client view")
+        info['text'] = f'Operation failed: {e}'
 
     return HttpResponse(json.dumps(info), content_type='text/html')
