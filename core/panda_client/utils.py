@@ -241,19 +241,19 @@ def set_debug_mode(request, **kwargs) -> str:
     Toggle debug mode for a job. Keeps string return for backward-compat with views.py.
 
     Kwargs:
-        pandaid (int): required
-        modeOn (bool): required
+        job_id (int): required
+        mode (bool): required
         user_id (int), groups (Iterable[str]) — optional
     """
-    pandaid = kwargs.get("pandaid")
-    mode_on = kwargs.get("modeOn")
+    job_id = kwargs.get("job_id")
+    mode = kwargs.get("mode")
 
-    if pandaid is None:
-        return "PandaID is not defined"
-    if mode_on is None:
-        return "ModeOn is not defined"
+    if job_id is None:
+        return "job_id is not defined"
+    if mode is None:
+        return "mode is not defined"
 
-    data = {"panda_id": int(pandaid), "mode_on": bool(mode_on)}
+    data = {"job_id": int(job_id), "mode": bool(mode)}
 
     try:
         status, output = _http_post(request, "/job/set_debug_mode", data)

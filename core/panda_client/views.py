@@ -49,8 +49,8 @@ def client(request, task_id=None):
 
             info['text'] = set_debug_mode(
                 request=request,
-                pandaid=data['pandaid'],
-                modeOn=modeOn,
+                job_id=data['pandaid'],
+                mode=modeOn,
                 user_id=getattr(request.user, 'id', None),
                 groups=groups,
             )
