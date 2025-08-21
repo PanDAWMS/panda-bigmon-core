@@ -257,14 +257,25 @@ def set_debug_mode(request, **kwargs) -> str:
 
     try:
         status, output = _http_post(request, "/job/set_debug_mode", data)
-        if _ok(status, output):
-            text = "Succeeded"
-        else:
-            text = "Failed"
-        extra = _msg(output)
-        return f"{text}: {extra}" if extra else text
     except Exception as ex:
-        return f"ERROR to set debug mode: {str(ex)}"
+        return f"ERROR to set debug mode: {ex}"
+    if status != 0:
+        return f"Failed: {output}"
+
+    if isinstance(output, dict):
+        if "success" in output:
+            msg = str(output.get("message") or output.get("data") or "").strip()
+            return "Succeeded" if output["success"] else (f"Failed: {msg}" if msg else "Failed")
+
+        msg = str(output.get("message") or "").strip()
+        if msg:
+            low = msg.lower()
+            if low.startswith("succeed") or low in ("ok", "okay"):
+                return "Succeeded"
+            if "fail" in low or low.startswith("error"):
+                return f"Failed: {msg}"
+            return f"Succeeded: {msg}"
+    return "Succeeded"
 
 def get_worker_stats(auth: Optional[Dict[str, str]] = None, **params) -> Tuple[int, Dict[str, Any]]:
     return _http_get(auth, "/harvester/get_worker_statistics", params)
