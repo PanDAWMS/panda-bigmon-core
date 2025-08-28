@@ -1507,6 +1507,16 @@ def jobList(request, mode=None, param=None):
         url_nolimit = request.get_full_path()
     njobsmax = display_limit
 
+    sortby_options = {
+        'pandaid' : 'pandaid',
+        'time': 'mod time',
+        'create': 'creation time',
+        'statetime': 'time since last state change',
+        'priority': 'priority',
+        'duration': 'duration',
+        'queuetime': 'time to start',
+        'attemptnr': 'attempt number'
+    }
     sortby = 'time-descending'
     sortby_reverse = True
     sortby_key = 'modificationtime'
@@ -1516,35 +1526,36 @@ def jobList(request, mode=None, param=None):
         sortby = 'time-descending'
     if 'jeditaskid' in request.session['requestParams']:
         sortby = "attemptnr-descending"
-    if 'sortby' in request.session['requestParams']:
+    if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby']:
         sortby = request.session['requestParams']['sortby']
 
-    if sortby:
-        if sortby.endswith('-descending'):
-            sortby_reverse = True
-        elif sortby.endswith('-ascending'):
-            sortby_reverse = False
+    if sortby.endswith('-descending'):
+        sortby_reverse = True
+    elif sortby.endswith('-ascending'):
+        sortby_reverse = False
 
-        if sortby.startswith('create'):
-            sortby_key = 'creationtime'
-        elif sortby.startswith('time'):
-            sortby_key = 'modificationtime'
-        elif sortby.startswith('statetime'):
-            sortby_key = 'statechangetime'
-        elif sortby.startswith('priority'):
-            sortby_key = 'currentpriority'
-        elif sortby.startswith('duration'):
-            sortby_key = 'durationsec'
-        elif sortby.startswith('attemptnr'):
-            sortby_key = 'attemptnr'
-        elif sortby.startswith('PandaID'):
-            sortby_key = 'pandaid'
+    if sortby.startswith('create'):
+        sortby_key = 'creationtime'
+    elif sortby.startswith('time'):
+        sortby_key = 'modificationtime'
+    elif sortby.startswith('statetime'):
+        sortby_key = 'statechangetime'
+    elif sortby.startswith('priority'):
+        sortby_key = 'currentpriority'
+    elif sortby.startswith('duration'):
+        sortby_key = 'durationsec'
+    elif sortby.startswith('attemptnr'):
+        sortby_key = 'attemptnr'
+    elif sortby.startswith('pandaid'):
+        sortby_key = 'pandaid'
+    elif sortby.startswith('queuetime'):
+        sortby_key = 'waittimesec'
 
-        if 'time' in sortby_key:
-            # use default date for sorting if it is none
-            jobs = sorted(jobs, key=lambda x: x[sortby_key] if not None else datetime(1900, 1, 1), reverse=sortby_reverse)
-        else:
-            jobs = sorted(jobs, key=lambda x: x[sortby_key], reverse=sortby_reverse)
+    if 'time' in sortby_key and sortby_key != 'waittimesec':
+        # use default date for sorting if it is none
+        jobs = sorted(jobs, key=lambda x: x[sortby_key] if not None else datetime(1900, 1, 1), reverse=sortby_reverse)
+    else:
+        jobs = sorted(jobs, key=lambda x: x[sortby_key], reverse=sortby_reverse)
     _logger.debug('Sorted joblist: {}'.format(time.time() - request.session['req_init_time']))
 
     taskname = ''
@@ -1760,6 +1771,7 @@ def jobList(request, mode=None, param=None):
             'url_nolimit': url_nolimit,
             'display_limit': display_limit,
             'sortby': sortby,
+            'sortby_options': sortby_options,
             'nosorturl': nosorturl,
             'nodurminurl': nodurminurl,
             'time_locked_url': time_locked_url,
