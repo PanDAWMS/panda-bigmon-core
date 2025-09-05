@@ -71,18 +71,19 @@ def art(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    tquery = {'platform__endswith': 'opt'}
+    tquery = {'platform__endswith': 'opt', 'test_type': 'grid'}
 
     # limit results by N days
     if 'days' in request.session['requestParams']:
         n_days_limit = int(request.session['requestParams']['days'])
     else:
-        n_days_limit = 90
+        n_days_limit = art_const.N_DAYS_DEFAULT['main']
     tquery['created__castdate__range'] = [timezone.now() - timedelta(days=n_days_limit), timezone.now()]
 
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
     branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
     ntags = ARTTests.objects.values('nightly_tag_display').annotate(nightly_tag_date=Substr('nightly_tag_display', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
+    _logger.debug(f"{len(packages)} packages and {len(branches)} branches")
 
     if not is_json_request(request):
         # a workaround for the DF split into a lot of separate packages
@@ -306,7 +307,6 @@ def artTasks(request):
                 for testtype in testtypelist:
                     arttasksdict[job[ao[0]]][job[ao[1]]][n.strftime(art_const.DATETIME_FORMAT['default'])][testtype] = {}
                     arttasksdict[job[ao[0]]][job[ao[1]]][n.strftime(art_const.DATETIME_FORMAT['default'])][testtype]['ntag_hf'] = n.strftime(art_const.DATETIME_FORMAT['humanized'])
-
         if job['nightly_tag'] not in art_jobs_dict[job[ao[0]]][job[ao[1]]]:
             art_jobs_dict[job[ao[0]]][job[ao[1]]][job['nightly_tag']] = {}
 
@@ -1383,6 +1383,7 @@ def registerARTTest(request):
 
     return HttpResponse(json.dumps(data), status=200, content_type='application/json')
 
+
 @csrf_exempt
 def upload_test_result(request):
     """
@@ -1508,6 +1509,7 @@ def sendArtReport(request):
     final_result_dict = {v: k for k, v in art_const.TEST_STATUS_INDEX.items()}
     # process URL params to query params
     query, extra_str = setupView(request)
+    query['test_type'] = 'grid'
     _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
 
     # getting tests
@@ -1532,7 +1534,7 @@ def sendArtReport(request):
                 artjobsdictpackage[job['package']]['branch'] = job['branch']
                 artjobsdictpackage[job['package']]['ntag_full'] = job['nightly_tag']
                 artjobsdictpackage[job['package']]['ntag'] = job['ntag'].strftime(art_const.DATETIME_FORMAT['default'])
-                artjobsdictpackage[job['package']]['link'] = 'https://bigpanda.cern.ch/art/tasks/?package={}&ntag={}'.format(
+                artjobsdictpackage[job['package']]['link'] = 'https://bigpanda.cern.ch/art/tasks/?package={}&ntag={}&test_type=grid'.format(
                     job['package'], job['ntag'].strftime(art_const.DATETIME_FORMAT['default']))
                 artjobsdictpackage[job['package']]['branches'] = {}
             if job['branch'] not in artjobsdictpackage[job['package']]['branches'].keys():

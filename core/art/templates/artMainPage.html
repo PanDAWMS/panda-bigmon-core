@@ -61,7 +61,7 @@
       <fieldset class="fieldset artmenu">
         <legend>Choose test type</legend>
         <ul class="no-bullet">
-	    <li class="artmenu-item"><input type="radio" name="test_type" class="test_type" value="" id="" checked ><label for="">Grid and Local</label></li>
+            <li class="artmenu-item"><input type="radio" name="test_type" class="test_type" value="" id="" checked ><label for="">Grid and Local</label></li>
             <li class="artmenu-item"><input type="radio" name="test_type" class="test_type" value="grid" id="grid" ><label for="grid">Grid</label></li>
             <li class="artmenu-item"><input type="radio" name="test_type" class="test_type" value="local" id="local"><label for="local">Local</label></li>
         </ul>
@@ -167,7 +167,7 @@ function searchResults() {
         if (viewAggStr.length > 1) {
             query += 'view=' + viewAggStr + "&";
         }
-	if (testTypeStr.length > 1 && !testTypeStr.includes(",")) {
+        if (testTypeStr.length > 1 && !testTypeStr.includes(",")) {
             query += 'test_type=' + testTypeStr + "&";
         }
 
@@ -224,4 +224,9 @@ $(function(){
 });
 
 </script>
+{% endblock %}
+
+{% block help %}
+  <a name="help"></a>
+  {% include "artMainHelp.html" %}
 {% endblock %}

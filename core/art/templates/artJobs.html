@@ -37,7 +37,7 @@
 {% endif %}
 
 <div class="bp-selected-params">
-  <p><b>Test type: {% if requestParams.test_type %}{{ requestParams.test_type }}{% else %} grid and local</b></p>{% endif %}
+  <p>Test type: <b>{% if requestParams.test_type %}{{ requestParams.test_type }}{% else %} grid and local</b></p>{% endif %}</b></p>
   {% if requestParams.package %}<p>Package: <b><a href="{% url 'artTasks' %}?package={{ requestParams.package }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.package }}</a></b></p>{% endif %}
   {% if requestParams.branch %}<p>Branch: <b><a href="{% url 'artTasks' %}?branch={{ requestParams.branch }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.branch }}</a></b></p>{% endif %}
   {% if viewParams.ntag %}<p><b>Listed tests are for builds done on {{ viewParams.ntag }}</b></p>{% endif %}
@@ -90,6 +90,7 @@ for (let i=3; i<table_title.length; i++) {
 
 let lengthMenu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, "All"]];
 let iDisplayLength = lengthMenu[0][0];
+const pageLength = 'ntag_full' in request_params ? -1 : iDisplayLength;
 if ('display_limit' in request_params) {
     let display_limit = parseInt(request_params.display_limit);
     if (lengthMenu[0].findIndex((x) => x === display_limit) > 0) {
@@ -156,12 +157,12 @@ for (let i=0; i<table_data[0].length; i++) {
                 let link_previous_attempt_logs = '';
                 let link_html = '';
                 let link_gitlab = ''
-		let test_site = item.computingsite
+                let test_site = item.computingsite
                 if (item.subresults && item.subresults.length > 0 && view_params.subresults > 0) {
                   subresults += '<div class="testsubresultscontainer"><ul>';
                   for (let s=0; s<item.subresults.length; s++) {
                     let r = item.subresults[s];
-		    subresults += '<li class="testsubresultbox bp-tooltip left ' +
+                    subresults += '<li class="testsubresultbox bp-tooltip left ' +
                                   `${(test_site === "ART Local") ?
                                      ((r.result > 0) ? 'local-failedtest' : 'local-finishedtest') : ((r.result > 0) ? 'failedtest' : 'finishedtest')}` + '"> ' +
                       s + `<span class="tooltip-text">${(r.name.length > 1) ? r.name + ':' : ''}` + r.result + '</span></li>';
@@ -182,18 +183,18 @@ for (let i=0; i<table_data[0].length; i++) {
                 }
                 result += '<div class="with-link-to-logs">' + subresults +
                   '<div class="clickable">' +
-		    '<div class="' + (test_site === "ART Local" ? "local-" : "") + item.finalresult + '_job">' + item.finalresult + '</div>' +
+                    '<div class="' + (test_site === "ART Local" ? "local-" : "") + item.finalresult + '_job">' + item.finalresult + '</div>' +
                     '<a href="{% url 'artTest' %}' + row[table_title.indexOf('package')] + '/' + row[2] + '/?ntag_full=' + item.ntag + '&branch=' + row[table_title.indexOf('branch')] + '">' + '</a>' +
                   '</div>' +
                   '<div class="extra-links">' +
                     ntag_time
-		    if (item.computingsite != "ART Local") {
+                    if (item.computingsite != "ART Local") {
                         result += tarindex +
                           '<span class="attempt bp-tooltip left">' + item.attemptnr + '/' + item.maxattempt + '<span class="tooltip-text">Attempt number / max attempts</span></span>' +
                                   '<a class="blacklink" target="_blank" href="{% url "filebrowser" %}?pandaid=' + item.origpandaid + '"><i class="fi-link bp-tooltip left"><span class="tooltip-text">Link to logs of last attempt</span></i></a>' + link_previous_attempt_logs
-		    } else {
+                    } else {
                         result += '<span class="attempt bp-tooltip left">' + '---&nbsp---&nbsp---</span>'
-		    }
+                    }
                     result += link_eos +link_html +link_gitlab +
                   '</div>' +
                 '</div>';
@@ -243,7 +244,8 @@ let columnDefs =  [];
 
 var art_table = $('#art_table').DataTable({
   lengthChange: true,
-  pageLength: -1,
+  lengthMenu: lengthMenu,
+  pageLength: pageLength,
   iDisplayLength: iDisplayLength,
   paging: true,
   bFilter: true,

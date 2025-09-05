@@ -21,7 +21,7 @@
 {% endif %}
 
 <div class="bp-selected-params">
-  <p><b>Test type: {% if requestParams.test_type %}{{ requestParams.test_type }}{% else %} grid and local</b></p>{% endif %}
+  <p>Test type: <b>{% if requestParams.test_type %}{{ requestParams.test_type }}{% else %} grid and local{% endif %}</b></p>
   {% if requestParams.package %}<p>Package: <b><a href="{% url 'artOverview' %}?package={{ requestParams.package }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.package }}</a></b></p>{% endif %}
   {% if requestParams.branch %}<p>Branch: <b><a href="{% url 'artOverview' %}?branch={{ requestParams.branch }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.branch }}</a></b></p>{% endif %}
   {% if viewParams.ntag %}<p>Listed tests are for builds done on <b>{{ viewParams.ntag }}</b> </p>{% endif %}
@@ -112,13 +112,13 @@ for (let i=0; i<table_data[0].length; i++) {
         }
         else {
           let result = '';
-	  if ((!data.grid || (data.grid.active + data.grid.succeeded + data.grid.finished + data.grid.failed === 0)) &&
+          if ((!data.grid || (data.grid.active + data.grid.succeeded + data.grid.finished + data.grid.failed === 0)) &&
               (!data.local || (data.local.active + data.local.succeeded + data.local.finished + data.local.failed === 0))) {
             result += '---';
           }
           else {
                 ['grid', 'local'].forEach(testType => {
-		  if (test_type !== '' && test_type !== testType) {
+                  if (test_type !== '' && test_type !== testType) {
                     return;
                   }
 
@@ -130,10 +130,10 @@ for (let i=0; i<table_data[0].length; i++) {
                     result += `
                       <div class="with-ntagfull">
                           <div class="clickable traffic-lights">
-                            <div class="${baseClass}active">${data[testType].active}</div>
-                            <div class="${baseClass}succeeded">${data[testType].succeeded}</div>
-                            <div class="${baseClass}finished">${data[testType].finished}</div>
-                            <div class="${baseClass}failed">${data[testType].failed}</div>
+                            <div class="${baseClass}active ${(data[testType].active>0) ? 'bold': ''}">${data[testType].active}</div>
+                            <div class="${baseClass}succeeded ${(data[testType].succeeded>0) ? 'bold': ''}">${data[testType].succeeded}</div>
+                            <div class="${baseClass}finished ${(data[testType].finished>0) ? 'bold': ''}">${data[testType].finished}</div>
+                            <div class="${baseClass}failed ${(data[testType].failed>0) ? 'bold': ''}">${data[testType].failed}</div>
                             <a target="_blank" href="{% url 'artJobs' %}?${table_title[0]}=${row[0]}&${table_title[1]}=${row[1]}&ntag_full=${data[testType].ntag_full}&test_type=${testType}"></a>
                           </div>
                           ${ntag_time}

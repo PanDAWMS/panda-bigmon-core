@@ -110,6 +110,10 @@ fieldset.artmenu li.input-group button.hollow.alert {
     font-weight: bold;
   }
 
+  .clickable > .bold {
+    font-weight: bold;
+  }
+
   .clickable .done, .clickable .succeeded, .clickable .failed, .clickable .active, .clickable .finished {
     text-align: center;
     vertical-align: middle;
@@ -118,7 +122,6 @@ fieldset.artmenu li.input-group button.hollow.alert {
     display: inline-block;
     color: black;
     font-size: 14px;
-    font-weight: bold;
   }
 
   .clickable .done {
@@ -138,17 +141,8 @@ fieldset.artmenu li.input-group button.hollow.alert {
     background: #fadd6e;
   }
 
-  /* Lighter colors for Local Test Type */
-  .clickable .done,
-  .clickable .succeeded,
-  .clickable .failed,
-  .clickable .active,
-  .clickable .finished,
-  .clickable .local-done,
-  .clickable .local-succeeded,
-  .clickable .local-failed,
-  .clickable .local-active,
-  .clickable .local-finished {
+/* Lighter colors for Local Test Type */
+  .clickable .local-done, .clickable .local-succeeded, .clickable .local-failed, .clickable .local-active, .clickable .local-finished {
     text-align: center;
     vertical-align: middle;
     height: 100%;
@@ -156,7 +150,6 @@ fieldset.artmenu li.input-group button.hollow.alert {
     display: inline-block;
     color: black;
     font-size: 14px;
-    font-weight: bold;
   }
 
   .clickable .local-done {
@@ -372,6 +365,10 @@ a.away {
 .ok_fill {color:black;  background-color:#d6f5d6}
 
 .gridDiv:hover, .localDiv:hover {
-    background-color: lightgray; 
-    cursor: pointer; 
+    background-color: lightgray;
+    cursor: pointer;
+}
+
+div.bp-tooltip {
+  border-bottom: none;
 }
