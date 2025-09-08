@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: main
-          persist-credentials: true
+          fetch-depth: 0
 
       - name: Configure Git
         run: |
@@ -28,7 +28,7 @@ jobs:
 
       - name: Merge main into dev
         run: |
-          git merge origin/main --no-edit || echo "Merge conflict, please resolve manually"
+          git merge origin/main --no-edit
 
       - name: Push dev
         run: git push origin dev
