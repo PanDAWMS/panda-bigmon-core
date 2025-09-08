@@ -62,12 +62,12 @@ def civiewDemo(request):
     }
 
     query = (
-        "select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc"
+        "select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,type from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc"
         % nname
     )
     if rname != "*":
         query = (
-            "select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and name ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc"
+            "select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,type from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and name ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc"
             % (nname, rname)
         )
 
@@ -115,6 +115,7 @@ def civiewDemo(request):
         job_start = row[8]
         mrlink = row[7]
         gitbr = row[13]
+        rtype = row[14]
         dict_p = {"jid": jid_sel}
         query1 = """
             select to_char(jid),projname,econf,eb,sb,ei,si,eafs,safs,ekit,skit,erpm,srpm,ncompl,pccompl,npb,ner,pcpb,pcer,suff,skitinst,skitkv,scv,scvkv,scb,sib,sco,hname 
@@ -224,12 +225,17 @@ def civiewDemo(request):
             if i_config is None or i_config == "None":
                 i_config = radiooff_icon
             ii_checkout, ii_inst, ii_config = i_checkout, i_inst, i_config
+            toolNameU = "NICOS"
+            toolNameL = "nicos"
+            if "py" in rtype:
+                toolNameU = "ARDOC"
+                toolNameL = "ardoc"
             if ii_checkout == check_icon or ii_checkout == error_icon or ii_checkout == majorwarn_icon or ii_checkout == minorwarn_icon:
-                ii_checkout = f'<a href="{webarea_cur}{os.sep}nicos_web_area{area_suffix}{os.sep}NICOS_Log_{rname_trun}{os.sep}nicos_checkout.html">{i_checkout}</a>'
+                ii_checkout = f'<a href="{webarea_cur}{os.sep}{toolNameL}_web_area{area_suffix}{os.sep}{toolNameU}_Log_{rname_trun}{os.sep}{toolNameL}_checkout.html">{i_checkout}</a>'
             if ii_inst == check_icon or ii_inst == error_icon or ii_inst == majorwarn_icon or ii_inst == minorwarn_icon:
-                ii_inst = f'<a href="{webarea_cur}{os.sep}nicos_web_area{area_suffix}{os.sep}NICOS_Log_{rname_trun}{os.sep}nicos_instbuild.html">{i_inst}</a>'
+                ii_inst = f'<a href="{webarea_cur}{os.sep}{toolNameL}_web_area{area_suffix}{os.sep}{toolNameU}_Log_{rname_trun}{os.sep}{toolNameL}_instbuild.html">{i_inst}</a>'
             if ii_config == check_icon or ii_config == error_icon or ii_config == majorwarn_icon or ii_config == minorwarn_icon:
-                ii_config = f'<a href="{webarea_cur}{os.sep}nicos_web_area{area_suffix}{os.sep}NICOS_Log_{rname_trun}{os.sep}nicos_confbuild.html">{i_config}</a>'
+                ii_config = f'<a href="{webarea_cur}{os.sep}{toolNameL}_web_area{area_suffix}{os.sep}{toolNameU}_Log_{rname_trun}{os.sep}{toolNameL}_confbuild.html">{i_config}</a>'
             link_to_testsRes = reverse("TestsRes")
             link_to_compsRes = reverse("CompsRes")
             i_combo_t = f'<a href="{link_to_testsRes}?nightly={nname}&rel={rname}&ar={ar_sel}&proj={pjname}">{combo_t}</a>'
