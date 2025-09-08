@@ -1,0 +1,34 @@
+name: Sync main to dev
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: git fetch origin
+
+      - name: Checkout dev
+        run: git checkout dev
+
+      - name: Merge main into dev
+        run: |
+          git merge origin/main --no-edit || echo "Merge conflict, please resolve manually"
+
+      - name: Push dev
+        run: git push origin dev
