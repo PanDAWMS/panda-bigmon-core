@@ -280,7 +280,7 @@
         {% endif %}
 
         {% if pandaid %}
-            <a href="http://pandaserver.cern.ch:25080//server/panda/getScriptOfflineRunning?pandaID={{pandaid}}">Script to re-create job for offline debugging</a>
+            <a href="http://pandaserver.cern.ch:25080/api/v1/job/generate_offline_execution_script?job_id={{pandaid}}">Script to re-create job for offline debugging</a>
         {% endif %}
 
         {% if coreData %}
@@ -323,13 +323,11 @@
 <div class="columns small-5 medium-4 large-3 align-right" style="padding-right: 0px; width: auto">
   {% with 'finished failed transferring aborted merging' as finalstatelist %}
       {% if not job.jobstatus in finalstatelist %}
-         {% if 'indigoiam' in authtype %}
              {% if debugmode %}
               <a id="button-unset-debug-mode" class='bp-button command'>Disable Debug mode</a>
              {% else %}
               <a id="button-set-debug-mode" class='bp-button command'>Enable Debug mode</a>
              {% endif %}
-          {% endif %}
       {% endif %}
   {% endwith %}
 </div>
