@@ -260,7 +260,7 @@ def set_debug_mode(request, **kwargs) -> str:
     except Exception as ex:
         return f"ERROR to set debug mode: {ex}"
 
-    message = output.get("message", "No message")
+    message = output.get("message") or output.get("detail") or str(output)
     return f"Status: {status}, message: {message}"
 
 
