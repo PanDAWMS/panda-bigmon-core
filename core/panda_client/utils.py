@@ -260,7 +260,8 @@ def set_debug_mode(request, **kwargs) -> str:
     except Exception as ex:
         return f"ERROR to set debug mode: {ex}"
 
-    return f"{status} {output}"
+    message = output.get("message") or output.get("detail") or str(output)
+    return f"Status: {status}, message: {message}"
 
 
 def get_worker_stats(auth: Optional[Dict[str, str]] = None, **params) -> Tuple[int, Dict[str, Any]]:
