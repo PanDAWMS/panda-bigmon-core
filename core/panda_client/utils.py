@@ -260,10 +260,8 @@ def set_debug_mode(request, **kwargs) -> str:
     except Exception as ex:
         return f"ERROR to set debug mode: {ex}"
 
-    if status != 0:
-        return f"{status} {output}"
-    else:
-        return "UNKNOWN"
+    return f"{status} {output}"
+
 
 def get_worker_stats(auth: Optional[Dict[str, str]] = None, **params) -> Tuple[int, Dict[str, Any]]:
     return _http_get(auth, "/harvester/get_worker_statistics", params)
