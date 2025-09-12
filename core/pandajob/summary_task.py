@@ -4,6 +4,7 @@ A set of functions to get jobs from JOBS* and group them by task
 import logging
 import copy
 import time
+from collections import Counter
 
 from django.db import connection
 from django.db.models import Count
@@ -113,15 +114,19 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
     return plots_list, job_summary_list_ordered, scouts, metrics
 
 
-def job_summary_for_task_light(taskrec):
+def job_summary_for_task_light(taskrec, **kwargs):
     """
     Light version of jobSummary for ES tasks specifically. Nodrop mode by default. See ATLASPANDA-466 for details.
     :param taskrec:
     :return:
     """
+    mode = 'nodrop'
+    if 'mode' in kwargs:
+        mode = kwargs['mode']
+
     jeditaskidstr = str(taskrec['jeditaskid'])
     statelistlight = ['defined', 'assigned', 'activated', 'starting', 'running', 'holding', 'transferring', 'finished',
-                      'failed', 'cancelled']
+                      'subfinished', 'failed', 'cancelled']
     estypes = ['es', 'esmerge', 'jumbo', 'unknown']
 
     # create structure and fill the dicts by 0 values
@@ -136,7 +141,9 @@ def job_summary_for_task_light(taskrec):
 
     js_count_list = []
     # decide which tables to query, if -1: only atlarc, 1: adcr, 0: both
-    task_archive_flag = get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime'))
+    task_archive_flag = -1 
+    if settings.DEPLOYMENT != 'POSTGRES':
+      task_archive_flag = get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime'))
 
     if task_archive_flag >= 0:
         jsquery = """
@@ -163,8 +170,13 @@ def job_summary_for_task_light(taskrec):
         js_count_list = [dict(zip(js_count_names, row)) for row in js_count]
 
     # if old task go to ATLARC for jobs summary
+    values = ['actualcorecount', 'modificationtime', 'jobsubstatus', 'pandaid', 'jobstatus',
+              'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
+              'nevents', 'hs06', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
+              'jobsetid', 'specialhandling', 'creationtime', 'pilottiming', 'eventservice']   
     if task_archive_flag <= 0:
         js_count_raw_list = []
+        jobs = []
         jquery = {
             'jeditaskid': taskrec['jeditaskid'],
             'modificationtime__castdate__range': get_task_timewindow(taskrec, format_out='str')
@@ -172,8 +184,21 @@ def job_summary_for_task_light(taskrec):
         jobsarchived_models = get_pandajob_models_by_year(get_task_timewindow(taskrec, format_out='str'))
         if len(jobsarchived_models) > 0:
             for jam in jobsarchived_models:
-                js_count_raw_list.extend(jam.objects.filter(**jquery).values('eventservice', 'jobstatus').annotate(count=Count('pandaid')))
-            _logger.info("Got jobs summary from ATLARC")
+                if mode == 'drop':
+                    jobs.extend(jam.objects.filter(**jquery).values(*values))
+                else:
+                    js_count_raw_list.extend(jam.objects.filter(**jquery).values('eventservice', 'jobstatus').annotate(count=Count('pandaid')))
+            if mode == 'drop':
+                jobs, dj, dmj = drop_job_retries(jobs, jquery['jeditaskid'], is_return_dropped_jobs=False)
+                for job in jobs:
+                    if job['jobsubstatus'] == 'fg_partial':
+                        job['jobstatus'] = 'subfinished'
+                    elif job['jobsubstatus'] == 'fg_stumble':
+                        job['jobstatus'] = 'failed'
+                counter = Counter((job["pandaid"], job["jobstatus"]) for job in jobs)
+                js_count_raw_list = [{"eventservice": eventservice, "jobstatus": jobstatus, "count": count} for (eventservice, jobstatus), count in counter.items() ]
+            _logger.info("Got jobs summary from ATLARC")                
+
         if len(js_count_raw_list) > 0:
             for row in js_count_raw_list:
                 tmp_dict = {

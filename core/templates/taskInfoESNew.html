@@ -197,22 +197,24 @@
     </div>
   </div>
 
-  <div class="dropdownplots">
-      <button class="dropdownbutton">Task details</button>
-      <div id="dropdown-plotchoice" class="dropdown-plot">
+  {% if viewParams.vo == 'ATLAS' %}
+      <div class="dropdownplots">
+          <button class="dropdownbutton">Task details</button>
+          <div id="dropdown-plotchoice" class="dropdown-plot">
 
-          <a id="button-task-full-job-summary">Show full jobs summary including retries</a>
-          <a {% if 'dropmode' in warning %}class="disabled"{% endif %} id="button-task-job-summary">Show full jobs summary excluding retries</a>
-          <a id="button-task-scouts">Show scout jobs</a>
-          <a id="button-task-inputs">Show task inputs list </a>
-          <a id="button-task-event-chunks">Show jobset relationships</a>
-          <a id="button-task-logs" href="#tasklogs">Show task logs from OpenSearch</a>
-          {% if eventssummary|length > 0 %}
-            <a id="button-task-event-states">Show all events states</a>
-          {% endif %}
-          <a id="button-task-worker-list" href="#workerList">Show Harvester Workers Info</a>
+              <a id="button-task-full-job-summary">Show full jobs summary including retries</a>
+              <a {% if 'dropmode' in warning %}class="disabled"{% endif %} id="button-task-job-summary">Show full jobs summary excluding retries</a>
+              <a id="button-task-scouts">Show scout jobs</a>
+              <a id="button-task-inputs">Show task inputs list </a>
+              <a id="button-task-event-chunks">Show jobset relationships</a>
+              <a id="button-task-logs" href="#tasklogs">Show task logs from OpenSearch</a>
+              {% if eventssummary|length > 0 %}
+                <a id="button-task-event-states">Show all events states</a>
+              {% endif %}
+              <a id="button-task-worker-list" href="#workerList">Show Harvester Workers Info</a>
+          </div>
       </div>
-  </div>
+  {% endif %}
 
   <div class="dropdownplots">
       <button class="dropdownbutton">Task parameters and help</button>
@@ -243,7 +245,7 @@
   <div class="dropdownplots">
       <button class="dropdownbutton">Other plots</button>
       <div id="dropdown-plotchoice" class="dropdown-plot">
-          {% if not task.tasktype == 'anal' %}
+          {% if not task.tasktype == 'anal' and viewParams.MON_VO == 'ATLAS' %}
               <a href="{% url 'ganttTaskChain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Gantt diagram)</a>
               <a href="{% url 'taskchain' %}?jeditaskid={{ task.jeditaskid }}" target="_blank">Task Chain (Tree diagram)</a>
           {% endif %}
@@ -263,7 +265,7 @@
   {% endwith %}
   </div>
 
-  {% if iecsummary %}
+  {% if iecsummary and iecounts %}
 
     <div class="card bp-container-simple secondary">
       <div class="card-divider"><p>Input status summary</p></div>
@@ -381,7 +383,7 @@
                       {% for state in jobsummarylight %}
                           <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
                               {% if state.count > 0 %}<b>
-                                  <a {% if 'archive' in warning %}class="disabled"{% endif %} class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode=nodrop">{{ state.count }}</a></b>
+                                <a {% if 'archive' in warning %}class="disabled"{% endif %} class="blacklink" href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}{%if not finegrained%}&jobstatus={{ state.name }}{% elif finegrained %}{% if state.name == 'finished' %}&jobsubstatus=fg_done{% elif state.name == 'subfinished' %}&jobsubstatus=fg_partial{% elif state.name == 'failed' %}&jobsubstatus=fg_stumble{% endif %}{% endif %}&mode={{ mode }}">{{ state.count }}</a></b>
                               {% endif %}
                           </td>
                       {% endfor %}
@@ -648,16 +650,17 @@
   <script nonce={{request.csp_nonce}}>
   var jeditaskid = {{ jeditaskid }};
   var es = '{{ eventservice }}';
-  document.getElementById("button-task-event-chunks").addEventListener("click", buildEventChunkTable);
-
-
-  document.getElementById("button-task-full-job-summary").addEventListener("click", loadJobSummary.bind(null, jeditaskid, 'nodrop', es, 'jobsummary', 'jobsummarytables'));
-  if (document.getElementById("button-task-job-summary")) {document.getElementById("button-task-job-summary").addEventListener("click", loadJobSummary.bind(jeditaskid, 'drop', es, 'jobsummary', 'jobsummarytables'));}
-  document.getElementById("button-task-scouts").addEventListener("click", loadJobSummary.bind(null, jeditaskid, 'drop', es, 'scouts', 'scoutstable'));
-  document.getElementById("button-task-inputs").addEventListener("click", buildInputFilesTable);
-  if (document.getElementById("button-task-logs")) {document.getElementById("button-task-logs").addEventListener("click", toggleTaskLogs);}
-  if (document.getElementById("button-task-event-states")) {document.getElementById("button-task-event-states").addEventListener("click", toggleHiddenEventsStates);}
-  if (document.getElementById("button-task-worker-list")) {document.getElementById("button-task-worker-list").addEventListener("click", buildWorkersTable);}
+  var vo = "{{ viewParams.vo|escapejs }}";
+  if (vo === "ATLAS") {
+    document.getElementById("button-task-event-chunks").addEventListener("click", buildEventChunkTable);
+    document.getElementById("button-task-full-job-summary").addEventListener("click", loadJobSummary.bind(null, jeditaskid, 'nodrop', es, 'jobsummary', 'jobsummarytables'));
+    if (document.getElementById("button-task-job-summary")) {document.getElementById("button-task-job-summary").addEventListener("click", loadJobSummary.bind(jeditaskid, 'drop', es, 'jobsummary', 'jobsummarytables'));}
+    document.getElementById("button-task-scouts").addEventListener("click", loadJobSummary.bind(null, jeditaskid, 'drop', es, 'scouts', 'scoutstable'));
+    document.getElementById("button-task-inputs").addEventListener("click", buildInputFilesTable);
+    if (document.getElementById("button-task-logs")) {document.getElementById("button-task-logs").addEventListener("click", toggleTaskLogs);}
+    if (document.getElementById("button-task-event-states")) {document.getElementById("button-task-event-states").addEventListener("click", toggleHiddenEventsStates);}
+    if (document.getElementById("button-task-worker-list")) {document.getElementById("button-task-worker-list").addEventListener("click", buildWorkersTable);}
+  }
   if (document.getElementById("button-task-failed-events")) {document.getElementById("button-task-failed-events").addEventListener("click", loadErrorSummaryData.bind(null, jeditaskid, '{{ mode }}' , '{{ tkdj }}'));}
 
   document.getElementById("button-task-plots-exclude-retries").addEventListener("click", togglePlots.bind(null, jeditaskid, 'drop', es, 'plots', 'plots'));
