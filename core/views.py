@@ -4816,7 +4816,7 @@ def taskInfo(request, jeditaskid=0):
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
     # task dignostics - checks and warnings
-    task = get_task_diagnostics(taskrec, datasets=dsets)
+    # task = get_task_diagnostics(taskrec, datasets=dsets)
 
     # get sum of hs06sec grouped by status
     # creating a jquery with timewindow
