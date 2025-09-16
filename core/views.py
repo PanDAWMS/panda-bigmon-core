@@ -2904,7 +2904,7 @@ def userDashApi(request, agg=None):
         values = [
             'produsername', 'computingsite', 'jobstatus', 'specialhandling', 'attemptnr', 'nevents', 'maxpss',
             'actualcorecount', 'cpuconsumptiontime', 'cpuconsumptionunit',  'hs06sec', 'gco2_global', 'diskio',
-            'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime', 'jobmetrics',]
+            'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime', 'jobmetrics', 'jobsubstatus']
         jobs = get_job_list(jquery, values=values, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
