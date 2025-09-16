@@ -119,27 +119,15 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
 
     transactionKey = random.randrange(1000000)
     new_cur = connection.cursor()
-    unique_key = 'unique'
     if settings.DEPLOYMENT == 'POSTGRES':
-        unique_key = 'distinct'
-        exist_query = f"""
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables
-                WHERE table_schema = %s AND table_name = %s
-            ); 
-        """     
-        schema, tablename = tmpTableName.split(".")
-        new_cur.execute(exist_query,[schema, tablename])
-        exists = new_cur.fetchone()[0]
-        if not exists:
-            create_temporary_table(new_cur, tmpTableName)
+        create_temporary_table(new_cur, tmpTableName)
     jeditaskid = newquery['jeditaskid']
 
     ins_query = """
     insert into {0} 
     (id,transactionkey,ins_time) 
     select pandaid, {1}, TO_DATE('{2}', 'YYYY-MM-DD') from (
-        select {6} pandaid from (
+        select unique pandaid from (
             select j.pandaid, j.jeditaskid, j.eventservice, j.specialhandling, j.jobstatus, j.jobsetid, j.jobsubstatus, j.processingtype,
                     h.oldpandaid, h.relationtype, h.newpandaid
             from (
@@ -189,8 +177,7 @@ def insert_dropped_jobs_to_tmp_table(query, extra):
         timezone.now().strftime("%Y-%m-%d"),
         jeditaskid,
         settings.DB_SCHEMA_PANDA,
-        settings.DB_SCHEMA_PANDA_ARCH,
-        unique_key
+        settings.DB_SCHEMA_PANDA_ARCH
     )
 
     new_cur.execute(ins_query)
