@@ -6,10 +6,8 @@ from django.urls import re_path, include
 from core.oauth import views as auth_views
 
 urlpatterns = [
-    re_path(r'^oauth/', include('social_django.urls', namespace='social')),  # <--
-    re_path(r'^testauth/$', auth_views.testauth, name='testauth'),
-    re_path(r'^login/$', auth_views.loginauth2, name='loginauth2'),
-    re_path(r'^login/$', auth_views.loginauth2, name='login'),
+    re_path(r'^oauth/', include('social_django.urls', namespace='social')),
+    re_path(r'^login/$', auth_views.login, name='login'),
     re_path(r'^logout/$', auth_views.logout, name='logout'),
     re_path(r'^loginerror/$', auth_views.loginerror, name='loginerror'),
 

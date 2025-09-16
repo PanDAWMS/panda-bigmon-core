@@ -273,15 +273,10 @@ def initRequest(request, callselfmon=True):
 
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         VOMODE = 'atlas'
-        request.session['viewParams']['MON_VO'] = 'ATLAS'
     else:
         VOMODE = settings.DEPLOYMENT
-        if '_' in settings.DEPLOYMENT:
-            request.session['viewParams']['MON_VO'] = settings.DEPLOYMENT.split('_')[1]
-        elif hasattr(settings, 'MON_VO'):
-            request.session['viewParams']['MON_VO'] = settings.MON_VO
-        else:
-            request.session['viewParams']['MON_VO'] = ''
+
+    request.session['viewParams']['MON_VO'] = settings.MON_VO if hasattr(settings, 'MON_VO') else ''
 
     # add CRIC URL base to session
     if settings.CRIC_API_URL:
