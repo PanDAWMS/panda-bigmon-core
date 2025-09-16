@@ -432,7 +432,9 @@
         <tr>
           <th></th>
             {% for state in jobsummary.0.job_state_counts %}
-              <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
+              {% if state.name != 'subfinished' %}
+                <th class="{{ state.name }}"><b> {{ state.name }} </b></th>
+              {% endif %}
             {% endfor %}
         </tr>
         {% for job_category_states in jobsummary %}
@@ -440,7 +442,7 @@
             <th>{{ job_category_states.value | title }}</th>
             {% for state in job_category_states.job_state_counts %}
               <td {% if state.count > 0 %} class='{{ state.name }}_fill' {% endif %}>
-                    {% if state.count > 0 %}
+                    {% if state.count > 0 and state.name != 'subfinished' %}
                         <b> <a {% if 'archive' in warning %}class="disabled"{% endif %} href="{% url 'jobList' %}?jeditaskid={{ jeditaskid }}&jobstatus={{ state.name }}&mode={{ mode }}{% if job_category_states.value == 'build' %}&transformation=build*{% elif job_category_states.value == 'merge' %}&processingtype=pmerge{% elif viewParams.MON_VO == 'ATLAS' %}&processingtype=!pmerge&prodsourcelabel={% if task.tasktype == 'prod' %}managed{% else %}user{% endif %}{% endif %}&display_limit=100">
                             <span class='{{ state.name }}_fill'>{% if state.count > 0 %} {{ state.count }} {% endif %}</span></a> </b>
                     {% endif %}

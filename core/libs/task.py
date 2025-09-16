@@ -1106,6 +1106,40 @@ def filter_task_list_by_relevance(tasks, n_tasks=1000):
     return tasks
 
 
+def get_task_diagnostics(task:dict, datasets: list) -> dict:
+    """
+    Do some checks on task and return diagnostics info if applicable
+    Args:
+        task (dict): task record
+
+    Returns:
+        task (dict): task record with diagnostics field added if applicable
+    """
+    rse_list = []
+    if 'errordialog' in task and task['errordialog'] and len(task['errordialog']) > 0:
+        if 'downtime' in task['errordialog'].lower():
+            # get dataset name from str, find RSEs where it is located, and check downtimes for them
+            match = re.search(r"\b[^:\s]+:[A-Za-z0-9._]+", task['errordialog'])
+            if match:
+                dataset_name = match.group(0)
+            else:
+                dataset_name = ''
+            if datasets is not None and len(datasets) > 0:
+                for ds in datasets:
+                    if ds['type'] == 'input' and ds['datasetname'] == dataset_name and 'rse' in ds and len(ds['rse']) > 0:
+                        rse_list = ds['rse']
+                        break
+            if len(rse_list) == 0:
+                from core.libs.dataset import get_dataset_locations
+                rse_list = get_dataset_locations(dataset_name)
+
+    # get downtimes for RSEs
+    from core.schedresource.utils import get_ddm_downtimes
+    downtimes = get_ddm_downtimes()
+
+    return task
+
+
 def checkIfDCTask(taskinfo):
     if taskinfo['splitrule']:
         split_rule = str(taskinfo['splitrule']).split(',')

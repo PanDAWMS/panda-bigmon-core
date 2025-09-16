@@ -16,28 +16,34 @@ from django.conf import settings
 _logger = logging.getLogger('bigpandamon')
 
 
+def cric_conn(url):
+    """ Create connection to CRIC with proxy if needed"""
+    # check http proxy
+    netloc = urlparse(url)
+    proxy = None
+    if 'no_proxy' in os.environ and netloc.hostname in os.environ['no_proxy'].split(','):
+        # no_proxy
+        pass
+    elif netloc.scheme == 'https' and 'https_proxy' in os.environ:
+        # https proxy
+        proxy = os.environ['https']
+    elif netloc.scheme == 'http' and 'http_proxy' in os.environ:
+        # http proxy
+        proxy = os.environ['http']
+    if proxy:
+        http = urllib3.ProxyManager(proxy)
+    else:
+        http = urllib3.PoolManager(ca_certs=settings.OS_CA_CERT)
+    return http
+
+
 def get_CRIC_panda_queues():
     """Get PanDA queues config from CRIC and put to cache"""
     panda_queues_dict = cache.get(f'pandaQueues{settings.DEPLOYMENT}', None)
     if not panda_queues_dict:
         panda_queues_dict = {}
         url = settings.CRIC_API_URL
-        # check http proxy
-        netloc = urlparse(url)
-        proxy = None
-        if 'no_proxy' in os.environ and netloc.hostname in os.environ['no_proxy'].split(','):
-            # no_proxy
-            pass
-        elif netloc.scheme == 'https' and 'https_proxy' in os.environ:
-            # https proxy
-            proxy = os.environ['https']
-        elif netloc.scheme == 'http' and 'http_proxy' in os.environ:
-            # http proxy
-            proxy = os.environ['http']
-        if proxy:
-            http = urllib3.ProxyManager(proxy)
-        else:
-            http = urllib3.PoolManager()
+        http = cric_conn(url)
         try:
             r = http.request('GET', url)
             data = json.loads(r.data.decode('utf-8'))
@@ -55,6 +61,31 @@ def get_CRIC_panda_queues():
             print(exc)
         cache.set(f'pandaQueues{settings.DEPLOYMENT}', panda_queues_dict, 60*20)
     return panda_queues_dict
+
+
+
+def get_ddm_downtimes():
+    """ Get DDM downtimes from CRIC """
+    ddm_downtimes = cache.get(f'ddm_downtimes_{settings.DEPLOYMENT}', None)
+    if not ddm_downtimes:
+        ddm_downtimes = {}
+        url = settings.CRIC_API_URL.split('pandaqueue')[0] + 'ddmendpointstatus/query/?json'
+        http = cric_conn(url)
+        headers = {"Content-Type": "application/json"}
+        try:
+            r = http.request('GET', url, headers=headers)
+            if r.status == 200:
+                data = json.loads(r.data.decode('utf-8'))
+                _logger.debug(data)
+            else:
+                data = {}
+                _logger.info(f'CRIC ddmendpointstatus returned status {r.status}')
+        except Exception as exc:
+            _logger.exception(exc)
+
+        # cache.set(f'cric_ddm_downtimes{settings.DEPLOYMENT}', ddm_downtimes, 60*20)  # cache for 20 min
+
+    return ddm_downtimes
 
 
 def get_panda_queues():
@@ -302,6 +333,32 @@ def getCRICSites():
         cache.set('computevsAtlasCE', computevsAtlasCE, 3600)
 
     return sitesUcore, sitesHarvester, sitesType, computevsAtlasCE
+
+
+def get_cric_rse_downtimes():
+    """ Get RSE downtimes from CRIC """
+    rse_downtimes = cache.get('cric_rse_downtimes', None)
+    if not rse_downtimes:
+        rse_downtimes = {}
+        url = "https://atlas-cric.cern.ch/api/atlas/downtime/query/?json&active=True"
+        http = urllib3.PoolManager()
+        try:
+            r = http.request('GET', url)
+            data = json.loads(r.data.decode('utf-8'))
+            for dt_id, dt_info in data.items():
+                if 'rse' in dt_info and dt_info['rse'] is not None:
+                    rse_downtimes[dt_info['rse']] = {
+                        'id': dt_id,
+                        'starttime': dt_info['starttime'],
+                        'endtime': dt_info['endtime'],
+                        'comment': dt_info['comment'] if 'comment' in dt_info else '',
+                    }
+        except Exception as exc:
+            _logger.exception(exc)
+
+        cache.set('cric_rse_downtimes', rse_downtimes, 300)
+
+    return rse_downtimes
 
 
 def getFilePathForObjectStore(objectstore, filetype="logs"):
