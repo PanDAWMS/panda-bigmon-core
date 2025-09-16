@@ -62,7 +62,7 @@ from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, 
 from core.libs.eventservice import is_event_service, event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
-    get_datasets_for_tasklist, get_task_name_by_taskid, get_task_rating
+    get_datasets_for_tasklist, get_task_name_by_taskid, get_task_rating, get_task_diagnostics
 from core.libs.task import get_dataset_locality, is_event_service_task, filter_task_list_by_relevance, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
 from core.libs.taskparams import analyse_task_submission_options
@@ -2921,7 +2921,7 @@ def userDashApi(request, agg=None):
         values = [
             'produsername', 'computingsite', 'jobstatus', 'specialhandling', 'attemptnr', 'nevents', 'maxpss',
             'actualcorecount', 'cpuconsumptiontime', 'cpuconsumptionunit',  'hs06sec', 'gco2_global', 'diskio',
-            'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime', 'jobmetrics',]
+            'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime', 'jobmetrics', 'jobsubstatus']
         jobs = get_job_list(jquery, values=values, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -4815,6 +4815,9 @@ def taskInfo(request, jeditaskid=0):
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
+    # task dignostics - checks and warnings
+    task = get_task_diagnostics(taskrec, datasets=dsets)
+
     # get sum of hs06sec grouped by status
     # creating a jquery with timewindow
     jquery = copy.deepcopy(query)
@@ -5036,8 +5039,7 @@ def taskInfo(request, jeditaskid=0):
         if eventservice:
             data['eventssummary'] = eventssummary
             if 'version' not in request.session['requestParams'] or (
-                    'version' in request.session['requestParams'] and request.session['requestParams'][
-                'version'] != 'old'):
+                    'version' in request.session['requestParams'] and request.session['requestParams']['version'] != 'old'):
                 # prepare input-centric ES taskInfo
                 _logger.info("This is input-centric ES taskInfo request")
                 # get input files state summary
