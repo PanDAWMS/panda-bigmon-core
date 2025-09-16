@@ -31,7 +31,6 @@ JOB_STATES = (
     'transferring',
     'merging',
     'finished',
-    'subfinished',
     'failed',
     'cancelled',
     'closed'

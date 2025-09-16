@@ -1447,12 +1447,6 @@ def jobList(request, mode=None, param=None):
         'processingtype'] == 'pmerge':
         isReturnDroppedPMerge = True
 
-    for job in jobs:
-        if job.get("jobsubstatus") == "fg_partial":
-            job["jobstatus"] = "subfinished"
-        elif job.get("jobsubstatus") == "fg_stumble":
-            job["jobstatus"] = "failed"
-
     droplist = []
     droppedPmerge = set()
     cntStatus = []
@@ -2058,11 +2052,6 @@ def jobInfo(request, pandaid=None, batchid=None):
     except IndexError:
         _logger.info('No job found for: {}'.format(jobid))
 
-    if job.get("jobsubstatus") == "fg_partial":
-        job["jobstatus"] = "subfinished"
-    elif job.get("jobsubstatus") == "fg_stumble":
-        job["jobstatus"] = "failed"
-
     tquery = {'jeditaskid': job['jeditaskid'], 'storagetoken__isnull': False}
     storagetoken = JediDatasets.objects.filter(**tquery).values('storagetoken')
     if storagetoken:
@@ -2185,10 +2174,7 @@ def jobInfo(request, pandaid=None, batchid=None):
     evtable = []
     if is_event_service(job):
         # prepare link to related by file jobs
-        if 'ATLAS' in settings.DEPLOYMENT:
-            input_files = [f for f in files if f['type'] == 'input']
-        else:
-            input_files = [f for f in files if 'input' in f['type']]
+        input_files = [f for f in files if f['type'] == 'input']
         f = input_files[0] if len(input_files) > 0 else None
         job['es_related_jobs_link_params'] = f"jeditaskid={f['jeditaskid']}&datasetid={f['datasetid']}&fileid={f['fileid']}" if f else ""
         # prepare the event table
@@ -2200,10 +2186,7 @@ def jobInfo(request, pandaid=None, batchid=None):
         for evrange in evtable:
             evrange['status'] = eventservicestatelist[evrange['status']]
             esjobdict[evrange['status']] += evrange['def_max_eventid'] - evrange['def_min_eventid'] + 1
-            if 'ATLAS' in settings.DEPLOYMENT:
-                evrange['attemptnr'] = 10 - evrange['attemptnr']
-            elif evrange['status'] == 'finished':
-                evrange['attemptnr'] = job['attemptnr'] - evrange['attemptnr']
+            evrange['attemptnr'] = 10 - evrange['attemptnr']
 
         esjobstr = ''
         for s in esjobdict:
@@ -2220,7 +2203,7 @@ def jobInfo(request, pandaid=None, batchid=None):
             'jobsetid': job['jobsetid'],
             'produsername': job['produsername'],
         }
-        jvalues = ['pandaid', 'prodsourcelabel', 'processingtype', 'transformation', 'eventservice', 'jobstatus', 'jobsubstatus']
+        jvalues = ['pandaid', 'prodsourcelabel', 'processingtype', 'transformation', 'eventservice', 'jobstatus']
         jobs = get_job_list(jsquery, values=jvalues)
         job_summary_list = job_states_count_by_param(jobs, param='category')
         for row in job_summary_list:
@@ -2309,7 +2292,7 @@ def jobInfo(request, pandaid=None, batchid=None):
 
         # prepare error summary data for table
         error_summary = []
-        if job['jobstatus'] in ('failed', 'holding', 'subfinished'):
+        if job['jobstatus'] in ('failed', 'holding'):
             error_summary = error_summary_for_job(job)
 
         data = {
@@ -4682,11 +4665,6 @@ def taskInfo(request, jeditaskid=0):
         else:
             return error_response(request, message="No jeditaskid or taskname provided", status=400)
 
-    # get task params
-    taskparams = get_task_params(jeditaskid)
-    fine_grained = taskparams.get('fineGrainedProc', False)
-    _logger.info('Got task info: {}'.format(time.time() - request.session['req_init_time']))
-
     # getting task info
     taskrec = None
     query = {'jeditaskid': jeditaskid}
@@ -4707,10 +4685,9 @@ def taskInfo(request, jeditaskid=0):
         return render(request, 'taskInfo.html', data, content_type='text/html')
 
     eventservice = False
-    if 'eventservice' in taskrec and (taskrec['eventservice'] == 1 or taskrec['eventservice'] == 'eventservice' or fine_grained):
+    if 'eventservice' in taskrec and (taskrec['eventservice'] == 1 or taskrec['eventservice'] == 'eventservice'):
         eventservice = True
-        if not fine_grained:
-            mode = 'nodrop'
+        mode = 'nodrop'
 
     # nodrop only for tasks older than 2 years
     if get_task_timewindow(taskrec, format_out='datetime')[0] <= datetime.now() - timedelta(days=365 * 3):
@@ -4745,6 +4722,10 @@ def taskInfo(request, jeditaskid=0):
         pair = {'name': k, 'value': val}
         columns.append(pair)
     columns = sorted(columns, key=lambda x: x['name'].lower())
+
+    # get task params
+    taskparams = get_task_params(jeditaskid)
+    _logger.info('Got task info: {}'.format(time.time() - request.session['req_init_time']))
 
     # analyse cliParams -> warnings
     if 'cliParams' in taskparams:
@@ -4832,7 +4813,7 @@ def taskInfo(request, jeditaskid=0):
     if eventservice:
         # insert dropped jobs to temporary table if drop mode
         transactionKeyDJ = -1
-        if mode == 'drop' and "ATLAS" in settings.DEPLOYMENT:
+        if mode == 'drop':
             extra, transactionKeyDJ = insert_dropped_jobs_to_tmp_table(query, extra)
             _logger.info("Inserting dropped jobs: {}".format(time.time() - request.session['req_init_time']))
             _logger.info('tk of dropped jobs: {}'.format(transactionKeyDJ))
@@ -4842,8 +4823,7 @@ def taskInfo(request, jeditaskid=0):
         equery = copy.deepcopy(query)
         # set timerange for better use of partitioned JOBSARCHIVED
         equery['creationdate__range'] = get_task_timewindow(taskrec, format_out='str')
-        mode_essummary = 'nodrop'
-        eventssummary = event_summary_for_task(mode_essummary, equery, tk_dj=transactionKeyDJ)
+        eventssummary = event_summary_for_task(mode, equery, tk_dj=transactionKeyDJ)
         for entry in eventssummary:
             if 'count' in entry and 'totev' in taskrec and taskrec['totev'] > 0:
                 entry['pct'] = round(entry['count'] * 100. / taskrec['totev'], 2)
@@ -5031,8 +5011,7 @@ def taskInfo(request, jeditaskid=0):
             'warning': warning,
             'info': info,
             'authtype': auth,
-            'userexpert': user_expert,
-            'finegrained': fine_grained
+            'userexpert': user_expert
         }
         data.update(getContextVariables(request))
 
@@ -5046,7 +5025,6 @@ def taskInfo(request, jeditaskid=0):
                 transactionKeyIEC = -1
                 ifs_summary = []
                 inputfiles_list, ifs_summary, ifs_tk = input_summary_for_task(taskrec, dsets)
-                ifs_counts = ifs_summary and sum(item['count'] for item in ifs_summary) > 0
 
                 # Putting list of inputs IDs to tmp table for connection with jobList
                 for tk, ids_list in ifs_tk.items():
@@ -5059,11 +5037,10 @@ def taskInfo(request, jeditaskid=0):
                 _logger.info("Inputs states summary: {}".format(time.time() - request.session['req_init_time']))
 
                 # get lighted job summary
-                jobsummarylight, jobsummarylightsplitted = job_summary_for_task_light(taskrec, mode=mode)
+                jobsummarylight, jobsummarylightsplitted = job_summary_for_task_light(taskrec)
                 _logger.info("Loaded lighted job summary: {}".format(time.time() - request.session['req_init_time']))
 
                 data['iecsummary'] = ifs_summary
-                data['iecounts'] = ifs_counts
                 data['tkiec'] = transactionKeyIEC
                 data['jobsummarylight'] = jobsummarylight
                 data['jobsummarylightsplitted'] = jobsummarylightsplitted
