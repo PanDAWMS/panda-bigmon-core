@@ -237,10 +237,6 @@ def job_states_count_by_param(jobs, **kwargs):
                 job_states_count_dict[pv][state] = 0
 
     for job in jobs:
-        if job['jobsubstatus'] == 'fg_partial':
-            job['jobstatus'] = 'subfinished'
-        elif job['jobsubstatus'] == 'fg_stumble':
-            job['jobstatus'] = 'failed'
         job_states_count_dict[job[param]][job['jobstatus']] += 1
 
     job_summary_dict = {}
