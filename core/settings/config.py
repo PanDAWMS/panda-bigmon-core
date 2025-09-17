@@ -39,10 +39,6 @@ if 'BIGMON_WSGI_PATH' in os.environ:
 if 'BIGMON_ASGI_PATH' in os.environ:
     ASGI_PATH = os.environ['BIGMON_ASGI_PATH']
 
-# VO
-if 'BIGMON_VO' in os.environ:
-    MON_VO = os.environ['BIGMON_VO']
-
 # PanDA server URL
 PANDA_SERVER_URL = os.environ.get('PANDA_SERVER_URL', 'https://pandaserver.cern.ch/server/panda')
 
@@ -132,8 +128,13 @@ except ImportError:
 
 DEPLOYMENT = os.environ.get('BIGMON_DEPLOYMENT', 'ORACLE_ATLAS')
 
-# Authentication providers, supported: ['cern', 'google', 'github', 'indigoiam']
-AUTH_PROVIDER_LIST = ['cern', 'google', 'github', 'indigoiam']
+# set the VO from the DEPLOYMENT if not set in the environment
+MON_VO = os.environ.get('BIGMON_VO', '')
+if MON_VO == '' and '_' in DEPLOYMENT:
+    MON_VO = DEPLOYMENT.split('_')[1]
+
+# Authentication providers, supported: ['indigoiam', 'cern']
+AUTH_PROVIDER_LIST = ['indigoiam', 'cern']
 if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
     AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
 # get the wlcg groups from indigoiam for ATLAS

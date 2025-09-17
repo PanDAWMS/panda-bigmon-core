@@ -26,10 +26,6 @@ def login_customrequired(function):
         if request.user.is_authenticated or is_json_request(request):
             return function(request, *args, **kwargs)
         else:
-            # if '/user/' in request.path:
-            #     return HttpResponseRedirect('/login/?next=' + request.get_full_path())
-            # else:
-            # return function(request, *args, **kwargs)
             return HttpResponseRedirect('/login/?next='+request.get_full_path())
     wrap.__doc__ = function.__doc__
     wrap.__name__ = function.__name__
@@ -89,12 +85,12 @@ def get_auth_provider(request):
         try:
             auth_provider = (request.user.social_auth.get()).provider
         except Exception as ex:
-            _logger.exception('{0}. User: {1}'.
-                               format(ex, user))
+            _logger.exception('{0}. User: {1}'.format(ex, user))
             auth_provider = None
     else:
         auth_provider = None
     return auth_provider
+
 
 def is_expert(request):
 

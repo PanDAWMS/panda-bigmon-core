@@ -18,37 +18,25 @@
     </div>
 {% endif %}
 
-  <div id='buttons' class="button-group-v">
-    {% if auth_providers is None or 'cern' in auth_providers %}
-    <a href="{% url 'social:begin' 'cernoidc' %}" class="button social cern" >
-        <img width="40" width="40" src="{% static "images/cern-logo.png"%}">
-        Log in with CERN (recommended)
-    </a>
-    {% endif %}
-    {% if auth_providers is None or 'google' in auth_providers %}
-    <a href="{% url 'social:begin' 'google-oauth2' %}" class="button social google-plus">
-      <i class="fi-social-google-plus" aria-hidden="true"></i> Log in with Google
-    </a>
-    {% endif %}
-    {% if auth_providers is None or 'github' in auth_providers %}
-    <a href="{% url 'social:begin' 'github' %}" class="button social github">
-    <i class="fi-social-github" aria-hidden="true"></i> Log in with Github
-    </a>
-    {% endif %}
-    {% if auth_providers is None or 'indigoiam' in auth_providers %}
-    <a href="{% url 'social:begin' 'indigoiam' %}" class="button social indigoiam">
-        <i class="fi-ticket" aria-hidden="true"></i> Log in with IAM
-    </a>
-    {% endif %}
-  </div>
-
+<div id='buttons' class="button-group-v">
+  {% if auth_providers is None or 'indigoiam' in auth_providers %}
+  <a href="{% url 'social:begin' 'indigoiam' %}" class="button social indigoiam bp-tooltip right">
+      <i class="fi-ticket" aria-hidden="true"></i> {{ vo }} IAM
+      <span class="tooltip-text">This is recommended way to log in, you must be a member of {{ vo }} VO.</span>
+  </a>
+  {% endif %}
+  {% if auth_providers is None or 'cern' in auth_providers %}
+  <a href="{% url 'social:begin' 'cernoidc' %}" class="button social cern bp-tooltip right" >
+      <img width="40" width="40" src="{% static "images/cern-logo.png"%}"> CERN SSO
+      <span class="tooltip-text">Use it to log in with your CERN account, guest CERN account, home organization account, Google, or GitHub.</span>
+  </a>
+  {% endif %}
+</div>
 
 <div id='message' class="callout alert" style="display: none">
   <h5>Warning!</h5>
   <p>Cookies disabled or your browser does not support it. Please check your browser settings or download a new version.</p>
 </div>
-
-
 
 {% endblock %}
 
