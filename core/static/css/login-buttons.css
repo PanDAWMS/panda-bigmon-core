@@ -32,7 +32,7 @@
   }
 
 .button-group-v .button.social.indigoiam {
-  background-color: #3B7E5A;
+  background-color: #008951;
 }
   .button-group-v .button.social.indigoiam > i {
     padding-right: 0.7rem;
@@ -40,6 +40,6 @@
     vertical-align: middle;
   }
   .button-group-v .button.social.indigoiam:hover, .button-group-v .button.social.indigoiam:focus {
-    background-color: #2C5E43;
+    background-color: #006d40;
     color: #fefefe;
   }

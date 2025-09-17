@@ -21,7 +21,7 @@
 <div id='buttons' class="button-group-v">
   {% if auth_providers is None or 'indigoiam' in auth_providers %}
   <a href="{% url 'social:begin' 'indigoiam' %}" class="button social indigoiam bp-tooltip right">
-      <i class="fi-ticket" aria-hidden="true"></i> {{ vo }} IAM (recommended)
+      <i class="fi-ticket" aria-hidden="true"></i> {{ vo }} IAM
       <span class="tooltip-text">This is recommended way to log in, you must be a member of {{ vo }} VO.</span>
   </a>
   {% endif %}
