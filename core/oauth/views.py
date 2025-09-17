@@ -5,10 +5,8 @@ import json
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout as auth_logout
 from django.views.decorators.cache import never_cache
-from django.utils.cache import patch_response_headers
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
-from django.db.models import Q
 from django.conf import settings
 
 import core.constants as const
@@ -20,22 +18,22 @@ from core.oauth.models import BPUser, BPUserSettings, Visits
 
 
 @never_cache
-def loginauth2(request):
+def login(request):
     """
     Login view
     """
     if 'next' in request.GET:
-        next = str(request.GET['next'])
+        next_url = str(request.GET['next'])
         if len(request.GET) > 1:
-            next += '&' + '&'.join(['{}={}'.format(k, v) for k, v in request.GET.items() if k != 'next'])
+            next_url += '&' + '&'.join(['{}={}'.format(k, v) for k, v in request.GET.items() if k != 'next'])
     elif 'HTTP_REFERER' in request.META:
-        next = extensibleURL(request, request.META['HTTP_REFERER'])
+        next_url = extensibleURL(request, request.META['HTTP_REFERER'])
     else:
-        next = '/'
+        next_url = '/'
 
     # redirect to the next if user already authenticated
     if request.user.is_authenticated:
-        return redirect(next)
+        return redirect(next_url)
 
     # auth providers
     if hasattr(settings, 'AUTH_PROVIDER_LIST') and settings.AUTH_PROVIDER_LIST:
@@ -44,10 +42,11 @@ def loginauth2(request):
         auth_providers = None
 
     # store the redirect url in the session to be picked up after the auth completed
-    request.session['next'] = next
+    request.session['next'] = next_url
     data = {
         'request': request,
         'auth_providers': auth_providers,
+        'vo': settings.MON_VO if hasattr(settings, 'MON_VO') else '',
     }
     response = render(request, 'login.html', data, content_type='text/html')
     response.delete_cookie('sessionid')
@@ -58,14 +57,6 @@ def loginerror(request):
     warning = """The login to BigPanDA monitor has failed. Cleaning of your browser cookies might help. 
                  If the error persists, please write to """
     response = render(request, 'login.html', {'request': request, 'warning': warning}, content_type='text/html')
-    #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-    return response
-
-
-@login_customrequired
-def testauth(request):
-    response = render(request, 'testauth.html', {'request': request,}, content_type='text/html')
-    patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     return response
 
 
