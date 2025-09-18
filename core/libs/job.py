@@ -230,13 +230,23 @@ def job_states_count_by_param(jobs, **kwargs):
     job_states_count_dict = {}
     param_values = list(set([job[param] for job in jobs if param in job]))
 
+    jobstates = const.JOB_STATES
+    for job in jobs:
+        if job.get('eventservice') == 6:
+            jobstates = const.JOB_STATES_ES
+            break
+
     if len(param_values) > 0:
         for pv in param_values:
             job_states_count_dict[pv] = {}
-            for state in const.JOB_STATES:
+            for state in jobstates:
                 job_states_count_dict[pv][state] = 0
 
     for job in jobs:
+        if job.get("jobsubstatus") == 'fg_partial':
+            job['jobstatus'] = 'subfinished'
+        elif job.get("jobsubstatus") == 'fg_stumble':
+            job['jobstatus'] = 'failed'
         job_states_count_dict[job[param]][job['jobstatus']] += 1
 
     job_summary_dict = {}
