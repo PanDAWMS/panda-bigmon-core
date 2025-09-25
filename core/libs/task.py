@@ -595,7 +595,9 @@ def get_task_params(jeditaskid):
         taskparams = taskparams[0]['taskparams']
     try:
         taskparams = json.loads(taskparams)
-    except ValueError:
+    except Exception as e:
+        _logger.info(f"Failed to load taskparams json for jeditaskid={jeditaskid}: {e}")
+        taskparams = {}
         pass
 
     # protection against surrogates

@@ -4683,11 +4683,9 @@ def taskInfo(request, jeditaskid=0):
     _logger.info('Got task info: {}'.format(time.time() - request.session['req_init_time']))
 
     # getting task info
-    taskrec = None
     query = {'jeditaskid': jeditaskid}
     extra = '(1=1)'
     tasks.extend(JediTasks.objects.filter(**query).values())
-
     tasks = cleanTaskList(tasks, add_datasets_info=False)
     try:
         taskrec = tasks[0]
@@ -4697,6 +4695,7 @@ def taskInfo(request, jeditaskid=0):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
+            'jeditaskid': jeditaskid,
             'columns': None,
         }
         return render(request, 'taskInfo.html', data, content_type='text/html')
