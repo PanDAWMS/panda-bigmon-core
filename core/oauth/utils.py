@@ -156,12 +156,12 @@ def update_user_groups(email, user_roles):
 
 def get_username(user):
     """
-    Getting true user name from social auth user table
+    Getting true username from social auth user table
     :param user: request.user object
     :return: username: str
     """
     if user.is_authenticated:
-        social_user = user.social_auth.get()
+        social_user = user.social_auth.filter(user_id=user.id).first()
         if social_user and social_user.extra_data and 'username' in social_user.extra_data:
             username = social_user.extra_data['username']
         else:
