@@ -787,10 +787,7 @@
 
 {% else %}
 
-  <p>PanDA task {% if jeditaskid > 0 %}{{ jeditaskid }}{% endif %} {% if task.taskname %}:<b>{{ task.taskname }}</b> not found.{% endif %}</p>
-  {% if viewParams.MON_VO == 'ATLAS' %}
-    <p>You can however get a job listing for any task in quick search.</p>
-  {% endif %}
+<p>PanDA task {% if jeditaskid > 0 %}<b>{{ jeditaskid }}</b>{% endif %} {% if task.taskname %}:<b>{{ task.taskname }}</b>{% endif %} not found.</p>
 
 {% endif %}
 
