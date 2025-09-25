@@ -20,7 +20,7 @@ class BPDataCarouselTest(unittest.TestCase):
         data = json.loads(response.content)
         if data is not None and 'detailstable' in data and len(data['detailstable']) > 0:
             cls.test_data['taskid'] = data['detailstable'][0]['taskid']
-            cls.test_data['rule_id'] = data['detailstable'][0]['rse']
+            cls.test_data['rule_id'] = data['detailstable'][0]['rrule']
             cls.test_data['source_rse'] = data['detailstable'][0]['source_rse']
 
 
