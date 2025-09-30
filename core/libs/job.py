@@ -856,6 +856,8 @@ def get_files_for_job(pandaid):
             parced = f['destinationdblocktoken'].split("_")
             f['ddmsite'] = parced[0][4:] if len(parced) > 0 and len(parced[0]) > 4 else ''
             f['dsttoken'] = 'ATLAS' + parced[1] if len(parced) > 1 else ''
+        else:
+            f['ddmsite'] = 'All'
         # add info from dataset contents
         if f['type'] == 'input':
             f['attemptnr'] = dcfiles_dict[f['fileid']]['attemptnr'] if f['fileid'] in dcfiles_dict else f['attemptnr']
