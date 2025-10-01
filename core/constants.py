@@ -231,7 +231,6 @@ SITE_FIELDS_STANDARD = (
     'country',
     'harvester',
     'copytool',
-    'system',
     'workflow',
 )
 
