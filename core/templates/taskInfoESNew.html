@@ -254,7 +254,7 @@
 
       </div>
   </div>
-
+  {% if authtype == "indigoiam" %}
   {% with 'done finished failed ready broken aborted defined' as finalstatelist %}
       {% if not task.status in finalstatelist %}
           <div style="float: right">
@@ -263,6 +263,7 @@
           </div>
       {% endif %}
   {% endwith %}
+  {% endif %}
   </div>
 
   {% if iecsummary and iecounts %}
