@@ -140,6 +140,10 @@ def make_http_client_from_request(request) -> Tuple[Optional[HttpClient], Option
     if auth_provider == "indigoiam":
         # Token (OIDC) path
         auth = get_auth_indigoiam(request)
+
+        client.ssl_key = None
+        client.ssl_certificate = None
+
         if "Authorization" not in auth:
             # Keep prior behavior: explicit error if IAM flow is broken/expired
             return None, auth.get("detail", "Authentication required")

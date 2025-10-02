@@ -16,9 +16,6 @@ def client(request, task_id=None):
     if not valid:
         return response
 
-    auth = get_auth_indigoiam(request) or {}
-    bearer = auth.get('Authorization')
-
     info = {'redirect': 'false'}
 
     data = request.session.get('requestParams') or {}
@@ -39,6 +36,9 @@ def client(request, task_id=None):
             info['text'] = kill_task(request=request, jeditaskid=jeditaskid)
 
         elif action == 'setdebugmode' and data.get('pandaid') is not None:
+            auth = get_auth_indigoiam(request) or {}
+            bearer = auth.get('Authorization')
+
             modeOn = False
             if data.get('params'):
                 params = json.loads(data['params'])
