@@ -89,7 +89,7 @@ from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
 from core.schedresource.utils import get_panda_queues, get_basic_info_for_pqs, get_pq_clouds, get_pq_object_store_path, \
-    filter_pq_json
+    filter_pq_json, get_osg_pool_pqs
 
 tcount = {}
 lock = Lock()
@@ -896,7 +896,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     # process queue related params if any
     if querytype == 'job':
-        if 'region' in request.session['requestParams']:
+        if 'region' in request.session['requestParams'] and request.session['requestParams']['region'] != 'OSG':
             request.session['requestParams']['queuecloud'] = request.session['requestParams']['region']
         if 'site' in request.session['requestParams']:
             request.session['requestParams']['queueatlas_site'] = request.session['requestParams']['site']
@@ -911,6 +911,35 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     query['computingsite__in'] = list(set(query['computingsite__in']) & set([k for k in pqs_dict]))
                 else:
                     query['computingsite__in'] = list(pqs_dict.keys())
+
+        # in case of OSG region, limit to OSG sites. No support of * wildcard as it is too hard to implement
+        if settings.OSG_POOL_USED:
+            osg_pool_pqs = get_osg_pool_pqs()
+            if 'region' in request.session['requestParams'] and request.session['requestParams']['region'] == 'OSG':
+                query['computingsite__in'] = osg_pool_pqs.keys()
+            if 'computingsite' in request.session['requestParams']:
+                if is_wildcards(request.session['requestParams']['computingsite']):
+                    cs_list_requested = request.session['requestParams']['computingsite'].replace('!', '').replace('*', '').split(',')
+                else:
+                    cs_list_requested = [request.session['requestParams']['computingsite'], ]
+                if 'destinationsite__in' not in query:
+                    query['destinationsite__in'] = []
+                if 'computingsite__in' not in query:
+                    query['computingsite__in'] = []
+                for cs in cs_list_requested:
+                    if cs in osg_pool_pqs:
+                        if cs not in query['computingsite__in']:
+                            query['computingsite__in'].append(cs)
+                    else:
+                        if cs not in query['destinationsite__in']:
+                            query['destinationsite__in'].append(cs)
+                if len(query['computingsite__in']) == 0:
+                    del query['computingsite__in']
+                if len(query['destinationsite__in']) == 0:
+                    del query['destinationsite__in']
+            # remove computingsite from wildcards search
+            if 'computingsite' in wildSearchFields:
+                wildSearchFields.remove('computingsite')
 
     if opmode in ['analysis', 'production'] and querytype == 'job':
         if opmode.startswith('analy'):
@@ -968,7 +997,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraJobParCondition = '('
         for card in jobParWildCards:
             extraJobParCondition += preprocess_wild_card_string(escape_input(card), 'JOBPARAMETERS')
-            if (jobParCurrentCardCount < jobParCountCards): extraJobParCondition += ' OR '
+            if jobParCurrentCardCount < jobParCountCards:
+                extraJobParCondition += ' OR '
             jobParCurrentCardCount += 1
         extraJobParCondition += ')'
 
@@ -986,7 +1016,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if extraQueryString.endswith(' AND '):
         extraQueryString = extraQueryString[:-5]
 
-    if (len(extraQueryString) < 2):
+    if len(extraQueryString) < 2:
         extraQueryString = '1=1'
 
     return (query, extraQueryString, LAST_N_HOURS_MAX)
@@ -1266,17 +1296,7 @@ def jobList(request, mode=None, param=None):
     if is_json_request(request):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     else:
-        values = [
-            'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
-            'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease',
-            'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime',
-            'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag',
-            'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode',
-            'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag',
-            'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr',
-            'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount',
-            'statechangetime', 'nevents', 'jobmetrics', 'noutputdatafiles', 'outputfiletype', 'parentid',
-            'actualcorecount', 'schedulerid', 'pilotid', 'commandtopilot', 'cmtconfig', 'maxpss']
+        values = list(const.JOB_FIELDS)
         if not eventservice:
             values.extend(['avgvmem', 'maxvmem', 'maxrss'])
 
@@ -1286,6 +1306,8 @@ def jobList(request, mode=None, param=None):
             values.append('gshare')
             values.append('resourcetype')
             values.append('container_name')
+
+        values = list(set(values))  # deduplicate the list
 
     showTop = 0
     if 'limit' in request.session['requestParams']:

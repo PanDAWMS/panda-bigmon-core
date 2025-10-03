@@ -4,7 +4,7 @@ Collection of constants tuples
 __author__ = 'Tatiana Korchuganova'
 
 from types import MappingProxyType
-
+from django.conf import settings
 
 # dicts:
 EVENT_SERVICE_JOB_TYPES = MappingProxyType({
@@ -332,7 +332,8 @@ JOB_FIELDS = (
     'jobmetrics',
     'resourcetype',
     'commandtopilot',
-    'cmtconfig'
+    'cmtconfig',
+    'outputfiletype'
 )
 
 TIME_LIMIT_OPTIONS = (
@@ -343,3 +344,14 @@ TIME_LIMIT_OPTIONS = (
     'earlierthan',
     'earlierthandays',
 )
+
+
+if settings.OSG_POOL_USED:
+    JOB_FIELDS += (
+        'destinationsite',
+        'sourcesite',
+    )
+    JOB_FIELDS_ATTR_SUMMARY += (
+        'destinationsite',
+        'sourcesite',
+    )

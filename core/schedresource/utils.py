@@ -530,3 +530,31 @@ def site_summary_dict(sites, vo='ATLAS', sortby='alpha'):
     suml = sorted(suml, key=lambda x: x['field'])
     return suml
 
+
+def is_osg_pool_pq(pqdata) -> bool:
+    """ Return True if the given PQ is an OSG pool """
+    if 'system' in pqdata and pqdata['system'] == 'osg':
+        return True
+    if 'queues' in pqdata and pqdata['queues'] is not None and len(pqdata['queues']) > 0:
+        for ce in pqdata['queues']:
+            if 'ce_jobmanager' in ce and (ce['ce_jobmanager'] == 'osg' or 'osg' in ce['ce_jobmanager']):
+                return True
+    return False
+
+
+def is_any_osg_pool(pqs_dict) -> bool:
+    """ Return True if any of the given PQs is an OSG pool """
+    for pq, pqdata in pqs_dict.items():
+        if is_osg_pool_pq(pqdata):
+            return True
+    return False
+
+
+def get_osg_pool_pqs() -> dict:
+    """ Return dict of OSG pool PQs """
+    osg_pool_pqs = {}
+    pqs_dict = get_panda_queues()
+    for pq, pqdata in pqs_dict.items():
+        if is_osg_pool_pq(pqdata):
+            osg_pool_pqs[pq] = pqdata
+    return osg_pool_pqs

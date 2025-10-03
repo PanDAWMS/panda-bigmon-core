@@ -148,6 +148,9 @@ if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA', 'ORACLE_ATLAS_TB'):
     except Exception as e:
         _logger.error(f"An unexpected error occurred: {e}")
 
+# whether OSG pool used (if True, we need to use destinationsite instead of computingsite for jobs)
+OSG_POOL_USED = os.environ.get('BIGMON_OSG_POOL_USED', 'False').lower() in ('true', '1')
+
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
     DB_SCHEMA = 'ATLAS_PANDABIGMON'

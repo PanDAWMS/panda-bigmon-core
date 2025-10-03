@@ -13,6 +13,7 @@ from core.libs.checks import is_positive_int_field
 
 from django.conf import settings
 import core.constants as const
+from core.schedresource.utils import is_osg_pool_pq, get_panda_queues
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -126,12 +127,13 @@ def is_archived_only_jobs(timerange):
     return False
 
 
-def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
+def preprocess_job_summary(list_of_dict, field_name_jobtype='prodsourcelabel'):
     """
     Translate prodsourcelabel values to descriptive analy|prod job types
     The base param is prodsourcelabel, but to identify which HC test template a job belong to we need transformation.
     If transformation ends with '.py' - prod, if it is PanDA server URL - analy.
     Using this as complementary info to make a decision.
+    Also, if OSG pool is used, replace computingsite (PQ) with real site where job run - job.destinationsite
     """
 
     psl_to_jt = {
@@ -155,14 +157,27 @@ def identify_jobtype(list_of_dict, field_name='prodsourcelabel'):
         'py': 'prod',
     }
 
+    if settings.OSG_POOL_USED:
+        pqs = get_panda_queues()
+
     new_list_of_dict = []
     for row in list_of_dict:
-        if field_name in row and row[field_name] in psl_to_jt.keys():
-            row['jobtype'] = psl_to_jt[row[field_name]]
-            if 'transform' in row and row['transform'] in trsfrm_to_jt and row[field_name] in ('rc_alrb', 'rc_test2'):
+        if field_name_jobtype in row and row[field_name_jobtype] in psl_to_jt.keys():
+            row['jobtype'] = psl_to_jt[row[field_name_jobtype]]
+            if 'transform' in row and row['transform'] in trsfrm_to_jt and row[field_name_jobtype] in ('rc_alrb', 'rc_test2'):
                 row['jobtype'] = trsfrm_to_jt[row['transform']]
         else:
             row['jobtype'] = 'prod'
+
+        if settings.OSG_POOL_USED:
+            if 'computingsite' in row and row['computingsite'] in pqs and is_osg_pool_pq(pqs[row['computingsite']]):
+                if 'destinationsite' in row and row['destinationsite'] is not None and row['destinationsite'] != '':
+                    row['is_osg_pool_pq'] = True
+                    row['osg_pool_pq_name'] = row['computingsite']
+                    row['computingsite'] = row['destinationsite']
+        else:
+            row['is_osg_pool_pq'] = False
+
         new_list_of_dict.append(row)
 
     return new_list_of_dict
