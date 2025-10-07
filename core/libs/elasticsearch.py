@@ -64,9 +64,10 @@ def create_os_connection(instance='os-atlas', timeout=2000, max_retries=10, retr
     try:
         parsed_uri = urlparse(os_host)
         protocol = '{uri.scheme}'.format(uri=parsed_uri)
+        is_https = protocol == 'https'
 
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
-            if protocol == 'https':
+            if is_https:
                 ca_certs = settings.OS_CA_CERT
 
                 connection = OpenSearch(
@@ -86,13 +87,24 @@ def create_os_connection(instance='os-atlas', timeout=2000, max_retries=10, retr
                     max_retries=max_retries,
                     retry_on_timeout=retry_on_timeout)
         else:
-            connection = Elasticsearch (
+            if is_https:
+                ca_certs = settings.OS_CA_CERT
+                connection = OpenSearch (
+                        [os_host],
+                        http_auth=(os_user, os_password),
+                        verify_certs=True,
+                        timeout=timeout,
+                        max_retries=max_retries,
+                        retry_on_timeout=retry_on_timeout,
+                        ca_certs=ca_certs
+                )
+            else:
+                connection = OpenSearch(
                     [os_host],
                     http_auth=(os_user, os_password),
                     timeout=timeout,
                     max_retries=max_retries,
                     retry_on_timeout=retry_on_timeout)
-
         return connection
 
     except Exception as ex:
