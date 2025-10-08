@@ -5,7 +5,7 @@ from django.shortcuts import render
 from core.oauth.utils import login_customrequired
 from core.views import initRequest
 from django.http import HttpResponse, JsonResponse
-from opensearchpy import Search
+
 from core.libs.elasticsearch import create_os_connection, get_os_task_status_log
 from core.libs.DateEncoder import DateEncoder
 

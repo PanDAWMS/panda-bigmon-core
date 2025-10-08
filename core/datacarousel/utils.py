@@ -8,7 +8,10 @@ import time
 import datetime
 import pandas as pd
 
-from opensearchpy import Search
+try:
+    from opensearch_dsl import Search
+except ImportError:
+    from opensearchpy import Search
 
 from django.core.cache import cache
 from django.db import connection

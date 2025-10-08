@@ -15,7 +15,10 @@ import hashlib
 from datetime import datetime, timedelta
 from threading import Thread, Lock
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, unquote_plus
-from opensearchpy import Search
+try:
+    from opensearch_dsl import Search
+except ImportError:
+    from opensearchpy import Search
 
 from django.http import HttpResponse, JsonResponse, UnreadablePostError
 from django.shortcuts import render, redirect
