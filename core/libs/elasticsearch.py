@@ -1,12 +1,8 @@
-import logging
-import json
-import requests
+import logging, os, json, requests, hashlib
+
 from requests.auth import HTTPBasicAuth
-import hashlib
 from datetime import datetime
 from opensearchpy import OpenSearch, Search, Q
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search as ESearch, Q as EQ
 
 from core.pandajob.models import Jobsactive4
 from core.libs.DateTimeEncoder import DateTimeEncoder
@@ -25,31 +21,37 @@ def get_os_credentials(instance):
     os_host = None
     os_user = None
     os_password = None
+
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         protocol = 'https'
         if instance == 'os-atlas' and hasattr(settings, 'OS'):
             os_host = settings.OS.get('osHost', None)
             os_port = settings.OS.get('osPort', None)
-            os_host = protocol +'://' + os_host + ':' + os_port + '/os' if os_host else None
+            os_host = f"{protocol}://{os_host}:{os_port}/os" if os_host else None
             os_user = settings.OS.get('osUser', None)
             os_password = settings.OS.get('osPassword', None)
         elif instance == 'monit-opensearch' and hasattr(settings, 'MONIT_OPENSEARCH'):
             os_host = settings.MONIT_OPENSEARCH.get('osHost', None)
             os_port = settings.MONIT_OPENSEARCH.get('osPort', None)
-            os_host = protocol + '://' + os_host + ':' + os_port + '/os' if os_host else None
+            os_host = f"{protocol}://{os_host}:{os_port}/os" if os_host else None
             os_user = settings.MONIT_OPENSEARCH.get('osUser', None)
             os_password = settings.MONIT_OPENSEARCH.get('osPassword', None)
+
         if any(i is None for i in (os_host, os_user, os_password)):
-            raise Exception('OS cluster credentials was not found in settings')
+            raise Exception('OS cluster credentials were not found in settings')
+
     else:
         if hasattr(settings, 'ES_CLUSTER'):
             es_host = settings.ES_CLUSTER.get('esHost', '')
             es_port = settings.ES_CLUSTER.get('esPort', '9200')
             es_protocol = settings.ES_CLUSTER.get('esProtocol', 'http')
             es_path = settings.ES_CLUSTER.get('esPath', '')
-            es_host = es_protocol + '://' + es_host + ':' + es_port + es_path
-            es_user = settings.ES_CLUSTER.get('esUser', '')
-            es_password = settings.ES_CLUSTER.get('esPassword', '')
+
+            es_host = f"{es_protocol}://{es_host}:{es_port}{es_path}"
+
+            es_user = os.getenv('ES_USER', settings.ES_CLUSTER.get('esUser', ''))
+            es_password = os.getenv('ES_PASSWORD', settings.ES_CLUSTER.get('esPassword', ''))
+
             os_host = es_host
             os_user = es_user
             os_password = es_password
@@ -64,9 +66,10 @@ def create_os_connection(instance='os-atlas', timeout=2000, max_retries=10, retr
     try:
         parsed_uri = urlparse(os_host)
         protocol = '{uri.scheme}'.format(uri=parsed_uri)
+        is_https = protocol == 'https'
 
         if settings.DEPLOYMENT == 'ORACLE_ATLAS':
-            if protocol == 'https':
+            if is_https:
                 ca_certs = settings.OS_CA_CERT
 
                 connection = OpenSearch(
@@ -86,13 +89,24 @@ def create_os_connection(instance='os-atlas', timeout=2000, max_retries=10, retr
                     max_retries=max_retries,
                     retry_on_timeout=retry_on_timeout)
         else:
-            connection = Elasticsearch (
+            if is_https:
+                ca_certs = settings.OS_CA_CERT
+                connection = OpenSearch (
+                        [os_host],
+                        http_auth=(os_user, os_password),
+                        verify_certs=True,
+                        timeout=timeout,
+                        max_retries=max_retries,
+                        retry_on_timeout=retry_on_timeout,
+                        ca_certs=ca_certs
+                )
+            else:
+                connection = OpenSearch(
                     [os_host],
                     http_auth=(os_user, os_password),
                     timeout=timeout,
                     max_retries=max_retries,
                     retry_on_timeout=retry_on_timeout)
-
         return connection
 
     except Exception as ex:
@@ -117,8 +131,8 @@ def get_payloadlog(id, os_conn, index, start=0, length=50, mode='pandaid', sort=
         s = Search(using=os_conn, index=index)
         q = Q("multi_match", query=search_string, fields=['level', 'message'])
     else:
-        s = ESearch(using=os_conn, index=index)
-        q = EQ("multi_match", query=search_string, fields=['level', 'message'])
+        s = Search(using=os_conn, index=index)
+        q = Q("multi_match", query=search_string, fields=['level', 'message'])
 
     s = s.source(["@timestamp", "@timestamp_nanoseconds", "level", "message", "PandaJobID", "TaskID",
                   "Harvester_WorkerID", "Harvester_ID"])
