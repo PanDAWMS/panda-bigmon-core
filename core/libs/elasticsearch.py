@@ -2,7 +2,11 @@ import logging, os, json, requests, hashlib
 
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
-from opensearchpy import OpenSearch, Search, Q
+from opensearchpy import OpenSearch
+try:
+    from opensearch_dsl import Search, Q
+except ImportError:
+    from opensearchpy import Search, Q
 
 from core.pandajob.models import Jobsactive4
 from core.libs.DateTimeEncoder import DateTimeEncoder

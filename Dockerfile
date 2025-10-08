@@ -84,7 +84,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt beautifulsoup4 boto3 bz2file  \
     cachetools certifi cffi channels chardet click confluent_kafka cryptography cycler \
     daphne dataclasses datefinder decorator defusedxml Django==5.0.8 docopt dogpile.cache ecdsa \
-    elasticsearch elasticsearch-dsl opensearch-py enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
+    elasticsearch elasticsearch-dsl opensearch-py opensearch-dsl enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
     humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
     Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
     olefile openshift oracledb packaging pandas paramiko patterns pep8 Pillow pip pluggy prettytable progressbar2 psutil psycopg2-binary \
