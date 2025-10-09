@@ -25,9 +25,9 @@ class TrafficControlMiddleware(object):
     """
     - Stores requests data to DB
     - Rejects requests with 429 in case of overload from the same client or address
-    - Uses settings.TRAFFIC_CONTROL_ACTIVATE to activate/deactivate
-    - Uses settings.TRAFFIC_CONTROL_WHITE_LIST to exclude IPs from checking
+    - Uses settings.TRAFFIC_CONTROL_ENABLED to enable/disable checking
     - Uses settings.TRAFFIC_CONTROL_BLACK_LIST to always reject IPs
+    - Uses settings.TRAFFIC_CONTROL_WHITE_LIST to exclude IPs from checking
     - Uses settings.MAX_REQUESTS_PER_HOUR to set max allowed requests per hour from the
     """
 
