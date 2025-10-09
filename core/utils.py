@@ -5,7 +5,6 @@ import logging
 import re
 import subprocess
 import os
-import json
 
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -76,7 +75,7 @@ def complete_request(request, **kwargs):
     :param kwargs: expects extra_keys as list
     :return:
     """
-    _logger.info(f"Len of session dict at the end: {len(json.dumps(dict(request.session)))}")
+    _logger.info(f"Len of session dict at the end: {len(str(dict(request.session)))}")
 
     keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls', 'TFIRST', 'TLAST', 'PLOW', 'PHIGH']
     if 'extra_keys' in kwargs:
@@ -86,7 +85,7 @@ def complete_request(request, **kwargs):
         if k in request.session:
             del request.session[k]
     request.session.modified = True
-    _logger.info(f"Len of session dict after cleaning: {len(json.dumps(dict(request.session)))}")
+    _logger.info(f"Len of session dict after cleaning: {len(str(dict(request.session)))}")
 
     if is_json_request(request):
         # request.session.set_expiry(settings.SESSION_API_CALL_AGE)
