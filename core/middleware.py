@@ -6,7 +6,6 @@ import subprocess
 from datetime import timedelta
 
 from django.utils import timezone
-from django.utils.deprecation import MiddlewareMixin
 from django.db.models import Count
 from django.db import connection, DatabaseError
 
@@ -162,7 +161,20 @@ class TrafficControlMiddleware(object):
 
 
 
-class RequestLoggingMiddleware(MiddlewareMixin):
+class RequestLoggingMiddleware(object):
+    """ Middleware that logs any unhandled exceptions raised during request processing."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        try:
+            response = self.get_response(request)
+        except Exception as ex:
+            self.process_exception(request, ex)
+            raise
+        return response
+
     def process_exception(self, request, exception):
         _logger.error(
             f"Error occurred: {str(exception)}",
