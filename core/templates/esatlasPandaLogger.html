@@ -217,7 +217,7 @@
                         }
                         $("#tabs-4").append("<input id=\"refresh\" type=\"submit\" value=\"Refresh\">      ");
                         $("#tabs-4").append("<a href=\"https://os-atlas.cern.ch/dashboards/app/dashboards#/view/jedilogs_analyjobbrokerage?_g=()\" target=\"_blank\" style=\"color: #0a47ff\">Analy job brokerage (os-atlas.cern.ch)</a><br/><br/>");
-                        $("#tabs-4").append("<iframe id=\"analyjobbrokerage\" src=\"https://os-atlas.cern1.ch/dashboards/app/dashboards#/view/jedilogs_analyjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
+                        $("#tabs-4").append("<iframe id=\"analyjobbrokerage\" src=\"https://os-atlas.cern.ch/dashboards/app/dashboards#/view/jedilogs_analyjobbrokerage?embed=true&_g=(refreshInterval%3A(display%3AOff%2Cpause%3A!f%2Cvalue%3A0)%2Ctime%3A(from%3Anow-15m%2Cmode%3Aquick%2Cto%3Anow))\" height=\"1000\" width=\"100%\"></iframe>");
                         $("#refresh").button();
                         $("#refresh").click(function (event) {
                             $('#analyjobbrokerage').attr('src', function (i, val) {

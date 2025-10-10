@@ -39,24 +39,19 @@ STATICFILES_FINDERS = (
 # List of callables that know how to import templates from various sources.
 
 MIDDLEWARE = (
-    'core.ddosprotection.DDOSMiddleware',
+    'core.middleware.TrafficControlMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',  # for AJAX POST protection with csrf
-
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'core.oauth.CustomSocialAuthException.CustomSocialAuthExceptionMiddleware',
-
     'csp.middleware.CSPMiddleware',
-
-    'core.loggingmiddleware.RequestLoggingMiddleware',
-
+    'core.middleware.RequestLoggingMiddleware',
 )
 
 ROOT_URLCONF = 'core.urls'
@@ -64,10 +59,8 @@ ROOT_URLCONF = 'core.urls'
 # Auth
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'core.oauth.Cernauth2.CernAuthOIDC',
-    'social_core.backends.google.GoogleOAuth2',
-    'social_core.backends.github.GithubOAuth2',
     'core.oauth.indigoiam.IndigoIamOIDC',
+    'core.oauth.Cernauth2.CernAuthOIDC',
 )
 AUTH_USER_MODEL = 'oauth.BPUser'
 
