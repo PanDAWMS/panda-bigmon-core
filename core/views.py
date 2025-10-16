@@ -4059,7 +4059,7 @@ def killtasks(request):
     if action == 1:
         postdata = {"username": username, "task": taskid, "userfullname": fullname}
     else:
-        postdata = {"username": username, "task": taskid, "parameters": [1], "userfullname": fullname}
+        postdata = {"username": username, "task": taskid, "parameters": [True], "userfullname": fullname}
 
     headers = {
         'Content-Type': 'application/json',
