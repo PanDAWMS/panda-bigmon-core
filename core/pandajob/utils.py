@@ -174,7 +174,7 @@ def preprocess_job_summary(list_of_dict, field_name_jobtype='prodsourcelabel'):
                 if 'destinationsite' in row and row['destinationsite'] is not None and row['destinationsite'] != '':
                     row['is_osg_pool_pq'] = True
                     row['osg_pool_pq_name'] = row['computingsite']
-                    row['computingsite'] = row['destinationsite']
+                    row['computingsite'] = f"{row['computingsite']}:{row['destinationsite']}"
         else:
             row['is_osg_pool_pq'] = False
 

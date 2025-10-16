@@ -355,3 +355,7 @@ if settings.OSG_POOL_USED:
         'destinationsite',
         'sourcesite',
     )
+    JOB_FIELDS_ERROR_VIEW += (
+        'destinationsite',
+        'sourcesite',
+    )

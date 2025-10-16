@@ -5330,6 +5330,9 @@ def errorSummary(request):
         'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'actualcorecount', 'computingelement'
     )
 
+    if settings.OSG_POOL_USED:
+        values += ('destinationsite', 'sourcesite',)
+
     panda_job_models = [Jobsarchived4,]
     # we add tables with active jobs for test jobs summary
     if testjobs:
