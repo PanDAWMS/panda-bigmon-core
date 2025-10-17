@@ -5,6 +5,7 @@ import logging
 import copy
 from datetime import datetime, timedelta
 from django.db.models import Count, Sum, Q
+from django.conf import settings
 
 from core.pandajob.models import Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
 from core.libs.datetimestrings import parse_datetime
@@ -28,15 +29,19 @@ def wn_summary_data(query):
         except KeyError:
             _logger.warning('Failed to remove modificationtime range from query')
 
-    summary.extend(Jobsdefined4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
-    summary.extend(Jobsactive4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
-    summary.extend(Jobsarchived4.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
+    agg_values = ('modificationhost', 'jobstatus')
+    if settings.OSG_POOL_USED:
+        agg_values += ('destinationsite',)
+
+    summary.extend(Jobsdefined4.objects.filter(**query).values(*agg_values).annotate(
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running))
+    summary.extend(Jobsactive4.objects.filter(**query).values(*agg_values).annotate(
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running))
+    summary.extend(Jobsarchived4.objects.filter(**query).values(*agg_values).annotate(
+        Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running))
     if is_archive:
-        summary.extend(Jobsarchived.objects.filter(**query).values('modificationhost', 'jobstatus').annotate(
-            Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running).order_by('modificationhost', 'jobstatus'))
+        summary.extend(Jobsarchived.objects.filter(**query).values(*agg_values).annotate(
+            Count('jobstatus')).annotate(rcores=cores_running).annotate(rminramcount=minramcount_running))
 
     return summary
 
@@ -50,12 +55,17 @@ def wn_summary(wnname, query):
     totjobs = 0
     totrcores = 0
     totrminramcount = 0
+    real_sites_from_osg_pool = {}
     wns = {}
     wnPlotFailed = {}
     wnPlotFinished = {}
     for state in const.JOB_STATES_SITE:
         totstates[state] = 0
     for rec in wnsummarydata:
+        if settings.OSG_POOL_USED and 'destinationsite' in rec and rec['destinationsite'] not in ('Unknown', None):
+            if rec['destinationsite'] not in real_sites_from_osg_pool:
+                real_sites_from_osg_pool[rec['destinationsite']] = 0
+            real_sites_from_osg_pool[rec['destinationsite']] += rec['jobstatus__count']
         jobstatus = rec['jobstatus']
         count = rec['jobstatus__count']
         rcores = rec['rcores'] if rec['rcores'] is not None else 0
@@ -185,4 +195,4 @@ def wn_summary(wnname, query):
 
     plots_data = {'finished': wnPlotFinished, 'failed': wnPlotFailed}
 
-    return fullsummary, plots_data
+    return fullsummary, plots_data, real_sites_from_osg_pool

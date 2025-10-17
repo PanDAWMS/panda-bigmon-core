@@ -3063,7 +3063,7 @@ def wnInfo(request, site=None, wnname='all'):
         query['modificationhost__contains'] = wnname_rgx.replace('*', '')
     query['computingsite'] = site
 
-    fullsummary, plots_data = wn_summary(wnname, query)
+    fullsummary, plots_data, real_sites_from_osg_pool = wn_summary(wnname, query)
 
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         sortby = 1  # count
@@ -3116,6 +3116,7 @@ def wnInfo(request, site=None, wnname='all'):
             'summary': fullsummary,
             'wnPlotFailed': wnPlotFailedL,
             'wnPlotFinished': wnPlotFinishedL,
+            'real_sites_from_osg_pool': list(real_sites_from_osg_pool),
             'hours': hours,
             'time_locked_url': time_locked_url,
             'warning': warning,
