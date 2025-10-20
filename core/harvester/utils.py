@@ -5,7 +5,7 @@ from django.db import connection
 from django.db.models import Q, Count, Sum
 
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs
-from core.pandajob.utils import identify_jobtype
+from core.pandajob.utils import preprocess_job_summary
 
 from django.conf import settings
 
@@ -261,5 +261,5 @@ def get_workers_summary_split(query, **kwargs):
         worker_summary = HarvesterWorkerStats.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
-    worker_summary = identify_jobtype(worker_summary, field_name='jobtype')
+    worker_summary = preprocess_job_summary(worker_summary, field_name_jobtype='jobtype')
     return list(worker_summary)

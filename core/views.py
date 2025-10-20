@@ -8,7 +8,6 @@ import copy
 import random
 import pandas as pd
 import math
-import base64
 import urllib3
 import hashlib
 
@@ -37,11 +36,9 @@ import core.constants as const
 from core.common.utils import getPrefix, getContextVariables
 from core.pandajob.SQLLookups import CastDate
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4, Jobsarchived, PandaJob, ErrorDescription
-from core.schedresource.models import SchedconfigJson
 from core.common.models import Filestable4, FilestableArch, Datasets, Users, Jobparamstable, JobsStatuslog, Jobsdebug, ResourceTypes
 from core.common.models import JediJobRetryHistory, JediTasks, TasksStatusLog, JediEvents, JediDatasets, JediDatasetContents, JediWorkQueue
 from core.common.models import Rating
-from core.oauth.models import BPUser
 from core.compare.modelsCompare import ObjectsComparison
 from core.filebrowser.rucioutils import get_rucio_username_by_produserid
 from core.filebrowser.utils import get_log_provider
@@ -68,12 +65,12 @@ from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_datasets_for_tasklist, get_task_name_by_taskid, get_task_rating, get_task_diagnostics
 from core.libs.task import get_dataset_locality, is_event_service_task, filter_task_list_by_relevance, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
+from core.libs.task import checkIfIddsTask, checkIfDCTask
 from core.libs.taskparams import analyse_task_submission_options
 from core.libs.job import get_job_list, calc_jobs_metrics, job_states_count_by_param, is_job_active, \
     get_job_queuetime, get_job_walltime, job_state_count, getSequentialRetries, getSequentialRetries_ES, \
      getSequentialRetries_ESupstream, is_debug_mode, clean_job_list, add_files_info_to_jobs, get_files_for_job
 from core.libs.jobmetadata import addJobMetadata
-from core.libs.site import get_pq_metrics
 from core.libs.bpuser import get_relevant_links, filterErrorData
 from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
 from core.libs.elasticsearch import create_os_connection, get_payloadlog, get_split_rule_info
@@ -86,20 +83,16 @@ from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.pandajob.summary_error import errorSummaryDict, get_error_message_summary
 from core.pandajob.summary_task import task_summary, job_summary_for_task, job_summary_for_task_light, \
     get_job_state_summary_for_tasklist, get_top_memory_consumers
-from core.pandajob.summary_site import site_summary_dict
 from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_user import user_summary_dict
 from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, error_summary_for_job
-
-from core.libs.task import checkIfIddsTask
-from core.libs.task import checkIfDCTask
 
 from core.iDDS.utils import add_idds_info_to_tasks
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
 from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
-from core.schedresource.utils import get_panda_queues, get_basic_info_for_pqs, get_panda_resource, get_pq_clouds, get_pq_object_store_path, \
-    filter_pq_json
+from core.schedresource.utils import get_panda_queues, get_basic_info_for_pqs, get_pq_clouds, get_pq_object_store_path, \
+    filter_pq_json, get_osg_pool_pqs
 
 tcount = {}
 lock = Lock()
@@ -172,11 +165,8 @@ def get_item(input_dict, key):
 
 def initRequest(request, callselfmon=True):
     global VOMODE, ENV, hostname, full_hostname
+    VOMODE = settings.MON_VO.lower() if hasattr(settings, 'MON_VO') else 'atlas'
     ENV = {}
-    VOMODE = ''
-    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
-        VOMODE = 'atlas'
-
     request.session['meta'] = {
         'version': settings.VERSION,
     }
@@ -185,31 +175,6 @@ def initRequest(request, callselfmon=True):
     request.session['IS_TESTER'] = False
     request.session['viewParams'] = {}
     request.session['requestParams'] = {}
-
-    if VOMODE == 'atlas':
-        if "MELLON_SAML_RESPONSE" in request.META and base64.b64decode(request.META['MELLON_SAML_RESPONSE']):
-            if "ADFS_FULLNAME" in request.META:
-                request.session['ADFS_FULLNAME'] = request.META['ADFS_FULLNAME']
-            if "ADFS_EMAIL" in request.META:
-                request.session['ADFS_EMAIL'] = request.META['ADFS_EMAIL']
-            if "ADFS_FIRSTNAME" in request.META:
-                request.session['ADFS_FIRSTNAME'] = request.META['ADFS_FIRSTNAME']
-            if "ADFS_LASTNAME" in request.META:
-                request.session['ADFS_LASTNAME'] = request.META['ADFS_LASTNAME']
-            if "ADFS_LOGIN" in request.META:
-                request.session['ADFS_LOGIN'] = request.META['ADFS_LOGIN']
-                user = None
-                try:
-                    user = BPUser.objects.get(username=request.session['ADFS_LOGIN'])
-                    request.session['IS_TESTER'] = user.is_tester
-                    request.session['USER_ID'] = user.id
-                except BPUser.DoesNotExist:
-                    user = BPUser.objects.create_user(username=request.session['ADFS_LOGIN'],
-                                                      email=request.session['ADFS_EMAIL'],
-                                                      first_name=request.session['ADFS_FIRSTNAME'],
-                                                      last_name=request.session['ADFS_LASTNAME'])
-                    user.set_unusable_password()
-                    user.save()
 
     # creating a dict in session to store long urls as it will not be saved to session storage
     # Session is NOT modified, because this alters sub dict
@@ -274,10 +239,6 @@ def initRequest(request, callselfmon=True):
         else:
             request.session['user_permissions'] = []
 
-    if settings.DEPLOYMENT == 'ORACLE_ATLAS':
-        VOMODE = 'atlas'
-    else:
-        VOMODE = settings.DEPLOYMENT
 
     request.session['viewParams']['MON_VO'] = settings.MON_VO if hasattr(settings, 'MON_VO') else ''
 
@@ -938,7 +899,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
     # process queue related params if any
     if querytype == 'job':
-        if 'region' in request.session['requestParams']:
+        if 'region' in request.session['requestParams'] and request.session['requestParams']['region'] != 'OSG':
             request.session['requestParams']['queuecloud'] = request.session['requestParams']['region']
         if 'site' in request.session['requestParams']:
             request.session['requestParams']['queueatlas_site'] = request.session['requestParams']['site']
@@ -953,6 +914,35 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     query['computingsite__in'] = list(set(query['computingsite__in']) & set([k for k in pqs_dict]))
                 else:
                     query['computingsite__in'] = list(pqs_dict.keys())
+
+        # in case of OSG region, limit to OSG sites. No support of * wildcard as it is too hard to implement
+        if settings.OSG_POOL_USED:
+            osg_pool_pqs = get_osg_pool_pqs()
+            if 'region' in request.session['requestParams'] and request.session['requestParams']['region'] == 'OSG':
+                query['computingsite__in'] = osg_pool_pqs.keys()
+            if 'computingsite' in request.session['requestParams']:
+                if is_wildcards(request.session['requestParams']['computingsite']):
+                    cs_list_requested = request.session['requestParams']['computingsite'].replace('!', '').replace('*', '').split(',')
+                else:
+                    cs_list_requested = [request.session['requestParams']['computingsite'], ]
+                if 'destinationsite__in' not in query:
+                    query['destinationsite__in'] = []
+                if 'computingsite__in' not in query:
+                    query['computingsite__in'] = []
+                for cs in cs_list_requested:
+                    if cs in osg_pool_pqs:
+                        if cs not in query['computingsite__in']:
+                            query['computingsite__in'].append(cs)
+                    else:
+                        if cs not in query['destinationsite__in']:
+                            query['destinationsite__in'].append(cs)
+                if len(query['computingsite__in']) == 0:
+                    del query['computingsite__in']
+                if len(query['destinationsite__in']) == 0:
+                    del query['destinationsite__in']
+            # remove computingsite from wildcards search
+            if 'computingsite' in wildSearchFields:
+                wildSearchFields.remove('computingsite')
 
     if opmode in ['analysis', 'production'] and querytype == 'job':
         if opmode.startswith('analy'):
@@ -1010,7 +1000,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         extraJobParCondition = '('
         for card in jobParWildCards:
             extraJobParCondition += preprocess_wild_card_string(escape_input(card), 'JOBPARAMETERS')
-            if (jobParCurrentCardCount < jobParCountCards): extraJobParCondition += ' OR '
+            if jobParCurrentCardCount < jobParCountCards:
+                extraJobParCondition += ' OR '
             jobParCurrentCardCount += 1
         extraJobParCondition += ')'
 
@@ -1028,7 +1019,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if extraQueryString.endswith(' AND '):
         extraQueryString = extraQueryString[:-5]
 
-    if (len(extraQueryString) < 2):
+    if len(extraQueryString) < 2:
         extraQueryString = '1=1'
 
     return (query, extraQueryString, LAST_N_HOURS_MAX)
@@ -1308,17 +1299,7 @@ def jobList(request, mode=None, param=None):
     if is_json_request(request):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     else:
-        values = [
-            'corecount', 'jobsubstatus', 'produsername', 'cloud', 'computingsite', 'cpuconsumptiontime', 'jobstatus',
-            'transformation', 'prodsourcelabel', 'specialhandling', 'vo', 'modificationtime', 'pandaid', 'atlasrelease',
-            'jobsetid', 'processingtype', 'workinggroup', 'jeditaskid', 'taskid', 'currentpriority', 'creationtime',
-            'starttime', 'endtime', 'brokerageerrorcode', 'brokerageerrordiag', 'ddmerrorcode', 'ddmerrordiag',
-            'exeerrorcode', 'exeerrordiag', 'jobdispatchererrorcode', 'jobdispatchererrordiag', 'piloterrorcode',
-            'piloterrordiag', 'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag',
-            'transexitcode', 'destinationse', 'homepackage', 'inputfileproject', 'inputfiletype', 'attemptnr',
-            'maxattempt', 'jobname', 'computingelement', 'proddblock', 'destinationdblock', 'reqid', 'minramcount',
-            'statechangetime', 'nevents', 'jobmetrics', 'noutputdatafiles', 'outputfiletype', 'parentid',
-            'actualcorecount', 'schedulerid', 'pilotid', 'commandtopilot', 'cmtconfig', 'maxpss']
+        values = list(const.JOB_FIELDS)
         if not eventservice:
             values.extend(['avgvmem', 'maxvmem', 'maxrss'])
 
@@ -1328,6 +1309,8 @@ def jobList(request, mode=None, param=None):
             values.append('gshare')
             values.append('resourcetype')
             values.append('container_name')
+
+        values = list(set(values))  # deduplicate the list
 
     showTop = 0
     if 'limit' in request.session['requestParams']:
@@ -3021,200 +3004,6 @@ def userDashApi(request, agg=None):
 
 
 @login_customrequired
-def siteList(request):
-    valid, response = initRequest(request)
-    if not valid: return response
-
-    # Here we try to get cached data
-    data = getCacheEntry(request, "siteList")
-    if data is not None:
-        data = json.loads(data)
-        data['request'] = request
-        response = render(request, 'siteList.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-
-    if 'sortby' in request.session['requestParams']:
-        sortby = request.session['requestParams']['sortby']
-    else:
-        sortby = 'alpha'
-    for param in request.session['requestParams']:
-        request.session['requestParams'][param] = escape_input(request.session['requestParams'][param])
-
-    # get full list of queues
-    pqs = get_panda_queues()
-    if 'copytool' in request.session['requestParams'] and request.session['requestParams']['copytool'] is not None:
-        pqs = {k: v for k, v in pqs.items() if request.session['requestParams']['copytool'] in v['copytools']}
-
-    pqs = filter_pq_json(request, pqs_dict=pqs)
-    pqs = list(pqs.values())
-
-    xurl = extensibleURL(request)
-    nosorturl = removeParam(xurl, 'sortby', mode='extensible')
-    if not is_json_request(request):
-        # attribute summary
-        sumd = site_summary_dict(pqs, vo_mode=VOMODE, sortby=sortby)
-        # prepare data for table
-        for pq in pqs:
-            if 'maxrss' in pq and isinstance(pq['maxrss'], int):
-                pq['maxrss_gb'] = round(pq['maxrss'] / 1000., 1)
-            if 'minrss' in pq and isinstance(pq['minrss'], int):
-                pq['minrss_gb'] = round(pq['minrss'] / 1000., 1)
-            if 'maxtime' in pq and isinstance(pq['maxtime'], int) and pq['maxtime'] > 0:
-                pq['maxtime_hours'] = round(pq['maxtime'] / 3600.)
-            if 'maxinputsize' in pq and isinstance(pq['maxinputsize'], int) and pq['maxinputsize'] > 0:
-                pq['maxinputsize_gb'] = round(pq['maxinputsize'] / 1000.)
-            if 'copytools' in pq and pq['copytools'] and len(pq['copytools']) > 0:
-                pq['copytool'] = ', '.join(list(pq['copytools'].keys()))
-        pq_params_table = [
-            'cloud', 'gocname', 'tier', 'nickname', 'status', 'type', 'workflow', 'system', 'copytool', 'harvester',
-            'minrss_gb', 'maxrss_gb', 'maxtime_hours', 'maxinputsize_gb', 'comment'
-        ]
-        sites = []
-        for pq in pqs:
-            tmp_dict = {}
-            for param in pq_params_table:
-                tmp_dict[param] = pq[param] if param in pq and pq[param] is not None else '---'
-            sites.append(tmp_dict)
-
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'requestParams': request.session['requestParams'],
-            'sites': sites,
-            'sumd': sumd,
-            'xurl': xurl,
-            'nosorturl': nosorturl,
-            'built': datetime.now().strftime("%H:%M:%S"),
-        }
-        setCacheEntry(request, "siteList", json.dumps(data, cls=DateEncoder), 60 * 60)
-        response = render(request, 'siteList.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-    else:
-        return HttpResponse(json.dumps(pqs, cls=DateEncoder), content_type='application/json')
-
-
-@login_customrequired
-def siteInfo(request, site=''):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    if site == '' and 'site' in request.session['requestParams']:
-        site = request.session['requestParams']['site']
-
-    # get data from new schedconfig_json table
-    HPC = False
-    njobhours = 12
-    panda_queue = []
-    pq_dict = None
-    pqquery = {'pandaqueue': site}
-    panda_queues = SchedconfigJson.objects.filter(**pqquery).values()
-    panda_queue_type = None
-
-    if len(panda_queues) > 0:
-        pq_dict = panda_queues[0]['data']
-        if isinstance(pq_dict, str):
-            pq_dict = json.loads(pq_dict)
-    # get PQ params from CRIC if no info in DB
-    if not pq_dict:
-        pq_dict = get_panda_resource(site)
-
-    if pq_dict:
-        panda_queue_type = pq_dict['type']
-        for par, val in pq_dict.items():
-            val = ', '.join([str(subpar) + ' = ' + str(subval) for subpar, subval in val.items()]) if isinstance(val,
-                                                                                                                 dict) else val
-            panda_queue.append({'param': par, 'value': val})
-        panda_queue = sorted(panda_queue, key=lambda x: x['param'])
-
-        # if HPC increase hours for links
-        if 'catchall' in pq_dict and pq_dict['catchall'] and pq_dict['catchall'].find('HPC') >= 0:
-            HPC = True
-            njobhours = 48
-
-    if not is_json_request(request):
-        # prepare relevant params for top table
-        attrs = []
-        if pq_dict:
-            attrs.append({'name': 'GOC name', 'value': pq_dict['gocname'] if 'gocname' in pq_dict else ''})
-            if HPC:
-                attrs.append({'name': 'HPC', 'value': 'This is a High Performance Computing (HPC) supercomputer queue'})
-            if 'catchall' in pq_dict and pq_dict['catchall'].find('log_to_objectstore') >= 0:
-                attrs.append({'name': 'Object store logs', 'value': 'Logging to object store is enabled'})
-            if 'objectstore' in pq_dict and pq_dict['objectstore'] and len(pq_dict['objectstore']) > 0:
-                fields = pq_dict['objectstore'].split('|')
-                nfields = len(fields)
-                for nf in range(0, len(fields)):
-                    if nf == 0:
-                        attrs.append({'name': 'Object store location', 'value': fields[0]})
-                    else:
-                        fields2 = fields[nf].split('^')
-                        if len(fields2) > 1:
-                            ostype = fields2[0]
-                            ospath = fields2[1]
-                            attrs.append({'name': 'Object store %s path' % ostype, 'value': ospath})
-
-            if 'nickname' in pq_dict and pq_dict['nickname'] != site:
-                attrs.append({'name': 'Queue (nickname)', 'value': pq_dict['nickname']})
-            attrs.append({'name': 'Status', 'value': pq_dict['status'] if 'status' in pq_dict else '-'})
-            if 'comment' in pq_dict and pq_dict['comment'] and len(pq_dict['comment']) > 0:
-                attrs.append({'name': 'Comment', 'value': pq_dict['comment']})
-            if 'type' in pq_dict and pq_dict['type']:
-                attrs.append({'name': 'Type', 'value': pq_dict['type']})
-            if 'cloud' in pq_dict and pq_dict['cloud']:
-                attrs.append({'name': 'Cloud', 'value': pq_dict['cloud']})
-            if 'tier' in pq_dict and pq_dict['tier']:
-                attrs.append({'name': 'Tier', 'value': pq_dict['tier']})
-            if 'corecount' in pq_dict and isinstance(pq_dict['corecount'], int):
-                attrs.append({'name': 'Cores', 'value': pq_dict['corecount']})
-            if 'maxrss' in pq_dict and isinstance(pq_dict['maxrss'], int):
-                attrs.append({'name': 'Max RSS', 'value': "{} GB".format(round(pq_dict['maxrss'] / 1000., 1))})
-            if 'maxtime' in pq_dict and isinstance(pq_dict['maxtime'], int) and pq_dict['maxtime'] > 0:
-                attrs.append({'name': 'Max time', 'value': "{} hours".format(round(pq_dict['maxtime'] / 3600.))})
-            if 'maxinputsize' in pq_dict and isinstance(pq_dict['maxinputsize'], int) and pq_dict['maxinputsize'] > 0:
-                attrs.append(
-                    {'name': 'Max input size', 'value': "{} GB".format(round(pq_dict['maxinputsize'] / 1000.))})
-
-            # get calculated metrics
-            if 'ATLAS' in settings.DEPLOYMENT:
-                try:
-                    metrics = get_pq_metrics(pq_dict['nickname'])
-                except Exception as ex:
-                    metrics = {}
-                    _logger.exception('Failed to get metrics for {}\n {}'.format(pq_dict['nickname'], ex))
-                if len(metrics) > 0:
-                    for pq, m_dict in metrics.items():
-                        for m in m_dict:
-                            panda_queue.append({'label': m, 'param': m, 'value': m_dict[m]})
-
-        data = {
-            'request': request,
-            'viewParams': request.session['viewParams'],
-            'site': pq_dict,
-            'colnames': panda_queue,
-            'attrs': attrs,
-            'name': site,
-            'pq_type': panda_queue_type,
-            'njobhours': njobhours,
-            'hc_link_dates': [
-                (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
-                datetime.now().strftime("%Y-%m-%d")],
-            'built': datetime.now().strftime("%H:%M:%S"),
-        }
-        data.update(getContextVariables(request))
-        response = render(request, 'siteInfo.html', data, content_type='text/html')
-        patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
-        return response
-    else:
-        del request.session['TFIRST']
-        del request.session['TLAST']
-
-        return HttpResponse(json.dumps(panda_queue), content_type='application/json')
-
-
-@login_customrequired
 def wnInfo(request, site=None, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
     valid, response = initRequest(request)
@@ -3274,7 +3063,7 @@ def wnInfo(request, site=None, wnname='all'):
         query['modificationhost__contains'] = wnname_rgx.replace('*', '')
     query['computingsite'] = site
 
-    fullsummary, plots_data = wn_summary(wnname, query)
+    fullsummary, plots_data, real_sites_from_osg_pool = wn_summary(wnname, query)
 
     if 'sortby' in request.session['requestParams'] and request.session['requestParams']['sortby'] == 'count':
         sortby = 1  # count
@@ -3327,6 +3116,7 @@ def wnInfo(request, site=None, wnname='all'):
             'summary': fullsummary,
             'wnPlotFailed': wnPlotFailedL,
             'wnPlotFinished': wnPlotFinishedL,
+            'real_sites_from_osg_pool': list(real_sites_from_osg_pool),
             'hours': hours,
             'time_locked_url': time_locked_url,
             'warning': warning,
@@ -5540,6 +5330,9 @@ def errorSummary(request):
         'superrorcode', 'superrordiag', 'taskbuffererrorcode', 'taskbuffererrordiag', 'transexitcode',
         'destinationse', 'currentpriority', 'computingelement', 'gshare', 'reqid', 'actualcorecount', 'computingelement'
     )
+
+    if settings.OSG_POOL_USED:
+        values += ('destinationsite', 'sourcesite',)
 
     panda_job_models = [Jobsarchived4,]
     # we add tables with active jobs for test jobs summary
