@@ -146,15 +146,9 @@ function buildDatasetsTable(data) {
             }
         },
         {
-            data: "system",
-            title: "System",
+            data: "job_manager",
+            title: "Job manager",
             sDefaultContent: "---",
-            render: function(data, type, row, meta) {
-              if (data && data !== '---') {
-                return '<a href="{{ xurl }}system=' + data + '">' + data + '</a>'
-              }
-              else {return data}
-            }
         },
         {
             data: "copytool",
