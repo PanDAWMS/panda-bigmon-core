@@ -71,7 +71,10 @@ def setup_harvester_view(request, otype='worker'):
             for field in HarvesterWorkers._meta.get_fields():
                 param = field.name
                 if rparam == param:
-                    query[param] = rvalue
+                    if rvalue == 'Not specified':
+                        extra += f" AND ( {rparam} is NULL or {rparam} = '' ) "
+                    else:
+                        query[param] = rvalue
             if rparam == 'workerids':
                 query['workerid__in'] = rvalue.split(',')
             if rparam == 'pandaid':
@@ -127,17 +130,6 @@ def setup_harvester_view(request, otype='worker'):
                 settings.DB_SCHEMA_PANDA,
                 internal_extra
             )
-
-    # if 'pandaid' in request.session['requestParams']:
-    #     pandaid = request.session['requestParams']['pandaid']
-    #     try:
-    #         jobsworkersquery, pandaids = getWorkersByJobID(pandaid, request.session['requestParams']['instance'])
-    #     except:
-    #         message = """PandaID for this instance is not found """
-    #         return HttpResponse(json.dumps({'message': message}),
-    #                             content_type='text/html')
-    #     extra += """ AND workerid in (%s)""" % (jobsworkersquery)
-    #     URL += '&pandaid=' + str(request.session['requestParams']['pandaid'])
 
     return query, extra
 
