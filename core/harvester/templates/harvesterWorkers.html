@@ -4,7 +4,7 @@
 {% load common_tags %}
 
 {% block page_title %}Harvester {% if instance %}{{ instance }}{% endif %} {% endblock %}
-{% block subtitle %} {{ viewParams.selection|safe }}{% endblock %}
+{% block subtitle %} Harvester workers {{ viewParams.selection|safe }}{% endblock %}
 {% block css_page_library %}
   <link rel="stylesheet" href="{% static "js/datatables/DataTables-1.10.13/css/dataTables.foundation.css" %}"/>
   <link rel="stylesheet" href="{% static 'js/jquery-ui/jquery-ui.css' %}">
@@ -24,10 +24,13 @@
 
 {% block body %}
 
+{% if warning and warning|length > 0 %}
+  <p>{{ warning }}</p>
+{% endif %}
+
+
 {% if nworkers > 0 %}
-<p>
-  <b>{{ nworkers }} workers </b> in this selection
-</p>
+<p><b>{{ nworkers }} workers </b> in this selection</p>
 
 {% if instance and harvesterinfo|length > 0 %}
 <div class="table-scroll">
@@ -74,7 +77,7 @@
       <td>
         <div class="comment more">
         {% for item in row.attrs %}
-          <span class="item"><span class="{% if row.field == 'status' %}{{ item.0 }}{% endif %}">{{ item.0 }}</span> <a href="{{ xurl }}{{ row.field }}={{ item.0|safe }}">({{ item.1 }})</a></span>
+          <span class="item"><span class="{% if row.field == 'status' or row.field == 'nativestatus' %}{{ item.0 }}{% endif %}">{{ item.0 }}</span> <a href="{{ xurl }}{{ row.field }}={{ item.0|safe }}">({{ item.1 }})</a></span>
         {% endfor %}
         </div>
       </td>
@@ -109,8 +112,7 @@
         <thead>
         <tr>
           <th>Instance</th>
-          <th class="num">Worker ID</th>
-          <th class="num">Jobs</th>
+          <th>Worker ID</th>
           <th class="num">Last update</th>
           <th class="state">Status</th>
           <th class="num">Batch ID</th>
@@ -218,8 +220,6 @@
   </div>
 </div>
 
-{% else %}
-  <p>No workers found. Check the filters in the URL or increase time range using <code>&hours=N</code> parameter.</p>
 {% endif %}
 
 <script nonce={{request.csp_nonce}}>
@@ -277,44 +277,17 @@ function workersTable() {
             {
                 data: "workerid",
                 sDefaultContent: "",
-                "className": "num",
+                "className": "text icons1",
                 "render": function (data, type, full, meta) {
                     if (type === "sort" || type === 'type') {
                         return data;
                     }
                     else {
-                        let hwi_base_url = "{% url 'harvesterWorkerInfo' workerid='000000' %}?harvesterid=" + full['harvesterid'];
-                        if (full['njobs']!=null) {
-                            if("harvesterid" in full) {
-                            return '' +'<a href="' + hwi_base_url.replace('000000', data)+'">'+full['workerid']+'</a>';
-                            } else {
-                            return '' + full['workerid'] + '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">'
-                            }
+                        let link = '<a target="_blank" href="{% url 'harvesterWorkerInfo' %}' + full['workerid'] + "/?harvesterid=" + full['harvesterid']+ '">'+full['workerid']+"</a>";
+                        if (full['njobs'] != null) {
+                            link += ' <a target="_blank" href="{% url 'jobList' %}?harvesterinstance=' + full['harvesterid'] + '&workerid=' + full['workerid'] + '"><div class="tooltip-right"><i class="fi-plus"></i><span class="tooltip-text">PanDA jobs</span></div></a>'
                         }
-                        else {
-                            return '' + '<a href="' + hwi_base_url.replace('000000', data)+'">'+full['workerid']+'</a>'
-                        }
-                    }
-                }
-            },
-            {
-                data: "njobs",
-                sDefaultContent: "",
-                "className": "num",
-                "render": function (data, type, full, meta) {
-                    if (type === "sort" || type === 'type') {
-                        return data;
-                    }
-                    else {
-                        if (full['njobs']!=null) {
-                            if("harvesterid" in full){
-                            return  '<a href = "{% url 'jobList' %}?harvesterinstance='+full['harvesterid']+'&workerid=' + full['workerid'] + '">' +  full['njobs']  + '</a>'
-                            }
-                            else {
-                            return '<a href = "{% url 'jobList' %}?computingsite='+full['computingsite']+'&workerid=' + full['workerid'] + '">' +  full['njobs'] +  '</a>'
-                            }
-                        }
-                        else { return '-' }
+                        return link
                     }
                 }
             },
@@ -416,7 +389,7 @@ function workersTable() {
             },
             {
                 "data": "errorcode",
-                sDefaultContent: "",
+                sDefaultContent: "-",
             },
             {
                 "data": "stdout",
@@ -426,7 +399,7 @@ function workersTable() {
                         return "-"
                     }
                     else {
-                        return '<a href = "' + full['stdout'] + '" target="_blank">' + 'Link' + '</a>'
+                        return '<a href = "' + full['stdout'] + '" target="_blank">' + 'link' + '</a>'
                     }
                 }
             },
@@ -438,7 +411,7 @@ function workersTable() {
                         return "-"
                     }
                     else {
-                        return '<a href = "' + full['stderr'] + '" target="_blank">' + 'Link' + '</a>'
+                        return '<a href = "' + full['stderr'] + '" target="_blank">' + 'link' + '</a>'
                     }
                 }
             },
@@ -450,7 +423,7 @@ function workersTable() {
                     if (full['batchlog'] == 0 || full['batchlog'] == null) {
                         return "-"
                     } else {
-                        return '<a href = "' + full['batchlog'] + '" target="_blank">' + 'Link' + '</a>'
+                        return '<a href = "' + full['batchlog'] + '" target="_blank">' + 'link' + '</a>'
                     }
                 }
             },
@@ -462,34 +435,37 @@ function workersTable() {
                         return "-"
                     }
                     else {
-                        return '<a href = "' + full['jdl'] + '" target="_blank">' + 'Link' + '</a>'
+                        return '<a href = "' + full['jdl'] + '" target="_blank">' + 'link' + '</a>'
                     }
                 }
             },
             {
                 "data": "resourcetype",
-                sDefaultContent: "",
+                sDefaultContent: "-",
             },
             {
                 "data": "nativeexitcode",
-                sDefaultContent: "",
+                sDefaultContent: "-",
                 "className": "num",
             },
             {
                 "data": "nativestatus",
-                sDefaultContent: "",
+                "className": "state",
+                sDefaultContent: "-",
             },
             {
                 "data": "diagmessage",
-                sDefaultContent: "",
+                sDefaultContent: "-",
             },
         ],
         "createdRow": function (row, data, index) {
-            $('td', row).eq(4,18).addClass(data['status'] + '_fill');
-            $('td', row).eq(1,2,3,5,8,9,10,11,17).addClass("dt-right");
+            $('td', row).eq(3).addClass(data['status'] + '_fill');
+            $('td', row).eq(17).addClass(data['nativestatus'] + '_fill');
         }
     });
 }
+
+
 function diagnosticsTable(number) {
     var url = "{% url 'getdiagnostics' %}{{ url|safe }}&limit=" + number;
     $('#datatableHDL').dataTable({

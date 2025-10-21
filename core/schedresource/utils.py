@@ -533,12 +533,8 @@ def site_summary_dict(sites, vo='ATLAS', sortby='alpha'):
 
 def is_osg_pool_pq(pqdata) -> bool:
     """ Return True if the given PQ is an OSG pool """
-    if 'system' in pqdata and pqdata['system'] == 'osg':
+    if 'catchall' in pqdata and 'osgpool=true' in pqdata['catchall']:
         return True
-    if 'queues' in pqdata and pqdata['queues'] is not None and len(pqdata['queues']) > 0:
-        for ce in pqdata['queues']:
-            if 'ce_jobmanager' in ce and (ce['ce_jobmanager'] == 'osg' or 'osg' in ce['ce_jobmanager']):
-                return True
     return False
 
 

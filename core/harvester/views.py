@@ -8,10 +8,9 @@ from collections import Counter
 from datetime import datetime, timedelta
 
 from django.db import connection, connections
-
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
-
 from django.utils.cache import patch_response_headers
 
 from core.libs.cache import setCacheEntry, getCacheEntry
@@ -21,7 +20,7 @@ from core.libs.sqlsyntax import interval_last
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired
-from core.utils import is_json_request, removeParam
+from core.utils import is_json_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.harvester.models import HarvesterWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots, \
     HarvesterInstances, HarvesterRelJobsWorkers
@@ -29,10 +28,6 @@ from core.harvester.utils import get_harverster_workers_for_task, setup_harveste
 
 from django.conf import settings
 import core.constants as const
-
-harvesterWorkerStatuses = [
-    'missed', 'submitted', 'ready', 'running', 'idle', 'finished', 'failed', 'cancelled'
-]
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -124,9 +119,16 @@ def harvesterWorkers(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    warning = {}
+    warning = ''
     xurl = extensibleURL(request)
     url = removeParam(removeParam(xurl, 'hours', 'extensible'), 'days', 'extensible')
+
+    # prepare harvester info if instance is specified
+    instance = None
+    if 'instance' in request.session['requestParams']:
+        instance = request.session['requestParams']['instance']
+    elif 'harvesterid' in request.session['requestParams']:
+        instance = request.session['requestParams']['harvesterid']
 
     # getting workers
     wquery, extra = setup_harvester_view(request, 'worker')
@@ -137,10 +139,11 @@ def harvesterWorkers(request):
         last_submission_time = None
         try:
             last_submission_time = HarvesterWorkers.objects.filter(**wquery).latest('submittime').submittime
-        except:
-            _logger.exception('Failed to get last submitted worker - it seams there are no workers at all ')
+        except ObjectDoesNotExist:
+            warning = 'No workers have been find for the instance in all history'
+            _logger.info('Failed to get last submitted worker - it seams there are no workers at all')
         if last_submission_time is not None:
-            warning['timewindow'] = """The time window was extended to the last submitted worker 
+            warning = """The time window was extended to the last submitted worker 
                             since no workers have been found for specified or default time period"""
             wquery['submittime__range'] = [
                 (last_submission_time - timedelta(hours=1)).strftime(settings.DATETIME_FORMAT),
@@ -148,10 +151,13 @@ def harvesterWorkers(request):
             ]
         else:
             data = {
-                'warning': 'No workers have been find for the instance',
                 'request': request,
                 'requestParams': request.session['requestParams'],
                 'viewParams': request.session['viewParams'],
+                'instance': instance if instance else '',
+                'nworkers': 0,
+                'warning': warning,
+                'built': datetime.now().strftime("%H:%M:%S"),
             }
             return render(request, 'harvesterWorkers.html', data, content_type='text/html')
 
@@ -184,7 +190,9 @@ def harvesterWorkers(request):
     ]
     for wp in worker_params_to_count:
         sumd[wp] = dict(Counter(worker[wp] for worker in worker_list))
+        sumd[wp] = {"Not specified" if k == '' else k: v for k, v in sumd[wp].items()}
     sumd = collections.OrderedDict(sumd)
+    _logger.debug('Prepared attribute summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if is_json_request(request):
         data = {
@@ -203,17 +211,11 @@ def harvesterWorkers(request):
         suml = sorted(suml, key=lambda x: x['field'])
 
         # prepare harvester info if instance is specified
-        instance = None
         harvester_info = {}
-        if 'instance' in request.session['requestParams']:
-            instance = request.session['requestParams']['instance']
-        elif 'harvesterid' in request.session['requestParams']:
-            instance = request.session['requestParams']['harvesterid']
-        else:
-            # check if all found workers are from the same instance
-            if 'harvesterid' in sumd and len(sumd['harvesterid']) == 1:
-                instance = list(sumd['harvesterid'].keys())[0]
-                url += '&harvesterid={}'.format(instance)
+        # check if all found workers are from the same instance
+        if instance is None and 'harvesterid' in sumd and len(sumd['harvesterid']) == 1:
+            instance = list(sumd['harvesterid'].keys())[0]
+            url += '&harvesterid={}'.format(instance)
         if instance:
             iquery = {'harvesterid': instance}
             instance_params_to_show = [
@@ -245,7 +247,8 @@ def harvesterWorkers(request):
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
-            'url': '?' + url.split('?')[1] if '?' in url else '?' + url
+            'url': '?' + url.split('?')[1] if '?' in url else '?' + url,
+            'warning': warning,
         }
         setCacheEntry(request, "harvesterWorkers", json.dumps(data, cls=DateEncoder), 60 * 20)
         response = render(request, 'harvesterWorkers.html', data, content_type='text/html')
@@ -259,13 +262,15 @@ def harvesterWorkerInfo(request, workerid=None):
     if not valid:
         return response
 
-    if workerid is None:
-        if 'workerid' in request.session['requestParams']:
-            workerid = request.session['requestParams']['workerid']
-            try:
-                workerid = int(workerid)
-            except:
-                _logger.exception('Provided workerid is not integer')
+    if workerid is None and 'workerid' in request.session['requestParams']:
+        workerid = request.session['requestParams']['workerid']
+
+    if workerid:
+        try:
+            workerid = int(workerid)
+        except:
+            _logger.info('Provided workerid is not integer, returning 400')
+            return error_response(request, message="workerid must be integer", status=400)
 
     harvesterid = None
     if 'harvesterid' in request.session['requestParams']:
@@ -273,46 +278,44 @@ def harvesterWorkerInfo(request, workerid=None):
     elif 'instance' in request.session['requestParams']:
         harvesterid = escape_input(request.session['requestParams']['instance'])
 
+    if not harvesterid or not workerid:
+        return error_response(request, message="Missing param: either workerid or harvesterid (or both) is not provided.", status=400)
+
+    workerslist = []
+    workerslist.extend(HarvesterWorkers.objects.filter(harvesterid=harvesterid, workerid=workerid).values())
     workerinfo = {}
-    error = None
-    if harvesterid and workerid:
-        workerslist = []
-        tquery = {'harvesterid': harvesterid, 'workerid': workerid}
-        workerslist.extend(HarvesterWorkers.objects.filter(**tquery).values())
+    if len(workerslist) > 0:
+        workerinfo = workerslist[0]
+        workerinfo['corrJobs'] = []
+        workerinfo['jobsStatuses'] = {}
+        workerinfo['jobsSubStatuses'] = {}
 
-        if len(workerslist) > 0:
-            workerinfo = workerslist[0]
-            workerinfo['corrJobs'] = []
-            workerinfo['jobsStatuses'] = {}
-            workerinfo['jobsSubStatuses'] = {}
+        jobs = getHarvesterJobs(request, instance=harvesterid, workerid=workerid)
 
-            jobs = getHarvesterJobs(request, instance=harvesterid, workerid=workerid)
+        for job in jobs:
+            workerinfo['corrJobs'].append(job['pandaid'])
+            if job['jobstatus'] not in workerinfo['jobsStatuses']:
+                workerinfo['jobsStatuses'][job['jobstatus']] = 1
+            else:
+                workerinfo['jobsStatuses'][job['jobstatus']] += 1
+            if job['jobsubstatus'] not in workerinfo['jobsSubStatuses']:
+                workerinfo['jobsSubStatuses'][job['jobsubstatus']] = 1
+            else:
+                workerinfo['jobsSubStatuses'][job['jobsubstatus']] += 1
 
-            for job in jobs:
-                workerinfo['corrJobs'].append(job['pandaid'])
-                if job['jobstatus'] not in workerinfo['jobsStatuses']:
-                    workerinfo['jobsStatuses'][job['jobstatus']] = 1
-                else:
-                    workerinfo['jobsStatuses'][job['jobstatus']] += 1
-                if job['jobsubstatus'] not in workerinfo['jobsSubStatuses']:
-                    workerinfo['jobsSubStatuses'][job['jobsubstatus']] = 1
-                else:
-                    workerinfo['jobsSubStatuses'][job['jobsubstatus']] += 1
-            for k, v in list(workerinfo.items()):
-                if is_timestamp(k):
-                    try:
-                        val = v.strftime(settings.DATETIME_FORMAT)
-                        workerinfo[k] = val
-                    except:
-                        pass
-        else:
-            workerinfo = None
-    else:
-        error = "harvesterid or/and workerid not specified"
+        # overwrite by the found number of jobs
+        workerinfo['njobs'] = len(workerinfo['corrJobs'])
+        # datetime -> str for template
+        for k, v in list(workerinfo.items()):
+            if is_timestamp(k):
+                try:
+                    val = v.strftime(settings.DATETIME_FORMAT)
+                    workerinfo[k] = val
+                except:
+                    pass
 
     data = {
         'request': request,
-        'error': error,
         'workerinfo': workerinfo,
         'harvesterid': harvesterid,
         'workerid': workerid,

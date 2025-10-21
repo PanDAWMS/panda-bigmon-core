@@ -27,6 +27,7 @@
 .sent { color:#deb900 }
 .brokeroff { color:#deb900 }
 .holding { color:#FF9933 }
+.held { color:#FF9933 }
 .throttled { color:#FF9933 }
 .throttling { color:#FF9933 }
 .exhausted { color:#FF9933 }
@@ -36,6 +37,7 @@
 .missing { color:#e67300 }
 .timeout { color:#e67300 }
 .discarded { color:#e67300 }
+.removed { color:#e67300 }
 .approved { color:#47D147 }
 .topreprocess { color:#47D147 }
 .preprocessing { color:#47D147 }
@@ -164,11 +166,13 @@
 .discarded_fill { color:black; background-color:#FFD65D }
 .timeout_fill { color:black; background-color:#FFD65D }
 .cancelled_fill { color:black; background-color:#FFD65D }
+.removed_fill { color:black; background-color:#FFD65D }
 
 .holding_fill { color:black; background-color:#FFE38E }
 .throttled_fill { color:black; background-color:#FFE38E; }
 .throttling_fill { color:black; background-color:#FFE38E; }
 .exhausted_fill { color:black; background-color:#FFE38E; }
+.held_fill { color:black; background-color:#FFE38E }
 
 .pending_fill { color:black;  background-color:#FFF5D6; }
 .waiting_fill { color:black; background-color:#FFF5D6 }
