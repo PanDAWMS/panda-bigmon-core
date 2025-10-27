@@ -23,6 +23,10 @@ class TasksErrorCodesAnalyser:
         except ValueError:
             return False
 
+    def is_percentage(self, value):
+        regex = re.compile(r'^\s*(\d+(?:\.\d+)?)\s*%\s*$', re.IGNORECASE)
+        return bool(regex.match(value))
+
     def isHours(self, value):
         if value[-1] == 'h' and self.isint(value[:-1]):
             return True
@@ -79,7 +83,7 @@ class TasksErrorCodesAnalyser:
             words_freq = [(word, sum_words[0, idx]) for word, idx in vectorizer.vocabulary_.items()]
             words_freqf = [x[0] for x in filter(lambda x: (
                 x[1] < threshold or self.is_vm_name(x[0]) or self.is_did(x[0]) or
-                self.isint(x[0]) or self.isfloat(x[0]) or self.isHours(x[0]) or self.is_volume(x[0])
+                self.isint(x[0]) or self.isfloat(x[0]) or self.isHours(x[0]) or self.is_volume(x[0]) or self.is_percentage(x[0])
             ), words_freq)]
             words_freqf = set(words_freqf)
             frame['processed_errordialog'] = frame['errordialog'].apply(self.replace_all, words_to_replace=words_freqf)
