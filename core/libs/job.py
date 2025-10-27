@@ -162,6 +162,26 @@ def get_job_info(job):
     return job_info
 
 
+def job_category(job):
+    """
+    Determine which category job belong to among: build, run or merge and add 'category' param to dict of a job
+    Need 'processingtype', 'eventservice' and 'transformation' params to make a decision
+    :param job:
+    :return: category
+    """
+    if 'transformation' in job and 'build' in job['transformation']:
+        category = 'build'
+    elif 'processingtype' in job and job['processingtype'] == 'pmerge':
+        category = 'merge'
+    elif 'eventservice' in job and (job['eventservice'] == 2 or job['eventservice'] == 'esmerge'):
+        category = 'merge'
+    else:
+        category = 'run'
+
+    return category
+
+
+
 def add_job_category(jobs):
     """
     Determine which category job belong to among: build, run or merge and add 'category' param to dict of a job
@@ -169,16 +189,8 @@ def add_job_category(jobs):
     :param jobs: list of dicts
     :return: jobs: list of updated dicts
     """
-
     for job in jobs:
-        if 'transformation' in job and 'build' in job['transformation']:
-            job['category'] = 'build'
-        elif 'processingtype' in job and job['processingtype'] == 'pmerge':
-            job['category'] = 'merge'
-        elif 'eventservice' in job and (job['eventservice'] == 2 or job['eventservice'] == 'esmerge'):
-            job['category'] = 'merge'
-        else:
-            job['category'] = 'run'
+        job['category'] = job_category(job)
 
     return jobs
 
@@ -519,6 +531,9 @@ def clean_job_list(request, jobl, do_add_metadata=False, do_add_errorinfo=False)
             request.session['PHIGH'] = job['currentpriority']
         if 'currentpriority' in job and job['currentpriority'] < request.session['PLOW']:
             request.session['PLOW'] = job['currentpriority']
+
+        # determine job category (run, build or merge)
+        job['category'] = job_category(job)
 
         if is_event_service(job):
             job = add_event_service_info_to_job(job)

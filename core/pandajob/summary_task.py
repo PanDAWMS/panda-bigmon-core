@@ -24,17 +24,10 @@ import core.constants as const
 _logger = logging.getLogger('bigpandamon')
 
 
-def job_summary_for_task(query, extra="(1=1)", **kwargs):
+def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=1, task_status=None):
     """An attempt to rewrite it moving dropping to db request level"""
     start_time = time.time()
 
-    mode = 'nodrop'
-    if 'mode' in kwargs:
-        mode = kwargs['mode']
-
-    task_archive_flag = 1
-    if 'task_archive_flag' in kwargs and kwargs['task_archive_flag'] is not None:
-        task_archive_flag = kwargs['task_archive_flag']
     jobs = []
 
     # getting jobs from DB
@@ -78,7 +71,7 @@ def job_summary_for_task(query, extra="(1=1)", **kwargs):
     _logger.info("Dropped jobs: {} sec".format(time.time() - start_time))
 
     if mode == 'drop':
-        jobs, dj, dmj = drop_job_retries(jobs, jquery['jeditaskid'], is_return_dropped_jobs=False)
+        jobs, dj, dmj = drop_job_retries(jobs, jquery['jeditaskid'], is_return_dropped_jobs=False, task_status=task_status)
         _logger.info("Dropped job retries (drop mode): {} sec".format(time.time() - start_time))
 
     # determine jobs category (build, run or merge)
