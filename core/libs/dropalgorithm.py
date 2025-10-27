@@ -2,6 +2,7 @@ import random
 import copy
 import logging
 import time
+from collections import deque
 from django.db import connection
 from django.utils import timezone
 from core.libs.eventservice import is_event_service
@@ -13,89 +14,113 @@ from django.conf import settings
 _logger = logging.getLogger('bigpandamon')
 
 
-def drop_job_retries(jobs, jeditaskid, **kwards):
+def drop_job_retries(jobs, jeditaskid, is_return_dropped_jobs=False, task_status=None):
     """
-    Dropping algorithm for jobs belong to a single task
-    Mandatory job's attributes:
-        PANDAID
-        JOBSTATUS
-        PROCESSINGTYPE
-        JOBSETID
-        SPECIALHANDLING
-    :param jobs: list
-    :param jeditaskid: int
-    :return:
+    Dropping algorithm for jobs belong to a single task, it drops previous retries leaving only the very last attempt.
+    Jobs relations:
+        retry - simple retry (old run job -> new run job)
+        jobset_id - job cloning (old jobset -> new jobs)
+        jobset_retry - retry of a whole jobset
+        merge - both retries of a merge job and run-merge relation, (run job -> merge job  and old merge job -> new merge job)
+
+    Args:
+        jobs: list[dict] - mandatory job attributes: pandaid, jobstatus, processingtype, jobsetid, specialhandling
+        jeditaskid: int
+        is_return_dropped_jobs: bool
+        task_status: str - status of the task needed to improve the algorithm
+
+    Returns:
+        jobs: list[dict]
+        drop_list: list[dict]
+        drop_merge_list: list - list of pandaids
     """
     start_time = time.time()
 
-    is_return_dropped_jobs = False
-    if 'is_return_dropped_jobs' in kwards and kwards['is_return_dropped_jobs'] is True:
-        is_return_dropped_jobs = True
-
     drop_list = []
     drop_merge_list = set()
+    FAIL_STATES = ('failed', 'cancelled', 'closed')
 
     # get job retry history for a task
-    retryquery = {
-        'jeditaskid': jeditaskid
-    }
-    extra = """
-        OLDPANDAID != NEWPANDAID 
-        AND RELATIONTYPE IN ('', 'retry', 'pmerge', 'merge', 'jobset_retry', 'es_merge', 'originpandaid')
-    """
-    retries = JediJobRetryHistory.objects.filter(**retryquery).extra(where=[extra]).order_by('newpandaid').values()
-    _logger.debug('Got {} retries whereas total number of jobs is {}: {} sec'.format(len(retries), len(jobs),
-                                                                                    (time.time() - start_time)))
+    extra = """oldpandaid != newpandaid"""
+    retries = JediJobRetryHistory.objects.filter(jeditaskid=jeditaskid).extra(where=[extra]).order_by('newpandaid').values()
+    _logger.debug(f'Got {len(retries)} retries whereas total number of jobs is {len(jobs)}: {(time.time() - start_time)} sec')
 
-    hashRetries = {}
-    # old run job -> new run job (relaton_type=retry) and run job -> merge job (relation_type=merge)
-    hashMergeRelation = {}
+    # create a hash of retried job to compare against the full list of jobs
+    hash_retries = {}
+    hash_merge_retries = {}
+    merge_children = {}
+    retried_roots = {}
     for retry in retries:
-        hashRetries[retry['oldpandaid']] = retry
+        hash_retries[retry['oldpandaid']] = retry
         if retry['relationtype'] == 'merge':
+            merge_children.setdefault(retry['oldpandaid'], []).append(retry['newpandaid'])
             # adding to dict all the run jobs for which merge job was created
-            if retry['newpandaid'] not in hashMergeRelation:
-                hashMergeRelation[retry['newpandaid']] = []
-            hashMergeRelation[retry['newpandaid']].append(retry['oldpandaid'])
+            if retry['newpandaid'] not in hash_merge_retries:
+                hash_merge_retries[retry['newpandaid']] = []
+            hash_merge_retries[retry['newpandaid']].append(retry['oldpandaid'])
+        if retry['relationtype'] == 'retry':
+            retried_roots[retry['oldpandaid']] = 0
+
+    # list of merge retry tails which did not finish and the root was retried by itself - whole branch should be dropped
+    to_drop_due_to_retry_chain = {}
+    for root in retried_roots:
+        stack = deque([root])
+        while stack:
+            node = stack.pop()
+            for child in merge_children.get(node, []):
+                if child not in to_drop_due_to_retry_chain:
+                    to_drop_due_to_retry_chain[child] = 1
+                    stack.append(child)
 
     newjobs = []
     for job in jobs:
-        dropJob = 0
+        is_drop_job = 0
         pandaid = job['pandaid']
         if not is_event_service(job):
-            if pandaid in hashRetries:
-                retry = hashRetries[pandaid]
-                if retry['relationtype'] in ('', 'retry') or (job['processingtype'] == 'pmerge' and job['jobstatus'] in ('failed', 'cancelled') and retry['relationtype'] == 'merge'):
-                    dropJob = retry['newpandaid']
-            else:
-                if job['jobsetid'] in hashRetries and hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry':
-                    dropJob = 1
-            if job['processingtype'] == 'pmerge' and pandaid in hashMergeRelation:
-                for oldrunpandaid in hashMergeRelation[pandaid]:
-                    if oldrunpandaid in hashRetries and hashRetries[oldrunpandaid]['relationtype'] == 'retry':
-                        dropJob = 1
+            # simple retry of run job
+            if pandaid in hash_retries:
+                retry = hash_retries[pandaid]
+                if retry['relationtype'] == 'retry':
+                    is_drop_job = 1
+            # jobset retry and job cloning
+            if 'jobsetid' in job and job['jobsetid'] in hash_retries:
+                if hash_retries[job['jobsetid']]['relationtype'] == 'jobset_retry':
+                    is_drop_job = 1
+                # job cloning
+                elif hash_retries[job['jobsetid']]['relationtype'] == 'jobset_id' and pandaid != hash_retries[job['jobsetid']]['newpandaid']:
+                    is_drop_job = 1
+            if job['processingtype'] == 'pmerge':
+                # merge retries
+                if pandaid in hash_merge_retries and any([
+                    orpid in hash_retries and hash_retries[orpid]['relationtype'] == 'retry' for orpid in hash_merge_retries[pandaid]
+                ]):
+                    is_drop_job = 1
+                elif pandaid in hash_retries and hash_retries[pandaid]['relationtype'] == 'merge' and job['jobstatus'] in FAIL_STATES:
+                    is_drop_job = 1
+                # covers case when the whole run->merge1->merge2->mergeN was retried at a different site
+                elif pandaid in to_drop_due_to_retry_chain:
+                    is_drop_job = 1
         else:
-
-            if job['pandaid'] in hashRetries and job['jobstatus'] not in ('finished', 'merging'):
-                if hashRetries[job['pandaid']]['relationtype'] == 'retry':
-                    dropJob = 1
-
-            # if hashRetries[job['pandaid']]['relationtype'] == 'es_merge' and job['jobsubstatus'] == 'es_merge':
-            #     dropJob = 1
-
-            if dropJob == 0:
-                if job['jobsetid'] in hashRetries and hashRetries[job['jobsetid']]['relationtype'] == 'jobset_retry':
-                    dropJob = 1
-
+            if job['pandaid'] in hash_retries and job['jobstatus'] not in ('finished', 'merging'):
+                if hash_retries[job['pandaid']]['relationtype'] == 'retry':
+                    is_drop_job = 1
+            if is_drop_job == 0:
+                if job['jobsetid'] in hash_retries and hash_retries[job['jobsetid']]['relationtype'] == 'jobset_retry':
+                    is_drop_job = 1
                 if job['jobstatus'] == 'closed' and job['jobsubstatus'] in ('es_unused', 'es_inaction',):
-                    dropJob = 1
+                    is_drop_job = 1
 
-        if dropJob == 0:
+        # drop unsuccessful build jobs for done tasks
+        if task_status and task_status == 'done' and job['jobstatus'] in FAIL_STATES and (
+                ('category' in job and job['category'] == 'build') or ('transformation' in job and 'buildGen' in job['transformation'])):
+            is_drop_job = 1
+
+        if is_drop_job == 0:
             newjobs.append(job)
         else:
             if is_return_dropped_jobs:
                 if job['processingtype'] != 'pmerge':
-                    drop_list.append({'pandaid': pandaid, 'newpandaid': dropJob})
+                    drop_list.append({'pandaid': pandaid, 'newpandaid': is_drop_job})
                 elif job['processingtype'] == 'pmerge':
                     drop_merge_list.add(pandaid)
 
@@ -108,8 +133,13 @@ def drop_job_retries(jobs, jeditaskid, **kwards):
 
 def insert_dropped_jobs_to_tmp_table(query, extra):
     """
+    Args:
+        query: dict - with jeditaskid inside
+        extra: str - extra where query where tail of jeditaskid in tmp table will be added
 
-    :return: extra sql query
+    Returns:
+        extra: str
+        transactionKey: int
     """
 
     newquery = copy.deepcopy(query)

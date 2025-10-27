@@ -62,7 +62,7 @@ from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, 
 from core.libs.eventservice import is_event_service, event_summary_for_task, add_event_summary_to_tasklist
 from core.libs.task import input_summary_for_task, datasets_for_task, \
     get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
-    get_datasets_for_tasklist, get_task_name_by_taskid, get_task_rating, get_task_diagnostics
+    get_datasets_for_tasklist, get_task_info, get_task_rating, get_task_diagnostics
 from core.libs.task import get_dataset_locality, is_event_service_task, filter_task_list_by_relevance, \
     get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
 from core.libs.task import checkIfIddsTask, checkIfDCTask
@@ -1278,8 +1278,12 @@ def jobList(request, mode=None, param=None):
             jeditaskid in (
             select jeditaskid from {}.jedi_tasks where taskname like '{}' and username like '{}'
             ) """.format(settings.DB_SCHEMA_PANDA, taskname, taskusername)
-
     _logger.debug('Specific params processing: {}'.format(time.time() - request.session['req_init_time']))
+
+    # get task info to be used for dropping and showing task name
+    task_info = None
+    if jeditaskid:
+        task_info = get_task_info(jeditaskid)
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
 
@@ -1438,7 +1442,11 @@ def jobList(request, mode=None, param=None):
     droppedPmerge = set()
     cntStatus = []
     if dropmode and jeditaskid:
-        jobs, droplist, droppedPmerge = drop_job_retries(jobs, jeditaskid, is_return_dropped_jobs=isReturnDroppedPMerge)
+        jobs, droplist, droppedPmerge = drop_job_retries(
+            jobs, jeditaskid,
+            is_return_dropped_jobs=isReturnDroppedPMerge,
+            task_status=task_info['status'] if 'status' in task_info else None,
+        )
         _logger.debug('Done droppping if was requested: {}'.format(time.time() - request.session['req_init_time']))
 
     # get attempts of file if fileid in request params
@@ -1544,12 +1552,6 @@ def jobList(request, mode=None, param=None):
     else:
         jobs = sorted(jobs, key=lambda x: x[sortby_key], reverse=sortby_reverse)
     _logger.debug('Sorted joblist: {}'.format(time.time() - request.session['req_init_time']))
-
-    taskname = ''
-    if 'jeditaskid' in request.session['requestParams'] and '|' not in request.session['requestParams']['jeditaskid']:
-        taskname = get_task_name_by_taskid(request.session['requestParams']['jeditaskid'])
-    if 'taskid' in request.session['requestParams'] and '|' not in request.session['requestParams']['taskid']:
-        taskname = get_task_name_by_taskid(request.session['requestParams']['taskid'])
 
     if 'produsername' in request.session['requestParams']:
         user = request.session['requestParams']['produsername']
@@ -1746,7 +1748,7 @@ def jobList(request, mode=None, param=None):
             'xurl': xurl,
             'xurlnopref': xurl[5:],
             'droplist': droplist,
-            'ndrops': len(droplist) if len(droplist) > 0 else (- len(droppedPmerge)),
+            'ndrops': len(droplist) if len(droplist) > 0 else (-len(droppedPmerge)),
             'tfirst': request.session['TFIRST'].strftime(settings.DATETIME_FORMAT),
             'tlast': request.session['TLAST'].strftime(settings.DATETIME_FORMAT),
             'plow': request.session['PLOW'],
@@ -1762,7 +1764,7 @@ def jobList(request, mode=None, param=None):
             'nosorturl': nosorturl,
             'nodurminurl': nodurminurl,
             'time_locked_url': time_locked_url,
-            'taskname': taskname,
+            'taskname': task_info['taskname'] if task_info and 'taskname' in task_info else "",
             'eventservice': eventservice,
             'jobsTotalCount': jobsTotalCount,
             'requestString': urlParametrs,
@@ -4863,7 +4865,9 @@ def taskInfo(request, jeditaskid=0):
                 plotsDict, jobsummary, scouts, metrics = job_summary_for_task(
                     jquery, '(1=1)',
                     mode=mode,
-                    task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')))
+                    task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')),
+                    task_status=taskrec['status']
+                )
                 data['jobsummary'] = jobsummary
                 data['plotsDict'] = plotsDict
                 data['jobscoutids'] = scouts
@@ -4875,7 +4879,9 @@ def taskInfo(request, jeditaskid=0):
             plotsDict, jobsummary, scouts, metrics = job_summary_for_task(
                 jquery, '(1=1)',
                 mode=mode,
-                task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')))
+                task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')),
+                task_status=taskrec['status']
+            )
             data['jobsummary'] = jobsummary
             data['plotsDict'] = plotsDict
             data['jobscoutids'] = scouts
