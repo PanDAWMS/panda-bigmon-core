@@ -5444,7 +5444,7 @@ def errorSummary(request):
 
         # Build the task state summary and add task state info to task error summary
         errsByTask = errsByTask[:display_limit]
-        taskname = ''
+        task_info = {}
         if not testjobs:
             tquery = copy.deepcopy(query)
             tquery['jeditaskid__in'] = [task['name'] for task in errsByTask]
