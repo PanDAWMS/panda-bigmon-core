@@ -5516,7 +5516,7 @@ def errorSummary(request):
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,
-            'taskname': task_info['taslname'] if 'taskname' in task_info else '',
+            'taskname': task_info['taskname'] if 'taskname' in task_info else '',
             'jobs_count_total': jobs_count_total,
             'display_limit': display_limit,
             'built': datetime.now().strftime("%H:%M:%S"),
