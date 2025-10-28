@@ -4605,7 +4605,7 @@ def taskInfo(request, jeditaskid=0):
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
     # task dignostics - checks and warnings
-    # task = get_task_diagnostics(taskrec, datasets=dsets)
+    task = get_task_diagnostics(taskrec, datasets=dsets)
 
     # get sum of hs06sec grouped by status
     # creating a jquery with timewindow
@@ -5468,7 +5468,7 @@ def errorSummary(request):
                     if 'pctfail' in taskstates[taskid]:
                         task['pctfail'] = taskstates[taskid]['pctfail']
             if 'jeditaskid' in request.session['requestParams']:
-                taskname = get_task_name_by_taskid(request.session['requestParams']['jeditaskid'])
+                task_info = get_task_info(request.session['requestParams']['jeditaskid'])
         _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
 
         xurl = extensibleURL(request)
@@ -5516,7 +5516,7 @@ def errorSummary(request):
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,
-            'taskname': taskname,
+            'taskname': task_info['taslname'] if 'taskname' in task_info else '',
             'jobs_count_total': jobs_count_total,
             'display_limit': display_limit,
             'built': datetime.now().strftime("%H:%M:%S"),
