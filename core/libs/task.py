@@ -4,7 +4,6 @@ import copy
 import random
 import json
 import re
-
 from datetime import datetime, timedelta, timezone
 from opensearchpy import Search
 
@@ -15,14 +14,15 @@ from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4
 from core.oauth.models import BPUser
 
-
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
 from core.libs.datetimestrings import parse_datetime
+from core.libs.dataset import get_dataset_locations
 from core.libs.elasticsearch import create_os_connection
 from core.libs.job import drop_duplicates
 from core.pandajob.utils import get_pandajob_arch_models_by_year
 from core.filebrowser.ruciowrapper import ruciowrapper
 from core.libs.taskflow import executeTF
+from core.schedresource.utils import get_ddm_downtimes
 
 import core.constants as const
 from django.conf import settings
@@ -1122,32 +1122,34 @@ def get_task_diagnostics(task:dict, datasets: list) -> dict:
     Do some checks on task and return diagnostics info if applicable
     Args:
         task (dict): task record
+        datasets (list) - list of datasets associated with the task
 
     Returns:
         task (dict): task record with diagnostics field added if applicable
     """
-    rse_list = []
-    if 'errordialog' in task and task['errordialog'] and len(task['errordialog']) > 0:
-        if 'downtime' in task['errordialog'].lower():
-            # get dataset name from str, find RSEs where it is located, and check downtimes for them
-            match = re.search(r"\b[^:\s]+:[A-Za-z0-9._]+", task['errordialog'])
-            if match:
-                dataset_name = match.group(0)
-            else:
-                dataset_name = ''
-            if datasets is not None and len(datasets) > 0:
-                for ds in datasets:
-                    if ds['type'] == 'input' and ds['datasetname'] == dataset_name and 'rse' in ds and len(ds['rse']) > 0:
-                        rse_list = ds['rse']
-                        break
-            if len(rse_list) == 0:
-                from core.libs.dataset import get_dataset_locations
-                rse_list = get_dataset_locations(dataset_name)
+    if 'errordialog' in task and task['errordialog'] and len(task['errordialog']) > 0 and 'downtime' in task['errordialog'].lower():
+        # get dataset name from str, find RSEs where it is located, and check downtimes for them
+        match = re.search(r"\b(?!https?://)(?![A-Za-z0-9.-]+:\d+/)[A-Za-z0-9._-]+:[A-Za-z0-9._/-]+/?", task['errordialog'])
+        if match:
+            dataset_name = match.group(0)
+        else:
+            dataset_name = ''
+        rse_list = []
+        if datasets is not None and len(datasets) > 0:
+            for ds in datasets:
+                if ds['type'] == 'input' and ds['datasetname'] == dataset_name and 'rse' in ds and len(ds['rse']) > 0:
+                    rse_list = ds['rse'].split(',')
+                    break
+        if len(rse_list) == 0:
+            rse_list = get_dataset_locations(dataset_name, is_full_replicas_only=True)
 
-    # get downtimes for RSEs
-    from core.schedresource.utils import get_ddm_downtimes
-    downtimes = get_ddm_downtimes()
+        # get downtimes for RSEs
+        rse_downtimes = get_ddm_downtimes()
 
+        dataset_location_in_downtime = [[rse, rse_downtimes[rse]] for rse in rse_list if rse in rse_downtimes]
+        if len(dataset_location_in_downtime) > 0:
+            for i in dataset_location_in_downtime:
+                task['errordialog'] += f" The downtime at {i[0]} is till {i[1]['end']}."
     return task
 
 
