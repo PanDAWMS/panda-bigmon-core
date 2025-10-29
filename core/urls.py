@@ -131,15 +131,17 @@ if len(settings.INSTALLED_APPS) > 0:
             urlpatterns.append(re_path('', include('{}.urls'.format(app_name)), name=app_name))
 
 if settings.DEBUG:
-    try:
-        import debug_toolbar
-        urlpatterns += [
-            re_path(r'^__debug__/', include(debug_toolbar.urls)),
-        ]
-    except ImportError:
-        pass
+    # Only include debug_toolbar URLs if it's enabled in settings
+    if getattr(settings, 'ENABLE_DEBUG_TOOLBAR', False):
+        try:
+            import debug_toolbar
+            urlpatterns += [
+                re_path(r'^__debug__/', include(debug_toolbar.urls)),
+            ]
+        except ImportError:
+            pass
     try:
         urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     except Exception as e:
-            pass
+        pass 
 

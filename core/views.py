@@ -208,6 +208,9 @@ def initRequest(request, callselfmon=True):
     request.session['urls_cut']['nodisplaylimiturl'] = removeParam(extensibleURL(request), 'display_limit', mode='extensible')
     request.session['urls_cut']['nosorturl'] = removeParam(extensibleURL(request), 'sortby', mode='extensible')
 
+    # Mark session as modified to ensure urls_cut changes are saved
+    request.session.modified = True
+    
     if 'timerange' in request.session:
         del request.session['timerange']
 
