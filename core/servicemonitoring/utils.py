@@ -303,19 +303,19 @@ def service_availability(metrics:dict) -> tuple[str, str]:
             availability_desc += ', no requests processed in last 10 minutes'
             return str(availability), availability_desc
         elif metrics['requests_last_10min_count'] <= 10:
-            availability = min(availability - 20, 0)
+            availability = max(availability - 20, 0)
             availability_desc += ', low number of requests processed lately'
     if 'requests_last_10min_duration_median' in metrics and metrics['requests_last_10min_duration_median'] is not None:
         if metrics['requests_last_10min_duration_median'] > threshold_ttr:
-            availability = min(availability - 20, 0)
+            availability = max(availability - 20, 0)
             availability_desc += f', median TTR is more than {threshold_ttr} sec'
     if ('cephfs_used_pc' in metrics and metrics['cephfs_used_pc'] is not None and
             isinstance(metrics['cephfs_used_pc'], (int, float)) and metrics['cephfs_used_pc'] > 90):
-        availability = min(availability - 20, 0)
+        availability = max(availability - 20, 0)
         availability_desc += ', shared /cephfs/ volume usage is more than 90%'
     if ('memory_usage_pc' in metrics and metrics['memory_usage_pc'] is not None and
             isinstance(metrics['memory_usage_pc'], (int, float)) and metrics['memory_usage_pc'] > 0.9):
-        availability = min(availability - 20, 0)
+        availability = max(availability - 20, 0)
         availability_desc += ', memory usage is more than 90%'
 
     return str(availability), availability_desc
