@@ -134,7 +134,7 @@ if len(settings.INSTALLED_APPS) > 0:
         if app_name.startswith('core.'):
             urlpatterns.append(re_path('', include('{}.urls'.format(app_name)), name=app_name))
 
-if settings.DEBUG:
+if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
     try:
         import debug_toolbar
         urlpatterns += [

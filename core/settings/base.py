@@ -151,8 +151,7 @@ else:
         "core.mlflowdynamic",
         "core.reports",
         "core.runningprod",
-        "core.panda_client",
-        "core.kafka"
+        "core.panda_client"
     ]
 
 CHANNEL_LAYERS = {
@@ -169,10 +168,6 @@ JS_I18N_APPS = ()
 JS_I18N_APPS_EXCLUDE = INSTALLED_APPS_BIGPANDAMON_CORE
 
 INSTALLED_APPS = COMMON_INSTALLED_APPS + INSTALLED_APPS_BIGPANDAMON_CORE
-
-if SERVER_GATEWAY_INTERFACE == 'ASGI':
-    INSTALLED_APPS = ('daphne',) + INSTALLED_APPS
-    ASGI_APPLICATION = 'core.asgi.application'
 
 if DEBUG and ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE += (

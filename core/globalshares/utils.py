@@ -5,6 +5,7 @@ import re
 
 from django.db.models import Case, When, Value, Sum
 from core.globalshares.models import JobsShareStats
+from decimal import Decimal, InvalidOperation
 
 def get_child_elements(tree,childsgsharelist):
     for gshare in tree:
@@ -158,3 +159,12 @@ def fill_level_gs_plots_data(gs_plot_data, level, gs_name, gs, resources_dict, g
             gs_plot_data[level]['pieChartActualHS06'][gs_name] += float(r_dict['executing'])
 
     return gs_plot_data
+def _safe_percent(ratio, value):
+    try:
+        if ratio in (None, '', 'NaN') or value in (None, '', 'NaN'):
+            return None
+        r = Decimal(str(ratio))
+        v = Decimal(str(value))
+        return (r * v) / Decimal(100)
+    except (InvalidOperation, TypeError, ValueError):
+        return None

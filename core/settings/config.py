@@ -443,7 +443,8 @@ LOGGING = {
         },
         'custom': {
             '()': CustomFormatter,
-            'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
+            'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s '
+                  '%(message)s | url=%(full_url)s method=%(http_method)s ip=%(remote_addr)s'
         },
         'simple': {
             'format': '%(levelname)s %(name)-1s:%(lineno)d %(message)s'

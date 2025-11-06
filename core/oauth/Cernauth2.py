@@ -1,9 +1,9 @@
 import base64
 import json
-from requests import ConnectionError, request
+
+from requests import ConnectionError, Session
 from social_core.backends.oauth import BaseOAuth2
 from social_core.exceptions import AuthMissingParameter, AuthFailed
-from social_core.utils import SSLHttpAdapter
 from django.conf import settings
 from core.oauth.utils import update_user_groups
 
@@ -84,34 +84,22 @@ class CernAuthOIDC(BaseOAuth2):
         return 'social-auth-1.6.0'
 
     def request(self, url, method='POST', *args, **kwargs):
-        """Request helper"""
         kwargs.setdefault('headers', {})
         if self.setting('VERIFY_SSL') is not None:
             kwargs.setdefault('verify', self.setting('VERIFY_SSL'))
         kwargs.setdefault('timeout', self.setting('REQUESTS_TIMEOUT') or self.setting('URLOPEN_TIMEOUT'))
         if self.SEND_USER_AGENT and 'User-Agent' not in kwargs['headers']:
             kwargs['headers']['User-Agent'] = self.setting('USER_AGENT') or self.user_agent()
+
         try:
-            if self.SSL_PROTOCOL:
-                session = SSLHttpAdapter.ssl_adapter_session(self.SSL_PROTOCOL)
-                response = session.request(method, url, *args, **kwargs)
-            else:
-                if method == 'POST':
-                    if 'params' in kwargs:
-                        del kwargs['params']
-                response = request(method, url, *args, **kwargs)
+            session = Session()
+            if method == 'POST' and 'params' in kwargs:
+                del kwargs['params']
+            response = session.request(method, url, *args, **kwargs)
         except ConnectionError as err:
             raise AuthFailed(self, str(err))
+
         response.raise_for_status()
-        try:
-            if self.message != '':
-                self.general_to_message(kwargs, response)
-                self.message_write()
-            else:
-                _logger.error('Message is Empty!')
-        except Exception as ex:
-            _logger.error(ex)
-            pass
         return response
 
     def validate_state(self):

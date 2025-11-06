@@ -1,20 +1,23 @@
 import logging
 
+from django.http import HttpRequest
 class CustomFormatter(logging.Formatter):
     def format(self, record):
-        if hasattr(record, 'request') and record.request:
-            request = record.request
+        url = "N/A"
+        method = "-"
+        remote = "-"
+
+        req = getattr(record, "request", None)
+        if isinstance(req, HttpRequest):
             try:
-                full_url = request.build_absolute_uri(request.get_full_path())
-            except Exception as e:
-                full_url = 'N/A'
-        else:
-            full_url = 'N/A'
+                url = req.build_absolute_uri(req.get_full_path())
+                method = req.method
+                remote = req.META.get("REMOTE_ADDR", "-")
+            except Exception:
+                pass
 
-        message = super().format(record)
+        record.full_url = url
+        record.http_method = method
+        record.remote_addr = remote
 
-        if record.exc_info:
-            #error_traceback = self.formatException(record.exc_info)
-            return f"{message}\n|Full URL: {full_url}"
-        else:
-            return f"{message}\n|Full URL: {full_url}"
+        return super().format(record)

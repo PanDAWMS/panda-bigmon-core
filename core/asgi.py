@@ -67,11 +67,3 @@ if False:
 
 import django
 django.setup()
-
-from django.core.asgi import get_asgi_application
-from core.kafka.routing import ws_urlpatterns
-
-application = ProtocolTypeRouter({
-  'http': get_asgi_application(),
-  'websocket': AuthMiddlewareStack(URLRouter(ws_urlpatterns))
-})

@@ -82,7 +82,7 @@ RUN yum clean all && rm -rf /var/cache/yum
 
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt beautifulsoup4 boto3 bz2file  \
-    cachetools certifi cffi channels chardet click confluent_kafka cryptography cycler \
+    cachetools certifi cffi channels chardet click cryptography cycler \
     daphne dataclasses datefinder decorator defusedxml Django==5.0.8 docopt dogpile.cache ecdsa \
     elasticsearch elasticsearch-dsl opensearch-py opensearch-dsl enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
     humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
