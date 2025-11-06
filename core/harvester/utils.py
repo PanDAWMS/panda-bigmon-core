@@ -5,7 +5,7 @@ from django.db import connection
 from django.db.models import Q, Count, Sum
 
 from core.harvester.models import HarvesterWorkerStats, HarvesterWorkers, HarvesterRelJobsWorkers, HarvesterDialogs
-from core.pandajob.utils import identify_jobtype
+from core.pandajob.utils import preprocess_job_summary
 
 from django.conf import settings
 
@@ -71,7 +71,10 @@ def setup_harvester_view(request, otype='worker'):
             for field in HarvesterWorkers._meta.get_fields():
                 param = field.name
                 if rparam == param:
-                    query[param] = rvalue
+                    if rvalue == 'Not specified':
+                        extra += f" AND ( {rparam} is NULL or {rparam} = '' ) "
+                    else:
+                        query[param] = rvalue
             if rparam == 'workerids':
                 query['workerid__in'] = rvalue.split(',')
             if rparam == 'pandaid':
@@ -127,17 +130,6 @@ def setup_harvester_view(request, otype='worker'):
                 settings.DB_SCHEMA_PANDA,
                 internal_extra
             )
-
-    # if 'pandaid' in request.session['requestParams']:
-    #     pandaid = request.session['requestParams']['pandaid']
-    #     try:
-    #         jobsworkersquery, pandaids = getWorkersByJobID(pandaid, request.session['requestParams']['instance'])
-    #     except:
-    #         message = """PandaID for this instance is not found """
-    #         return HttpResponse(json.dumps({'message': message}),
-    #                             content_type='text/html')
-    #     extra += """ AND workerid in (%s)""" % (jobsworkersquery)
-    #     URL += '&pandaid=' + str(request.session['requestParams']['pandaid'])
 
     return query, extra
 
@@ -261,5 +253,5 @@ def get_workers_summary_split(query, **kwargs):
         worker_summary = HarvesterWorkerStats.objects.filter(**wquery).values(*w_values).annotate(nwrunning=w_running).annotate(nwsubmitted=w_submitted)
 
     # Translate prodsourcelabel values to descriptive analy|prod job types
-    worker_summary = identify_jobtype(worker_summary, field_name='jobtype')
+    worker_summary = preprocess_job_summary(worker_summary, field_name_jobtype='jobtype')
     return list(worker_summary)

@@ -5,6 +5,7 @@ import logging
 import re
 import subprocess
 import os
+
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -13,7 +14,7 @@ _logger = logging.getLogger('bigpandamon')
 
 def is_json_request(request):
     """
-    Check if request is requires JSON output
+    Check if request is requiring JSON output
     :param request:
     :return: bool: True or False
     """
@@ -74,7 +75,7 @@ def complete_request(request, **kwargs):
     :param kwargs: expects extra_keys as list
     :return:
     """
-    _logger.info("Len of session dict at the end: {}".format(len(str(request.session._session))))
+    _logger.info(f"Len of session dict at the end: {len(str(dict(request.session)))}")
 
     keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls', 'TFIRST', 'TLAST', 'PLOW', 'PHIGH']
     if 'extra_keys' in kwargs:
@@ -84,7 +85,7 @@ def complete_request(request, **kwargs):
         if k in request.session:
             del request.session[k]
     request.session.modified = True
-    _logger.info("Len of session dict after cleaning: {}".format(len(str(request.session._session))))
+    _logger.info(f"Len of session dict after cleaning: {len(str(dict(request.session)))}")
 
     if is_json_request(request):
         # request.session.set_expiry(settings.SESSION_API_CALL_AGE)
@@ -141,8 +142,8 @@ def error_response(request, message=None, status=400):
         response = JsonResponse({'error': message}, status=status)
     else:
         data = {
-            'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
-            'requestParams': request.session['requestParams'] if 'requestParams' in request.session else None,
+            'viewParams': request.session['viewParams'] if hasattr(request, 'session') and 'viewParams' in request.session else None,
+            'requestParams': request.session['requestParams'] if hasattr(request, 'session') and 'requestParams' in request.session else None,
             "errormessage": message,
         }
         response =  render(request, 'errorPage.html', data, content_type='text/html', status=status)

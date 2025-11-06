@@ -8,8 +8,8 @@ from django.conf import settings
 from django.db import connection, connections
 
 from core.pandajob.models import PandaJob
-from core.pandajob.utils import identify_jobtype, is_archived_jobs, is_archived_only_jobs
-from core.schedresource.utils import get_panda_queues
+from core.pandajob.utils import preprocess_job_summary, is_archived_jobs, is_archived_only_jobs
+from core.schedresource.utils import get_panda_queues, is_osg_pool_pq
 from core.libs.exlib import getPilotCounts, get_resource_types
 from core.libs.sqlsyntax import interval_to_sec
 
@@ -193,11 +193,30 @@ def get_job_summary_region(query, **kwargs):
     elif 'computingsite__in' in query:
         pqs_dict = {pqn: params for pqn, params in pqs_dict.items() if pqn in query['computingsite__in']}
 
-    sites_list = list(set([params['atlas_site'] for pq, params in pqs_dict.items() if 'atlas_site' in params]))
-    regions_list = list(set([params['cloud'] for pq, params in pqs_dict.items() if 'cloud' in params]))
-
     # get job summary
     jsq = get_job_summary_split(query, extra=extra)
+
+    # create artificial copy of PQ for each site in OSG pool PQ where job run
+    if settings.OSG_POOL_USED:
+        for pq_name, pq_data in pqs_dict.items():
+            if is_osg_pool_pq(pq_data):
+                pq_data['cloud'] = 'OSG'
+        osg_pool_pq_to_sites = {}
+        for row in jsq:
+            if ('is_osg_pool_pq' in row and row['is_osg_pool_pq'] and row['computingsite'] and row['computingsite'] != '' and
+                    row['osg_pool_pq_name'] in pqs_dict):
+                if row['osg_pool_pq_name'] not in osg_pool_pq_to_sites:
+                    osg_pool_pq_to_sites[row['osg_pool_pq_name']] = set()
+                osg_pool_pq_to_sites[row['osg_pool_pq_name']].add(row['computingsite'])
+        if len(osg_pool_pq_to_sites) > 0:
+            for osg_pq, sites in osg_pool_pq_to_sites.items():
+                for s in sites:
+                    if s not in pqs_dict:
+                        pqs_dict[s] = copy.deepcopy(pqs_dict[osg_pq])
+                        pqs_dict[s]['cloud'] = 'OSG'
+
+    sites_list = list(set([params['atlas_site'] for pq, params in pqs_dict.items() if 'atlas_site' in params]))
+    regions_list = list(set([params['cloud'] for pq, params in pqs_dict.items() if 'cloud' in params]))
 
     # check if there is more values of resourcetype than 4 default ones, if yes -> add them to the list
     if len(jsq) > 0:
@@ -385,7 +404,7 @@ def get_job_summary_split(query, extra):
     query_jobs_raw = ""
     if is_archived_jobs(query['modificationtime__castdate__range']):
         query_jobs_raw = """
-        select ja.pandaid, ja.resource_type, ja.computingsite, ja.prodsourcelabel, ja.jobstatus, ja.modificationtime, 0 as rcores,
+        select ja.pandaid, ja.resource_type, ja.computingsite, ja.destinationsite, ja.prodsourcelabel, ja.jobstatus, ja.modificationtime, 0 as rcores,
             case when jobstatus in ('finished', 'failed') then {walltime_sec} else 0 end as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from {db_scheme}.jobsarchived ja where statechangetime > TO_DATE('{date_from}', 'YYYY-MM-DD HH24:MI:SS') 
@@ -401,23 +420,27 @@ def get_job_summary_split(query, extra):
         if len(query_jobs_raw) > 0:
             query_jobs_raw += " union "
         query_jobs_raw += """
-        select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.prodsourcelabel, ja4.jobstatus, ja4.modificationtime, 0 as rcores,
+        select ja4.pandaid, ja4.resource_type, ja4.computingsite, ja4.destinationsite, ja4.prodsourcelabel, ja4.jobstatus, 
+            ja4.modificationtime, 0 as rcores,
             case when jobstatus in ('finished', 'failed') then {walltime_sec} else 0 end as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from {db_scheme}.jobsarchived4 ja4  where modificationtime > TO_DATE('{date_from}', 'YYYY-MM-DD HH24:MI:SS') and {extra_str}
         union
-        select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
+        select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.destinationsite, jav4.prodsourcelabel, jav4.jobstatus, 
+            jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from {db_scheme}.jobsactive4 jav4 where modificationtime > TO_DATE('{date_from}', 'YYYY-MM-DD HH24:MI:SS') and 
             jobstatus in ('failed', 'finished', 'closed', 'cancelled') and {extra_str}
         union
-        select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.prodsourcelabel, jav4.jobstatus, jav4.modificationtime,
+        select jav4.pandaid, jav4.resource_type, jav4.computingsite, jav4.destinationsite, jav4.prodsourcelabel, jav4.jobstatus, 
+            jav4.modificationtime,
             case when jobstatus = 'running' then actualcorecount else 0 end as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from {db_scheme}.jobsactive4 jav4 where jobstatus not in ('failed', 'finished', 'closed', 'cancelled') and {extra_str}
         union
-        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.prodsourcelabel, jd4.jobstatus, jd4.modificationtime, 0 as rcores, 0 as walltime,
+        select jd4.pandaid, jd4.resource_type, jd4.computingsite, jd4.destinationsite, jd4.prodsourcelabel, jd4.jobstatus, 
+            jd4.modificationtime, 0 as rcores, 0 as walltime,
             case when transformation like 'http%' then 'run' when transformation like '%.py' then 'py' else 'unknown' end as transform
         from {db_scheme}.jobsdefined4 jd4  where {extra_str}  
         """.format(
@@ -427,13 +450,13 @@ def get_job_summary_split(query, extra):
             walltime_sec=interval_to_sec('endtime-starttime', db=db)
         )
     query_raw = """
-        select j.computingsite, j.resource_type as resourcetype, j.prodsourcelabel, j.transform, j.jobstatus, 
+        select j.computingsite, j.destinationsite, j.resource_type as resourcetype, j.prodsourcelabel, j.transform, j.jobstatus, 
             count(j.pandaid) as count, sum(j.rcores) as rcores, round(sum(j.walltime)) as walltime
         from  (
         {query_jobs_raw}
         ) j
-        GROUP BY j.computingsite, j.prodsourcelabel, j.transform, j.resource_type, j.jobstatus
-        order by j.computingsite, j.prodsourcelabel, j.transform, j.resource_type, j.jobstatus
+        GROUP BY j.computingsite, j.destinationsite, j.prodsourcelabel, j.transform, j.resource_type, j.jobstatus
+        order by j.computingsite, j.destinationsite, j.prodsourcelabel, j.transform, j.resource_type, j.jobstatus
     """.format(
         date_from=query['modificationtime__castdate__range'][0],
         extra_str=extra_str,
@@ -445,11 +468,11 @@ def get_job_summary_split(query, extra):
     cur = connection.cursor()
     cur.execute(query_raw)
     job_summary_tuple = cur.fetchall()
-    job_summary_header = ['computingsite', 'resourcetype', 'prodsourcelabel', 'transform', 'jobstatus', 'count', 'rcores', 'walltime']
+    job_summary_header = ['computingsite', 'destinationsite', 'resourcetype', 'prodsourcelabel', 'transform', 'jobstatus', 'count', 'rcores', 'walltime']
     summary = [dict(zip(job_summary_header, row)) for row in job_summary_tuple]
 
-    # Translate prodsourcelabel values to descriptive analy|prod job types
-    summary = identify_jobtype(summary)
+    # Translate prodsourcelabel values to descriptive analy|prod job types & handle OSG pool jobs if any
+    summary = preprocess_job_summary(summary)
 
     return summary
 

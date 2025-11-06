@@ -5,7 +5,6 @@ from django.conf import settings
 from django.urls import re_path, include
 
 from core import views as coremon_views
-
 from core.dashboards import campaignprediction as campaignprediction
 from core.dashboards import campaingprogressDKB
 from core.dashboards import taskproblemexplorer
@@ -39,9 +38,6 @@ urlpatterns = [
     re_path(r'^userProfile/(?P<username>.*)/$', coremon_views.userProfile, name='userProfile'),
     re_path(r'^userProfile/$', coremon_views.userProfile, name='userProfile'),
     re_path(r'^userProfileData/$', coremon_views.userProfileData, name='userProfileData'),
-    re_path(r'^sites/$', coremon_views.siteList, name='siteList'),
-    re_path(r'^site/(?P<site>.*)/$', coremon_views.siteInfo, name='siteInfo'),
-    re_path(r'^site/$', coremon_views.siteInfo, name='siteInfo'),
     re_path(r'^wns/$', coremon_views.wnInfo, name='wnInfo'),
     re_path(r'^wns/(?P<site>.*)/$', coremon_views.wnInfo, name='wnInfo'),
     re_path(r'^wn/(?P<site>.*)/(?P<wnname>.*)/$', coremon_views.wnInfo, name='wnInfo'),

@@ -929,13 +929,22 @@ def taskNameDict(jobs):
     return tasknamedict
 
 
-def get_task_name_by_taskid(taskid):
-    taskname = ''
-    if taskid and taskid != 'None':
-        tasks = JediTasks.objects.filter(jeditaskid=taskid).values('taskname')
+def get_task_info(jeditaskid):
+    """
+    Getting basic task attributes
+
+    Args:
+        jeditaskid: int
+
+    Returns:
+        task_info: dict - (jeditaskid, status, taskname), if no task - empty dict
+    """
+    task_info = {}
+    if jeditaskid and isinstance(jeditaskid, int):
+        tasks = JediTasks.objects.filter(jeditaskid=jeditaskid).values('jeditaskid', 'status', 'taskname')
         if len(tasks) > 0:
-            taskname = tasks[0]['taskname']
-    return taskname
+            task_info = dict(tasks[0])
+    return task_info
 
 
 def get_task_flow_data(jeditaskid):

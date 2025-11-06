@@ -8,10 +8,11 @@ import logging
 import json
 from urllib.parse import urlparse
 
+from django.conf import settings
 from django.core.cache import cache
 
 from core.schedresource.models import SchedconfigJson
-from django.conf import settings
+import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -483,3 +484,73 @@ def filter_pq_json(request, **kwargs):
     pqs_dict = {k: v for k, v in pqs_dict.items() if k in filtered_pq_names_final}
 
     return pqs_dict
+
+
+def site_summary_dict(sites, vo='ATLAS', sortby='alpha'):
+    """ Return a dictionary summarizing the field values for the chosen most interesting fields """
+    sumd = {'copytool': {}}
+    for site in sites:
+        for f in const.SITE_FIELDS_STANDARD:
+            if f in site and site[f] is not None:
+                if f not in sumd:
+                    sumd[f] = {}
+                if site[f] not in sumd[f]:
+                    sumd[f][site[f]] = 0
+                sumd[f][site[f]] += 1
+        if 'copytool' in const.SITE_FIELDS_STANDARD:
+            if 'copytools' in site and site['copytools'] and len(site['copytools']) > 0:
+                copytools = list(site['copytools'].keys())
+                for cp in copytools:
+                    if cp not in sumd['copytool']:
+                        sumd['copytool'][cp] = 0
+                    sumd['copytool'][cp] += 1
+
+    if vo != 'ATLAS':
+        try:
+            del sumd['cloud']
+        except:
+            _logger.exception('Failed to remove cloud key from dict')
+
+    # convert to ordered lists
+    suml = []
+    for f in sumd:
+        itemd = {}
+        itemd['field'] = f
+        iteml = []
+        kys = sumd[f].keys()
+        for ky in kys:
+            iteml.append({'kname': ky, 'kvalue': sumd[f][ky]})
+        # sorting
+        if sortby == 'count':
+            iteml = sorted(iteml, key=lambda x: -x['kvalue'])
+        else:
+            iteml = sorted(iteml, key=lambda x: x['kname'])
+        itemd['list'] = iteml
+        suml.append(itemd)
+    suml = sorted(suml, key=lambda x: x['field'])
+    return suml
+
+
+def is_osg_pool_pq(pqdata) -> bool:
+    """ Return True if the given PQ is an OSG pool """
+    if 'catchall' in pqdata and 'osgpool=true' in pqdata['catchall']:
+        return True
+    return False
+
+
+def is_any_osg_pool(pqs_dict) -> bool:
+    """ Return True if any of the given PQs is an OSG pool """
+    for pq, pqdata in pqs_dict.items():
+        if is_osg_pool_pq(pqdata):
+            return True
+    return False
+
+
+def get_osg_pool_pqs() -> dict:
+    """ Return dict of OSG pool PQs """
+    osg_pool_pqs = {}
+    pqs_dict = get_panda_queues()
+    for pq, pqdata in pqs_dict.items():
+        if is_osg_pool_pq(pqdata):
+            osg_pool_pqs[pq] = pqdata
+    return osg_pool_pqs

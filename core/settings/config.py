@@ -1,4 +1,4 @@
-import os, core, logging, io, sys
+import os, core, logging
 from os.path import dirname, join
 
 from core.settings.local import MY_SECRET_KEY, LOG_ROOT
@@ -24,9 +24,6 @@ if 'BIGMON_HOST' in os.environ:
 
 # IPs of CACHING CRAWLERS if any
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46', '188.184.90.5']
-
-# IPs of BigPanDAmon backend nodes for DDOS protection script
-BIGMON_BACKEND_NODES_IP_LIST = os.environ.get('BIGMON_BACKEND_NODES_IP_LIST', [])
 
 # VIRTUALENV
 VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/opt/prod')
@@ -148,6 +145,9 @@ if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA', 'ORACLE_ATLAS_TB'):
     except Exception as e:
         _logger.error(f"An unexpected error occurred: {e}")
 
+# whether OSG pool used (if True, we need to use destinationsite instead of computingsite for jobs)
+OSG_POOL_USED = os.environ.get('BIGMON_OSG_POOL_USED', 'False').lower() in ('true', '1')
+
 PRMON_LOGS_DIRECTIO_LOCATION = None
 if DEPLOYMENT == 'ORACLE_ATLAS':
     DB_SCHEMA = 'ATLAS_PANDABIGMON'
@@ -182,9 +182,10 @@ elif DEPLOYMENT == 'POSTGRES':
     IDDS_HOST = os.environ.get('IDDS_HOST', 'https://iddsserver.cern.ch:443/idds')
     RUCIO_UI_URL = os.environ.get('RUCIO_UI_URL', '')
     LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'rucio')
-    PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get('PRMON_LOGS_DIRECTIO_LOCATION',
-                                                  "https://storage.googleapis.com/drp-us-central1-logging"
-                                                  "/logs/{queue_name}/PandaJob_{panda_id}")
+    PRMON_LOGS_DIRECTIO_LOCATION = os.environ.get(
+        'PRMON_LOGS_DIRECTIO_LOCATION',
+        "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
+    )
 elif DEPLOYMENT == 'ORACLE_DOMA':
     DB_SCHEMA = 'DOMA_PANDABIGMON'
     DB_SCHEMA_PANDA = 'DOMA_PANDA'
@@ -197,6 +198,15 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
     RUCIO_UI_URL = os.environ.get('RUCIO_UI_URL', '')
     LOGS_PROVIDER = os.environ.get('LOGS_PROVIDER', 'cric')
     PRMON_LOGS_DIRECTIO_LOCATION = "https://storage.googleapis.com/drp-us-central1-logging/logs/{queue_name}/PandaJob_{panda_id}"
+else:
+    _logger.error(f"Unknown DEPLOYMENT={DEPLOYMENT} is set")
+    raise Exception(f"Unknown DEPLOYMENT={DEPLOYMENT} is set")
+
+# Request traffic control settings
+TRAFFIC_CONTROL_ENABLED = os.environ.get('BIGMON_TRAFFIC_CONTROL_ENABLED', 'True') == 'True'
+TRAFFIC_CONTROL_WHITE_LIST = os.environ.get('BIGMON_TRAFFIC_CONTROL_WHITE_LIST', '').split(',')
+TRAFFIC_CONTROL_BLACK_LIST = os.environ.get('BIGMON_TRAFFIC_CONTROL_BLACK_LIST', '').split(',')
+TRAFFIC_CONTROL_MAX_REQUESTS_PER_HOUR = int(os.environ.get('BIGMON_TRAFFIC_CONTROL_MAX_REQUESTS_PER_HOUR', 1000))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
