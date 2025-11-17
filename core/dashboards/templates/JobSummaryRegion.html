@@ -1463,9 +1463,9 @@
                         '&var-resource_type=All&var-type=All&var-states=All&var-pilot_manager=All&var-pilot_version=All' +
                         '&var-harvester=All&var-workflow=All&var-frontier=All&var-fts_server=All&var-container_type=All&var-pledge=All' +
                         '&panelId=8&width=1400&height=1400&tz=Europe%2FZurich&timeout=3600&timestamp=' + encodeURIComponent(tmstp.toISOString());
-
+                    const linkUrl = url.replace('/grafana/img/?url=', '');
                     doc.write('<img id="show_image" src="' + url + '" style="width:900px;height:600px;"><br>');
-                    doc.write('<a target="_blank" href="' + url.replace('/grafana/img/?url=', 'https://') + '">Jobs monitoring dashboard</a><br><br>');
+                    doc.write('<a target="_blank" href="' + linkUrl  + '">Jobs monitoring dashboard</a><br><br>');
                     doc.write('<button id="reloadBtn">Reload</button> <button id="closeBtn">Close</button>');
                 }
 
