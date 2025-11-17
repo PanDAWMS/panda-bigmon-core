@@ -1454,18 +1454,24 @@
                     );
                     doc.write('<button id="closeBtn">Close</button>');
                 } else {
-                    const url = '/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/VbKvjL2Zk/jobs-monitoring?orgId=17' +
+                    const commonParams =
                         '&from=now-24h/h&to=now' +
                         '&var-retention=10m&var-cloud=All&var-tier=All&var-federation=All&var-nucleus=All' +
                         '&var-site=All&var-queue=' + encodeURIComponent(site) +
                         '&var-queue_state=All&var-prod_source=' + encodeURIComponent(prod_source) +
                         '&var-resource=' + encodeURIComponent(res_cap) +
                         '&var-resource_type=All&var-type=All&var-states=All&var-pilot_manager=All&var-pilot_version=All' +
-                        '&var-harvester=All&var-workflow=All&var-frontier=All&var-fts_server=All&var-container_type=All&var-pledge=All' +
-                        '&panelId=8&width=1400&height=1400&tz=Europe%2FZurich&timeout=3600&timestamp=' + encodeURIComponent(tmstp.toISOString());
-                    const linkUrl = url.replace('/grafana/img/?url=', '');
+                        '&var-harvester=All&var-workflow=All&var-frontier=All&var-fts_server=All&var-container_type=All&var-pledge=All';
+                    const url = '/grafana/img/?url=https://monit-grafana.cern.ch/render/d-solo/VbKvjL2Zk/jobs-monitoring-panda-api?orgId=17' +
+                        commonParams +
+                        '&panelId=8&width=1400&height=1400&tz=Europe%2FZurich&timeout=3600&timestamp=' +
+                        encodeURIComponent(tmstp.toISOString());
+
+                    const dashboardUrl = 'https://monit-grafana.cern.ch/d/VbKvjL2Zk/jobs-monitoring-panda-api?orgId=17' +
+                        '&orgId=17' + commonParams;
+
                     doc.write('<img id="show_image" src="' + url + '" style="width:900px;height:600px;"><br>');
-                    doc.write('<a target="_blank" href="' + linkUrl  + '">Jobs monitoring dashboard</a><br><br>');
+                    doc.write('<a target="_blank" href="' + dashboardUrl + '">Jobs monitoring dashboard</a><br><br>');
                     doc.write('<button id="reloadBtn">Reload</button> <button id="closeBtn">Close</button>');
                 }
 
