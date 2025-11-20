@@ -1466,6 +1466,7 @@ canvas.full_screen_size {
   .card.bp-container-simple.warning > .card-divider {
     background-color: #FFF5D6;
     color: firebrick;
+    word-break: break-all;
   }
   .card.bp-container-simple.warning > .card-section {
     font-size: smaller;
@@ -1474,6 +1475,11 @@ canvas.full_screen_size {
   }
   .card.bp-container-simple.warning > .card-section > pre {
     padding: 0.3rem 0.7rem;
+  }
+  .card.bp-container-simple.warning > .card-divider a, .card.bp-container-simple.warning > .card-section a {
+    color: #0a0a0a;
+    font-weight: bold;
+    border-bottom: 1px dotted;
   }
 
 .card.bp-container-simple.alert {
