@@ -30,10 +30,10 @@ def get_dataset_locations(name, is_full_replicas_only=False):
     if replicas is not None and len(replicas) > 0:
         for r in replicas:
             if is_full_replicas_only:
-                if r['available_bytes'] == r['total_bytes']:
-                    rse_list.extend([rse for rse, state in r['states'].items() if state == 'AVAILABLE'])
+                if r['available_bytes'] == r['bytes'] and r['state'] == 'AVAILABLE':
+                    rse_list.append(r['rse'])
             else:
-                rse_list.extend([rse for rse, state in r['states'].items() if state == 'AVAILABLE'])
+                rse_list.append(r['rse'])
 
     return rse_list
 
