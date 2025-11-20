@@ -73,7 +73,9 @@ def setup_view_dc(request):
         extra_str += f" AND t1.SOURCE_{source_rse} in ({quoted_values})"
 
     if 'destination' in request_params:
-        extra_str += f" AND t1.DESTINATION_RSE in ({','.join('\'' + str(x) + '\'' for x in request_params['destination'].split(','))})"
+        dest_values = request_params['destination'].split(',')
+        quoted_dest = ",".join(f"'{str(x)}'" for x in dest_values)
+        extra_str += f" AND t1.DESTINATION_RSE in ({quoted_dest})"
 
     if 'campaign' in request_params:
         campaignl = request_params['campaign'].split(',')
@@ -429,4 +431,3 @@ def substitudeRSEbreakdown(rse):
     for rse in rses:
         final_string += "&var-src_endpoint=" + rse
     return final_string
-
