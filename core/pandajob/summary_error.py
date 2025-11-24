@@ -331,7 +331,7 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
             continue
 
         fields_values = {
-            'user': job['produsername'],
+            'user': job['produsername'] if 'produsername' in job else '',
             'site': job['wn'] if is_site_req else job['computingsite'],
             'task': job.get('jeditaskid') or job.get('taskid') or None
         }

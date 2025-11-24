@@ -4862,7 +4862,7 @@ def taskInfo(request, jeditaskid=0):
             else:
                 _logger.info("This old style ES taskInfo request")
                 # getting job summary and plots
-                plotsDict, jobsummary, scouts, metrics = job_summary_for_task(
+                plotsDict, jobsummary, scouts, metrics, error_summary = job_summary_for_task(
                     jquery, '(1=1)',
                     mode=mode,
                     task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')),
@@ -4871,12 +4871,13 @@ def taskInfo(request, jeditaskid=0):
                 data['jobsummary'] = jobsummary
                 data['plotsDict'] = plotsDict
                 data['jobscoutids'] = scouts
+                data['errorsummary'] = error_summary
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
                 response = render(request, 'taskInfoES.html', data, content_type='text/html')
         else:
             _logger.info("This is ordinary non-ES task")
             # getting job summary and plots
-            plotsDict, jobsummary, scouts, metrics = job_summary_for_task(
+            plotsDict, jobsummary, scouts, metrics, error_summary = job_summary_for_task(
                 jquery, '(1=1)',
                 mode=mode,
                 task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')),
@@ -4885,6 +4886,7 @@ def taskInfo(request, jeditaskid=0):
             data['jobsummary'] = jobsummary
             data['plotsDict'] = plotsDict
             data['jobscoutids'] = scouts
+            data['errorsummary'] = error_summary
             data['task'].update(metrics)
             setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
             response = render(request, 'taskInfo.html', data, content_type='text/html')
@@ -5105,7 +5107,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         _logger.debug('tk of dropped jobs: {}'.format(transactionKeyDJ))
 
     # pass mode='nodrop' as we already took dropping into account in extra query str
-    plotsDict, jobsummary, jobScoutIDs, metrics = job_summary_for_task(query, extra=extra, mode='nodrop')
+    plotsDict, jobsummary, jobScoutIDs, metrics, _ = job_summary_for_task(query, extra=extra, mode='nodrop')
 
     alldata = {
         'jeditaskid': jeditaskid,
