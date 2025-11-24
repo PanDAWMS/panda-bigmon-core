@@ -2,6 +2,8 @@
 
 """
 import json
+from datetime import datetime
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout as auth_logout
 from django.views.decorators.cache import never_cache
@@ -43,10 +45,14 @@ def login(request):
 
     # store the redirect url in the session to be picked up after the auth completed
     request.session['next'] = next_url
+    request.session['urls_cut'] = {}
     data = {
         'request': request,
+        'viewParams': {},
+        'requestParams': {},
         'auth_providers': auth_providers,
         'vo': settings.MON_VO if hasattr(settings, 'MON_VO') else '',
+        'built': datetime.now().strftime("%H:%M:%S")
     }
     response = render(request, 'login.html', data, content_type='text/html')
     response.delete_cookie('sessionid')
