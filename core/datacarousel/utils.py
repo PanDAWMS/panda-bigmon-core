@@ -254,7 +254,7 @@ def send_report_rse(rse: str, data, experts_only:bool=True) -> int:
 
 
 
-def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
+def staging_rule_verification(rule_id: str, rse: str) -> tuple[bool, list]:
     """
     Check if a cause of a stalled rule is tape or disk
     Got logic from ProdSys2 https://github.com/PanDAWMS/panda-bigmon-atlas/blob/main-py3/atlas/prestage/views.py
