@@ -183,7 +183,7 @@ def initRequest(request, callselfmon=True):
     query = parse_qs(u.query)
     query.pop('timestamp', None)
     try:
-        u._replace(query=urlencode(query, True))
+        u = u._replace(query=urlencode(query, True))
     except UnicodeEncodeError:
         return False, error_response(request, message='Error appeared while encoding URL!', status=400)
 
@@ -201,6 +201,7 @@ def initRequest(request, callselfmon=True):
     for trp in timerange_params:
         no_time_range_url = removeParam(no_time_range_url, trp, mode='extensible')
     urls_cut = {
+        'notimestampurl': urlunparse(u) + ('&' if len(query) > 0 else '?'),
         'notimerangeurl': no_time_range_url,
         'xurl': extensibleURL(request),
         'nolimiturl': removeParam(extensibleURL(request), 'limit', mode='extensible'),
