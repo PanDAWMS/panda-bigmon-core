@@ -30,7 +30,7 @@
 {% block body %}
 
 <p>
-{# {{ viewParams.selection|safe }} #}
+{% if timerange == '' %} You are using the custom time range, please edit it directly in the URL since it seems you know what you are doing. {% endif %}
 {% if requestParams.priorityrange %}<br><b>Current priority range: {{ requestParams.priorityrange }}</b> {% endif %}
 </p>
 

@@ -2844,7 +2844,7 @@ def userInfo(request, user=''):
                 'request': request,
                 'viewParams': request.session['viewParams'],
                 'requestParams': request.session['requestParams'],
-                'timerange': request.session['timerange'],
+                'timerange': request.session['timerange'] if 'timerange' in request.session else '',
                 'built': datetime.now().strftime("%H:%M:%S"),
                 'tk': tk_taskids,
                 'xurl': xurl,
