@@ -276,6 +276,32 @@
     </div>
   {% endif %}
 
+{#  {% if errorsummary and errorsummary|length > 0 %}#}
+{#    <div class="card bp-container-simple alert">#}
+{#      <div class="card-divider">#}
+{#        <h5><b>Error summary for task {{ jeditaskid }}:</b></h5>#}
+{#      </div>#}
+{#      <div class="card-section">#}
+{#        {% for cat, err_sum in errorsummary.items %}{% if cat != "Uncategorized" %}#}
+{#          <p><b>{{ err_sum.count }}</b> job(s) failed due to <b>{{ cat }}</b>, top errors are:</p>#}
+{#          <ul>#}
+{#            {% for code_data in err_sum.codes %}#}
+{#              <li><b>{{ code_data.1.count }}</b> jobs failed with <b><i>{{ code_data.1.diag }}</i></b> <span class="bp-tooltip left long"><i class="fi-info"></i><span class="tooltip-text"> {{ code_data.1.desc }}</span></span></li>#}
+{#            {% endfor %}#}
+{#          </ul>#}
+{#        {% endif %}{% endfor %}#}
+{#        {% if 'Uncategorized' in errorsummary %}#}
+{#          <p><b>{{ errorsummary.Uncategorized.count }}</b> job(s) failed due to other reasons, top errors are:</p>#}
+{#          <ul>#}
+{#            {% for code_data in errorsummary.Uncategorized.codes %}#}
+{#              <li><b>{{ code_data.1.count }}</b> jobs failed with <b><i>{{ code_data.1.diag }}</i></b> <span class="bp-tooltip left long"><i class="fi-info"></i><span class="tooltip-text"> {{ code_data.1.desc }}</span></span></li>#}
+{#            {% endfor %}#}
+{#          </ul>#}
+{#        {% endif %}#}
+{#      </div>#}
+{#    </div>#}
+{#  {% endif %}#}
+
   {% if viewParams.MON_VO == 'ATLAS' %}
     {% if info.split_rule %}
       <div class="callout info">

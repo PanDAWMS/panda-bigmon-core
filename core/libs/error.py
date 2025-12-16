@@ -143,3 +143,101 @@ def get_job_errors(pandaids):
         errors_dict[job['pandaid']] = job_with_error_info['errorinfo']
 
     return errors_dict
+
+
+def get_job_error_component_code_list(job):
+    """
+    Get shortened error component:code string by error field and error code
+    :param job: dict, name of error field
+    :return: error_list: list of str, shortened error category string
+    """
+    error_list = []
+    for k in list(const.JOB_ERROR_COMPONENTS):
+        if k['error'] in job and job[k['error']] is not None and job[k['error']] != '' and int(job[k['error']]) > 0:
+            error_list.append(f"{k['name']}:{job[k['error']]}")
+
+    return error_list
+
+
+def get_job_error_category(job, error_descriptions=None):
+    """
+    Get error category for a job
+    :param job: dict, job data
+    :param error_descriptions: dict, error descriptions mapping
+    :return: str, error category name
+    """
+    if not error_descriptions:
+        error_descriptions = get_job_error_descriptions()
+
+    error_list = get_job_error_component_code_list(job)
+    if len(error_list) == 0:
+        return None
+
+    # use the first error code as the category
+    error_categories = list(set([error_descriptions.get(err, {}).get('category', 0) for err in error_list]))
+
+    if len(error_categories) > 1 and 0 in error_categories:
+        # if 'Uncategorized' is present but there are other categories, we remove 'Uncategorized' from the list
+        error_categories.remove(0)
+
+    if len(error_categories) == 1:
+        return const.ERROR_CATEGORIES[str(error_categories[0])] if str(error_categories[0]) in const.ERROR_CATEGORIES else 'Uncategorized'
+    else:
+        _logger.debug(f"Multiple error categories found for job {job['pandaid']}: {error_categories}. Defaulting to 'Uncategorized'.")
+        return f"Uncategorized ({','.join([str(c) for c in error_categories if c != 0])})"
+
+
+def top_errors_summary(jobs, n_top=3) -> dict:
+    """
+    Get a summary of the top errors with descriptions and categories
+    :param jobs: list of dicts
+    :param n_top: int, number of top errors to return
+    :return:
+    """
+    if not jobs or len(jobs) == 0:
+        return []
+
+    error_desc = get_job_error_descriptions()
+
+    # errors by category
+    n_failed_jobs_total = 0
+    err_cat_sum = {}
+    for job in jobs:
+        if job['jobstatus'] != 'failed':
+            continue
+        n_failed_jobs_total += 1
+        err_cat = get_job_error_category(job, error_descriptions=error_desc)
+        if err_cat not in err_cat_sum:
+            err_cat_sum[err_cat] = {'count': 0, 'sites': set(), 'codes': {}}
+        err_cat_sum[err_cat]['count'] += 1
+        err_cat_sum[err_cat]['sites'].add(job['computingsite'])
+
+        err_comp_code_list = get_job_error_component_code_list(job)
+        err_comp_code = ','.join(err_comp_code_list)
+        if err_comp_code not in err_cat_sum[err_cat]['codes']:
+            err_cat_sum[err_cat]['codes'][err_comp_code] = {'count': 0, 'diag': '', 'desc': ''}
+            # special case for payload error, we do not show other component codes to avoid confusion
+            if 'pilot:1305' in err_comp_code_list:
+                err_cat_sum[err_cat]['codes'][err_comp_code]['diag'] = error_desc['pilot:1305']['diagnostics']
+                err_cat_sum[err_cat]['codes'][err_comp_code]['desc'] = error_desc['pilot:1305']['description']
+            else:
+                for comp_code in err_comp_code_list:
+                    if comp_code in error_desc:
+                        err_cat_sum[err_cat]['codes'][err_comp_code]['diag'] += f" {comp_code} {error_desc[comp_code]['diagnostics']}"
+                        err_cat_sum[err_cat]['codes'][err_comp_code]['desc'] += f" {comp_code} {error_desc[comp_code]['description']}"
+
+        err_cat_sum[err_cat]['codes'][err_comp_code]['count'] += 1
+
+    for cat in err_cat_sum:
+        err_cat_sum[cat]['sites'] = sorted(list(err_cat_sum[cat]['sites']))
+        # sort error codes by count and keep only top n_top codes
+        err_cat_sum[cat]['codes'] = sorted(err_cat_sum[cat]['codes'].items(), key=lambda x: -x[1]['count'])
+        if len(err_cat_sum[cat]['codes']) > n_top:
+            err_cat_sum[cat]['codes'] = err_cat_sum[cat]['codes'][:n_top]
+
+    return err_cat_sum
+
+
+
+
+
