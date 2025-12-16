@@ -10,6 +10,7 @@ from django.db import connection
 from django.db.models import Count
 
 from core.libs.dropalgorithm import drop_job_retries
+from core.libs.error import top_errors_summary
 from core.libs.exlib import drop_duplicates, get_tmp_table_name, insert_to_temp_table
 from core.libs.job import parse_jobmetrics, add_job_category, job_states_count_by_param
 from core.libs.jobconsumption import job_consumption_plots
@@ -43,6 +44,7 @@ def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=
               'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
               'nevents', 'hs06', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
               'jobsetid', 'specialhandling', 'creationtime', 'pilottiming']
+    values.extend(const.JOB_ERROR_FIELDS)
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         values.append('eventservice')
         values.append('hs06sec')
@@ -104,7 +106,13 @@ def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=
     metrics = calculate_metrics(jobs, metrics_names=[
         'resimevents_avg', 'resimeventspernevents_avgpercent', 'resimevents_sum'])
 
-    return plots_list, job_summary_list_ordered, scouts, metrics
+    # error summary if any failed jobs
+    error_summary = {}
+    run_jobs_summary = [r['job_state_counts'] for r in job_summary_list if r['value'] == 'run']
+    if len(run_jobs_summary) > 0 and  max([jc['count'] for jc in run_jobs_summary[0] if jc['name'] == 'failed']) > 0:
+        error_summary = top_errors_summary(jobs, n_top=3)
+
+    return plots_list, job_summary_list_ordered, scouts, metrics, error_summary
 
 
 def job_summary_for_task_light(taskrec, **kwargs):

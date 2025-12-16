@@ -336,6 +336,36 @@ JOB_FIELDS = (
     'outputfiletype'
 )
 
+
+JOB_ERROR_FIELDS = (
+    'brokerageerrorcode',
+    'brokerageerrordiag',
+    'ddmerrorcode',
+    'ddmerrordiag',
+    'exeerrorcode',
+    'exeerrordiag',
+    'jobdispatchererrorcode',
+    'jobdispatchererrordiag',
+    'piloterrorcode',
+    'piloterrordiag',
+    'superrorcode',
+    'superrordiag',
+    'taskbuffererrorcode',
+    'taskbuffererrordiag',
+    'transexitcode',
+)
+
+ERROR_CATEGORIES =  MappingProxyType({
+        '0': 'Uncategorized',
+        '1': 'File and Storage Issues',
+        '2': 'Execution and Payload Failures',
+        '3': 'Network and Communication Errors',
+        '4': 'Job Termination and Kill Signals',
+        '5': 'Software and Environment Issues',
+        '6': 'Internal and Unknown Errors',
+})
+
+
 TIME_LIMIT_OPTIONS = (
     'days',
     'hours',

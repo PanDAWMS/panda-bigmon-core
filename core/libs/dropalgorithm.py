@@ -87,7 +87,8 @@ def drop_job_retries(jobs, jeditaskid, is_return_dropped_jobs=False, task_status
                 if hash_retries[job['jobsetid']]['relationtype'] == 'jobset_retry':
                     is_drop_job = 1
                 # job cloning
-                elif hash_retries[job['jobsetid']]['relationtype'] == 'jobset_id' and pandaid != hash_retries[job['jobsetid']]['newpandaid']:
+                elif hash_retries[job['jobsetid']]['relationtype'] == 'jobset_id' and (
+                        pandaid != hash_retries[job['jobsetid']]['newpandaid'] and job['jobstatus'] in FAIL_STATES):
                     is_drop_job = 1
             if job['processingtype'] == 'pmerge':
                 # merge retries
