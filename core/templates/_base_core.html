@@ -505,18 +505,17 @@
       {% else %}
           var timerange =  ['', ''];
       {% endif %}
-      {% if request.session.urls_cut.notimerangeurl %}
-          var notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
+      {% if 'urls_cut' in request.session and 'notimerangeurl' in request.session.urls_cut and request.session.urls_cut.notimerangeurl %}
+          const notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
       {% else %}
-          var notimerangeurl =  window.location.href + '?';
+          const notimerangeurl =  window.location.href + '?';
       {% endif %}
 
-      {% if request.session.urls_cut.notimestampurl %}
-          var notimestampurl = '{{ request.session.urls_cut.notimestampurl|safe }}';
+      {% if 'urls_cut' in request.session and 'notimestampurl' in request.session.urls_cut and request.session.urls_cut.notimestampurl %}
+          const notimestampurl = '{{ request.session.urls_cut.notimestampurl|safe }}';
       {% else %}
-          var notimestampurl =  window.location.href + '?' ;
+          const notimestampurl =  window.location.href + '?' ;
       {% endif %}
-
 
       app.controller('timeWindowController', ['$scope', function($scope) {
         $scope.timewindow = {
@@ -676,14 +675,13 @@
 
       function clearComparisonList() {
           let object_name = 'job';
-          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/clearcomparison/',
               data: 'object='+object_name,
               async: true,
               cache: false
           }).done(function (response) {
-              window.location = newURL
+              window.location = notimestampurl
               });
       }
 
@@ -720,26 +718,24 @@
       }
 
       function grantRights() {
-          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/grantrights/',
               data: 'type=tester',
               async: true,
               cache: false
           }).done(function (response) {
-              window.location = newURL
+              window.location = notimestampurl
               });
       }
 
       function denyRights() {
-          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/denyrights/',
               data: 'type=tester',
               async: true,
               cache: false
           }).done(function (response) {
-              window.location = newURL
+              window.location = notimestampurl
               });
       }
 
@@ -758,7 +754,7 @@
               data: url,
               async: true,
               success: function() {
-                  window.location = '{{ request.session.urls_cut.notimestampurl|safe }}timestamp={% now "H:i:s" %}'
+                  window.location = notimestampurl + 'timestamp={% now "H:i:s" %}'
               }
           });
       }

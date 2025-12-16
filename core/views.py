@@ -178,7 +178,6 @@ def initRequest(request, callselfmon=True):
 
     # creating a dict in session to store long urls as it will not be saved to session storage
     # Session is NOT modified, because this alters sub dict
-    request.session['urls_cut'] = {}
     url = request.get_full_path()
     u = urlparse(url)
     query = parse_qs(u.query)
@@ -192,8 +191,7 @@ def initRequest(request, callselfmon=True):
     if is_xss(url):
         return False, error_response(request, message="Illegal request", status=400)
 
-    request.session['urls_cut']['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
-    notimerangeurl = extensibleURL(request)
+    no_time_range_url = extensibleURL(request)
     timerange_params = [
         'days', 'hours',
         'date_from', 'date_to',
@@ -201,13 +199,17 @@ def initRequest(request, callselfmon=True):
         'earlierthan', 'earlierthandays'
     ]
     for trp in timerange_params:
-        notimerangeurl = removeParam(notimerangeurl, trp, mode='extensible')
-    request.session['urls_cut']['notimerangeurl'] = notimerangeurl
-    request.session['urls_cut']['xurl'] = extensibleURL(request)
-    request.session['urls_cut']['nolimiturl'] = removeParam(extensibleURL(request), 'limit', mode='extensible')
-    request.session['urls_cut']['nodisplaylimiturl'] = removeParam(extensibleURL(request), 'display_limit', mode='extensible')
-    request.session['urls_cut']['nosorturl'] = removeParam(extensibleURL(request), 'sortby', mode='extensible')
-
+        no_time_range_url = removeParam(no_time_range_url, trp, mode='extensible')
+    urls_cut = {
+        'notimestampurl': urlunparse(u) + ('&' if len(query) > 0 else '?'),
+        'notimerangeurl': no_time_range_url,
+        'xurl': extensibleURL(request),
+        'nolimiturl': removeParam(extensibleURL(request), 'limit', mode='extensible'),
+        'nodisplaylimiturl': removeParam(extensibleURL(request), 'display_limit', mode='extensible'),
+        'nosorturl': removeParam(extensibleURL(request), 'sortby', mode='extensible')
+    }
+    request.session['urls_cut'] = urls_cut
+    
     if 'timerange' in request.session:
         del request.session['timerange']
 
@@ -3851,7 +3853,7 @@ def killtasks(request):
     if action == 1:
         postdata = {"username": username, "task": taskid, "userfullname": fullname}
     else:
-        postdata = {"username": username, "task": taskid, "parameters": [1], "userfullname": fullname}
+        postdata = {"username": username, "task": taskid, "parameters": [True], "userfullname": fullname}
 
     headers = {
         'Content-Type': 'application/json',
