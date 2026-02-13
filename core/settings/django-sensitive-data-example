@@ -98,13 +98,10 @@ GRAFANA = {
    "Authorization": ""
 }
 
-# OAuth secrets and keys for supported authentification via CERN, Google, GitHub, or IndigoIAM
+# OAuth secrets and keys for supported authentification via CERN, or IndigoIAM
 SOCIAL_AUTH_CERNOIDC_KEY = ''
 SOCIAL_AUTH_CERNOIDC_SECRET = ''
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = ''
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = ''
-SOCIAL_AUTH_GITHUB_KEY = ''
-SOCIAL_AUTH_GITHUB_SECRET = ''
+SOCIAL_AUTH_CERNOIDC_BASEPATH = ''
 SOCIAL_AUTH_INDIGOIAM_KEY = ''
 SOCIAL_AUTH_INDIGOIAM_SECRET = ''
 SOCIAL_AUTH_INDIGOIAM_BASEPATH = ''
@@ -136,5 +133,6 @@ DEBUG = False
 if DEBUG is True:
     ENABLE_DEBUG_TOOLBAR = True
     DEBUG_PROPAGATE_EXCEPTIONS = True
+    SESSION_COOKIE_SECURE = False
 
 

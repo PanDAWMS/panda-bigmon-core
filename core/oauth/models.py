@@ -7,7 +7,6 @@ from django.db import models
 from django.conf import settings
 
 
-
 class BPUser(AbstractUser):
     is_tester = models.BooleanField(db_column='is_tester', null=True, blank=False)
     last_login = models.DateTimeField(db_column='last_login', auto_now_add=True, blank=False)

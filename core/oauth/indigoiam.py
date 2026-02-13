@@ -1,9 +1,11 @@
+import logging
 from social_core.backends.oauth import BaseOAuth2
 from urllib.parse import urljoin
-import logging
+
+_logger = logging.getLogger('social')
+
 
 class IndigoIamOIDC(BaseOAuth2):
-
     name = 'indigoiam'
     ID_KEY = 'email'
     ACCESS_TOKEN_METHOD = 'POST'
@@ -20,16 +22,14 @@ class IndigoIamOIDC(BaseOAuth2):
     def access_token_url(self):
         return urljoin(self.setting('BASEPATH'), 'token')
     def get_user_details(self, response):
-        logger = logging.getLogger('social')
         for k, v in response.items():
-            logger.info('{}: {}'.format(k, v))
+            _logger.info('{}: {}'.format(k, v))
         return {
             'username': response.get('preferred_username'),
             'email': response.get('email', ''),
             'first_name': response.get('given_name', ''),
             'last_name': response.get('family_name', ''),
-            'name': response.get('name', ''),
         }
     def user_data(self, access_token, *args, **kwargs):
-        return self.get_json(urljoin(self.setting('BASEPATH'), 'userinfo'),
-                             headers={'Authorization': f'Bearer {access_token}'})
+        return self.get_json(urljoin(self.setting('BASEPATH'), 'userinfo'), headers={'Authorization': f'Bearer {access_token}'})
+
