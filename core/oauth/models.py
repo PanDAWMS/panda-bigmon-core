@@ -1,11 +1,11 @@
 """
 
 """
-
+import binascii
+import os
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.conf import settings
-
 
 
 class BPUser(AbstractUser):
@@ -66,3 +66,28 @@ class Visits(models.Model):
 
     class Meta:
         db_table = f'"{settings.DB_SCHEMA}"."visits"'
+
+
+class BPToken(models.Model):
+    """
+    The default authorization token model.
+    """
+    key = models.CharField(max_length=40, primary_key=True)
+    user = models.OneToOneField(BPUser, related_name='bp_auth_token', on_delete=models.DO_NOTHING)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA}"."authtoken_token"'
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_key(cls):
+        return binascii.hexlify(os.urandom(20)).decode()
+
+    def __str__(self):
+        return self.key
+

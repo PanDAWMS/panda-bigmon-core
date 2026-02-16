@@ -49,7 +49,7 @@ from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
-from core.oauth.utils import login_customrequired, get_auth_provider, is_expert, get_full_name, get_username
+from core.oauth.utils import login_customrequired, is_expert, get_full_name, get_username
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
@@ -1961,7 +1961,7 @@ def jobInfo(request, pandaid=None, batchid=None):
         return response
 
     # Get the current AUTH type
-    auth = get_auth_provider(request)
+    auth = request.session.get('auth_social_backend', None)
 
     eventservice = False
     query = setupView(request, hours=365 * 24)
@@ -3801,6 +3801,17 @@ def killtasks(request):
     if not valid:
         return response
 
+    if request.user.is_authenticated:
+        username = request.user.username
+        fullname = request.user.get_full_name()
+    else:
+        resp = {"detail": "User not authenticated. Please login to BigPanDAmon"}
+        response = JsonResponse(resp, status=401)
+        return response
+
+    prodsys_host = settings.PRODSYS['prodsysHost'] if 'prodsysHost' in settings.PRODSYS else None
+    prodsys_token = settings.PRODSYS['prodsysToken'] if 'prodsysToken' in settings.PRODSYS else None
+
     taskid = -1
     action = -1
     if 'task' in request.session['requestParams']:
@@ -3808,168 +3819,50 @@ def killtasks(request):
     if 'action' in request.session['requestParams']:
         action = int(request.session['requestParams']['action'])
 
-    prodsysHost = None
-    prodsysToken = None
-    prodsysUrl = None
-    username = None
-    fullname = None
-
-    if 'prodsysHost' in settings.PRODSYS:
-        prodsysHost = settings.PRODSYS['prodsysHost']
-    if 'prodsysToken' in settings.PRODSYS:
-        prodsysToken = settings.PRODSYS['prodsysToken']
-
     if action == 0:
-        prodsysUrl = '/prodtask/task_action_ext/finish/'
+        prodsys_url = '/prodtask/task_action_ext/finish/'
     elif action == 1:
-        prodsysUrl = '/prodtask/task_action_ext/abort/'
+        prodsys_url = '/prodtask/task_action_ext/abort/'
     else:
-        resp = {"detail": "Action is not recognized"}
-        dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, content_type='application/json')
-        return response
-
-    cern_auth_provider = None
-    user = request.user
-    # TODO
-    # temporary while both old and new CERN auth supported
-    if user.is_authenticated and user.social_auth is not None:
-        if len(user.social_auth.filter(provider='cernauth2')) > 0:
-            cern_auth_provider = 'cernauth2'
-        elif len(user.social_auth.filter(provider='cernoidc')) > 0:
-            cern_auth_provider = 'cernoidc'
-
-    if cern_auth_provider and user.social_auth.get(provider=cern_auth_provider).extra_data is not None and (
-            'username' in user.social_auth.get(provider=cern_auth_provider).extra_data):
-        username = user.social_auth.get(provider=cern_auth_provider).extra_data['username']
-        fullname = user.social_auth.get(provider=cern_auth_provider).extra_data['name']
-
-    else:
-        resp = {"detail": "User not authenticated. Please login to BigPanDAmon with CERN"}
-        dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, content_type='application/json')
-        return response
+        resp = {"detail": "Provided action is not supported"}
+        return JsonResponse(resp, status=400)
 
     if action == 1:
-        postdata = {"username": username, "task": taskid, "userfullname": fullname}
+        post_data = {"username": username, "task": taskid, "userfullname": fullname}
     else:
-        postdata = {"username": username, "task": taskid, "parameters": [True], "userfullname": fullname}
+        post_data = {"username": username, "task": taskid, "parameters": [True], "userfullname": fullname}
 
+
+    if not username or not fullname or not prodsys_host or not prodsys_token:
+        resp = {"detail": "User is not recognised"}
+        _logger.error(f"kill task failed, user: {username}-{fullname}, PS2:{prodsys_host},token {'ok' if prodsys_token else 'not ok'}")
+        return JsonResponse(resp, status=400)
     headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': 'Token ' + prodsysToken
+        'Authorization': 'Token ' + prodsys_token
     }
-    conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=100)
-    resp = None
-
-    # if request.session['IS_TESTER']:
-    resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1,
-                        assert_same_host=False)
-    # else:
-    #    resp = {"detail": "You are not allowed to test. Sorry"}
-    #    dump = json.dumps(resp, cls=DateEncoder)
-    #    response = HttpResponse(dump, mimetype='text/plain')
-    #    return response
-
+    conn = urllib3.HTTPSConnectionPool(prodsys_host, timeout=100)
+    resp = conn.urlopen('POST', prodsys_url,
+        body=json.dumps(post_data, cls=DateEncoder),
+        headers=headers,
+        retries=1,
+        assert_same_host=False
+    )
     if resp and len(resp.data) > 0:
         try:
             resp = json.loads(resp.data)
             if resp['result'] == "FAILED":
                 resp['detail'] = 'Result:' + resp['result'] + ' with reason:' + resp['exception']
             elif resp['result'] == "OK":
-                resp['detail'] = 'Action peformed successfully, details: ' + resp['details']
-        except:
-            resp = {"detail": "prodsys responce could not be parced"}
+                resp['detail'] = 'Action performed successfully, details: ' + resp['details']
+        except Exception as e:
+            resp = {"detail": "prodsys response could not be parced"}
+            _logger.exception(f"{resp['detail']} with error: {str(e)}")
     else:
         resp = {"detail": "Error with sending request to prodsys"}
-    dump = json.dumps(resp, cls=DateEncoder)
-    response = HttpResponse(dump, content_type='application/json')
-    return response
-
-
-@never_cache
-def killtasks_token(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    from requests import get, post
-
-    taskid = -1
-    action = -1
-
-    if 'task' in request.session['requestParams']:
-        taskid = int(request.session['requestParams']['task'])
-    if 'action' in request.session['requestParams']:
-        action = int(request.session['requestParams']['action'])
-
-    id_token = None
-    token_type = None
-    access_token = None
-
-    username = None
-    fullname = None
-    organisation = 'atlas'
-
-    auth_provider = None
-
-    user = request.user
-
-    if user.is_authenticated and user.social_auth is not None:
-
-        auth_provider = (request.user.social_auth.get()).provider
-        social = request.user.social_auth.get(provider=auth_provider)
-
-        if (auth_provider == 'indigoiam'):
-            if (social.extra_data['auth_time'] + social.extra_data['expires_in'] - 10) <= int(time.time()):
-                resp = {"detail": "id token is expired"}
-                dump = json.dumps(resp, cls=DateEncoder)
-                response = HttpResponse(dump, content_type='application/json')
-                return response
-            else:
-                token_type = social.extra_data['token_type']
-                access_token = social.extra_data['access_token']
-                id_token = social.extra_data['id_token']
-
-                os.environ['PANDA_AUTH_ID_TOKEN'] = id_token
-                os.environ['PANDA_AUTH'] = 'oidc'
-                os.environ['PANDA_AUTH_VO'] = organisation
-        else:
-            return None
-
-    resp = get('https://atlas-auth.web.cern.ch/api/tokens/access', data={"grant_type": "access_token"},
-               headers={'Authorization': '%s %s' % (token_type, access_token)})
-
-    header = {}
-    header['Authorization'] = 'Bearer {0}'.format(id_token)
-    header['Origin'] = 'atlas'
-    resp1 = post('https://pandaserver.cern.ch/server/panda/getAttr', headers=header)
-
-    if resp.ok:
-        user_tokens = json.loads(resp.text)
-        #
-        # from pandaclient import Client
-        # c=Client()
-
-        _logger.info('completed')
-        # c = Client()
-        # c.show_tasks()
-        # from core.panda_client.utils import kill_task, show_tasks
-        # show_tasks()
-
-    resp = None
-
-    if resp and len(resp.data) > 0:
-        try:
-            pass
-        except:
-            pass
-    else:
-        pass
-
-    dump = json.dumps(resp, cls=DateEncoder)
-    response = HttpResponse(dump, content_type='application/json')
+        _logger.error(f"{resp['detail']}, full resp: {str(resp)}")
+    response = JsonResponse(resp, cls=DateEncoder)
     return response
 
 
@@ -4398,7 +4291,7 @@ def taskInfo(request, jeditaskid=0):
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfo", skip_central_refresh=True)
     # Get the current AUTH type
-    auth = get_auth_provider(request)
+    auth = request.session.get('auth_social_backend', None)
 
     # temporarily turn off caching
     # data = None
