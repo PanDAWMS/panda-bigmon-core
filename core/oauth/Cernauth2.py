@@ -11,7 +11,7 @@ _logger = logging.getLogger('social')
 class CernAuthOIDC(BaseOAuth2):
     """CERN OAuth2 authentication backend via OpenID Connect"""
     name = 'cernoidc'
-    DEFAULT_SCOPE = ['openid', 'email', 'profile' ]
+    DEFAULT_SCOPE = ['openid',]
     SCOPE_SEPARATOR = ','
     REDIRECT_STATE = False
     ACCESS_TOKEN_METHOD = 'POST'
