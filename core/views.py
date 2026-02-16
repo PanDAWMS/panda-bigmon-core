@@ -3862,7 +3862,7 @@ def killtasks(request):
     else:
         resp = {"detail": "Error with sending request to prodsys"}
         _logger.error(f"{resp['detail']}, full resp: {str(resp)}")
-    response = JsonResponse(resp, cls=DateEncoder)
+    response = JsonResponse(resp)
     return response
 
 
