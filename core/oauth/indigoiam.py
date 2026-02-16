@@ -21,15 +21,17 @@ class IndigoIamOIDC(BaseOAuth2):
         return urljoin(self.setting('BASEPATH'), 'authorize')
     def access_token_url(self):
         return urljoin(self.setting('BASEPATH'), 'token')
+    def user_data(self, access_token, *args, **kwargs):
+        """Load user data from the service, it will be propagated down the pipeline"""
+        return self.get_json(urljoin(self.setting('BASEPATH'), 'userinfo'), headers={'Authorization': f'Bearer {access_token}'})
+
     def get_user_details(self, response):
+        """Return user details to be saved to auth_user django table"""
         for k, v in response.items():
             _logger.info('{}: {}'.format(k, v))
         return {
             'username': response.get('preferred_username'),
             'email': response.get('email', ''),
-            'first_name': response.get('given_name', ''),
-            'last_name': response.get('family_name', ''),
+            'first_name': response.get('given_name', '').title(),
+            'last_name': response.get('family_name', '').title(),
         }
-    def user_data(self, access_token, *args, **kwargs):
-        return self.get_json(urljoin(self.setting('BASEPATH'), 'userinfo'), headers={'Authorization': f'Bearer {access_token}'})
-

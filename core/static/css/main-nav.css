@@ -80,16 +80,34 @@
   border-color: transparent transparent transparent #fefefe;
 }
 
-.top-bar .dropdown.menu.large-horizontal > li.is-dropdown-submenu-parent > a::after {
+.top-bar .top-bar-right .dropdown.menu.large-horizontal > li.is-dropdown-submenu-parent > a::after,
+  .top-bar .top-bar-left .dropdown.menu.large-horizontal > li.is-dropdown-submenu-parent > a::after {
   border: inset 3px;
   border-color: #fefefe transparent transparent;
 }
-.top-bar .is-dropdown-submenu .is-dropdown-submenu-parent.opens-left > a::after {
+.top-bar .top-bar-right .is-dropdown-submenu .is-dropdown-submenu-parent.opens-left > a::after {
     border: inset 5px;
     border-color: transparent #fefefe transparent transparent; }
-.top-bar .is-dropdown-submenu .is-dropdown-submenu-parent.opens-right > a::after {
+.top-bar .top-bar-left .is-dropdown-submenu .is-dropdown-submenu-parent.opens-right > a::after {
     border: inset 5px;
     border-color: transparent transparent transparent #fefefe; }
+
+.top-bar .top-bar-right .dropdown.menu.large-horizontal > li.has-submenu.is-dropdown-submenu-parent > a.user-name-icon > i {
+  font-size: 1rem;
+  vertical-align: middle;
+}
+
+.top-bar-right li.opens-left:last-child > .is-dropdown-submenu {
+  top: 100% !important;
+  left: auto !important;
+  right: 0 !important;
+}
+
+.top-bar-right li.opens-inner > .is-dropdown-submenu {
+  top: 100% !important;
+  left: auto !important;
+  right: 0 !important;
+}
 
 
 .title-bar {
@@ -247,7 +265,7 @@
 }
 
 .li-text {
-  padding: 0.7rem 1rem;
+  padding: 1rem 0.7rem;
 }
 
 .loggeduser {

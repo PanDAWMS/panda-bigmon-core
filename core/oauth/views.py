@@ -2,6 +2,7 @@
 
 """
 import json
+import logging
 from datetime import datetime
 
 from django.shortcuts import render, redirect
@@ -16,8 +17,9 @@ from core.utils import extensibleURL, error_response
 from core.views import initRequest
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired, grant_rights, deny_rights, user_email_sort
-from core.oauth.models import BPUser, BPUserSettings, Visits
+from core.oauth.models import BPUser, BPUserSettings, Visits, BPToken
 
+_logger = logging.getLogger('social')
 
 @never_cache
 def login(request):
@@ -68,7 +70,13 @@ def loginerror(request):
 
 def logout(request):
     """Logs out user"""
+    if request.user.is_authenticated:
+        try:
+            BPToken.objects.filter(user_id=request.user.id).delete()
+        except Exception as ex:
+            _logger.exception('Exception was caught while deleting user tokens during logout')
     auth_logout(request)
+
     return redirect('/')
 
 
