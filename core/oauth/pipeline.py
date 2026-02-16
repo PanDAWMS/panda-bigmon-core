@@ -60,7 +60,7 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
     Returns:
         None - pipeline will continue
     """
-    user_groups = None
+    user_groups = []
     token_dict = {}
     roles_key = None
     groups_user_registered = []
