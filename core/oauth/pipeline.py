@@ -41,7 +41,7 @@ def merge_social_users(details, *args, **kwargs):
             UserSocialAuth.objects.filter(user_id__in=duplicates).update(user_id=primary_user_id)
             # mark duplicated users as inactive to clean up later
             auth_user_model.objects.filter(id__in=duplicates).update(is_active=0)
-        _logger.debug(f"Found {len(duplicates)} social user duplicates -> merged them with {primary_user_id} user_id")
+        _logger.info(f"Found {len(duplicates)} social user duplicates -> merged them with {primary_user_id} user_id")
 
     # pass primary user object into pipeline
     primary_user = auth_user_model.objects.get(id=primary_user_id)
@@ -76,7 +76,7 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
         _logger.warning(f"Failed to decode access token for user {user} from {backend.name}: {ex}")
     if roles_key is not None and roles_key in token_dict and len(token_dict[roles_key]) >= 0:
         user_groups = token_dict[roles_key]
-
+    _logger.info(f"User {user} groups from {backend.name} token: {user_groups}, registered groups: {groups_user_registered}")
     if set(user_groups) == set(groups_user_registered):
         return None
 
@@ -97,6 +97,7 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
         for g in groups_user_joined_recently:
             user.groups.add(Group.objects.get(name=g))
             user.save()
+    _logger.info(f"Group membership for {user}, new groups: {groups_user_joined_recently}, joined groups: {groups_user_joined_recently}")
 
     # if the existing groups does not correspond with ones from token -> update
     groups_user_left = list(set(groups_user_registered) - set(user_groups))
@@ -104,6 +105,7 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
         for g in groups_user_left:
             user.groups.remove(Group.objects.get(name=g))
             user.save()
+    _logger.info(f"Group membership for {user}, left groups: {groups_user_left}")
 
     return None
 
