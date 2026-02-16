@@ -239,7 +239,7 @@
 
 
     <div class="top-bar-right">
-      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown" data-alignment="left">
           {% if request.user and request.user.is_authenticated %}
             <li>
             <div class="row collapse searchbox show-for-large">
@@ -313,10 +313,10 @@
           </li>
 
           {% if request.user and request.user.is_authenticated %}
-            <li class="has-submenu">
-              <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 1rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
+            <li class="has-submenu opens-left">
+              <a class="user-name-icon" href="#"><i class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
               <ul class="submenu menu vertical">
-                  <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
+                  <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }}</span>
                   <li><span class="li-text loggeduser">{{ request.user.email }}</span>
                   {% if request.user.is_tester and 'core.compare' in request.session.installed_apps %}
                       <li><a href="/compare/jobs/?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
