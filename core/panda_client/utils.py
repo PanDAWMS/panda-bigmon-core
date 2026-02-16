@@ -4,10 +4,7 @@ import logging
 import jwt
 from typing import Any, Dict, Tuple, Optional, List, Union
 
-from requests import post
-from core.oauth.utils import get_auth_provider
 from django.conf import settings
-
 from .http_client import HttpClient, api_url_ssl
 
 _logger = logging.getLogger("panda.client")
@@ -49,22 +46,20 @@ def get_auth_indigoiam(request) -> Dict[str, str]:
     """
     header: Dict[str, str] = {}
     organisation = "atlas"
-
-    auth_provider = get_auth_provider(request)
+    auth_provider = request.session.get('auth_social_backend', None)
 
     if not auth_provider:
         return {"detail": "Authentication is required. Please sign in with IAM (green button)."}
+    elif auth_provider != "indigoiam":
+        return {
+            "detail": "This action is only available for token-based authentication. "
+                      "Please re-login with the green 'Sign in with IAM' option."
+        }
 
     try:
         social = request.user.social_auth.get(provider=auth_provider)
     except Exception:
         return {"detail": "Authentication provider not found for user session. Please re-login with IAM."}
-
-    if auth_provider != "indigoiam":
-        return {
-            "detail": "This action is only available for token-based authentication. "
-                      "Please re-login with the green 'Sign in with IAM' option."
-        }
 
     # Token expiration check
     try:
@@ -133,7 +128,7 @@ def make_http_client_from_request(request) -> Tuple[Optional[HttpClient], Option
     If user logged in via IndigoIAM — use OIDC token.
     Otherwise — use certificate (x509 proxy).
     """
-    auth_provider = get_auth_provider(request)
+    auth_provider = request.session.get('auth_social_backend', None)
 
     client = HttpClient()
 

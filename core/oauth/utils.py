@@ -74,21 +74,7 @@ def deny_rights(request, rtype):
         _logger.exception('Exception was caught while denying tester rights from user')
         return False
 
-
     return True
-
-def get_auth_provider(request):
-    user = request.user
-
-    if user.is_authenticated and user.social_auth is not None:
-        try:
-            auth_provider = (request.user.social_auth.get()).provider
-        except Exception as ex:
-            _logger.exception('{0}. User: {1}'.format(ex, user))
-            auth_provider = None
-    else:
-        auth_provider = None
-    return auth_provider
 
 
 def is_expert(request):

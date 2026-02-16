@@ -2,10 +2,9 @@ import base64
 import json
 import logging
 from django.contrib.auth import get_user_model
-from rest_framework.authtoken.models import Token
 from django.db import transaction
 from social_django.models import UserSocialAuth
-from core.oauth.models import Group
+from core.oauth.models import Group, BPToken
 
 _logger = logging.getLogger('social')
 
@@ -122,7 +121,7 @@ def issue_user_token(strategy, backend, user=None, *args, **kwargs):
         None - the pipeline will continue.
     """
     if user:
-        token, created = Token.objects.get_or_create(user=user)
+        token, created = BPToken.objects.get_or_create(user=user)
         if created:
             _logger.info(f"Created new token for user {user.username}")
         else:

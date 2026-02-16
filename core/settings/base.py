@@ -103,6 +103,7 @@ INSTALLED_APPS_DJANGO_FRAMEWORK = (
 INSTALLED_APPS_DJANGO_PLUGINS = (
     # Django plugins
     'rest_framework',
+    'rest_framework.authtoken',
     'django_datatables_view',
     'django_extensions'
 )
