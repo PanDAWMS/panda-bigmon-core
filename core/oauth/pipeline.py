@@ -52,7 +52,7 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
     """
     Update user groups provided in access token. Because there are several supported backends,
         we need to make sure the groups data is not interfere with each other.
-        Roles from CERN SSO - does not have / in their names. Groups from IAM start with / .
+        Roles from CERN SSO - we control them and they must have '-' in their names. Groups from IAM does not have '-'.
     Args:
         backend: authentication backend (provider) instance.
         user: Django user instance.
@@ -66,12 +66,12 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
     groups_user_registered = []
     if backend.name == 'cernoidc':
         roles_key = 'cern_roles'
-        groups_user_registered = [g.name for g in user.groups.exclude(name__contains='/')]
+        groups_user_registered = [g.name for g in user.groups.filter(name__contains='-')]
     elif backend.name == 'indigoiam':
-        roles_key = 'wlcg.groups'
-        groups_user_registered = [g.name for g in user.groups.filter(name__contains='/')]
+        roles_key = 'groups'
+        groups_user_registered = [g.name for g in user.groups.exclude(name__contains='-')]
     try:
-        token_dict = json.loads(base64.b64decode(social.extra_data['access_token'].split('.')[1] + '==').decode('utf-8'))
+        token_dict = json.loads(base64.b64decode(social.extra_data['id_token'].split('.')[1] + '==').decode('utf-8'))
     except Exception as ex:
         _logger.warning(f"Failed to decode access token for user {user} from {backend.name}: {ex}")
     if roles_key is not None and roles_key in token_dict and len(token_dict[roles_key]) >= 0:
@@ -83,9 +83,9 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
     # if any new groups - add them and register user in them
     groups_all = []
     if backend.name == 'cernoidc':
-        groups_all = [g.name for g in Group.objects.exclude(name__contains='/')]
+        groups_all = [g.name for g in Group.objects.filter(name__contains='-')]
     elif backend.name == 'indigoiam':
-        groups_all = [g.name for g in Group.objects.filter(name__contains='/')]
+        groups_all = [g.name for g in Group.objects.exclude(name__contains='-')]
     groups_new = list(set(user_groups) - set(groups_all))
     if len(groups_new) > 0:
         try:
