@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.conf import settings
 
 import core.constants as const
-from core.utils import extensibleURL, error_response
+from core.utils import extensibleURL, error_response, is_json_request
 from core.views import initRequest
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired, grant_rights, deny_rights, user_email_sort
@@ -78,6 +78,36 @@ def logout(request):
     auth_logout(request)
 
     return redirect('/')
+
+@never_cache
+@login_customrequired
+def profile(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    user_info = {}
+    if request.user.is_authenticated:
+        user_info = {
+            'username': request.user.username,
+            'email': request.user.email,
+            'full_name': f"{request.user.first_name} {request.user.last_name}".strip(),
+            'joined': request.user.date_joined,
+            'last_login': request.user.last_login,
+            'auth_provider': request.session.get('auth_social_backend', '-'),
+            'groups': ', '.join(list(request.user.groups.values_list('name', flat=True))),
+            'permissions': ', '.join(list(request.user.get_all_permissions())),
+            'token': request.session.get('bp_token', '-')
+        }
+    data = {
+        'request': request,
+        'viewParams': request.session.get('viewParams', {}),
+        'requestParams': request.session.get('requestParams', {}),
+        'user_info': user_info,
+    }
+    if is_json_request(request):
+        return JsonResponse({'message': 'JSON response not supported for this view'}, status=406)
+    return render(request, 'profile.html', data, content_type='text/html')
 
 
 @login_customrequired
