@@ -95,9 +95,12 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
     groups_user_joined_recently = list(set(user_groups) - set(groups_user_registered))
     if len(groups_user_joined_recently) > 0:
         for g in groups_user_joined_recently:
-            user.groups.add(Group.objects.get(name=g))
-            user.save()
-    _logger.info(f"Group membership for {user}, new groups: {groups_user_joined_recently}, joined groups: {groups_user_joined_recently}")
+            try:
+                user.groups.add(Group.objects.get(name=g))
+                user.save()
+            except Exception as ex:
+                _logger.warning(f"Failed to add user {user} to group {g}: {ex}")
+    _logger.info(f"Group membership for {user}, new groups: {groups_new}, joined groups: {groups_user_joined_recently}")
 
     # if the existing groups does not correspond with ones from token -> update
     groups_user_left = list(set(groups_user_registered) - set(user_groups))
