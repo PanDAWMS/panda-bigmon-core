@@ -121,7 +121,7 @@ def get_workflow_progress_data(request_params, **kwargs):
         tasks = get_datasets_for_tasklist(tasks)
         for task in tasks:
             for ds in task['datasets']:
-                if "input" in ds['type'] and ds['masterid'] is None:
+                if "input" in ds['type'] and ds['masterid'] is None and 'status' in ds and ds['status'] != 'removed':
                     workflow['FINISHED_FILES'] += ds["nfilesfinished"]
                     workflow['FAILED_FILES'] += ds["nfilesfailed"]
                     workflow['TOTAL_JEDI_FILES'] += ds["nfiles"]
