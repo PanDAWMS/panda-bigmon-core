@@ -4,10 +4,12 @@
 
 import logging
 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from core.utils import is_json_request
 from core.oauth.models import BPUser
+from core.oauth.authentication import BPTokenAuthentication
 from django.conf import settings as django_settings
+from rest_framework.exceptions import AuthenticationFailed
 
 _logger = logging.getLogger('social')
 
@@ -22,7 +24,26 @@ def login_customrequired(function):
         if x_forwarded_for and x_forwarded_for in django_settings.CACHING_CRAWLER_HOSTS:
             return function(request, *args, **kwargs)
 
-        if request.user.is_authenticated or is_json_request(request):
+        if request.user.is_authenticated:
+            return function(request, *args, **kwargs)
+        elif is_json_request(request):
+            auth = BPTokenAuthentication()
+            try:
+                result = auth.authenticate(request)
+            except AuthenticationFailed:
+                _logger.error(f"[TOKEN_AUTH] failed with token: {request.headers.get("Authorization")}, req: {request}")
+                return JsonResponse({'detail': 'Invalid token'}, status=401)
+
+            if result is None:
+                _logger.info(f"[TOKEN_AUTH] no token in header found, req: {request}")
+                # return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=401)
+                return function(request, *args, **kwargs)
+
+            user, token = result
+            request.user = user
+            request.auth = token
+            _logger.info(f"[TOKEN_AUTH] successfully authenticated user {user.username}, req: {request}")
+
             return function(request, *args, **kwargs)
         else:
             return HttpResponseRedirect('/login/?next='+request.get_full_path())

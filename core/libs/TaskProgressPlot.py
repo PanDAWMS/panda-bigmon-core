@@ -55,7 +55,8 @@ class TaskProgressPlot:
         task_datasets = get_datasets_for_tasklist([{'jeditaskid': self.taskid}])
         if len(task_datasets) > 0 and 'datasets' in task_datasets[0]:
             for d in task_datasets[0]['datasets']:
-                if 'type' in d and d['type'] in ('input', 'pseudo_input') and 'masterid' in d and d['masterid'] is None:
+                if ('type' in d and d['type'] in ('input', 'pseudo_input') and 'masterid' in d and d['masterid'] is None and
+                        'status' in d and d['status'] != 'removed'):
                     task_inputs_dict['files'] += d['nfiles']
                     task_inputs_dict['events'] += d['nevents']
 

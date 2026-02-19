@@ -397,7 +397,8 @@ def calculate_dataset_stats(dsets):
                 ds['scope'] = scope
 
             # input primary datasets
-            if 'type' in ds and ds['type'] in ['input', 'pseudo_input'] and 'masterid' in ds and ds['masterid'] is None:
+            if ('type' in ds and ds['type'] in ['input', 'pseudo_input'] and 'masterid' in ds and ds['masterid'] is None and
+                    'status' in ds and ds['status'] != 'removed'):
                 if 'nevents' in ds and ds['nevents'] is not None and int(ds['nevents']) > 0:
                     dsinfo['neventsTot'] += int(ds['nevents'])
                 if 'neventsused' in ds and ds['neventsused'] is not None and int(ds['neventsused']) > 0:
