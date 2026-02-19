@@ -102,7 +102,7 @@ def cleanTaskList(tasks, **kwargs):
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
         dvalues = (
-            'jeditaskid', 'type', 'masterid',
+            'jeditaskid', 'type', 'masterid', 'status',
             'nfiles', 'nfilesfinished', 'nfilesfailed', 'nfilesmissing', 'nfilestobeused',
             'nevents', 'neventsused'
         )
