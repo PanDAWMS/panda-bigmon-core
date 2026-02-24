@@ -219,7 +219,9 @@ def get_user_contact(request):
         return error_response(request, message='only POST requests are allowed', status=405)
 
     # allow only authenticated users with permission
-    if request.user.is_authenticated and request.user.has_perm('oauth.can_contact_users'):
+    from core.oauth.authz.service import authz
+    allowed = authz.enforce(request.user.groups.values_list('name', flat=True), {'type': 'user_contact'}, 'read', {})
+    if request.user.is_authenticated and allowed and request.user.has_perm('oauth.can_contact_users'):
         if 'user' in request.session['requestParams']:
             user_name_split = request.session['requestParams']['user'].split(' ')
         else:
