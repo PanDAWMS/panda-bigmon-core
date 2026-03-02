@@ -556,6 +556,7 @@ function openAllLogs() {
 
 function buildFilesTable(data) {
   let job_status = '{{ job.jobstatus|safe }}';
+  let vo = '{{ viewParams.MON_VO|safe }}';
   $('#filestable').dataTable({
     //"bRetrieve": true,
     "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
@@ -586,7 +587,7 @@ function buildFilesTable(data) {
                   links += row['lfn'];
                 }
 
-                if (row['type'] !== 'pseudo_input' && ['defined', 'pending', 'waiting'].includes(job_status) === false ) {
+                if (row['type'] !== 'pseudo_input' && ['defined', 'pending', 'waiting'].includes(job_status) === false && vo === 'ATLAS') {
                   let dsttoken = '';
                   (row['dsttoken']) ? dsttoken += '&var-enr_filters=data.dst_token%7C%3D%7C' + row['dsttoken'] : dsttoken = '';
 
