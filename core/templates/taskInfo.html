@@ -655,12 +655,9 @@
               <th colspan="11">
                 <span ng-if="datasets.length === 1">
                   {% if request.session.rucio_ui|length > 0 %}
-                    for <a href="{{ request.session.rucio_ui }}did?scope={$ datasets[0].scope $}&name={$ datasets[0].dataset $}">
-                      {$ datasets[0].dataset $}
-                    </a>
-                    <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
-                      <i class="fi-graph-trend"></i>
-                    </a>
+                    for <a href="{{ request.session.rucio_ui }}did?scope={$ datasets[0].scope $}&name={$ datasets[0].dataset $}">{$ datasets[0].dataset $}</a>
+                    {% if 'rucio_ui_new' in request.session %}<a class="rucio-link-new" href="{{ request.session.rucio_ui_new }}did/{$ datasets[0].scope $}/{$ datasets[0].dataset $}"><img src="/static/images/rucio-logo.png" width="14" height="14"></a>{% endif %}
+                    <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}"><i class="fi-graph-trend"></i></a>
                   {% else %}
                     {$ datasets[0].dataset $}
                   {% endif %}
@@ -686,8 +683,9 @@
               <td class="icons1">
                 <span ng-if="dataset.rse && '{{ request.session.rucio_ui|escapejs }}'.length > 0">
                   <a ng-href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
-                    {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width="14" height="14" border="0">
+                    {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width="14" height="14">
                   </a>
+                  {% if 'rucio_ui_new' in request.session %}<a class="rucio-link-new" href="{{ request.session.rucio_ui_new }}rule/{$ dataset.rse $}/"><img src="/static/images/rucio-logo.png" width="14" height="14"></a>{% endif %}
                 </span>
                 <span ng-if="!dataset.rse || '{{ request.session.rucio_ui|escapejs }}'.length == 0">
                   {$ dataset.rrule_cut $}
@@ -714,6 +712,9 @@
               <td>
                 <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.scope $}:{$ dataset.dataset $}">
                   {$ dataset.dataset $}
+                </a>
+                <a ng-href="{{ request.session.rucio_ui_new }}did/{$ dataset.scope $}/{$ dataset.dataset $}">
+                  <img src="/static/images/rucio-logo.png" width="14" height="14">
                 </a>
               </td>
                <td>
@@ -1661,6 +1662,7 @@ function buildDatasetsTable(data) {
             "render": function(data, type, row, meta) {
                 var links = '';
                 var base = "{{ request.session.rucio_ui }}";
+                var base_new = "{{ request.session.rucio_ui_new }}";
 
                 if (base && base.length > 0 && row['datasetname']) {
 
@@ -1686,6 +1688,11 @@ function buildDatasetsTable(data) {
 
                     links += '<a href="' + rucioUrl + '" target="_blank">'
                                + '<img src="/static/images/rucio-logo.png" width="14" height="14" border="0"></a>';
+                    if (base_new && base_new.length > 0) {
+                        var rucioUrlNew = base_new + 'did/' + encodeURIComponent(scope) + '/' + encodeURIComponent(name);
+                        links += ' <a class="rucio-link-new" href="' + rucioUrlNew + '" target="_blank">'
+                                   + '<img src="/static/images/rucio-logo.png" width="14" height="14"></a>';
+                    }
 
                 }
 

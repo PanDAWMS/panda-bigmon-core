@@ -249,6 +249,8 @@ def initRequest(request, callselfmon=True):
         request.session['crichost'] = urlparse(settings.CRIC_API_URL).hostname
     if settings.RUCIO_UI_URL:
         request.session['rucio_ui'] = settings.RUCIO_UI_URL
+        if "ATLAS" in settings.DEPLOYMENT:
+            request.session['rucio_ui_new'] = settings.RUCIO_UI_URL.replace('rucio-ui', 'atlas-rucio-webui')
 
     # add installed apps to session
     request.session['installed_apps'] = list(settings.INSTALLED_APPS)
