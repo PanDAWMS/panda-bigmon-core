@@ -38,3 +38,25 @@ def get_dataset_locations(name, is_full_replicas_only=False):
     return rse_list
 
 
+def get_scope(dataset_name: str) -> str:
+    """
+    Get the scope of a dataset.
+
+    Args:
+        dataset_name (str): The name of the dataset, should have `scope:name` format.
+
+    Returns:
+        str: The scope of the dataset.
+    """
+    if not isinstance(dataset_name, str) or len(dataset_name) == 0:
+        _logger.info("Invalid dataset or container name provided, returning empty string.")
+        return ""
+
+    if ':' in dataset_name:
+        scope = dataset_name.split(':')[0]
+    elif dataset_name.startswith('user') or dataset_name.startswith('group'):
+        scope = '.'.join(dataset_name.split('.')[:2])
+    else:
+        scope = str(dataset_name).split('.')[0]
+
+    return scope
