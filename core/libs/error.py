@@ -217,7 +217,7 @@ def top_errors_summary(jobs, n_top=3) -> dict:
         if err_comp_code not in err_cat_sum[err_cat]['codes']:
             err_cat_sum[err_cat]['codes'][err_comp_code] = {'count': 0, 'diag': '', 'desc': ''}
             # special case for payload error, we do not show other component codes to avoid confusion
-            if 'pilot:1305' in err_comp_code_list:
+            if 'pilot:1305' in err_comp_code_list and 'pilot:1305' in error_desc:
                 err_cat_sum[err_cat]['codes'][err_comp_code]['diag'] = error_desc['pilot:1305']['diagnostics']
                 err_cat_sum[err_cat]['codes'][err_comp_code]['desc'] = error_desc['pilot:1305']['description']
             else:

@@ -126,11 +126,14 @@ def issue_user_token(strategy, backend, user=None, *args, **kwargs):
         None - the pipeline will continue.
     """
     if user:
-        token, created = BPToken.objects.get_or_create(user=user)
-        if created:
-            _logger.info(f"Created new token for user {user.username}")
-        else:
-            _logger.info(f"Using existing token for user {user.username}")
-        strategy.session_set("bp_token", token.key)
+        try:
+            token, created = BPToken.objects.get_or_create(user=user)
+            if created:
+                _logger.info(f"Created new token for user {user.username}")
+            else:
+                _logger.info(f"Using existing token for user {user.username}")
+            strategy.session_set("bp_token", token.key)
+        except Exception as ex:
+            _logger.error(f"Failed to create or retrieve token for user {user.username}: {ex}")
         strategy.session_set("auth_social_backend", backend.name)
     return None

@@ -52,6 +52,7 @@ from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 from core.oauth.utils import login_customrequired, is_expert, get_full_name, get_username
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
+from core.libs.dataset import get_scope
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
@@ -249,6 +250,8 @@ def initRequest(request, callselfmon=True):
         request.session['crichost'] = urlparse(settings.CRIC_API_URL).hostname
     if settings.RUCIO_UI_URL:
         request.session['rucio_ui'] = settings.RUCIO_UI_URL
+        if "ATLAS" in settings.DEPLOYMENT:
+            request.session['rucio_ui_new'] = settings.RUCIO_UI_URL.replace('rucio-ui', 'atlas-rucio-webui')
 
     # add installed apps to session
     request.session['installed_apps'] = list(settings.INSTALLED_APPS)
@@ -2075,6 +2078,7 @@ def jobInfo(request, pandaid=None, batchid=None):
             produsername = job[k]
 
     # get rucio user name
+    _logger.info("getting Rucio username")
     if 'produserid' in job and job['produserid'] and 'prodsourcelabel' in job and job['prodsourcelabel']:
         rucio_username = get_rucio_username_by_produserid(job['produserid'], job['prodsourcelabel'])
     else:
@@ -5782,6 +5786,8 @@ def datasetList(request):
         status = 200
         dsets.extend(JediDatasets.objects.filter(**query).extra(where=[wild_card_str]).values())
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
+        for ds in dsets:
+            ds['scope'] = get_scope(ds['datasetname'])
     else:
         message = 'Neither containername nor jeditaskid provided. At least one of them is required.'
         status = 400

@@ -48,7 +48,7 @@ class ruciowrapper(object):
                     return accounts
 
                 if len(accounts) > 0:
-                    if (accountExists == 0):
+                    if accountExists == 0:
                         RucioAccounts.objects.filter(certificatedn=DN).delete()
 
                     for account in accounts:

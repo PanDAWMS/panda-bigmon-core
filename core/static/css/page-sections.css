@@ -273,6 +273,10 @@ a.bp-link {
       border-bottom: 1px solid;
   }
 
+a.rucio-link-new img {
+  box-shadow: 0 0 4px 1px #934fff;
+  border-radius: 2px;
+}
 
 div.normal {
   font-size: 0.875rem;
