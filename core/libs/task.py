@@ -102,7 +102,7 @@ def cleanTaskList(tasks, **kwargs):
     # Get status of input processing as indicator of task progress if requested
     if add_datasets_info:
         dvalues = (
-            'jeditaskid', 'type', 'masterid', 'status',
+            'jeditaskid', 'type', 'masterid', 'status', 'datasetname',
             'nfiles', 'nfilesfinished', 'nfilesfailed', 'nfilesmissing', 'nfilestobeused',
             'nevents', 'neventsused'
         )
@@ -389,7 +389,7 @@ def calculate_dataset_stats(dsets):
         for ds in dsets:
             if 'datasetname' in ds and len(ds['datasetname']) > 0:
                 ds['scope'] = get_scope(ds['datasetname'])
-            if ':' in ds['datasetname']:
+            if 'datasetname' in ds and ':' in ds['datasetname']:
                 ds['datasetname'] = ds['datasetname'].split(':')[1]
 
             # input primary datasets
