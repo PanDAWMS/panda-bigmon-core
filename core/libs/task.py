@@ -16,7 +16,7 @@ from core.oauth.models import BPUser
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
 from core.libs.datetimestrings import parse_datetime
-from core.libs.dataset import get_dataset_locations
+from core.libs.dataset import get_dataset_locations, get_scope
 from core.libs.elasticsearch import create_os_connection
 from core.libs.job import drop_duplicates
 from core.pandajob.utils import get_pandajob_arch_models_by_year
@@ -388,13 +388,7 @@ def calculate_dataset_stats(dsets):
     if len(dsets) > 0:
         for ds in dsets:
             if 'datasetname' in ds and len(ds['datasetname']) > 0:
-                if not str(ds['datasetname']).startswith('user'):
-                    scope = str(ds['datasetname']).split('.')[0]
-                else:
-                    scope = '.'.join(str(ds['datasetname']).split('.')[:2])
-                if ':' in scope:
-                    scope = str(scope).split(':')[0]
-                ds['scope'] = scope
+                ds['scope'] = get_scope(ds['datasetname'])
 
             # input primary datasets
             if ('type' in ds and ds['type'] in ['input', 'pseudo_input'] and 'masterid' in ds and ds['masterid'] is None and
