@@ -5788,6 +5788,8 @@ def datasetList(request):
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
         for ds in dsets:
             ds['scope'] = get_scope(ds['datasetname'])
+            if ':' in ds['datasetname']:
+                ds['datasetname'] = ds['datasetname'].split(':')[1]
     else:
         message = 'Neither containername nor jeditaskid provided. At least one of them is required.'
         status = 400

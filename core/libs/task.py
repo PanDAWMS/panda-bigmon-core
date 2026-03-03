@@ -389,6 +389,8 @@ def calculate_dataset_stats(dsets):
         for ds in dsets:
             if 'datasetname' in ds and len(ds['datasetname']) > 0:
                 ds['scope'] = get_scope(ds['datasetname'])
+            if ':' in ds['datasetname']:
+                ds['datasetname'] = ds['datasetname'].split(':')[1]
 
             # input primary datasets
             if ('type' in ds and ds['type'] in ['input', 'pseudo_input'] and 'masterid' in ds and ds['masterid'] is None and
