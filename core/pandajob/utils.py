@@ -329,18 +329,25 @@ def job_summary_dict(jobs, fieldlist=None, produsername=None, sortby='alpha'):
             itemd['stats'] = {}
             # calculate sum(minramcount)/sum(cores) and convert MB->GB
             try:
-                result = dict(functools.reduce(operator.add, map(collections.Counter, [
-                    {'corecount': j['corecount'], 'minramcount': j['minramcount']} for j in jobs if isinstance(j[f], int) and isinstance(j['corecount'], int) and j['corecount'] > 0
+                result = dict(functools.reduce(operator.add, map(collections.Counter, [{
+                    'corecount': j['corecount'],
+                    'minramcount': j['minramcount']
+                } for j in jobs if isinstance(j[f], int) and isinstance(j['corecount'], int) and j['corecount'] > 0
                 ])))
                 itemd['stats']['sum'] = round(1.0/1000*result['minramcount']/result['corecount'], 2)
             except Exception as ex:
                 _logger.warning(f"Can not calculate {f}/core with {ex}")
             # calculate requested ramcount estimate resource_type.maxrampercore*corecount*njobs
             try:
-                result = dict(functools.reduce(operator.add, map(collections.Counter, [
-                    {'corecount': j['corecount'], 'maxram': 1.0*j['corecount']*maxrampercore_dict[j['resourcetype']][j['computingsite']]} for j in jobs if (
-                        'resourcetype' in j and j['resourcetype'] in maxrampercore_dict and 'computingsite' in j and j['computingsite'] in maxrampercore_dict[j['resourcetype']] and isinstance(maxrampercore_dict[j['resourcetype']][j['computingsite']], int) and isinstance(j['corecount'], int) and j['corecount'] > 0)
-                ])))
+                result = dict(functools.reduce(operator.add, map(collections.Counter, [{
+                        'corecount': j['corecount'],
+                        'maxram': 1.0*j['corecount']*maxrampercore_dict[j['resourcetype']][j['computingsite']]
+                    } for j in jobs if (
+                        'resourcetype' in j and j['resourcetype'] in maxrampercore_dict and \
+                        'computingsite' in j and j['computingsite'] in maxrampercore_dict[j['resourcetype']] and \
+                        isinstance(maxrampercore_dict[j['resourcetype']][j['computingsite']], int) and \
+                        isinstance(j['corecount'], int) and j['corecount'] > 0
+                    )])))
                 itemd['stats']['sum_allocated'] = round(1.0/1000*result['maxram']/result['corecount'], 2)
             except Exception as ex:
                 _logger.warning(f"Can not calculate allocated ram/core with {ex}")
@@ -369,6 +376,36 @@ def get_job_error_descriptions():
         error_descriptions = {f"{d['component']}:{d['code']}": d for d in error_descriptions_list}
         cache.set('error_descriptions', error_descriptions, 60*60*24)
     return error_descriptions
+
+
+def get_errors_per_category(category, error_descriptions=None):
+    """
+    Returns the error codes grouped by component for a given error category. If error_descriptions is not provided, it will be fetched using get_job_error_descriptions().
+    Args:
+        category: int or str, error category as number, 0 - Uncategorised, -1 - All
+        error_descriptions: dict, if already in memory, otherwise will be fetched from DB
+
+    Returns:
+        err_codes_per_component: dict, where keys are component names and values are lists of error codes belonging to the specified category.
+    """
+    if error_descriptions is None:
+        error_descriptions = get_job_error_descriptions()
+    if isinstance(category, str):
+        try:
+            category = int(category)
+        except ValueError:
+            _logger.warning(f"Invalid category value: {category}. Expected an integer or a string representing an integer.")
+            return {}
+    if category <= 0:
+        cat_error_codes = [x for err, x in error_descriptions.items() if x['code'] > 0]
+    else:
+        cat_error_codes = [x for err, x in error_descriptions.items() if x['category'] == category and x['code'] > 0]
+    err_codes_per_component = {}
+    for x in cat_error_codes:
+        if x['component'] not in err_codes_per_component:
+            err_codes_per_component[x['component']] = []
+        err_codes_per_component[x['component']].append(x['code'])
+    return err_codes_per_component
 
 
 def error_summary_for_job(job):

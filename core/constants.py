@@ -356,15 +356,24 @@ JOB_ERROR_FIELDS = (
 )
 
 ERROR_CATEGORIES =  MappingProxyType({
-        '0': 'Uncategorized',
-        '1': 'File and Storage Issues',
-        '2': 'Execution and Payload Failures',
-        '3': 'Network and Communication Errors',
-        '4': 'Job Termination and Kill Signals',
-        '5': 'Software and Environment Issues',
-        '6': 'Internal and Unknown Errors',
+    '0': 'Uncategorized',
+    '1': 'File and Storage Issues',
+    '2': 'Runtime Failures and Resource Violations',
+    '3': 'Network and Communication Errors',
+    '4': 'Job Termination and Kill Signals',
+    '5': 'Software and Environment Issues',
+    '6': 'Internal and Unknown Errors',
 })
 
+ERROR_CATEGORY_DESCRIPTIONS =  MappingProxyType({
+    '0': "The error has not been mapped yet. You should inspect the Full Error Diag and the job's stdout to identify the root cause.",
+    '1': "Problem with input/output registration or local disk failure. Verify input file availability or wait for a job retry.",
+    '2': "The payload failed during execution. You need to check the job logs (stderr/stdout) for code crashes or limit violations.",
+    '3': "Connectivity drops between the node and storage. These are often transient; the system usually recovers on retry.",
+    '4': "The job was forced to stop by the batch system. Check if the job exceeded wall-time or was preempted by the site.",
+    '5': "Mismatch in setup or missing CVMFS repository. Ensure your release setup and environment variables are correct.",
+    '6': "Systemic grid or pilot failure. Most likely a transient infrastructure error; the system should overcome it automatically."
+})
 
 TIME_LIMIT_OPTIONS = (
     'days',
