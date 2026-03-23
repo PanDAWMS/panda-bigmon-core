@@ -289,7 +289,7 @@ def error_category_summary_by_task(jobs, error_descriptions=None) -> dict:
     :return:
     """
     if not jobs or len(jobs) == 0:
-        return []
+        return {}
     if not error_descriptions:
         error_descriptions = get_job_error_descriptions()
 
