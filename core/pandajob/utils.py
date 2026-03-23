@@ -4,8 +4,8 @@ import logging
 import collections, functools, operator
 from django.core.cache import cache
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
-    Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021, Jobsarchived_y2022, Jobsarchived, Jobsarchived4, \
-    ErrorDescription
+    Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021, Jobsarchived_y2022, Jobsarchived_y2023, \
+    Jobsarchived, Jobsarchived4, ErrorDescription
 from core.libs.datetimestrings import parse_datetime
 from core.libs.eventservice import is_event_service, get_event_status_summary
 from core.libs.exlib import split_into_intervals, get_maxrampercore_dict
@@ -35,16 +35,18 @@ def get_pandajob_models_by_year(timewindow):
             2020: [Jobsarchived_y2020, ],
             2021: [Jobsarchived_y2021, ],
             2022: [Jobsarchived_y2022, ],
-            2023: [Jobsarchived, ],
+            2023: [Jobsarchived_y2023, ],
             2024: [Jobsarchived, ],
-            2025: [Jobsarchived, Jobsarchived4],
+            2025: [Jobsarchived, ],
+            2026: [Jobsarchived, Jobsarchived4],
         }
     else:
         pjm_year_dict = {
             2022: [Jobsarchived, ],
             2023: [Jobsarchived, ],
             2024: [Jobsarchived, ],
-            2025: [Jobsarchived, Jobsarchived4],
+            2025: [Jobsarchived, ],
+            2026: [Jobsarchived, Jobsarchived4],
         }
     pandajob_models = []
 
@@ -79,6 +81,7 @@ def get_pandajob_arch_models_by_year(timewindow):
             2020: [Jobsarchived_y2020, ],
             2021: [Jobsarchived_y2021, ],
             2022: [Jobsarchived_y2022, ],
+            2023: [Jobsarchived_y2023, ],
         }
 
     pandajob_models = []
