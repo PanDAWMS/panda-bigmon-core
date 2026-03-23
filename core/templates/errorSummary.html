@@ -149,14 +149,16 @@
         <table id="errorsummary_groupbycode" class="data-table left-aligned">
         <thead>
         <tr>
-            <th>Category:code</th>
-            <th>Nerrors</th>
-            <th>Sample error description</th>
+            <th>Category</th>
+            <th>Component:code</th>
+            <th># errors</th>
+            <th>Sample error diagnostic message</th>
         </tr>
         </thead>
         <tbody>
         {% for errval in errsByCount %}
         <tr>
+            <td class="err_cat_{{ errval.cat.id }}_fill"><a href="{{ xurl }}errorcategory={{ errval.cat.id }}">{{ errval.cat.name }}</a></td>
             <td> <a href="{{ xurl }}jobstatus=failed&{{errval.codename}}={{errval.codeval}}&display_limit=100"> {{ errval.error }} </a> {% if errval.desc|length > 0 %} <span class="bp-tooltip long right"><i class="fi-info"></i><span class="tooltip-text">{{ errval.desc|escape|safe }}</span></span>{% endif %}</td>
             <td> <a href="{% url 'jobList' %}?{{ requestString }}&hours={{ hours }}&jobstatus=failed&{{errval.codename}}={{errval.codeval}}">{{ errval.count }}</a></td>
             <td> {{ errval.diag|force_escape|safe }}</td>
@@ -172,13 +174,15 @@
         <table id="errorsummary_groupbymessage" class="data-table left-aligned">
         <thead>
           <tr>
-            <th>Category:code</th>
+            <th>Category</th>
+            <th>Component:code</th>
             <th>Error message</th>
             <th class="num">Number of error message</th>
           </tr>
         </thead>
         <tfoot>
           <tr>
+            <th></th>
             <th></th>
             <th></th>
             <th></th>
@@ -294,7 +298,7 @@ function DisplayErrorCountListTableData() {
     errorCountListTableData = $('#errorsummary_groupbycode').dataTable({
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
-        "aaSorting": [[1, 'desc']],
+        "aaSorting": [[2, 'desc']],
     })
 }
 
@@ -306,6 +310,10 @@ function DisplayErrorMessagesListTableData() {
         "aaSorting": [[2, 'desc'],],
         "data": err_list_data,
         "columns": [
+            {
+                "data": "errcatname",
+                sDefaultContent: "",
+            },
             {
                 "data": "errcode",
                 sDefaultContent: "",
@@ -329,8 +337,11 @@ function DisplayErrorMessagesListTableData() {
                 }
             },
         ],
+        createdRow: function ( row, data, index ) {
+            $('td', row).eq(0).addClass('err_cat_' + data['errcat'] + '_fill');
+        },
         initComplete: function () {
-            this.api().columns([0]).every(function (i) {
+            this.api().columns([0,1]).every(function (i) {
                 var column = this;
                 var select = $('<select><option value="">All</option></select>')
                     .appendTo( $(column.footer()).empty() )
@@ -362,13 +373,23 @@ app.controller('chartController', function($scope, $window) {
   var ctx_pie, ctx;
   $scope.es = {
     selection: {
-      tab: 'total'
+      tab: 'total',
     },
     plot_data: {{ errHist | safe }},
+    color_schema_categories: {
+      "File and Storage Issues": "#934fff",
+      "Internal and Unknown Errors": "#e67300",
+      "Job Termination and Kill Signals": "#deb900",
+      "Network and Communication Errors": "#099999",
+      "Runtime Failures and Resource Violation": "#b22222",
+      "Software and Environment Issues": "#2174bb",
+      "Uncategorized": "#898989",
+    }
   };
   $scope.es.charts = {
     pie: {
       options: {
+        attr: '',
         title: '',
         size:[getWidth()*4/12-40, 500]
       },
@@ -376,6 +397,7 @@ app.controller('chartController', function($scope, $window) {
     },
     barSplit: {
       options: {
+        attr: '',
         title: '',
         size: [getWidth()*8/12-40, 500],
         labels: ['Timestamp, UTC', 'Number of failed jobs'],
@@ -399,11 +421,13 @@ app.controller('chartController', function($scope, $window) {
     if ($scope.es.charts.barSplit.chart) {
       $scope.es.charts.barSplit.chart.destroy();
     }
-
     ctx_pie = document.getElementById("pieChartErr_" + $scope.es.selection.tab);
     if (ctx_pie) {
       ctx_pie.width = $scope.es.charts.pie.options.size[0];
       ctx_pie.height = $scope.es.charts.pie.options.size[1];
+      if ($scope.es.selection.tab === 'category') {
+        $scope.es.charts.pie.options.color_schema = $scope.es.color_schema_categories;
+      }
       let config_pie = prepare_pie_chart($scope.es.charts.pie.data, $scope.es.charts.pie.options);
       // extract color schema so colors in pie and bar chart are the same
       $scope.es.charts.barSplit.options.color_schema = config_pie.data.labels.reduce((acc, label, index) => {

@@ -276,31 +276,23 @@
     </div>
   {% endif %}
 
-{#  {% if errorsummary and errorsummary|length > 0 %}#}
-{#    <div class="card bp-container-simple alert">#}
-{#      <div class="card-divider">#}
-{#        <h5><b>Error summary for task {{ jeditaskid }}:</b></h5>#}
-{#      </div>#}
-{#      <div class="card-section">#}
-{#        {% for cat, err_sum in errorsummary.items %}{% if cat != "Uncategorized" %}#}
-{#          <p><b>{{ err_sum.count }}</b> job(s) failed due to <b>{{ cat }}</b>, top errors are:</p>#}
-{#          <ul>#}
-{#            {% for code_data in err_sum.codes %}#}
-{#              <li><b>{{ code_data.1.count }}</b> jobs failed with <b><i>{{ code_data.1.diag }}</i></b> <span class="bp-tooltip left long"><i class="fi-info"></i><span class="tooltip-text"> {{ code_data.1.desc }}</span></span></li>#}
-{#            {% endfor %}#}
-{#          </ul>#}
-{#        {% endif %}{% endfor %}#}
-{#        {% if 'Uncategorized' in errorsummary %}#}
-{#          <p><b>{{ errorsummary.Uncategorized.count }}</b> job(s) failed due to other reasons, top errors are:</p>#}
-{#          <ul>#}
-{#            {% for code_data in errorsummary.Uncategorized.codes %}#}
-{#              <li><b>{{ code_data.1.count }}</b> jobs failed with <b><i>{{ code_data.1.diag }}</i></b> <span class="bp-tooltip left long"><i class="fi-info"></i><span class="tooltip-text"> {{ code_data.1.desc }}</span></span></li>#}
-{#            {% endfor %}#}
-{#          </ul>#}
-{#        {% endif %}#}
-{#      </div>#}
-{#    </div>#}
-{#  {% endif %}#}
+  {% if errorsummary and errorsummary|length > 0 and  task.run_jobs_failed_pct > 10 %}
+    <div class="card bp-container-simple alert">
+      <div class="card-divider">
+        <h5><i class="fi-alert"></i> <b>Failure rate: {{ task.run_jobs_failed_pct }}%</b>, primary causes:</h5>
+      </div>
+      <div class="card-section">
+      {% for err_cat in errorsummary %}
+        <p> <span class="bp-tooltip right long"><span><b>{{ err_cat.name }}</b></span><span class="tooltip-text"> {{ err_cat.desc }}</span></span> - {{ err_cat.pct }}% ({{ err_cat.count }} jobs)</p>
+        <ul>
+          {% for code_data in err_cat.codes %}
+            <li>{% if code_data.desc|length > 10 %}<span class="bp-tooltip right long"><span><b>{{ code_data.diag }}</b></span><span class="tooltip-text"> {{ code_data.desc }}</span></span>{% else %}<b>{{ code_data.diag }}</b>{% endif %} - {{ code_data.count }} jobs. Log examples: {% for pid in code_data.examples %} <a href="/filebrowser/?pandaid={{ pid }}"> [<i class="fi fi-link"></i>] </a> {% endfor %}</li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
+      </div>
+    </div>
+  {% endif %}
 
   {% if viewParams.MON_VO == 'ATLAS' %}
     {% if info.split_rule %}
