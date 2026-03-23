@@ -375,6 +375,11 @@ class Jobsarchived_y2022(PandaJobArch):
         app_label = 'pandaarch'
 
 
+class Jobsarchived_y2023(PandaJobArch):
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA_PANDA_ARCH}"."y2023_jobsarchived"'
+        app_label = 'pandaarch'
+
 class ErrorDescription(models.Model):
     """
     ErrorDescription model
