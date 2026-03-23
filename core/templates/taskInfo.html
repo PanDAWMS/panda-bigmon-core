@@ -276,7 +276,7 @@
     </div>
   {% endif %}
 
-  {% if errorsummary and errorsummary|length > 0 and  task.run_jobs_failed_pct > 10 %}
+  {% if errorsummary and errorsummary|length > 0 %}
     <div class="card bp-container-simple alert">
       <div class="card-divider">
         <h5><i class="fi-alert"></i> <b>Failure rate: {{ task.run_jobs_failed_pct }}%</b>, primary causes:</h5>
