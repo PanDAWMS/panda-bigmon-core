@@ -135,7 +135,7 @@
         {% if task.workinggroup %}
           <td> {{ task.workinggroup }} </td>
         {% endif %}
-        <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
+        <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a> <a href="{% url 'userInfo' %}{{ task.username }}" target="_blank"><div class="tooltip-right"><i class="fi-link"></i><span class="tooltip-text">User dash</span></div></a></td>
         <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
         <td class='{{ task.status }}_fill mid'>
           {% if task.superstatus %}

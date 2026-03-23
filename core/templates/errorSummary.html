@@ -58,13 +58,13 @@
 {% if errHist %}
 <div data-ng-controller="chartController" id="chartController">
 <ul class="tabs primary" data-tabs data-active-collapse="true" id="es-tabs">
-  <li class="tabs-title is-active"><a href="#panel_es_total" ng-click="es.enable_panel('total')">Total</a></li>
+  <li class="tabs-title {% if viewParams.MON_VO != 'ATLAS' %}is-active{% endif %}"><a href="#panel_es_total" ng-click="es.enable_panel('total')">Total</a></li>
   <li class="tabs-title"><a href="#panel_es_code" ng-click="es.enable_panel('code')">Error code</a></li>
   <li class="tabs-title"><a href="#panel_es_site" ng-click="es.enable_panel('site')">{% if 'computingsite' in requestParams or 'site' in requestParams %}WN{% else %}Site{% endif %}</a></li>
   <li class="tabs-title"><a href="#panel_es_user" ng-click="es.enable_panel('user')">User</a></li>
   <li class="tabs-title"><a href="#panel_es_request" ng-click="es.enable_panel('request')">Request</a></li>
   <li class="tabs-title"><a href="#panel_es_task" ng-click="es.enable_panel('task')">Task</a></li>
-  <li class="tabs-title"><a href="#panel_es_category" ng-click="es.enable_panel('category')">Category</a></li>
+  <li class="tabs-title {% if viewParams.MON_VO == 'ATLAS' %}is-active{% endif %}"><a href="#panel_es_category" ng-click="es.enable_panel('category')">Category</a></li>
 </ul>
 <div class="tabs-content" data-tabs-content="es-tabs">
   <div class="tabs-panel is-active" id="panel_es_total">
@@ -293,6 +293,7 @@ $(document).ready(function() {
 var err_list_data = {{ errsByMessage|safe }};
 var errorMessagesListDataTable;
 var errorCountListTableData;
+const vo = '{{ viewParams.MON_VO }}';
 
 function DisplayErrorCountListTableData() {
     errorCountListTableData = $('#errorsummary_groupbycode').dataTable({
@@ -307,7 +308,7 @@ function DisplayErrorMessagesListTableData() {
         "sPaginationType": "full_numbers",
         "lengthMenu": [[20, 50, 100, 200, -1], [20, 50, 100, 200, "All"]],
         "paging": true,
-        "aaSorting": [[2, 'desc'],],
+        "aaSorting": [[3, 'desc'],],
         "data": err_list_data,
         "columns": [
             {
@@ -373,7 +374,7 @@ app.controller('chartController', function($scope, $window) {
   var ctx_pie, ctx;
   $scope.es = {
     selection: {
-      tab: 'total',
+      tab: (vo !== 'ATLAS') ? 'total': 'category',
     },
     plot_data: {{ errHist | safe }},
     color_schema_categories: {
@@ -381,7 +382,7 @@ app.controller('chartController', function($scope, $window) {
       "Internal and Unknown Errors": "#e67300",
       "Job Termination and Kill Signals": "#deb900",
       "Network and Communication Errors": "#099999",
-      "Runtime Failures and Resource Violation": "#b22222",
+      "Runtime Failures and Resource Violations": "#b22222",
       "Software and Environment Issues": "#2174bb",
       "Uncategorized": "#898989",
     }
