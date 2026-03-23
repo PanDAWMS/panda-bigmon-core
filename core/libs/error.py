@@ -104,6 +104,7 @@ def add_error_info_to_job(job, n_chars=300, mode='html', do_add_desc=False, erro
 
     job['errorinfo'] = error_info_str  # keep it as it is used by API clients
     job['error_desc'] = error_desc_str
+    job['error_category'] = get_job_error_category(job, error_descriptions=error_desc, output_format='str')
     return job
 
 

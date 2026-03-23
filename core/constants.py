@@ -358,7 +358,7 @@ JOB_ERROR_FIELDS = (
 ERROR_CATEGORIES =  MappingProxyType({
     '0': 'Uncategorized',
     '1': 'File and Storage Issues',
-    '2': 'Runtime Failures and Resource Violation',
+    '2': 'Runtime Failures and Resource Violations',
     '3': 'Network and Communication Errors',
     '4': 'Job Termination and Kill Signals',
     '5': 'Software and Environment Issues',
