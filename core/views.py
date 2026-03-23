@@ -57,6 +57,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid, get_prod_request_info
+from core.libs.error import error_category_summary_by_task
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
 from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, \
     convert_grams
@@ -86,7 +87,8 @@ from core.pandajob.summary_task import task_summary, job_summary_for_task, job_s
     get_job_state_summary_for_tasklist, get_top_memory_consumers
 from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_user import user_summary_dict
-from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, error_summary_for_job
+from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, error_summary_for_job, \
+    get_errors_per_category
 
 from core.iDDS.utils import add_idds_info_to_tasks
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -307,7 +309,7 @@ def initRequest(request, callselfmon=True):
                     'wansourcelimit', 'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
                     'maxinputsize', 'timefloor', 'depthboost', 'pilotlimit', 'transferringlimit',
                     'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory', 'maxmemory', 'minrss',
-                    'maxrss', 'mintime', 'nlastnightlies'):
+                    'maxrss', 'mintime', 'nlastnightlies', 'errorcategory'):
                 try:
                     if '|' in pval:
                         values = pval.split('|')
@@ -787,6 +789,18 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     query['eventservice'] = 2
                 elif jobtype == 'test' or jobtype.find('test') >= 0:
                     query['produsername'] = 'gangarbt'
+            elif param == 'errorcategory' and request.session['requestParams'][param] and request.session['requestParams'][param] != '0':
+                err_codes_per_component = get_errors_per_category(request.session['requestParams'][param])
+                comp_to_dbfield_map = {x['name']: x['error'] for x in const.JOB_ERROR_COMPONENTS}
+                conditions = []
+                for comp, codes in err_codes_per_component.items():
+                    field = comp_to_dbfield_map.get(comp)
+                    if not field:
+                        continue
+                    codes_str = ",".join(str(c) for c in codes)
+                    conditions.append(f"{field} in ({codes_str})")
+                if conditions:
+                    extraQueryString += " and (" + " or ".join(conditions) + ") "
 
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -1605,10 +1619,8 @@ def jobList(request, mode=None, param=None):
             request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0):
         testjobs = True
 
-    errsByCount, _, _, _, errdSumd, _ = errorSummaryDict(jobs, testjobs, output=['errsByCount', 'errdSumd'])
+    errsByCount, _, _, _, errdSumd, _, errsByMessage = errorSummaryDict(jobs, testjobs, output=['errsByCount', 'errsSumd', 'errsByMessage'])
     _logger.debug('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
-    errsByMessage = get_error_message_summary(jobs)
-    _logger.debug('Built error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if not is_json_request(request):
         # Here we're getting extended data for list of jobs to be shown
@@ -2914,12 +2926,38 @@ def userDashApi(request, agg=None):
         jobs = get_job_list(jquery, values=values, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(
-            jobs, is_test_jobs=False, flist=[], sortby='count', output=['errsByCount', 'errsByTask', 'errsHist'])
-        errs_by_task_dict = {}
-        for err in errs_by_task:
-            if err['name'] not in errs_by_task_dict:
-                errs_by_task_dict[err['name']] = err
+        errs_by_task_dict = error_category_summary_by_task(jobs)
+        error_summary = {}
+        for tid, errs in errs_by_task_dict.items():
+            for cat in errs:
+                if cat['name'] not in error_summary:
+                    error_summary[cat['name']] = {
+                        'id': cat['id'],
+                        'name': cat['name'],
+                        'desc': cat['desc'] if 'desc' in cat else '',
+                        'count': 0, 'tasks': set(), 'codes': {}
+                    }
+                error_summary[cat['name']]['count'] += cat['count']
+                error_summary[cat['name']]['tasks'].add(tid)
+                for code in cat['codes']:
+                    if code['comp_code'] not in error_summary[cat['name']]['codes']:
+                        error_summary[cat['name']]['codes'][code['comp_code']] = {
+                            'comp_code': code['comp_code'],
+                            'count': 0,
+                            'diag': code['diag'],
+                            'desc': code['desc'],
+                            'examples': [],
+                        }
+                    error_summary[cat['name']]['codes'][code['comp_code']]['count'] += code['count']
+                    if len(error_summary[cat['name']]['codes'][code['comp_code']]['examples']) < 3:
+                        error_summary[cat['name']]['codes'][code['comp_code']]['examples'].extend(code['examples'])
+        # dict -> list and sort by count
+        error_summary_list = []
+        for cat_name, cat_info in error_summary.items():
+            error_summary[cat_name]['tasks'] = sorted(list(error_summary[cat_name]['tasks']))
+            error_summary[cat_name]['codes'] = sorted(list(error_summary[cat_name]['codes'].values()), key=lambda x: -x['count'])[:3]
+            error_summary_list.append(error_summary[cat_name])
+        data['data']['error_summary'] = sorted(error_summary_list, key=lambda x: -x['count'])[:3]
         _logger.info('Got error summaries: {}'.format(time.time() - request.session['req_init_time']))
 
         metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
@@ -2954,20 +2992,16 @@ def userDashApi(request, agg=None):
                     t['errordialog'] if t['errordialog'] is not None else ''
                 )
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
-                link_jobs_base = '/jobs/?mode=nodrop&jobstatus=failed&jeditaskid={}&'.format(t['jeditaskid'])
+                link_jobs_base = '/errors/?mode=nodrop&jobstatus=failed&jeditaskid={}&'.format(t['jeditaskid'])
                 link_logs_base = '/filebrowser/?'
-                t['top_errors_list'] = [[
-                    '<a href="{}{}={}">{}</a>'.format(link_jobs_base, err['codename'], err['codeval'], err['count']),
-                    ' [{}]'.format(err['error']),
-                    ' "{}"'.format(err['diag']),
-                    ' <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(link_logs_base, err['example_pandaid']),
-                    ' <span class="bp-tooltip long left"><i class="fi-info alert"></i><span class="tooltip-text">{}</span></span>'.format(
-                        err['desc']
-                    ) if 'desc' in err and err['desc'] and len(err['desc']) > 1 else ''
-                    ] for err in errs_by_task_dict[t['jeditaskid']]['errorlist'] if len(err['diag']) > 0
-                ][:2]
-            else:
                 t['top_errors_list'] = []
+                for cat in errs_by_task_dict[t['jeditaskid']][:1]:
+                    t['top_errors_list'].append([
+                        '<a href="{}{}={}">{}</a>'.format(link_jobs_base, 'errorcategory', cat['id'], cat['count']),
+                        ' <span class="bp-tooltip long left">[{}]<span class="tooltip-text">{}</span></span>'.format(cat['name'], const.ERROR_CATEGORY_DESCRIPTIONS.get(str(cat['id']), "---")),
+                        ' <span class="bp-tooltip long left">{}<span class="tooltip-text">{}</span></span>'.format(cat['codes'][0]['diag'], cat['codes'][0]['desc']),
+                        ' <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(link_logs_base, cat['codes'][0]['examples'][0] if len(cat['codes'][0]['examples']) > 0 else '')
+                    ])
         _logger.info('Jobs metrics added to tasks: {}'.format(time.time() - request.session['req_init_time']))
 
         # prepare relevant metrics to show
@@ -5273,17 +5307,15 @@ def errorSummary(request):
     njobs = len(jobs)
     _logger.info('Cleaned jobs list: {}'.format(time.time() - request.session['req_init_time']))
 
-    error_message_summary = get_error_message_summary(jobs)
-    _logger.info('Prepared new error message summary: {}'.format(time.time() - request.session['req_init_time']))
-
     # Build the error summary
-    errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(
+    errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist, errsByMessage = errorSummaryDict(
         jobs,
         is_test_jobs=testjobs,
         sortby=sortby,
         is_user_req=True if 'produsername' in request.session['requestParams'] else False,
         is_site_req=True if 'computingsite' in request.session['requestParams'] or 'site' in request.session['requestParams'] else False,
         errHist=True,
+        category=-1 if 'errorcategory' not in request.session['requestParams'] else int(request.session['requestParams']['errorcategory']),
     )
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -5395,6 +5427,7 @@ def errorSummary(request):
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'requestString': request_params_str,
+            'timerange': '',
             'jobtype': jobtype,
             'njobs': njobs,
             'hours': LAST_N_HOURS_MAX,
@@ -5413,7 +5446,7 @@ def errorSummary(request):
             'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
-            'errsByMessage': json.dumps(error_message_summary),
+            'errsByMessage': json.dumps(errsByMessage),
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,

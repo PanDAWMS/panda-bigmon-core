@@ -213,5 +213,23 @@
 .suspended { color:#4a4a4a }
 
 .transforming_fill { color:black;  background-color:#C7E9A9;  }
-.subfinished_fill { color:black;  background-color:#FFF5D6; }
+.subfinished_fill { color:black;  background-color:#fff1aa; }
 .suspended_fill { color:black; background-color:#bdbdbd }
+
+
+/* Job error categories */
+.err_cat_0_fill {background-color:#bdbdbd}
+.err_cat_1_fill {background-color:#f1e8ff}
+.err_cat_2_fill {background-color:#ffc2bc}
+.err_cat_3_fill {background-color:#d9efef}
+.err_cat_4_fill {background-color:#fff1aa}
+.err_cat_5_fill {background-color:#e6f0f6}
+.err_cat_6_fill {background-color:#fecfa6}
+
+.err_cat_0 {background-color:#898989}
+.err_cat_1 {background-color:#934fff}
+.err_cat_2 {background-color:#b22222}
+.err_cat_3 {background-color:#099999}
+.err_cat_4 {background-color:#deb900}
+.err_cat_5 {background-color:#2174bb}
+.err_cat_6 {background-color:#e67300}

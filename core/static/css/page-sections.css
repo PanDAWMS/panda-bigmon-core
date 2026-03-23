@@ -229,7 +229,7 @@ div.bp-selected-params a {
   border-bottom: 1px dotted;
 }
 
-.callout {
+.callout, .callout.large {
   border: none;
   padding: 0.7rem;
 }
@@ -249,6 +249,12 @@ div.bp-selected-params a {
   color: black;
   font-weight: bold;
   border-bottom: 1px dotted;
+}
+.callout.large > p {
+  font-size: 1rem;
+}
+.callout.large ul li, .callout.large pre  {
+  font-size: 0.875rem;
 }
 .callout.secondary {
   background-color: #e4e7eb;
@@ -1496,6 +1502,31 @@ canvas.full_screen_size {
   }
   .card.bp-container-simple.alert > .card-section > pre {
     padding: 0.3rem 0.7rem;
+  }
+  .card.bp-container-simple.alert > .card-section {
+    padding: 0.7rem;
+  }
+  .card.bp-container-simple.alert > .card-section p {
+    font-size: 1rem;
+  }
+  .card.bp-container-simple.alert > .card-section a {
+    color: #0a0a0a;
+    font-weight: bold;
+    border-bottom: 1px dotted;
+  }
+  .card.bp-container-simple.alert > .card-section span.alert {
+    font-weight: bold;
+    color: firebrick;
+  }
+  .card.bp-container-simple.alert > .card-section span.warning {
+    font-weight: bold;
+    color: #ff9900;
+  }
+  .card.bp-container-simple.alert > .card-section ul {
+    padding-bottom: 0.7rem;
+  }
+  .card.bp-container-simple.alert > .card-section ul li {
+    font-size: 0.875rem;
   }
 
 .card.bp-container-simple > .card-section > div.uservisits {

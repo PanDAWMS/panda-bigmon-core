@@ -109,8 +109,13 @@ def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=
     # error summary if any failed jobs
     error_summary = {}
     run_jobs_summary = [r['job_state_counts'] for r in job_summary_list if r['value'] == 'run']
-    if len(run_jobs_summary) > 0 and  max([jc['count'] for jc in run_jobs_summary[0] if jc['name'] == 'failed']) > 0:
+    run_jobs_stats = {s['name']: s['count'] for s in run_jobs_summary[0] if s['name'] in ('failed', 'finished')}
+    run_jobs_stats['total'] = sum(run_jobs_stats.values())
+    metrics['run_jobs_failed_pct'] = round(100. * run_jobs_stats['failed'] / run_jobs_stats['total'], 1) if run_jobs_stats['total'] > 0 else 0
+    if len(run_jobs_summary) > 0 and 'failed' in run_jobs_stats and run_jobs_stats['failed'] > 5 and metrics['run_jobs_failed_pct'] > 10:
         error_summary = top_errors_summary(jobs, n_top=3)
+        for err_cat in error_summary:
+            err_cat['pct'] = round(100. * err_cat['count'] / run_jobs_stats['total'], 1)
 
     return plots_list, job_summary_list_ordered, scouts, metrics, error_summary
 
