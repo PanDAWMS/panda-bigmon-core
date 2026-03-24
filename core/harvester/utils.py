@@ -91,18 +91,29 @@ def setup_harvester_view(request, otype='worker'):
                     query['creationtime__range'] = [
                         startdate.strftime(settings.DATETIME_FORMAT),
                         enddate.strftime(settings.DATETIME_FORMAT)]
+
         elif otype == 'workerstat':
-            if rparam in ('status',):
-                # status of worker != aggregated status for statistics -> exclude from query
-                continue
-            for field in HarvesterWorkerStats._meta.get_fields():
-                param = field.name
-                if rparam == param:
-                    query[param] = rvalue
-                elif param == 'lastupdate':
-                    query['lastupdate__range'] = [
-                        startdate.strftime(settings.DATETIME_FORMAT),
-                        enddate.strftime(settings.DATETIME_FORMAT)]
+            lastupdate_from = request.GET.get('lastupdate_from')
+            lastupdate_to = request.GET.get('lastupdate_to')
+
+            if lastupdate_from or lastupdate_to:
+                try:
+                    if lastupdate_from:
+                        startdate = datetime.strptime(lastupdate_from, '%Y-%m-%dT%H:%M:%S').replace(tzinfo=timezone.utc)
+                    if lastupdate_to:
+                        enddate = datetime.strptime(lastupdate_to, '%Y-%m-%dT%H:%M:%S').replace(tzinfo=timezone.utc)
+                except ValueError as e:
+                    raise ValueError(f'Invalid date format. Use YYYY-MM-DDTHH:MM:SS. Details: {e}')
+
+            query['lastupdate__range'] = [
+                startdate.strftime(settings.DATETIME_FORMAT),
+                enddate.strftime(settings.DATETIME_FORMAT)
+            ]
+
+            for field in ('harvesterid', 'computingsite', 'resourcetype', 'status', 'jobtype'):
+                value = request.GET.get(field)
+                if value:
+                    apply_wildcard_filter(query, field, value)
 
         elif otype == 'jobs':
             if rparam in ('status', 'computingsite', 'computingelement', 'resourcetype'):
@@ -255,3 +266,21 @@ def get_workers_summary_split(query, **kwargs):
     # Translate prodsourcelabel values to descriptive analy|prod job types
     worker_summary = preprocess_job_summary(worker_summary, field_name_jobtype='jobtype')
     return list(worker_summary)
+
+def apply_wildcard_filter(query, field, value):
+    if '*' not in value:
+        query[field] = value
+        return
+
+    if value.startswith('*') and value.endswith('*'):
+        query[f'{field}__icontains'] = value.strip('*')
+
+    elif value.endswith('*'):
+        query[f'{field}__startswith'] = value[:-1]
+
+    elif value.startswith('*'):
+        query[f'{field}__endswith'] = value[1:]
+
+    else:
+        pattern = value.replace('*', '.*')
+        query[f'{field}__regex'] = f'^{pattern}$'

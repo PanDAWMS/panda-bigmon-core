@@ -388,12 +388,24 @@ def get_harvester_worker_stats(request):
     if not valid:
         return HttpResponse(status=400)
 
-    wquery, extra = setup_harvester_view(request, 'workerstat')
-    harvsterworkerstats = []
-    wvalues = ('harvesterid', 'computingsite', 'resourcetype', 'status', 'nworkers', 'lastupdate')
-    harvsterworkerstats.extend(HarvesterWorkerStats.objects.filter(**wquery).values(*wvalues).order_by('-lastupdate'))
+    try:
+        wquery, extra = setup_harvester_view(request, 'workerstat')
+    except ValueError as e:
+        return HttpResponse(json.dumps({'error': str(e)}), content_type='application/json', status=400)
 
-    return HttpResponse(json.dumps(harvsterworkerstats, cls=DateTimeEncoder), content_type='application/json')
+    wvalues = ('harvesterid', 'computingsite', 'resourcetype', 'status', 'nworkers', 'lastupdate', 'jobtype')
+
+    harvsterworkerstats = list(
+        HarvesterWorkerStats.objects
+        .filter(**wquery)
+        .values(*wvalues)
+        .order_by('-lastupdate')
+    )
+
+    return HttpResponse(
+        json.dumps(harvsterworkerstats, cls=DateTimeEncoder),
+        content_type='application/json'
+    )
 
 
 def get_harvester_jobs(request):
