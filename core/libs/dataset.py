@@ -30,11 +30,33 @@ def get_dataset_locations(name, is_full_replicas_only=False):
     if replicas is not None and len(replicas) > 0:
         for r in replicas:
             if is_full_replicas_only:
-                if r['available_bytes'] == r['total_bytes']:
-                    rse_list.extend([rse for rse, state in r['states'].items() if state == 'AVAILABLE'])
+                if r['available_bytes'] == r['bytes'] and r['state'] == 'AVAILABLE':
+                    rse_list.append(r['rse'])
             else:
-                rse_list.extend([rse for rse, state in r['states'].items() if state == 'AVAILABLE'])
+                rse_list.append(r['rse'])
 
     return rse_list
 
 
+def get_scope(dataset_name: str) -> str:
+    """
+    Get the scope of a dataset.
+
+    Args:
+        dataset_name (str): The name of the dataset, should have `scope:name` format.
+
+    Returns:
+        str: The scope of the dataset.
+    """
+    if not isinstance(dataset_name, str) or len(dataset_name) == 0:
+        _logger.info("Invalid dataset or container name provided, returning empty string.")
+        return ""
+
+    if ':' in dataset_name:
+        scope = dataset_name.split(':')[0]
+    elif dataset_name.startswith('user') or dataset_name.startswith('group'):
+        scope = '.'.join(dataset_name.split('.')[:2])
+    else:
+        scope = str(dataset_name).split('.')[0]
+
+    return scope

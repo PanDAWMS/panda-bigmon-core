@@ -2,6 +2,9 @@
 
 """
 import json
+import logging
+from datetime import datetime
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout as auth_logout
 from django.views.decorators.cache import never_cache
@@ -10,12 +13,13 @@ from django.utils import timezone
 from django.conf import settings
 
 import core.constants as const
-from core.utils import extensibleURL, error_response
+from core.utils import extensibleURL, error_response, is_json_request
 from core.views import initRequest
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import login_customrequired, grant_rights, deny_rights, user_email_sort
-from core.oauth.models import BPUser, BPUserSettings, Visits
+from core.oauth.models import BPUser, BPUserSettings, Visits, BPToken
 
+_logger = logging.getLogger('social')
 
 @never_cache
 def login(request):
@@ -43,10 +47,14 @@ def login(request):
 
     # store the redirect url in the session to be picked up after the auth completed
     request.session['next'] = next_url
+    request.session['urls_cut'] = {}
     data = {
         'request': request,
+        'viewParams': {},
+        'requestParams': {},
         'auth_providers': auth_providers,
         'vo': settings.MON_VO if hasattr(settings, 'MON_VO') else '',
+        'built': datetime.now().strftime("%H:%M:%S")
     }
     response = render(request, 'login.html', data, content_type='text/html')
     response.delete_cookie('sessionid')
@@ -62,8 +70,44 @@ def loginerror(request):
 
 def logout(request):
     """Logs out user"""
+    if request.user.is_authenticated:
+        try:
+            BPToken.objects.filter(user_id=request.user.id).delete()
+        except Exception as ex:
+            _logger.exception('Exception was caught while deleting user tokens during logout')
     auth_logout(request)
+
     return redirect('/')
+
+@never_cache
+@login_customrequired
+def profile(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    user_info = {}
+    if request.user.is_authenticated:
+        user_info = {
+            'username': request.user.username,
+            'email': request.user.email,
+            'full_name': f"{request.user.first_name} {request.user.last_name}".strip(),
+            'joined': request.user.date_joined,
+            'last_login': request.user.last_login,
+            'auth_provider': request.session.get('auth_social_backend', '-'),
+            'groups': ', '.join(list(request.user.groups.values_list('name', flat=True))),
+            'permissions': ', '.join(list(request.user.get_all_permissions())),
+            'token': request.session.get('bp_token', '-')
+        }
+    data = {
+        'request': request,
+        'viewParams': request.session.get('viewParams', {}),
+        'requestParams': request.session.get('requestParams', {}),
+        'user_info': user_info,
+    }
+    if is_json_request(request):
+        return JsonResponse({'message': 'JSON response not supported for this view'}, status=406)
+    return render(request, 'profile.html', data, content_type='text/html')
 
 
 @login_customrequired

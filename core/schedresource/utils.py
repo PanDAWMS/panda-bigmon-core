@@ -31,10 +31,21 @@ def cric_conn(url):
     elif netloc.scheme == 'http' and 'http_proxy' in os.environ:
         # http proxy
         proxy = os.environ['http']
+
+    x509_kwargs = {}
+    if 'ATLAS' in settings.DEPLOYMENT and settings.X509_USER_PROXY and settings.CAPATH:
+        # Construct PoolManager (or ProxyManager)
+        x509_kwargs = dict(
+            cert_file=settings.X509_USER_PROXY,
+            ca_certs=settings.X509_USER_PROXY,
+            ca_cert_dir=settings.CAPATH,
+            cert_reqs="CERT_REQUIRED"
+        )
+
     if proxy:
-        http = urllib3.ProxyManager(proxy)
+        http = urllib3.ProxyManager(proxy, **x509_kwargs)
     else:
-        http = urllib3.PoolManager(ca_certs=settings.OS_CA_CERT)
+        http = urllib3.PoolManager(**x509_kwargs)
     return http
 
 
@@ -64,11 +75,16 @@ def get_CRIC_panda_queues():
     return panda_queues_dict
 
 
-
 def get_ddm_downtimes():
-    """ Get DDM downtimes from CRIC """
+    """
+    Get DDM downtimes from DDM endpoints table or CRIC
+
+    Returns:
+        ddm_downtimes: dict
+    """
     ddm_downtimes = cache.get(f'ddm_downtimes_{settings.DEPLOYMENT}', None)
     if not ddm_downtimes:
+        data = None
         ddm_downtimes = {}
         url = settings.CRIC_API_URL.split('pandaqueue')[0] + 'ddmendpointstatus/query/?json'
         http = cric_conn(url)
@@ -84,7 +100,15 @@ def get_ddm_downtimes():
         except Exception as exc:
             _logger.exception(exc)
 
-        # cache.set(f'cric_ddm_downtimes{settings.DEPLOYMENT}', ddm_downtimes, 60*20)  # cache for 20 min
+        if data:
+            for endpoint, ops in data.items():
+                for op, op_data in ops.items():
+                    if 'status' in op_data and 'probe' in op_data['status'] and op_data['status']['probe'] == "DOWNTIME":
+                        if endpoint not in ddm_downtimes:
+                            ddm_downtimes[endpoint] = {'end': op_data['status']['expiration'], 'operations': []}
+                        ddm_downtimes[endpoint]['operations'].append(op)
+
+        cache.set(f'cric_ddm_downtimes{settings.DEPLOYMENT}', ddm_downtimes, 60*20)  # cache for 20 min
 
     return ddm_downtimes
 

@@ -10,6 +10,7 @@ from django.db import connection
 from django.db.models import Count
 
 from core.libs.dropalgorithm import drop_job_retries
+from core.libs.error import top_errors_summary
 from core.libs.exlib import drop_duplicates, get_tmp_table_name, insert_to_temp_table
 from core.libs.job import parse_jobmetrics, add_job_category, job_states_count_by_param
 from core.libs.jobconsumption import job_consumption_plots
@@ -43,6 +44,7 @@ def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=
               'jeditaskid', 'processingtype', 'maxpss', 'starttime', 'endtime', 'computingsite', 'jobmetrics',
               'nevents', 'hs06', 'cpuconsumptiontime', 'cpuconsumptionunit', 'transformation',
               'jobsetid', 'specialhandling', 'creationtime', 'pilottiming']
+    values.extend(const.JOB_ERROR_FIELDS)
     if settings.DEPLOYMENT == 'ORACLE_ATLAS':
         values.append('eventservice')
         values.append('hs06sec')
@@ -104,7 +106,24 @@ def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=
     metrics = calculate_metrics(jobs, metrics_names=[
         'resimevents_avg', 'resimeventspernevents_avgpercent', 'resimevents_sum'])
 
-    return plots_list, job_summary_list_ordered, scouts, metrics
+    # error summary if any failed jobs
+    error_summary = []
+    run_jobs_summary = [r['job_state_counts'] for r in job_summary_list if r['value'] == 'run']
+    if len(run_jobs_summary) > 0:
+        run_jobs_stats = {s['name']: s['count'] for s in run_jobs_summary[0] if s['name'] in ('failed', 'finished')}
+        run_jobs_stats['total'] = sum(run_jobs_stats.values())
+    else:
+        run_jobs_stats = {'failed': 0, 'finished': 0, 'total': 0}
+    metrics['run_jobs_failed_pct'] = round(100. * run_jobs_stats['failed'] / run_jobs_stats['total'], 1) if run_jobs_stats['total'] > 0 else 0
+    if (run_jobs_stats['failed'] > 5 and metrics['run_jobs_failed_pct'] > 10) or (task_status and task_status in ('exhausted', 'broken', 'failed')):
+        error_summary_list = top_errors_summary(jobs, n_top=3)
+        for err_cat in error_summary_list:
+            err_cat['pct'] = round(100. * err_cat['count'] / run_jobs_stats['total'], 1)
+            if err_cat['pct'] > 1:
+                error_summary.append(err_cat)
+    _logger.info("Got error summary: {} sec".format(time.time() - start_time))
+
+    return plots_list, job_summary_list_ordered, scouts, metrics, error_summary
 
 
 def job_summary_for_task_light(taskrec, **kwargs):

@@ -3,7 +3,6 @@ import logging
 import jwt
 
 from requests import post
-from core.oauth.utils import get_auth_provider
 from django.conf import settings
 
 _logger = logging.getLogger('panda.client')
@@ -25,7 +24,7 @@ def get_auth_indigoiam(request):
     header = {}
     organisation = 'atlas'
 
-    auth_provider = get_auth_provider(request)
+    auth_provider = request.session.get('auth_social_backend', None)
 
     if auth_provider:
         social = request.user.social_auth.get(provider=auth_provider)

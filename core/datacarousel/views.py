@@ -175,12 +175,13 @@ def build_summary_data(staginData):
             if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
                 summary[key][dsdata[key]]['bytes_rem'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
 
-            if dsdata['end_time'] is not None:
+            if dsdata['end_time'] is not None and dsdata['start_time'] is not None:
                 summary[key][dsdata[key]]['ds_done'] += 1
                 timelistIntervalfin.append(dsdata['end_time'] - dsdata['start_time'])
             elif dsdata['status'] != 'queued':
                 summary[key][dsdata[key]]['ds_active'] += 1
-                timelistIntervalact.append(timezone.now() - dsdata['start_time'])
+                if dsdata['start_time'] is not None:
+                    timelistIntervalact.append(timezone.now() - dsdata['start_time'])
                 if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
                     summary[key][dsdata[key]]['files_active'] += dsdata['total_files'] - dsdata['staged_files']
                 if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):

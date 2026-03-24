@@ -135,7 +135,7 @@
         {% if task.workinggroup %}
           <td> {{ task.workinggroup }} </td>
         {% endif %}
-        <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a></td>
+        <td><a href="{% url 'taskList' %}?username={{ task.username }}">{{ task.username }}</a> <a href="{% url 'userInfo' %}{{ task.username }}" target="_blank"><div class="tooltip-right"><i class="fi-link"></i><span class="tooltip-text">User dash</span></div></a></td>
         <td>{% if task.nucleus %}{{ task.nucleus }}{% else %}&mdash;{% endif %}</td>
         <td class='{{ task.status }}_fill mid'>
           {% if task.superstatus %}
@@ -263,20 +263,34 @@
 
   {% if task.errordialog %}
     <div class="card bp-container-simple warning">
+      <div class="card-divider errorlog">
+        <h5>Logged status: {{ task.errordialog|safe }} {% if 'downtime' in task.errordialog %} <a target="_blank" href="https://{{ request.session.crichost }}/atlas/ddmendpointstatus/list/">see full list of storage downtimes</a>{% endif %}</h5>
+      </div>
       {% if logtxt %}
-        <div class="card-divider">
-          <h5>Logged status: {{ task.errordialog|safe }}</h5>
-        </div>
         <div class="card-section scrollable">
           <pre>
           {{ logtxt }}
           </pre>
         </div>
-      {% else %}
-        <div class="card-divider errorlog">
-          <h5>Logged status: {{ task.errordialog|safe }}</h5>
-        </div>
       {% endif %}
+    </div>
+  {% endif %}
+
+  {% if errorsummary and errorsummary|length > 0 %}
+    <div class="card bp-container-simple alert">
+      <div class="card-divider">
+        <h5><i class="fi-alert"></i> <b>Failure rate: {{ task.run_jobs_failed_pct }}%</b>, primary causes:</h5>
+      </div>
+      <div class="card-section">
+      {% for err_cat in errorsummary %}
+        <p> <span class="bp-tooltip right long"><span><b>{{ err_cat.name }}</b></span><span class="tooltip-text"> {{ err_cat.desc }}</span></span> - {{ err_cat.pct }}% ({{ err_cat.count }} jobs)</p>
+        <ul>
+          {% for code_data in err_cat.codes %}
+            <li>{% if code_data.desc|length > 10 %}<span class="bp-tooltip right long"><span><b>{{ code_data.diag }}</b></span><span class="tooltip-text"> {{ code_data.desc }}</span></span>{% else %}<b>{{ code_data.diag }}</b>{% endif %} - {{ code_data.count }} jobs. Log examples: {% for pid in code_data.examples %} <a href="/filebrowser/?pandaid={{ pid }}"> [<i class="fi fi-link"></i>] </a> {% endfor %}</li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
+      </div>
     </div>
   {% endif %}
 
@@ -603,7 +617,7 @@
       <table class="data-table left-aligned nowrap" id="datasetstable">
           <thead>
           <tr>
-              <th>Dataset, container name</th>
+              <th>Name</th>
               <th>Type</th>
               <th>Stream</th>
               <th>Status</th>
@@ -633,12 +647,9 @@
               <th colspan="11">
                 <span ng-if="datasets.length === 1">
                   {% if request.session.rucio_ui|length > 0 %}
-                    for <a href="{{ request.session.rucio_ui }}did?scope={$ datasets[0].scope $}&name={$ datasets[0].dataset $}">
-                      {$ datasets[0].dataset $}
-                    </a>
-                    <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}">
-                      <i class="fi-graph-trend"></i>
-                    </a>
+                    for <a href="{{ request.session.rucio_ui }}did?scope={$ datasets[0].scope $}&name={$ datasets[0].dataset $}">{$ datasets[0].dataset $}</a>
+                    {% if 'rucio_ui_new' in request.session %}<a class="rucio-link-new" href="{{ request.session.rucio_ui_new }}did/{$ datasets[0].scope $}/{$ datasets[0].dataset $}"><img src="/static/images/rucio-logo.png" width="14" height="14"></a>{% endif %}
+                    <a target="_blank" href="/staginprogressplot/?jeditaskid={{ jeditaskid|safe }}"><i class="fi-graph-trend"></i></a>
                   {% else %}
                     {$ datasets[0].dataset $}
                   {% endif %}
@@ -663,9 +674,8 @@
             <tr ng-repeat="dataset in datasets">
               <td class="icons1">
                 <span ng-if="dataset.rse && '{{ request.session.rucio_ui|escapejs }}'.length > 0">
-                  <a ng-href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}">
-                    {$ dataset.rrule_cut $} <img src="/static/images/rucio-logo.png" width="14" height="14" border="0">
-                  </a>
+                  <a ng-href="{{ request.session.rucio_ui }}rule?rule_id={$ dataset.rse $}"><span class="bp-tooltip left">{$ dataset.rrule_cut $}<span class="tooltip-text">Old Rucio UI</span></span></a>
+                  {% if 'rucio_ui_new' in request.session %}<a class="rucio-link-new" href="{{ request.session.rucio_ui_new }}rule/{$ dataset.rse $}/"><span class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Try out the new Rucio UI!</span></span></a>{% endif %}
                 </span>
                 <span ng-if="!dataset.rse || '{{ request.session.rucio_ui|escapejs }}'.length == 0">
                   {$ dataset.rrule_cut $}
@@ -692,6 +702,9 @@
               <td>
                 <a ng-href="{{ request.session.rucio_ui }}did?name={$ dataset.scope $}:{$ dataset.dataset $}">
                   {$ dataset.dataset $}
+                </a>
+                <a class="rucio-link-new" ng-href="{{ request.session.rucio_ui_new }}did/{$ dataset.scope $}/{$ dataset.dataset $}">
+                  <span class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Try out the new Rucio UI</span></span>
                 </a>
               </td>
                <td>
@@ -1638,40 +1651,31 @@ function buildDatasetsTable(data) {
             sDefaultContent: "-",
             "render": function(data, type, row, meta) {
                 var links = '';
-                var base = "{{ request.session.rucio_ui }}";
-
-                if (base && base.length > 0 && row['datasetname']) {
+                if (row['type'] !== 'pseudo_input') {
+                  var base = "{{ request.session.rucio_ui }}";
+                  var base_new = "{{ request.session.rucio_ui_new }}";
+                  if (base && base.length > 0 && row['datasetname']) {
 
                     var scope = row['scope'] || '';
                     var name  = row['datasetname'] || '';
-
-                    if (name.includes(':')) {
-                        var didParts = name.split(':');
-                        if (didParts.length === 2) {
-                            scope = didParts[0];
-                            name  = didParts[1];
-                        }
-                    } else if (name.startsWith('group.')) {
-                        var parts = name.split('.');
-                        if (parts.length >= 3) {
-                            scope = parts.slice(0, 2).join('.');
-                        }
-                    }
 
                     name = name.replace(/\/+$/, '');
                     var didParam = encodeURIComponent(scope) + ':' + encodeURIComponent(name);
                     var rucioUrl = base + 'did?name=' + didParam;
 
                     links += '<a href="' + rucioUrl + '" target="_blank">'
-                               + '<img src="/static/images/rucio-logo.png" width="14" height="14" border="0"></a>';
-
+                               + '<span class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Old Rucio UI</span></span></a>';
+                    if (base_new && base_new.length > 0) {
+                        var rucioUrlNew = base_new + 'did/' + encodeURIComponent(scope) + '/' + encodeURIComponent(name);
+                        links += ' <a class="rucio-link-new" href="' + rucioUrlNew + '" target="_blank">'
+                                   + '<span class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Try out the new Rucio UI</span></span></a>';
+                    }
+                  }
                 }
-
                 if (row['type'] === 'input') {
                     links += (links.length > 0) ? ', ' : '';
                     links += '<a href="{% url 'jobList' %}?datasetid=' + row['datasetid'] + '&jeditaskid=' + row['jeditaskid'] + '"> jobs </a>';
                 }
-
                 return links;
             }
         },
@@ -1686,7 +1690,6 @@ function buildDatasetsTable(data) {
     }
   })
 }
-
 
 </script>
 

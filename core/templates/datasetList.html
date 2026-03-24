@@ -21,7 +21,7 @@
 {% if datasets %}
 
 <div class="card bp-container-simple secondary" id="container_dst">
-<div class="card-divider"><p>{{ datasets|length }} datasets listed :</p></div>
+<div class="card-divider"><p>{{ datasets|length }} datasets listed:</p></div>
 <div class="card-section">
   <table id='datasetlist' class="data-table">
     <thead></thead>
@@ -121,10 +121,10 @@ function datasetListTable(data) {
             sDefaultContent: "-",
             className: 'num',
             "render": function(data, type, full, meta) {
-                if (full['type'] == 'input' && data > 0) {
+                if (full['type'] === 'input' && data > 0) {
                     return '<a href = "{% url 'fileList' %}?procstatus=finished&jeditaskid=' + full['jeditaskid'] + '&datasetid=' + full['datasetid'] +  '"><snap class="finished">' + full['nfilesfinished'] + '</snap></a>'
                 }
-                else if (full['type'] == 'input' && data == 0) {
+                else if (full['type'] === 'input' && data == 0) {
                     return data;
                 }
                 else {
@@ -164,15 +164,18 @@ function datasetListTable(data) {
             "data": "type",
             sDefaultContent: "-",
             "render": function(data, type, row, meta) {
-              if ("{{ request.session.rucio_ui }}".length > 0) {
-                return '<a href="{{ request.session.rucio_ui }}did?name=' + row['datasetname'] + '" target="_blank"><img src="/static/images/rucio-logo.png" width=14 height=14 border=0></a>';
+              if ("{{ request.session.rucio_ui }}".length > 10) {
+                let rucio_link = '<a href="{{ request.session.rucio_ui }}did?name=' + row['datasetname'] + '" target="_blank"><span class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Old Rucio UI</span></a>';
+                if ("{{ request.session.rucio_ui_new }}".length > 10) {
+                  rucio_link += ' <a class="rucio-link-new" href="{{ request.session.rucio_ui_new }}did/' + row['scope'] + '/' + row['datasetname'] + '" target="_blank"><span class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Try out the new Rucio UI</span></a>';
+                }
+                return rucio_link
               }
               else {
                 return '-'
               }
             }
         },
-
     ],
     "createdRow": function ( row, data, index ) {
         $('td', row).eq(5).addClass(data['state'] + '_fill');

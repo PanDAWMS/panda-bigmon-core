@@ -229,7 +229,7 @@ div.bp-selected-params a {
   border-bottom: 1px dotted;
 }
 
-.callout {
+.callout, .callout.large {
   border: none;
   padding: 0.7rem;
 }
@@ -249,6 +249,12 @@ div.bp-selected-params a {
   color: black;
   font-weight: bold;
   border-bottom: 1px dotted;
+}
+.callout.large > p {
+  font-size: 1rem;
+}
+.callout.large ul li, .callout.large pre  {
+  font-size: 0.875rem;
 }
 .callout.secondary {
   background-color: #e4e7eb;
@@ -273,6 +279,10 @@ a.bp-link {
       border-bottom: 1px solid;
   }
 
+a.rucio-link-new img {
+  box-shadow: 0 0 4px 1px #934fff;
+  border-radius: 2px;
+}
 
 div.normal {
   font-size: 0.875rem;
@@ -1466,6 +1476,7 @@ canvas.full_screen_size {
   .card.bp-container-simple.warning > .card-divider {
     background-color: #FFF5D6;
     color: firebrick;
+    word-break: break-all;
   }
   .card.bp-container-simple.warning > .card-section {
     font-size: smaller;
@@ -1474,6 +1485,11 @@ canvas.full_screen_size {
   }
   .card.bp-container-simple.warning > .card-section > pre {
     padding: 0.3rem 0.7rem;
+  }
+  .card.bp-container-simple.warning > .card-divider a, .card.bp-container-simple.warning > .card-section a {
+    color: #0a0a0a;
+    font-weight: bold;
+    border-bottom: 1px dotted;
   }
 
 .card.bp-container-simple.alert {
@@ -1486,6 +1502,31 @@ canvas.full_screen_size {
   }
   .card.bp-container-simple.alert > .card-section > pre {
     padding: 0.3rem 0.7rem;
+  }
+  .card.bp-container-simple.alert > .card-section {
+    padding: 0.7rem;
+  }
+  .card.bp-container-simple.alert > .card-section p {
+    font-size: 1rem;
+  }
+  .card.bp-container-simple.alert > .card-section a {
+    color: #0a0a0a;
+    font-weight: bold;
+    border-bottom: 1px dotted;
+  }
+  .card.bp-container-simple.alert > .card-section span.alert {
+    font-weight: bold;
+    color: firebrick;
+  }
+  .card.bp-container-simple.alert > .card-section span.warning {
+    font-weight: bold;
+    color: #ff9900;
+  }
+  .card.bp-container-simple.alert > .card-section ul {
+    padding-bottom: 0.7rem;
+  }
+  .card.bp-container-simple.alert > .card-section ul li {
+    font-size: 0.875rem;
   }
 
 .card.bp-container-simple > .card-section > div.uservisits {

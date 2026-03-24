@@ -239,7 +239,7 @@
 
 
     <div class="top-bar-right">
-      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown">
+      <ul class="dropdown vertical large-horizontal menu" data-responsive-menu="accordion large-dropdown" data-alignment="left">
           {% if request.user and request.user.is_authenticated %}
             <li>
             <div class="row collapse searchbox show-for-large">
@@ -304,20 +304,19 @@
               <li><a href="#doc"><span class='help'>See the bottom of the page for contextual help on current page</span></a>
               <li><a href="/help/"><span class='help'>Complete PanDA monitor help page</span></a>
               {% if viewParams.MON_VO == 'ATLAS' %}
-              <li><a href="https://twiki.cern.ch/twiki/bin/viewauth/AtlasComputing/AtlasDAST">Distributed analysis support</a>
+              <li><a href="https://atlas-computing.docs.cern.ch/operations/DAST/index.html">Distributed analysis support</a>
               {% endif %}
               <li><a href="mailto:atlas-adc-pandamon-support@cern.ch">PanDA monitor support</a>
-              <li><a href="https://github.com/PanDAWMS"> PanDA repository </a>
-              <li><a href="https://panda-wms.readthedocs.io/en/latest/index.html">PanDA home</a>
+              <li><a href="https://github.com/PanDAWMS">PanDA repository</a>
+              <li><a href="https://panda-wms.readthedocs.io/en/latest/index.html">PanDA docs</a>
           </ul>
           </li>
 
           {% if request.user and request.user.is_authenticated %}
-            <li class="has-submenu">
-              <a style="padding-bottom: 0.4rem; padding-top: 0.4rem" href="#"><i style="font-size: 1rem; vertical-align: middle" class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
+            <li class="has-submenu opens-left">
+              <a class="user-name-icon" href="#"><i class="fi-torso"></i><span>{{ request.user.first_name }}</span></a>
               <ul class="submenu menu vertical">
-                  <li><span class="li-text loggeduser">{{ request.user.first_name }} {{ request.user.last_name }},</span>
-                  <li><span class="li-text loggeduser">{{ request.user.email }}</span>
+                  <li><a href="/profile/">Profile</a>
                   {% if request.user.is_tester and 'core.compare' in request.session.installed_apps %}
                       <li><a href="/compare/jobs/?timestamp={% now "H:i:s" %}">Go to jobs comparison</a>
                       <li><a id="button-clear-comparison-list">Clear jobs comparison list</a>
@@ -464,12 +463,11 @@
     <div class="columns medium-8 small-7">
       <p>In case of suggestions, questions, or problems with:</p>
       {% if viewParams.MON_VO == 'ATLAS' %}
-        <p>running analysis - <a target="_blank" href="https://atlas-talk.web.cern.ch/c/distributed-computing-help"><img src="{% static 'images/atlas-logo-white.png' %}"> ATLAS talk</a> or <a href="mailto:hn-atlas-dist-analysis-help@cern.ch">email DAST experts</a></p>
+        <p>running analysis - <a target="_blank" href="https://atlas-talk.web.cern.ch/c/distributed-computing-help"><img src="{% static 'images/atlas-logo-white.png' %}"> ATLAS talk</a></p>
       {% endif %}
         <p>
-          monitoring - <a href="mailto:atlas-adc-pandamon-support@cern.ch">email</a>
           {% if viewParams.MON_VO == 'ATLAS' %}
-            ,<a target="_blank" href="https://its.cern.ch/jira/projects/ATLASPANDA/"><img src="{% static 'images/jira-logo.png' %}"></a>
+            monitoring - <a target="_blank" href="https://its.cern.ch/jira/projects/ATLASPANDA/"><img src="{% static 'images/jira-logo.png' %}"></a>
             , or <a target="_blank" href="https://mattermost.web.cern.ch/adcvcr/channels/adc-bigpanda"><img src="{% static 'images/mattermost-logo.png' %}"> mattermost</a>
           {% endif %}
         </p>
@@ -505,18 +503,17 @@
       {% else %}
           var timerange =  ['', ''];
       {% endif %}
-      {% if request.session.urls_cut.notimerangeurl %}
-          var notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
+      {% if 'urls_cut' in request.session and 'notimerangeurl' in request.session.urls_cut and request.session.urls_cut.notimerangeurl %}
+          const notimerangeurl = '{{ request.session.urls_cut.notimerangeurl|safe }}';
       {% else %}
-          var notimerangeurl =  window.location.href + '?';
+          const notimerangeurl =  window.location.href + '?';
       {% endif %}
 
-      {% if request.session.urls_cut.notimestampurl %}
-          var notimestampurl = '{{ request.session.urls_cut.notimestampurl|safe }}';
+      {% if 'urls_cut' in request.session and 'notimestampurl' in request.session.urls_cut and request.session.urls_cut.notimestampurl %}
+          const notimestampurl = '{{ request.session.urls_cut.notimestampurl|safe }}';
       {% else %}
-          var notimestampurl =  window.location.href + '?' ;
+          const notimestampurl =  window.location.href + '?' ;
       {% endif %}
-
 
       app.controller('timeWindowController', ['$scope', function($scope) {
         $scope.timewindow = {
@@ -676,14 +673,13 @@
 
       function clearComparisonList() {
           let object_name = 'job';
-          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/clearcomparison/',
               data: 'object='+object_name,
               async: true,
               cache: false
           }).done(function (response) {
-              window.location = newURL
+              window.location = notimestampurl
               });
       }
 
@@ -720,26 +716,24 @@
       }
 
       function grantRights() {
-          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/grantrights/',
               data: 'type=tester',
               async: true,
               cache: false
           }).done(function (response) {
-              window.location = newURL
+              window.location = notimestampurl
               });
       }
 
       function denyRights() {
-          var newURL = '{{ request.session.urls_cut.notimestampurl|safe }}';
           $.ajax({
               url: '/denyrights/',
               data: 'type=tester',
               async: true,
               cache: false
           }).done(function (response) {
-              window.location = newURL
+              window.location = notimestampurl
               });
       }
 
@@ -758,7 +752,7 @@
               data: url,
               async: true,
               success: function() {
-                  window.location = '{{ request.session.urls_cut.notimestampurl|safe }}timestamp={% now "H:i:s" %}'
+                  window.location = notimestampurl + 'timestamp={% now "H:i:s" %}'
               }
           });
       }

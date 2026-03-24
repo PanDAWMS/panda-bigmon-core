@@ -73,7 +73,9 @@ def setup_view_dc(request):
         extra_str += f" AND t1.SOURCE_{source_rse} in ({quoted_values})"
 
     if 'destination' in request_params:
-        extra_str += f" AND t1.DESTINATION_RSE in ({','.join('\'' + str(x) + '\'' for x in request_params['destination'].split(','))})"
+        dest_values = request_params['destination'].split(',')
+        quoted_dest = ",".join(f"'{str(x)}'" for x in dest_values)
+        extra_str += f" AND t1.DESTINATION_RSE in ({quoted_dest})"
 
     if 'campaign' in request_params:
         campaignl = request_params['campaign'].split(',')
@@ -252,7 +254,7 @@ def send_report_rse(rse: str, data, experts_only:bool=True) -> int:
 
 
 
-def staging_rule_verification(rule_id: str, rse: str) -> (bool, list):
+def staging_rule_verification(rule_id: str, rse: str) -> tuple[bool, list]:
     """
     Check if a cause of a stalled rule is tape or disk
     Got logic from ProdSys2 https://github.com/PanDAWMS/panda-bigmon-atlas/blob/main-py3/atlas/prestage/views.py

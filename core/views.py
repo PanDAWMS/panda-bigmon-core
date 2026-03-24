@@ -49,13 +49,15 @@ from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.UserProfilePlot import UserProfilePlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 
-from core.oauth.utils import login_customrequired, get_auth_provider, is_expert, get_full_name, get_username
+from core.oauth.utils import login_customrequired, is_expert, get_full_name, get_username
 
 from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
+from core.libs.dataset import get_scope
 from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid, get_prod_request_info
+from core.libs.error import error_category_summary_by_task
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
 from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, \
     convert_grams
@@ -85,7 +87,8 @@ from core.pandajob.summary_task import task_summary, job_summary_for_task, job_s
     get_job_state_summary_for_tasklist, get_top_memory_consumers
 from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_user import user_summary_dict
-from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, error_summary_for_job
+from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, error_summary_for_job, \
+    get_errors_per_category
 
 from core.iDDS.utils import add_idds_info_to_tasks
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
@@ -178,7 +181,6 @@ def initRequest(request, callselfmon=True):
 
     # creating a dict in session to store long urls as it will not be saved to session storage
     # Session is NOT modified, because this alters sub dict
-    request.session['urls_cut'] = {}
     url = request.get_full_path()
     u = urlparse(url)
     query = parse_qs(u.query)
@@ -192,8 +194,7 @@ def initRequest(request, callselfmon=True):
     if is_xss(url):
         return False, error_response(request, message="Illegal request", status=400)
 
-    request.session['urls_cut']['notimestampurl'] = urlunparse(u) + ('&' if len(query) > 0 else '?')
-    notimerangeurl = extensibleURL(request)
+    no_time_range_url = extensibleURL(request)
     timerange_params = [
         'days', 'hours',
         'date_from', 'date_to',
@@ -201,13 +202,17 @@ def initRequest(request, callselfmon=True):
         'earlierthan', 'earlierthandays'
     ]
     for trp in timerange_params:
-        notimerangeurl = removeParam(notimerangeurl, trp, mode='extensible')
-    request.session['urls_cut']['notimerangeurl'] = notimerangeurl
-    request.session['urls_cut']['xurl'] = extensibleURL(request)
-    request.session['urls_cut']['nolimiturl'] = removeParam(extensibleURL(request), 'limit', mode='extensible')
-    request.session['urls_cut']['nodisplaylimiturl'] = removeParam(extensibleURL(request), 'display_limit', mode='extensible')
-    request.session['urls_cut']['nosorturl'] = removeParam(extensibleURL(request), 'sortby', mode='extensible')
-
+        no_time_range_url = removeParam(no_time_range_url, trp, mode='extensible')
+    urls_cut = {
+        'notimestampurl': urlunparse(u) + ('&' if len(query) > 0 else '?'),
+        'notimerangeurl': no_time_range_url,
+        'xurl': extensibleURL(request),
+        'nolimiturl': removeParam(extensibleURL(request), 'limit', mode='extensible'),
+        'nodisplaylimiturl': removeParam(extensibleURL(request), 'display_limit', mode='extensible'),
+        'nosorturl': removeParam(extensibleURL(request), 'sortby', mode='extensible')
+    }
+    request.session['urls_cut'] = urls_cut
+    
     if 'timerange' in request.session:
         del request.session['timerange']
 
@@ -247,6 +252,8 @@ def initRequest(request, callselfmon=True):
         request.session['crichost'] = urlparse(settings.CRIC_API_URL).hostname
     if settings.RUCIO_UI_URL:
         request.session['rucio_ui'] = settings.RUCIO_UI_URL
+        if "ATLAS" in settings.DEPLOYMENT:
+            request.session['rucio_ui_new'] = settings.RUCIO_UI_URL.replace('rucio-ui', 'atlas-rucio-webui')
 
     # add installed apps to session
     request.session['installed_apps'] = list(settings.INSTALLED_APPS)
@@ -302,7 +309,7 @@ def initRequest(request, callselfmon=True):
                     'wansourcelimit', 'wansinklimit', 'nqueue', 'nodes', 'queuehours', 'memory', 'maxtime', 'space',
                     'maxinputsize', 'timefloor', 'depthboost', 'pilotlimit', 'transferringlimit',
                     'cachedse', 'stageinretry', 'stageoutretry', 'maxwdir', 'minmemory', 'maxmemory', 'minrss',
-                    'maxrss', 'mintime', 'nlastnightlies'):
+                    'maxrss', 'mintime', 'nlastnightlies', 'errorcategory'):
                 try:
                     if '|' in pval:
                         values = pval.split('|')
@@ -782,6 +789,18 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                     query['eventservice'] = 2
                 elif jobtype == 'test' or jobtype.find('test') >= 0:
                     query['produsername'] = 'gangarbt'
+            elif param == 'errorcategory' and request.session['requestParams'][param] and request.session['requestParams'][param] != '0':
+                err_codes_per_component = get_errors_per_category(request.session['requestParams'][param])
+                comp_to_dbfield_map = {x['name']: x['error'] for x in const.JOB_ERROR_COMPONENTS}
+                conditions = []
+                for comp, codes in err_codes_per_component.items():
+                    field = comp_to_dbfield_map.get(comp)
+                    if not field:
+                        continue
+                    codes_str = ",".join(str(c) for c in codes)
+                    conditions.append(f"{field} in ({codes_str})")
+                if conditions:
+                    extraQueryString += " and (" + " or ".join(conditions) + ") "
 
             for field in Jobsactive4._meta.get_fields():
                 if param == field.name:
@@ -1600,10 +1619,8 @@ def jobList(request, mode=None, param=None):
             request.session['requestParams']['prodsourcelabel'].lower().find('test') >= 0):
         testjobs = True
 
-    errsByCount, _, _, _, errdSumd, _ = errorSummaryDict(jobs, testjobs, output=['errsByCount', 'errdSumd'])
+    errsByCount, _, _, _, errdSumd, _, errsByMessage = errorSummaryDict(jobs, testjobs, output=['errsByCount', 'errsSumd', 'errsByMessage'])
     _logger.debug('Built error summary: {}'.format(time.time() - request.session['req_init_time']))
-    errsByMessage = get_error_message_summary(jobs)
-    _logger.debug('Built error message summary: {}'.format(time.time() - request.session['req_init_time']))
 
     if not is_json_request(request):
         # Here we're getting extended data for list of jobs to be shown
@@ -1959,7 +1976,7 @@ def jobInfo(request, pandaid=None, batchid=None):
         return response
 
     # Get the current AUTH type
-    auth = get_auth_provider(request)
+    auth = request.session.get('auth_social_backend', None)
 
     eventservice = False
     query = setupView(request, hours=365 * 24)
@@ -2073,6 +2090,7 @@ def jobInfo(request, pandaid=None, batchid=None):
             produsername = job[k]
 
     # get rucio user name
+    _logger.info("getting Rucio username")
     if 'produserid' in job and job['produserid'] and 'prodsourcelabel' in job and job['prodsourcelabel']:
         rucio_username = get_rucio_username_by_produserid(job['produserid'], job['prodsourcelabel'])
     else:
@@ -2842,7 +2860,7 @@ def userInfo(request, user=''):
                 'request': request,
                 'viewParams': request.session['viewParams'],
                 'requestParams': request.session['requestParams'],
-                'timerange': request.session['timerange'],
+                'timerange': request.session['timerange'] if 'timerange' in request.session else '',
                 'built': datetime.now().strftime("%H:%M:%S"),
                 'tk': tk_taskids,
                 'xurl': xurl,
@@ -2908,12 +2926,38 @@ def userDashApi(request, agg=None):
         jobs = get_job_list(jquery, values=values, error_info=True)
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-        errs_by_code, _, _, errs_by_task, _, _ = errorSummaryDict(
-            jobs, is_test_jobs=False, flist=[], sortby='count', output=['errsByCount', 'errsByTask', 'errsHist'])
-        errs_by_task_dict = {}
-        for err in errs_by_task:
-            if err['name'] not in errs_by_task_dict:
-                errs_by_task_dict[err['name']] = err
+        errs_by_task_dict = error_category_summary_by_task(jobs)
+        error_summary = {}
+        for tid, errs in errs_by_task_dict.items():
+            for cat in errs:
+                if cat['name'] not in error_summary:
+                    error_summary[cat['name']] = {
+                        'id': cat['id'],
+                        'name': cat['name'],
+                        'desc': cat['desc'] if 'desc' in cat else '',
+                        'count': 0, 'tasks': set(), 'codes': {}
+                    }
+                error_summary[cat['name']]['count'] += cat['count']
+                error_summary[cat['name']]['tasks'].add(tid)
+                for code in cat['codes']:
+                    if code['comp_code'] not in error_summary[cat['name']]['codes']:
+                        error_summary[cat['name']]['codes'][code['comp_code']] = {
+                            'comp_code': code['comp_code'],
+                            'count': 0,
+                            'diag': code['diag'],
+                            'desc': code['desc'],
+                            'examples': [],
+                        }
+                    error_summary[cat['name']]['codes'][code['comp_code']]['count'] += code['count']
+                    if len(error_summary[cat['name']]['codes'][code['comp_code']]['examples']) < 3:
+                        error_summary[cat['name']]['codes'][code['comp_code']]['examples'].extend(code['examples'])
+        # dict -> list and sort by count
+        error_summary_list = []
+        for cat_name, cat_info in error_summary.items():
+            error_summary[cat_name]['tasks'] = sorted(list(error_summary[cat_name]['tasks']))
+            error_summary[cat_name]['codes'] = sorted(list(error_summary[cat_name]['codes'].values()), key=lambda x: -x['count'])[:3]
+            error_summary_list.append(error_summary[cat_name])
+        data['data']['error_summary'] = sorted(error_summary_list, key=lambda x: -x['count'])[:3]
         _logger.info('Got error summaries: {}'.format(time.time() - request.session['req_init_time']))
 
         metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
@@ -2948,20 +2992,16 @@ def userDashApi(request, agg=None):
                     t['errordialog'] if t['errordialog'] is not None else ''
                 )
             if t['jeditaskid'] in errs_by_task_dict and t['superstatus'] != 'done':
-                link_jobs_base = '/jobs/?mode=nodrop&jobstatus=failed&jeditaskid={}&'.format(t['jeditaskid'])
+                link_jobs_base = '/errors/?mode=nodrop&jobstatus=failed&jeditaskid={}&'.format(t['jeditaskid'])
                 link_logs_base = '/filebrowser/?'
-                t['top_errors_list'] = [[
-                    '<a href="{}{}={}">{}</a>'.format(link_jobs_base, err['codename'], err['codeval'], err['count']),
-                    ' [{}]'.format(err['error']),
-                    ' "{}"'.format(err['diag']),
-                    ' <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(link_logs_base, err['example_pandaid']),
-                    ' <span class="bp-tooltip long left"><i class="fi-info alert"></i><span class="tooltip-text">{}</span></span>'.format(
-                        err['desc']
-                    ) if 'desc' in err and err['desc'] and len(err['desc']) > 1 else ''
-                    ] for err in errs_by_task_dict[t['jeditaskid']]['errorlist'] if len(err['diag']) > 0
-                ][:2]
-            else:
                 t['top_errors_list'] = []
+                for cat in errs_by_task_dict[t['jeditaskid']][:1]:
+                    t['top_errors_list'].append([
+                        '<a href="{}{}={}">{}</a>'.format(link_jobs_base, 'errorcategory', cat['id'], cat['count']),
+                        ' <span class="bp-tooltip long left">[{}]<span class="tooltip-text">{}</span></span>'.format(cat['name'], const.ERROR_CATEGORY_DESCRIPTIONS.get(str(cat['id']), "---")),
+                        ' <span class="bp-tooltip long left">{}<span class="tooltip-text">{}</span></span>'.format(cat['codes'][0]['diag'], cat['codes'][0]['desc']),
+                        ' <a href="{}pandaid={}">[<i class="fi-link"></i>]</a>'.format(link_logs_base, cat['codes'][0]['examples'][0] if len(cat['codes'][0]['examples']) > 0 else '')
+                    ])
         _logger.info('Jobs metrics added to tasks: {}'.format(time.time() - request.session['req_init_time']))
 
         # prepare relevant metrics to show
@@ -3799,6 +3839,17 @@ def killtasks(request):
     if not valid:
         return response
 
+    if request.user.is_authenticated:
+        username = request.user.username
+        fullname = request.user.get_full_name()
+    else:
+        resp = {"detail": "User not authenticated. Please login to BigPanDAmon"}
+        response = JsonResponse(resp, status=401)
+        return response
+
+    prodsys_host = settings.PRODSYS['prodsysHost'] if 'prodsysHost' in settings.PRODSYS else None
+    prodsys_token = settings.PRODSYS['prodsysToken'] if 'prodsysToken' in settings.PRODSYS else None
+
     taskid = -1
     action = -1
     if 'task' in request.session['requestParams']:
@@ -3806,168 +3857,50 @@ def killtasks(request):
     if 'action' in request.session['requestParams']:
         action = int(request.session['requestParams']['action'])
 
-    prodsysHost = None
-    prodsysToken = None
-    prodsysUrl = None
-    username = None
-    fullname = None
-
-    if 'prodsysHost' in settings.PRODSYS:
-        prodsysHost = settings.PRODSYS['prodsysHost']
-    if 'prodsysToken' in settings.PRODSYS:
-        prodsysToken = settings.PRODSYS['prodsysToken']
-
     if action == 0:
-        prodsysUrl = '/prodtask/task_action_ext/finish/'
+        prodsys_url = '/prodtask/task_action_ext/finish/'
     elif action == 1:
-        prodsysUrl = '/prodtask/task_action_ext/abort/'
+        prodsys_url = '/prodtask/task_action_ext/abort/'
     else:
-        resp = {"detail": "Action is not recognized"}
-        dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, content_type='application/json')
-        return response
-
-    cern_auth_provider = None
-    user = request.user
-    # TODO
-    # temporary while both old and new CERN auth supported
-    if user.is_authenticated and user.social_auth is not None:
-        if len(user.social_auth.filter(provider='cernauth2')) > 0:
-            cern_auth_provider = 'cernauth2'
-        elif len(user.social_auth.filter(provider='cernoidc')) > 0:
-            cern_auth_provider = 'cernoidc'
-
-    if cern_auth_provider and user.social_auth.get(provider=cern_auth_provider).extra_data is not None and (
-            'username' in user.social_auth.get(provider=cern_auth_provider).extra_data):
-        username = user.social_auth.get(provider=cern_auth_provider).extra_data['username']
-        fullname = user.social_auth.get(provider=cern_auth_provider).extra_data['name']
-
-    else:
-        resp = {"detail": "User not authenticated. Please login to BigPanDAmon with CERN"}
-        dump = json.dumps(resp, cls=DateEncoder)
-        response = HttpResponse(dump, content_type='application/json')
-        return response
+        resp = {"detail": "Provided action is not supported"}
+        return JsonResponse(resp, status=400)
 
     if action == 1:
-        postdata = {"username": username, "task": taskid, "userfullname": fullname}
+        post_data = {"username": username, "task": taskid, "userfullname": fullname}
     else:
-        postdata = {"username": username, "task": taskid, "parameters": [True], "userfullname": fullname}
+        post_data = {"username": username, "task": taskid, "parameters": [True], "userfullname": fullname}
 
+
+    if not username or not fullname or not prodsys_host or not prodsys_token:
+        resp = {"detail": "User is not recognised"}
+        _logger.error(f"kill task failed, user: {username}-{fullname}, PS2:{prodsys_host},token {'ok' if prodsys_token else 'not ok'}")
+        return JsonResponse(resp, status=400)
     headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': 'Token ' + prodsysToken
+        'Authorization': 'Token ' + prodsys_token
     }
-    conn = urllib3.HTTPSConnectionPool(prodsysHost, timeout=100)
-    resp = None
-
-    # if request.session['IS_TESTER']:
-    resp = conn.urlopen('POST', prodsysUrl, body=json.dumps(postdata, cls=DateEncoder), headers=headers, retries=1,
-                        assert_same_host=False)
-    # else:
-    #    resp = {"detail": "You are not allowed to test. Sorry"}
-    #    dump = json.dumps(resp, cls=DateEncoder)
-    #    response = HttpResponse(dump, mimetype='text/plain')
-    #    return response
-
+    conn = urllib3.HTTPSConnectionPool(prodsys_host, timeout=100)
+    resp = conn.urlopen('POST', prodsys_url,
+        body=json.dumps(post_data, cls=DateEncoder),
+        headers=headers,
+        retries=1,
+        assert_same_host=False
+    )
     if resp and len(resp.data) > 0:
         try:
             resp = json.loads(resp.data)
             if resp['result'] == "FAILED":
                 resp['detail'] = 'Result:' + resp['result'] + ' with reason:' + resp['exception']
             elif resp['result'] == "OK":
-                resp['detail'] = 'Action peformed successfully, details: ' + resp['details']
-        except:
-            resp = {"detail": "prodsys responce could not be parced"}
+                resp['detail'] = 'Action performed successfully, details: ' + resp['details']
+        except Exception as e:
+            resp = {"detail": "prodsys response could not be parced"}
+            _logger.exception(f"{resp['detail']} with error: {str(e)}")
     else:
         resp = {"detail": "Error with sending request to prodsys"}
-    dump = json.dumps(resp, cls=DateEncoder)
-    response = HttpResponse(dump, content_type='application/json')
-    return response
-
-
-@never_cache
-def killtasks_token(request):
-    valid, response = initRequest(request)
-    if not valid:
-        return response
-
-    from requests import get, post
-
-    taskid = -1
-    action = -1
-
-    if 'task' in request.session['requestParams']:
-        taskid = int(request.session['requestParams']['task'])
-    if 'action' in request.session['requestParams']:
-        action = int(request.session['requestParams']['action'])
-
-    id_token = None
-    token_type = None
-    access_token = None
-
-    username = None
-    fullname = None
-    organisation = 'atlas'
-
-    auth_provider = None
-
-    user = request.user
-
-    if user.is_authenticated and user.social_auth is not None:
-
-        auth_provider = (request.user.social_auth.get()).provider
-        social = request.user.social_auth.get(provider=auth_provider)
-
-        if (auth_provider == 'indigoiam'):
-            if (social.extra_data['auth_time'] + social.extra_data['expires_in'] - 10) <= int(time.time()):
-                resp = {"detail": "id token is expired"}
-                dump = json.dumps(resp, cls=DateEncoder)
-                response = HttpResponse(dump, content_type='application/json')
-                return response
-            else:
-                token_type = social.extra_data['token_type']
-                access_token = social.extra_data['access_token']
-                id_token = social.extra_data['id_token']
-
-                os.environ['PANDA_AUTH_ID_TOKEN'] = id_token
-                os.environ['PANDA_AUTH'] = 'oidc'
-                os.environ['PANDA_AUTH_VO'] = organisation
-        else:
-            return None
-
-    resp = get('https://atlas-auth.web.cern.ch/api/tokens/access', data={"grant_type": "access_token"},
-               headers={'Authorization': '%s %s' % (token_type, access_token)})
-
-    header = {}
-    header['Authorization'] = 'Bearer {0}'.format(id_token)
-    header['Origin'] = 'atlas'
-    resp1 = post('https://pandaserver.cern.ch/server/panda/getAttr', headers=header)
-
-    if resp.ok:
-        user_tokens = json.loads(resp.text)
-        #
-        # from pandaclient import Client
-        # c=Client()
-
-        _logger.info('completed')
-        # c = Client()
-        # c.show_tasks()
-        # from core.panda_client.utils import kill_task, show_tasks
-        # show_tasks()
-
-    resp = None
-
-    if resp and len(resp.data) > 0:
-        try:
-            pass
-        except:
-            pass
-    else:
-        pass
-
-    dump = json.dumps(resp, cls=DateEncoder)
-    response = HttpResponse(dump, content_type='application/json')
+        _logger.error(f"{resp['detail']}, full resp: {str(resp)}")
+    response = JsonResponse(resp)
     return response
 
 
@@ -4396,7 +4329,7 @@ def taskInfo(request, jeditaskid=0):
     # Here we try to get cached data. We get any cached data is available
     data = getCacheEntry(request, "taskInfo", skip_central_refresh=True)
     # Get the current AUTH type
-    auth = get_auth_provider(request)
+    auth = request.session.get('auth_social_backend', None)
 
     # temporarily turn off caching
     # data = None
@@ -4605,7 +4538,7 @@ def taskInfo(request, jeditaskid=0):
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
     # task dignostics - checks and warnings
-    # task = get_task_diagnostics(taskrec, datasets=dsets)
+    taskrec = get_task_diagnostics(taskrec, datasets=dsets)
 
     # get sum of hs06sec grouped by status
     # creating a jquery with timewindow
@@ -4862,7 +4795,7 @@ def taskInfo(request, jeditaskid=0):
             else:
                 _logger.info("This old style ES taskInfo request")
                 # getting job summary and plots
-                plotsDict, jobsummary, scouts, metrics = job_summary_for_task(
+                plotsDict, jobsummary, scouts, metrics, error_summary = job_summary_for_task(
                     jquery, '(1=1)',
                     mode=mode,
                     task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')),
@@ -4871,12 +4804,13 @@ def taskInfo(request, jeditaskid=0):
                 data['jobsummary'] = jobsummary
                 data['plotsDict'] = plotsDict
                 data['jobscoutids'] = scouts
+                data['errorsummary'] = error_summary
                 setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
                 response = render(request, 'taskInfoES.html', data, content_type='text/html')
         else:
             _logger.info("This is ordinary non-ES task")
             # getting job summary and plots
-            plotsDict, jobsummary, scouts, metrics = job_summary_for_task(
+            plotsDict, jobsummary, scouts, metrics, error_summary = job_summary_for_task(
                 jquery, '(1=1)',
                 mode=mode,
                 task_archive_flag=get_task_time_archive_flag(get_task_timewindow(taskrec, format_out='datatime')),
@@ -4885,6 +4819,7 @@ def taskInfo(request, jeditaskid=0):
             data['jobsummary'] = jobsummary
             data['plotsDict'] = plotsDict
             data['jobscoutids'] = scouts
+            data['errorsummary'] = error_summary
             data['task'].update(metrics)
             setCacheEntry(request, "taskInfo", json.dumps(data, cls=DateEncoder), cacheexpiration)
             response = render(request, 'taskInfo.html', data, content_type='text/html')
@@ -5105,7 +5040,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
         _logger.debug('tk of dropped jobs: {}'.format(transactionKeyDJ))
 
     # pass mode='nodrop' as we already took dropping into account in extra query str
-    plotsDict, jobsummary, jobScoutIDs, metrics = job_summary_for_task(query, extra=extra, mode='nodrop')
+    plotsDict, jobsummary, jobScoutIDs, metrics, _ = job_summary_for_task(query, extra=extra, mode='nodrop')
 
     alldata = {
         'jeditaskid': jeditaskid,
@@ -5372,17 +5307,15 @@ def errorSummary(request):
     njobs = len(jobs)
     _logger.info('Cleaned jobs list: {}'.format(time.time() - request.session['req_init_time']))
 
-    error_message_summary = get_error_message_summary(jobs)
-    _logger.info('Prepared new error message summary: {}'.format(time.time() - request.session['req_init_time']))
-
     # Build the error summary
-    errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist = errorSummaryDict(
+    errsByCount, errsBySite, errsByUser, errsByTask, sumd, errHist, errsByMessage = errorSummaryDict(
         jobs,
         is_test_jobs=testjobs,
         sortby=sortby,
         is_user_req=True if 'produsername' in request.session['requestParams'] else False,
         is_site_req=True if 'computingsite' in request.session['requestParams'] or 'site' in request.session['requestParams'] else False,
         errHist=True,
+        category=-1 if 'errorcategory' not in request.session['requestParams'] else int(request.session['requestParams']['errorcategory']),
     )
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -5494,6 +5427,7 @@ def errorSummary(request):
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'requestString': request_params_str,
+            'timerange': '',
             'jobtype': jobtype,
             'njobs': njobs,
             'hours': LAST_N_HOURS_MAX,
@@ -5512,7 +5446,7 @@ def errorSummary(request):
             'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
             'sumd': sumd,
             'errHist': errHist,
-            'errsByMessage': json.dumps(error_message_summary),
+            'errsByMessage': json.dumps(errsByMessage),
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,
@@ -5885,6 +5819,10 @@ def datasetList(request):
         status = 200
         dsets.extend(JediDatasets.objects.filter(**query).extra(where=[wild_card_str]).values())
         dsets = sorted(dsets, key=lambda x: x['datasetname'].lower())
+        for ds in dsets:
+            ds['scope'] = get_scope(ds['datasetname'])
+            if ':' in ds['datasetname']:
+                ds['datasetname'] = ds['datasetname'].split(':')[1]
     else:
         message = 'Neither containername nor jeditaskid provided. At least one of them is required.'
         status = 400

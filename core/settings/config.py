@@ -134,9 +134,14 @@ if MON_VO == '' and '_' in DEPLOYMENT:
 AUTH_PROVIDER_LIST = ['indigoiam', 'cern']
 if 'BIGMON_AUTH_PROVIDER_LIST' in os.environ and os.environ['BIGMON_AUTH_PROVIDER_LIST']:
     AUTH_PROVIDER_LIST = os.environ['BIGMON_AUTH_PROVIDER_LIST'].split(',')
+if 'cern' in AUTH_PROVIDER_LIST:
+    SOCIAL_AUTH_CERNOIDC_BASEPATH = os.environ.get(
+        'SOCIAL_AUTH_CERNOIDC_BASEPATH', 'https://auth.cern.ch/auth/realms/cern/protocol/openid-connect/'
+    )
 # get the wlcg groups from indigoiam for ATLAS
+SOCIAL_AUTH_INDIGOIAM_SCOPE = ['email', 'openid', 'profile']
 if 'indigoiam' in AUTH_PROVIDER_LIST and 'ATLAS' in DEPLOYMENT:
-    SOCIAL_AUTH_INDIGOIAM_SCOPE = ['wlcg.groups']
+    SOCIAL_AUTH_INDIGOIAM_SCOPE.extend(['wlcg.groups'])
 
 if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA', 'ORACLE_ATLAS_TB'):
     try:
@@ -235,7 +240,10 @@ CACHES = {
     }
 }
 
-SESSION_COOKIE_AGE = 60*60*24  # 24 hours
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_NAME = 'bpsessionid'
+SESSION_COOKIE_AGE = 60*60*24*7
 SESSION_API_CALL_AGE = 60*30  # 10 minutes
 
 # URL_PATH_PREFIX for multi-developer apache/wsgi instance

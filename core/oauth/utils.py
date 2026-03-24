@@ -4,13 +4,14 @@
 
 import logging
 
-from django.http import HttpResponseRedirect
-from django.contrib.auth.models import Group
+from django.http import HttpResponseRedirect, JsonResponse
 from core.utils import is_json_request
 from core.oauth.models import BPUser
+from core.oauth.authentication import BPTokenAuthentication
 from django.conf import settings as django_settings
+from rest_framework.exceptions import AuthenticationFailed
 
-_logger = logging.getLogger('bigpandamon-error')
+_logger = logging.getLogger('social')
 
 
 def login_customrequired(function):
@@ -23,7 +24,26 @@ def login_customrequired(function):
         if x_forwarded_for and x_forwarded_for in django_settings.CACHING_CRAWLER_HOSTS:
             return function(request, *args, **kwargs)
 
-        if request.user.is_authenticated or is_json_request(request):
+        if request.user.is_authenticated:
+            return function(request, *args, **kwargs)
+        elif is_json_request(request):
+            auth = BPTokenAuthentication()
+            try:
+                result = auth.authenticate(request)
+            except AuthenticationFailed:
+                _logger.error(f"[TOKEN_AUTH] failed with token: {request.headers.get("Authorization")}, req: {request}")
+                return JsonResponse({'detail': 'Invalid token'}, status=401)
+
+            if result is None:
+                _logger.info(f"[TOKEN_AUTH] no token in header found, req: {request}")
+                # return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=401)
+                return function(request, *args, **kwargs)
+
+            user, token = result
+            request.user = user
+            request.auth = token
+            _logger.info(f"[TOKEN_AUTH] successfully authenticated user {user.username}, req: {request}")
+
             return function(request, *args, **kwargs)
         else:
             return HttpResponseRedirect('/login/?next='+request.get_full_path())
@@ -75,21 +95,7 @@ def deny_rights(request, rtype):
         _logger.exception('Exception was caught while denying tester rights from user')
         return False
 
-
     return True
-
-def get_auth_provider(request):
-    user = request.user
-
-    if user.is_authenticated and user.social_auth is not None:
-        try:
-            auth_provider = (request.user.social_auth.get()).provider
-        except Exception as ex:
-            _logger.exception('{0}. User: {1}'.format(ex, user))
-            auth_provider = None
-    else:
-        auth_provider = None
-    return auth_provider
 
 
 def is_expert(request):
@@ -121,37 +127,6 @@ def get_full_name(email):
         full_names.extend([f"{u['first_name']} {u['last_name']}" for u in bp_users])
 
     return list(set(full_names))
-
-
-def update_user_groups(email, user_roles):
-    """
-    Update user groups
-    :param email: str
-    :param user_roles: list of str, user roles = egroup names
-    :return: bool
-    """
-    # get users by email, there can be multiple users with the same email due to different auth providers
-    try:
-        users = BPUser.objects.filter(email=email)
-    except:
-        _logger.exception('Exception was caught while getting row from AUTH_USER by email')
-        return False
-
-    # get existing groups
-    groups_existing = [g['name'] for g in Group.objects.filter(name__in=user_roles).values('name')]
-
-    # update user groups
-    if len(users) > 0:
-        for user in users:
-            for role in list(set(user_roles) & set(groups_existing)):
-                if not user.groups.filter(name=role).exists():
-                    user.groups.add(Group.objects.get(name=role))
-                    user.save()
-    else:
-        _logger.exception(f'There is no user with this email {email}')
-        return False
-
-    return True
 
 
 def get_username(user):

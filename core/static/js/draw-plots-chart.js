@@ -16,7 +16,6 @@ var colors = [
         "#6759bd","#a45d4d","#5c94e5","#e28fb1","#ec2c6b","#4fd08e","#9d43ba","#7a8435","#6b699b","#7f84ea","#8d5cac",
         "#c94860","#d9a276","#a05981","#cd5644","#b3439b","#4569b1","#d9b63a","#dc3238"];
 
-
 function prepare_scatter_chart(datasets, options, annotations) {
   var timeFormat = 'YYYY-MM-DD HH:mm:ss';
   var config = {
@@ -259,11 +258,16 @@ function prepare_pie_chart(raw_data, options) {
       }
     ]
   };
-  const color_schema = {};
+  const color_schema = options.color_schema || {};
   Object.keys(raw_data).forEach((key, index) => {
     data.labels.push(key);
     data.datasets[0].data.push(raw_data[key]);
-    data.datasets[0].backgroundColor.push((key !== 'Other') ? colors[index] : "#d3d3d3");
+    if (key in color_schema) {
+       data.datasets[0].backgroundColor.push(color_schema[key]);
+    }
+    else {
+      data.datasets[0].backgroundColor.push((key !== 'Other') ? colors[index] : "#d3d3d3");
+    }
   });
 
   var config = {

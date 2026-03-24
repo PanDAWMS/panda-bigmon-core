@@ -190,8 +190,8 @@ def humanize_metrics(metrics):
             'alert': [12, 1000000]
         },
         'fail': {
-            'warning': [20, 40],
-            'alert': [40, 100]
+            'warning': [10, 20],
+            'alert': [20, 100]
         },
         'efficiency': {
             'warning': [50, 70],
