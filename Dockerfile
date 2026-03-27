@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.11.6
+ARG PYTHON_VERSION=3.14.3
 
 FROM gitlab-registry.cern.ch/linuxsupport/alma9-base:latest
 
@@ -83,7 +83,7 @@ RUN yum clean all && rm -rf /var/cache/yum
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  \
     aenum appdirs argcomplete asn1crypto attrs aws bcrypt beautifulsoup4 boto3 bz2file  \
     cachetools certifi cffi channels chardet click cryptography cycler \
-    daphne dataclasses datefinder decorator defusedxml Django==5.0.8 docopt dogpile.cache ecdsa \
+    daphne dataclasses datefinder decorator defusedxml Django==5.2.8 docopt dogpile.cache ecdsa \
     elasticsearch elasticsearch-dsl opensearch-py opensearch-dsl enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
     humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
     Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
@@ -91,7 +91,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  \
     py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyOpenSSL pyparsing pyrebase4 pytest \
     python-dateutil python-dotenv python-magic python-openid python-string-utils python-utils python3-openid \
     pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
-    schedule scikit-learn scipy six scikit-learn social-auth-core==4.5.3 social-auth-app-django==5.4.0 soupsieve sqlparse \
+    schedule scikit-learn scipy six scikit-learn social-auth-core social-auth-app-djangosoupsieve sqlparse \
     stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
     urllib3 webencodings websocket-client Werkzeug xlrd zipp \
     django-bower django-cors-headers django-csp \

@@ -47,11 +47,11 @@ class CernAuthOIDC(BaseOAuth2):
             raise AuthUnknownError("The mandatory field: email was not return by the auth provider.")
         return user_details
 
-    def extra_data(self, user, uid, response, details=None, *args, **kwargs):
+    def extra_data(self, user, uid, response, details, pipeline_kwargs):
         """
         This data will be stored to social_auth_user.extra_data field.
         """
-        data = super().extra_data(user, uid, response, details=details, *args, **kwargs)
+        data = super().extra_data(user, uid, response, details, pipeline_kwargs)
         data.update({
             'expires_access': data['auth_time'] + response.get('expires_in', ''),
             'expires_refresh': data['auth_time'] + response.get('refresh_expires_in', ''),
