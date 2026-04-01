@@ -6,6 +6,7 @@ Created by Tatiana Korchuganova on 05.03.2020
 import logging
 from html import escape
 
+from core.libs.checks import is_positive_int_field
 from core.pandajob.models import Jobsarchived4, Jobsarchived
 from core.pandajob.utils import get_job_error_descriptions
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table
@@ -177,6 +178,39 @@ def get_job_error_component_code_list(job):
             error_list = [pilot_err]
 
     return error_list
+
+
+def error_summary_for_job(job, error_descriptions=None):
+    """
+    Prepare error summary for a job
+    :param job: dict, job data
+    :param error_descriptions
+    :return: list of dicts with error summary
+    """
+    if not error_descriptions:
+        error_descriptions = get_job_error_descriptions()
+    error_summary = []
+    error_comp_code_list = get_job_error_component_code_list(job)
+    for comp_code in error_comp_code_list:
+        comp = comp_code.split(':')[0]
+        field_code, field_diag  = get_error_filed_from_component(comp)
+        err_dict = {
+            'component': comp,
+            'code': comp_code.split(':')[1],
+            'diagnostics': job[field_diag] if field_diag in job else '',
+            'description': job[f"{comp}_error_desc"] if f"{comp}_error_desc" in job else '',
+        }
+        if comp_code in error_descriptions and comp == 'pilot':
+            err_dict['diagnostics'] = f"{error_descriptions[comp_code]['diagnostics']}: {err_dict['diagnostics']}"
+        error_summary.append(err_dict)
+    if 'harvesterInfo' in job and is_positive_int_field(job['harvesterInfo'], 'errorcode') and job['harvesterInfo']['errorcode'] > 0:
+        error_summary.append({
+            'component': 'Harvester worker',
+            'code': job['harvesterInfo']['errorcode'],
+            'diagnostics': job['harvesterInfo']['diagmessage'] if 'diagmessage' in job['harvesterInfo'] else '',
+            'description': '-',
+        })
+    return error_summary
 
 
 def get_job_error_category(job, error_descriptions=None, output_format='str'):

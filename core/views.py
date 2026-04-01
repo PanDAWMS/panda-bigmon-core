@@ -57,7 +57,7 @@ from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_r
 from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
 from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
     get_prod_slice_by_taskid, get_prod_request_info
-from core.libs.error import error_category_summary_by_task
+from core.libs.error import error_category_summary_by_task, error_summary_for_job
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
 from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, \
     convert_grams
@@ -87,8 +87,7 @@ from core.pandajob.summary_task import task_summary, job_summary_for_task, job_s
     get_job_state_summary_for_tasklist, get_top_memory_consumers
 from core.pandajob.summary_wn import wn_summary
 from core.pandajob.summary_user import user_summary_dict
-from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, error_summary_for_job, \
-    get_errors_per_category
+from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, get_errors_per_category
 
 from core.iDDS.utils import add_idds_info_to_tasks
 from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
