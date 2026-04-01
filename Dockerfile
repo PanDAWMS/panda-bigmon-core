@@ -91,7 +91,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  \
     py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyOpenSSL pyparsing pyrebase4 pytest \
     python-dateutil python-dotenv python-magic python-openid python-string-utils python-utils python3-openid \
     pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
-    schedule scikit-learn scipy six scikit-learn social-auth-core social-auth-app-djangosoupsieve sqlparse \
+    schedule scikit-learn scipy six scikit-learn social-auth-core social-auth-app-django soupsieve sqlparse \
     stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
     urllib3 webencodings websocket-client Werkzeug xlrd zipp \
     django-bower django-cors-headers django-csp \
