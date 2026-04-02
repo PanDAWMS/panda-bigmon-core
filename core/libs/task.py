@@ -922,7 +922,6 @@ def taskNameDict(jobs):
         jeditasks = JediTasks.objects.filter(**tquery).extra(where=[extra]).values('taskname', 'jeditaskid')
         for t in jeditasks:
             tasknamedict[t['jeditaskid']] = t['taskname']
-
     return tasknamedict
 
 

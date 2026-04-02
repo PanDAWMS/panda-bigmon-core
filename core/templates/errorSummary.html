@@ -208,7 +208,7 @@
 {% for site in errsBySite %}
 <tr><th class="wrap-words"> <a href="{{xurlsubstNoSite}}computingsite={{ site.name }}"> {{ site.name }} </a> </th>
 <th> {{ site.toterrors }} </th>
-<th> Total errors in {{ site.toterrjobs }} jobs.     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a>     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a>     % failed: {{ site.pctfail }}     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ site.holding }} </span></a>      <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }} </span></a> </th>  </tr>
+  <th> Total errors in {{ site.toterrjobs }} jobs. {% if 'finished' in site %} <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ site.finished }} </span></a>     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ site.failed }} </span></a>    <span class="alarm">({{ site.pctfail }}%)</span>     <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{ site.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ site.cancelled }}</span></a>{% endif %}</th></tr>
 {% for errval in site.errorlist %}
 <tr><td>  </td>
     <td> <a href="{% url 'jobList' %}{{jobsurlNoSite}}computingsite={{site.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td>
@@ -246,10 +246,10 @@
 </colgroup>
 <tr class='tablesection'><th colspan=2> Task error summary{% if 'display_limit' in requestParams %}, limited to top-{{ requestParams.display_limit }}. To remove this limit, delete display_limit param from URL.{% endif %}</th></tr>
 {% for task in errsByTask %}
-<tr><th colspan=10><a href="{{xurlsubst}}jeditaskid={{ task.name }}">{{ task.name }}</a>,{% if task.longname != '' %} <a href="{{xurlsubst}}jeditaskid={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
+<tr><th colspan=10><a href="{% url 'taskInfo' %}{{ task.name }}/?mode=nodrop">{{ task.name }}</a>{% if task.longname != '' %}, <a href="{{xurlsubst}}jeditaskid={{ task.name }}">{{ task.longname }}</a>{% endif %} </th></tr>
 <tr>
 <th> {{ task.toterrors }} </th>
-<th> Total errors in {{ task.toterrjobs }} jobs.     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a>     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a>     % failed: {{ task.pctfail }}     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=holding&hours={{ hours }}"><span class='holding'> Holding: {{ task.holding }} </span></a>      <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
+<th> Total errors in {{ task.toterrjobs }} jobs.  <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=finished&hours={{ hours }}"><span class='finished'> Finished: {{ task.finished }} </span></a>     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=failed&hours={{ hours }}"><span class='failed'> Failed: {{ task.failed }} </span></a>     ({{ task.pctfail }}%)     <a href="{% url 'jobList' %}?taskid={{ task.name }}&jobstatus=cancelled&hours={{ hours }}"><span class='cancelled'> Cancelled: {{ task.cancelled }} </span></a> </th>
 </tr>
 {% for errval in task.errorlist %}
 <tr><td> <a href="{{jobsurl}}jeditaskid={{task.name}}&{{errval.codename}}={{errval.codeval}}&hours={{hours}}&display_limit=100&mode=nodrop">{{ errval.count }}</a> </td> <td class="wrap-words"> <b>{{ errval.error }}</b>      {{ errval.diag|force_escape|safe }} </td>  </tr>

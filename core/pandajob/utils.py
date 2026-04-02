@@ -2,14 +2,14 @@
 import datetime
 import logging
 import collections, functools, operator
+from django.db.models import Count
 from django.core.cache import cache
 from core.pandajob.models import Jobsarchived_y2014, Jobsarchived_y2015, Jobsarchived_y2016, Jobsarchived_y2017, \
     Jobsarchived_y2018, Jobsarchived_y2019, Jobsarchived_y2020, Jobsarchived_y2021, Jobsarchived_y2022, Jobsarchived_y2023, \
-    Jobsarchived, Jobsarchived4, ErrorDescription
+    Jobsarchived, Jobsarchived4, ErrorDescription, Jobsactive4
 from core.libs.datetimestrings import parse_datetime
 from core.libs.eventservice import is_event_service, get_event_status_summary
 from core.libs.exlib import split_into_intervals, get_maxrampercore_dict
-from core.libs.checks import is_positive_int_field
 
 from django.conf import settings
 import core.constants as const
@@ -410,3 +410,36 @@ def get_errors_per_category(category, error_descriptions=None):
         err_codes_per_component[x['component']].append(x['code'])
     return err_codes_per_component
 
+
+def summary_by_site_overall(site_list: list, timerange: list):
+    """
+    Get summary of jobs for the given site list and time range.
+    Args:
+        site_list: list of site names to include in the summary
+        timerange: list of two datetime strings representing the start and end of the time range
+    """
+    summary = {}
+    job_states = ('finished', 'failed', 'cancelled', 'holding', )
+    job_agg_raw = []
+    job_models = (Jobsarchived4, Jobsactive4)
+    if is_archived_jobs(timerange):
+        job_models += (Jobsarchived,)
+    query = {'statechangetime__range': timerange, 'computingsite__in': site_list, 'jobstatus__in': job_states}
+    for model in job_models:
+        job_agg_raw.extend(model.objects.filter(**query).values('computingsite', 'jobstatus').annotate(Count('jobstatus')))
+
+    for row in job_agg_raw:
+        pq = row['computingsite']
+        if pq not in summary:
+            summary[pq] = {s: 0 for s in job_states}
+            summary[pq]['pctfail'] = 0
+
+        if 'jobstatus' in row and row['jobstatus'] in job_states:
+            summary[pq][row['jobstatus']] += row['jobstatus__count']
+
+    for pq, data in summary.items():
+        if summary[pq]['failed'] > 0 and (summary[pq]['finished'] + summary[pq]['failed']) > 0:
+            summary[pq]['pctfail'] = round(
+                100.0 * summary[pq]['failed'] / (summary[pq]['finished'] + summary[pq]['failed'])
+            )
+    return summary

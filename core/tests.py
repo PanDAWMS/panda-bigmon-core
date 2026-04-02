@@ -362,12 +362,15 @@ class BPPerfTest(unittest.TestCase):
 
     # jobs
     @unittest.skip('skipping performance test, comment out this decorator if you need to run it ')
-    def test_jobs(self):
+    def test_list(self):
         try:
             from core.settings.local import LOG_ROOT
             path = LOG_ROOT
         except:
             path = '/tmp/'
+
+        # view_path = 'jobs'
+        view_path = "errors"
 
         results = [[
             'limit',
@@ -385,12 +388,12 @@ class BPPerfTest(unittest.TestCase):
             tmp_results = [limit, ]
 
             self.since_last_time = time.time()
-            self.client.get('/jobs/?days=2&{}&limit={}'.format(self.generate_random_timestamp(), int(limit)))
+            self.client.get('/{}/?days=2&{}&limit={}'.format(view_path, self.generate_random_timestamp(), int(limit)))
             tmp_results.append((time.time() - self.since_last_time))
             print('{}: {}s'.format(limit, (time.time() - self.since_last_time)))
 
             self.since_last_time = time.time()
-            self.client.get('/jobs/?days=2&{}&limit={}&json&outputs=nothing'.format(
+            self.client.get('/{}/?days=2&{}&limit={}&json&outputs=nothing'.format(view_path,
                 self.generate_random_timestamp(),
                 int(limit)
             ))
@@ -398,7 +401,7 @@ class BPPerfTest(unittest.TestCase):
             print('{}: {}s'.format(limit, (time.time() - self.since_last_time)))
 
             self.since_last_time = time.time()
-            self.client.get('/jobs/?days=2&{}&limit={}&display_limit=1'.format(
+            self.client.get('/{}/?days=2&{}&limit={}&display_limit=1'.format(view_path,
                 self.generate_random_timestamp(),
                 int(limit)
             ))
@@ -406,7 +409,7 @@ class BPPerfTest(unittest.TestCase):
             print('{}: {}s'.format(limit, (time.time() - self.since_last_time)))
 
             self.since_last_time = time.time()
-            self.client.get('/jobs/?days=2&{}&limit={}&display_limit=1000'.format(
+            self.client.get('/{}/?days=2&{}&limit={}&display_limit=1000'.format(view_path,
                 self.generate_random_timestamp(),
                 int(limit)
             ))
