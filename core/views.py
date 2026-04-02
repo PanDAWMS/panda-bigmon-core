@@ -4478,8 +4478,12 @@ def taskInfo(request, jeditaskid=0):
         if mat:
             errurl = mat.group(1)
             cmd = "curl -s -f --compressed '{}'".format(errurl)
-            logout = subprocess.getoutput(cmd)
-            if len(logout) > 0:
+            try:
+                logout = subprocess.getoutput(cmd)
+            except Exception as e:
+                _logger.exception("Failed to load error log with command '{}', error: {}".format(cmd, str(e)))
+                logout = None
+            if logout and len(logout) > 0:
                 loglist = (logout.splitlines())[::-1]
                 logtxt = '\n'.join(loglist)
             _logger.info("Loaded error log using '{}': {}".format(cmd, time.time() - request.session['req_init_time']))
