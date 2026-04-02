@@ -505,6 +505,8 @@ def artJobs(request):
                     jobdict['cpuconsumptionunit'] = '---'
 
                 jobdict['duration'] = convert_sec(get_job_walltime(panda_jobs_dict[job['pandaid']]), out_unit='str')
+                if jobdict['duration'] is None:
+                    jobdict['duration'] = '---'
             else:
                 jobdict['maxrss'] = '---'
                 jobdict['cpuconsumptiontime'] = '---'
