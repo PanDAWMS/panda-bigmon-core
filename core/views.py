@@ -4479,7 +4479,8 @@ def taskInfo(request, jeditaskid=0):
         if mat:
             errurl = mat.group(1)
             cmd = "curl -s -f --compressed '{}'".format(errurl)
-            logout = subprocess.getoutput(cmd)
+            proc = subprocess.run(cmd, shell=True, capture_output=True)
+            logout = proc.stdout.decode('utf-8', errors='replace')
             if len(logout) > 0:
                 loglist = (logout.splitlines())[::-1]
                 logtxt = '\n'.join(loglist)
