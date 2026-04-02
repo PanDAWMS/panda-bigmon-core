@@ -242,7 +242,7 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
     error_descriptions = get_job_error_descriptions()
     error_codes_per_category = get_errors_per_category(category, error_descriptions=error_descriptions)
     errname2dbfield = {comp['name']: comp['error'] for comp in error_components}
-    tasknamedict = taskNameDict(jobs) if 'errsByTask' in outputs else {}
+    _logger.debug('Got error desc and categories: {}'.format(time.time() - start_time))
 
     for job in jobs:
         # attribute summary aggregation
@@ -266,7 +266,6 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
             'site': job.get('wn') if is_site_req else job.get('computingsite', ''),
             'task': job.get('jeditaskid') or job.get('taskid')
         }
-        taskname = tasknamedict.get(fields_values['task'], '') if fields_values['task'] else ''
         pandaid = job.get('pandaid')
 
         for err in error_components:
@@ -303,8 +302,6 @@ def errorSummaryDict(jobs, is_test_jobs=False, sortby='count', is_user_req=False
                 f_dict = summary_field[f]
                 if f_val not in f_dict:
                     f_dict[f_val] = {'name': f_val, 'errors': {}, 'toterrors': 0, 'toterrjobs': 0}
-                    if f == 'task':
-                        f_dict[f_val]['longname'] = taskname
 
                 target = f_dict[f_val]
                 if errcode not in target['errors']:
