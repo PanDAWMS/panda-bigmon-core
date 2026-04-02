@@ -5384,6 +5384,10 @@ def errorSummary(request):
                         task['pctfail'] = taskstates[taskid]['pctfail']
                     if 'name' in taskstates[taskid]:
                         task['longname'] = taskstates[taskid]['name']
+        if 'jeditaskid' in request.session['requestParams'] and len(errsByTask) > 0 and 'longname' in errsByTask[0]:
+            task_name = errsByTask[0]['longname']
+        else:
+            task_name = ''
         _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
 
         xurl = extensibleURL(request)
@@ -5432,7 +5436,7 @@ def errorSummary(request):
             'tfirst': TFIRST,
             'tlast': TLAST,
             'sortby': sortby,
-            'taskname': errsByTask[0]['longname'] if 'jeditaskid' in request.session['requestParams']  else '',
+            'taskname': task_name,
             'jobs_count_total': jobs_count_total,
             'display_limit': display_limit,
             'built': datetime.now().strftime("%H:%M:%S"),
