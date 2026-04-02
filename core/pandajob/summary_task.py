@@ -16,7 +16,7 @@ from core.libs.job import parse_jobmetrics, add_job_category, job_states_count_b
 from core.libs.jobconsumption import job_consumption_plots
 from core.libs.task import taskNameDict, get_task_timewindow, get_task_scouts, calculate_metrics, get_task_time_archive_flag
 
-from core.pandajob.utils import get_pandajob_models_by_year
+from core.pandajob.utils import get_pandajob_models_by_year, is_archived_jobs
 from core.pandajob.models import Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
 
 from django.conf import settings
@@ -433,5 +433,8 @@ def task_summary_data(query, limit=1000):
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
     summary.extend(Jobsarchived4.objects.filter(**query).values('jeditaskid', 'jobstatus').annotate(
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
+    if is_archived_jobs(query['modificationtime__castdate__range']):
+        summary.extend(Jobsarchived.objects.filter(**query).values('jeditaskid', 'jobstatus').annotate(
+            Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
     
     return summary
