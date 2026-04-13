@@ -143,15 +143,15 @@ def filterErrorData(request, data, **kwargs):
 
     defaultErrorsPreferences = {
         'jobattr': standard_errorfields,
+        'tables': {
+            'jobattrsummary': 'Job attribute summary',
+            'errorsummary': 'Overall error summary',
+            'siteerrorsummary': 'Site error summary',
+            'usererrorsummary': 'User error summary',
+            'taskerrorsummary': 'Task error summary'
+        }
     }
 
-    defaultErrorsPreferences['tables'] = {
-        'jobattrsummary': 'Job attribute summary',
-        'errorsummary': 'Overall error summary',
-        'siteerrorsummary': 'Site error summary',
-        'usererrorsummary': 'User error summary',
-        'taskerrorsummary': 'Task error summary'
-    }
     userids = BPUser.objects.filter(email=request.user.email).values('id')
     userid = userids[0]['id']
     try:

@@ -5430,6 +5430,7 @@ def errorSummary(request):
             'errsBySite': errsBySite[:display_limit] if len(errsBySite) > display_limit else errsBySite,
             'errsByUser': errsByUser[:display_limit] if len(errsByUser) > display_limit else errsByUser,
             'errsByTask': errsByTask[:display_limit] if len(errsByTask) > display_limit else errsByTask,
+            'userPreferences': {},
             'sumd': sumd,
             'errHist': errHist,
             'errsByMessage': json.dumps(errsByMessage),
