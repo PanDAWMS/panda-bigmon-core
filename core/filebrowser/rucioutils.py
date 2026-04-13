@@ -12,11 +12,11 @@ def get_rucio_username_by_produserid(produserid, prodsourcelabel='user'):
     :return: str - Rucio username
     """
     if prodsourcelabel == 'user':
+        dn = produserid
         try:
             if produserid.startswith("/"):
                 # OpenSSL -> RFC 2253 format & remove last part if it is a number (e.g. /CN=1234567890)
-                if produserid.startswith("/"):
-                    produserid = produserid[1:]
+                produserid = produserid[1:]
                 parts = produserid.split("/")
                 if parts and parts[-1].startswith("CN="):
                     value = parts[-1][3:]
