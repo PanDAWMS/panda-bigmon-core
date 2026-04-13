@@ -82,7 +82,10 @@
     </div>
     <div class="card-section">
       <p>
-        <span class="label medium" ng-repeat="m in userinfo.metrics" ng-class="m.class">{$ m.title $}: <b>{$ m.value $}</b> {$ m.unit $}</span>
+        <span class="label medium" ng-repeat="m in userinfo.metrics" ng-class="m.class">
+          <a ng-if="m.title === 'Jobs failure'" ng-click="userinfo.onMetricClick(m)">{$ m.title $}: <b>{$ m.value $}</b> {$ m.unit $}</a>
+          <span ng-if="m.title !== 'Jobs failure'">{$ m.title $}: <b>{$ m.value $}</b> {$ m.unit $}</span>
+        </span>
       </p>
       <div class="c3-chart-block" ng-repeat="plot in userinfo.uts_plots.plot_data" uaplot-directive plot="plot" parent="$parent"></div>
     </div>
@@ -619,6 +622,12 @@
 
     };
     $scope.userinfo.init();
+
+    $scope.userinfo.onMetricClick = function(metric) {
+      if (metric.title === 'Jobs failure') {
+        $scope.userinfo.error_summary.is_shown = true;
+      }
+    };
 
     $scope.getBrowser = function () {
       if ("chrome" in $window) return "Chrome";

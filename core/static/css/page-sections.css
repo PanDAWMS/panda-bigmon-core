@@ -162,6 +162,15 @@ span.bold {
   background-color: #acacac;
   color: #fefefe;
 }
+.label > a {
+  font-weight: inherit !important;
+  color: inherit !important;
+  border-bottom: 1px dotted;
+}
+.label > a:hover {
+  border-bottom: 1px solid;
+}
+
 
 table tr th p {
   margin: 0;

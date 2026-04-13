@@ -118,7 +118,7 @@ def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=
     if (run_jobs_stats['failed'] > 5 and metrics['run_jobs_failed_pct'] > 10) or (task_status and task_status in ('exhausted', 'broken', 'failed')):
         error_summary_list = top_errors_summary(jobs, n_top=3)
         for err_cat in error_summary_list:
-            err_cat['pct'] = round(100. * err_cat['count'] / run_jobs_stats['total'], 1)
+            err_cat['pct'] = round(100. * err_cat['count'] / run_jobs_stats['total'], 1) if run_jobs_stats['total'] > 0 else 0
             if err_cat['pct'] > 1:
                 error_summary.append(err_cat)
     _logger.info("Got error summary: {} sec".format(time.time() - start_time))
