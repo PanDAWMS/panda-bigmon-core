@@ -31,7 +31,8 @@ def login_customrequired(function):
             try:
                 result = auth.authenticate(request)
             except AuthenticationFailed:
-                _logger.error(f"[TOKEN_AUTH] failed with token: {request.headers.get("Authorization")}, req: {request}")
+                auth_token = request.headers.get("Authorization", "---no token---")
+                _logger.error(f"[TOKEN_AUTH] failed with token: {auth_token}, req: {request}")
                 return JsonResponse({'detail': 'Invalid token'}, status=401)
 
             if result is None:

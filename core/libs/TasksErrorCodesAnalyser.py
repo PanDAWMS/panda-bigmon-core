@@ -98,7 +98,8 @@ class TasksErrorCodesAnalyser:
 
     def remove_special_character(self, input_str):
         bad_chars = ['"', "'", '\n']
-        processed_string = ''.join((filter(lambda i: i not in bad_chars, input_str)))
+        processed_string = ''.join('*' if ch in bad_chars else ch for ch in input_str)
+        processed_string = re.sub(r'\*+', '*', processed_string)
         return processed_string
 
     def get_messages_groups(self, tasks_list):

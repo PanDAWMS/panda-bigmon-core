@@ -16,7 +16,7 @@ from core.libs.job import parse_jobmetrics, add_job_category, job_states_count_b
 from core.libs.jobconsumption import job_consumption_plots
 from core.libs.task import taskNameDict, get_task_timewindow, get_task_scouts, calculate_metrics, get_task_time_archive_flag
 
-from core.pandajob.utils import get_pandajob_models_by_year
+from core.pandajob.utils import get_pandajob_models_by_year, is_archived_jobs
 from core.pandajob.models import Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived
 
 from django.conf import settings
@@ -118,7 +118,7 @@ def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=
     if (run_jobs_stats['failed'] > 5 and metrics['run_jobs_failed_pct'] > 10) or (task_status and task_status in ('exhausted', 'broken', 'failed')):
         error_summary_list = top_errors_summary(jobs, n_top=3)
         for err_cat in error_summary_list:
-            err_cat['pct'] = round(100. * err_cat['count'] / run_jobs_stats['total'], 1)
+            err_cat['pct'] = round(100. * err_cat['count'] / run_jobs_stats['total'], 1) if run_jobs_stats['total'] > 0 else 0
             if err_cat['pct'] > 1:
                 error_summary.append(err_cat)
     _logger.info("Got error summary: {} sec".format(time.time() - start_time))
@@ -433,5 +433,8 @@ def task_summary_data(query, limit=1000):
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
     summary.extend(Jobsarchived4.objects.filter(**query).values('jeditaskid', 'jobstatus').annotate(
         Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
+    if is_archived_jobs(query['modificationtime__castdate__range']):
+        summary.extend(Jobsarchived.objects.filter(**query).values('jeditaskid', 'jobstatus').annotate(
+            Count('jobstatus')).order_by('jeditaskid', 'jobstatus')[:limit])
     
     return summary
