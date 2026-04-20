@@ -87,7 +87,7 @@ RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  \
     elasticsearch elasticsearch-dsl opensearch-py opensearch-dsl enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
     humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
     Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
-    olefile openshift oracledb==2.0.1 packaging pandas paramiko patterns pep8 Pillow pip pluggy prettytable progressbar2 psutil psycopg2-binary \
+    olefile openshift oracledb packaging pandas paramiko patterns pep8 Pillow pip pluggy prettytable progressbar2 psutil psycopg2-binary \
     py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyOpenSSL pyparsing pyrebase4 pytest \
     python-dateutil python-dotenv python-magic python-openid python-string-utils python-utils python3-openid \
     pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
