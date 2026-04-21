@@ -206,7 +206,7 @@ def getPrMonPlotsData(request, pandaid=-1):
         if mmo_path is not None and (os.path.exists(mmo_path) or settings.PRMON_LOGS_DIRECTIO_LOCATION):
             # load the data from file
             try:
-                raw_data = pd.read_csv(mmo_path, delim_whitespace=True)
+                raw_data = pd.read_csv(mmo_path, sep=r"\s+", engine="python")
             except Exception as ex:
                 _logger.exception('Failed to open memory output file with {}'.format(ex))
             # get memory_monitor_summary.json
