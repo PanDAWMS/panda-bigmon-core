@@ -638,7 +638,7 @@ class TProject(models.Model):
     time_stamp = models.DecimalField(decimal_places=0, max_digits=10, db_column='timestamp')
 
     class Meta:
-        db_table = u'"atlas_deft"."t_projects"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_projects"'
         app_label = 'deft'
 
 class TRequest(models.Model):
@@ -659,7 +659,7 @@ class TRequest(models.Model):
     reference_link = models.CharField(max_length=50, db_column='reference_link', null=True, blank=True)
 
     class Meta:
-        db_table = u'"atlas_deft"."t_prodmanager_request"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_prodmanager_request"'
         app_label = 'deft'
 
 
@@ -672,7 +672,7 @@ class RequestStatus(models.Model):
     timestamp = models.DateTimeField(db_column='timestamp', null=False)
 
     class Meta:
-        db_table = u'"atlas_deft"."t_prodmanager_request_status"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_prodmanager_request_status"'
         app_label = 'deft'
 
 class StepTemplate(models.Model):
@@ -691,7 +691,7 @@ class StepTemplate(models.Model):
     swrelease = models.CharField(max_length=80, db_column='swrelease', null=True)
 
     class Meta:
-        db_table = u'"atlas_deft"."t_step_template"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_step_template"'
         app_label = 'deft'
 
 
@@ -710,7 +710,7 @@ class ProductionDataset(models.Model):
     campaign = models.CharField(max_length=32, db_column='campaign', null=False, blank=True)
 
     class Meta:
-        db_table = u'"atlas_deft"."t_production_dataset"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_production_dataset"'
         app_label = 'deft'
 
 
@@ -722,7 +722,7 @@ class ProductionContainer(models.Model):
     status = models.CharField(max_length=12, db_column='status', null=True)
 
     class Meta:
-        db_table = u'"atlas_deft"."t_production_container"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_production_container"'
         app_label = 'deft'
 
 
@@ -741,7 +741,7 @@ class InputRequestList(models.Model):
     is_hide = models.BooleanField(db_column='hided', null=True, blank=False)
 
     class Meta:
-        db_table = u'"atlas_deft"."t_input_dataset"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_input_dataset"'
         app_label = 'deft'
 
 
@@ -761,7 +761,7 @@ class StepExecution(models.Model):
     step_parent = models.ForeignKey('self', db_column='step_parent_id', on_delete=models.DO_NOTHING)
 
     class Meta:
-        db_table = u'"atlas_deft"."t_production_step"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_production_step"'
         app_label = 'deft'
 
 
@@ -771,7 +771,7 @@ class TTask(models.Model):
 
     class Meta:
         managed = False
-        db_table =  u'"atlas_deft"."t_task"'
+        db_table =  f'"{settings.DB_SCHEMA_DEFT}"."t_task"'
         app_label = 'deft'
 
 
@@ -809,5 +809,5 @@ class ProductionTask(models.Model):
     campaign = models.CharField(max_length=32, db_column='campaign', null=False, blank=True)
 
     class Meta:
-        db_table = u'"atlas_deft"."t_production_task"'
+        db_table = f'"{settings.DB_SCHEMA_DEFT}"."t_production_task"'
         app_label = 'deft'

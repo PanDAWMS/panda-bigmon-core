@@ -7,7 +7,7 @@ from collections import defaultdict
 from core.libs.task import taskNameDict
 from core.libs.job import get_job_walltime
 from core.libs.error import get_job_error_category, get_job_error_component_code_list
-from core.libs.exlib import calc_freq_time_series
+from core.libs.exlib import calc_freq_time_series, normalize_pandas_freq
 
 from django.conf import settings
 import core.constants as const
@@ -88,6 +88,7 @@ def prepare_binned_and_total_data(df, column, freq='10T'):
     :return:
     """
     # resample in 10-minute bins and count occurrences for each unique value in the specified column
+    freq = normalize_pandas_freq(freq)
     resampled = df.groupby([pd.Grouper(freq=freq), column]).size().unstack(fill_value=0)
 
     # calculate total counts across all bins for pie chart
@@ -155,7 +156,7 @@ def build_error_histograms(jobs, is_wn_instead_of_site=False):
         timestamp_list.append(job['modificationtime'])
 
     freq = calc_freq_time_series(timestamp_list, n_bins_max=60)
-
+    freq = normalize_pandas_freq(freq)
     if len(data) > 0:
         df = pd.DataFrame(data)
         df['modificationtime'] = pd.to_datetime(df['modificationtime'])

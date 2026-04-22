@@ -153,7 +153,11 @@ if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA', 'ORACLE_ATLAS_TB'):
 # whether OSG pool used (if True, we need to use destinationsite instead of computingsite for jobs)
 OSG_POOL_USED = os.environ.get('BIGMON_OSG_POOL_USED', 'False').lower() in ('true', '1')
 
+
+DB_SCHEMA_DEFT = DATABASE_NAME_SPACES['prodsys']
+
 PRMON_LOGS_DIRECTIO_LOCATION = None
+
 if DEPLOYMENT == 'ORACLE_ATLAS':
     DB_SCHEMA = 'ATLAS_PANDABIGMON'
     DB_SCHEMA_PANDA = 'ATLAS_PANDA'
@@ -171,6 +175,7 @@ elif DEPLOYMENT == 'ORACLE_ATLAS_TB':
     DB_SCHEMA_PANDA_META = 'ATLAS_PANDAMETA_TB'
     DB_SCHEMA_PANDA_ARCH = 'ATLAS_PANDAARCH_TB'
     DB_SCHEMA_IDDS = 'ATLAS_IDDS_TB'
+    DB_SCHEMA_DEFT = 'ATLAS_DEFT_TB'
     DATABASES = dbaccess_oracle_atlas
     CRIC_API_URL = 'https://atlas-cric.cern.ch/api/atlas/pandaqueue/query/?json'
     IDDS_HOST = 'https://iddsserver.cern.ch:443/idds'
@@ -461,7 +466,8 @@ LOGGING = {
         },
         'custom': {
             '()': CustomFormatter,
-            'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s %(message)s'
+            'format': '%(asctime)s %(module)s %(name)-1s:%(lineno)d %(levelname)-5s '
+                  '%(message)s | url=%(full_url)s method=%(http_method)s ip=%(remote_addr)s'
         },
         'simple': {
             'format': '%(levelname)s %(name)-1s:%(lineno)d %(message)s'
