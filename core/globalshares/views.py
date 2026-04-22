@@ -20,7 +20,7 @@ from core.schedresource.utils import get_pq_fairshare_policy, get_pq_resource_ty
 import json
 
 from core.globalshares import GlobalShares
-from core.globalshares.utils import get_gs_plots_data, get_child_elements, get_child_sumstats, get_hs_distribution
+from core.globalshares.utils import get_gs_plots_data, get_child_elements, get_child_sumstats, get_hs_distribution, _safe_percent
 from core.globalshares.models import GlobalSharesModel, JobsShareStats
 
 @login_customrequired
@@ -37,10 +37,11 @@ def globalshares(request):
 
     for shareName, shareValue in gs.items():
         shareValue['delta'] = shareValue['executing'] - shareValue['pledged']
-        shareValue['used'] = shareValue['ratio'] if 'ratio' in shareValue else None
+        shareValue['used'] = _safe_percent(shareValue.get('ratio'), shareValue.get('value'))
+
 
     for shareValue in tablerows:
-        shareValue['used'] = shareValue['ratio']*Decimal(shareValue['value'])/100 if 'ratio' in shareValue and shareValue['ratio'] is not None else None
+        shareValue['used'] = _safe_percent(shareValue.get('ratio'), shareValue.get('value'))
     ordtablerows ={}
     ordtablerows['childlist']=[]
     level1 = ''
@@ -119,8 +120,12 @@ def globalshares(request):
                         break
     tablerows = newTablesRow
 
-    del request.session['TFIRST']
-    del request.session['TLAST']
+    for k in ('TFIRST', 'TLAST'):
+        try:
+            del request.session[k]
+        except KeyError:
+            pass
+
     if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
                 'json' not in request.session['requestParams'])):
         data = {

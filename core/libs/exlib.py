@@ -485,7 +485,7 @@ def build_time_histogram(data):
     else:
         timestamp_list = [item[0] for item in data]
     freq = calc_freq_time_series(timestamp_list, n_bins_max=60)
-
+    freq = normalize_pandas_freq(freq)
     # prepare binned data
     if agg == 'count':
         df = pd.DataFrame(timestamp_list, columns=['date'])
@@ -705,3 +705,17 @@ def get_maxrampercore_dict():
                 maxrampercore_dict[rt['resource_name']][pq] = int(pq_data['maxrss']/pq_data['corecount'])
 
     return maxrampercore_dict
+
+def normalize_pandas_freq(freq):
+    if not isinstance(freq, str):
+        return freq
+    return (
+        freq.replace('CBH', 'cbh')
+            .replace('BH', 'bh')
+            .replace('H', 'h')
+            .replace('T', 'min')
+            .replace('S', 's')
+            .replace('L', 'ms')
+            .replace('U', 'us')
+            .replace('N', 'ns')
+    )
