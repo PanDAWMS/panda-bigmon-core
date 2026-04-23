@@ -183,7 +183,6 @@ if DEBUG and ENABLE_DEBUG_TOOLBAR:
         # 'debug_toolbar.panels.logger.LoggingPanel',
     )
 
-
 SESSION_SERIALIZER = "core.libs.CustomJSONSerializer.CustomJSONSerializer"
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 
