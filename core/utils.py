@@ -95,26 +95,6 @@ def complete_request(request, **kwargs):
     return request
 
 
-def get_most_recent_git_tag():
-    """
-    Getting recent git tag to show which version is running
-    :return: git_tag
-    """
-    git_path = os.getcwd()
-
-    try:
-        git_tag = str(
-            subprocess.check_output(
-                ['git', '--git-dir={}/.git'.format(git_path), 'describe', '--tags'],
-                stderr=subprocess.STDOUT)
-        ).strip('\'b\\n')
-    except subprocess.CalledProcessError as exc_info:
-        _logger.exception('Failed to get latest tag from git repo\n{}'.format(str(exc_info.output)))
-        git_tag = 'N/A'
-
-    return git_tag
-
-
 def is_xss(val):
     """
     Check if str contains XSS suspicious flags

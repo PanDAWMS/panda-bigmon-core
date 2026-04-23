@@ -1,0 +1,7 @@
+[tool.semantic_release]
+branches = ["main"]
+version_variables = ["core/__init__.py:__version__"]
+commit_version_number = true
+upload_to_vcs_release = true
+upload_to_repository = false
+build_command = ""
