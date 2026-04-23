@@ -9,7 +9,7 @@
     {% endif %}
 {% endblock %}
 {% block subtitle_params %}
-  {% if tasksTotalCount != None %}<b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?{% if requestString != None %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{ display_limit }}{% endif %}&limit={{ tasksTotalCount }}">{{ tasksTotalCount }}</a></b>{% endif %}
+  {% if tasksTotalCount != None %}<b> Total tasks found &#x7E; <a href="{% url 'taskList' %}?{% if requestString|length > 0 %}{{ requestString }}{% endif %}{% if display_limit %}display_limit={{ display_limit }}{% endif %}&limit={{ tasksTotalCount }}">{{ tasksTotalCount }}</a></b>{% endif %}
 {% endblock %}
 
 {% block css_page_library %}
@@ -244,15 +244,15 @@
             {% endif %}
             &nbsp;<a href="{% url 'errorSummary' %}?jeditaskid={{ task.jeditaskid }}">Errors</a>
             <br><span class="alert wrap-words">{{ task.errordialog|safe }}</span></td>
-        <td {% if task.scoutinghascritfailures == True %} class='broken_fill'
-            {% elif task.scoutinghasnoncritfailures == True %} class='discarded_fill'
+        <td {% if 'scoutinghascritfailures' in task and task.scoutinghascritfailures == True %} class='broken_fill'
+            {% elif 'scoutinghasnoncritfailures' in task and task.scoutinghasnoncritfailures == True %} class='discarded_fill'
             {% else %} class='{{ task.superstatus }}_fill'
             {% endif %}>
             <a href="https://panda-wms.readthedocs.io/en/latest/terminology/terminology.html#task">
-                {% if task.superstatus %}
+                {% if 'superstatus' in task and task.superstatus %}
                     <span class="bp_tooltip task_{{ task.superstatus }}">{{ task.superstatus }}</span> {% else %}
                     <span class="bp_tooltip task_{{ task.status }}">{{ task.status }} </span> {% endif %}
-            </a> {% if task.failedscouting == True %}<br>during scouting{% endif %}
+            </a> {% if 'failedscouting' in task and task.failedscouting == True %}<br>during scouting{% endif %}
             {% if task.dsinfo.nfiles >= 0 %} <br>{{ task.dsinfo.nfiles }} {% endif %} </td>
         <td>
           {% if task.dsinfo.nfilesmissing > 0 %}<span class="lost">+{{ task.dsinfo.nfilesmissing }} lost</span>{% endif %}

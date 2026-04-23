@@ -3779,6 +3779,9 @@ def taskList(request):
             tasksTotalCount = None
         else:
             tasksTotalCount = int(math.ceil((tasksTotalCount + 10000) / 10000) * 10000)
+        # for total tasks link
+        excluded_params = ('display_limit', 'limit')
+        request_params_str = '&'.join([f'{k}={v}' for k, v in request.session['requestParams'].items() if k not in excluded_params])
 
         # cut task list
         n_tasks_to_show = 100
@@ -3807,6 +3810,7 @@ def taskList(request):
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
+            'requestString': request_params_str,
             'tasks': tasks,
             'datasetstage': json.dumps(datasetstage, cls=DateEncoder),
             'ntasks': ntasks,
