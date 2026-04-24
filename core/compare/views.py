@@ -5,7 +5,6 @@
 """
 
 import json
-import multiprocessing
 from datetime import datetime
 
 from django.http import HttpResponse
@@ -132,14 +131,12 @@ def compareJobs(request):
         else:
             pandaidsToBeLoad.append(pandaid)
 
-    #Loading jobs info in parallel
-    nprocesses = 1
+    # Loading jobs info
     if len(pandaidsToBeLoad) > 0:
-        url_params = [('?json=1&pandaid=' + str(pid)) for pid in pandaidsToBeLoad]
-        pool = multiprocessing.Pool(processes=nprocesses)
-        jobInfoJSON.extend(pool.map(job_info_getter, url_params))
-        pool.close()
-        pool.join()
+        for pid in pandaidsToBeLoad:
+            url_param = '?json=1&pandaid=' + str(pid)
+            result = job_info_getter(url_param)
+            jobInfoJSON.append(result)
 
     compareParamNames = {'produsername': 'Owner', 'reqid': 'Request ID', 'jeditaskid': 'Task ID', 'jobstatus': 'Status',
                      'attemptnr': 'Attempt', 'creationtime': 'Created', 'waittime': 'Time to start', 'duration': 'Duration',

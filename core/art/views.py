@@ -6,7 +6,6 @@ import json
 import re
 import time
 import socket
-import multiprocessing
 from datetime import datetime, timedelta
 
 from django.utils import timezone
@@ -1087,17 +1086,12 @@ def loadSubResults(request):
 
         # Loading subresults from logs
         if len(ids) > 0:
-
-            # Loading subresults in parallel and collecting to list of dictionaries
-            pool = multiprocessing.Pool(processes=N_ROWS)
             try:
-                sub_results = pool.map(subresults_getter, [id['pandaid'] for id in ids])
-            except:
+                sub_results = [subresults_getter(id['pandaid']) for id in ids]
+            except Exception:
                 _logger.exception(
-                    'Exception was caught while mapping pool requests responses for next pandaid(s): {}'.format(ids))
+                    'Exception was caught while fetching subresults for next pandaid(s): {}'.format(ids))
                 sub_results = []
-            pool.close()
-            pool.join()
 
             # list -> dict
             subResultsDict = {}
