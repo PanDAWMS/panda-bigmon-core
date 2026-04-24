@@ -28,7 +28,7 @@ CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46', '188.184.90.5']
 # VIRTUALENV, WSGI & ASGI paths
 VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/opt/prod')
 WSGI_PATH = os.environ.get('BIGMON_WSGI_PATH', '/opt/prod/pythonpath')
-ASGI_PATH = os.environ.get('BIGMON_ASGI_PATH', '/opt/prod/pythonpath')
+ASGI_PATH = os.environ.get('BIGMON_ASGI_PATH', WSGI_PATH)
 
 # PanDA server URL
 PANDA_SERVER_URL = os.environ.get('PANDA_SERVER_URL', 'https://pandaserver.cern.ch/server/panda')
