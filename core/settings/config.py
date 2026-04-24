@@ -25,16 +25,10 @@ if 'BIGMON_HOST' in os.environ:
 # IPs of CACHING CRAWLERS if any
 CACHING_CRAWLER_HOSTS = ['188.184.185.129', '188.184.116.46', '188.184.90.5']
 
-# VIRTUALENV
+# VIRTUALENV, WSGI & ASGI paths
 VIRTUALENV_PATH = os.environ.get('BIGMON_VIRTUALENV_PATH', '/opt/prod')
-
-# WSGI
-if 'BIGMON_WSGI_PATH' in os.environ:
-    WSGI_PATH = os.environ['BIGMON_WSGI_PATH']
-
-# ASGI
-if 'BIGMON_ASGI_PATH' in os.environ:
-    ASGI_PATH = os.environ['BIGMON_ASGI_PATH']
+WSGI_PATH = os.environ.get('BIGMON_WSGI_PATH', '/opt/prod/pythonpath')
+ASGI_PATH = os.environ.get('BIGMON_ASGI_PATH', '/opt/prod/pythonpath')
 
 # PanDA server URL
 PANDA_SERVER_URL = os.environ.get('PANDA_SERVER_URL', 'https://pandaserver.cern.ch/server/panda')
