@@ -994,11 +994,16 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         wildCardsOr = request.session['requestParams'][field_name].split('|')
         if not ((field_name.lower() == 'cloud') & (any(card.lower() == 'all' for card in wildCardsOr))):
             for i_or, card_or in enumerate(wildCardsOr, start=1):
-                if ',' in card_or:
+                if card_or.strip() == '*':
+                    extraQueryString += f" {field_name} is not null "
+                elif ',' in card_or:
                     extraQueryString += '('
                     wildCardsAnd = card_or.split(',')
                     for i_and, card_and in enumerate(wildCardsAnd, start=1):
-                        extraQueryString += preprocess_wild_card_string(card_and, field_name)
+                        if card_and.strip() == '*':
+                            extraQueryString += f" {field_name} is not null "
+                        else:
+                            extraQueryString += preprocess_wild_card_string(card_and, field_name)
                         if i_and < len(wildCardsAnd):
                             extraQueryString += ' AND '
                     extraQueryString += ')'
