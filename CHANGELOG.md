@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.0.1 (2026-04-27)
+
+### Bug Fixes
+
+- Add check of disk usage to servicemon and decrease threshold to 80
+  ([`7489c47`](https://github.com/PanDAWMS/panda-bigmon-core/commit/7489c47208545b7c9be562f6a9dd692a3592032d))
+
+- Add support of 'field=*' wildcard
+  ([`25985e6`](https://github.com/PanDAWMS/panda-bigmon-core/commit/25985e6b56e863713135ac05db50a1fca237e1c7))
+
+
 ## v1.0.0 (2026-04-27)
 
 ### Bug Fixes
