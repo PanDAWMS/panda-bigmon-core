@@ -36,7 +36,7 @@ def memory_info():
 
 
 def disk_info(disk=''):
-    if disk == '':
+    if disk == '' or disk == 'root':
         full_path = '/'
     else:
         full_path = '/' + disk
@@ -288,6 +288,8 @@ def service_availability(metrics:dict) -> tuple[str, str]:
     """
     process = 'httpd'
     threshold_ttr = 10
+    threshold_pct = 80
+    avail_decrease = 10
 
     if process in metrics:
         availability = int(metrics[process])
@@ -303,20 +305,24 @@ def service_availability(metrics:dict) -> tuple[str, str]:
             availability_desc += ', no requests processed in last 10 minutes'
             return str(availability), availability_desc
         elif metrics['requests_last_10min_count'] <= 10:
-            availability = max(availability - 20, 0)
+            availability = max(availability - avail_decrease, 0)
             availability_desc += ', low number of requests processed lately'
     if 'requests_last_10min_duration_median' in metrics and metrics['requests_last_10min_duration_median'] is not None:
         if metrics['requests_last_10min_duration_median'] > threshold_ttr:
-            availability = max(availability - 20, 0)
+            availability = max(availability - avail_decrease, 0)
             availability_desc += f', median TTR is more than {threshold_ttr} sec'
     if ('cephfs_used_pc' in metrics and metrics['cephfs_used_pc'] is not None and
-            isinstance(metrics['cephfs_used_pc'], (int, float)) and metrics['cephfs_used_pc'] > 90):
-        availability = max(availability - 20, 0)
-        availability_desc += ', shared /cephfs/ volume usage is more than 90%'
+            isinstance(metrics['cephfs_used_pc'], (int, float)) and metrics['cephfs_used_pc'] > threshold_pct):
+        availability = max(availability - avail_decrease, 0)
+        availability_desc += f', shared /cephfs/ volume usage is more than {threshold_pct}%'
+    if ('root_used_pc' in metrics and metrics['root_used_pc'] is not None and
+            isinstance(metrics['root_used_pc'], (int, float)) and metrics['root_used_pc'] > threshold_pct):
+        availability = max(availability - avail_decrease, 0)
+        availability_desc += f', shared /cephfs/ volume usage is more than {threshold_pct}%'
     if ('memory_usage_pc' in metrics and metrics['memory_usage_pc'] is not None and
-            isinstance(metrics['memory_usage_pc'], (int, float)) and metrics['memory_usage_pc'] > 0.9):
-        availability = max(availability - 20, 0)
-        availability_desc += ', memory usage is more than 90%'
+            isinstance(metrics['memory_usage_pc'], (int, float)) and metrics['memory_usage_pc'] > threshold_pct/100):
+        availability = max(availability - avail_decrease, 0)
+        availability_desc += f', memory usage is more than {threshold_pct}%'
 
     return str(availability), availability_desc
 
