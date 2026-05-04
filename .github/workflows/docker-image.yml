@@ -70,6 +70,9 @@ jobs:
             type=raw,value=${{ needs.release.outputs.new_version }}
             type=raw,value=latest
 
+      - name: Set up Docker Buildx (to enable caching)
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
