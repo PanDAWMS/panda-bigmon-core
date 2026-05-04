@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.3 (2026-05-04)
+
+### Bug Fixes
+
+- Start using cache in github actions
+  ([`cce3cbb`](https://github.com/PanDAWMS/panda-bigmon-core/commit/cce3cbbba96b6062e517a57c49fa9664117c516d))
+
+
 ## v1.0.2 (2026-05-04)
 
 ### Bug Fixes
