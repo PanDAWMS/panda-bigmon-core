@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.0.2 (2026-05-04)
+
+### Bug Fixes
+
+- Add using of cache to github actions
+  ([`69eb17e`](https://github.com/PanDAWMS/panda-bigmon-core/commit/69eb17ec683e0db73d286eb9df45e5afc48a9cc2))
+
+- Improve dockerfile to speed up building
+  ([`7e6b169`](https://github.com/PanDAWMS/panda-bigmon-core/commit/7e6b16958a40330941e683af017a8856e0b49e89))
+
+
 ## v1.0.1 (2026-04-27)
 
 ### Bug Fixes
