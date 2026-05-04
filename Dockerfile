@@ -49,15 +49,13 @@ RUN ln -fs /data/bigmon/config/tnsnames.ora /etc/tnsnames.ora
 
 RUN yum clean all && rm -rf /var/cache/yum
 
-ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
-ENV BIGMON_WSGI_PATH /data/bigmon
-ENV DJANGO_SETTINGS_MODULE core.settings
+ENV BIGMON_VIRTUALENV_PATH=/opt/bigmon \
+    BIGMON_WSGI_PATH=/data/bigmon \
+    DJANGO_SETTINGS_MODULE=core.settings
 
 # setup venv with python and install dependencies
 RUN python$(echo ${PYTHON_VERSION} | sed -E 's/\.[0-9]+$//') -m venv ${BIGMON_VIRTUALENV_PATH}
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U pip
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U setuptools
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U gnureadline
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U pip setuptools gnureadline
 RUN adduser atlpan
 RUN groupadd zp
 RUN usermod -a -G zp atlpan
