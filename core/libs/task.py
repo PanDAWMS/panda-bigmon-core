@@ -966,14 +966,12 @@ def get_task_flow_data(jeditaskid):
     jquery = {'jeditaskid': jeditaskid, 'prodsourcelabel__in': ['user', 'managed'], }
     extra_str = "( processingtype not in ('pmerge') )"
     jvalues = ['proddblock', 'computingsite', 'jobstatus']
-    jobs.extend(Jobsarchived4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
-    jobs.extend(Jobsarchived.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
-    jobs.extend(Jobsactive4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
-    jobs.extend(Jobsdefined4.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid')))
+    for model in (Jobsarchived4, Jobsarchived, Jobsactive4, Jobsdefined4):
+        jobs.extend(list(model.objects.filter(**jquery).extra(where=[extra_str]).values(*jvalues).annotate(njobs=Count('pandaid'))))
 
     if len(jobs) > 0:
         for j in jobs:
-            if len(j['proddblock']) > 0:
+            if 'proddblock' in j and j['proddblock'] and len(j['proddblock']) > 0:
                 dname = j['proddblock'] if ':' not in j['proddblock'] else j['proddblock'].split(':')[1]
             else:
                 dname = next(iter(dataset_dict)) if len(dataset_dict) > 0 else 'pseudo_dataset'
