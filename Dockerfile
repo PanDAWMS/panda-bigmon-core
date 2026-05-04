@@ -1,30 +1,11 @@
 ARG PYTHON_VERSION=3.14.3
-
 FROM gitlab-registry.cern.ch/linuxsupport/alma9-base:latest
-
+LABEL maintainer="PanDA team"
 ARG PYTHON_VERSION
 
-MAINTAINER PanDA team
-
+# system repos and basic tools
 COPY docker/yum.repos.d/almalinux-appstream_1.repo /etc/yum.repos.d/
 COPY docker/yum.repos.d/almalinux-baseos_1.repo /etc/yum.repos.d/
-
-RUN yum update -y
-RUN yum install -y epel-release
-
-RUN yum install -y httpd httpd-devel gcc gridsite git psmisc less wget logrotate procps which \
-    openssl-devel readline-devel bzip2-devel libffi-devel zlib-devel systemd-udev
-
-# install python
-RUN mkdir /tmp/python && cd /tmp/python && \
-    wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-    tar -xzf Python-*.tgz && rm -f Python-*.tgz && \
-    cd Python-* && \
-    ./configure --enable-shared --enable-optimizations --with-lto && \
-    make altinstall && \
-    echo /usr/local/lib > /etc/ld.so.conf.d/local.conf && ldconfig && \
-    cd / && rm -rf /tmp/pyton
-
 RUN echo -e '[epel]\n\
 name=Extra Packages for Enterprise Linux 9 [HEAD]\n\
 baseurl=http://linuxsoft.cern.ch/epel/9/Everything/x86_64\n\
@@ -32,24 +13,47 @@ enabled=1\n\
 gpgcheck=0\n\
 gpgkey=http://linuxsoft.cern.ch/epel/RPM-GPG-KEY-EPEL-9\n\
 exclude=collectd*,libcollectd*,mcollective,perl-Authen-Krb5,perl-Collectd,puppet,python*collectd_systemd*,koji*,python*koji*\n\
-priority=20\' >> /etc/yum.repos.d/epel.repo
-
+priority=20' >> /etc/yum.repos.d/epel.repo
 RUN echo -e '[carepo]\n\
 name=IGTF CA Repository\n\
 baseurl=https://linuxsoft.cern.ch/mirror/repository.egi.eu/sw/production/cas/1/current/\n\
 enabled=1\n\
 gpgcheck=0\n\
 gpgkey=https://linuxsoft.cern.ch/mirror/repository.egi.eu/GPG-KEY-EUGridPMA-RPM-3\' >> /etc/yum.repos.d/carepo.repo
+RUN yum update -y && \
+    yum install -y epel-release && \
+    yum install -y httpd httpd-devel gcc gridsite git psmisc less wget logrotate procps which \
+        openssl-devel readline-devel bzip2-devel libffi-devel zlib-devel systemd-udev \
+        nano mod_ssl.x86_64 supervisor.noarch fetch-crl.noarch net-tools sudo conda ca-policy-egi-core \
+        https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    yum install -y postgresql14 postgresql14-devel
 
-RUN ln -s /usr/bin/python3 /usr/bin/python && \
-    ln -s /usr/bin/pip3 /usr/bin/pip
+# python compilation and installation from source
+RUN mkdir /tmp/python && cd /tmp/python && \
+    wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
+    tar -xzf Python-*.tgz && rm -f Python-*.tgz && \
+    cd Python-* && \
+    ./configure --enable-shared --enable-optimizations --with-lto && \
+    make altinstall && \
+    echo /usr/local/lib > /etc/ld.so.conf.d/local.conf && ldconfig && \
+    cd / && rm -rf /tmp/python
+RUN ln -s /usr/local/bin/python3.14 /usr/bin/python && \
+    ln -s /usr/local/bin/pip3.14 /usr/bin/pip
+
+# install Oracle Instant Client and grab the latest version of the Oracle tnsnames.ora file
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -P /tmp/ && \
+    yum install /tmp/oracle-instantclient-basic-linuxx64.rpm -y && \
+    wget https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -P /tmp/ && \
+    yum install /tmp/oracle-instantclient-sqlplus-linuxx64.rpm -y
+RUN ln -fs /data/bigmon/config/tnsnames.ora /etc/tnsnames.ora
+
+RUN yum clean all && rm -rf /var/cache/yum
 
 ENV BIGMON_VIRTUALENV_PATH /opt/bigmon
 ENV BIGMON_WSGI_PATH /data/bigmon
 ENV DJANGO_SETTINGS_MODULE core.settings
 
-
-# setup venv with pythonX.Y
+# setup venv with python and install dependencies
 RUN python$(echo ${PYTHON_VERSION} | sed -E 's/\.[0-9]+$//') -m venv ${BIGMON_VIRTUALENV_PATH}
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U pip
 RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U setuptools
@@ -59,49 +63,12 @@ RUN groupadd zp
 RUN usermod -a -G zp atlpan
 RUN mkdir /tmp/src
 WORKDIR /tmp/src
+COPY requirements.txt .
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-RUN yum -y update
-
-RUN yum install -y nano python3-psycopg2 httpd.x86_64 conda gridsite mod_ssl.x86_64 httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch \
-        less git ca-policy-egi-core \
-        httpd-devel.x86_64 gcc.x86_64 supervisor.noarch fetch-crl.noarch wget net-tools sudo \
-        https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
-    yum install -y postgresql14 postgresql14-devel
-
-# install Oracle Instant Client and tnsnames.ora
-RUN wget https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -P /tmp/ && \
-    yum install /tmp/oracle-instantclient-basic-linuxx64.rpm -y && \
-    wget https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -P /tmp/ && \
-    yum install /tmp/oracle-instantclient-sqlplus-linuxx64.rpm -y
-
-# Grab the latest version of the Oracle tnsnames.ora file
-RUN ln -fs /data/bigmon/config/tnsnames.ora /etc/tnsnames.ora
-
-RUN yum clean all && rm -rf /var/cache/yum
-
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir --upgrade  \
-    aenum appdirs argcomplete asn1crypto attrs aws bcrypt beautifulsoup4 boto3 bz2file  \
-    cachetools certifi cffi channels chardet click cryptography cycler \
-    daphne dataclasses datefinder decorator defusedxml Django==5.2.8 docopt dogpile.cache ecdsa \
-    elasticsearch elasticsearch-dsl opensearch-py opensearch-dsl enum34 fabric findspark flake8 Flask futures google-auth html5lib httplib2 \
-    humanize idds-client idds-common idds-workflow idna importlib-metadata iniconfig invoke ipaddress itsdangerous \
-    Jinja2 joblib kiwisolver kubernetes linecache2 lxml MarkupSafe matplotlib mccabe mod-wsgi nose numpy oauthlib \
-    olefile openshift oracledb packaging pandas paramiko patterns pep8 Pillow pip pluggy prettytable progressbar2 psutil psycopg2-binary \
-    py pyasn1 pyasn1-modules pycodestyle pycparser pycrypto pyflakes PyJWT PyNaCl pyOpenSSL pyparsing pyrebase4 pytest \
-    python-dateutil python-dotenv python-magic python-openid python-string-utils python-utils python3-openid \
-    pytz PyYAML redis regex reportlab requests requests-oauthlib rsa ruamel.yaml ruamel.yaml.clib rucio-clients \
-    schedule scikit-learn scipy six scikit-learn social-auth-core social-auth-app-django soupsieve sqlparse \
-    stomp.py subprocess32 sunburnt tabulate threadpoolctl tiny-xslt toml traceback2 typing-extensions unittest2 \
-    urllib3 webencodings websocket-client Werkzeug xlrd zipp \
-    django-bower django-cors-headers django-csp \
-    django-datatables-view django-render-block django-tables2 django-templated-email djangorestframework \
-    django-debug-toolbar django-extensions django-htmlmin django-mathfilters django-redis \
-    django-redis-cache
-
-RUN mkdir -p ${BIGMON_WSGI_PATH}
-RUN mkdir ${BIGMON_WSGI_PATH}/config
-RUN mkdir ${BIGMON_WSGI_PATH}/logs
+RUN mkdir -p ${BIGMON_WSGI_PATH} ${BIGMON_WSGI_PATH}/config ${BIGMON_WSGI_PATH}/logs
 RUN rm -rf /etc/httpd/conf.d/*
 
 # copy tagged version or branch/fork snapshot from repository
@@ -134,8 +101,6 @@ RUN chown -R apache.apache /data/bigmon/logs/
 RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
 
 ENTRYPOINT ["start-daemon.sh"]
-
 STOPSIGNAL SIGINT
-
 EXPOSE 8443 8080 8000
 CMD ["all"]
