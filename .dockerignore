@@ -1,0 +1,8 @@
+.git
+.gitignore
+__pycache__/
+*.py[cod]
+*$py.class
+.idea/
+Dockerfile
+.dockerignore
