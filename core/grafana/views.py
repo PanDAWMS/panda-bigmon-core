@@ -16,6 +16,8 @@ from django.utils import encoding
 from django.utils.cache import patch_response_headers
 from django.conf import settings
 
+from urllib.parse import urlparse
+
 from core.grafana.GrafanaES import Grafana
 from core.grafana.QueryES import Query
 
@@ -466,44 +468,54 @@ def grafana_api_es(request):
     result = Grafana().get_data(q)
     return JsonResponse(result)
 
+def add_no_cache_headers(response):
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
+
 
 def grafana_image(request):
     whitelist = ["triumf.ca", "cern.ch"]
-    if 'url' in request.GET:
-        param = request.build_absolute_uri()
-        url = param[param.index("=")+1:len(param)]
-        for urlw in whitelist:
-            pattern = r"^((http[s]?):\/)?\/?([^:\/\s]+"+urlw+")"
-            urlConfim = re.findall(pattern, url)
-            if len(urlConfim) > 0:
-                break
-        if len(urlConfim) == 0:
-            return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
-        try:
-            data = getCacheEntry(request, "grafanaimagewrap")
 
-            if data is not None:
-                data = base64.b64decode(data)
-                response = HttpResponse(data, content_type='image/jpg')
-                patch_response_headers(response, cache_timeout=10 * 60)
-                return response
-            if 'Authorization' in settings.GRAFANA:
-                grafana_token = settings.GRAFANA['Authorization']
-
-            headers = {"Authorization": grafana_token}
-            r = requests.get(url, headers=headers)
-            r.raise_for_status()
-            with io.BytesIO(r.content) as f:
-                with Image.open(f) as img:
-                    rgb_im = img.convert('RGB')
-                    response = HttpResponse(content_type='image/jpg')
-                    rgb_im.save(response, "JPEG")
-                    byte_io = BytesIO()
-                    rgb_im.save(byte_io, 'JPEG')
-                    data = base64.b64encode(byte_io.getvalue())
-                    setCacheEntry(request, "grafanaimagewrap", data, 60 * 60)
-                    return response
-        except Exception as ex:
-            return redirect('/static/images/404-not-found-site.gif')
-    else:
+    url = request.GET.get("url")
+    if not url:
         return redirect('/static/images/error_z0my4n.png')
+
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+
+    if not any(hostname == domain or hostname.endswith("." + domain) for domain in whitelist):
+        return redirect('/static/images/22802286-denied-red-grunge-stamp.png')
+
+    try:
+        cache_key = "grafanaimagewrap:" + hashlib.md5(url.encode("utf-8")).hexdigest()
+        data = getCacheEntry(request, cache_key)
+
+        if data is not None:
+            data = base64.b64decode(data)
+            response = HttpResponse(data, content_type="image/jpeg")
+            return add_no_cache_headers(response)
+
+        headers = {}
+        if 'Authorization' in settings.GRAFANA:
+            headers["Authorization"] = settings.GRAFANA['Authorization']
+
+        r = requests.get(url, headers=headers, timeout=60)
+        r.raise_for_status()
+
+        with io.BytesIO(r.content) as f:
+            with Image.open(f) as img:
+                rgb_im = img.convert("RGB")
+
+                byte_io = BytesIO()
+                rgb_im.save(byte_io, "JPEG")
+                jpeg_bytes = byte_io.getvalue()
+
+                setCacheEntry(request, cache_key, base64.b64encode(jpeg_bytes), 60 * 60)
+
+                response = HttpResponse(jpeg_bytes, content_type="image/jpeg")
+                return add_no_cache_headers(response)
+
+    except Exception:
+        return redirect('/static/images/404-not-found-site.gif')
