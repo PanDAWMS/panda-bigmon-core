@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.4 (2026-05-04)
+
+### Bug Fixes
+
+- Check job proddblock in taskflow view
+  ([`250998c`](https://github.com/PanDAWMS/panda-bigmon-core/commit/250998c6e0a186d97dc041f6a44d24cf75f2bb84))
+
+
 ## v1.0.3 (2026-05-04)
 
 ### Bug Fixes
