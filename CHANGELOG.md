@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.5 (2026-05-05)
+
+### Bug Fixes
+
+- Add v prefix to release tags
+  ([`48d7c4a`](https://github.com/PanDAWMS/panda-bigmon-core/commit/48d7c4a145106de5c339fc0caec5c4a0c57a7dbc))
+
+
 ## v1.0.4 (2026-05-04)
 
 ### Bug Fixes
