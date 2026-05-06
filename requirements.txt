@@ -22,7 +22,7 @@ openshift==0.13.2
 oracledb==3.4.2
 panda-client==1.6.13
 pandas==3.0.1
-pillow==12.1.1
+pillow==12.2.0
 psutil==7.2.2
 psycopg2-binary==2.9.11
 PyJWT==2.12.1
