@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.7 (2026-05-06)
+
+### Bug Fixes
+
+- Missing mod_wsgi for docker image
+  ([`976437c`](https://github.com/PanDAWMS/panda-bigmon-core/commit/976437ca22ac5df146fcb5571b34fcc15c582e2a))
+
+
 ## v1.0.6 (2026-05-06)
 
 ### Bug Fixes
