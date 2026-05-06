@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.6 (2026-05-06)
+
+### Bug Fixes
+
+- Fix Grafana image caching and URL encoding
+  ([`99c8881`](https://github.com/PanDAWMS/panda-bigmon-core/commit/99c8881fe1f56fd45e6e5713daf313c7565b899c))
+
+
 ## v1.0.5 (2026-05-05)
 
 ### Bug Fixes
