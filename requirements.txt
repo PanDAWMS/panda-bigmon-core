@@ -15,7 +15,7 @@ idds-common==2.6.1
 idds-workflow==2.6.1
 kafka-python==2.3.0
 kubernetes==35.0.0
-mod_wsgi==4.0.3
+mod_wsgi==4.9.3
 numpy==2.4.3
 opensearch-py==3.1.0
 openshift==0.13.2
