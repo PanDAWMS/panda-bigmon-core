@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.0.8 (2026-05-07)
+
+### Bug Fixes
+
+- Update requirements.txt
+  ([`655a990`](https://github.com/PanDAWMS/panda-bigmon-core/commit/655a9908a951153c9b25eb609105dc6fe07fa722))
+
+### Build System
+
+- **deps**: Bump mod-wsgi from 4.0.3 to 4.9.3
+  ([`8f287f1`](https://github.com/PanDAWMS/panda-bigmon-core/commit/8f287f11888d6b223a8e39f75c0c08b94299bc09))
+
+
 ## v1.0.7 (2026-05-06)
 
 ### Bug Fixes
