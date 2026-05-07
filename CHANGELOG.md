@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.9 (2026-05-07)
+
+### Bug Fixes
+
+- Move Grafana image URL encoding to /templatetags/common_tags.py
+  ([`32a91b8`](https://github.com/PanDAWMS/panda-bigmon-core/commit/32a91b8830ebb6516b68b5d994fe5151a7d0224a))
+
+
 ## v1.0.8 (2026-05-07)
 
 ### Bug Fixes
