@@ -116,7 +116,7 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
   $(function() {
     $("#site").autocomplete({
       source: "{% url 'getsites' %}",
-      select: function (event, ui) {
+      select: function (event, ui) { //item selected
         AutoCompleteSelectHandler(event, ui)
       },
       minLength: 1,
@@ -132,7 +132,7 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
 <fieldset class="fieldset">
 <legend>Search</legend>
   <div class="small-12 medium-6 columns">
-      <form action="{% url 'jobInfo' %}" method="get" class="search-form">
+      <form action="{% url 'jobInfo' %}" method='get' class="search-form">
           <div class="input-group">
               <span class="input-group-label">PanDA job ID or name</span>
               <input class="input-group-field" type="text" placeholder="Enter job ID or name..." id="pandaid" name="pandaid">
@@ -141,7 +141,187 @@ Select what you'd like to have a look at in the top menu bar: dashboard overview
             </div>
           </div>
       </form>
-      ...
+      <form action="{% url 'jobList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Jobs for batch ID</span>
+              <input class="input-group-field" type="text" placeholder="Enter batch ID..." id="batchid" name="batchid">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskInfo' %}?" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Task ID</span>
+              <input class="input-group-field" type="text" placeholder="Enter task ID..." id="jeditaskid" name="jeditaskid">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Tasks for task name</span>
+              <input class="input-group-field" type="text" placeholder="Enter task name..." id="taskname" name="taskname">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Tasks for request ID </span>
+              <input class="input-group-field" type="text" placeholder="Enter job ID or name..." id="reqid" name="reqid">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Tasks for Request IDs: from </span>
+              <input class="input-group-field" type="text"  id="reqid_from" name="reqid_from">
+              <span class="input-group-label">to: </span>
+              <input class="input-group-field" type="text"  id="reqid_to" name="reqid_to">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'jobList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Jobs for Request IDs: from </span>
+              <input class="input-group-field" type="text"  id="reqid_from" name="reqid_from">
+              <span class="input-group-label">to: </span>
+              <input class="input-group-field" type="text"  id="reqid_to" name="reqid_to">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'jobList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Stalled jobs</span>
+              <span class="input-group-label">in:</span>
+              <select name="jobstatus" class="input-group-field">
+                <option value="defined"><span class="defined">defined</span></option>
+                <option value="waiting"><span class="waiting">waiting</span></option>
+                <option value="assigned"><span class="assigned">assigned</span></option>
+                <option value="activated"><span class="activated">activated</span></option>
+                <option value="starting"><span class="starting">starting</span></option>
+                <option value="running"><span class="running">running</span></option>
+                <option value="holding"><span class="holding">holding</span></option>
+                <option value="transferring"><span class="transferring">transferring</span></option>
+              </select>
+              <span class="input-group-label">for over</span>
+              <input class="input-group-field" type="number"  id="statenotupdated" name="statenotupdated">
+              <span class="input-group-label">hours</span>
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Stalled tasks</span>
+              <span class="input-group-label">in:</span>
+              <select name="superstatus" class="input-group-field">
+                <option value="registered"><span class="registered">registered</span></option>
+                <option value="submitting"><span class="submitting">submitting</span></option>
+                <option value="running"><span class="running">running</span></option>
+              </select>
+              <span class="input-group-label">for over</span>
+              <input class="input-group-field" type="number"  id="statenotupdated" name="statenotupdated">
+              <span class="input-group-label">hours</span>
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+  </div>
+  <div class="small-12 medium-6 columns">
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Tasks for campaign </span>
+              <input class="input-group-field" type="text" placeholder="Enter campaign..." id="campaign" name="campaign">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Tasks for project</span>
+              <input class="input-group-field" type="text" placeholder="Enter project..." id="project" name="project">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Tasks for tag </span>
+              <input class="input-group-field" type="text" placeholder="Enter tag..." id="tag" name="tag">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Tasks for hashtag </span>
+              <input class="input-group-field" type="text" placeholder="Enter hashtag..." id="hashtag" name="hashtag">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'taskList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Tasks for stream </span>
+              <input class="input-group-field" type="text" placeholder="Enter stream..." id="stream" name="stream">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'siteInfo' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Site </span>
+              <input class="input-group-field" type="text" placeholder="Enter site name..." id="site" name="site">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'userInfo' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">User  </span>
+              <input class="input-group-field" type="text" placeholder="Enter user name..." id="user" name="user">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'datasetList' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">Dataset </span>
+              <input class="input-group-field" type="text" placeholder="Enter name of dataset..." id="datasetname" name="datasetname">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+      <form action="{% url 'fileInfo' %}" method='get' class="search-form">
+          <div class="input-group">
+              <span class="input-group-label">File </span>
+              <input class="input-group-field" type="text" placeholder="Enter name of file..." id="filename" name="filename">
+            <div class="input-group-button">
+                  <input type="submit" value="Submit" class="button secondary">
+            </div>
+          </div>
+      </form>
+
   </div>
 </fieldset>
 </div>
