@@ -147,7 +147,6 @@ if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA', 'ORACLE_ATLAS_TB'):
 # whether OSG pool used (if True, we need to use destinationsite instead of computingsite for jobs)
 OSG_POOL_USED = os.environ.get('BIGMON_OSG_POOL_USED', 'False').lower() in ('true', '1')
 
-
 DB_SCHEMA_DEFT = DATABASE_NAME_SPACES['prodsys']
 
 PRMON_LOGS_DIRECTIO_LOCATION = None
@@ -205,6 +204,11 @@ elif DEPLOYMENT == 'ORACLE_DOMA':
 else:
     _logger.error(f"Unknown DEPLOYMENT={DEPLOYMENT} is set")
     raise Exception(f"Unknown DEPLOYMENT={DEPLOYMENT} is set")
+
+if "ATLAS" in DEPLOYMENT and LOGS_PROVIDER == 'rucio':
+    RUCIO_AUTH_HOST = os.environ.get('RUCIO_AUTH_HOST', 'https://atlas-rucio-auth.cern.ch')
+    RUCIO_ACCOUNT = os.environ.get('RUCIO_ACCOUNT', 'atlpan')
+    X509_USER_PROXY = os.environ.get('X509_USER_PROXY', '')
 
 # Request traffic control settings
 TRAFFIC_CONTROL_ENABLED = os.environ.get('BIGMON_TRAFFIC_CONTROL_ENABLED', 'True') == 'True'
