@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.10 (2026-05-08)
+
+### Bug Fixes
+
+- Main page hotfix
+  ([`172503f`](https://github.com/PanDAWMS/panda-bigmon-core/commit/172503ffc5192213ca529cbe40e95ebe28f3641f))
+
+
 ## v1.0.9 (2026-05-07)
 
 ### Bug Fixes
