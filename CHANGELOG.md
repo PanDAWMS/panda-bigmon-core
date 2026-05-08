@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.11 (2026-05-08)
+
+### Bug Fixes
+
+- Reading X509_USER_PROXY from env vars for k8s deployment
+  ([`5f6e2cb`](https://github.com/PanDAWMS/panda-bigmon-core/commit/5f6e2cb70399875c7a37f38a525bf53951f8470b))
+
+
 ## v1.0.10 (2026-05-08)
 
 ### Bug Fixes
