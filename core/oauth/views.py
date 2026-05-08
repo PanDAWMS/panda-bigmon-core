@@ -5,6 +5,7 @@ import json
 import logging
 from datetime import datetime
 
+from django.apps import apps
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout as auth_logout
 from django.views.decorators.cache import never_cache
@@ -219,7 +220,9 @@ def get_user_contact(request):
         return error_response(request, message='only POST requests are allowed', status=405)
 
     # allow only authenticated users with permission
-    if request.user.is_authenticated and request.user.has_perm('oauth.can_contact_users'):
+    authz = apps.get_app_config("core.oauth").authz
+    if (request.user.is_authenticated and
+            authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'user_contact', 'read', {}, {})):
         if 'user' in request.session['requestParams']:
             user_name_split = request.session['requestParams']['user'].split(' ')
         else:
