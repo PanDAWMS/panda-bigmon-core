@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.12 (2026-05-11)
+
+### Bug Fixes
+
+- [ATLASPANDA-1648] links to rucio ui in fileList view
+  ([`043d265`](https://github.com/PanDAWMS/panda-bigmon-core/commit/043d26571d4c3c0cfab701ac1e4d1e05ea1db991))
+
+
 ## v1.0.11 (2026-05-08)
 
 ### Bug Fixes
