@@ -6151,23 +6151,6 @@ def loadFileList(request):
 
     for f in files:
         f['fsizemb'] = "%0.2f" % (f['fsize'] / 1000000.)
-        if settings.RUCIO_UI_URL is not None and isinstance(settings.RUCIO_UI_URL, str) and len(settings.RUCIO_UI_URL) > 0:
-            ruciolink_base = settings.RUCIO_UI_URL + 'did?scope='
-            f['ruciolink'] = ''
-            if f['fileid'] in files_ft_dict:
-                name_param = ''
-                if 'dispatchdblock' in files_ft_dict[f['fileid']] and len(files_ft_dict[f['fileid']]['dispatchdblock']) > 0:
-                    name_param = 'dispatchdblock'
-                elif 'destinationdblock' in files_ft_dict[f['fileid']] and len(files_ft_dict[f['fileid']]['destinationdblock']) > 0:
-                    name_param = 'destinationdblock'
-                if len(name_param) > 0:
-                    if files_ft_dict[f['fileid']][name_param].startswith(files_ft_dict[f['fileid']]['scope']):
-                        ruciolink_base += files_ft_dict[f['fileid']]['scope']
-                    else:
-                        ruciolink_base += files_ft_dict[f['fileid']][name_param].split('.')[0]
-                    f['ruciolink'] = ruciolink_base + '&name=' + files_ft_dict[f['fileid']][name_param]
-        else:
-            f['ruciolink'] = ''
         f['creationdatecut'] = f['creationdate'].strftime('%Y-%m-%d')
         f['creationdate'] = f['creationdate'].strftime(settings.DATETIME_FORMAT)
         if f['endevent'] is not None and f['startevent'] is not None:
