@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.13 (2026-05-11)
+
+### Bug Fixes
+
+- Keep Tape Carousel selections in URL (ADCMONITOR-574)
+  ([`7be2378`](https://github.com/PanDAWMS/panda-bigmon-core/commit/7be2378b5f01b975168de15f6d1bf258df8e7c89))
+
+
 ## v1.0.12 (2026-05-11)
 
 ### Bug Fixes
