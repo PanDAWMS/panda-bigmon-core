@@ -39,17 +39,17 @@
                     <option value="" selected="selected">All</option>
                 </select>
                 <b>Username:</b>
-                <select id="source" ng-model="selection.selected.username"
+                <select id="username" ng-model="selection.selected.username"
                         ng-options="pt.value as pt.name for pt in selection.options.username" multiple>
                     <option value="" selected="selected">All</option>
                 </select>
                 <b>Source:</b>
-                <select id="source" ng-model="selection.selected.source_rse"
+                <select id="source_rse" ng-model="selection.selected.source_rse"
                         ng-options="source.value as source.name for source in selection.options.source_rse" multiple>
                     <option value="" selected="selected">All</option>
                 </select>
                 <b>Processing type:</b>
-                <select id="source" ng-model="selection.selected.processingtype"
+                <select id="processingtype" ng-model="selection.selected.processingtype"
                         ng-options="pt.value as pt.name for pt in selection.options.processingtype" multiple>
                     <option value="" selected="selected">All</option>
                 </select>
@@ -541,7 +541,7 @@
             var get_stuck_files = function (rule_id, source_rse) {
                 return $http({
                     method: 'GET',
-                    url: '{% url 'datacarstuckfiles' %}?rule_id=' + rule_id + '&source_rse=' + source_rse,
+                    url: '{% url 'datacarstuckfiles' %}?rule_id=' + encodeURIComponent(rule_id) + '&source_rse=' + encodeURIComponent(source_rse),
                     cache: false
                 })
             }
@@ -552,8 +552,6 @@
         }
 
         function controller($scope, $sce, $compile, $location, $timeout, $anchorScroll, Service) {
-
-            const Title = 'Campaign';
 
             $scope.is_hidden = true;
             $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
@@ -578,38 +576,86 @@
 
             $scope.selection = {
                 options: {},
-                selected: {[Title]: [], processingtype: [], source_rse: [], destination_rse: [], jeditaskid: []},
-            }
-            Object.keys($scope.selection.selected).forEach(key => {
-                if (key in $scope.request_params) {
-                    $scope.selection.selected[key] = $scope.request_params[key].split(',');
+                selected: {
+                    campaign: [],
+                    username: [],
+                    processingtype: [],
+                    source_rse: [],
+                    destination_rse: [],
+                    jeditaskid: []
+                },
+            };
+
+            Object.keys($scope.selection.selected).forEach(function (key) {
+                if (key in $scope.request_params && $scope.request_params[key]) {
+                    $scope.selection.selected[key] = String($scope.request_params[key]).split(',');
                 }
             });
-            $scope.scroll_to = function (anchor) {
-                if ($location.hash() !== anchor) {
-                    // set the $location.hash to `newHash` and $anchorScroll will automatically scroll to it
-                    $location.hash(anchor);
-                } else {
-                    // call $anchorScroll() explicitly, since $location.hash hasn't changed
-                    $anchorScroll();
-                }
+
+            $scope.buildQueryParams = function () {
+                var params = new URLSearchParams();
+
+                Object.keys($scope.request_params).forEach(function (key) {
+                    if ($scope.request_params[key]) {
+                        params.set(key, $scope.request_params[key]);
+                    }
+                });
+
+                Object.keys($scope.selection.selected).forEach(function (key) {
+                    var value = $scope.selection.selected[key];
+                    if (value && value.length > 0 && String(value[0]).length > 0) {
+                        params.set(key, value.join(','));
+                    } else {
+                        params.delete(key);
+                    }
+                });
+
+                return params.toString();
+            };
+
+            $scope.updateUrl = function () {
+                var query = $scope.buildQueryParams();
+                var newUrl = window.location.pathname + (query ? '?' + query : '');
+                window.history.replaceState({}, '', newUrl);
             };
 
             $scope.gog = function () {
-                var request = "";
-
-                Object.keys($scope.request_params).forEach(key => {
-                    if ($scope.request_params[key]) {
-                        request += '&' + key + '=' + encodeURIComponent($scope.request_params[key]);
-                    }
-                });
-
-                Object.keys($scope.selection.selected).forEach(key => {
-                    if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
-                        request += '&' + key + '=' + encodeURIComponent($scope.selection.selected[key]);
-                    }
-                });
+                var request = $scope.buildQueryParams();
+                $scope.updateUrl();
                 Service.get(request).then($scope.processResponce);
+            };
+
+            $scope.share = function () {
+                $scope.updateUrl();
+
+                var link = window.location.origin + window.location.pathname + window.location.search;
+
+                var clipboard = new ClipboardJS('#share_button', {
+                    text: function () {
+                        return link;
+                    }
+                });
+
+                clipboard.on('success', function (e) {
+                    $scope.share_button.text = 'copied!';
+                    $scope.share_button.is_disabled = true;
+                    e.clearSelection();
+                    $scope.$applyAsync();
+                });
+
+                clipboard.on('error', function (e) {
+                    $scope.share_button.text = 'failed to copy!';
+                    $scope.share_button.is_disabled = true;
+                    $scope.$applyAsync();
+                });
+            };
+
+            $scope.scroll_to = function (anchor) {
+                if ($location.hash() !== anchor) {
+                    $location.hash(anchor);
+                } else {
+                    $anchorScroll();
+                }
             };
 
             $scope.getTimeForQuery = function (forGrafana = false) {
@@ -927,32 +973,6 @@
                 }
             }
 
-            $scope.share = function () {
-                var link = window.location.href.split('?')[0] + '?';
-                Object.keys($scope.selection.selected).forEach(key => {
-                    if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
-                        link += key + '=' + $scope.selection.selected[key] + '&';
-                    }
-                });
-                var clipboard = new ClipboardJS('#share_button', {
-                    text: function () {
-                        return link;
-                    }
-                }); // needed for copy to clipboard button
-                clipboard.on('success', function (e) {
-                    $scope.share_button.text = 'copied!';
-                    $scope.share_button.is_disabled = true;
-                    e.clearSelection();
-                });
-                clipboard.on('error', function (e) {
-                    $scope.share_button.text = 'failed to copy!';
-                    $scope.share_button.is_disabled = true;
-                });
-
-                $timeout(function () {
-                }, 1);
-            }
-
             $scope.gog();
         }
 
@@ -967,7 +987,9 @@
         //redraw graph when window resize is completed
         $(window).on('resize_ended', function () {
             Object.keys(charts).forEach(name => {
-                charts[name].obj.draw(charts[name].data, charts[name].options);
+                if (charts[name].obj && charts[name].data && Object.keys(charts[name].obj).length > 0) {
+                    charts[name].obj.draw(charts[name].data, charts[name].options);
+                }
             });
         });
     </script>
