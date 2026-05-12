@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.15 (2026-05-12)
+
+### Bug Fixes
+
+- Hot fix (ADCMONITOR-574)
+  ([`d1f367c`](https://github.com/PanDAWMS/panda-bigmon-core/commit/d1f367c92f27afcfa25b9545236ad5547869c8af))
+
+
 ## v1.0.14 (2026-05-11)
 
 ### Bug Fixes
