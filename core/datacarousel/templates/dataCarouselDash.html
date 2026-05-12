@@ -637,13 +637,18 @@
             };
 
             $scope.refreshDataCarousel = function () {
+                var params = new URLSearchParams(window.location.search);
 
-                var params = Object.fromEntries(new URLSearchParams($scope.buildQueryParams()));
-                params.timestamp = $scope.getTimestamp();
+                params.set('timestamp', $scope.getTimestamp());
 
-                $location.search(params);
+                var paramsObject = {};
+                params.forEach(function (value, key) {
+                    paramsObject[key] = value;
+                });
 
-                Service.get(new URLSearchParams(params).toString()).then($scope.processResponse);
+                $location.search(paramsObject);
+
+                Service.get(params.toString()).then($scope.processResponse);
             };
 
             $scope.gog = function () {
