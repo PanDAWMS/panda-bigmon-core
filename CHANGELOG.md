@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.14 (2026-05-11)
+
+### Bug Fixes
+
+- Add URL state updates for Data Carousel filters without page reload (ADCMONITOR-574)
+  ([`123536a`](https://github.com/PanDAWMS/panda-bigmon-core/commit/123536a6ecf191c1af2d650cc6ea0833d3d932c4))
+
+
 ## v1.0.13 (2026-05-11)
 
 ### Bug Fixes
