@@ -604,13 +604,8 @@
             });
 
             $scope.buildQueryParams = function () {
-                var params = new URLSearchParams();
+                var params = new URLSearchParams(window.location.search);
 
-                Object.keys($scope.request_params).forEach(function (key) {
-                    if ($scope.request_params[key]) {
-                        params.set(key, $scope.request_params[key]);
-                    }
-                });
                 Object.keys($scope.selection.selected).forEach(function (key) {
                     var value = $scope.selection.selected[key];
 
