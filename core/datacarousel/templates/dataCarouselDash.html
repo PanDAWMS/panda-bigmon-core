@@ -5,6 +5,10 @@
 {% block page_title %}Data Carousel Dashboard{% endblock %}
 {% block subtitle %}Data Carousel Dashboard {{ viewParams.selection|safe }} {% endblock %}
 
+{% block refresh_button %}
+    <a onclick="refreshDataCarouselFromBase();"> Refresh</a>
+{% endblock %}
+
 {% block time_window %}
     Modification time window: <span class="time-window-range">{{ timerange.0 }}</span>
     - <span class="time-window-range">{{ timerange.1 }}</span> UTC
@@ -39,23 +43,22 @@
                     <option value="" selected="selected">All</option>
                 </select>
                 <b>Username:</b>
-                <select id="source" ng-model="selection.selected.username"
+                <select id="username" ng-model="selection.selected.username"
                         ng-options="pt.value as pt.name for pt in selection.options.username" multiple>
                     <option value="" selected="selected">All</option>
                 </select>
                 <b>Source:</b>
-                <select id="source" ng-model="selection.selected.source_rse"
+                <select id="source_rse" ng-model="selection.selected.source_rse"
                         ng-options="source.value as source.name for source in selection.options.source_rse" multiple>
                     <option value="" selected="selected">All</option>
                 </select>
                 <b>Processing type:</b>
-                <select id="source" ng-model="selection.selected.processingtype"
+                <select id="processingtype" ng-model="selection.selected.processingtype"
                         ng-options="pt.value as pt.name for pt in selection.options.processingtype" multiple>
                     <option value="" selected="selected">All</option>
                 </select>
-                <a ng-click="gog();" class="button primary">Update</a>
-                <a id="share_button" ng-click="share();" ng-disabled="share_button.is_disabled" class="button primary">{$ share_button.text
-                    $}</a>
+                <a href="" ng-click="gog(); $event.preventDefault();" class="button primary">Update</a>
+                <a id="share_button" ng-click="share();" ng-disabled="share_button.is_disabled" class="button primary">{$share_button.text$}</a>
             </div>
         </div>
 
@@ -91,7 +94,8 @@
                     <tbody>
                     <tr ng-repeat="x in summary.source_rse" class="low-stat">
                         <th class="nowrap"><a class="nowrap"
-                                              href="{% url 'taskList' %}?tape=true&stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">{$ x.source_rse
+                                              href="{% url 'taskList' %}?tape=true&stagesource={$ x.source_rse $}&{$ getTimeForQuery() $}">{$
+                            x.source_rse
                             $}</a>
                         </th>
                         <td class="mid">
@@ -225,6 +229,13 @@
     <script src="{% static 'js/google-charts-loader.js' %}"></script>
     <script nonce={{ request.csp_nonce }}>
         google.charts.load('current', {packages: ['sankey', 'corechart']});
+
+        app.config(['$locationProvider', function ($locationProvider) {
+            $locationProvider.html5Mode({
+                enabled: true,
+                requireBase: false
+            });
+        }]);
         var chart_list = ['submittime', 'submittimefiles', 'elapsedtime', 'progress', 'dataset_tape', 'files_tape', 'dataset_activity', 'files_activity'];
 
         var charts = {
@@ -541,7 +552,7 @@
             var get_stuck_files = function (rule_id, source_rse) {
                 return $http({
                     method: 'GET',
-                    url: '{% url 'datacarstuckfiles' %}?rule_id=' + rule_id + '&source_rse=' + source_rse,
+                    url: '{% url 'datacarstuckfiles' %}?rule_id=' + encodeURIComponent(rule_id) + '&source_rse=' + encodeURIComponent(source_rse),
                     cache: false
                 })
             }
@@ -552,8 +563,6 @@
         }
 
         function controller($scope, $sce, $compile, $location, $timeout, $anchorScroll, Service) {
-
-            const Title = 'Campaign';
 
             $scope.is_hidden = true;
             $scope.loading_placeholder = $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}">');
@@ -578,38 +587,104 @@
 
             $scope.selection = {
                 options: {},
-                selected: {[Title]: [], processingtype: [], source_rse: [], destination_rse: [], jeditaskid: []},
-            }
-            Object.keys($scope.selection.selected).forEach(key => {
-                if (key in $scope.request_params) {
-                    $scope.selection.selected[key] = $scope.request_params[key].split(',');
+                selected: {
+                    campaign: [],
+                    username: [],
+                    processingtype: [],
+                    source_rse: [],
+                    destination_rse: [],
+                    jeditaskid: []
+                },
+            };
+
+            Object.keys($scope.selection.selected).forEach(function (key) {
+                if (key in $scope.request_params && $scope.request_params[key]) {
+                    $scope.selection.selected[key] = String($scope.request_params[key]).split(',');
                 }
             });
-            $scope.scroll_to = function (anchor) {
-                if ($location.hash() !== anchor) {
-                    // set the $location.hash to `newHash` and $anchorScroll will automatically scroll to it
-                    $location.hash(anchor);
-                } else {
-                    // call $anchorScroll() explicitly, since $location.hash hasn't changed
-                    $anchorScroll();
-                }
+
+            $scope.buildQueryParams = function () {
+                var params = new URLSearchParams(window.location.search);
+
+                Object.keys($scope.selection.selected).forEach(function (key) {
+                    var value = $scope.selection.selected[key];
+
+                    if (value && value.length > 0 && String(value[0]).length > 0) {
+                        params.set(key, value.join(','));
+                    } else {
+                        params.delete(key);
+                    }
+                });
+
+                return params.toString();
+            };
+            $scope.getTimestamp = function () {
+                return new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            };
+            $scope.updateUrl = function () {
+                var params = Object.fromEntries(new URLSearchParams($scope.buildQueryParams()));
+                $location.search(params);
+            };
+
+            $scope.refreshDataCarousel = function () {
+                var params = new URLSearchParams(window.location.search);
+
+                params.set('timestamp', $scope.getTimestamp());
+
+                var paramsObject = {};
+                params.forEach(function (value, key) {
+                    paramsObject[key] = value;
+                });
+
+                $location.search(paramsObject);
+
+                Service.get(params.toString()).then($scope.processResponse);
             };
 
             $scope.gog = function () {
-                var request = "";
+                var params = Object.fromEntries(new URLSearchParams($scope.buildQueryParams()));
+                $location.search(params);
 
-                Object.keys($scope.request_params).forEach(key => {
-                    if ($scope.request_params[key]) {
-                        request += '&' + key + '=' + encodeURIComponent($scope.request_params[key]);
+                $scope.request_params = params;
+                Service.get(new URLSearchParams(params).toString()).then($scope.processResponse);
+            };
+
+            $scope.share = function () {
+                $scope.updateUrl();
+
+                var link = window.location.origin + window.location.pathname + window.location.search;
+
+                var clipboard = new ClipboardJS('#share_button', {
+                    text: function () {
+                        return link;
                     }
                 });
 
-                Object.keys($scope.selection.selected).forEach(key => {
-                    if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
-                        request += '&' + key + '=' + encodeURIComponent($scope.selection.selected[key]);
-                    }
+                clipboard.on('success', function (e) {
+                    $scope.share_button.text = 'copied!';
+                    $scope.share_button.is_disabled = true;
+                    e.clearSelection();
+                    $scope.$applyAsync();
                 });
-                Service.get(request).then($scope.processResponce);
+
+                clipboard.on('error', function (e) {
+                    $scope.share_button.text = 'failed to copy!';
+                    $scope.share_button.is_disabled = true;
+                    $scope.$applyAsync();
+                });
+            };
+
+            $scope.scroll_to = function (anchor) {
+                if ($location.hash() !== anchor) {
+                    $location.hash(anchor);
+                } else {
+                    $anchorScroll();
+                }
             };
 
             $scope.getTimeForQuery = function (forGrafana = false) {
@@ -622,7 +697,7 @@
                 }
             };
 
-            $scope.processResponce = function (response) {
+            $scope.processResponse = function (response) {
                 $scope.is_hidden = false;
                 $scope.loading_placeholder = "";
 
@@ -775,8 +850,8 @@
                                     let entry = ''
                                     if (data && "{{ request.session.rucio_ui }}".length > 0) {
                                         entry += '<a href="{{ request.session.rucio_ui }}rule?rule_id=' + full['rrule'] + '">' + full['rrule'].slice(0, 3) + '...' + full['rrule'].slice(full['rrule'].length - 3, full['rrule'].length) + ' <span class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Old Rucio UI</span></a>';
-                                        if ("{{ request.session.rucio_ui_new }}".length > 10 ) {
-                                          entry += ' <a class="rucio-link-new" target="_blank" href="{{ request.session.rucio_ui_new }}rule/' + full['rrule'] + '"><div class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Try out the new Rucio UI</span></div></a>'
+                                        if ("{{ request.session.rucio_ui_new }}".length > 10) {
+                                            entry += ' <a class="rucio-link-new" target="_blank" href="{{ request.session.rucio_ui_new }}rule/' + full['rrule'] + '"><div class="bp-tooltip left"><img src="/static/images/rucio-logo.png" width="14" height="14"><span class="tooltip-text">Try out the new Rucio UI</span></div></a>'
                                         }
                                         if (data && full['status'] === 'staging') {
                                             entry += ` <a target="_blank" ng-click="stuckfiles.toggle('` + full['rrule'] + `','` + full['source_rse'] + `')"><div class="bp-tooltip left"><i class="fi-plus"></i><span class="tooltip-text">Look for stuck files</span></div></a>`
@@ -927,33 +1002,21 @@
                 }
             }
 
-            $scope.share = function () {
-                var link = window.location.href.split('?')[0] + '?';
-                Object.keys($scope.selection.selected).forEach(key => {
-                    if ($scope.selection.selected[key].length > 0 && $scope.selection.selected[key][0].length > 0) {
-                        link += key + '=' + $scope.selection.selected[key] + '&';
-                    }
-                });
-                var clipboard = new ClipboardJS('#share_button', {
-                    text: function () {
-                        return link;
-                    }
-                }); // needed for copy to clipboard button
-                clipboard.on('success', function (e) {
-                    $scope.share_button.text = 'copied!';
-                    $scope.share_button.is_disabled = true;
-                    e.clearSelection();
-                });
-                clipboard.on('error', function (e) {
-                    $scope.share_button.text = 'failed to copy!';
-                    $scope.share_button.is_disabled = true;
-                });
+            $scope.gog();
+        }
 
-                $timeout(function () {
-                }, 1);
+        function refreshDataCarouselFromBase() {
+            var element = document.getElementById('datacar');
+
+            if (!element) {
+                return;
             }
 
-            $scope.gog();
+            var scope = angular.element(element).scope();
+
+            scope.$apply(function () {
+                scope.refreshDataCarousel();
+            });
         }
 
         //create trigger to resizeEnd event
@@ -967,7 +1030,9 @@
         //redraw graph when window resize is completed
         $(window).on('resize_ended', function () {
             Object.keys(charts).forEach(name => {
-                charts[name].obj.draw(charts[name].data, charts[name].options);
+                if (charts[name].obj && charts[name].data && Object.keys(charts[name].obj).length > 0) {
+                    charts[name].obj.draw(charts[name].data, charts[name].options);
+                }
             });
         });
     </script>

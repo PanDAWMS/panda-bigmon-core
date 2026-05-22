@@ -2,6 +2,70 @@
 
 <!-- version list -->
 
+## v1.0.16 (2026-05-18)
+
+### Bug Fixes
+
+- Hot fix (ADCMONITOR-574)
+  ([`fdc130f`](https://github.com/PanDAWMS/panda-bigmon-core/commit/fdc130f9e6e2bd6725fe6cd35eac30128a7fed04))
+
+
+## v1.0.15 (2026-05-12)
+
+### Bug Fixes
+
+- Hot fix (ADCMONITOR-574)
+  ([`d1f367c`](https://github.com/PanDAWMS/panda-bigmon-core/commit/d1f367c92f27afcfa25b9545236ad5547869c8af))
+
+
+## v1.0.14 (2026-05-11)
+
+### Bug Fixes
+
+- Add URL state updates for Data Carousel filters without page reload (ADCMONITOR-574)
+  ([`123536a`](https://github.com/PanDAWMS/panda-bigmon-core/commit/123536a6ecf191c1af2d650cc6ea0833d3d932c4))
+
+
+## v1.0.13 (2026-05-11)
+
+### Bug Fixes
+
+- Keep Tape Carousel selections in URL (ADCMONITOR-574)
+  ([`7be2378`](https://github.com/PanDAWMS/panda-bigmon-core/commit/7be2378b5f01b975168de15f6d1bf258df8e7c89))
+
+
+## v1.0.12 (2026-05-11)
+
+### Bug Fixes
+
+- [ATLASPANDA-1648] links to rucio ui in fileList view
+  ([`043d265`](https://github.com/PanDAWMS/panda-bigmon-core/commit/043d26571d4c3c0cfab701ac1e4d1e05ea1db991))
+
+
+## v1.0.11 (2026-05-08)
+
+### Bug Fixes
+
+- Reading X509_USER_PROXY from env vars for k8s deployment
+  ([`5f6e2cb`](https://github.com/PanDAWMS/panda-bigmon-core/commit/5f6e2cb70399875c7a37f38a525bf53951f8470b))
+
+
+## v1.0.10 (2026-05-08)
+
+### Bug Fixes
+
+- Main page hotfix
+  ([`172503f`](https://github.com/PanDAWMS/panda-bigmon-core/commit/172503ffc5192213ca529cbe40e95ebe28f3641f))
+
+
+## v1.0.9 (2026-05-07)
+
+### Bug Fixes
+
+- Move Grafana image URL encoding to /templatetags/common_tags.py
+  ([`32a91b8`](https://github.com/PanDAWMS/panda-bigmon-core/commit/32a91b8830ebb6516b68b5d994fe5151a7d0224a))
+
+
 ## v1.0.8 (2026-05-07)
 
 ### Bug Fixes
