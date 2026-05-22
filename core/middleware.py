@@ -60,14 +60,11 @@ class TrafficControlMiddleware(object):
             x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case one server config
         if x_forwarded_for is not None:
             try:
-                ips_found = re.findall(
-                    r'((?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{1,4})|((?:[0-9]{1,3}\.){3}[0-9])',
-                    x_forwarded_for
-                )
-                ip = [i for i in ips_found[0] if i][0]  # filter out empty values
-                ipaddress.ip_address(ip)
+                # X-Forwarded-For can be a comma-separated chain of proxy IPs, the client's real IP is always the first one in the list
+                raw_ip = x_forwarded_for.split(',')[0].strip().strip('[]').split('%')[0]
+                ipaddress.ip_address(raw_ip)
             except Exception as ex:
-                _logger.info(f'Request HTTP_X_FORWARDED_FOR={x_forwarded_for} is not a valid IP address. \n{ex}')
+                _logger.info(f'Request HTTP_X_FORWARDED_FOR={x_forwarded_for} is not a valid IPv4 or IPv6 address. \n{ex}')
                 return error_response(request, message='Request remote address is wrong', status=400)
 
         # get incremented id for request and store its data to DB
