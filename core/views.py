@@ -2288,9 +2288,9 @@ def jobInfo(request, pandaid=None, batchid=None):
     art_test = []
     if 'core.art' in settings.INSTALLED_APPS and settings.DEPLOYMENT == 'ORACLE_ATLAS':
         try:
-            from core.art.modelsART import ARTTests
+            from core.art.models import ARTTests
             artqueue = {'pandaid': pandaid}
-            art_test.extend(ARTTests.objects.filter(**artqueue).values('pandaid', 'testname'))
+            art_test.extend(ARTTests.objects.filter(**artqueue).values('pandaid', 'testname', 'package'))
         except ImportError:
             _logger.exception('Failed to import ARTTests model')
 
