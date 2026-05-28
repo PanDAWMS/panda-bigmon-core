@@ -19,4 +19,5 @@ urlpatterns = [
     re_path(r'^statpixel/$', auth_views.statpixel, name='statpixel'),
 
     re_path(r'^api/oauth/user_contact/$', auth_views.get_user_contact, name='get_user_contact'),
+    re_path(r'^api/auth_test/$', auth_views.api_auth_test_view, name='api_auth_test_view'),
 ]

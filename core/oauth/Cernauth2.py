@@ -59,6 +59,7 @@ class CernAuthOIDC(BaseOAuth2):
             'id_token': response.get('id_token', ''),
             'home_institute': response.get('home_institute', ''),
             'cern_person_id': response.get('cern_person_id', ''),
+            'account_type': response.get('account_type', '')
         })
         return data
 
