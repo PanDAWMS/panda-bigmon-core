@@ -76,6 +76,9 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
         _logger.warning(f"Failed to decode access token for user {user} from {backend.name}: {ex}")
     if roles_key is not None and roles_key in token_dict and len(token_dict[roles_key]) >= 0:
         user_groups = token_dict[roles_key]
+    # add user to service-accounts group if service account is used for authentication
+    if backend.name == 'cernoidc' and social.extra_data.get('account_type') == 'Service':
+        user_groups.append('service-accounts')
     _logger.info(f"User {user} groups from {backend.name} token: {user_groups}, registered groups: {groups_user_registered}")
     if set(user_groups) == set(groups_user_registered):
         return None
@@ -116,6 +119,7 @@ def sync_user_groups(backend, user, social,  *args, **kwargs):
 def issue_user_token(strategy, backend, user=None, *args, **kwargs):
     """
     Issue a DRF Token for the authenticated user. This token can be used for subsequent API requests to authenticate the user.
+    For users the lifetime of the token is limited to default SESSION_COOKIE_AGE, for service accounts the token expires in 10 years.
     Args:
         strategy: the current social-auth strategy instance.
         backend: the authentication backend (provider) instance.
