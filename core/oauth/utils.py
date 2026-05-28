@@ -27,6 +27,12 @@ def login_customrequired(function):
         if request.user.is_authenticated:
             return function(request, *args, **kwargs)
         elif is_json_request(request):
+
+            ### DEBUG, TODO remove later
+            for key in sorted(request.META.keys()):
+                _logger.info(f"[META_DEBUG] {key}: {request.META[key]}")
+            ### END DEBUG
+
             from core.oauth.authentication import BPTokenAuthentication
             auth = BPTokenAuthentication()
             try:

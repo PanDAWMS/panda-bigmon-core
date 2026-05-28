@@ -23,11 +23,13 @@ class BPTokenAuthentication(TokenAuthentication):
     def authenticate(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header:
-            return None
+            raise AuthenticationFailed(_('Invalid token header. No credentials provided.'))
 
         parts = auth_header.split()
         if len(parts) != 2:
-            return None
+            raise AuthenticationFailed(
+                _('Invalid token header. Authorization header must be in the format: "Token <token>" or "Bearer <token>".')
+            )
 
         prefix = parts[0].lower()
         token_value = parts[1]
