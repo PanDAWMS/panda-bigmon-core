@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.1 (2026-05-28)
+
+### Bug Fixes
+
+- Dependency conflict
+  ([`0038f7c`](https://github.com/PanDAWMS/panda-bigmon-core/commit/0038f7c3d304c33b0505841781574efe98d835ce))
+
+
 ## v1.1.0 (2026-05-28)
 
 ### Bug Fixes
