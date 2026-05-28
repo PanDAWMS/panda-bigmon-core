@@ -225,7 +225,7 @@ def get_user_contact(request):
         return error_response(request, message='only POST requests are allowed', status=405)
 
     # allow only authenticated users with permission
-    authz = apps.get_app_config("core.oauth").authz
+    authz = apps.get_app_config("oauth").authz
     if (request.user.is_authenticated and
             authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'user_contact', 'read', {}, {})):
         if 'user' in request.session['requestParams']:

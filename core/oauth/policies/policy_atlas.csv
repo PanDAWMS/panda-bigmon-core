@@ -1,1 +1,2 @@
 p, atlas-adc-dpa, user_contact, read, {}, {}, allow
+p, atlas-adc-dpa, report, read, {"type": "rated_tasks"}, {}, allow
