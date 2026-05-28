@@ -137,6 +137,8 @@ SOCIAL_AUTH_INDIGOIAM_SCOPE = ['email', 'openid', 'profile']
 if 'indigoiam' in AUTH_PROVIDER_LIST and 'ATLAS' in DEPLOYMENT:
     SOCIAL_AUTH_INDIGOIAM_SCOPE.extend(['wlcg.groups'])
 
+AUTHORIZATION_POLICY_PATH = os.environ.get('BIGMON_AUTHORIZATION_POLICY_PATH', None)
+
 if DEPLOYMENT in ('ORACLE_ATLAS', 'ORACLE_DOMA', 'ORACLE_ATLAS_TB'):
     try:
         import oracledb

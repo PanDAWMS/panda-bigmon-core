@@ -3,11 +3,11 @@
 """
 
 import logging
-
+from datetime import timedelta
 from django.http import HttpResponseRedirect, JsonResponse
+from django.utils import timezone
 from core.utils import is_json_request
 from core.oauth.models import BPUser
-from core.oauth.authentication import BPTokenAuthentication
 from django.conf import settings as django_settings
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -27,16 +27,18 @@ def login_customrequired(function):
         if request.user.is_authenticated:
             return function(request, *args, **kwargs)
         elif is_json_request(request):
+            from core.oauth.authentication import BPTokenAuthentication
             auth = BPTokenAuthentication()
             try:
                 result = auth.authenticate(request)
-            except AuthenticationFailed:
+            except AuthenticationFailed as e:
                 auth_token = request.headers.get("Authorization", "---no token---")
-                _logger.error(f"[TOKEN_AUTH] failed with token: {auth_token}, req: {request}")
-                return JsonResponse({'detail': 'Invalid token'}, status=401)
+                _logger.error(f"[TOKEN_AUTH_FAILED] failed, token: {auth_token} with: {e}, req: {request} from {x_forwarded_for}")
+                # return JsonResponse({'detail': f"{e}"}, status=401)
+                return function(request, *args, **kwargs)
 
             if result is None:
-                _logger.info(f"[TOKEN_AUTH] no token in header found, req: {request}")
+                _logger.info(f"[TOKEN_AUTH_FAILED] no token in header found, req: {request} from {x_forwarded_for}")
                 # return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=401)
                 return function(request, *args, **kwargs)
 
@@ -51,6 +53,72 @@ def login_customrequired(function):
     wrap.__doc__ = function.__doc__
     wrap.__name__ = function.__name__
     return wrap
+
+
+def login_customrequired_strict(function):
+    def wrap(request, *args, **kwargs):
+
+        # we check here if it is a crawler:
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for is None:
+            x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case of one server config
+        if x_forwarded_for and x_forwarded_for in django_settings.CACHING_CRAWLER_HOSTS:
+            return function(request, *args, **kwargs)
+
+        if request.user.is_authenticated:
+            return function(request, *args, **kwargs)
+        elif is_json_request(request):
+            from core.oauth.authentication import BPTokenAuthentication
+            auth = BPTokenAuthentication()
+            try:
+                result = auth.authenticate(request)
+            except AuthenticationFailed as e:
+                auth_token = request.headers.get("Authorization", "---no token---")
+                _logger.error(f"[TOKEN_AUTH_FAILED] failed, token: {auth_token} with: {e}, req: {request} from {x_forwarded_for}")
+                return JsonResponse({'detail': f"{e}"}, status=401)
+
+            if result is None:
+                _logger.info(f"[TOKEN_AUTH_FAILED] no token in header found, req: {request} from {x_forwarded_for}")
+                return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=401)
+
+            user, token = result
+            request.user = user
+            request.auth = token
+            _logger.info(f"[TOKEN_AUTH] successfully authenticated user {user.username}, req: {request}")
+
+            return function(request, *args, **kwargs)
+        else:
+            return HttpResponseRedirect('/login/?next='+request.get_full_path())
+    wrap.__doc__ = function.__doc__
+    wrap.__name__ = function.__name__
+    return wrap
+
+
+def get_token_expiry_info(token, user=None):
+    """
+    Returns a dictionary containing expiration states and calculated dates for a token.
+    """
+    if not token:
+        return {
+            "is_expired": True,
+            "created": None,
+            "expires_at": None,
+        }
+
+    # Use provided user object or fallback to the token's attached user
+    eval_user = user or token.user
+    if eval_user.groups.filter(name="service-accounts").exists():
+        lifetime_days = 365 * 10
+    else:
+        lifetime_days = django_settings.SESSION_COOKIE_AGE/(60*60*24)
+    expires = token.created + timedelta(days=lifetime_days)
+    is_expired = timezone.now() > expires
+
+    return {
+        "created": token.created,
+        "expires": expires,
+        "is_expired": is_expired,
+    }
 
 
 def grant_rights(request, rtype):

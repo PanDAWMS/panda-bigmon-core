@@ -4,7 +4,7 @@
 
 import logging
 from datetime import datetime
-
+from django.apps import apps
 from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -56,7 +56,8 @@ def reports(request):
                 }
             }
         }
-        if request.user.groups.filter(name='atlas-adc-dpa').exists():
+        authz = apps.get_app_config("oauth").authz
+        if authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'report', 'read', {'type': 'rated_tasks'}, {}):
             available_reports['rated_tasks'] = {
                 'value': 'rated_tasks', 'name': 'Rated tasks',
                 'params': {
@@ -183,6 +184,10 @@ def report(request):
         return response
 
     elif report_type == 'rated_tasks':
+        authz = apps.get_app_config("oauth").authz
+        if not authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'report', 'read', {'type': 'rated_tasks'}, {}):
+            return error_response(request, "You are not allowed to view this report", status=403)
+
         if 'days' in request.session['requestParams'] and request.session['requestParams']['days']:
             days = int(request.session['requestParams']['days'])
         else:
@@ -195,8 +200,6 @@ def report(request):
         report = TasksRatedReport.TasksRatedReport(days=days, rating_threshold=rating_threshold)
 
         if delivery == 'page':
-            if not request.user.groups.filter(name='atlas-adc-dpa').exists():
-                return error_response(request, "You are not allowed to view this report", status=403)
             ratings = report.prepare_data_page()
             data = {
                 'request': request,

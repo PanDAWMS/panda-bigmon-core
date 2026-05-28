@@ -5,6 +5,7 @@ import json
 import logging
 from datetime import datetime
 
+from django.apps import apps
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout as auth_logout
 from django.views.decorators.cache import never_cache
@@ -16,7 +17,7 @@ import core.constants as const
 from core.utils import extensibleURL, error_response, is_json_request
 from core.views import initRequest
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.oauth.utils import login_customrequired, grant_rights, deny_rights, user_email_sort
+from core.oauth.utils import login_customrequired, grant_rights, deny_rights, user_email_sort, get_token_expiry_info, login_customrequired_strict
 from core.oauth.models import BPUser, BPUserSettings, Visits, BPToken
 
 _logger = logging.getLogger('social')
@@ -70,11 +71,12 @@ def loginerror(request):
 
 def logout(request):
     """Logs out user"""
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and not request.user.groups.filter(name='service-accounts').exists():
         try:
             BPToken.objects.filter(user_id=request.user.id).delete()
+            _logger.info(f"User {request.user.username} logging out: remove tokens")
         except Exception as ex:
-            _logger.exception('Exception was caught while deleting user tokens during logout')
+            _logger.exception(f"Exception was caught while deleting user tokens during logout: {ex}")
     auth_logout(request)
 
     return redirect('/')
@@ -88,6 +90,9 @@ def profile(request):
 
     user_info = {}
     if request.user.is_authenticated:
+        token = BPToken.objects.filter(user=request.user).first()
+        token_expiry_info = get_token_expiry_info(token, user=request.user)
+
         user_info = {
             'username': request.user.username,
             'email': request.user.email,
@@ -96,8 +101,9 @@ def profile(request):
             'last_login': request.user.last_login,
             'auth_provider': request.session.get('auth_social_backend', '-'),
             'groups': ', '.join(list(request.user.groups.values_list('name', flat=True))),
-            'permissions': ', '.join(list(request.user.get_all_permissions())),
-            'token': request.session.get('bp_token', '-')
+            'token': request.session.get('bp_token', '-'),
+            'token_created': token_expiry_info['created'] if token_expiry_info else '-',
+            'token_expires': token_expiry_info['expires'] if token_expiry_info else '-',
         }
     data = {
         'request': request,
@@ -219,7 +225,9 @@ def get_user_contact(request):
         return error_response(request, message='only POST requests are allowed', status=405)
 
     # allow only authenticated users with permission
-    if request.user.is_authenticated and request.user.has_perm('oauth.can_contact_users'):
+    authz = apps.get_app_config("oauth").authz
+    if (request.user.is_authenticated and
+            authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'user_contact', 'read', {}, {})):
         if 'user' in request.session['requestParams']:
             user_name_split = request.session['requestParams']['user'].split(' ')
         else:
@@ -242,3 +250,22 @@ def get_user_contact(request):
         return JsonResponse({'email': emails[0]}, status=200)
     else:
         return error_response(request, message='No permission to ask this', status=403)
+
+
+@login_customrequired_strict
+def api_auth_test_view(request):
+    """
+    Endpoint for users to verify their API Token or IAM Bearer token configuration
+    during the migration grace period.
+    """
+    data = {
+        'status': 'authenticated',
+        'message': 'Token authentication configuration verified successfully!',
+        'user': {
+            'username': request.user.username,
+            'email': getattr(request.user, 'email', None),
+        },
+        'auth_method': 'Bearer (OIDC Token)' if 'Bearer' in request.headers.get('Authorization', '') else 'Token (Custom API Token)'
+    }
+
+    return JsonResponse(data, status=200)

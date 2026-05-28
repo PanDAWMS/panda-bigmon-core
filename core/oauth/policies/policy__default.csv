@@ -1,0 +1,2 @@
+# This is a default policy file. It is used when no other policy file is found.
+p, guest, job, read, {}, {}, allow
