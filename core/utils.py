@@ -80,18 +80,16 @@ def complete_request(request, **kwargs):
     keys_to_remove = ['requestParams', 'viewParams', 'urls_cut', 'urls', 'TFIRST', 'TLAST', 'PLOW', 'PHIGH']
     if 'extra_keys' in kwargs:
         keys_to_remove.extend(kwargs['extra_keys'])
-
     for k in keys_to_remove:
         if k in request.session:
             del request.session[k]
-    request.session.modified = True
+
+    if is_json_request(request) and not request.user.is_authenticated:
+        request.session.modified = False
+        _logger.info("Bypassed session saving for unauthenticated API request (to main page for example)")
+    else:
+        request.session.modified = True
     _logger.info(f"Len of session dict after cleaning: {len(str(dict(request.session)))}")
-
-    if is_json_request(request):
-        # request.session.set_expiry(settings.SESSION_API_CALL_AGE)
-        # _logger.info(f"Set session expiration for API call to {settings.SESSION_API_CALL_AGE}")
-        _logger.debug(f"cache_key={request.session.cache_key}")
-
     return request
 
 
