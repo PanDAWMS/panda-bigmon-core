@@ -2,6 +2,43 @@
 
 <!-- version list -->
 
+## v1.1.0 (2026-05-28)
+
+### Bug Fixes
+
+- Add policy files to repo
+  ([`a4fdc39`](https://github.com/PanDAWMS/panda-bigmon-core/commit/a4fdc39ddafaa9cdb18658e153c2843c6f255f05))
+
+- Add policy files to repo
+  ([`a52c166`](https://github.com/PanDAWMS/panda-bigmon-core/commit/a52c1668ff61f6271718254badc608df03c3e826))
+
+- List all request meta to debug
+  ([`1fb04bf`](https://github.com/PanDAWMS/panda-bigmon-core/commit/1fb04bf07d7e3f3d23038b4bc9468bf207d5b6e1))
+
+- Migrate to panda_authz
+  ([`76c0c73`](https://github.com/PanDAWMS/panda-bigmon-core/commit/76c0c7392e1e7883992bdbca68dc07b493ae1b66))
+
+- Remove debug messages
+  ([`fc41f94`](https://github.com/PanDAWMS/panda-bigmon-core/commit/fc41f94be799372b2dbe8cc261079292c41cfe4a))
+
+- Use request.META instead of request.headers
+  ([`c17fa4d`](https://github.com/PanDAWMS/panda-bigmon-core/commit/c17fa4de30252d39d4891f7945df61c15b33f769))
+
+### Features
+
+- [ATLASPANDA-1757] support oidc tokens for authN
+  ([`14df7b7`](https://github.com/PanDAWMS/panda-bigmon-core/commit/14df7b7771cab5f0fa2d9e27d7cf55bb762cce47))
+
+- [ATLASPANDA-1757] support oidc tokens for authN
+  ([`67db42e`](https://github.com/PanDAWMS/panda-bigmon-core/commit/67db42ee23ea28adb9db207df95eec72a409f823))
+
+- Start using panda-authz
+  ([`58024e8`](https://github.com/PanDAWMS/panda-bigmon-core/commit/58024e825d2dc95dc1570e04d17e86292d58ac82))
+
+- Start using panda-authz
+  ([`9d74113`](https://github.com/PanDAWMS/panda-bigmon-core/commit/9d7411310859a67b6503a65ea92a0b0455b37bd5))
+
+
 ## v1.0.17 (2026-05-22)
 
 
