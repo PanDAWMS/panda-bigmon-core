@@ -265,7 +265,7 @@ def api_auth_test_view(request):
             'username': request.user.username,
             'email': getattr(request.user, 'email', None),
         },
-        'auth_method': 'Bearer (OIDC Token)' if 'Bearer' in request.headers.get('Authorization', '') else 'Token (Custom API Token)'
+        'auth_method': 'Bearer (OIDC Token)' if 'Bearer' in request.META.get('HTTP_AUTHORIZATION', '-') else 'Token (Custom API Token)'
     }
 
     return JsonResponse(data, status=200)
