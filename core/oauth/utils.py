@@ -32,7 +32,7 @@ def login_customrequired(function):
             try:
                 result = auth.authenticate(request)
             except AuthenticationFailed as e:
-                auth_token = request.headers.get("Authorization", "---no token---")
+                auth_token = request.META.get('HTTP_AUTHORIZATION', '---no token---')
                 _logger.error(f"[TOKEN_AUTH_FAILED] failed, token: {auth_token} with: {e}, req: {request} from {x_forwarded_for}")
                 # return JsonResponse({'detail': f"{e}"}, status=401)
                 return function(request, *args, **kwargs)
@@ -73,7 +73,7 @@ def login_customrequired_strict(function):
             try:
                 result = auth.authenticate(request)
             except AuthenticationFailed as e:
-                auth_token = request.headers.get("Authorization", "---no token---")
+                auth_token = request.META.get('HTTP_AUTHORIZATION', '---no token---')
                 _logger.error(f"[TOKEN_AUTH_FAILED] failed, token: {auth_token} with: {e}, req: {request} from {x_forwarded_for}")
                 return JsonResponse({'detail': f"{e}"}, status=401)
 

@@ -21,7 +21,7 @@ class BPTokenAuthentication(TokenAuthentication):
         return BPToken
 
     def authenticate(self, request):
-        auth_header = request.headers.get('Authorization')
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header:
             return None
 
