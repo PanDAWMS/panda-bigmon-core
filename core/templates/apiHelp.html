@@ -5,22 +5,37 @@
 
 <p>
 It is possible to retrieve data in json format via curl so that it can be used programmatically.
+  Every endpoint that is available in the web interface is also available via API, and the data is returned in json format.
   Do not use web page scraping; if you need info, ask how to get it.
-  An example curl command is as follows; it takes the same url parameters as the browser version.</p>
-<p><b>If you are using lxplus:</b></p>
-  <code>auth-get-sso-cookie -u https://bigpanda.cern.ch/oauth/login/cernoidc/ -o bigpanda.cookie.txt</code><br>
-  <code>curl -b bigpanda.cookie.txt -H 'Accept: application/json' -H 'Content-Type: application/json' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"
+</p>
+
+<p><b>There are several options for authentication:</b></p>
+
+<p><b>1: Custom API Token Authentication</b></p>
+<p>Use this method for custom Python scripts, command-line clients, or developer tools interacting with the APIs directly.</p>
+<ol>
+    <li>Log in & go to the <a href="{% url 'profile' %}">User Profile</a> page (your name in top right corner -> Profile)</li>
+    <li>You should see your token in the table. It has limited lifetime. If you need longer lived token,
+      you may want to use <a href="https://auth.docs.cern.ch/user-documentation/account-lifecycle/#service-accounts">a service account</a> or go for option 2.</li>
+    <li>Pass this token in the <code>Authorization</code> header of your requests prefixed with <code>Token</code>, example:</li>
+</ol>
+<code>
+  curl -X GET https://bigpanda.cern.ch/api/auth_test/ -H "Authorization: Token a1b2c3d4e5f6a8b9c1" -H "Accept: application/json"
 </code>
+</p>
 
-<p><b>If you are retrieving JSON outside of CERN:</b></p>
-  <code>ssh username@lxplus.cern.ch "auth-get-sso-cookie -u https://bigpanda.cern.ch/oauth/login/cernoidc/ -o bigpanda.cookie.txt;"</code><br>
-  <code>ssh username@lxplus.cern.ch 'curl -b ~/bigpanda.cookie.txt -H '"'"'Accept: application/json'"'"' -H '"'"'Content-Type: application/json'"'"' "https://bigpanda.cern.ch/tasks/?taskname=user.nacken*&days=3&json"'</code>
-
-<p>The first command performs SSO authentication, the second delivers needed information. You may reuse single cookie until it get expired.
-
-
-  <p>What you get is a list with each element a dictionary with info for a task.
-  If your request is for a single task (jeditaskid=N), you get additional info: an element 'datasets' in the task dictionary with input/output dataset info.</p>
+<p><b>2: IAM issued tokens</b></p>
+<p>This relies on transient tokens generated via your local OIDC agent environment.</p>
+<ol>
+  <li>See the <a href="https://atlas-computing.docs.cern.ch/operations/IAM/index.html#oidc-agent">documentation</a> on how to set up OIDC agent with device flow</li>
+  <li>Generate a token with openid, profile and wlcg scopes: <code>oidc-token --scope="openid profile wlcg" YOUR-USER-DEVICE-FLOW-CLIENT</code></li>
+  <li>Pass this token as a <code>Bearer</code> token inside the request's <code>Authorization</code> header</li>
+</ol>
+<p><b>Example Request (cURL):</b><br>
+<code>
+  curl -X GET https://bigpanda.cern.ch/api/auth_test/ -H "Authorization: Bearer a1b2c3d4e5f6a8b9c1" -H "Accept: application/json"
+</code>
+</p>
 
 </div>
 </div>

@@ -22,6 +22,7 @@ numpy==2.4.4
 opensearch-py==3.1.0
 openshift==0.13.2
 oracledb==3.4.2
+panda-authz==2.0.0
 panda-client==1.6.16
 pandas==3.0.2
 pillow==12.2.0
