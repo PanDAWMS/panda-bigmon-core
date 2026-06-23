@@ -3743,7 +3743,7 @@ def taskList(request):
                     task['job_state_count'] = js_count_bytask_dict[task['jeditaskid']]
                 else:
                     task['job_state_count'] = {}
-        return JsonResponse(tasks, encoder=DateEncoder, safe=False)
+        return JsonResponse(list(tasks), encoder=DateEncoder, safe=False)
     else:
         xurl = extensibleURL(request)
         nohashtagurl = removeParam(xurl, 'hashtag', mode='extensible')
