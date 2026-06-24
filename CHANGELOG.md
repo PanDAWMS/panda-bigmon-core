@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.1.3 (2026-06-24)
+
+### Bug Fixes
+
+- ADCMONITOR-581 - json response with tasks
+  ([`4a51ef7`](https://github.com/PanDAWMS/panda-bigmon-core/commit/4a51ef7d2d296db251837afd69fa6bd467d146e6))
+
+- ATLASPANDA-1782 - add link to files for container
+  ([`c8a456b`](https://github.com/PanDAWMS/panda-bigmon-core/commit/c8a456b7dba7a7cf883fda8f96cdefe2deb89ba4))
+
+
 ## v1.1.2 (2026-05-28)
 
 ### Bug Fixes
