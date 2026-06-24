@@ -602,7 +602,11 @@
         <tr><th colspan="3">Output:</th></tr>
         {% for dsrec in outctrs %}
           <tr>
-              <td colspan="3" class="wrap-words"><a href="{% url 'datasetList' %}?containername={{ dsrec }}">{{ dsrec }}</a></td>
+              <td colspan="3" class="wrap-words">
+                {{ dsrec.containername }} &nbsp;
+                <a href="{% url 'datasetList' %}?containername={{ dsrec.containername }}">{{ dsrec.ndatasets }} datasets</a>,
+                <a href="{% url 'fileList' %}?containername={{ dsrec.containername }}">{{ dsrec.nfiles }} files</a>
+              </td>
           </tr>
         {% endfor %}
       {% endif %}

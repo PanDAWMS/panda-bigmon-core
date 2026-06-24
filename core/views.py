@@ -2288,9 +2288,9 @@ def jobInfo(request, pandaid=None, batchid=None):
     art_test = []
     if 'core.art' in settings.INSTALLED_APPS and settings.DEPLOYMENT == 'ORACLE_ATLAS':
         try:
-            from core.art.modelsART import ARTTests
+            from core.art.models import ARTTests
             artqueue = {'pandaid': pandaid}
-            art_test.extend(ARTTests.objects.filter(**artqueue).values('pandaid', 'testname'))
+            art_test.extend(ARTTests.objects.filter(**artqueue).values('pandaid', 'testname', 'package'))
         except ImportError:
             _logger.exception('Failed to import ARTTests model')
 
@@ -3743,7 +3743,7 @@ def taskList(request):
                     task['job_state_count'] = js_count_bytask_dict[task['jeditaskid']]
                 else:
                     task['job_state_count'] = {}
-        return JsonResponse(tasks, encoder=DateEncoder, safe=False)
+        return JsonResponse(list(tasks), encoder=DateEncoder, safe=False)
     else:
         xurl = extensibleURL(request)
         nohashtagurl = removeParam(xurl, 'hashtag', mode='extensible')
@@ -4508,30 +4508,43 @@ def taskInfo(request, jeditaskid=0):
             taskrec['totev'] * convert_hs06(taskrec['cputime'], taskrec['cputimeunit'])) if (
                     taskrec['cputime'] and taskrec['cputimeunit'] and taskrec['totev'] > 0) else None
         taskrec['totevoutput'] = dsinfo['neventsOutput'] if 'neventsOutput' in dsinfo else 0
+
     # get input and output containers
     inctrs = []
-    outctrs = []
     if 'dsForIN' in taskparams and taskparams['dsForIN'] and isinstance(taskparams['dsForIN'], str):
-        inctrs = [{
-            'containername': cin,
-            'nfiles': 0,
-            'nfilesfinished': 0,
-            'nfilesfailed': 0,
-            'nfilesmissing': 0,
-            'pct': 0
-        } for cin in taskparams['dsForIN'].split(',')]
-        # fill the list of input containers with progress info
+        inctrs = [
+            {
+                'containername': cin,
+                'nfiles': 0,
+                'nfilesfinished': 0,
+                'nfilesfailed': 0,
+                'nfilesmissing': 0,
+                'pct': 0,
+                'ndatasets': 0
+            }
+            for cin in taskparams['dsForIN'].split(',')
+        ]
         for inc in inctrs:
             for ds in dsets:
-                if ds['containername'] == inc['containername']:
-                    inc['nfiles'] += ds['nfiles'] if 'nfiles' in ds and ds['nfiles'] else 0
-                    inc['nfilesfinished'] += ds['nfilesfinished'] if 'nfilesfinished' in ds and ds['nfilesfinished'] else 0
-                    inc['nfilesfailed'] += ds['nfilesfailed'] if 'nfilesfailed' in ds and ds['nfilesfailed'] else 0
-                    inc['nfilesmissing'] += ds['nfilesmissing'] if 'nfilesmissing' in ds and ds['nfilesmissing'] else 0
-                    inc['pct'] = math.floor(100.0 * inc['nfilesfinished'] / inc['nfiles']) if ds['nfiles'] and ds['nfiles'] > 0 else inc['pct']
+                if ds.get('containername') == inc['containername']:
+                    inc['nfiles'] += ds.get('nfiles', 0) or 0
+                    inc['nfilesfinished'] += ds.get('nfilesfinished', 0) or 0
+                    inc['nfilesfailed'] += ds.get('nfilesfailed', 0) or 0
+                    inc['nfilesmissing'] += ds.get('nfilesmissing', 0) or 0
+                    inc['ndatasets'] += 1
+            inc['pct'] = math.floor(100.0 * inc['nfilesfinished'] / inc['nfiles']) if inc['nfiles'] else 0
 
-    outctrs.extend(
-        list(set([ds['containername'] for ds in dsets if ds['type'] in ('output', 'log') and ds['containername']])))
+    out = {}
+    for ds in dsets:
+        if ds.get('type') in ('output', 'log') and ds.get('containername'):
+            ctr = out.setdefault(ds['containername'], {
+                'containername': ds['containername'],
+                'nfiles': 0,
+                'ndatasets': 0
+            })
+            ctr['nfiles'] += ds.get('nfiles', 0) or 0
+            ctr['ndatasets'] += 1
+    outctrs = list(out.values())
 
     # get reference and link to JIRA for ATLAS prod tasks
     if "ATLAS" in settings.DEPLOYMENT and taskrec['tasktype'] == 'prod':

@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 
 from django.db import transaction, DatabaseError
-from core.art.modelsART import ARTSubResult, ARTTests
+from core.art.models import ARTSubResult, ARTTests
 import core.art.constants as const_art
 from core.filebrowser.utils import get_job_log_file_path
 
