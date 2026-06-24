@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
-from django.db import connection
+from django.db import connection, transaction, IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
 from django.template.defaulttags import register
@@ -23,7 +23,7 @@ from core.oauth.utils import login_customrequired
 from core.utils import is_json_request, complete_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
-from core.art.modelsART import ARTTests, ARTResultsQueue, ARTSubResult
+from core.art.models import ARTTests, ARTResultsQueue, ARTSubResult
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, \
     get_final_result, update_test_status
 from core.reports.models import ReportEmails
@@ -1145,15 +1145,9 @@ def registerARTTest(request):
     valid, response = initRequest(request)
     if not valid:
         return response
+
     pandaid = -1
     jeditaskid = -1
-    testname = ''
-    nightly_release_short = None
-    platform = None
-    project = None
-    package = None
-    nightly_tag = None
-    nightly_tag_display = None
     extra_info = {}
     computingsite = None
     attemptnr = None
@@ -1162,25 +1156,20 @@ def registerARTTest(request):
     gitlabid = None
     test_type = "grid"
 
-    # log all the req params for debug
-    _logger.debug('[ART] registerARTtest requestParams: ' + str(request.session['requestParams']))
+    # log all the request params
+    try:
+        request_params = str(request.session['requestParams'])
+    except Exception as e:
+        request_params = f'FAIL! not able to parse requestParams: {e}'
+    _logger.info(f'[ART] registerARTtest requestParams: {request_params}')
 
     # Checking whether params were provided
     if 'requestParams' in request.session and 'test_type' in request.session['requestParams']:
         test_type = request.session['requestParams']['test_type']
-
-    if 'requestParams' in request.session and 'testname' in request.session['requestParams']:
-        testname = request.session['requestParams']['testname']
-    else:
-        data = {'exit_code': -1, 'message': "There were not received any testname"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
-
     if 'requestParams' in request.session and 'pandaid' in request.session['requestParams']:
         pandaid = request.session['requestParams']['pandaid']
     elif test_type == 'local':
-        #session_id = request.COOKIES.get('sessionid')
-        #if session_id:
+        # For ART Local, we generate pandaid on the fly and do not require it as a parameter
         client_ip = get_client_ip(request)
         alias_ips = []
         for alias in art_const.AUTHORIZED_HOSTS[:2]:
@@ -1202,8 +1191,8 @@ def registerARTTest(request):
 
         # Generate job ID for ART Local
         cursor = connection.cursor()
-        sqlArtTest = f"SELECT {settings.DB_SCHEMA}.ART_TESTS_SEQ.NEXTVAL as new_test_id FROM dual;"
-        cursor.execute(sqlArtTest)
+        sql_art_test = f"SELECT {settings.DB_SCHEMA}.ART_TESTS_SEQ.NEXTVAL as new_test_id FROM dual;"
+        cursor.execute(sql_art_test)
         pandaid = cursor.fetchall()[0][0]
         cursor.close()
         _logger.info("JobID: {} was generated".format(pandaid))
@@ -1212,172 +1201,160 @@ def registerARTTest(request):
     else:
         data = {'exit_code': -1, 'message': "There were not received any pandaid"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+        return JsonResponse(data, status=400)
 
-    if 'nightly_release_short' in request.session['requestParams']:
-        nightly_release_short = request.session['requestParams']['nightly_release_short']
-    else:
-        data = {'exit_code': -1, 'message': "No nightly_release_short provided"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
+    # validate required params
+    for param in ['testname', 'nightly_release_short', 'platform', 'project', 'package', 'nightly_tag']:
+        if param not in request.session['requestParams']:
+            data = {'exit_code': -1, 'message': f"No {param} provided"}
+            _logger.warning(data['message'] + str(request.session['requestParams']))
+            return JsonResponse(data, status=400)
+    testname = request.session['requestParams']['testname']
+    nightly_release_short = request.session['requestParams']['nightly_release_short']
+    platform = request.session['requestParams']['platform']
+    project = request.session['requestParams']['project']
+    package = request.session['requestParams']['package']
+    branch = concat_branch({'nightly_release_short': nightly_release_short, 'project': project, 'platform': platform})
+    nightly_tag = request.session['requestParams']['nightly_tag']
+    nightly_tag_date = None
+    try:
+        nightly_tag_date = parse_datetime(nightly_tag)
+    except Exception as e:
+        _logger.exception(f'Failed to parse date from nightly_tag: {e}')
 
-    if 'platform' in request.session['requestParams']:
-        platform = request.session['requestParams']['platform']
-    else:
-        data = {'exit_code': -1, 'message': "No platform provided"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
-
-    if 'project' in request.session['requestParams']:
-        project = request.session['requestParams']['project']
-    else:
-        data = {'exit_code': -1, 'message': "No project provided"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
-
-    if 'package' in request.session['requestParams']:
-        package = request.session['requestParams']['package']
-    else:
-        data = {'exit_code': -1, 'message': "No package provided"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
-
-    if 'nightly_tag' in request.session['requestParams']:
-        nightly_tag = request.session['requestParams']['nightly_tag']
-    else:
-        data = {'exit_code': -1, 'message': "No nightly_tag provided"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=400, content_type='application/json')
-
+    # Processing extra params
     if 'gitlabid' in request.session['requestParams']:
         gitlabid = request.session['requestParams']['gitlabid']
-
-    ### Processing extra params
     if 'nightly_tag_display' in request.session['requestParams']:
         nightly_tag_display = request.session['requestParams']['nightly_tag_display']
     else:
         nightly_tag_display = request.session['requestParams']['nightly_tag']
-
     if 'html' in request.session['requestParams']:
         extra_info['html'] = request.session['requestParams']['html']
 
-    ### Checking whether params is valid
+    # Checking whether params is valid
     try:
         pandaid = int(pandaid)
     except:
         data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
+        return JsonResponse(data, status=422)
 
     if pandaid < 0:
         data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
+        return JsonResponse(data, status=422)
 
     if not str(testname).startswith('test_'):
         data = {'exit_code': -1, 'message': "Illegal test name was recieved"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
-        return HttpResponse(json.dumps(data), status=422, content_type='application/json')
+        return JsonResponse(data, status=422)
 
-    # Only check ART Grid tests
-    branch = concat_branch({'nightly_release_short':nightly_release_short, 'project': project, 'platform': platform})
-    if test_type and test_type == 'grid':
-        # Checking if provided pandaid exists in panda db
-        query = {'pandaid': pandaid}
-        values = ('pandaid', 'jeditaskid', 'username', 'computingsite', 'jobname')
-        jobs = []
-        jobs.extend(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
-        try:
-            job = jobs[0]
-        except:
-            data = {'exit_code': -1, 'message': "Provided pandaid does not exists"}
-            _logger.warning(data['message'] + str(request.session['requestParams']))
-            return HttpResponse(json.dumps(data), status=422, content_type='application/json')
-
-        # Checking whether provided pandaid is art job
-        if 'username' in job and job['username'] != 'artprod':
-            data = {'exit_code': -1, 'message': "Provided pandaid is not art job"}
-            _logger.warning(data['message'] + str(request.session['requestParams']))
-            return HttpResponse(json.dumps(data), status=422, content_type='application/json')
-
-        # Preparing params to register art job
-        if 'computingsite' in job:
-            computingsite = job['computingsite']
-        if 'jeditaskid' in job:
-            jeditaskid = job['jeditaskid']
-
-            # get files -> extract log tarball name, attempts
-            files = []
-            fquery = {'jeditaskid': jeditaskid, 'pandaid': pandaid, 'type__in': ('pseudo_input', 'input', 'log')}
-            files.extend(Filestable4.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
-            # count of attempts starts from 0, for readability change it to start from 1
-            if len(files) > 0:
-                input_files = [f for f in files if f['type'] in ('pseudo_input', 'input')]
-                if len(input_files) > 0:
-                    attemptnr = 1 + max([f['attemptnr'] for f in input_files])
-                    inputfileid = max([f['fileid'] for f in input_files])
-                log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
-                if len(log_lfn) > 0:
-                    try:
-                        tarindex = int(re.search('.([0-9]{6}).log.', log_lfn[0]).group(1))
-                    except:
-                        _logger.info('Failed to extract tarindex from log lfn')
-                        tarindex = None
-        if 'jobname' in job:
-            try:
-                gitlabid = int(re.search('.([0-9]{6,8}).', job['jobname']).group(1))
-            except:
-                _logger.info('Failed to extract tarindex from log lfn')
-                gitlabid = None
-        _logger.info(f"""Got job-related metadata for test {pandaid}: 
-            computingsite={computingsite}, tarindex={tarindex}, inputfileid={inputfileid}, attemptnr={attemptnr}""")
-
-    # extract datetime from str nightly time
-    nightly_tag_date = None
+    # write to DB all provided info in atomic transaction to avoid duplicates and get lock on the row immediately
+    # to have time to fill in job-related metadata for grid tests before other requests can access the row
     try:
-        nightly_tag_date = parse_datetime(nightly_tag)
-    except:
-        _logger.exception('Failed to parse date from nightly_tag')
-
-    # Check whether the pandaid has been registered already
-    if ARTTests.objects.filter(pandaid=pandaid).count() == 0:
-        # INSERT ROW
-        try:
-            insertRow = ARTTests.objects.create(
+        with transaction.atomic():
+            art_test, created = ARTTests.objects.get_or_create(
                 pandaid=pandaid,
-                jeditaskid=jeditaskid,
-                testname=testname,
-                nightly_release_short=nightly_release_short,
-                nightly_tag=nightly_tag,
-                nightly_tag_display=nightly_tag_display,
-                project=project,
-                platform=platform,
-                branch=branch,
-                package=package,
-                extrainfo=json.dumps(extra_info),
-                created=timezone.now(),
-                nightly_tag_date=nightly_tag_date,
-                attemptnr=attemptnr,
-                maxattempt=2,
-                inputfileid=inputfileid,
-                tarindex=tarindex,
-                gitlabid=gitlabid,
-                computingsite=computingsite,
-                status=art_const.TEST_STATUS_INDEX['active'],
-                test_type=test_type,
+                defaults={
+                    'testname': testname,
+                    'package': package,
+                    'branch': branch,
+                    'nightly_tag': nightly_tag,
+                    'nightly_tag_display': nightly_tag_display,
+                    'test_type': test_type,
+                    'created': timezone.now(),
+                    'nightly_release_short': nightly_release_short,
+                    'project': project,
+                    'platform': platform,
+                    'extrainfo': json.dumps(extra_info),
+                    'nightly_tag_date': nightly_tag_date,
+                    'computingsite': computingsite,
+                    'status': art_const.TEST_STATUS_INDEX['active'],
+                    'maxattempt': 2,
+                    'jeditaskid': jeditaskid
+                }
             )
-            insertRow.save()
+
+            # lock the row immediately
+            art_test = ARTTests.objects.select_for_update().get(pk=art_test.pk)
+
+            # fail duplicate immediately
+            if not created:
+                data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
+                _logger.warning(data['message'] + str(request.session['requestParams']))
+                return JsonResponse(data, status=200)
+
+            # for grid tests, try to get job metadata from PanDA DB and save it together with the test info
+            if test_type and test_type == 'grid':
+                # checking if provided pandaid exists in panda db
+                query = {'pandaid': pandaid}
+                values = ('pandaid', 'jeditaskid', 'username', 'computingsite', 'jobname')
+                jobs = list(CombinedWaitActDefArch4.objects.filter(**query).values(*values))
+                if not jobs or len(jobs) == 0:
+                    raise ValueError("Provided pandaid does not exists")
+                job = jobs[0]
+                # Checking whether provided pandaid is art job
+                if 'username' in job and job['username'] != 'artprod':
+                    raise ValueError("Provided pandaid is not art job")
+
+                # Preparing params to register art job
+                if 'computingsite' in job:
+                    computingsite = job['computingsite']
+                if 'jeditaskid' in job:
+                    jeditaskid = job['jeditaskid']
+
+                    # get files -> extract log tarball name, attempts
+                    fquery = {'jeditaskid': jeditaskid, 'pandaid': pandaid, 'type__in': ('pseudo_input', 'input', 'log')}
+                    files = list(Filestable4.objects.filter(**fquery).values('jeditaskid', 'pandaid', 'fileid', 'lfn', 'type', 'attemptnr'))
+                    # count of attempts starts from 0, for readability change it to start from 1
+                    if files and len(files) > 0:
+                        input_files = [f for f in files if f['type'] in ('pseudo_input', 'input')]
+                        if len(input_files) > 0:
+                            attemptnr = 1 + max([f['attemptnr'] for f in input_files])
+                            inputfileid = max([f['fileid'] for f in input_files])
+                        log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
+                        if len(log_lfn) > 0:
+                            try:
+                                tarindex = int(re.search('\.([0-9]{6})\.log\.', log_lfn[0]).group(1))
+                            except Exception as e:
+                                _logger.info(f'Failed to extract tarindex from log lfn: {e}')
+                                tarindex = None
+                if 'jobname' in job:
+                    try:
+                        gitlabid = int(re.search('\.([0-9]{6,8})\.', job['jobname']).group(1))
+                    except Exception as e:
+                        _logger.info(f'Failed to extract gitlab id from job name: {e}')
+                        gitlabid = None
+                _logger.info(f"""Got job-related metadata for test {pandaid}: 
+                    computingsite={computingsite}, tarindex={tarindex}, inputfileid={inputfileid}, attemptnr={attemptnr}""")
+
+            # add info to the test row and save
+            art_test.jeditaskid = jeditaskid
+            art_test.computingsite = computingsite
+            art_test.attemptnr = attemptnr if attemptnr is not None else (1 if test_type == 'local' else None)
+            art_test.inputfileid = inputfileid
+            art_test.tarindex = tarindex
+            art_test.gitlabid = gitlabid
+            art_test.save()
+
             data = {'exit_code': 0, 'pandaid': pandaid, 'message': "ART test has been successfully registered"}
             _logger.info(data['message'] + str(request.session['requestParams']))
-        except Exception as e:
-            data = {'exit_code': 0, 'message': "Failed to register test, can not save the row to DB"}
-            _logger.error('{}\n{}\n{}'.format(data['message'], str(e), str(request.session['requestParams'])))
-            return JsonResponse(data, status=500)
-    else:
-        data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
-        _logger.warning(data['message'] + str(request.session['requestParams']))
 
-    return HttpResponse(json.dumps(data), status=200, content_type='application/json')
+    except ValueError as val_err:
+        # Aborting the atomic block wipes out the row completely
+        data = {'exit_code': -1, 'message': str(val_err)}
+        _logger.warning(data['message'] + str(request.session['requestParams']))
+        return JsonResponse(data, status=422)
+    except IntegrityError:
+        data = {'exit_code': 0, 'message': "Provided pandaid is already registered"}
+        return JsonResponse(data, status=200)
+    except Exception as e:
+        data = {'exit_code': -1, 'message': f"Failed to register test, database error: {str(e)}"}
+        _logger.error(f"{data['message']} - {str(request.session['requestParams'])}")
+        return JsonResponse(data, status=500)
+
+    return JsonResponse(data, status=200)
 
 
 @csrf_exempt

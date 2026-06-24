@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from django.db.models.functions import Substr
 
 from core.libs.sqlcustom import preprocess_wild_card_string
-from core.art.modelsART import ARTTests
+from core.art.models import ARTTests
 from core.art.jobSubResults import analize_test_subresults, get_final_result
 
 from core.libs.job import get_job_list
@@ -111,6 +111,8 @@ def setupView(request):
     query_str = '(1=1) '
     if 'ntag_full' in request.session['requestParams']:
         query['nightly_tag'] = request.session['requestParams']['ntag_full']
+    elif 'pandaid' in request.session['requestParams'] and request.session['requestParams']['pandaid'].isdigit():
+        query['pandaid'] = int(request.session['requestParams']['pandaid'])
     elif 'ntag' in request.session['requestParams']:
         query['nightly_tag__startswith'] = request.session['requestParams']['ntag']
     elif startdate is not None and enddate is not None:
@@ -137,9 +139,6 @@ def setupView(request):
         for f in art_tests_str_fields:
             if p == f:
                 query[f] = v
-
-    # For transiton period to integrate ART Local tests, temporarily requiring test_type=grid to only show ART Grid test
-    # query['test_type'] = "grid"
 
     return query, query_str
 
