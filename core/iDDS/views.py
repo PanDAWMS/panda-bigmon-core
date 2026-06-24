@@ -187,12 +187,14 @@ def wfprogress(request):
     if not valid:
         return response
 
+    message = {'error': None}
     kwargs = {}
     try:
         iDDSrequests = get_workflow_progress_data(request.session['requestParams'], **kwargs)
     except Exception as e:
         iDDSrequests = []
-        _logger.exception('Internal Server Error: Failed to load iDDS requests from DB: \n{}'.format(e))
+        message['error'] = 'Internal Server Error: Failed to load iDDS requests from DB: \n{}'.format(e)
+        _logger.exception(message['error'])
 
     iDDSsummary = prepare_requests_summary(iDDSrequests)
     if is_json_request(request):
@@ -201,6 +203,7 @@ def wfprogress(request):
     data = {
         'iDDSrequests': iDDSrequests,
         'iDDSsummary': iDDSsummary,
+        'message': message,
         'request': request,
         'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
     }

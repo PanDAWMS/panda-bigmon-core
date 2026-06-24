@@ -23,6 +23,7 @@
 
 {% block body %}
 
+
 {% if iDDSrequests|length > 0 %}
 <table class="bp-table secondary">
 <thead>
@@ -75,9 +76,11 @@
   </div>
 </div>
 {% else %}
-  <div class="card bp-container-simple info">
-    <div class="card-divider"><p>No iDDS requests found.</p></div>
-  </div>
+  {% if 'error' in message and message.error %}
+  <div class="card bp-container-simple alert"><div class="card-divider"><p>{{ message.error }}</p></div>
+  {% else %}
+  <div class="card bp-container-simple info"><div class="card-divider"><p>No iDDS requests found.</p></div></div>
+  {% endif %}
 {% endif %}
 {% endblock %}
 
