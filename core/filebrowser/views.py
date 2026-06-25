@@ -117,7 +117,8 @@ def index(request):
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
             'errors': errors,
-            'api_url': api_url
+            'api_url': api_url,
+            'pandaid': pandaid,
         }
         response = render(request, 'filebrowser_index.html', data, RequestContext(request))
         _logger.debug('Rendered template - {}'.format(time.time() - request.session['req_init_time']))

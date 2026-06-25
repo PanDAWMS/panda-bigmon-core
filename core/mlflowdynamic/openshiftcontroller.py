@@ -4,6 +4,8 @@ import yaml
 import logging
 from typing import Dict
 from os import path
+
+from django.core.exceptions import ImproperlyConfigured
 from kubernetes import client
 from openshift.dynamic import DynamicClient
 
@@ -14,18 +16,30 @@ logger = logging.getLogger('bigpandamon-error')
 
 class occlicalls:
     TIME_OUT_FOR_QUERY = 60 * 5
-    URL_CONFIGMAPS = "https://{endpoint}/api/v1/namespaces/{namespace}/configmaps".format(
-        endpoint=settings.OC_ENDPOINT,
-        namespace=settings.OC_NAMESPACE
-    )
-    configuration = client.Configuration()
-    configuration.host = "https://" + settings.OC_ENDPOINT
-    configuration.debug = True
-    configuration.verify_ssl = False
-    configuration.api_key = {"authorization": settings.OC_TOKEN}
-    configuration.api_key_prefix['authorization'] = 'Bearer'
 
     def __init__(self, taskid):
+
+        self.oc_endpoint = getattr(settings, "OC_ENDPOINT", None)
+        self.oc_token = getattr(settings, "OC_TOKEN", None)
+        self.oc_namespace = getattr(settings, "OC_NAMESPACE", None)
+
+        if not all([self.oc_endpoint, self.oc_token, self.oc_namespace]):
+            logger.error("OC_ENDPOINT, OC_TOKEN and OC_NAMESPACE must be set")
+            raise ImproperlyConfigured("Missing OC configuration")
+
+        self.URL_CONFIGMAPS = (
+            f"https://{self.oc_endpoint}/api/v1/namespaces/{self.oc_namespace}/configmaps"
+        )
+
+        configuration = client.Configuration()
+        configuration.host = "https://" + self.oc_endpoint
+        configuration.debug = True
+        configuration.verify_ssl = False
+        configuration.api_key = {"authorization": self.oc_token}
+        configuration.api_key_prefix["authorization"] = "Bearer"
+
+        self.configuration = configuration
+
         self.INSTANCE = ''.join(random.choices(string.ascii_lowercase + string.digits, k=7))
         self.taskid = taskid
         self.ocp_client = DynamicClient(
