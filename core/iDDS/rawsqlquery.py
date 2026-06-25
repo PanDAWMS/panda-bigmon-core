@@ -1,6 +1,8 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from django.db import connections
+from oracledb import DatabaseError
+
 from core.libs.exlib import dictfetchall
 from core.libs.sqlsyntax import bind_var
 from core.iDDS.useconstants import SubstitleValue
@@ -104,12 +106,14 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
     if db == 'postgresql':
         style = 'uppercase'
     sqlpar, condition = prepareSQLQueryParameters(request_params, db=db)
-    columns = "r.request_id, r.name as r_name, r.status as r_STATUS, r.created_at as r_created_at, "
-    extra_cols = "r.cloud, r.site, "
-    if 'ATLAS' in settings.DEPLOYMENT:
-        extra_cols = "NULL as cloud, r.site, "
-    columns += extra_cols
-    columns += "c.total_files, c.processed_files, c.processing_files, c.transform_id, t.workload_id, t.transform_type, t.transform_tag, p.status as p_status, r.username"
+    column_list = [
+        "r.request_id", "r.name as r_name", "r.status as r_status", "r.created_at as r_created_at", "r.cloud", "r.site", "r.campaign",
+        "r.username",
+        "c.total_files", "c.processed_files", "c.processing_files", "c.transform_id",
+        "t.workload_id", "t.transform_type", "t.transform_tag",
+        "p.status as p_status"
+    ]
+    columns = ", ".join(column_list)
     sql = f"""
     select {columns}
     from {settings.DB_SCHEMA_IDDS}.requests r
@@ -123,7 +127,12 @@ def getWorkFlowProgressItemized(request_params, **kwargs):
         connection_name, db, connections[connection_name].settings_dict['HOST'],
         connections[connection_name].settings_dict['PORT'], connections[connection_name].settings_dict['USER'], sql
     ))
-    cur.execute(sql, sqlpar)
-    rows = dictfetchall(cur, style=style)
-    cur.close()
+    try:
+        cur.execute(sql, sqlpar)
+        rows = dictfetchall(cur, style=style)
+    except Exception as e:
+        _logger.error("Error occurred while executing SQL query: {}".format(e))
+        raise DatabaseError("Error occurred while executing SQL query: {}".format(e))
+    finally:
+        cur.close()
     return rows

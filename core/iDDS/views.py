@@ -1,5 +1,7 @@
 import json
 import logging
+
+from django.conf import settings
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
@@ -187,8 +189,16 @@ def wfprogress(request):
     if not valid:
         return response
 
-    message = {'error': None}
+    if 'days' not in request.session['requestParams'] and 'hours' not in request.session['requestParams'] and (
+            'date_from' not in request.session['requestParams'] and 'date_to' not in request.session['requestParams']):
+        if 'ATLAS' in settings.DEPLOYMENT:
+            request.session['requestParams']['days'] = 1
+        else:
+            request.session['requestParams']['days'] = 7
+    query_time = setupView(request, querytype='idds')
+
     kwargs = {}
+    message = {'error': None}
     try:
         iDDSrequests = get_workflow_progress_data(request.session['requestParams'], **kwargs)
     except Exception as e:
@@ -201,11 +211,12 @@ def wfprogress(request):
         return JsonResponse(iDDSrequests, encoder=DateEncoder, safe=False)
 
     data = {
+        'request': request,
+        'viewParams': None,
+        'timerange': query_time.get('modificationtime__castdate__range', None),
         'iDDSrequests': iDDSrequests,
         'iDDSsummary': iDDSsummary,
-        'message': message,
-        'request': request,
-        'viewParams': request.session['viewParams'] if 'viewParams' in request.session else None,
+        'message': message
     }
     response = render(request, 'workflows.html', data, content_type='text/html')
     patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
