@@ -45,50 +45,43 @@ def get_workflow_progress_data(request_params, **kwargs):
     workflows_datasets_all_dict = {task['jeditaskid']: task['datasets'] for task in workflows_datasets_all_list}
     workflows_semi_grouped = []
     if not workflows_items.empty:
-        workflows_items.USERNAME.fillna(value='', inplace=True)
-        workflows_items.R_NAME.fillna(value='', inplace=True)
-        workflows_items.CLOUD.fillna(value='', inplace=True)
-        workflows_items.SITE.fillna(value='', inplace=True)
-        workflows_items.WORKLOAD_ID = workflows_items.WORKLOAD_ID.astype('Int64')
-        # workflows_items.PROCESSING_FILES.fillna(value=0, inplace=True)
-        workflows_pd = workflows_items.astype({"R_CREATED_AT":str}).groupby(
-            ['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'CLOUD', 'SITE', 'USERNAME', 'TRANSFORM_TYPE', 'TRANSFORM_TAG'],
+        # clean up fields before grouping
+        fillna_fields = {
+            'USERNAME': '', 'R_NAME': '', 'CLOUD': '', 'SITE': '', 'TRANSFORM_TAG': '', 'CAMPAIGN': '',
+            'P_STATUS': 0, 'TRANSFORM_TYPE': 99}
+        workflows_items = workflows_items.fillna(fillna_fields).astype({
+            'R_STATUS': int, 'TRANSFORM_TAG': str, 'P_STATUS': int, 'TRANSFORM_TYPE': int, 'WORKLOAD_ID': 'Int64', 'CAMPAIGN': str,
+        })
+        workflows_items['R_CREATED_AT'] = pd.to_datetime(workflows_items['R_CREATED_AT']).dt.strftime('%Y-%m-%d %H:%M:%S')
+        workflows_pd = workflows_items.groupby(
+            ['REQUEST_ID', 'R_STATUS', 'P_STATUS', 'R_NAME', 'CLOUD', 'SITE', 'USERNAME', 'TRANSFORM_TYPE', 'TRANSFORM_TAG', 'CAMPAIGN'],
             dropna=False
         ).agg(
-            PROCESSING_FILES_SUM=pd.NamedAgg(column="PROCESSING_FILES", aggfunc="sum"),
-            PROCESSED_FILES_SUM=pd.NamedAgg(column="PROCESSED_FILES", aggfunc="sum"),
-            TOTAL_FILES=pd.NamedAgg(column="TOTAL_FILES", aggfunc="sum"),
-            P_STATUS_COUNT=pd.NamedAgg(column="P_STATUS", aggfunc="count"),
-            R_CREATED_AT=pd.NamedAgg(column="R_CREATED_AT", aggfunc="first"),
+            PROCESSING_FILES_SUM=('PROCESSING_FILES', 'sum'),
+            PROCESSED_FILES_SUM=('PROCESSED_FILES', 'sum'),
+            TOTAL_FILES=('TOTAL_FILES', 'sum'),
+            P_STATUS_COUNT=('P_STATUS', 'count'),
+            R_CREATED_AT=('R_CREATED_AT', 'first'),
             workload_ids=('WORKLOAD_ID', lambda x: list(x.dropna())),
         ).reset_index()
-        # fill NAN with 0 for N files
-        workflows_pd.TOTAL_FILES.fillna(value=0, inplace=True)
-        workflows_pd.PROCESSING_FILES_SUM.fillna(value=0, inplace=True)
-        workflows_pd.PROCESSED_FILES_SUM.fillna(value=0, inplace=True)
-        workflows_pd.P_STATUS.fillna(value=0, inplace=True)
-        workflows_pd.TRANSFORM_TYPE.fillna(value=99, inplace=True)
-        workflows_pd.TRANSFORM_TAG.fillna(value='', inplace=True)
-        workflows_pd = workflows_pd.astype({
-            "R_STATUS":int,
-            "P_STATUS":int,
-            "PROCESSING_FILES_SUM": int,
-            "PROCESSED_FILES_SUM": int,
-            "TOTAL_FILES": int,
-            "P_STATUS_COUNT": int,
-            "TRANSFORM_TYPE": int,
-            "TRANSFORM_TAG": str
+        # clean new fields after grouping
+        field_defaults = {'TOTAL_FILES': 0, 'PROCESSING_FILES_SUM': 0, 'PROCESSED_FILES_SUM': 0}
+        workflows_pd = workflows_pd.fillna(field_defaults).astype({
+            "PROCESSING_FILES_SUM": int,"PROCESSED_FILES_SUM": int, "TOTAL_FILES": int, "P_STATUS_COUNT": int
         })
-        workflows_semi_grouped = workflows_pd.values.tolist()
+        workflows_semi_grouped = workflows_pd.to_dict('records')
 
+    # get constants for statuses and types
+    r_status_to_str = subtitleValue.substitleValue("requests", "status")
+    t_type_to_str = subtitleValue.substitleValue("transforms", "type")
+    p_status_to_str = subtitleValue.substitleValue("processings", "status")
     workflows = {}
-    for workflow_group in workflows_semi_grouped:
-        workflow = workflows.setdefault(workflow_group[0], {
-            "REQUEST_ID":workflow_group[0],
-            "R_STATUS": subtitleValue.substitleValue("requests", "status")[workflow_group[1]] if \
-                workflow_group[1] in subtitleValue.substitleValue("requests", "status") else \
-                'N/A',
-            "CREATED_AT":workflow_group[10],
+    for row in workflows_semi_grouped:
+        req_id = row['REQUEST_ID']
+        workflow = workflows.setdefault(req_id, {
+            "REQUEST_ID": req_id,
+            "R_STATUS": r_status_to_str.get(row['R_STATUS'], 'N/A'),
+            "CREATED_AT": row['R_CREATED_AT'],
             "TOTAL_TASKS": 0,
             "TASKS_STATUSES": {},
             "FINISHED_FILES": 0,
@@ -99,42 +92,40 @@ def get_workflow_progress_data(request_params, **kwargs):
             "TOTAL_FILES": 0,
             "TOTAL_JEDI_FILES": 0,
             "TRANSFORM_TYPE": 99,
-            "TRANSFOMR_TAG": '',
-            })
-        workflow['TRANSFORM_TYPE'] = subtitleValue.substitleValue("transforms", "type")[workflow_group[7]] if \
-            workflow_group[7] in subtitleValue.substitleValue("transforms", "type") else \
-            'N/A'
-        workflow['TRANSFORM_TAG'] = workflow_group[8]
-        workflow['TOTAL_TASKS'] += workflow_group[12]
-        workflow['R_NAME'] = workflow_group[3]
-        workflow['CLOUD'] = workflow_group[4]
-        workflow['SITE'] = workflow_group[5]
-        workflow['USERNAME'] = workflow_group[6]
-        workflow['CREATED_AT'] = workflow_group[13]
-        processing_status_name = subtitleValue.substitleValue("processings", "status")[workflow_group[2]] if \
-            workflow_group[2] in subtitleValue.substitleValue("processings", "status") else \
-            'N/A'
-        workflow["TASKS_STATUSES"][processing_status_name] = workflow_group[12]
-        workflow['RELEASED_FILES'] += workflow_group[10]
-        workflow['PROCESSING_FILES'] += workflow_group[9]
-        workflow['TOTAL_FILES'] += workflow_group[11]
+            "TRANSFORM_TAG": '',
+            "CAMPAIGN": '',
+        })
+        workflow['TRANSFORM_TYPE'] = t_type_to_str.get(row['TRANSFORM_TYPE'], 'N/A')
+        workflow['TRANSFORM_TAG'] = row['TRANSFORM_TAG']
+        workflow['TOTAL_TASKS'] += row['P_STATUS_COUNT']
+        workflow['R_NAME'] = row['R_NAME']
+        workflow['CLOUD'] = row['CLOUD']
+        workflow['SITE'] = row['SITE']
+        workflow['CAMPAIGN'] = row['CAMPAIGN'] if row['TRANSFORM_TYPE'] != 2 else '-'
+        workflow['USERNAME'] = row['USERNAME']
+        workflow['CREATED_AT'] = row['R_CREATED_AT']
+        workflow["TASKS_STATUSES"][p_status_to_str.get(row['P_STATUS'], 'N/A')] = row['P_STATUS_COUNT']
+        workflow['RELEASED_FILES'] += row['PROCESSED_FILES_SUM']
+        workflow['PROCESSING_FILES'] += row['PROCESSING_FILES_SUM']
+        workflow['TOTAL_FILES'] += row['TOTAL_FILES']
         workflow['UNRELEASED_FILES'] = workflow['TOTAL_FILES'] - workflow['RELEASED_FILES']
 
-        # add data from JEDI of N processed files
-        if workflow_group[14] and len(workflow_group[14]) > 0:
-            for tid in workflow_group[14]:
+        # add info from JEDI datasets
+        workload_ids = row['workload_ids']
+        if workload_ids:
+            for tid in workload_ids:
                 if tid in workflows_datasets_all_dict:
                     for ds in workflows_datasets_all_dict[tid]:
-                        if "input" in ds['type'] and ds['masterid'] is None and 'status' in ds and ds['status'] != 'removed':
+                        if "input" in ds['type'] and ds['masterid'] is None and ds.get('status', '') != 'removed':
                             workflow['FINISHED_FILES'] += ds["nfilesfinished"]
                             workflow['FAILED_FILES'] += ds["nfilesfailed"]
                             workflow['TOTAL_JEDI_FILES'] += ds["nfiles"]
 
-    # convert PROCESSED_FILES to percentage
+    # calculate percentages
     for run, workflow in workflows.items():
-        workflow['FINISHED_FILES'] = percentile(workflow['FINISHED_FILES'] / workflow['TOTAL_JEDI_FILES']) if workflow['TOTAL_JEDI_FILES'] else 0
-        workflow['FAILED_FILES'] = percentile(workflow['FAILED_FILES'] / workflow['TOTAL_JEDI_FILES']) if workflow['TOTAL_JEDI_FILES'] else 0
-        workflows[run] = workflow
+        total_jedi = workflow['TOTAL_JEDI_FILES']
+        workflow['FINISHED_FILES'] = percentile(workflow['FINISHED_FILES'] / total_jedi) if total_jedi else 0
+        workflow['FAILED_FILES'] = percentile(workflow['FAILED_FILES'] / total_jedi) if total_jedi else 0
 
     workflows = lower_dicts_in_list(list(workflows.values()))
     return workflows

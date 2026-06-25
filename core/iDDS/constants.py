@@ -6,7 +6,7 @@
 # http://www.apache.org/licenses/LICENSE-2.0OA
 #
 # Authors:
-# - Wen Guan, <wen.guan@cern.ch>, 2019 - 2023
+# - Wen Guan, <wen.guan@cern.ch>, 2019 - 2025
 
 """
 Constants.
@@ -34,6 +34,8 @@ class Sections:
     Cache = 'cache'
     Archiver = 'archiver'
     Coordinator = 'coordinator'
+    Prompt = 'prompt'
+    Rest = 'rest'
 
 
 class HTTP_STATUS_CODE:
@@ -97,6 +99,13 @@ class IDDSEnum(Enum):
         return d
 
 
+class WorkflowType(IDDSEnum):
+    Workflow = 0
+    iWorkflow = 1
+    iWork = 2
+    iWorkflowLocal = 3
+
+
 class WorkStatus(IDDSEnum):
     New = 0
     Ready = 1
@@ -120,6 +129,49 @@ class WorkStatus(IDDSEnum):
     ToForceFinish = 19
     Running = 20
     Terminating = 21
+
+
+class RequestGroupStatus(IDDSEnum):
+    New = 0
+    Ready = 1
+    Transforming = 2
+    Finished = 3
+    SubFinished = 4
+    Failed = 5
+    Extend = 6
+    ToCancel = 7
+    Cancelling = 8
+    Cancelled = 9
+    ToSuspend = 10
+    Suspending = 11
+    Suspended = 12
+    ToResume = 13
+    Resuming = 14
+    ToExpire = 15
+    Expiring = 16
+    Expired = 17
+    ToFinish = 18
+    ToForceFinish = 19
+    Terminating = 20
+    Building = 21
+    Built = 22
+    Throttling = 23
+    ToClose = 24
+
+
+class RequestGroupLocking(IDDSEnum):
+    Idle = 0
+    Locking = 1
+
+
+class RequestGroupType(IDDSEnum):
+    Workflow = 0
+    Other = 99
+
+
+class RequestAdditionalDataStorage(IDDSEnum):
+    Default = 0
+    OnDisk = 1
 
 
 class RequestStatus(IDDSEnum):
@@ -147,6 +199,7 @@ class RequestStatus(IDDSEnum):
     Building = 21
     Built = 22
     Throttling = 23
+    ToClose = 24
 
 
 class RequestLocking(IDDSEnum):
@@ -189,6 +242,10 @@ class RequestType(IDDSEnum):
     ActiveLearning = 3
     HyperParameterOpt = 4
     Derivation = 5
+    iWorkflow = 6
+    iWorkflowLocal = 7
+    GenericWorkflow = 8
+    WorkData = 9
     Other = 99
 
 
@@ -202,6 +259,11 @@ class TransformType(IDDSEnum):
     Processing = 6
     Actuating = 7
     Data = 8
+    iWorkflow = 9
+    iWork = 10
+    GenericWorkflow = 11
+    GenericWork = 12
+    BuildWork = 13
     Other = 99
 
 
@@ -229,6 +291,9 @@ class TransformStatus(IDDSEnum):
     Terminating = 20
     Building = 21
     Built = 22
+    Queue = 23
+    Throttling = 24
+    WaitForTrigger = 25
 
 
 class TransformLocking(IDDSEnum):
@@ -236,11 +301,18 @@ class TransformLocking(IDDSEnum):
     Locking = 1
 
 
+class ConditionStatus(IDDSEnum):
+    New = 0
+    WaitForTrigger = 1
+    Triggered = 2
+
+
 class CollectionType(IDDSEnum):
     Container = 0
     Dataset = 1
     File = 2
     PseudoDataset = 3
+    NoContentDataset = 4
 
 
 class CollectionRelationType(IDDSEnum):
@@ -293,6 +365,9 @@ class ContentStatus(IDDSEnum):
     Missing = 9
     Cancelled = 10
     Activated = 11
+    SubAvailable = 12
+    FinalSubAvailable = 13
+    PreProcessing = 14
 
 
 class ContentLocking(IDDSEnum):
@@ -309,6 +384,24 @@ class ContentFetchStatus(IDDSEnum):
 class GranularityType(IDDSEnum):
     File = 0
     Event = 1
+
+
+class ProcessingType(IDDSEnum):
+    Workflow = 0
+    EventStreaming = 1
+    StageIn = 2
+    ActiveLearning = 3
+    HyperParameterOpt = 4
+    Derivation = 5
+    Processing = 6
+    Actuating = 7
+    Data = 8
+    iWorkflow = 9
+    iWork = 10
+    GenericWorkflow = 11
+    GenericWork = 12
+    BuildWork = 13
+    Other = 99
 
 
 class ProcessingStatus(IDDSEnum):
@@ -342,6 +435,22 @@ class ProcessingStatus(IDDSEnum):
     Terminating = 27
     ToTrigger = 28
     Triggering = 29
+    Synchronizing = 30
+    Prepared = 31
+
+
+Terminated_processing_status = [ProcessingStatus.Finished,
+                                ProcessingStatus.Failed,
+                                ProcessingStatus.Lost,
+                                ProcessingStatus.FinishedOnStep,
+                                ProcessingStatus.FinishedOnExec,
+                                ProcessingStatus.FinishedTerm,
+                                ProcessingStatus.SubFinished,
+                                ProcessingStatus.Cancelled,
+                                ProcessingStatus.Suspended,
+                                ProcessingStatus.Expired,
+                                ProcessingStatus.Broken
+                                ]
 
 
 class ProcessingLocking(IDDSEnum):
@@ -371,6 +480,7 @@ class MessageType(IDDSEnum):
     HealthHeartbeat = 12
     IDDSCommunication = 13
     ContentExt = 14
+    AsyncResult = 15
     UnknownFile = 97
     UnknownCollection = 98
     UnknownWork = 99
@@ -395,6 +505,7 @@ class MessageTypeStr(IDDSEnum):
     UnknownCollection = 'collection_unknown'
     UnknownWork = 'work_unknown'
     ContentExt = 'content_ext'
+    AsyncResult = 'async_result'
 
 
 TransformType2MessageTypeMap = {
@@ -432,6 +543,7 @@ class MessageStatus(IDDSEnum):
     Delivered = 2
     Failed = 3
     ConfirmDelivered = 4
+    NoNeedDelivery = 5
 
 
 class MessageLocking(IDDSEnum):
@@ -446,6 +558,7 @@ class MessageSource(IDDSEnum):
     Carrier = 3
     Conductor = 4
     Rest = 5
+    OutSide = 6
 
 
 class MessageDestination(IDDSEnum):
@@ -456,12 +569,26 @@ class MessageDestination(IDDSEnum):
     Conductor = 4
     Outside = 5
     ContentExt = 6
+    AsyncResult = 7
 
 
 class CommandType(IDDSEnum):
-    AbortRequest = 0
-    ResumeRequest = 1
-    ExpireRequest = 2
+    NoneCommand = 0
+
+    AbortRequest = 10
+    ResumeRequest = 11
+    ExpireRequest = 12
+    CloseRequest = 13
+
+    AbortTransform = 20
+    ResumeTransform = 21
+    ExpireTransform = 22
+    CloseTransform = 23
+
+    AbortProcessing = 30
+    ResumeProcessing = 31
+    ExpireProcessing = 32
+    CloseProcessing = 33
 
 
 class CommandStatus(IDDSEnum):
@@ -470,6 +597,11 @@ class CommandStatus(IDDSEnum):
     Processed = 2
     Failed = 3
     UnknownCommand = 4
+
+
+class MetaStatus(IDDSEnum):
+    UnActive = 0
+    Active = 1
 
 
 class CommandLocking(IDDSEnum):
@@ -498,6 +630,24 @@ class ReturnCode(IDDSEnum):
     Locked = 1
 
 
+class GracefulEvent(object):
+    def __init__(self):
+        self.__is_set = False
+
+    def set(self):
+        self.__is_set = True
+
+    def is_set(self):
+        return self.__is_set
+
+
+class AsyncResultStatus(IDDSEnum):
+    Running = 0
+    Finished = 1
+    SubFinished = 2
+    Failed = 3
+
+
 def get_work_status_from_transform_processing_status(status):
     if status in [ProcessingStatus.New, TransformStatus.New]:
         return WorkStatus.New
@@ -517,3 +667,62 @@ def get_work_status_from_transform_processing_status(status):
         return WorkStatus.Terminating
     else:
         return WorkStatus.Transforming
+
+
+def get_transform_status_from_processing_status(status):
+    map = {ProcessingStatus.New: TransformStatus.Transforming,       # when Processing is created, set it to transforming
+           ProcessingStatus.Submitting: TransformStatus.Transforming,
+           ProcessingStatus.Submitted: TransformStatus.Transforming,
+           ProcessingStatus.Running: TransformStatus.Transforming,
+           ProcessingStatus.Finished: TransformStatus.Finished,
+           ProcessingStatus.Failed: TransformStatus.Failed,
+           ProcessingStatus.Lost: TransformStatus.Failed,
+           ProcessingStatus.Cancel: TransformStatus.Cancelled,
+           ProcessingStatus.FinishedOnStep: TransformStatus.Finished,
+           ProcessingStatus.FinishedOnExec: TransformStatus.Finished,
+           ProcessingStatus.FinishedTerm: TransformStatus.Finished,
+           ProcessingStatus.SubFinished: TransformStatus.SubFinished,
+           ProcessingStatus.ToCancel: TransformStatus.ToCancel,
+           ProcessingStatus.Cancelling: TransformStatus.Cancelling,
+           ProcessingStatus.Cancelled: TransformStatus.Cancelled,
+           ProcessingStatus.ToSuspend: TransformStatus.ToSuspend,
+           ProcessingStatus.Suspending: TransformStatus.Suspending,
+           ProcessingStatus.Suspended: TransformStatus.Suspended,
+           ProcessingStatus.ToResume: TransformStatus.ToResume,
+           ProcessingStatus.Resuming: TransformStatus.Resuming,
+           ProcessingStatus.ToExpire: TransformStatus.ToExpire,
+           ProcessingStatus.Expiring: TransformStatus.Expiring,
+           ProcessingStatus.Expired: TransformStatus.Expired,
+           ProcessingStatus.TimeOut: TransformStatus.Failed,
+           ProcessingStatus.ToFinish: TransformStatus.ToFinish,
+           ProcessingStatus.ToForceFinish: TransformStatus.ToForceFinish,
+           ProcessingStatus.Broken: TransformStatus.Failed,
+           ProcessingStatus.Terminating: TransformStatus.Terminating,
+           ProcessingStatus.ToTrigger: TransformStatus.Transforming,
+           ProcessingStatus.Triggering: TransformStatus.Transforming,
+           ProcessingStatus.Synchronizing: TransformStatus.Transforming
+           }
+    if status in map:
+        return map[status]
+    return WorkStatus.Transforming
+
+
+def get_processing_type_from_transform_type(tf_type):
+    map = {TransformType.Workflow: ProcessingType.Workflow,
+           TransformType.EventStreaming: ProcessingType.EventStreaming,
+           TransformType.StageIn: ProcessingType.StageIn,
+           TransformType.ActiveLearning: ProcessingType.ActiveLearning,
+           TransformType.HyperParameterOpt: ProcessingType.HyperParameterOpt,
+           TransformType.Derivation: ProcessingType.Derivation,
+           TransformType.Processing: ProcessingType.Processing,
+           TransformType.Actuating: ProcessingType.Actuating,
+           TransformType.Data: ProcessingType.Data,
+           TransformType.iWorkflow: ProcessingType.iWorkflow,
+           TransformType.iWork: ProcessingType.iWork,
+           TransformType.GenericWorkflow: ProcessingType.GenericWorkflow,
+           TransformType.GenericWork: ProcessingType.GenericWork,
+           TransformType.BuildWork: ProcessingType.BuildWork,
+           TransformType.Other: ProcessingType.Other}
+    if tf_type in map:
+        return map[tf_type]
+    return ProcessingType.Other

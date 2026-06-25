@@ -17,10 +17,10 @@
     <script src="{% static 'js/datatables/datetime-moment.js' %}"></script>
 {% endblock %}
 {% block page_title %}File browser{% endblock %}
-{% block subtitle %}File browser{% endblock %}
+{% block subtitle %}File browser {% if pandaid %}for job <a class="bp-link" href="{% url 'jobInfo' %}/{{ pandaid }}/">{{ pandaid }}</a>{% endif %}{% endblock %}
 {% block body %}
 
-<div class="bp-selected-params">{% for p, v in viewParams.items %}{% if p != 'MON_VO' %}<p>{{ p }}: <b>{{ v }}</b></p>{% endif %}{% endfor %}</div>
+<div class="bp-selected-params">{% for p, v in viewParams.items %}{% if p != 'MON_VO' and p != 'PanDA ID' %}<p>{{ p }}: <b>{{ v }}</b></p>{% endif %}{% endfor %}</div>
 
 {% if 'slow_downloading' in errors %}
   <div id="slow_downloading" class="callout warning">
