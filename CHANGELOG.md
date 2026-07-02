@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.5 (2026-07-02)
+
+### Bug Fixes
+
+- ADCMONITOR-578 add top sites to error panel
+  ([`af35644`](https://github.com/PanDAWMS/panda-bigmon-core/commit/af35644b4a3c95b1100f49a3ccfe0e0aa5441726))
+
+
 ## v1.1.4 (2026-06-25)
 
 ### Bug Fixes
