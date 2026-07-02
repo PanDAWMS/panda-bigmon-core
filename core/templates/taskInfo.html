@@ -283,7 +283,7 @@
       </div>
       <div class="card-section">
       {% for err_cat in errorsummary %}
-        <p> <span class="bp-tooltip right long"><span><b>{{ err_cat.name }}</b></span><span class="tooltip-text"> {{ err_cat.desc }}</span></span> - {{ err_cat.pct }}% ({{ err_cat.count }} jobs)</p>
+        <p> <span class="bp-tooltip right long"><span><b>{{ err_cat.name }}</b></span><span class="tooltip-text"> {{ err_cat.desc }}</span></span> - {{ err_cat.pct }}% ({{ err_cat.count }} jobs), top sites: <span class="smaller">{% for site in err_cat.sites %}{{ site.name }} (<a href="{% url 'jobList' %}?jeditaskid={{ task.jeditaskid }}&jobstatus=failed&errorcategory={{ err_cat.id }}&computingsite={{ site.name }}{% if 'mode' in requestParams and requestParams.mode == 'nodrop' %}&mode=nodrop{% endif %}">{{ site.count }}</a>)&nbsp;{% endfor %}</span></p>
         <ul>
           {% for code_data in err_cat.codes %}
             <li>{% if code_data.desc|length > 10 %}<span class="bp-tooltip right long"><span><b>{{ code_data.diag }}</b></span><span class="tooltip-text"> {{ code_data.desc }}</span></span>{% else %}<b>{{ code_data.diag }}</b>{% endif %} - {{ code_data.count }} jobs. Log examples: {% for pid in code_data.examples %} <a href="/filebrowser/?pandaid={{ pid }}"> [<i class="fi fi-link"></i>] </a> {% endfor %}</li>
@@ -313,7 +313,7 @@
   <div class="bp-dropdown-button">
       <button class="dropdown">Task extra info</button>
       <div class="dropdown-items">
-          {% if requestParams.mode and requestParams.mode == 'nodrop' %}
+          {% if 'mode' in requestParams and requestParams.mode == 'nodrop' %}
               <a {% if 'dropmode' in warning %}class="disabled"{% endif %} href="{{ nomodeurl }}mode=drop">Switch to drop mode</a>
           {% else %}
               <a href="{{ nomodeurl }}mode=nodrop">Switch to nodrop mode</a>
