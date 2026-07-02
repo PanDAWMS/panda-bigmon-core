@@ -2939,7 +2939,10 @@ def userDashApi(request, agg=None):
                         'id': cat['id'],
                         'name': cat['name'],
                         'desc': cat['desc'] if 'desc' in cat else '',
-                        'count': 0, 'tasks': set(), 'codes': {}
+                        'count': 0,
+                        'tasks': set(),
+                        'codes': {},
+                        'sites': {},
                     }
                 error_summary[cat['name']]['count'] += cat['count']
                 error_summary[cat['name']]['tasks'].add(tid)
@@ -2955,11 +2958,16 @@ def userDashApi(request, agg=None):
                     error_summary[cat['name']]['codes'][code['comp_code']]['count'] += code['count']
                     if len(error_summary[cat['name']]['codes'][code['comp_code']]['examples']) < 3:
                         error_summary[cat['name']]['codes'][code['comp_code']]['examples'].extend(code['examples'])
+                for site in cat['sites']:
+                    if site['name'] not in error_summary[cat['name']]['sites']:
+                        error_summary[cat['name']]['sites'][site['name']] = 0
+                    error_summary[cat['name']]['sites'][site['name']] += site['count']
         # dict -> list and sort by count
         error_summary_list = []
         for cat_name, cat_info in error_summary.items():
             error_summary[cat_name]['tasks'] = sorted(list(error_summary[cat_name]['tasks']))
             error_summary[cat_name]['codes'] = sorted(list(error_summary[cat_name]['codes'].values()), key=lambda x: -x['count'])[:3]
+            error_summary[cat_name]['sites'] = sorted(list(error_summary[cat_name]['sites'].items()), key=lambda x: -x[1])[:3]
             error_summary_list.append(error_summary[cat_name])
         data['data']['error_summary'] = sorted(error_summary_list, key=lambda x: -x['count'])[:3]
         _logger.info('Got error summaries: {}'.format(time.time() - request.session['req_init_time']))

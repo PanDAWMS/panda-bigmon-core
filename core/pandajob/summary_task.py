@@ -120,6 +120,7 @@ def job_summary_for_task(query, extra="(1=1)", mode='nodrop', task_archive_flag=
         for err_cat in error_summary_list:
             err_cat['pct'] = round(100. * err_cat['count'] / run_jobs_stats['total'], 1) if run_jobs_stats['total'] > 0 else 0
             if err_cat['pct'] > 1:
+                err_cat['sites'] = sorted(err_cat['sites'], key=lambda x: -x['count'])[:3]
                 error_summary.append(err_cat)
     _logger.info("Got error summary: {} sec".format(time.time() - start_time))
 
