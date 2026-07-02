@@ -1417,6 +1417,9 @@ canvas.full_screen_size {
   .card.bp-container-simple .card-section > table {
     margin: 0;
   }
+  .card.bp-container-simple .card-section > div.error-category ul {
+    margin: 0 0 0 1.5rem;
+  }
 
 .card.bp-container-simple.secondary {
   border: 1px solid #d3deed;
@@ -1522,6 +1525,9 @@ canvas.full_screen_size {
     color: #0a0a0a;
     font-weight: bold;
     border-bottom: 1px dotted;
+  }
+  .card.bp-container-simple.alert > .card-section span.smaller {
+    font-size: 0.875rem;
   }
   .card.bp-container-simple.alert > .card-section span.alert {
     font-weight: bold;

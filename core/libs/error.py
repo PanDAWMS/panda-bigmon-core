@@ -271,9 +271,11 @@ def top_errors_summary(jobs, n_top=3, error_descriptions=None) -> dict:
         err_cat_i = get_job_error_category(job, error_descriptions=error_descriptions, output_format='int')
         err_cat = const.ERROR_CATEGORIES[str(err_cat_i)] if str(err_cat_i) in const.ERROR_CATEGORIES else 'Uncategorized'
         if err_cat not in err_cat_sum:
-            err_cat_sum[err_cat] = {'count': 0, 'id': err_cat_i, 'sites': set(), 'codes': {}}
+            err_cat_sum[err_cat] = {'count': 0, 'id': err_cat_i, 'sites': {}, 'codes': {}}
         err_cat_sum[err_cat]['count'] += 1
-        err_cat_sum[err_cat]['sites'].add(job['computingsite'])
+        if job['computingsite'] not in err_cat_sum[err_cat]['sites']:
+            err_cat_sum[err_cat]['sites'][job['computingsite']] = 0
+        err_cat_sum[err_cat]['sites'][job['computingsite']] += 1
 
         err_comp_code_list = get_job_error_component_code_list(job)
         err_comp_code = ','.join(err_comp_code_list)
@@ -293,7 +295,10 @@ def top_errors_summary(jobs, n_top=3, error_descriptions=None) -> dict:
     # dict -> list of dicts & sort
     err_cat_sum_list = []
     for cat in err_cat_sum:
-        err_cat_sum[cat]['sites'] = sorted(list(err_cat_sum[cat]['sites']))
+        err_cat_sum[cat]['sites'] = sorted(
+            [{'name': site, 'count': count} for site, count in err_cat_sum[cat]['sites'].items()],
+            key=lambda x: -x['count']
+        )
         # keep only top n_top codes
         err_cat_sum[cat]['codes'] = sorted(err_cat_sum[cat]['codes'].items(), key=lambda x: -x[1]['count'])
         if len(err_cat_sum[cat]['codes']) > n_top:

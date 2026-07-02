@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v1.1.4 (2026-06-25)
+
+### Bug Fixes
+
+- Add error message if query failed to idds workflows
+  ([`3fe1b68`](https://github.com/PanDAWMS/panda-bigmon-core/commit/3fe1b68b384092c1d27562c8ff9855b61b2dbd07))
+
+- Add link to job from filebrowser page
+  ([`e79d8e2`](https://github.com/PanDAWMS/panda-bigmon-core/commit/e79d8e23a7b3e009b8b509b3bdbbe451eb354746))
+
+- ATLASPANDA-1788 - add campaign column to workflows table and polishing
+  ([`6316fd9`](https://github.com/PanDAWMS/panda-bigmon-core/commit/6316fd9882b8c4b45f6c94057500945ab84d7524))
+
+- Mlflow move configuration to class init to avoid failures
+  ([`638cc90`](https://github.com/PanDAWMS/panda-bigmon-core/commit/638cc90452b1250f4249f399002c9c4a36272624))
+
+
 ## v1.1.3 (2026-06-24)
 
 ### Bug Fixes
