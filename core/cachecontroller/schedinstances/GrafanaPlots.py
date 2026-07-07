@@ -23,6 +23,9 @@ class GrafanaPlots(BaseURLTasksProvider):
         'https://monit-grafana.cern.ch/render/d-solo/000000806/bigpanda-monitoring?panelId=106&orgId=17&width=1000&height=1000',
     ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)

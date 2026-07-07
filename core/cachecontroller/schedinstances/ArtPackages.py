@@ -9,6 +9,9 @@ class ArtPackages(BaseURLTasksProvider):
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' ArtPackages')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)
@@ -17,10 +20,12 @@ class ArtPackages(BaseURLTasksProvider):
 
 
 class ArtLoadResults(BaseURLTasksProvider):
-
     BASIC_PRIORITY = 1
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' ArtLoadSubResults')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def getpayload(self):
         self.logger.info("getpayload started")
@@ -33,6 +38,9 @@ class ArtRetentionPolicy(BaseURLTasksProvider):
     BASIC_PRIORITY = 1
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' ArtRetentionPolicy')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def getpayload(self):
         self.logger.info("getpayload started")

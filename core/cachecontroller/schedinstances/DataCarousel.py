@@ -18,6 +18,9 @@ class DataCarouselAlert(BaseURLTasksProvider):
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' DataCarouselAlert')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)

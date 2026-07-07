@@ -11,6 +11,9 @@ class Harvester(BaseURLTasksProvider):
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' Harvester')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)

@@ -9,6 +9,9 @@ class RatedTasks(BaseURLTasksProvider):
     lock = threading.RLock()
     logger = logging.getLogger(__name__ + ' RatedTasks')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def getpayload(self):
         self.logger.info("getpayload started")
 
