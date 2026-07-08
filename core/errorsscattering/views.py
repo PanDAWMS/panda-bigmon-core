@@ -13,9 +13,9 @@ from django.utils.cache import patch_response_headers
 from core.libs.cache import getCacheEntry, setCacheEntry, setCacheData
 from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_table
 from core.libs.DateEncoder import DateEncoder
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.views import initRequest, setupView
-from core.common.models import JediTasks
+from core.pandajob.models import JediTasks
 from core.schedresource.utils import get_pq_clouds
 
 from django.conf import settings

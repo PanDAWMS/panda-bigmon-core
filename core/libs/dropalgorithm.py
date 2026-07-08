@@ -7,7 +7,7 @@ from django.db import connection
 from django.utils import timezone
 from core.libs.eventservice import is_event_service
 from core.libs.exlib import get_tmp_table_name_debug, create_temporary_table
-from core.common.models import JediJobRetryHistory
+from core.pandajob.models import JediJobRetryHistory
 
 from django.conf import settings
 

@@ -4,7 +4,7 @@ Created by Tatiana Korchuganova on 18.11.2020
 import logging
 
 from core.libs.exlib import build_stack_histogram, convert_grams, round_to_n_digits
-from core.common.models import Users
+from core.pandajob.models import Users
 
 from django.conf import settings
 

@@ -7,16 +7,16 @@ import logging
 import json
 from datetime import datetime, timezone
 
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Q
 from django.shortcuts import render
-from django.template import RequestContext, loader
+from django.template import RequestContext
 from django.http import HttpResponse
 
 from .utils import build_query, summarize_data
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4
 
 from core.views import initRequest
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 
 collectorDatetimeFormat = "%Y-%m-%dT%H:%M:%S"
 collectorTimeFormat = "%Y-%m-%d %H:%M:%S"
@@ -24,6 +24,7 @@ collectorTimeFormat = "%Y-%m-%d %H:%M:%S"
 _logger = logging.getLogger('bigpandamon')
 
 
+@login_customrequired
 def index_data(request):
     """
         index -- status_summary's default page
@@ -154,6 +155,7 @@ def index_data(request):
     return data, errors, warnings, query_merge, GET_parameters
 
 
+@login_customrequired
 def api_status_summary(request):
     """
         api_status_summary -- api for status_summary's default page

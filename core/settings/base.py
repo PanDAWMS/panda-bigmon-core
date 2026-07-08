@@ -114,7 +114,6 @@ COMMON_INSTALLED_APPS = \
 INSTALLED_APPS_BIGPANDAMON_CORE = (
     # BigPanDAmon core
     "core.oauth",
-    "core.common",
     "core.pandajob",
     "core.schedresource",
     "core.dashboards",

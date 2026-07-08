@@ -1,97 +1,14 @@
 """
     Functions connected to management of authorized users
 """
-
 import logging
 from datetime import timedelta
-from django.http import HttpResponseRedirect, JsonResponse
-from django.utils import timezone
-from core.utils import is_json_request
-from core.oauth.models import BPUser
 from django.conf import settings as django_settings
-from rest_framework.exceptions import AuthenticationFailed
+from django.utils import timezone
+
+from core.oauth.models import BPUser
 
 _logger = logging.getLogger('social')
-
-
-def login_customrequired(function):
-    def wrap(request, *args, **kwargs):
-
-        # we check here if it is a crawler:
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for is None:
-            x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case of one server config
-        if x_forwarded_for and x_forwarded_for in django_settings.CACHING_CRAWLER_HOSTS:
-            return function(request, *args, **kwargs)
-
-        if request.user.is_authenticated:
-            return function(request, *args, **kwargs)
-        elif is_json_request(request):
-            from core.oauth.authentication import BPTokenAuthentication
-            auth = BPTokenAuthentication()
-            try:
-                result = auth.authenticate(request)
-            except AuthenticationFailed as e:
-                auth_token = request.META.get('HTTP_AUTHORIZATION', '---no token---')
-                _logger.error(f"[TOKEN_AUTH_FAILED] failed, token: {auth_token} with: {e}, req: {request} from {x_forwarded_for}")
-                # return JsonResponse({'detail': f"{e}"}, status=401)
-                return function(request, *args, **kwargs)
-
-            if result is None:
-                _logger.info(f"[TOKEN_AUTH_FAILED] no token in header found, req: {request} from {x_forwarded_for}")
-                # return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=401)
-                return function(request, *args, **kwargs)
-
-            user, token = result
-            request.user = user
-            request.auth = token
-            _logger.info(f"[TOKEN_AUTH] successfully authenticated user {user.username}, req: {request}")
-
-            return function(request, *args, **kwargs)
-        else:
-            return HttpResponseRedirect('/login/?next='+request.get_full_path())
-    wrap.__doc__ = function.__doc__
-    wrap.__name__ = function.__name__
-    return wrap
-
-
-def login_customrequired_strict(function):
-    def wrap(request, *args, **kwargs):
-
-        # we check here if it is a crawler:
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for is None:
-            x_forwarded_for = request.META.get('REMOTE_ADDR')  # in case of one server config
-        if x_forwarded_for and x_forwarded_for in django_settings.CACHING_CRAWLER_HOSTS:
-            return function(request, *args, **kwargs)
-
-        if request.user.is_authenticated:
-            return function(request, *args, **kwargs)
-        elif is_json_request(request):
-            from core.oauth.authentication import BPTokenAuthentication
-            auth = BPTokenAuthentication()
-            try:
-                result = auth.authenticate(request)
-            except AuthenticationFailed as e:
-                auth_token = request.META.get('HTTP_AUTHORIZATION', '---no token---')
-                _logger.error(f"[TOKEN_AUTH_FAILED] failed, token: {auth_token} with: {e}, req: {request} from {x_forwarded_for}")
-                return JsonResponse({'detail': f"{e}"}, status=401)
-
-            if result is None:
-                _logger.info(f"[TOKEN_AUTH_FAILED] no token in header found, req: {request} from {x_forwarded_for}")
-                return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=401)
-
-            user, token = result
-            request.user = user
-            request.auth = token
-            _logger.info(f"[TOKEN_AUTH] successfully authenticated user {user.username}, req: {request}")
-
-            return function(request, *args, **kwargs)
-        else:
-            return HttpResponseRedirect('/login/?next='+request.get_full_path())
-    wrap.__doc__ = function.__doc__
-    wrap.__name__ = function.__name__
-    return wrap
 
 
 def get_token_expiry_info(token, user=None):

@@ -8,7 +8,7 @@ from django.db import connection
 from django.utils import timezone
 from django.shortcuts import render
 
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.libs.exlib import dictfetchall
 from core.views import initRequest, setupView
 

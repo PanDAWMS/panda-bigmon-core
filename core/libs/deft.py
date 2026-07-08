@@ -4,7 +4,7 @@ All functions related to the data from ATLAS DEFT
 import logging
 from django.db import connections
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, dictfetchall
-from core.common.models import TRequest
+from core.pandajob.models import TRequest
 
 from django.conf import settings
 

@@ -13,9 +13,9 @@ from django.db.models import Q
 from core.libs.checks import is_positive_int_field
 from core.libs.exlib import convert_bytes
 from datetime import datetime
-from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4
+from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4, Filestable4, FilestableArch, JediDatasetContents, \
+    JediDatasets, JediJobRetryHistory
 from core.pandajob.utils import is_archived_jobs, get_job_error_descriptions
-from core.common.models import JediJobRetryHistory, Filestable4, FilestableArch, JediDatasetContents, JediDatasets
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table, drop_duplicates, convert_sec
 from core.libs.datetimestrings import parse_datetime
 from core.libs.jobmetadata import addJobMetadata

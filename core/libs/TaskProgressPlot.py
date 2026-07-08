@@ -1,8 +1,7 @@
 import logging
 import math
 from datetime import timedelta
-from core.common.models import JediTasks, TaskAttempts
-from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4, Jobsarchived
+from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4, Jobsarchived, JediTasks, TaskAttempts
 from core.libs.exlib import drop_duplicates
 from core.libs.job import add_job_category
 from core.libs.task import get_task_duration, get_datasets_for_tasklist

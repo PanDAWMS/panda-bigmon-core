@@ -12,7 +12,7 @@ from django.shortcuts import render
 
 from django.utils.cache import patch_response_headers
 
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.libs.cache import getCacheEntry
 from core.libs.DateEncoder import DateEncoder
 from core.views import initRequest, extensibleURL

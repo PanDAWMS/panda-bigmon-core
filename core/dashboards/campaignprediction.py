@@ -13,7 +13,7 @@ import pickle
 from django.http import JsonResponse
 import numpy as np
 import humanize
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 
 taskFinalStates = ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']
 stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge', 'Rec TAG', 'Atlfast', 'Atlf Merge']

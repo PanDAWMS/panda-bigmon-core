@@ -7,7 +7,7 @@ from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 from django.template.defaulttags import register
 from django.db.models import Q
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.views import initRequest, setupView
 from core.utils import is_json_request
 from core.iDDS.models import Transforms, Collections, Processings, Contents
@@ -84,6 +84,7 @@ def main(request):
     return response
 
 
+@login_customrequired
 def collections(request):
     valid, response = initRequest(request)
     if not valid:
@@ -107,6 +108,7 @@ def collections(request):
     return JsonResponse({'data': iDDScollections}, encoder=DateEncoder, safe=False)
 
 
+@login_customrequired
 def iddscontents(request):
     valid, response = initRequest(request)
     if not valid:
@@ -127,6 +129,7 @@ def iddscontents(request):
     return JsonResponse({'data': iDDSсontents}, encoder=DateEncoder, safe=False)
 
 
+@login_customrequired
 def processings(request):
     valid, response = initRequest(request)
     if not valid:
@@ -146,6 +149,7 @@ def processings(request):
     return JsonResponse({'data': iDDSprocessings}, encoder=DateEncoder, safe=False)
 
 
+@login_customrequired
 def transforms(request):
     valid, response = initRequest(request)
     if not valid:
@@ -172,6 +176,7 @@ def transforms(request):
     return JsonResponse({'data': iDDStransforms}, encoder=DateEncoder, safe=False)
 
 
+@login_customrequired
 def getiDDSInfoForTaskRequest(request):
     valid, response = initRequest(request)
     if not valid:

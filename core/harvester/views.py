@@ -19,7 +19,7 @@ from core.libs.sqlcustom import escape_input
 from core.libs.sqlsyntax import interval_last
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.utils import is_json_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.harvester.models import HarvesterWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots, \
@@ -331,7 +331,7 @@ def harvesterWorkerInfo(request, workerid=None):
 
 
 # API views for dataTables in harvesterWorkerList page
-
+@login_customrequired
 def get_harvester_workers(request):
     valid, response = initRequest(request)
     if not valid:
@@ -365,6 +365,7 @@ def get_harvester_workers(request):
         return HttpResponse(status=400)
 
 
+@login_customrequired
 def get_harvester_diagnostics(request):
     valid, response = initRequest(request)
     if not valid:
@@ -383,6 +384,7 @@ def get_harvester_diagnostics(request):
     return HttpResponse(json.dumps(dialogs_list, cls=DateTimeEncoder), content_type='application/json')
 
 
+@login_customrequired
 def get_harvester_worker_stats(request):
     valid, response = initRequest(request)
     if not valid:
@@ -408,6 +410,7 @@ def get_harvester_worker_stats(request):
     )
 
 
+@login_customrequired
 def get_harvester_jobs(request):
     valid, response = initRequest(request)
     if not valid:
@@ -460,6 +463,7 @@ def harvesterSlots(request):
     return render(request, 'harvesterSlots.html', data, content_type='text/html')
 
 
+@login_customrequired
 def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='', **kwargs):
     """
     Get jobs list for the particular harvester instance and worker
@@ -556,6 +560,7 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
     return jobsList
 
 
+@login_customrequired
 def getCeHarvesterJobs(request, computingelement, fields=''):
     """
     Get jobs for the particular CE
@@ -659,6 +664,7 @@ def getCeHarvesterJobs(request, computingelement, fields=''):
     return job_list
 
 
+@login_customrequired
 def getHarversterWorkersForTask(request):
     valid, response = initRequest(request)
     if not valid: return response

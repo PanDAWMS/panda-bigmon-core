@@ -1,6 +1,5 @@
 import logging
 import ipaddress
-import re
 import psutil
 import subprocess
 from datetime import timedelta
@@ -9,7 +8,7 @@ from django.utils import timezone
 from django.db.models import Count
 from django.db import connection, DatabaseError
 
-from core.common.models import AllRequests
+from core.oauth.models import AllRequests
 from core.utils import error_response
 
 from django.conf import settings

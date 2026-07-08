@@ -5,8 +5,7 @@ import json
 
 from django.db.models import Sum, Count
 
-from core.pandajob.models import Jobsactive4
-from core.common.models import Metrics
+from core.pandajob.models import Jobsactive4, Metrics
 
 
 def get_running_jobs_stats(computingsites):

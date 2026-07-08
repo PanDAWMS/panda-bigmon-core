@@ -25,7 +25,7 @@ from core.grafana.data_tranformation import stacked_hist, pledges_merging
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.views import initRequest
 
 colours_codes = {
@@ -148,7 +148,7 @@ def index(request):
     response = render(request, 'grafana-api-plots.html', data, content_type='text/html')
     return response
 
-
+@login_customrequired
 def chartjs(request):
     """The main page containing drop-down menus to select group by options etc.
     Data delivers asynchroniously by request to grafana_api view"""
@@ -170,6 +170,7 @@ def chartjs(request):
     return response
 
 
+@login_customrequired
 def grafana_api(request):
     valid, response = initRequest(request)
 
@@ -274,7 +275,7 @@ def grab_children(data, parent=None, child=None):
             child.append([parent, key, value])
     return child
 
-#@login_customrequired
+@login_customrequired
 def pledges(request):
     valid, response = initRequest(request)
 
@@ -444,6 +445,7 @@ def pledges(request):
                             content_type='text/html')
 
 
+@login_customrequired
 def grafana_api_es(request):
     valid, response = initRequest(request)
 
@@ -468,6 +470,7 @@ def grafana_api_es(request):
     result = Grafana().get_data(q)
     return JsonResponse(result)
 
+
 def add_no_cache_headers(response):
     response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response["Pragma"] = "no-cache"
@@ -475,6 +478,7 @@ def add_no_cache_headers(response):
     return response
 
 
+@login_customrequired
 def grafana_image(request):
     whitelist = ["triumf.ca", "cern.ch"]
 

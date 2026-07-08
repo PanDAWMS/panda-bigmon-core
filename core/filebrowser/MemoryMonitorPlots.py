@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
 from django.shortcuts import render, redirect
 
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.views import initRequest
 from core.utils import error_response
 from core.libs.datetimestrings import parse_datetime
