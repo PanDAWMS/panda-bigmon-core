@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.1.6 (2026-07-10)
+
+### Bug Fixes
+
+- Add headers to requests from cachecontroller
+  ([`ce40ffb`](https://github.com/PanDAWMS/panda-bigmon-core/commit/ce40ffb54f309d852ab2d3fccc29d91af0a70f4d))
+
+- Getting staging progress from monit opensearch
+  ([`690217b`](https://github.com/PanDAWMS/panda-bigmon-core/commit/690217bce1dc567e9c82622df881b5029f002787))
+
+- Update auth decorators and remove common module
+  ([`3f548ec`](https://github.com/PanDAWMS/panda-bigmon-core/commit/3f548eca91207d2afcfc000d7a028c23288781c6))
+
+
 ## v1.1.5 (2026-07-02)
 
 ### Bug Fixes
