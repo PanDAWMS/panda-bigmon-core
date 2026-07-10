@@ -1,5 +1,6 @@
 import urllib.request as urllibr
 from urllib.error import HTTPError
+import logging
 import socket
 from BaseTasksProvider import BaseTasksProvider
 import time, json
@@ -8,6 +9,11 @@ from settingscron import MAX_NUMBER_OF_ACTIVE_DB_SESSIONS, TIME_OUT_FOR_QUERY, B
 
 
 class BaseURLTasksProvider(BaseTasksProvider):
+
+    def __init__(self, executioncap=10, headers=None):
+        self.EXECUTIONCAP = executioncap
+        self.logger = logging.getLogger(__name__)
+        self.headers = headers if headers is not None else {}
 
     isActive = False
 
