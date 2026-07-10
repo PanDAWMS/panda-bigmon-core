@@ -489,15 +489,3 @@ if DEBUG is True:
         if 'handlers' in LOGGING['loggers'][logger]:
             LOGGING['loggers'][logger]['handlers'].append('console')
 
-
-ENV = {
-    ### Application name
-    'APP_NAME': "PanDA Monitor",
-    ### Page title default
-    'PAGE_TITLE': "PanDA Monitor",
-    ### Menu item separator
-    'SEPARATOR_MENU_ITEM': "         ",
-    ### Navigation chain item separator
-    'SEPARATOR_NAVIGATION_ITEM': "   &#187;   ",
-}
-

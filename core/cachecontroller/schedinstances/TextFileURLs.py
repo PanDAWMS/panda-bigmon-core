@@ -9,9 +9,11 @@ class TextFileURLs(BaseURLTasksProvider):
     logger = logging.getLogger(__name__+' MainMenuURLs')
     inputfile = 'mainmenurls.txt'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def setInputFile(self, filename):
         self.inputfile = filename
-
 
     def getpayload(self):
         self.logger.info("getpayload started")

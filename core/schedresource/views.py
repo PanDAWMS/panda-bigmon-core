@@ -7,12 +7,11 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.cache import patch_response_headers
 
-from core.common.utils import getContextVariables
 from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.site import get_pq_metrics
 from core.libs.sqlcustom import escape_input
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.schedresource.models import SchedconfigJson
 from core.schedresource.utils import get_panda_queues, filter_pq_json, get_panda_resource, site_summary_dict
 from core.utils import extensibleURL, removeParam, is_json_request
@@ -214,7 +213,6 @@ def siteInfo(request, site=''):
                 datetime.now().strftime("%Y-%m-%d")],
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        data.update(getContextVariables(request))
         response = render(request, 'siteInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response

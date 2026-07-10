@@ -2,7 +2,7 @@ import json
 import re
 
 from core.libs.DateEncoder import DateEncoder
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.utils import is_json_request
 from core.views import initRequest
 from django.db import connection

@@ -17,7 +17,8 @@ import core.constants as const
 from core.utils import extensibleURL, error_response, is_json_request
 from core.views import initRequest
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.oauth.utils import login_customrequired, grant_rights, deny_rights, user_email_sort, get_token_expiry_info, login_customrequired_strict
+from core.oauth.utils import grant_rights, deny_rights, user_email_sort, get_token_expiry_info
+from core.oauth.decorators import login_customrequired,  login_required
 from core.oauth.models import BPUser, BPUserSettings, Visits, BPToken
 
 _logger = logging.getLogger('social')
@@ -252,7 +253,7 @@ def get_user_contact(request):
         return error_response(request, message='No permission to ask this', status=403)
 
 
-@login_customrequired_strict
+@login_required
 def api_auth_test_view(request):
     """
     Endpoint for users to verify their API Token or IAM Bearer token configuration

@@ -1,6 +1,6 @@
 from rucio.client import Client, downloadclient, replicaclient
 import logging
-from core.common.models import RucioAccounts
+from ..oauth.models import RucioAccounts
 from django.utils import timezone
 from datetime import datetime, timedelta
 import os

@@ -17,20 +17,23 @@ from schedinstances.SQLAggregator import SQLAggregator
 from schedinstances.SQLAggregatorCampaign import SQLAggregatorCampaign
 from schedinstances.PandaLogsStorageCleanUp import PandaLogsStorageCleanUp
 from schedinstances.GrafanaPlots import GrafanaPlots
-from schedinstances.DataCarousel import DataCarouselPrestageCollector, DataCarouselAlert
+from schedinstances.DataCarousel import DataCarouselAlert
 from schedinstances.MLFlowCleanup import MLFlowCleanup
 from schedinstances.RatedTasks import RatedTasks
 from schedinstances.CacheCleanUp import CacheCleanUp
 
 from settingscron import EXECUTION_CAP_FOR_MAINMENUURLS
-try:
-    from core import settings
-    LOG_PATH = settings.local.LOG_ROOT + '/cachecontroller.log'
-except ImportError:
-    from settingscron import LOG_PATH
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
+from django.conf import settings
+
+LOG_PATH = getattr(settings, 'LOG_ROOT', '/tmp/') + 'cachecontroller.log'
+AUTH_TOKEN = getattr(settings, 'SERVICE_TOKEN', None)
+
+headers = {}
+if AUTH_TOKEN:
+    headers['Authorization'] = f'Token {AUTH_TOKEN}'
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -38,26 +41,26 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[RotatingFileHandler(LOG_PATH, maxBytes=100000000, backupCount=10)],
 )
+print("Logging to file: " + LOG_PATH, f"token: {'ok' if AUTH_TOKEN else 'Not set'}")
 
-mainMenuURLs = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
-infrequentURLS = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS)
+mainMenuURLs = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
+infrequentURLS = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
 infrequentURLS.setInputFile("infrequenturls.txt")
 
-artPackages = ArtPackages(EXECUTION_CAP_FOR_MAINMENUURLS)
-artLoadResults = ArtLoadResults(EXECUTION_CAP_FOR_MAINMENUURLS)
-artRetentionPolicy = ArtRetentionPolicy(EXECUTION_CAP_FOR_MAINMENUURLS)
-artMails = ArtMails(EXECUTION_CAP_FOR_MAINMENUURLS)
-artDevMails = ArtDevMails(EXECUTION_CAP_FOR_MAINMENUURLS)
-harvester = Harvester(EXECUTION_CAP_FOR_MAINMENUURLS)
-grafanaPlots = GrafanaPlots(EXECUTION_CAP_FOR_MAINMENUURLS)
+artPackages = ArtPackages(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
+artLoadResults = ArtLoadResults(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
+artRetentionPolicy = ArtRetentionPolicy(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
+artMails = ArtMails(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
+artDevMails = ArtDevMails(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
+harvester = Harvester(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
+grafanaPlots = GrafanaPlots(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
 cephCleanUp = PandaLogsStorageCleanUp()
 cacheCleanUp = CacheCleanUp()
 sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
-stageProgressCollector = DataCarouselPrestageCollector()
-dataCarouselAlert = DataCarouselAlert(EXECUTION_CAP_FOR_MAINMENUURLS)
+dataCarouselAlert = DataCarouselAlert(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
 mlFlowCleanUp = MLFlowCleanup()
-ratedTasks = RatedTasks(EXECUTION_CAP_FOR_MAINMENUURLS)
+ratedTasks = RatedTasks(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
 
 
 def run_threaded(job_func):
@@ -79,7 +82,6 @@ schedule.every(1).hours.do(run_threaded, infrequentURLS.execute)
 schedule.every(1).hours.do(run_threaded, cephCleanUp.execute)
 schedule.every().day.at("07:00").do(run_threaded, artMails.execute)  # UTC
 schedule.every().day.at("10:00").do(run_threaded, artMails.execute)  # UTC
-schedule.every(2).hours.do(run_threaded, stageProgressCollector.execute)
 schedule.every().day.at("10:00").do(run_threaded, dataCarouselAlert.execute)
 # schedule.every(10).minutes.do(run_threaded, mlFlowCleanUp.execute)  # disabled as it is not used
 schedule.every().monday.at("07:00").do(run_threaded, ratedTasks.execute)

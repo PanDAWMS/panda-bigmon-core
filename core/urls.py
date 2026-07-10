@@ -116,9 +116,6 @@ urlpatterns = [
     re_path(r'^api/get_hc_tests/', coremon_views.get_hc_tests, name='gethctests'),
     re_path(r'^api/user_dash/(?P<agg>.*)/$', coremon_views.userDashApi, name='userdashapi'),
 
-    # ????
-    re_path(r'^g4exceptions/$', coremon_views.g4exceptions, name='g4exceptions'),
-
     # robots.txt
     re_path(r'^robots\.txt$', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 

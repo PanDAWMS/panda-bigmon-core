@@ -3,7 +3,7 @@ import json
 from django.shortcuts import render
 from core.views import initRequest
 from core.libs.sqlcustom import escape_input
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 
 from django.conf import settings
 

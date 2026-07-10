@@ -11,7 +11,7 @@ from django.shortcuts import render
 from django.core.cache import cache
 from core.views import initRequest, setupView
 from core.utils import error_response
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.reports.models import ReportEmails
 from core.reports.sendMail import send_mail_bp
 from core.reports import ObsoletedTasksReport, LargeScaleAthenaTestsReport, ErrorClassificationReport, TasksRatedReport
@@ -77,6 +77,7 @@ def reports(request):
 
 
 @never_cache
+@login_customrequired
 def report(request):
     valid, response = initRequest(request)
     if not valid:
@@ -249,7 +250,8 @@ def report(request):
 
     return JsonResponse({'status': 'error', 'message': 'Something went wrong'})
 
-# @csrf_exempt
+
+@login_customrequired
 def send_report(request):
     """
     Send message in email

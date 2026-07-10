@@ -8,7 +8,7 @@ from django.http import JsonResponse
 import core.buildmonitor.constants as const
 from core.buildmonitor.utils import get_art_test_results
 from core.libs.DateEncoder import DateEncoder
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.utils import is_json_request
 from core.views import initRequest
 from django.db import connection

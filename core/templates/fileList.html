@@ -17,10 +17,10 @@
 {% block body %}
 {% if dataset.nfilestotal > 0 %}
 
-{% if requestParams.datasetname %}Dataset <b>{{ requestParams.datasetname }}</b> <br>{% endif %}
-{% if requestParams.datasetid %}Dataset ID: <b>{{ requestParams.datasetid }}</b>, name: <b>{{ dataset.name }}</b>  <br>{% endif %}
-{% if requestParams.containername %}Container: <b>{{ requestParams.containername }}</b> <br>{% endif %}
-{% if requestParams.procstatus %}Processing status: <span class="requestParams.procstatus"><b>{{ requestParams.procstatus }}</b></span> <br>{% endif %}
+{% if 'datasetname' in requestParams %}Dataset <b>{{ requestParams.datasetname }}</b> <br>{% endif %}
+{% if 'datasetid' in requestParams %}Dataset ID: <b>{{ requestParams.datasetid }}</b>, name: <b>{{ dataset.name }}</b>  <br>{% endif %}
+{% if 'containername' in requestParams %}Container: <b>{{ requestParams.containername }}</b> <br>{% endif %}
+{% if 'procstatus' in requestParams %}Processing status: <span class="requestParams.procstatus"><b>{{ requestParams.procstatus }}</b></span> <br>{% endif %}
 {% if dataset.type == 'input' or dataset.type == 'pseudo_input' %}
   Total number of inputs: <b>{{ dataset.nfilestotal }}</b>
   {% if dataset.nfilestotal != dataset.nfilesunique %}, whereas number of unique file names is <b>{{ dataset.nfilesunique }}</b> {% endif %}

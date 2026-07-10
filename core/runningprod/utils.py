@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from django.db import transaction, DatabaseError
 from core.runningprod.models import ProdNeventsHistory, RunningProdTasksModel
-from core.common.models import JediTasks
+from core.pandajob.models import JediTasks
 import core.constants as const
 from core.libs.exlib import round_to_n_digits
 

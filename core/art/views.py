@@ -19,7 +19,7 @@ from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F, Max
 
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.utils import is_json_request, complete_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
@@ -33,8 +33,7 @@ from core.libs.job import get_job_list, get_job_walltime
 from core.libs.error import get_job_errors
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.exlib import convert_sec, convert_bytes, round_to_n_digits
-from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived
-from core.common.models import Filestable4
+from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived, Filestable4
 
 from core.art.utils import setupView, get_test_diff, get_result_for_multijob_test, concat_branch, \
     find_last_successful_test, build_gitlab_link, clean_tests_list, get_client_ip
@@ -1017,6 +1016,7 @@ def artErrors(request):
         return response
 
 
+@login_customrequired
 def updateARTJobList(request):
     """
     Loading sub-step results for tests from PanDA job log files managed by Rucio
@@ -1056,6 +1056,7 @@ def updateARTJobList(request):
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
+@login_customrequired
 def loadSubResults(request):
     """
     Loading sub-step results for tests from PanDA job log files managed by Rucio
@@ -1450,6 +1451,7 @@ def upload_test_result(request):
     return response
 
 
+@login_customrequired
 def sendArtReport(request):
     """
     A view to send ART jobs status report by email
@@ -1611,6 +1613,7 @@ def sendDevArtReport(request):
 
 
 @never_cache
+@login_customrequired
 def remove_old_tests(request):
     """
     Remove old records in art_tests
@@ -1636,6 +1639,7 @@ def remove_old_tests(request):
     return JsonResponse({'message': f"{message}, it took {(datetime.now()-start).total_seconds()}s"}, status=status)
 
 
+@login_customrequired
 @never_cache
 def fill_table(request):
     """

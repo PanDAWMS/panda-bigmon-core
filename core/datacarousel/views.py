@@ -16,7 +16,7 @@ from core.libs.checks import is_positive_int_field
 from core.libs.exlib import build_time_histogram, convert_bytes, convert_sec, round_to_n_digits
 from core.libs.DateEncoder import DateEncoder
 from core.libs.task import get_datasets_for_tasklist
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.views import initRequest, setupView
 from core.datacarousel.utils import getBinnedData, get_staging_data, send_report_rse, substitudeRSEbreakdown, staging_rule_verification, \
     get_stuck_files_data, setup_view_dc
@@ -53,6 +53,7 @@ def data_carousel_dash(request):
 
 
 @never_cache
+@login_customrequired
 def get_staging_info_for_task(request):
     valid, response = initRequest(request)
     if not valid:
@@ -123,6 +124,8 @@ def get_staging_info_for_task(request):
 
     response = JsonResponse(datasets, safe=isinstance(datasets, dict), content_type='application/json')
     return response
+
+
 
 def build_summary_data(staginData):
 
@@ -204,6 +207,7 @@ def build_summary_data(staginData):
 
     return summary, timelistSubmitted, timelistSubmittedFiles, timelistIntervalact, timelistIntervalfin, timelistIntervalqueued, progressDistribution
 
+
 def build_dataset_list(staginData):
     dataset_list = []
 
@@ -237,6 +241,8 @@ def build_dataset_list(staginData):
         })
     return dataset_list
 
+
+@login_customrequired
 @never_cache
 def get_data_carousel_data(request):
     valid, response = initRequest(request)
@@ -313,6 +319,7 @@ def get_stuck_files(request):
     return JsonResponse({'data': stuck_files_list})
 
 
+@login_customrequired
 @never_cache
 def send_stalled_requests_report(request):
     """

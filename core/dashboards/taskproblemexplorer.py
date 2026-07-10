@@ -13,7 +13,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.utils.cache import patch_response_headers
 
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.utils import is_json_request, extensibleURL
 from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
@@ -24,7 +24,7 @@ from core.libs.sqlcustom import preprocess_wild_card_string
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 from core.views import initRequest, setupView
 
-from core.common.models import JediTasks, TasksStatusLog
+from core.pandajob.models import JediTasks, TasksStatusLog
 
 from django.conf import settings
 import core.constants as const

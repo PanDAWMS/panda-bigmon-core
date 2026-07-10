@@ -1,100 +1,94 @@
+import copy
+import hashlib
+import json
 import logging
+import math
+import os
+import random
 import re
 import subprocess
-import os
 import time
-import json
-import copy
-import random
-import pandas as pd
-import math
-import urllib3
-import hashlib
-
 from datetime import datetime, timedelta
-from threading import Thread, Lock
-from urllib.parse import urlencode, urlparse, urlunparse, parse_qs, unquote_plus
+from threading import Lock, Thread
+from urllib.parse import parse_qs, unquote_plus, urlencode, urlparse, urlunparse
+
+import pandas as pd
+import urllib3
+
 try:
     from opensearch_dsl import Search
 except ImportError:
     from opensearchpy import Search
 
+from django.conf import settings
+from django.db import connection
+from django.db.models import Count, DateTimeField, F, FloatField, Q, Sum, Value
 from django.http import HttpResponse, JsonResponse, UnreadablePostError
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect, render
 from django.template import RequestContext
-from django.db.models import Count, Sum, F, Value, FloatField, Q, DateTimeField
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.cache import never_cache
+from django.template.context_processors import csrf
+from django.template.defaulttags import register
+from django.template.loaders.app_directories import get_app_template_dirs
 from django.utils import timezone
 from django.utils.cache import patch_response_headers
-from django.db import connection
-from django.template.loaders.app_directories import get_app_template_dirs
-from django.template.defaulttags import register
-from django.template.context_processors import csrf
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
 
 import core.constants as const
-from core.common.utils import getPrefix, getContextVariables
-from core.pandajob.SQLLookups import CastDate
-from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4, Jobsarchived, PandaJob, ErrorDescription
-from core.common.models import Filestable4, FilestableArch, Datasets, Users, Jobparamstable, JobsStatuslog, Jobsdebug, ResourceTypes
-from core.common.models import JediJobRetryHistory, JediTasks, TasksStatusLog, JediEvents, JediDatasets, JediDatasetContents, JediWorkQueue
-from core.common.models import Rating
 from core.compare.modelsCompare import ObjectsComparison
+from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
+from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
+from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
 from core.filebrowser.rucioutils import get_rucio_username_by_produserid
 from core.filebrowser.utils import get_log_provider
-
-from django.conf import settings
-
-from core.libs.TaskProgressPlot import TaskProgressPlot
-from core.libs.UserProfilePlot import UserProfilePlot
-from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
-
-from core.oauth.utils import login_customrequired, is_expert, get_full_name, get_username
-
-from core.utils import is_json_request, extensibleURL, complete_request, is_wildcards, removeParam, is_xss, error_response
+from core.iDDS.utils import add_idds_info_to_tasks
+from core.libs.bpuser import filterErrorData, get_relevant_links
+from core.libs.cache import getCacheData, getCacheEntry, set_cache_timeout, setCacheEntry
 from core.libs.dataset import get_scope
-from core.libs.dropalgorithm import insert_dropped_jobs_to_tmp_table, drop_job_retries
-from core.libs.cache import getCacheEntry, setCacheEntry, set_cache_timeout, getCacheData
-from core.libs.deft import get_task_chain, hashtags_for_tasklist, extend_view_deft, staging_info_for_tasklist, \
-    get_prod_slice_by_taskid, get_prod_request_info
-from core.libs.error import error_category_summary_by_task, error_summary_for_job
-from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, create_temporary_table, dictfetchall, is_timestamp
-from core.libs.exlib import convert_to_si_prefix, get_file_info, convert_bytes, convert_hs06, round_to_n_digits, \
-    convert_grams
-from core.libs.eventservice import is_event_service, event_summary_for_task, add_event_summary_to_tasklist
-from core.libs.task import input_summary_for_task, datasets_for_task, \
-    get_task_params, humanize_task_params, get_job_metrics_summary_for_task, cleanTaskList, get_task_flow_data, \
-    get_datasets_for_tasklist, get_task_info, get_task_rating, get_task_diagnostics
-from core.libs.task import get_dataset_locality, is_event_service_task, filter_task_list_by_relevance, \
-    get_task_timewindow, get_task_time_archive_flag, get_logs_by_taskid, task_summary_dict, tasks_not_updated
-from core.libs.task import checkIfIddsTask, checkIfDCTask
-from core.libs.taskparams import analyse_task_submission_options
-from core.libs.job import get_job_list, calc_jobs_metrics, job_states_count_by_param, is_job_active, \
-    get_job_queuetime, get_job_walltime, job_state_count, getSequentialRetries, getSequentialRetries_ES, \
-     getSequentialRetries_ESupstream, is_debug_mode, clean_job_list, add_files_info_to_jobs, get_files_for_job
-from core.libs.jobmetadata import addJobMetadata
-from core.libs.bpuser import get_relevant_links, filterErrorData
-from core.libs.user import prepare_user_dash_plots, get_panda_user_stats, humanize_metrics
-from core.libs.elasticsearch import create_os_connection, get_payloadlog, get_split_rule_info
-from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
-from core.libs.datetimestrings import datetime_handler, parse_datetime, stringify_datetime_fields
-from core.libs.jobconsumers import reconstruct_job_consumers
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
-
-from core.pandajob.summary_error import errorSummaryDict, get_error_message_summary
-from core.pandajob.summary_task import task_summary, job_summary_for_task, job_summary_for_task_light, \
-    get_job_state_summary_for_tasklist, get_top_memory_consumers
-from core.pandajob.summary_wn import wn_summary
+from core.libs.datetimestrings import datetime_handler, parse_datetime, stringify_datetime_fields
+from core.libs.deft import (extend_view_deft, get_prod_request_info, get_prod_slice_by_taskid, get_task_chain, hashtags_for_tasklist,
+                            staging_info_for_tasklist)
+from core.libs.dropalgorithm import drop_job_retries, insert_dropped_jobs_to_tmp_table
+from core.libs.elasticsearch import create_os_connection, get_payloadlog, get_split_rule_info
+from core.libs.error import error_category_summary_by_task, error_summary_for_job
+from core.libs.eventservice import add_event_summary_to_tasklist, event_summary_for_task, is_event_service
+from core.libs.exlib import (convert_bytes, convert_grams, convert_hs06, convert_to_si_prefix, create_temporary_table, dictfetchall,
+                             get_file_info, get_tmp_table_name, insert_to_temp_table, is_timestamp, round_to_n_digits)
+from core.libs.job import (add_files_info_to_jobs, calc_jobs_metrics, clean_job_list, get_files_for_job, get_job_list, get_job_queuetime,
+                           get_job_walltime, getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode,
+                           is_job_active, job_state_count, job_states_count_by_param)
+from core.libs.jobconsumers import reconstruct_job_consumers
+from core.libs.jobmetadata import addJobMetadata
+from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
+from core.libs.task import (checkIfDCTask, checkIfIddsTask, cleanTaskList, datasets_for_task, filter_task_list_by_relevance,
+                            get_dataset_locality, get_datasets_for_tasklist, get_job_metrics_summary_for_task, get_logs_by_taskid,
+                            get_task_diagnostics, get_task_flow_data, get_task_info, get_task_params, get_task_rating,
+                            get_task_time_archive_flag, get_task_timewindow, humanize_task_params, input_summary_for_task,
+                            is_event_service_task, task_summary_dict, tasks_not_updated)
+from core.libs.taskparams import analyse_task_submission_options
+from core.libs.TaskProgressPlot import TaskProgressPlot
+from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
+from core.libs.user import get_panda_user_stats, humanize_metrics, prepare_user_dash_plots
+from core.libs.UserProfilePlot import UserProfilePlot
+from core.oauth.decorators import login_customrequired, login_required
+from core.oauth.models import Rating
+from core.oauth.utils import get_full_name, get_username, is_expert
+from core.pandajob.models import (Datasets, ErrorDescription, Filestable4, FilestableArch, JediDatasetContents, JediDatasets, JediEvents,
+                                  JediJobRetryHistory, JediTasks, JediWorkQueue, Jobparamstable, Jobsactive4, Jobsarchived, Jobsarchived4,
+                                  Jobsdebug, Jobsdefined4, JobsStatuslog, PandaJob, ResourceTypes, TasksStatusLog, Users)
+from core.pandajob.SQLLookups import CastDate
+from core.pandajob.summary_error import errorSummaryDict
+from core.pandajob.summary_task import (get_job_state_summary_for_tasklist, get_top_memory_consumers, job_summary_for_task,
+                                        job_summary_for_task_light, task_summary)
 from core.pandajob.summary_user import user_summary_dict
-from core.pandajob.utils import job_summary_dict, is_archived_jobs, get_job_error_descriptions, get_errors_per_category, summary_by_site_overall
-
-from core.iDDS.utils import add_idds_info_to_tasks
-from core.dashboards.jobsummaryregion import get_job_summary_region, prepare_job_summary_region, prettify_json_output
-from core.dashboards.jobsummarynucleus import get_job_summary_nucleus, prepare_job_summary_nucleus
-from core.dashboards.eventservice import get_es_job_summary_region, prepare_es_job_summary_region
-from core.schedresource.utils import get_panda_queues, get_basic_info_for_pqs, get_pq_clouds, get_pq_object_store_path, \
-    filter_pq_json, get_osg_pool_pqs
+from core.pandajob.summary_wn import wn_summary
+from core.pandajob.utils import (get_errors_per_category, get_job_error_descriptions, is_archived_jobs, job_summary_dict,
+                                 summary_by_site_overall)
+from core.schedresource.utils import (filter_pq_json, get_basic_info_for_pqs, get_osg_pool_pqs, get_panda_queues, get_pq_clouds,
+                                      get_pq_object_store_path)
+from core.utils import complete_request, error_response, extensibleURL, is_json_request, is_wildcards, is_xss, removeParam
 
 tcount = {}
 lock = Lock()
@@ -450,6 +444,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if ('jeditaskid' in request.session['requestParams'] or
                 'taskid' in request.session['requestParams'] or
                 'pandaid' in request.session['requestParams'] or
+                'datasetid' in request.session['requestParams'] or
                 'jobname' in request.session['requestParams'] or (
                     querytype == 'user'
                     and 'extra' in request.session['requestParams']
@@ -1058,18 +1053,16 @@ def mainPage(request):
         del request.session['TFIRST']
         del request.session['TLAST']
         data = {
-            'prefix': getPrefix(request),
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'built': datetime.now().strftime("%H:%M:%S")
         }
-        data.update(getContextVariables(request))
         response = render(request, 'core-mainPage.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
     else:
         response = JsonResponse({})
-    request = complete_request(request)
+    complete_request(request)
     return response
 
 
@@ -1128,7 +1121,6 @@ def helpPage(request):
 
     if not is_json_request(request):
         data = {
-            'prefix': getPrefix(request),
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
@@ -1141,7 +1133,7 @@ def helpPage(request):
     else:
         return HttpResponse('json', content_type='text/html')
 
-
+@login_required
 def jobParamList(request):
     idlist = []
     if 'pandaid' in request.session['requestParams']:
@@ -1346,7 +1338,7 @@ def jobList(request, mode=None, param=None):
     job_final_states = ['finished', 'failed', 'cancelled', 'closed', 'merging']
     harvesterjobstatus = ''
 
-    from core.harvester.views import getHarvesterJobs, getCeHarvesterJobs
+    from core.harvester.views import getCeHarvesterJobs, getHarvesterJobs
 
     if 'jobstatus' in request.session['requestParams']:
         harvesterjobstatus = request.session['requestParams']['jobstatus']
@@ -1754,7 +1746,6 @@ def jobList(request, mode=None, param=None):
         _logger.debug('Extra data preporation done: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
-            'prefix': getPrefix(request),
             'errsByCount': errsByCount,
             'errsByMessage': json.dumps(errsByMessage),
             'errdSumd': errdSumd,
@@ -1795,7 +1786,6 @@ def jobList(request, mode=None, param=None):
             'warning': warning,
             'timerange': [],
         }
-        data.update(getContextVariables(request))
         setCacheEntry(request, "jobList", json.dumps(data, cls=DateEncoder), 60 * 20)
         _logger.debug('Cache was set: {}'.format(time.time() - request.session['req_init_time']))
 
@@ -1909,6 +1899,7 @@ def jobList(request, mode=None, param=None):
 
 
 @never_cache
+@login_customrequired
 def descendentjoberrsinfo(request):
     valid, response = initRequest(request)
     if not valid:
@@ -2044,7 +2035,6 @@ def jobInfo(request, pandaid=None, batchid=None):
 
     if len(jobs) == 0:
         data = {
-            'prefix': getPrefix(request),
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
             'pandaid': pandaid,
@@ -2318,7 +2308,6 @@ def jobInfo(request, pandaid=None, batchid=None):
             error_summary = error_summary_for_job(job)
 
         data = {
-            'prefix': getPrefix(request),
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
@@ -2352,7 +2341,6 @@ def jobInfo(request, pandaid=None, batchid=None):
             'authtype': auth,
             'error_summary': error_summary,
         }
-        data.update(getContextVariables(request))
         setCacheEntry(request, "jobInfo", json.dumps(data, cls=DateEncoder), 60 * 20)
         if is_event_service(job):
             response = render(request, 'jobInfoES.html', data, content_type='text/html')
@@ -2386,6 +2374,7 @@ def jobInfo(request, pandaid=None, batchid=None):
 
 
 @never_cache
+@login_customrequired
 def get_job_relationships(request, pandaid=-1):
     """
     Getting job relationships in both directions: downstream (further retries); upstream (past retries).
@@ -2580,7 +2569,6 @@ def userList(request):
             'phigh': request.session['PHIGH'],
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        data.update(getContextVariables(request))
         setCacheEntry(request, "userList", json.dumps(data, cls=DateEncoder), 60 * 60)
         response = render(request, 'userList.html', data, content_type='text/html')
         request = complete_request(request)
@@ -2827,7 +2815,6 @@ def userInfo(request, user=''):
                 'built': datetime.now().strftime("%H:%M:%S"),
                 'links': links,
             }
-            data.update(getContextVariables(request))
             response = render(request, 'userInfo.html', data, content_type='text/html')
             request = complete_request(request)
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
@@ -2881,6 +2868,7 @@ def userInfo(request, user=''):
             return response
 
 
+@login_customrequired
 def userDashApi(request, agg=None):
     """
 
@@ -3570,6 +3558,7 @@ def dashProduction(request):
     return dashboard(request, view='production')
 
 
+@login_customrequired
 def taskESExtendedInfo(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
@@ -3920,6 +3909,7 @@ def killtasks(request):
     return response
 
 
+@login_customrequired
 def getErrorSummaryForEvents(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4096,6 +4086,7 @@ def taskProfile(request, jeditaskid=None):
 
 
 @never_cache
+@login_customrequired
 def taskProfileData(request, jeditaskid=0):
     """A view that returns data for task profile plot"""
     valid, response = initRequest(request)
@@ -4188,6 +4179,7 @@ def userProfile(request, username=""):
 
 
 @never_cache
+@login_customrequired
 def userProfileData(request):
     """A view that returns data for task profile plot"""
     valid, response = initRequest(request)
@@ -4789,7 +4781,6 @@ def taskInfo(request, jeditaskid=0):
             'userexpert': user_expert,
             'finegrained': fine_grained
         }
-        data.update(getContextVariables(request))
 
         if eventservice:
             data['eventssummary'] = eventssummary
@@ -4863,6 +4854,7 @@ def taskInfo(request, jeditaskid=0):
 
 
 @csrf_exempt
+@login_customrequired
 def rating_func(request):
     valid, response = initRequest(request)
     if not valid:
@@ -4903,6 +4895,7 @@ def rating_func(request):
     return JsonResponse({'data': {'rating_average': rating_average, 'rating_data': rating_data}}, status=200)
 
 
+@login_customrequired
 def getEventsDetails(request, mode='drop', jeditaskid=0):
     """
     A view for ES task Info page to get events details in different states
@@ -4953,6 +4946,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
     return HttpResponse(json.dumps(objectStoreDict, cls=DateEncoder), content_type='application/json')
 
 
+@login_customrequired
 def taskchain(request):
     """
     Task chain plot based on ATLAS_DEFT tables
@@ -4987,6 +4981,7 @@ def taskchain(request):
     return response
 
 
+@login_customrequired
 def ganttTaskChain(request):
     """"
      Task chain Gantt diagram based on ATLAS_DEFT tables
@@ -5015,6 +5010,7 @@ def ganttTaskChain(request):
     return response
 
 
+@login_customrequired
 def getJobSummaryForTask(request, jeditaskid=-1):
     valid, response = initRequest(request)
     if not valid:
@@ -5107,6 +5103,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
     return response
 
 
+@login_customrequired
 def taskFlowDiagram(request, jeditaskid=-1):
     """
     Prepare data for task flow chart
@@ -5438,7 +5435,6 @@ def errorSummary(request):
         _logger.info('Extra data preparation for template: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
-            'prefix': getPrefix(request),
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
@@ -5472,7 +5468,6 @@ def errorSummary(request):
             'display_limit': display_limit,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        data.update(getContextVariables(request))
         setCacheEntry(request, "errorSummary", json.dumps(data, cls=DateEncoder), 60 * 20)
 
         _logger.info('Set cache: {}'.format(time.time() - request.session['req_init_time']))
@@ -5529,6 +5524,7 @@ def decommissioned(request, **kwargs):
 
 
 
+@login_customrequired
 def esatlasPandaLoggerJson(request):
     valid, response = initRequest(request)
     if not valid or settings is None:
@@ -5568,6 +5564,7 @@ def esatlasPandaLoggerJson(request):
     return HttpResponse(json.dumps(jdListFinal), content_type='application/json')
 
 
+@login_customrequired
 def esatlasPandaLogger(request):
     valid, response = initRequest(request)
     if not valid:
@@ -5798,7 +5795,6 @@ def datasetInfo(request):
             'columns': columns,
             'built': datetime.now().strftime("%H:%M:%S"),
         }
-        data.update(getContextVariables(request))
         response = render(request, 'datasetInfo.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -5872,7 +5868,6 @@ def datasetList(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'message': message,
         }
-        data.update(getContextVariables(request))
         response = render(request, 'datasetList.html', data, content_type='text/html', status=status)
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -6035,7 +6030,6 @@ def fileInfo(request):
             'built': datetime.now().strftime("%H:%M:%S"),
             'plotData': plot_data,
         }
-        data.update(getContextVariables(request))
         response = render(request, 'fileInfo.html', data, RequestContext(request))
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -6054,6 +6048,8 @@ def fileList(request):
     valid, response = initRequest(request)
     if not valid:
         return response
+
+    _ = setupView(request, opmode='notime', querytype='file', wildCardExt=False)
 
     defaultlimit = 1000
     dataset = {
@@ -6108,8 +6104,8 @@ def fileList(request):
             'dataset': dataset,
             'extraparams': extraparams,
             'built': datetime.now().strftime("%H:%M:%S"),
+            'timerange': '',
         }
-        data.update(getContextVariables(request))
         response = render(request, 'fileList.html', data, content_type='text/html')
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
@@ -6118,6 +6114,7 @@ def fileList(request):
 
 
 @never_cache
+@login_customrequired
 def loadFileList(request):
     valid, response = initRequest(request)
     if not valid:
@@ -6292,86 +6289,6 @@ def stateNotUpdated(
         return jobs
 
 
-def g4exceptions(request):
-    valid, response = initRequest(request)
-    setupView(request, hours=365 * 24, limit=999999999)
-    if 'hours' in request.session['requestParams']:
-        hours = int(request.session['requestParams']['hours'])
-    else:
-        hours = 3
-
-    query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=hours, wildCardExt=True)
-    query['jobstatus__in'] = ['failed', 'holding']
-    query['exeerrorcode'] = 68
-    query['exeerrordiag__icontains'] = 'G4 exception'
-    values = 'pandaid', 'atlasrelease', 'exeerrorcode', 'exeerrordiag', 'jobstatus', 'transformation'
-
-    jobs = []
-    jobs.extend(
-        Jobsactive4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
-    jobs.extend(
-        Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
-    if (((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
-                                             "%Y-%m-%d %H:%M:%S")).days > 1) or \
-            ((datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
-                                                 "%Y-%m-%d %H:%M:%S")).days > 1)):
-        jobs.extend(
-            Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension])[:request.session['JOB_LIMIT']].values(*values))
-
-    if 'amitag' in request.session['requestParams']:
-
-        tmpTableName = get_tmp_table_name()
-        transactionKey = insert_to_temp_table([job['pandaid'] for job in jobs]) # Backend dependable
-        new_cur = connection.cursor()
-        new_cur.execute("""
-            SELECT JOBPARAMETERS, PANDAID 
-            FROM {}.JOBPARAMSTABLE 
-            WHERE PANDAID in (SELECT ID FROM {} WHERE TRANSACTIONKEY={})
-            """.format(settings.DB_SCHEMA_PANDA, tmpTableName, transactionKey))
-        mrecs = dictfetchall(new_cur)
-        jobsToRemove = set()
-        for rec in mrecs:
-            acceptJob = True
-            parameters = rec['JOBPARAMETERS'].read()
-            tagName = "--AMITag"
-            startPos = parameters.find(tagName)
-            if startPos == -1:
-                acceptJob = False
-            endPos = parameters.find(" ", startPos)
-            AMITag = parameters[startPos + len(tagName) + 1:endPos]
-            if AMITag != request.session['requestParams']['amitag']:
-                acceptJob = False
-            if acceptJob == False:
-                jobsToRemove.add(rec['PANDAID'])
-
-        jobs = filter(lambda x: not x['pandaid'] in jobsToRemove, jobs)
-
-    jobs = addJobMetadata(jobs)
-    errorFrequency = {}
-    errorJobs = {}
-
-    for job in jobs:
-        if job['metastruct']['executor'][0]['logfileReport']['countSummary']['FATAL'] > 0:
-            message = job['metastruct']['executor'][0]['logfileReport']['details']['FATAL'][0]['message']
-            exceptMess = message[message.find("G4Exception :") + 14: message.find("issued by :") - 1]
-            if exceptMess not in errorFrequency:
-                errorFrequency[exceptMess] = 1
-            else:
-                errorFrequency[exceptMess] += 1
-
-            if exceptMess not in errorJobs:
-                errorJobs[exceptMess] = []
-                errorJobs[exceptMess].append(job['pandaid'])
-            else:
-                errorJobs[exceptMess].append(job['pandaid'])
-
-    resp = {'errorFrequency': errorFrequency, 'errorJobs': errorJobs}
-
-    del request.session['TFIRST']
-    del request.session['TLAST']
-    return HttpResponse(json.dumps(resp), content_type='application/json')
-
-
 def initSelfMonitor(request):
     import psutil
     if 'hostname' in request.session:
@@ -6437,6 +6354,7 @@ def handler500(request):
     return response
 
 
+@login_customrequired
 def getBadEventsForTask(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
@@ -6493,6 +6411,7 @@ def getBadEventsForTask(request):
     return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 
+@login_customrequired
 def getEventsChunks(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
@@ -6542,6 +6461,7 @@ def getEventsChunks(request):
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='application/json')
 
 
+@login_customrequired
 def getTaskDataMovementData(request, jeditaskid=None):
     """
     Getting information of volume of input data has been moved initiated by PanDA
@@ -6587,6 +6507,7 @@ def getTaskDataMovementData(request, jeditaskid=None):
 
 
 @never_cache
+@login_customrequired
 def getJobStatusLog(request, pandaid=None):
     """
     A view to asynchronously load job states changes history
@@ -6638,6 +6559,7 @@ def getJobStatusLog(request, pandaid=None):
 
 
 @never_cache
+@login_customrequired
 def getTaskStatusLog(request, jeditaskid=None):
     """
     A view to asynchronously load task states changes history
@@ -6684,6 +6606,7 @@ def getTaskStatusLog(request, jeditaskid=None):
 
 
 @never_cache
+@login_customrequired
 def getTaskLogs(request, jeditaskid=None):
     """
     A view to asynchronously load task logs from OpenSearch storage
@@ -6712,6 +6635,7 @@ def getTaskLogs(request, jeditaskid=None):
     return response
 
 
+@login_customrequired
 def getSites(request):
     """
     List of sites for auto-complete options in the search by site in top bar
@@ -6737,6 +6661,7 @@ def getSites(request):
 
 
 @never_cache
+@login_customrequired
 def get_hc_tests(request):
     """
     API for getting list of HammerCloud Tests
@@ -6905,6 +6830,7 @@ def get_hc_tests(request):
 
 
 @csrf_exempt
+@login_customrequired
 def getPayloadLog(request):
     """
     A view to asynchronously load pilot logs from OpenSearch storage by pandaid or taskid
@@ -7000,6 +6926,7 @@ def resourceTypeList(request):
     return response
 
 
+@login_customrequired
 def error_descriptions(request):
     """
     Get error descriptions from the database

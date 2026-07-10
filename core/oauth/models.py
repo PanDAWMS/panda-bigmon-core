@@ -1,6 +1,8 @@
 """
 
 """
+from __future__ import unicode_literals
+
 import binascii
 import os
 from django.contrib.auth.models import AbstractUser, Group, Permission
@@ -91,3 +93,45 @@ class BPToken(models.Model):
     def __str__(self):
         return self.key
 
+
+class Rating(models.Model):
+    rating_id = models.BigAutoField(primary_key=True, db_column='ratingid')
+    user_id = models.IntegerField(primary_key=False, db_column='userid')
+    task_id = models.IntegerField(primary_key=False, db_column='jeditaskid')
+    rating = models.IntegerField(primary_key=False,db_column='rating')
+    feedback = models.CharField(max_length=255, db_column='feedback')
+    timestamp = models.CharField(max_length=255, db_column='added')
+    class Meta:
+            db_table = f'"{settings.DB_SCHEMA}"."rating"'
+            app_label = 'pandamon'
+
+
+class RucioAccounts(models.Model):
+    id = models.IntegerField(primary_key=True, db_column='id')
+    certificatedn = models.CharField(max_length=250, db_column='certificatedn')
+    rucio_account = models.CharField(max_length=40, db_column='rucio_account')
+    create_time = models.DateTimeField(db_column='create_time')
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA}"."rucio_accounts"'
+        app_label = 'pandamon'
+
+
+class AllRequests(models.Model):
+    id = models.IntegerField(primary_key=True, db_column='id')
+    server = models.CharField(max_length=100, db_column='server')
+    remote = models.CharField(max_length=100, db_column='remote')
+    qtime = models.DateTimeField(db_column='qtime')
+    rtime = models.DateTimeField(db_column='rtime')
+    url = models.CharField(max_length=2500, db_column='url')
+    referrer = models.CharField(max_length=4000, db_column='referrer')
+    useragent = models.CharField(max_length=250, db_column='useragent')
+    is_rejected = models.IntegerField(db_column='is_rejected')
+    urlview = models.CharField(max_length=300, db_column='urlview')
+    load = models.FloatField(db_column='load')
+    mem = models.FloatField(db_column='mem')
+    dbactivesess = models.IntegerField(db_column='dbactivesess')
+    dbtotalsess = models.IntegerField(db_column='dbtotalsess')
+
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA}"."all_requests_daily"'
+        app_label = 'pandamon'

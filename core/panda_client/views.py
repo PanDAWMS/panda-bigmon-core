@@ -10,6 +10,7 @@ from core.views import initRequest
 from core.oauth.utils import is_expert
 
 _logger = logging.getLogger('panda.client')
+
 @csrf_exempt
 def client(request, task_id=None):
     valid, response = initRequest(request)

@@ -2,8 +2,8 @@ import logging
 from datetime import timedelta, datetime
 from django.utils import timezone
 
-from core.common.models import Rating, JediTasks
-from core.oauth.models import BPUser
+from core.pandajob.models import JediTasks
+from core.oauth.models import BPUser, Rating
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits
 
 from django.conf import settings

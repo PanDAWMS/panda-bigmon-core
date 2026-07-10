@@ -7,7 +7,7 @@ import json
 from dateutil.parser import parse
 from django.db.models import Count, Avg, F
 
-from core.common.models import JediTasks, JediTaskparams, JediDatasetContents
+from core.pandajob.models import JediDatasetContents, JediTaskparams, JediTasks
 from core.libs.dropalgorithm import drop_job_retries
 from core.libs.job import get_job_list, job_state_count
 from core.libs.jobconsumption import job_consumption_plots

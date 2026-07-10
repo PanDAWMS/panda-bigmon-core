@@ -12,7 +12,7 @@ from datetime import datetime
 from django.conf import settings
 from core.filebrowser.ObjectStoreWrapper import ObjectStore
 import core.filebrowser.constants as const
-from core.common.models import Filestable4, FilestableArch
+from core.pandajob.models import Filestable4, FilestableArch
 from core.libs.job import get_job_list
 from core.libs.exlib import convert_bytes
 from core.schedresource.utils import get_panda_queues
