@@ -19,13 +19,13 @@ def run_query(rules):
     base = "https://monit-grafana.cern.ch"
     url = "api/datasources/proxy/8428/_msearch"
 
-    rulequery = ""
-    for rule in rules:
-        rulequery += " data.rule_id: %s OR" % rule
+    rulequery = " OR ".join([f"data.rule_id: {rule}" for rule in rules])
 
-    rulequery = rulequery[:-3]
     paramQuery = """{"filter":[{"query_string":{"analyze_wildcard":true,"query":"data.event_type:rule_progress AND (%s)"}}]}""" % rulequery
-    query = """{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["monit_prod_ddm_enr_transfer*"]}\n{"size":500,"query":{"bool":"""+paramQuery+"""},"sort":{"metadata.timestamp":{"order":"desc","unmapped_type":"boolean"}},"script_fields":{},"docvalue_fields":["metadata.timestamp"]}\n"""
+    query = (
+        '{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["monit_prod_ddm_enr_transfer*"]}\n'
+        f'{{"size":500,"query":{{"bool":{paramQuery}}},"sort":{{"metadata.timestamp":{{"order":"desc","unmapped_type":"boolean"}}}},"script_fields":{{}},"docvalue_fields":["metadata.timestamp"]}}\n'
+    )
     headers = settings.GRAFANA
     headers['Content-Type'] = 'application/json'
     headers['Accept'] = 'application/json'
@@ -38,73 +38,74 @@ def run_query(rules):
         results = loads(r.text)['responses'][0]['hits']['hits']
         for result in results:
             dictEntry = resultdict.get(result['_source']['data']['rule_id'], {})
-            dictEntry[result['_source']['data']['created_at']] = result['_source']['data'].get('progress')
+            dictEntry[result['_source']['data']['event_created_at']] = result['_source']['data'].get('progress')
             resultdict[result['_source']['data']['rule_id']] = dictEntry
         result = resultdict
     else:
         result = None
     return result
 
+
 def __getRucioRuleByTaskID(taskid):
+    """
+    Retrieves the ddm_rule_id for a given task ID using the new schema.
+    """
     new_cur = connection.cursor()
-    new_cur.execute(""" SELECT RSE FROM ATLAS_DEFT.T_DATASET_STAGING where DATASET_STAGING_ID IN (select DATASET_STAGING_ID FROM ATLAS_DEFT.T_ACTION_STAGING where TASKID=%i)""" % int(taskid))
-    rucioRule = dictfetchall(new_cur)
-    if rucioRule and len(rucioRule) > 0:
-        return rucioRule[0]['RSE']
-    else:
-        return None
+    query = """
+        SELECT ddm_rule_id FROM atlas_panda.data_carousel_requests 
+        WHERE request_id IN (
+            SELECT request_id FROM atlas_panda.data_carousel_relations WHERE task_id = :taskid
+        )
+    """
+    new_cur.execute(query, {'taskid': int(taskid)})
+    rucioRules = dictfetchall(new_cur, style='lowercase')
+    if rucioRules and len(rucioRules) > 0:
+        return [row['ddm_rule_id'] for row in rucioRules if row['ddm_rule_id'] is not None]
+    return None
 
 
 def __getRucioRulesBySourceSEAndTimeWindow(source, hours):
+    """
+    Retrieves a list of ddm_rule_ids matching a source RSE and a starting time window.
+    """
     new_cur = connection.cursor()
-    new_cur.execute(""" SELECT RSE FROM ATLAS_DEFT.T_DATASET_STAGING where SOURCE_RSE='%s' 
-    and (START_TIME>TO_DATE('%s','YYYY-mm-dd HH24:MI:SS') or END_TIME is NULL)""" % (source, (timezone.now() - timedelta(hours=hours)).strftime(settings.DATETIME_FORMAT)))
-
+    time_threshold = (timezone.now() - timedelta(hours=hours)).strftime(settings.DATETIME_FORMAT)
+    query = """ 
+        SELECT ddm_rule_id
+        FROM atlas_panda.data_carousel_requests 
+        WHERE source_rse = :source 
+          AND (start_time > TO_DATE(:time_threshold, 'YYYY-MM-DD HH24:MI:SS') OR end_time IS NULL)
     """
-    SELECT t1.RSE, t2.taskid FROM ATLAS_DEFT.T_DATASET_STAGING t1 LEFT JOIN ATLAS_DEFT.t_production_task t2 ON t2.PRIMARY_INPUT=t1.DATASET
-    and t1.SOURCE_RSE='BNL-OSG2_DATATAPE'
-    and t1.START_TIME>TO_DATE('2019-07-10 12:57:54','YYYY-mm-dd HH24:MI:SS')
-    """
+    new_cur.execute(query, {'source': source, 'time_threshold': time_threshold})
+    rucioRules = dictfetchall(new_cur, style='lowercase')
 
-    rucioRulesRows = dictfetchall(new_cur)
-    rucioRules = []
-    if rucioRulesRows and len(rucioRulesRows) > 0:
-        for rucioRulesRow in rucioRulesRows:
-            rucioRules.append(rucioRulesRow['RSE'])
-        return rucioRules
-    else:
-        return None
+    if rucioRules:
+        return [row['ddm_rule_id'] for row in rucioRules if row['ddm_rule_id'] is not None]
+    return None
 
 
-
+@login_customrequired
 def getStageProfileData(request):
     valid, response = initRequest(request)
+    status = 200
     RRules = []
-    #RuleToTasks = {}
     if 'jeditaskid' in request.session['requestParams']:
-        rucioRule = __getRucioRuleByTaskID(int(request.session['requestParams']['jeditaskid']))
-        if rucioRule:
-            RRules.append(rucioRule)
-            #RuleToTasks[rucioRule] = int(request.session['requestParams']['jeditaskid'])
-    elif ('stagesource' in request.session['requestParams'] and 'hours' in request.session['requestParams']):
+        rucioRules = __getRucioRuleByTaskID(request.session['requestParams']['jeditaskid'])
+        if rucioRules:
+            RRules.extend(rucioRules)
+    elif 'stagesource' in request.session['requestParams'] and 'hours' in request.session['requestParams']:
         RRules = __getRucioRulesBySourceSEAndTimeWindow(
             request.session['requestParams']['stagesource'].strip().replace("'","''"),
             int(request.session['requestParams']['hours']))
     chunksize = 50
     chunks = [RRules[i:i + chunksize] for i in range(0, len(RRules), chunksize)]
     resDict = {}
-    try: #TODO fix the query to Grafana
+    try:
         for chunk in chunks:
             resDict = {**resDict, **run_query(chunk)}
     except:
         resDict = None
-    """
-    s1 = pd.Series([0,1], index=list('AB'))
-    s2 = pd.Series([2,3], index=list('AC'))
-    
-    result = pd.concat([s1, s2], join='outer', axis=1, sort=False)
-    print(result)
-    """
+
     pandaDFs = {}
     RRuleNames = []
     result = []
@@ -118,10 +119,13 @@ def getStageProfileData(request):
         if pandaDFs:
             result = pd.concat(pandaDFs.values(), join='outer', axis=1, sort=True)
             result.index = pd.to_datetime(result.index, unit='ms')
-            result = result.resample('15min').last().reset_index().fillna(method='ffill').fillna(0)
+            result = result.resample('15min').last().reset_index().ffill().fillna(0)
             result['index'] = result['index'].dt.strftime('%Y-%m-%d %H:%M:%S')
             result = [['TimeStamp',] + RRuleNames] + result.values.tolist()
-    return JsonResponse(result, safe=False)
+    else:
+        status = 500
+    return JsonResponse(result, safe=False, status=status)
+
 
 @login_customrequired
 @never_cache
@@ -132,7 +136,7 @@ def getDATASetsProgressPlot(request):
     reqparams = ''
     if 'jeditaskid' in request.session['requestParams']:
         reqparams = 'jeditaskid='+str(int(request.session['requestParams']['jeditaskid']))
-    elif ('stagesource' in request.session['requestParams'] and 'hours' in request.session['requestParams']):
+    elif 'stagesource' in request.session['requestParams'] and 'hours' in request.session['requestParams']:
         reqparams = 'stagesource='+request.session['requestParams']['stagesource'] + \
                     '&hours=' + request.session['requestParams']['hours']
     data = {
@@ -142,5 +146,4 @@ def getDATASetsProgressPlot(request):
     }
 
     response = render(request, 'DSProgressplot.html', data, content_type='text/html')
-    #patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 5)
     return response

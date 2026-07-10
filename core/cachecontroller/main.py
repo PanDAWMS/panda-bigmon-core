@@ -17,7 +17,7 @@ from schedinstances.SQLAggregator import SQLAggregator
 from schedinstances.SQLAggregatorCampaign import SQLAggregatorCampaign
 from schedinstances.PandaLogsStorageCleanUp import PandaLogsStorageCleanUp
 from schedinstances.GrafanaPlots import GrafanaPlots
-from schedinstances.DataCarousel import DataCarouselPrestageCollector, DataCarouselAlert
+from schedinstances.DataCarousel import DataCarouselAlert
 from schedinstances.MLFlowCleanup import MLFlowCleanup
 from schedinstances.RatedTasks import RatedTasks
 from schedinstances.CacheCleanUp import CacheCleanUp
@@ -58,7 +58,6 @@ cephCleanUp = PandaLogsStorageCleanUp()
 cacheCleanUp = CacheCleanUp()
 sQLAggregator = SQLAggregator()
 sQLAggregatorCampaign = SQLAggregatorCampaign()
-stageProgressCollector = DataCarouselPrestageCollector()
 dataCarouselAlert = DataCarouselAlert(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
 mlFlowCleanUp = MLFlowCleanup()
 ratedTasks = RatedTasks(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
@@ -70,24 +69,23 @@ def run_threaded(job_func):
     job_thread.start()
 
 
-schedule.every(1).minutes.do(run_threaded, mainMenuURLs.execute)
-# schedule.every(10).minutes.do(run_threaded, harvester.execute)
-# schedule.every(20).minutes.do(run_threaded, artPackages.execute)
-# schedule.every(10).minutes.do(run_threaded, artLoadResults.execute)
-# schedule.every().day.at("12:00").do(run_threaded, artRetentionPolicy.execute)
-# schedule.every(1).hours.do(run_threaded, artDevMails.execute)
-# schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
-# # schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)  # disabled as it is not used
-# schedule.every().hour.at(":05").do(run_threaded, grafanaPlots.execute)
-# schedule.every(1).hours.do(run_threaded, infrequentURLS.execute)
-# schedule.every(1).hours.do(run_threaded, cephCleanUp.execute)
-# schedule.every().day.at("07:00").do(run_threaded, artMails.execute)  # UTC
-# schedule.every().day.at("10:00").do(run_threaded, artMails.execute)  # UTC
-# schedule.every(2).hours.do(run_threaded, stageProgressCollector.execute)
-# schedule.every().day.at("10:00").do(run_threaded, dataCarouselAlert.execute)
-# # schedule.every(10).minutes.do(run_threaded, mlFlowCleanUp.execute)  # disabled as it is not used
-# schedule.every().monday.at("07:00").do(run_threaded, ratedTasks.execute)
-# schedule.every(1).hours.do(run_threaded, cacheCleanUp.execute)
+schedule.every(10).minutes.do(run_threaded, mainMenuURLs.execute)
+schedule.every(10).minutes.do(run_threaded, harvester.execute)
+schedule.every(20).minutes.do(run_threaded, artPackages.execute)
+schedule.every(10).minutes.do(run_threaded, artLoadResults.execute)
+schedule.every().day.at("12:00").do(run_threaded, artRetentionPolicy.execute)
+schedule.every(1).hours.do(run_threaded, artDevMails.execute)
+schedule.every(1).hours.do(run_threaded, sQLAggregator.execute)
+# schedule.every(1).hours.do(run_threaded, sQLAggregatorCampaign.execute)  # disabled as it is not used
+schedule.every().hour.at(":05").do(run_threaded, grafanaPlots.execute)
+schedule.every(1).hours.do(run_threaded, infrequentURLS.execute)
+schedule.every(1).hours.do(run_threaded, cephCleanUp.execute)
+schedule.every().day.at("07:00").do(run_threaded, artMails.execute)  # UTC
+schedule.every().day.at("10:00").do(run_threaded, artMails.execute)  # UTC
+schedule.every().day.at("10:00").do(run_threaded, dataCarouselAlert.execute)
+# schedule.every(10).minutes.do(run_threaded, mlFlowCleanUp.execute)  # disabled as it is not used
+schedule.every().monday.at("07:00").do(run_threaded, ratedTasks.execute)
+schedule.every(1).hours.do(run_threaded, cacheCleanUp.execute)
 
 while 1:
     schedule.run_pending()
