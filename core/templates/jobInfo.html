@@ -517,13 +517,7 @@ function loadJobStatusLog(pandaid) {
 }
 
 function toggleByID(id) {
-    if ($("#" + id).is(':visible')){
-        $("#" + id).hide();
-    }
-    else {
-        $("#" + id).show();
-    }
-
+    $("#" + id).toggle();
 }
 
 function openAllLogs() {
@@ -942,5 +936,5 @@ function operationjob_token(pandaID, action, params) {
 
 
 {% block help %}
-{% include "jobInfoHelp.html" %}
+{% include "jobInfoHelp.html" with show='status' %}
 {% endblock %}

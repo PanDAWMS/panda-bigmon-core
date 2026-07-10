@@ -6,7 +6,7 @@ import json
 import logging
 from datetime import datetime
 from core.libs.exlib import get_tmp_table_name, insert_to_temp_table
-from core.common.models import Metatable, MetatableArch
+from core.pandajob.models import Metatable, MetatableArch
 
 from django.conf import settings
 

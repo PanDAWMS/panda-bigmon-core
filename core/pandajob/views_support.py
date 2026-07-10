@@ -1,25 +1,27 @@
 import logging
-import pytz
 
 from datetime import datetime, timedelta, timezone
-from json import dumps as json_dumps  ### FIXME - cleanup
+from json import dumps as json_dumps
 
 import re
 from django.http import HttpResponse, JsonResponse
 
 from .models import Jobsarchived4, Jobsactive4, Jobsdefined4
-from core.common.utils import getPrefix, getContextVariables, subDictToStr
+from core.oauth.decorators import login_customrequired
 from core.libs.DateEncoder import DateEncoder
 
 from django.conf import settings
 
+from ..libs.datetimestrings import stringify_datetime_fields
+
 _logger = logging.getLogger('bigpandamon')
 
-LAST_N_DAYS = settings.FILTER_UI_ENV['DAYS']  # FIXME: put to utils
-LAST_N_HOURS = settings.FILTER_UI_ENV['HOURS']  # FIXME: put to utils
-LAST_N_DAYS_MAX = settings.FILTER_UI_ENV['MAXDAYS']  # FIXME: put to utils
+LAST_N_DAYS = settings.FILTER_UI_ENV['DAYS']
+LAST_N_HOURS = settings.FILTER_UI_ENV['HOURS']
+LAST_N_DAYS_MAX = settings.FILTER_UI_ENV['MAXDAYS']
 
 
+@login_customrequired
 def maxpandaid(request):
     """
         maxpandaid:
@@ -34,6 +36,7 @@ def maxpandaid(request):
     return JsonResponse({'maxpandaid': pandaid}, safe=False)
 
 
+@login_customrequired
 def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
     """
         jobInfoOrig:
@@ -89,28 +92,19 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
 
     ### Handle json output
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        jobInfo = []
-        for job in jobs:
-            ### slim job dict
-            try:
-                newJob = subDictToStr(job, jobKeys, datetimeJobKeys, "%s")
-            except:
-                _logger.error('Something went wrong with job slimming: keys %s job %s' % (jobKeys, job))
-                newJob = job
-            ### append job info
-            jobInfo.append(newJob)
-        return  HttpResponse(json_dumps(jobInfo), content_type="application/json", mimetype='text/html')
+        jobs = stringify_datetime_fields(jobs, Jobsarchived4)
+        return  HttpResponse(json_dumps(jobs), content_type="application/json", mimetype='text/html')
 
     ### Handle other outputs
     name = prodUserName
     jobs = sorted(jobs, key=lambda x:-x['pandaid'])
     data = {
-            'prefix': getPrefix(request),
-            'jobInfo': jobs, 'name': name, 'nhours': nhours,
+        'jobInfo': jobs, 'name': name, 'nhours': nhours,
     }
     return JsonResponse(data, encoder=DateEncoder, safe=False)
 
 
+@login_customrequired
 def jobInfoHoursOrig(request, prodUserName, nhours=LAST_N_HOURS):
     """
         jobInfoHoursOrig:
@@ -123,6 +117,7 @@ def jobInfoHoursOrig(request, prodUserName, nhours=LAST_N_HOURS):
     return jobInfoOrig(request, prodUserName, nhours)
 
 
+@login_customrequired
 def jobInfoDaysOrig(request, prodUserName, nhours=LAST_N_DAYS * 24):
     """
         jobInfoDaysOrig:
@@ -135,6 +130,7 @@ def jobInfoDaysOrig(request, prodUserName, nhours=LAST_N_DAYS * 24):
     return jobInfoOrig(request, prodUserName, nhours * 24)
 
 
+@login_customrequired
 def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
     """
         jobUserOrig:
@@ -196,30 +192,20 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
 
     ### Handle json output
     if request.META.get('CONTENT_TYPE', 'text/plain') == 'application/json':
-        jobInfo = []
-        for job in jobs:
-            ### slim job dict
-            try:
-                newJob = subDictToStr(job, jobKeys, datetimeJobKeys, "%s")
-            except:
-                _logger.error('Something went wrong with job slimming: keys %s job %s' % (jobKeys, job))
-                newJob = job
-            ### append job info
-            jobInfo.append(newJob)
-        return  HttpResponse(json_dumps(jobInfo), content_type="application/json", mimetype='text/html')
+        jobs = stringify_datetime_fields(jobs, Jobsarchived4)
+        return  HttpResponse(json_dumps(jobs), content_type="application/json", mimetype='text/html')
 
 
     ### Handle other outputs
     name = vo
     jobs = sorted(jobs, key=lambda x:-x['pandaid'])
     data = {
-            'prefix': getPrefix(request),
-            'jobInfo': jobs, 'name': name, 'nhours': nhours,
+        'jobInfo': jobs, 'name': name, 'nhours': nhours,
     }
-    data.update(getContextVariables(request))
     return JsonResponse(data, encoder=DateEncoder, safe=False)
 
 
+@login_customrequired
 def jobUserDaysOrig(request, vo, ndays=LAST_N_DAYS):
     """
         jobUserDaysOrig:

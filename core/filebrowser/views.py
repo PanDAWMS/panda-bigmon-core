@@ -15,7 +15,7 @@ from django.views.decorators.cache import never_cache
 
 from core.filebrowser.utils import (get_rucio_file, remove_folder, get_job_log_file_properties, get_job_computingsite, get_s3_file,
                                     get_log_provider, extract_rucio_errors)
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.views import initRequest
 from core.libs.exlib import convert_bytes
 from core.libs.DateTimeEncoder import DateTimeEncoder

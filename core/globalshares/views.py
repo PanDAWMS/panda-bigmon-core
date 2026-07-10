@@ -1,9 +1,7 @@
 from datetime import datetime
 import decimal
 
-import numpy as np
 import re
-from decimal import Decimal
 
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -14,14 +12,14 @@ from django.conf import settings
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
 from core.libs.DateEncoder import DateEncoder
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.views import initRequest, setupView, extensibleURL
 from core.schedresource.utils import get_pq_fairshare_policy, get_pq_resource_types
 import json
 
 from core.globalshares import GlobalShares
 from core.globalshares.utils import get_gs_plots_data, get_child_elements, get_child_sumstats, get_hs_distribution, _safe_percent
-from core.globalshares.models import GlobalSharesModel, JobsShareStats
+from core.globalshares.models import GlobalSharesModel
 
 @login_customrequired
 def globalshares(request):
@@ -419,7 +417,7 @@ def getChildStat(node, hs_distribution_dict, level):
     node.ratio = ratio
 
 
-###JSON for Datatables globalshares###
+@login_customrequired
 def detailedInformationJSON(request):
     fullListGS = []
     sqlRequest = """
@@ -468,6 +466,7 @@ def detailedInformationJSON(request):
     return HttpResponse(json.dumps(fullListGS), content_type='application/json')
 
 
+@login_customrequired
 def sharesDistributionJSON(request):
     fullListGS = []
     sqlRequest = '''
@@ -523,6 +522,7 @@ def sharesDistributionJSON(request):
     return HttpResponse(json.dumps(fullListGS), content_type='application/json')
 
 
+@login_customrequired
 def siteWorkQueuesJSON(request):
     fullListGS = []
     sqlRequest = '''
@@ -575,6 +575,7 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(o)
 
 
+@login_customrequired
 def resourcesType(request):
     EXECUTING = 'executing'
     QUEUED = 'queued'
@@ -653,6 +654,7 @@ def resourcesType(request):
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 
 
+@login_customrequired
 def fairsharePolicy(request):
     EXECUTING = 'executing'
     QUEUED = 'queued'
@@ -754,6 +756,7 @@ def fairsharePolicy(request):
     return HttpResponse(json.dumps(hs_distribution_list, cls=DecimalEncoder), content_type='application/json')
 
 
+@login_customrequired
 def coreTypes(request):
 
     EXECUTING = 'executing'

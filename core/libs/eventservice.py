@@ -7,7 +7,7 @@ from django.db import connection
 from django.db.models import Count
 from django.conf import settings
 from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_table, get_tmp_table_name_debug
-from core.common.models import JediEvents, GetEventsForTask
+from core.pandajob.models import JediEvents, GetEventsForTask
 from core import constants as const
 
 _logger = logging.getLogger('bigpandamon')

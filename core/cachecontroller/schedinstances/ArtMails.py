@@ -9,6 +9,9 @@ class ArtMails(BaseURLTasksProvider):
     BASIC_PRIORITY = 1
     logger = logging.getLogger(__name__ + ' ArtMails')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def getpayload(self):
         self.logger.info("getpayload started")
         urlsQueue = queue.PriorityQueue(-1)
@@ -20,6 +23,9 @@ class ArtDevMails(BaseURLTasksProvider):
     lock = threading.RLock()
     BASIC_PRIORITY = 1
     logger = logging.getLogger(__name__ + ' ArtDevMails')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def getpayload(self):
         self.logger.info("getpayload started")

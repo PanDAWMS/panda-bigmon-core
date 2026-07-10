@@ -9,10 +9,9 @@ from opensearchpy import Search
 
 from django.db import connection
 from django.db.models import Count, Sum
-from core.common.models import JediDatasetContents, JediDatasets, JediTaskparams, JediDatasetLocality, JediTasks, \
-    JediJobRetryHistory, Rating
-from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4
-from core.oauth.models import BPUser
+from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4, JediDatasetContents, JediDatasets, \
+    JediDatasetLocality, JediJobRetryHistory, JediTaskparams, JediTasks
+from core.oauth.models import BPUser, Rating
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
 from core.libs.datetimestrings import parse_datetime

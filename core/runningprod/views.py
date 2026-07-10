@@ -15,7 +15,7 @@ from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import round_to_n_digits, convert_grams
 from core.libs.task import task_summary_dict
 from core.libs.elasticsearch import get_gco2_sum_for_tasklist
-from core.oauth.utils import login_customrequired
+from core.oauth.decorators import login_customrequired
 from core.libs.DateEncoder import DateEncoder
 from core.views import initRequest, setupView
 from core.utils import is_json_request, removeParam

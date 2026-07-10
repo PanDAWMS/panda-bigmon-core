@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import timedelta
 from django.db import connection
 
-from core.common.models import JediDatasets, Filestable4, FilestableArch, Sitedata, ResourceTypes
+from core.pandajob.models import Filestable4, FilestableArch, Sitedata, JediDatasets, ResourceTypes
 from core.schedresource.utils import get_panda_queues
 from django.conf import settings
 
