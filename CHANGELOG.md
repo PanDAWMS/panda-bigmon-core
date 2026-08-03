@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.7 (2026-07-10)
+
+### Bug Fixes
+
+- Returm init to base class in cachecontroller
+  ([`908c1e4`](https://github.com/PanDAWMS/panda-bigmon-core/commit/908c1e46b050c6f02c77faa9421262a1ada3ba4a))
+
+
 ## v1.1.6 (2026-07-10)
 
 ### Bug Fixes
