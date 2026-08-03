@@ -1237,17 +1237,17 @@ def registerARTTest(request):
     try:
         pandaid = int(pandaid)
     except:
-        data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
+        data = {'exit_code': -1, 'message': "Illegal pandaid was received"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return JsonResponse(data, status=422)
 
     if pandaid < 0:
-        data = {'exit_code': -1, 'message': "Illegal pandaid was recieved"}
+        data = {'exit_code': -1, 'message': "Illegal pandaid was received"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return JsonResponse(data, status=422)
 
     if not str(testname).startswith('test_'):
-        data = {'exit_code': -1, 'message': "Illegal test name was recieved"}
+        data = {'exit_code': -1, 'message': "Illegal test name was received"}
         _logger.warning(data['message'] + str(request.session['requestParams']))
         return JsonResponse(data, status=422)
 
