@@ -152,7 +152,7 @@ def get_staging_data(extra_str, add_idds_data=False):
             t3.username,
             t3.tasktype,
             t3.campaign,
-            row_number() over(partition by t1.request_id order by t1.start_time desc) as occurence,
+            row_number() over(partition by t1.request_id order by t1.start_time desc) as occurrence,
             (current_timestamp - t1.modification_time) AS update_time,
             (current_timestamp - t1.last_staged_time) as since_last_staged_file
         FROM {settings.DB_SCHEMA_PANDA}.data_carousel_requests t1
