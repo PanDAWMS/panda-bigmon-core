@@ -3885,7 +3885,7 @@ def killtasks(request):
         'Accept': 'application/json',
         'Authorization': 'Token ' + prodsys_token
     }
-    conn = urllib3.HTTPSConnectionPool(prodsys_host, timeout=100)
+    conn = urllib3.HTTPSConnectionPool(prodsys_host, timeout=300)
     resp = conn.urlopen('POST', prodsys_url,
         body=json.dumps(post_data, cls=DateEncoder),
         headers=headers,
