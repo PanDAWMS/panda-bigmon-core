@@ -289,7 +289,7 @@ def send_report(request):
             recipient=settings.ADMINS[0][1],
         )
     except Exception as ex:
-        response = JsonResponse({'message': 'Error occured, developers were notified'}, status=500)
+        response = JsonResponse({'message': 'Error occurred, developers were notified'}, status=500)
         return response
 
     response = JsonResponse({'message': 'Successfully sent'}, status=200)

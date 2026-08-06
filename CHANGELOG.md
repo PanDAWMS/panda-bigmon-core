@@ -2,6 +2,64 @@
 
 <!-- version list -->
 
+## v1.1.7 (2026-07-10)
+
+### Bug Fixes
+
+- Returm init to base class in cachecontroller
+  ([`908c1e4`](https://github.com/PanDAWMS/panda-bigmon-core/commit/908c1e46b050c6f02c77faa9421262a1ada3ba4a))
+
+
+## v1.1.6 (2026-07-10)
+
+### Bug Fixes
+
+- Add headers to requests from cachecontroller
+  ([`ce40ffb`](https://github.com/PanDAWMS/panda-bigmon-core/commit/ce40ffb54f309d852ab2d3fccc29d91af0a70f4d))
+
+- Getting staging progress from monit opensearch
+  ([`690217b`](https://github.com/PanDAWMS/panda-bigmon-core/commit/690217bce1dc567e9c82622df881b5029f002787))
+
+- Update auth decorators and remove common module
+  ([`3f548ec`](https://github.com/PanDAWMS/panda-bigmon-core/commit/3f548eca91207d2afcfc000d7a028c23288781c6))
+
+
+## v1.1.5 (2026-07-02)
+
+### Bug Fixes
+
+- ADCMONITOR-578 add top sites to error panel
+  ([`af35644`](https://github.com/PanDAWMS/panda-bigmon-core/commit/af35644b4a3c95b1100f49a3ccfe0e0aa5441726))
+
+
+## v1.1.4 (2026-06-25)
+
+### Bug Fixes
+
+- Add error message if query failed to idds workflows
+  ([`3fe1b68`](https://github.com/PanDAWMS/panda-bigmon-core/commit/3fe1b68b384092c1d27562c8ff9855b61b2dbd07))
+
+- Add link to job from filebrowser page
+  ([`e79d8e2`](https://github.com/PanDAWMS/panda-bigmon-core/commit/e79d8e23a7b3e009b8b509b3bdbbe451eb354746))
+
+- ATLASPANDA-1788 - add campaign column to workflows table and polishing
+  ([`6316fd9`](https://github.com/PanDAWMS/panda-bigmon-core/commit/6316fd9882b8c4b45f6c94057500945ab84d7524))
+
+- Mlflow move configuration to class init to avoid failures
+  ([`638cc90`](https://github.com/PanDAWMS/panda-bigmon-core/commit/638cc90452b1250f4249f399002c9c4a36272624))
+
+
+## v1.1.3 (2026-06-24)
+
+### Bug Fixes
+
+- ADCMONITOR-581 - json response with tasks
+  ([`4a51ef7`](https://github.com/PanDAWMS/panda-bigmon-core/commit/4a51ef7d2d296db251837afd69fa6bd467d146e6))
+
+- ATLASPANDA-1782 - add link to files for container
+  ([`c8a456b`](https://github.com/PanDAWMS/panda-bigmon-core/commit/c8a456b7dba7a7cf883fda8f96cdefe2deb89ba4))
+
+
 ## v1.1.2 (2026-05-28)
 
 ### Bug Fixes
