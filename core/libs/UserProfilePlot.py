@@ -21,7 +21,7 @@ class UserProfilePlot:
         :return:
         """
         jobs = []
-        # use modifacation time as it is DB index, also cut by creationdate
+        # use modification time as it is DB index, also cut by creationdate
         query['creationtime__gte'] = query['modificationtime__castdate__range'][0]
 
         jvalues = ('pandaid', 'processingtype', 'transformation', 'jobstatus', 'starttime', 'creationtime', 'endtime',)
