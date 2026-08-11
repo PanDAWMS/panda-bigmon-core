@@ -188,7 +188,7 @@ def upload_data(os_conn, index_name_base, data, timestamp_param='creationdate', 
     index_name_postfixes = list(set(index_name_postfixes))
     index_names = [f"{index_name_base}-{postfix}" for postfix in index_name_postfixes]
 
-    # crete index if it does not exist yet
+    # create index if it does not exist yet
     for index_name in index_names:
         while True:
             try:

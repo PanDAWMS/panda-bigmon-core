@@ -2902,7 +2902,7 @@ def userDashApi(request, agg=None):
             tasks = []
         _logger.info('Got {} tasks from cache: {}'.format(len(tasks), time.time() - request.session['req_init_time']))
 
-        # get only the most relevent N tasks if prod user
+        # get only the most relevant N tasks if prod user
         n_tasks = 500
         if len(tasks) > n_tasks and tasks[0]['tasktype'] == 'prod':
             tasks = filter_task_list_by_relevance(tasks, n_tasks=n_tasks)
@@ -4562,7 +4562,7 @@ def taskInfo(request, jeditaskid=0):
             ds['rse'] = ', '.join([item['rse'] for item in dataset_locality[jeditaskid][ds['datasetid']]])
     _logger.info("Loading datasets info: {}".format(time.time() - request.session['req_init_time']))
 
-    # task dignostics - checks and warnings
+    # task diagnostics - checks and warnings
     taskrec = get_task_diagnostics(taskrec, datasets=dsets)
 
     # get sum of hs06sec grouped by status
@@ -5244,7 +5244,7 @@ def errorSummary(request):
         siteStr = siteStr[1:]
         request.session['requestParams']['computingsite'] = siteStr
 
-        # this substitution is nessessary to propagate update in the xurl
+        # this substitution is necessary to propagate update in the xurl
         updatedRequest = ""
         updatedRequestNoSite = ""
 

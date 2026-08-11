@@ -170,7 +170,7 @@ def frec(M):
     return b
 
 
-# concat_all function: join the data in a proper formart for sankey plot.
+# concat_all function: join the data in a proper format for sankey plot.
 # This function considers all the nodes: replica, dataset, site and status
 def concat_all(TASK):
     A = pd.DataFrame(frec(RSEtoInpDat(TASK)))
@@ -181,7 +181,7 @@ def concat_all(TASK):
     return E.tolist()
 
 
-# concat_NoRep function: join the data in a proper formart for sankey plot.
+# concat_NoRep function: join the data in a proper format for sankey plot.
 # This function considers the nodes:dataset, site and status
 def concat_NoRep(TASK):
     B = pd.DataFrame(frec(InpDattoSITE(TASK)))

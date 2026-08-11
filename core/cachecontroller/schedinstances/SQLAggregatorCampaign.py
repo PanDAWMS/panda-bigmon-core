@@ -44,7 +44,7 @@ class SQLAggregatorCampaign(BaseTasksProvider):
         cursor.execute("alter session set NLS_DATE_FORMAT = 'mm-dd-yyyy HH24:mi:ss'")
         cursor.execute("alter session set NLS_TIMESTAMP_FORMAT = 'mm-dd-yyyy HH24:mi:ss'")
 
-        #Columns names are specific due to DEFT compartibility
+        #Columns names are specific due to DEFT compatibility
         query = """
             select STARTTIME as START_TIME, ENDTIME, STEP_NAME, round((NEVENTSUSED) / (count(*) over (partition by tr.jeditaskid))) as DONEEV  from (
             (SELECT DISTINCT STARTTIME, endtime, pandaid, jeditaskid FROM ATLAS_PANDAARCH.JOBSARCHIVED WHERE JOBSTATUS='finished' UNION ALL 
@@ -195,7 +195,7 @@ class SQLAggregatorCampaign(BaseTasksProvider):
             campaign_df['DONEEV'] = campaign_df['TOTEV'] - campaign_df['TOTEVREM']
             stepsname = campaign_df.STEP_NAME.unique().tolist()
 
-            #We do reindexing to have number of events deliveres per day
+            #We do reindexing to have number of events delivers per day
             index = pd.date_range(start=campaign_df.START_TIME.min(), end=campaign_df.ENDTIME.max())
             new_df = pd.DataFrame(index=index, columns=stepsname)
             new_df_total_ev = new_df.apply(lambda x: campaign_df[
