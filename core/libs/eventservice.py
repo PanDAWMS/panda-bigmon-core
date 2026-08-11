@@ -162,7 +162,7 @@ def add_event_summary_to_tasklist(tasks, transaction_key=None):
     extra_str = "jeditaskid in (select id from {} where transactionkey={})".format(tmp_table_name, transaction_key)
     task_event_info = GetEventsForTask.objects.extra(where=[extra_str]).values('jeditaskid', 'totevrem', 'totev')
 
-    # We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo cleares
+    # We do it because we intermix raw and queryset queries. With next new_cur.execute tasksEventInfo clears
     for t in task_event_info:
         event_info_dict[t["jeditaskid"]] = {
             "jeditaskid" : t["jeditaskid"],

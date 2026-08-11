@@ -66,7 +66,7 @@ def errorsScattering(request):
     task_ids = []
     for id in tasks:
         task_ids.append(id['jeditaskid'])
-        # full the list of jeditaskids for each reqid to put into cache for consistentcy with jobList
+        # full the list of jeditaskids for each reqid to put into cache for consistency with jobList
         if id['reqid'] not in taskListByReq:
             taskListByReq[id['reqid']] = ''
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','
@@ -348,7 +348,7 @@ def errorsScatteringDetailed(request, cloud, reqid):
     task_ids = []
     for id in tasks:
         task_ids.append(id['jeditaskid'])
-        # full the list of jeditaskids for each reqid to put into cache for consistentcy with jobList
+        # full the list of jeditaskids for each reqid to put into cache for consistency with jobList
         if id['reqid'] not in taskListByReq:
             taskListByReq[id['reqid']] = ''
         taskListByReq[id['reqid']] += str(id['jeditaskid']) + ','

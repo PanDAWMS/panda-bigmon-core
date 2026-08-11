@@ -236,7 +236,7 @@ def get_job_summary_region(query, **kwargs):
     if 'core.harvester' in settings.INSTALLED_APPS and not is_archived:
         from core.harvester.utils import get_workers_summary_split
         if 'computingsite__in' not in query:
-            # put full list of compitingsites to use index in workers table
+            # put full list of computingsites to use index in workers table
             query['computingsite__in'] = list(set([row['computingsite'] for row in jsq]))
         wsq = get_workers_summary_split(query)
 
