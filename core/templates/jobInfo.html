@@ -451,8 +451,14 @@
 
 
 {% block js_body_page %}
+{% csrf_token %}
 <script nonce={{request.csp_nonce}}>
-
+const headers = {
+  'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+};
+$.ajaxSetup({
+    headers: headers,
+});
 var pandaid = '{{ pandaid }}';
 if (document.getElementById("comparisonbutton{{ pandaid }}")) {document.getElementById("comparisonbutton{{ pandaid }}").addEventListener("click", toggleComparisonList.bind(null, "comparisonbutton{{ pandaid }}", '{{ pandaid }}'));}
 if (document.getElementById("button-open-all-logs")) {document.getElementById("button-open-all-logs").addEventListener("click", openAllLogs);}
@@ -483,6 +489,7 @@ function loadJobRelationships(pandaid, direction) {
     $.ajax({
         url: "{% url 'jobrelationships' pandaid=pandaid %}",
         data: 'direction=' + direction,
+        headers: headers,
         async: true,
     }).done(function (response) {
         $(id).html(response);
@@ -496,6 +503,7 @@ function loadExtendedErrorData(jeditaskid, pandaid) {
     $.ajax({
         url: {% url 'descendentjoberrsinfo' %},
         data: 'jeditaskid='+jeditaskid+'&pandaid='+pandaid,
+        headers: headers,
         async: true,
     }).done(function (response) {
         $('#div-exterrorsinfo').html(response);
@@ -508,6 +516,7 @@ function loadJobStatusLog(pandaid) {
     $('#div-statuslog').html("<img src='{% static "images/load.gif" %}'>  ");
     $.ajax({
         url: '{% url 'getjobstatuslog' pandaid %}',
+        headers: headers,
         data: '',
         async: true,
     }).done(function (response) {
@@ -762,6 +771,10 @@ function togglePayloadLog() {
                      "url": "{% url 'getpayloadlog' %}",
                     "method": "POST",
                     "data":{pandaid:{{pandaid}}},
+                    "headers": {
+                      ...headers,
+                      'Accept': 'application/json'
+                    },
                     "dataSrc": function (response) {
                          $scope.payload_log.flag = response['flag'];
                          return response['payloadlog'];
@@ -905,6 +918,9 @@ function operationjob_token(pandaID, action, params) {
     var message = '';
     var debug_mode = '{{ debugmode|safe }}';
 
+
+  {#'Accept': 'application/json',#}
+
     if (action == 'setdebugmode' & debug_mode == 'False' ) {
         message = 'Enable debug mode for this job? This will allow to see payload logs in real-time.';
     }
@@ -916,17 +932,21 @@ function operationjob_token(pandaID, action, params) {
     }
     if (confirm(message)) {
         $.ajax({
-                url: '/panda_client/',
-                data: {pandaID: pandaID, action: action, params: JSON.stringify(params)},
-                async: false,
-                type: "POST",
-                cache: false,
-                success: function(result) {
-                    const res_obj = JSON.parse(result);
-                    let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
-                    window.location = notimestampurl + 'timestamp=' + d;
-                    alert(res_obj['text'])
-                }});
+            url: '/panda_client/',
+            data: {pandaID: pandaID, action: action, params: JSON.stringify(params)},
+            headers: {
+              ...headers,
+              'Accept': 'application/json'
+            },
+            async: false,
+            type: "POST",
+            cache: false,
+            success: function(result) {
+                const res_obj = JSON.parse(result);
+                let d = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+                window.location = notimestampurl + 'timestamp=' + d;
+                alert(res_obj['text'])}
+        });
     } else {
         // Do nothing!
     }

@@ -28,11 +28,10 @@ from django.shortcuts import redirect, render
 from django.template import RequestContext
 from django.template.context_processors import csrf
 from django.template.defaulttags import register
-from django.template.loaders.app_directories import get_app_template_dirs
+from django.template.utils import get_app_template_dirs
 from django.utils import timezone
 from django.utils.cache import patch_response_headers
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_exempt
 
 import core.constants as const
 from core.compare.modelsCompare import ObjectsComparison
@@ -728,7 +727,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         query[param] = ttype
                     elif param == 'jeditaskid':
                         val = escape_input(request.session['requestParams'][param])
-                        values = val.split('|')
+                        values = val.split('|') if '|' in val else val.split(',')
                         query['jeditaskid__in'] = values
                     elif param == 'status':
                         val = escape_input(request.session['requestParams'][param])
@@ -1951,7 +1950,6 @@ def descendentjoberrsinfo(request):
 
 
 @login_customrequired
-@csrf_exempt
 def jobInfo(request, pandaid=None, batchid=None):
     valid, response = initRequest(request)
     if not valid:
@@ -3593,7 +3591,6 @@ def getCSRFToken(request):
 
 
 @login_customrequired
-@csrf_exempt
 def taskList(request):
     valid, response = initRequest(request)
     if not valid:
@@ -4853,7 +4850,6 @@ def taskInfo(request, jeditaskid=0):
         return response
 
 
-@csrf_exempt
 @login_customrequired
 def rating_func(request):
     valid, response = initRequest(request)
@@ -5960,31 +5956,33 @@ def fileInfo(request):
             files = [f for f in files if f['datasetname'] == request.session['requestParams']['datasetname']]
 
         files = sorted(files, key=lambda x: x['pandaid'] if x['pandaid'] is not None else False, reverse=True)
-        frec = files[0]
-        file = frec['lfn']
-        colnames = frec.keys()
-        colnames = sorted(colnames)
-        for k in colnames:
-            if is_timestamp(k):
-                try:
-                    val = frec[k].strftime(settings.DATETIME_FORMAT)
-                except:
-                    val = frec[k]
-            else:
-                val = frec[k]
-            if frec[k] is None:
-                val = ''
-                continue
-            pair = {'name': k, 'value': val}
-            columns.append(pair)
 
-        for f in files:
-            f['startevent'] = f['startevent'] + 1 if 'startevent' in f and f['startevent'] is not None else -1
-            f['endevent'] = f['endevent'] + 1 if 'endevent' in f and f['endevent'] is not None else -1
-            for p in ('maxattempt', 'attemptnr', 'pandaid'):
-                f[p] = f[p] if p in f and f[p] is not None else -1
-            if 'creationdate' in f and f['creationdate'] is not None:
-                f['creationdate'] = f['creationdate'].strftime(settings.DATETIME_FORMAT)
+        if len(files) > 0:
+            frec = files[0]
+            file = frec['lfn']
+            colnames = frec.keys()
+            colnames = sorted(colnames)
+            for k in colnames:
+                if is_timestamp(k):
+                    try:
+                        val = frec[k].strftime(settings.DATETIME_FORMAT)
+                    except:
+                        val = frec[k]
+                else:
+                    val = frec[k]
+                if frec[k] is None:
+                    val = ''
+                    continue
+                pair = {'name': k, 'value': val}
+                columns.append(pair)
+
+            for f in files:
+                f['startevent'] = f['startevent'] + 1 if 'startevent' in f and f['startevent'] is not None else -1
+                f['endevent'] = f['endevent'] + 1 if 'endevent' in f and f['endevent'] is not None else -1
+                for p in ('maxattempt', 'attemptnr', 'pandaid'):
+                    f[p] = f[p] if p in f and f[p] is not None else -1
+                if 'creationdate' in f and f['creationdate'] is not None:
+                    f['creationdate'] = f['creationdate'].strftime(settings.DATETIME_FORMAT)
 
     if not is_json_request(request):
         del request.session['TFIRST']
@@ -6829,7 +6827,6 @@ def get_hc_tests(request):
     return response
 
 
-@csrf_exempt
 @login_customrequired
 def getPayloadLog(request):
     """

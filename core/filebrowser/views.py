@@ -15,7 +15,7 @@ from django.views.decorators.cache import never_cache
 
 from core.filebrowser.utils import (get_rucio_file, remove_folder, get_job_log_file_properties, get_job_computingsite, get_s3_file,
                                     get_log_provider, extract_rucio_errors)
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_customrequired, login_required
 from core.views import initRequest
 from core.libs.exlib import convert_bytes
 from core.libs.DateTimeEncoder import DateTimeEncoder
@@ -37,6 +37,56 @@ def index(request):
             - missingparameter
             - improperformat
             - download
+
+        ---
+        summary: Filebrowser index
+        description: Filebrowser front page, it will check if logs exist and trigger download if needed.
+        parameters:
+          - name: pandaid
+            in: query
+            type: integer
+            required: false
+            description: PanDA ID of the job. Either pandaid or lfn is required.
+          - name: lfn
+            in: query
+            type: string
+            required: false
+            description: Logical file name. Either pandaid or lfn is required.
+          - name: computingsite
+            in: query
+            type: string
+            required: false
+            description: Computing site of the job. Required only if S3 storage is used.
+          - name: filename
+            in: query
+            type: string
+            required: false
+            description: Optional filename to download directly. If not provided, returns a list of log files.
+        responses:
+          '200':
+            description: Successful response
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    files:
+                      type: array
+                      items:
+                        type: object
+                    error:
+                      type: string
+          '301':
+            description: Redirect to the log file URL
+          '400':
+            description: Bad request
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    error:
+                      type: string
     """
     valid, response = initRequest(request)
     if not valid:
@@ -174,6 +224,7 @@ def index(request):
         return response
 
 
+@login_customrequired
 @never_cache
 def load_log_file_list(request, provider="rucio", guid=None, scope=None, lfn=None, pandaid=None, computingsite=None):
     """
@@ -282,12 +333,34 @@ def load_log_file_list(request, provider="rucio", guid=None, scope=None, lfn=Non
     )
 
 
-
+@login_required
 def delete_files(request):
     """
     Clear subfolder containing log files
     :param request:
     :return:
+
+    ---
+    summary: Delete files
+    description: Clear subfolder containing log files
+    parameters:
+      - name: guid
+        in: query
+        type: string
+        required: true
+        description: GUID of the folder to clean
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      '404':
+        description: Folder not found or GUID missing
     """
     # check that path to logs is provided
     guid = None

@@ -8,8 +8,9 @@ from types import MappingProxyType
 # vars
 CACHE_TIMEOUT_MINUTES = 15
 RETENTION_PERIOD_DAYS = 180
-EOS_PREFIX = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
-EOS_PREFIX_LOCAL = 'https://atlas-art-data.web.cern.ch/atlas-art-data/local-output/'
+EOS_LINK_BASE = 'https://atlas-art-data.web.cern.ch/atlas-art-data/'
+EOS_POSTFIX_GRID = 'grid-output/'
+EOS_POSTFIX_LOCAL = 'local-output/'
 INITIAL_LOCAL_ID = 1
 
 # dicts

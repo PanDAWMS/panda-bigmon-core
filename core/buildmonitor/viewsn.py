@@ -18,6 +18,38 @@ from django.urls import reverse
 
 @login_customrequired
 def nviewDemo(request):
+    """
+    Nightly View.
+
+    ---
+    summary: Nightly View
+    description: Detailed nightly build results.
+    parameters:
+      - name: nightly
+        in: query
+        type: string
+        required: false
+        description: Nightly build name.
+      - name: rel
+        in: query
+        type: string
+        required: false
+        description: Release name.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nightly:
+                  type: string
+                rel:
+                  type: string
+                data:
+                  type: object
+    """
     valid, response = initRequest(request)
     if not valid:
         return response

@@ -2,16 +2,14 @@ import json
 import logging
 from django.http import HttpResponse
 
-from django.views.decorators.csrf import csrf_exempt
-
+from core.oauth.decorators import login_required
 from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task, set_debug_mode, to_bool, get_user_groups
 from core.views import initRequest
 
-from core.oauth.utils import is_expert
-
 _logger = logging.getLogger('panda.client')
 
-@csrf_exempt
+
+@login_required
 def client(request, task_id=None):
     valid, response = initRequest(request)
     if not valid:

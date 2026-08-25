@@ -6,6 +6,7 @@ import logging
 import json
 import time
 import datetime
+import math
 import pandas as pd
 
 try:
@@ -15,18 +16,19 @@ except ImportError:
 
 from django.core.cache import cache
 from django.db import connection
-
-import core.datacarousel.constants as const
+from django.utils import timezone
 from core.reports.sendMail import send_mail_bp
 from core.reports.models import ReportEmails
 from core.views import setupView
-from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime, insert_to_temp_table
+from core.libs.checks import is_positive_int_field
+from core.libs.exlib import dictfetchall, get_tmp_table_name, convert_epoch_to_datetime, insert_to_temp_table, convert_bytes, convert_sec
 from core.libs.elasticsearch import create_os_connection
 from core.schedresource.utils import getCRICSEs
 from core.filebrowser.ruciowrapper import ruciowrapper
 from core.iDDS.utils import get_idds_data_for_tasks
 
 from django.conf import settings
+import core.datacarousel.constants as const
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -432,3 +434,122 @@ def substitudeRSEbreakdown(rse):
         final_string += "&var-src_endpoint=" + rse
     return final_string
 
+
+
+def build_summary_data(staginData):
+
+    summary = {
+        'processingtype': {},
+        'source_rse': {},
+        'campaign': {},
+        'username': {},
+        'destination_rse': {},
+    }
+    ts_submitted = []
+    ts_submitted_files = []
+    ts_interval_fin = []
+    ts_interval_act = []
+    ts_interval_queued = []
+    progress_distribution = []
+    seen_request_ids = set()
+
+    calc_temp = {
+        "ds_active": 0, "ds_done": 0, "ds_queued": 0, "ds_90pdone": 0,
+        'files_total': 0, "files_rem": 0, "files_queued": 0, "files_done": 0, 'files_active': 0,
+        'bytes_total': 0, 'bytes_done': 0, "bytes_queued": 0, 'bytes_rem': 0, 'bytes_active': 0,
+    }
+
+    for dsdata in staginData:
+        if dsdata.get('request_id') in seen_request_ids:
+            continue
+        seen_request_ids.add(dsdata.get('request_id'))
+
+        for key in summary:
+            if key == 'destination_rse' and dsdata['status'] == 'queued':
+                continue
+
+            if dsdata[key] not in summary[key]:
+                summary[key][dsdata[key]] = {key: dsdata[key]}
+                summary[key][dsdata[key]].update(calc_temp)
+                if key == "source_rse":
+                    summary[key][dsdata[key]]['source_rse_breakdown'] = substitudeRSEbreakdown(dsdata['source_rse'])
+
+            if is_positive_int_field(dsdata, 'total_files'):
+                summary[key][dsdata[key]]['files_total'] += dsdata['total_files']
+            if is_positive_int_field(dsdata, 'staged_files'):
+                summary[key][dsdata[key]]['files_done'] += dsdata['staged_files']
+            if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
+                summary[key][dsdata[key]]['files_rem'] += dsdata['total_files'] - dsdata['staged_files']
+            if is_positive_int_field(dsdata, 'dataset_bytes'):
+                summary[key][dsdata[key]]['bytes_total'] += convert_bytes(dsdata['dataset_bytes'], 'GB')
+            if is_positive_int_field(dsdata, 'staged_bytes'):
+                summary[key][dsdata[key]]['bytes_done'] += convert_bytes(dsdata['staged_bytes'], 'GB')
+            if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
+                summary[key][dsdata[key]]['bytes_rem'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
+
+            if dsdata['end_time'] is not None and dsdata['start_time'] is not None:
+                summary[key][dsdata[key]]['ds_done'] += 1
+                ts_interval_fin.append(dsdata['end_time'] - dsdata['start_time'])
+            elif dsdata['status'] != 'queued':
+                summary[key][dsdata[key]]['ds_active'] += 1
+                if dsdata['start_time'] is not None:
+                    ts_interval_act.append(timezone.now() - dsdata['start_time'])
+                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
+                    summary[key][dsdata[key]]['files_active'] += dsdata['total_files'] - dsdata['staged_files']
+                if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
+                    summary[key][dsdata[key]]['bytes_active'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
+                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') and dsdata['staged_files'] >= dsdata['total_files'] * 0.9:
+                    summary[key][dsdata[key]]['ds_90pdone'] += 1
+            elif dsdata['status'] == 'queued':
+                summary[key][dsdata[key]]['ds_queued'] += 1
+                ts_interval_queued.append(timezone.now() - dsdata['creation_time'])
+                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
+                    summary[key][dsdata[key]]['files_queued'] += dsdata['total_files'] - dsdata['staged_files']
+                if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
+                    summary[key][dsdata[key]]['bytes_queued'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
+
+        if dsdata['start_time'] is not None:
+            ts_submitted.append(dsdata['start_time'])
+            ts_submitted_files.append([dsdata['start_time'], dsdata['total_files']])
+        if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
+            progress_distribution.append(dsdata['staged_files'] / dsdata['total_files'])
+
+    return summary, ts_submitted, ts_submitted_files, ts_interval_act, ts_interval_fin, ts_interval_queued, progress_distribution
+
+
+def build_dataset_list(staginData):
+    dataset_list = []
+
+    for dsdata in staginData:
+        epltime = None
+        if dsdata.get('end_time') and dsdata.get('start_time'):
+            epltime = dsdata['end_time'] - dsdata['start_time']
+        elif dsdata.get('start_time'):
+            epltime = timezone.now() - dsdata['start_time']
+        elif dsdata.get('creation_time'):
+            epltime = timezone.now() - dsdata['creation_time']
+
+        dataset_list.append({
+            'campaign': dsdata['campaign'],
+            'username': dsdata['username'],
+            'pr_id': dsdata['pr_id'],
+            'taskid': dsdata['taskid'],
+            'dataset': dsdata['dataset'],
+            'status': dsdata['status'],
+            'total_files': dsdata['total_files'] if is_positive_int_field(dsdata, 'total_files') else 0,
+            'staged_files': dsdata['staged_files'] if is_positive_int_field(dsdata, 'staged_files') else 0,
+            'size': int(
+                round(convert_bytes(dsdata['dataset_bytes'], 'GB'))
+            ) if is_positive_int_field(dsdata, 'dataset_bytes') else "0",
+            'progress': int(
+                math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])
+            ) if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') else 0,
+            'source_rse': dsdata['source_rse'],
+            'destination_rse': dsdata['destination_rse'] if dsdata.get('destination_rse') else '---',
+            'elapsedtime': convert_sec(epltime.total_seconds(), 'str') if epltime is not None else '---',
+            'start_time': dsdata['start_time'].strftime(settings.DATETIME_FORMAT) if dsdata['start_time'] else '---',
+            'rrule': dsdata['rse'],
+            'update_time': convert_sec(dsdata['update_time'].total_seconds(), 'str') if dsdata.get('update_time') else '---',
+            'processingtype': dsdata['processingtype']
+        })
+    return dataset_list
