@@ -3,7 +3,6 @@
 """
 
 import json
-import math
 import logging
 import time
 
@@ -16,10 +15,11 @@ from core.libs.checks import is_positive_int_field
 from core.libs.exlib import build_time_histogram, convert_bytes, convert_sec, round_to_n_digits
 from core.libs.DateEncoder import DateEncoder
 from core.libs.task import get_datasets_for_tasklist
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_customrequired, login_required
 from core.views import initRequest, setupView
-from core.datacarousel.utils import getBinnedData, get_staging_data, send_report_rse, substitudeRSEbreakdown, staging_rule_verification, \
-    get_stuck_files_data, setup_view_dc
+from core.datacarousel.utils import (
+    getBinnedData, get_staging_data, send_report_rse, staging_rule_verification, get_stuck_files_data, setup_view_dc, build_summary_data,
+    build_dataset_list)
 import core.datacarousel.constants as const
 
 from django.conf import settings
@@ -126,122 +126,6 @@ def get_staging_info_for_task(request):
     return response
 
 
-
-def build_summary_data(staginData):
-
-    summary = {
-        'processingtype': {},
-        'source_rse': {},
-        'campaign': {},
-        'username': {},
-        'destination_rse': {},
-    }
-    timelistSubmitted = []
-    timelistSubmittedFiles = []
-    timelistIntervalfin = []
-    timelistIntervalact = []
-    timelistIntervalqueued = []
-    progressDistribution = []
-    seen_request_ids = set()
-
-    calc_temp = {
-        "ds_active": 0, "ds_done": 0, "ds_queued": 0, "ds_90pdone": 0,
-        'files_total': 0, "files_rem": 0, "files_queued": 0, "files_done": 0, 'files_active': 0,
-        'bytes_total': 0, 'bytes_done': 0, "bytes_queued": 0, 'bytes_rem': 0, 'bytes_active': 0,
-    }
-
-    for dsdata in staginData:
-        if dsdata.get('request_id') in seen_request_ids:
-            continue
-        seen_request_ids.add(dsdata.get('request_id'))
-
-        for key in summary:
-            if key == 'destination_rse' and dsdata['status'] == 'queued':
-                continue
-
-            if dsdata[key] not in summary[key]:
-                summary[key][dsdata[key]] = {key: dsdata[key]}
-                summary[key][dsdata[key]].update(calc_temp)
-                if key == "source_rse":
-                    summary[key][dsdata[key]]['source_rse_breakdown'] = substitudeRSEbreakdown(dsdata['source_rse'])
-
-            if is_positive_int_field(dsdata, 'total_files'):
-                summary[key][dsdata[key]]['files_total'] += dsdata['total_files']
-            if is_positive_int_field(dsdata, 'staged_files'):
-                summary[key][dsdata[key]]['files_done'] += dsdata['staged_files']
-            if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
-                summary[key][dsdata[key]]['files_rem'] += dsdata['total_files'] - dsdata['staged_files']
-            if is_positive_int_field(dsdata, 'dataset_bytes'):
-                summary[key][dsdata[key]]['bytes_total'] += convert_bytes(dsdata['dataset_bytes'], 'GB')
-            if is_positive_int_field(dsdata, 'staged_bytes'):
-                summary[key][dsdata[key]]['bytes_done'] += convert_bytes(dsdata['staged_bytes'], 'GB')
-            if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
-                summary[key][dsdata[key]]['bytes_rem'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
-
-            if dsdata['end_time'] is not None and dsdata['start_time'] is not None:
-                summary[key][dsdata[key]]['ds_done'] += 1
-                timelistIntervalfin.append(dsdata['end_time'] - dsdata['start_time'])
-            elif dsdata['status'] != 'queued':
-                summary[key][dsdata[key]]['ds_active'] += 1
-                if dsdata['start_time'] is not None:
-                    timelistIntervalact.append(timezone.now() - dsdata['start_time'])
-                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
-                    summary[key][dsdata[key]]['files_active'] += dsdata['total_files'] - dsdata['staged_files']
-                if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
-                    summary[key][dsdata[key]]['bytes_active'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
-                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') and dsdata['staged_files'] >= dsdata['total_files'] * 0.9:
-                    summary[key][dsdata[key]]['ds_90pdone'] += 1
-            elif dsdata['status'] == 'queued':
-                summary[key][dsdata[key]]['ds_queued'] += 1
-                timelistIntervalqueued.append(timezone.now() - dsdata['creation_time'])
-                if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
-                    summary[key][dsdata[key]]['files_queued'] += dsdata['total_files'] - dsdata['staged_files']
-                if is_positive_int_field(dsdata, 'dataset_bytes') and is_positive_int_field(dsdata, 'staged_bytes'):
-                    summary[key][dsdata[key]]['bytes_queued'] += convert_bytes(dsdata['dataset_bytes'] - dsdata['staged_bytes'], 'GB')
-
-        if dsdata['start_time'] is not None:
-            timelistSubmitted.append(dsdata['start_time'])
-            timelistSubmittedFiles.append([dsdata['start_time'], dsdata['total_files']])
-        if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files'):
-            progressDistribution.append(dsdata['staged_files'] / dsdata['total_files'])
-
-    return summary, timelistSubmitted, timelistSubmittedFiles, timelistIntervalact, timelistIntervalfin, timelistIntervalqueued, progressDistribution
-
-
-def build_dataset_list(staginData):
-    dataset_list = []
-
-    for dsdata in staginData:
-        epltime = None
-        if dsdata.get('end_time') and dsdata.get('start_time'):
-            epltime = dsdata['end_time'] - dsdata['start_time']
-        elif dsdata.get('start_time'):
-            epltime = timezone.now() - dsdata['start_time']
-        elif dsdata.get('creation_time'):
-            epltime = timezone.now() - dsdata['creation_time']
-
-        dataset_list.append({
-            'campaign': dsdata['campaign'],
-            'username': dsdata['username'],
-            'pr_id': dsdata['pr_id'],
-            'taskid': dsdata['taskid'],
-            'dataset': dsdata['dataset'],
-            'status': dsdata['status'],
-            'total_files': dsdata['total_files'] if is_positive_int_field(dsdata, 'total_files') else 0,
-            'staged_files': dsdata['staged_files'] if is_positive_int_field(dsdata, 'staged_files') else 0,
-            'size': int(round(convert_bytes(dsdata['dataset_bytes'], 'GB'))) if is_positive_int_field(dsdata, 'dataset_bytes') else "0",
-            'progress': int(math.floor(dsdata['staged_files'] * 100.0 / dsdata['total_files'])) if is_positive_int_field(dsdata, 'total_files') and is_positive_int_field(dsdata, 'staged_files') else 0,
-            'source_rse': dsdata['source_rse'],
-            'destination_rse': dsdata['destination_rse'] if dsdata.get('destination_rse') else '---',
-            'elapsedtime': convert_sec(epltime.total_seconds(), 'str') if epltime is not None else '---',
-            'start_time': dsdata['start_time'].strftime(settings.DATETIME_FORMAT) if dsdata['start_time'] else '---',
-            'rrule': dsdata['rse'],
-            'update_time': convert_sec(dsdata['update_time'].total_seconds(), 'str') if dsdata.get('update_time') else '---',
-            'processingtype': dsdata['processingtype']
-        })
-    return dataset_list
-
-
 @login_customrequired
 @never_cache
 def get_data_carousel_data(request):
@@ -289,6 +173,9 @@ def get_data_carousel_data(request):
     }
     return HttpResponse(json.dumps(finalvalue, cls=DateEncoder), content_type='application/json')
 
+
+@login_required
+@never_cache
 def get_stuck_files(request):
     """
     Return list of probably stuck in staging files for a dataset or Rucio rule & Rucio Storage Element

@@ -19,7 +19,7 @@ from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F, Max
 
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_customrequired, login_required
 from core.utils import is_json_request, complete_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
@@ -54,6 +54,35 @@ def get_time(value):
 
 @login_customrequired
 def art(request):
+    """
+    Main ART page.
+
+    ---
+    summary: ART Main Page
+    description: Main ART page displaying summary of packages and branches.
+    parameters:
+      - name: days
+        in: query
+        type: integer
+        required: false
+        description: Number of days to limit the results.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                packages:
+                  type: array
+                  items:
+                    type: string
+                branches:
+                  type: array
+                  items:
+                    type: string
+    """
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -111,6 +140,39 @@ def art(request):
 
 @login_customrequired
 def artOverview(request):
+    """
+    ART Overview page.
+
+    ---
+    summary: ART Overview
+    description: Overview of ART tests aggregated by package and branch.
+    parameters:
+      - name: view
+        in: query
+        type: string
+        required: false
+        description: Aggregation order (packages or branches).
+        default: packages
+      - name: extra
+        in: query
+        type: string
+        required: false
+        description: Extra parameters for aggregation.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                artpackages:
+                  type: object
+                art_overview_per_nightly_tag:
+                  type: object
+      '400':
+        description: Bad request
+    """
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -247,6 +309,32 @@ def artOverview(request):
 
 @login_customrequired
 def artTasks(request):
+    """
+    ART Tasks page.
+
+    ---
+    summary: ART Tasks
+    description: List of ART tasks aggregated by package or branch.
+    parameters:
+      - name: view
+        in: query
+        type: string
+        required: false
+        description: Aggregation order (packages or branches).
+        default: packages
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                arttasks:
+                  type: object
+      '400':
+        description: Bad request
+    """
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -380,6 +468,52 @@ def artTasks(request):
 
 @login_customrequired
 def artJobs(request):
+    """
+    ART Jobs page.
+
+    ---
+    summary: ART Jobs
+    description: List of ART jobs.
+    parameters:
+      - name: view
+        in: query
+        type: string
+        required: false
+        description: Aggregation order (packages or branches).
+        default: packages
+      - name: ntag
+        in: query
+        type: string
+        required: false
+        description: Nightly tag.
+      - name: ntag_full
+        in: query
+        type: string
+        required: false
+        description: Full nightly tag.
+      - name: extra
+        in: query
+        type: string
+        required: false
+        description: Extra parameters.
+      - name: nlastnightlies
+        in: query
+        type: string
+        required: false
+        description: Option to show metrics.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                artjobs:
+                  type: object
+      '400':
+        description: Bad request
+    """
     valid, response = initRequest(request)
     if not valid:
         return response
@@ -452,13 +586,13 @@ def artJobs(request):
     reportTo = {'mail': [], 'jira': {}}
     gitlabids = list(sorted(set([x['gitlabid'] for x in art_jobs if 'gitlabid' in x and x['gitlabid'] is not None])))
     linktoplots = []
-    eos_art_link = 'https://atlas-art-data.web.cern.ch/atlas-art-data/'
-    link_prefix = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/'
     artjobsdict={}
 
     for job in art_jobs:
         if job['test_type'] == 'local':
-            link_prefix = art_const.EOS_PREFIX_LOCAL
+            link_prefix = art_const.EOS_LINK_BASE + art_const.EOS_POSTFIX_LOCAL
+        else:
+            link_prefix = art_const.EOS_LINK_BASE + art_const.EOS_POSTFIX_GRID
 
         if job[ao[0]] not in artjobsdict:
             artjobsdict[job[ao[0]]] = {}
@@ -523,9 +657,8 @@ def artJobs(request):
             if 'html' in job['extrainfo'] and job['extrainfo']['html']:
                 if job['extrainfo']['html'].startswith('http'):
                     jobdict['htmllink'] = job['extrainfo']['html'] + jobdict['linktext']
-                    # replace eoslink
-                    # TODO: temporary dirty fix until ART begins to send a proper eos path
-                    if not job['extrainfo']['html'].startswith(eos_art_link):
+                    # replace eos link
+                    if not job['extrainfo']['html'].startswith(art_const.EOS_LINK_BASE):
                         jobdict['eoslink'] = '/'.join(job['extrainfo']['html'].split('/', 4)[:4]) + '/art/' + jobdict['linktext']
                 else:
                     jobdict['htmllink'] = link_prefix + jobdict['linktext'] + job['extrainfo']['html'] + '/'
@@ -618,11 +751,34 @@ def artJobs(request):
 @login_customrequired
 def artTest(request, package=None, testname=None):
     """
-    Single test page
-    :param request: request
-    :param package: str, name of ART package
-    :param testname: str, ART test name
-    :return:
+    Single test page.
+
+    ---
+    summary: ART Test Page
+    description: Page for a single ART test.
+    parameters:
+      - name: package
+        in: path
+        type: string
+        required: false
+        description: Name of ART package.
+      - name: testname
+        in: path
+        type: string
+        required: false
+        description: ART test name.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                art_test:
+                  type: object
+                error:
+                  type: object
     """
     valid, response = initRequest(request)
     if not valid:
@@ -767,9 +923,30 @@ def artTest(request, package=None, testname=None):
 @login_customrequired
 def artStability(request):
     """
-    A view to summarize changes of a test results over last week
-    :param request: HTTP request
-    :return:
+    ART Stability page.
+
+    ---
+    summary: ART Stability
+    description: A view to summarize changes of test results over the last week.
+    parameters:
+      - name: view
+        in: query
+        type: string
+        required: false
+        description: Aggregation order (packages or branches).
+        default: packages
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                art:
+                  type: object
+      '400':
+        description: Bad request
     """
     starttime = datetime.now()
     valid, response = initRequest(request)
@@ -908,9 +1085,23 @@ def artStability(request):
 @login_customrequired
 def artErrors(request):
     """
-    A view to summarize changes of a test results over last week
-    :param request: HTTP request
-    :return:
+    ART Errors page.
+
+    ---
+    summary: ART Errors
+    description: A view to summarize changes of a test results over last week.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                art:
+                  type: array
+                  items:
+                    type: array
     """
     valid, response = initRequest(request)
     if not valid:
@@ -1016,12 +1207,32 @@ def artErrors(request):
         return response
 
 
-@login_customrequired
+@login_required
 def updateARTJobList(request):
     """
-    Loading sub-step results for tests from PanDA job log files managed by Rucio
-    :param request: HTTP request
-    :return:
+    Loading sub-step results for tests.
+
+    ---
+    summary: Update ART Job List
+    description: Loading sub-step results for tests from PanDA job log files managed by Rucio.
+    parameters:
+      - name: days
+        in: query
+        type: integer
+        required: false
+        description: Number of days to process.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                strt:
+                  type: string
+                endt:
+                  type: string
     """
     valid, response = initRequest(request)
     if not valid:
@@ -1056,13 +1267,28 @@ def updateARTJobList(request):
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def loadSubResults(request):
     """
-    Loading sub-step results for tests from PanDA job log files managed by Rucio
-    Get N items from queue -> call filebrowser view -> extract art json -> save to ART_SUBRESULT table
-    :param request: HTTP request
-    :return:
+    Loading sub-step results.
+
+    ---
+    summary: Load Sub Results
+    description: Loading sub-step results for tests from PanDA job log files managed by Rucio.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                strt:
+                  type: string
+                endt:
+                  type: string
+                queue_len:
+                  type: integer
     """
     starttime = datetime.now()
     # limit to N rows to avoid timeouts
@@ -1135,13 +1361,51 @@ def loadSubResults(request):
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
-
+@login_customrequired
 @csrf_exempt
 def registerARTTest(request):
     """
-    API to register ART tests
-    Example of curl command:
-    curl -X POST -d "pandaid=XXX" -d "testname=test_XXXXX.sh" http://bigpanda.cern.ch/art/registerarttest/?json
+    API to register ART tests.
+
+    ---
+    summary: Register ART Test
+    description: API to register ART tests.
+    parameters:
+      - name: pandaid
+        in: query
+        type: integer
+        required: false
+        description: Panda ID.
+      - name: testname
+        in: query
+        type: string
+        required: true
+        description: Test name.
+      - name: test_type
+        in: query
+        type: string
+        required: false
+        description: Type of test (grid or local).
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                exit_code:
+                  type: integer
+                pandaid:
+                  type: integer
+                message:
+                  type: string
+      '400':
+        description: Bad request
+      '422':
+        description: Unprocessable entity
+      '500':
+        description: Internal server error
     """
     valid, response = initRequest(request)
     if not valid:
@@ -1357,17 +1621,40 @@ def registerARTTest(request):
 
     return JsonResponse(data, status=200)
 
-
+@login_customrequired
 @csrf_exempt
 def upload_test_result(request):
     """
-    A view to receive and save test result i.e. content of artReport.json.
-    It expects as a POST param:
-        pandaid - int
-        artreport - dict, content of artReport.json
-    E.g.  curl -X POST -d 'pandaid=XXX' -d 'artreport={"art": {}}' http://bigpanda.cern.ch/art/uploadtestresult/?json
-    :param request:
-    :return: HTTP response
+    Upload test result.
+
+    ---
+    summary: Upload Test Result
+    description: A view to receive and save test result.
+    parameters:
+      - name: pandaid
+        in: query
+        type: integer
+        required: true
+        description: Panda ID.
+      - name: artreport
+        in: query
+        type: string
+        required: true
+        description: JSON content of artReport.json.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      '400':
+        description: Bad request
+      '500':
+        description: Internal server error
     """
     _logger.debug('[ART] uploadtestresults: GET=' + str(request.GET) + ' POST=' + str(request.GET) + ' body:' + str(request.body))
 
@@ -1451,12 +1738,37 @@ def upload_test_result(request):
     return response
 
 
-@login_customrequired
+@login_required
 def sendArtReport(request):
     """
-    A view to send ART jobs status report by email
-    :param request:
-    :return: json
+    Send ART jobs status report.
+
+    ---
+    summary: Send ART Report
+    description: A view to send ART jobs status report by email.
+    parameters:
+      - name: ntag_from
+        in: query
+        type: string
+        required: true
+        description: Start ntag.
+      - name: ntag_to
+        in: query
+        type: string
+        required: true
+        description: End ntag.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isSent:
+                  type: boolean
+                nTries:
+                  type: integer
     """
     valid, response = initRequest(request)
     template = 'templated_email/artReportPackage.html'
@@ -1517,8 +1829,8 @@ def sendArtReport(request):
                 artjobsdictpackage[job['package']]['branches'][job['branch']]['name'] = job['branch']
                 for state in art_const.TEST_STATUS:
                     artjobsdictpackage[job['package']]['branches'][job['branch']]['n' + state] = 0
-                artjobsdictpackage[job['package']]['branches'][job['branch']]['linktoeos'] = 'https://atlas-art-data.web.cern.ch/atlas-art-data/grid-output/{}/{}/{}/'.format(
-                    job['branch'], job['nightly_tag'], job['package'])
+                artjobsdictpackage[job['package']]['branches'][job['branch']]['linktoeos'] = '{}{}{}/{}/{}/'.format(
+                    art_const.EOS_LINK_BASE, art_const.EOS_POSTFIX_GRID, job['branch'], job['nightly_tag'], job['package'])
 
             if 'status' in job and isinstance(job['status'], int):
                 finalresult = final_result_dict[job['status']]
@@ -1559,11 +1871,24 @@ def sendArtReport(request):
     return HttpResponse(json.dumps({'isSent': isSent, 'nTries': i}), content_type='application/json')
 
 
+@login_required
 def sendDevArtReport(request):
     """
-    A view to send special report to ART developer
-    :param request:
-    :return: json
+    Send ART developer report.
+
+    ---
+    summary: Send Dev ART Report
+    description: A view to send special report to ART developer.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isSent:
+                  type: boolean
     """
     valid, response = initRequest(request)
     if not valid:
@@ -1613,12 +1938,26 @@ def sendDevArtReport(request):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def remove_old_tests(request):
     """
-    Remove old records in art_tests
-    :param request:
-    :return:
+    Remove old ART tests.
+
+    ---
+    summary: Remove Old Tests
+    description: Remove old records in art_tests.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      '500':
+        description: Internal server error
     """
     start = datetime.now()
     message = ''
@@ -1639,13 +1978,27 @@ def remove_old_tests(request):
     return JsonResponse({'message': f"{message}, it took {(datetime.now()-start).total_seconds()}s"}, status=status)
 
 
-@login_customrequired
+@login_required
 @never_cache
 def fill_table(request):
     """
-    Fill new columns in art_tests
-    :param request:
-    :return:
+    Fill ART table columns.
+
+    ---
+    summary: Fill ART Table
+    description: Fill new columns in art_tests.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      '500':
+        description: Internal server error
     """
     start = datetime.now()
     # get last ntag with empty new fields

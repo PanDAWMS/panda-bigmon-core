@@ -12,6 +12,54 @@ from django.shortcuts import render
 
 @login_customrequired
 def testviewDemo(request):
+    """
+    Test View.
+
+    ---
+    summary: Test View
+    description: Detailed test results for a nightly release.
+    parameters:
+      - name: nightly
+        in: query
+        type: string
+        required: false
+        description: Nightly build name.
+      - name: rel
+        in: query
+        type: string
+        required: false
+        description: Release name.
+      - name: ar
+        in: query
+        type: string
+        required: false
+        description: Architecture/Platform.
+      - name: proj
+        in: query
+        type: string
+        required: false
+        description: Project name.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nightly:
+                  type: string
+                rel:
+                  type: string
+                ar:
+                  type: string
+                proj:
+                  type: string
+                rows_s:
+                  type: array
+                  items:
+                    type: array
+    """
     valid, response = initRequest(request)
     if not valid:
         return response

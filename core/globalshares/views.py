@@ -1,6 +1,6 @@
 from datetime import datetime
 import decimal
-
+import json
 import re
 
 from django.http import HttpResponse
@@ -13,13 +13,14 @@ from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.CustomJSONSerializer import DecimalEncoder
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.decorators import login_customrequired
+from core.utils import is_json_request
 from core.views import initRequest, setupView, extensibleURL
 from core.schedresource.utils import get_pq_fairshare_policy, get_pq_resource_types
-import json
 
-from core.globalshares import GlobalShares
-from core.globalshares.utils import get_gs_plots_data, get_child_elements, get_child_sumstats, get_hs_distribution, _safe_percent
-from core.globalshares.models import GlobalSharesModel
+
+from core.globalshares.utils import get_gs_plots_data, get_child_elements, get_child_sumstats, get_hs_distribution, _safe_percent, \
+    get_resources_gshare, __get_hs_leave_distribution, add_resources, resourcesDictToList
+
 
 @login_customrequired
 def globalshares(request):
@@ -124,8 +125,7 @@ def globalshares(request):
         except KeyError:
             pass
 
-    if (not (('HTTP_ACCEPT' in request.META) and (request.META.get('HTTP_ACCEPT') in ('application/json'))) and (
-                'json' not in request.session['requestParams'])):
+    if not is_json_request(request):
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
@@ -142,279 +142,6 @@ def globalshares(request):
         return response
     else:
         return HttpResponse(DecimalEncoder().encode(gs), content_type='application/json')
-
-
-def get_resources_gshare():
-    EXECUTING = 'executing'
-    QUEUED = 'queued'
-    PLEDGED = 'pledged'
-    IGNORE = 'ignore'
-    resourcesDictSites = get_pq_resource_types()
-    hs_distribution_raw = get_hs_distribution(group_by=('gshare', 'computingsite'), out_format='tuple')
-    # get the hs distribution data into a dictionary structure
-    hs_distribution_dict = {}
-    hs_queued_total = 0
-    hs_executing_total = 0
-    hs_ignore_total = 0
-    total_hs = 0
-    newresourecurcetype = ''
-    resourcecnt = 0
-    for hs_entry in hs_distribution_raw:
-        gshare, computingsite, status_group, hs = hs_entry
-        try:
-            resourcetype = resourcesDictSites[computingsite]
-        except:
-            continue
-        hs_distribution_dict.setdefault(gshare,{})
-        hs_distribution_dict[gshare].setdefault(resourcetype, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0, IGNORE:0})
-        #hs_distribution_dict[gshare][resourcetype][status_group] = hs
-
-        total_hs += hs
-
-        if status_group == QUEUED:
-            hs_queued_total += hs
-            hs_distribution_dict[gshare][resourcetype][status_group] += hs
-        elif status_group == EXECUTING:
-            hs_executing_total += hs
-            hs_distribution_dict[gshare][resourcetype][status_group] += hs
-        else:
-            hs_ignore_total += hs
-            hs_distribution_dict[gshare][resourcetype][status_group] += hs
-
-    hs_distribution_list=resourcesDictToList(hs_distribution_dict)
-
-    return hs_distribution_list, hs_distribution_dict
-
-
-def resourcesDictToList(hs_distribution_dict):
-    ignore = 0
-    pled = 0
-    executing = 0
-    queued = 0
-    total_hs = 0
-    for gshare in hs_distribution_dict.keys():
-        for resource in hs_distribution_dict[gshare].keys():
-            sum_hs = 0
-            pled += hs_distribution_dict[gshare][resource]['pledged']
-            ignore += hs_distribution_dict[gshare][resource]['ignore']
-            executing += hs_distribution_dict[gshare][resource]['executing']
-            queued += hs_distribution_dict[gshare][resource]['queued']
-            sum_hs = float(hs_distribution_dict[gshare][resource]['pledged']) + \
-                 float(hs_distribution_dict[gshare][resource]['ignore']) + \
-                 float(hs_distribution_dict[gshare][resource]['executing']) + \
-                 float(hs_distribution_dict[gshare][resource]['queued'])
-            total_hs+=sum_hs
-            hs_distribution_dict[gshare][resource]['total_hs'] = sum_hs
-
-    hs_distribution_list = {}
-    for gshare in hs_distribution_dict.keys():
-        for resource in hs_distribution_dict[gshare].keys():
-            if ignore > 0:
-            	hs_distribution_dict[gshare][resource]['ignore_percent'] =  (hs_distribution_dict[gshare][resource]['ignore']/ignore)* 100
-            else:
-                hs_distribution_dict[gshare][resource]['ignore_percent'] = 0
-            if executing > 0:
-            	hs_distribution_dict[gshare][resource]['executing_percent'] =  (hs_distribution_dict[gshare][resource]['executing'] / executing) * 100
-            else:
-                hs_distribution_dict[gshare][resource]['executing_percent'] = 0
-            if queued > 0:
-            	hs_distribution_dict[gshare][resource]['queued_percent'] = (hs_distribution_dict[gshare][resource]['queued']/queued) * 100
-            else:
-                hs_distribution_dict[gshare][resource]['queued_percent'] = 0
-            hs_distribution_list.setdefault(str(gshare).lower(),[]).append({'resource':resource, 'pledged':hs_distribution_dict[gshare][resource]['pledged'],
-                                     'ignore':hs_distribution_dict[gshare][resource]['ignore'],
-                                     'ignore_percent':hs_distribution_dict[gshare][resource]['ignore_percent'],
-                                     'executing':hs_distribution_dict[gshare][resource]['executing'],
-                                     'executing_percent': hs_distribution_dict[gshare][resource]['executing_percent'],
-                                     'queued':hs_distribution_dict[gshare][resource]['queued'],
-                                     'queued_percent':hs_distribution_dict[gshare][resource]['queued_percent'],
-                                     'total_hs':hs_distribution_dict[gshare][resource]['total_hs'],
-                                     'total_hs_percent': (hs_distribution_dict[gshare][resource]['total_hs']/total_hs)*100
-                                     })
-    return hs_distribution_list
-
-
-def add_resources(gshare,tableRows,resourceslist,level):
-    gshare = str(gshare).replace('_', ' ')
-    if gshare in resourceslist:
-        resourcesForGshare = resourceslist[gshare]
-        resourcesForGshareList = []
-        if level == 'level1':
-            for resource in resourcesForGshare:
-                resource['level1'] = resource['resource']
-                resource['level2'] = ''
-                resource['level3'] = ''
-        if level == 'level2':
-            for resource in resourcesForGshare:
-                resource['level1'] = ''
-                resource['level2'] = resource['resource']
-                resource['level3'] = ''
-        if level == 'level3':
-            for resource in resourcesForGshare:
-                resource['level1'] = ''
-                resource['level2'] = ''
-                resource['level3'] = resource['resource']
-
-        for row in tableRows:
-            if 'gshare' in row and gshare.replace(' ', '_') == row['gshare']:
-                row['resources'] = resourcesForGshare
-
-
-def get_shares(parents=''):
-    """
-    Get global shares from DB
-    :param parents:
-    :return:
-    """
-    gvalues = ('name', 'value', 'parent', 'prodsourcelabel', 'workinggroup', 'campaign', 'processingtype')
-    gquery = {}
-    if parents is None:
-        gquery['parent__isnull'] = True
-    elif type(parents) == str:
-        gquery['parent'] = parents
-    elif type(parents) in (list, tuple):
-        gquery['parent__in'] = parents
-
-    global_shares_list = []
-    global_shares_list.extend(GlobalSharesModel.objects.filter(**gquery).values(*gvalues))
-    global_shares_tuples = [(tuple(gs[gv] for gv in gvalues)) for gs in global_shares_list]
-
-    return global_shares_tuples
-
-
-def __load_branch(share):
-    """
-    Recursively load a branch
-    """
-    node = GlobalShares.Share(share.name, share.value, share.parent, share.prodsourcelabel,
-                              share.workinggroup, share.campaign, share.processingtype)
-
-    children = get_shares(parents=share.name)
-    if not children:
-        return node
-
-    for (name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype) in children:
-        child = GlobalShares.Share(name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype)
-        node.children.append(__load_branch(child))
-
-    return node
-
-
-def __get_hs_leave_distribution():
-    """
-    Get the current HS06 distribution for running and queued jobs
-    """
-
-    EXECUTING = 'executing'
-    QUEUED = 'queued'
-    PLEDGED = 'pledged'
-    IGNORE = 'ignore'
-
-    comment = ' /* DBProxy.get_hs_leave_distribution */'
-
-    tree = GlobalShares.Share('root', 100, None, None, None, None, None)
-    shares_top_level = get_shares(parents=None)
-    for (name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype) in shares_top_level:
-        share = GlobalShares.Share(name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype)
-        tree.children.append(__load_branch(share))
-
-    tree.normalize()
-    leave_shares = tree.get_leaves()
-
-    hs_distribution_raw = get_hs_distribution(group_by='gshare', out_format='tuple')
-
-    # get the hs distribution data into a dictionary structure
-    hs_distribution_dict = {}
-    hs_queued_total = 0
-    hs_executing_total = 0
-    hs_ignore_total = 0
-    for hs_entry in hs_distribution_raw:
-        gshare, status_group, hs = hs_entry
-        hs_distribution_dict.setdefault(gshare, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0})
-        hs_distribution_dict[gshare][status_group] = hs
-        # calculate totals
-        if status_group == QUEUED:
-            hs_queued_total += hs
-        elif status_group == EXECUTING:
-            hs_executing_total += hs
-        else:
-            hs_ignore_total += hs
-
-    # Calculate the ideal HS06 distribution based on shares.
-
-    for share_node in leave_shares:
-        share_name, share_value = share_node.name, share_node.value
-        hs_pledged_share = hs_executing_total * decimal.Decimal(str(share_value)) / decimal.Decimal(str(100.0))
-
-        hs_distribution_dict.setdefault(share_name, {PLEDGED: 0, QUEUED: 0, EXECUTING: 0})
-        # Pledged HS according to global share definitions
-        hs_distribution_dict[share_name]['pledged'] = hs_pledged_share
-
-    getChildStat(tree, hs_distribution_dict, 0)
-    rows = []
-    stripTree(tree, rows)
-    return hs_distribution_dict, rows
-
-
-def stripTree(node, rows):
-    row = {}
-    if hasattr(node,'level'):
-        if node.level > 0:
-            if node.level == 1:
-                row['level1'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-                row['level2'] = ''
-                row['level3'] = ''
-            if node.level == 2:
-                row['level1'] = ''
-                row['level2'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-                row['level3'] = ''
-            if node.level == 3:
-                row['level1'] = ''
-                row['level2'] = ''
-                row['level3'] = node.name + ' [' + ("%0.1f" % node.rawvalue) + '%]'
-            row['executing'] = node.executing
-            row['pledged'] = node.pledged
-            row['delta'] = node.delta
-            row['queued'] = node.queued
-            row['ratio'] = node.ratio
-            row['value'] = node.value
-            rows.append(row)
-    for item in node.children:
-        stripTree(item, rows)
-
-
-def getChildStat(node, hs_distribution_dict, level):
-    executing = 0
-    pledged = 0
-    delta = 0
-    queued = 0
-    ratio = 0
-    if node.name in hs_distribution_dict and len(node.children) == 0:
-        executing = hs_distribution_dict[node.name]['executing']
-        pledged = hs_distribution_dict[node.name]['pledged']
-        delta = hs_distribution_dict[node.name]['executing'] - hs_distribution_dict[node.name]['pledged']
-        queued = hs_distribution_dict[node.name]['queued']
-    else:
-        for item in node.children:
-            getChildStat(item, hs_distribution_dict, level+1)
-            executing += item.executing
-            pledged += item.pledged
-            delta += item.delta
-            queued += item.queued
-            #ratio = item.ratio if item.ratio!=None else 0
-
-    node.executing = executing
-    node.pledged = pledged
-    node.delta = delta
-    node.queued = queued
-    node.level = level
-
-    if (pledged != 0):
-        ratio = executing / pledged *100
-    else:
-        ratio = None
-
-    node.ratio = ratio
 
 
 @login_customrequired

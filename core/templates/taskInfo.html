@@ -818,9 +818,14 @@
 {% block js_body_page %}
 <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
 <script src="{% static 'js/google-charts-loader.js' %}?{% cache_bust "js/google-charts-loader.js" %}"></script>
+{% csrf_token %}
 <script nonce={{request.csp_nonce}}>
 var MON_VO = '{{ viewParams.MON_VO|safe }}';
 var jeditaskid = {{ jeditaskid | safe }};
+const headers = {
+  'Accept': 'application/json',
+  'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+};
 google.charts.load('current', {'packages':['sankey']});
 
 document.getElementById("button-taskflow").addEventListener("click", toggletaskflow);
@@ -912,6 +917,7 @@ app.controller('taskInfoController', function($rootScope, $scope, $http) {
     $http({
         url: '{% url 'rating_func' %}?json',
         method: "POST",
+        headers: headers,
         data: {
           'task': jeditaskid,
           'rating': $scope.rating.new,
@@ -1521,6 +1527,7 @@ function killtasks(taskID, action) {
         $.ajax({
             url: {% url 'killtasks' %},
             data: {'task': taskID, 'action': action},
+            headers: headers,
             async: true
         })
         .done(function (response) {
@@ -1547,10 +1554,10 @@ function operationtask_token(taskID, action) {
         // Reserve
     }
     if (confirm(message)) {
-
         $.ajax({
             url: '/panda_client/',
             data: {taskID: taskID, action: action},
+            headers: headers,
             async: false,
             type: "POST",
             success: function(result){

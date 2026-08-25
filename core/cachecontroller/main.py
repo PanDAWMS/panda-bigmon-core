@@ -28,7 +28,7 @@ from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 from django.conf import settings
 
-LOG_PATH = getattr(settings, 'LOG_ROOT', '/tmp/') + 'cachecontroller.log'
+LOG_PATH = getattr(settings, 'LOG_ROOT', '/tmp') + '/cachecontroller.log'
 AUTH_TOKEN = getattr(settings, 'SERVICE_TOKEN', None)
 
 headers = {}
@@ -41,7 +41,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[RotatingFileHandler(LOG_PATH, maxBytes=100000000, backupCount=10)],
 )
-print("Logging to file: " + LOG_PATH, f"token: {'ok' if AUTH_TOKEN else 'Not set'}")
 
 mainMenuURLs = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)
 infrequentURLS = TextFileURLs(EXECUTION_CAP_FOR_MAINMENUURLS, headers=headers)

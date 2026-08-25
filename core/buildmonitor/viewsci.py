@@ -62,13 +62,27 @@ def civiewDemo(request):
     }
 
     query = (
-        "select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,type from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc"
-        % nname
+        """
+        select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, 
+            nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,type 
+        from NIGHTLIES@ATLR.CERN.CH 
+        natural join releases@ATLR.CERN.CH 
+        natural join jobs@ATLR.CERN.CH 
+        where nname ='%s' and tstamp between sysdate-7+1/24 and sysdate 
+        order by tstamp desc
+        """ % nname
     )
     if rname != "*":
         query = (
-            "select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,type from NIGHTLIES@ATLR.CERN.CH natural join releases@ATLR.CERN.CH natural join jobs@ATLR.CERN.CH where nname ='%s' and name ='%s' and tstamp between sysdate-7+1/24 and sysdate order by tstamp desc"
-            % (nname, rname)
+            """
+            select to_char(jid),arch||'-'||os||'-'||comp||'-'||opt as AA, to_char(tstamp, 'RR/MM/DD HH24:MI') as tstamp, 
+                nname, name, webarea, webbuild, gitmrlink, tstamp as tst1,tcrel,tcrelbase,buildarea,relnstamp,gitbr,type 
+            from NIGHTLIES@ATLR.CERN.CH 
+            natural join releases@ATLR.CERN.CH 
+            natural join jobs@ATLR.CERN.CH 
+            where nname ='%s' and name ='%s' and tstamp between sysdate-7+1/24 and sysdate 
+            order by tstamp desc
+            """ % (nname, rname)
         )
 
     ####HEADERS
