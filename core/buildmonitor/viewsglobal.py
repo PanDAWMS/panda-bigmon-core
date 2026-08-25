@@ -15,7 +15,20 @@ from django.urls import reverse
 
 @login_customrequired
 def globalviewDemo(request):
+    """
+    Global View.
 
+    ---
+    summary: Global View
+    description: Global summary of builds and art tests.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+    """
     valid, response = initRequest(request)
     if not valid:
         return response

@@ -2,7 +2,6 @@ import json
 import re
 
 from django.http import JsonResponse
-import core.buildmonitor.constants as const
 from core.libs.DateEncoder import DateEncoder
 from core.oauth.decorators import login_customrequired
 from core.utils import is_json_request
@@ -13,6 +12,50 @@ from django.shortcuts import render
 
 @login_customrequired
 def compviewDemo(request):
+    """
+    Compilation View.
+
+    ---
+    summary: Compilation View
+    description: Compilation results for a given nightly release and platform.
+    parameters:
+      - name: nightly
+        in: query
+        type: string
+        required: false
+        description: Nightly build name.
+      - name: rel
+        in: query
+        type: string
+        required: false
+        description: Release name.
+      - name: ar
+        in: query
+        type: string
+        required: false
+        description: Architecture/Platform.
+      - name: proj
+        in: query
+        type: string
+        required: false
+        description: Project name.
+    responses:
+      '200':
+        description: Successful response
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nightly:
+                  type: string
+                platform:
+                  type: string
+                proj:
+                  type: string
+                data:
+                  type: object
+    """
     valid, response = initRequest(request)
     if not valid:
         return response

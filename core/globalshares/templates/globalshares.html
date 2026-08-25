@@ -336,6 +336,7 @@
   <script src="{% static 'js/draw-plots-c3.js' %}?{% cache_bust "js/draw-plots-c3.js" %}"></script>
   <script nonce={{request.csp_nonce}}>
     var dt = {};
+    const headers = {'Accept': 'application/json'};
 
     document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("tab_shares_distribution").addEventListener("click", DisplaySharesDistribution);
@@ -462,6 +463,7 @@
             url: '{% url 'resourcesType' %}',
             async: false,
             dataType: 'json',
+            headers: headers,
             success: function (json) {
               dtR = json;
             }
@@ -472,6 +474,7 @@
             url: '{% url 'coreTypes' %}',
             async: false,
             dataType: 'json',
+            headers: headers,
             success: function (json) {
               dtC = json;
             }
@@ -482,6 +485,7 @@
             url: '{% url 'fairsharePolicy' %}',
             async: false,
             dataType: 'json',
+            headers: headers,
             success: function (json) {
               dtF = json;
             }
@@ -545,7 +549,7 @@
             "ajax": {
                 "processing": true,
                 "url": "{% url 'detailedInformationJSON' %}",
-
+                "headers": headers,
                 "dataSrc": ''
             },
 
@@ -660,7 +664,7 @@
             "ajax": {
                 "processing": true,
                 "url": "{% url 'sharesDistributionJSON' %}",
-
+                "headers": headers,
                 "dataSrc": ''
             },
             "aoColumns": [
@@ -744,6 +748,7 @@
             "ajax": {
                 "processing": true,
                 "url": "{% url 'siteWorkQueuesJSON' %}",
+                "headers": headers,
                 "dataSrc": ''
             },
             "aoColumns": [

@@ -9,7 +9,7 @@
 
 ### Bug Fixes
 
-- Returm init to base class in cachecontroller
+- Return init to base class in cachecontroller
   ([`908c1e4`](https://github.com/PanDAWMS/panda-bigmon-core/commit/908c1e46b050c6f02c77faa9421262a1ada3ba4a))
 
 
