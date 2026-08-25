@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.9 (2026-08-25)
+
+### Bug Fixes
+
+- Link to EOS for art tests + missing decorators
+  ([`70ee17d`](https://github.com/PanDAWMS/panda-bigmon-core/commit/70ee17ddf2060c4c48f57ca32d06f97f4342fdd3))
+
+
 ## v1.1.8 (2026-08-06)
 
 
