@@ -23,7 +23,7 @@ from core.oauth.decorators import login_customrequired, login_required
 from core.utils import is_json_request, complete_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
-from core.art.models import ARTTests, ARTResultsQueue, ARTSubResult
+from core.art.models import ARTTests, ARTResultsQueue
 from core.art.jobSubResults import subresults_getter, save_subresults, lock_nqueuedjobs, delete_queuedjobs, clear_queue, \
     get_final_result, update_test_status
 from core.reports.models import ReportEmails
@@ -830,11 +830,11 @@ def artTest(request, package=None, testname=None):
             # combine info from ART and PanDA
             for job in art_jobs:
                 pid = job['pandaid']
-                job['eos'] = '{}{}/{}/{}/{}/'.format(
-                    art_const.EOS_PREFIX, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
+                job['eos'] = '{}{}{}/{}/{}/{}/'.format(
+                    art_const.EOS_LINK_BASE, art_const.EOS_POSTFIX_GRID, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
                 if job['test_type'] == 'local':
-                    job['eos'] = '{}{}/{}/{}/{}/'.format(
-                    art_const.EOS_PREFIX_LOCAL, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
+                    job['eos'] = '{}{}{}/{}/{}/{}/'.format(
+                    art_const.EOS_LINK_BASE, art_const.EOS_POSTFIX_LOCAL, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
                 if len(job['extrainfo']) > 0:
                     try:
                         extrainfo_json = json.loads(job['extrainfo'])
