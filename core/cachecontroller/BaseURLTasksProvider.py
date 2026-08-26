@@ -57,18 +57,31 @@ class BaseURLTasksProvider(BaseTasksProvider):
                 try:
                     req = urllibr.Request(BASE_URL + urltofetch, headers=self.headers)
                     urllibr.urlopen(req, timeout=TIME_OUT_FOR_QUERY)
-                except Exception or HTTPError as e:
-                    if isinstance(e, socket.timeout):
-                        timeout = True
-                    else:
-                        failedFetch = True
+                except HTTPError as e:
+                    failedFetch = True
+                    self.logger.error(
+                        "HTTP error while fetching %s: status=%s, reason=%s",
+                        urltofetch, e.code, e.reason,
+                    )
+                except socket.timeout:
+                    timeout = True
+                    self.logger.warning(
+                        "Timeout while fetching %s",
+                        urltofetch
+                    )
+                except Exception as e:
+                    failedFetch = True
+                    self.logger.exception(
+                        "Unexpected error while fetching %s, %s",
+                        urltofetch, e
+                    )
             else:
                 # We postpone the job if DB is overloaded
                 self.logger.warning('DB is overloaded with {} active sessions, postpone the job for {}s'.format(
                     numsess, TIMEOUT_WHEN_DB_LOADED
                 ))
                 time.sleep(TIMEOUT_WHEN_DB_LOADED)
-                return (None, None, None, jobtofetch)  # Operation did not performe due to DB overload
+                return (None, None, None, jobtofetch)  # Operation did not perform due to DB overload
             return (time.time() - start, timeout, failedFetch, jobtofetch)
 
         payload = self.getpayload()

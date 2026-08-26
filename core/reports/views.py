@@ -11,7 +11,7 @@ from django.shortcuts import render
 from django.core.cache import cache
 from core.views import initRequest, setupView
 from core.utils import error_response
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_customrequired, login_required
 from core.reports.models import ReportEmails
 from core.reports.sendMail import send_mail_bp
 from core.reports import ObsoletedTasksReport, LargeScaleAthenaTestsReport, ErrorClassificationReport, TasksRatedReport
@@ -215,7 +215,7 @@ def report(request):
             result = {}
             do_submit = True
             cache_key = None
-            # if tge report was sent to the default egroup, do not allow to send it again until the next week
+            # if the report was sent to the default egroup, do not allow to send it again until the next week
             if 'egroup' in request.session['requestParams'] and request.session['requestParams']['egroup'] == 'default':
                 cache_key = f"mail_sent_flag_{report_type}_default_egroup"
                 if cache.get(cache_key, False):
@@ -251,7 +251,7 @@ def report(request):
     return JsonResponse({'status': 'error', 'message': 'Something went wrong'})
 
 
-@login_customrequired
+@login_required
 def send_report(request):
     """
     Send message in email
@@ -262,10 +262,9 @@ def send_report(request):
     if not valid:
         return response
 
-    if 'remote' in request.session and request.session['remote'] in settings.CACHING_CRAWLER_HOSTS:
-        _logger.debug('Request came from a cache crawler node, all is good')
-    else:
-        response = JsonResponse({'message': 'Bad request'}, status=400)
+    authz = apps.get_app_config("oauth").authz
+    if not authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'report', 'write', {'type': 'rated_tasks'}, {}):
+        response = JsonResponse({'status': 'error', 'message': 'Not allowed to submit report'}, status=403)
         return response
 
     if 'subject' in request.session['requestParams']:
@@ -273,7 +272,6 @@ def send_report(request):
     else:
         subject = 'Unidentified report'
     subject = f'[{settings.EMAIL_SUBJECT_PREFIX}] {subject}'
-
 
     if 'message' in request.session['requestParams'] and len(request.session['requestParams']['message']) > 0:
         message = request.session['requestParams']['message']
