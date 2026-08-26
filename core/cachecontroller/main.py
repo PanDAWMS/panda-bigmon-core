@@ -2,7 +2,7 @@
 Install:
 schedule
 """
-
+import os
 import schedule
 import time
 import threading
@@ -28,7 +28,7 @@ from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 from django.conf import settings
 
-LOG_PATH = getattr(settings, 'LOG_ROOT', '/tmp') + '/cachecontroller.log'
+LOG_PATH = os.path.join(getattr(settings, 'LOG_ROOT', '/tmp'), 'cachecontroller.log')
 AUTH_TOKEN = getattr(settings, 'SERVICE_TOKEN', None)
 
 headers = {}

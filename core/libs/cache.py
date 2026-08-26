@@ -1,8 +1,6 @@
 import json
 import hashlib
-import socket
 import uuid
-import logging
 from collections import defaultdict
 
 from django.utils import encoding
