@@ -196,7 +196,6 @@
 <div class="bp-dropdown-button">
     <button class="dropdown"><span>Logs</span></button>
     <div   class=" dropdown-items">
-    <script nonce={{request.csp_nonce}}>var logLinksArray = [];</script>
     {% if debugmode %}
         <a href="#payloadlog" id="button-realtime-payload-log">Real-time log</a>
     {% endif %}
@@ -219,12 +218,6 @@
         {% if stdjdl %}
           <a href='{{stdjdl}}'>Pilot job jdl</a>
         {% endif %}
-        <script nonce={{request.csp_nonce}}>
-          logLinksArray[logLinksArray.length] ='{{stdout}}'
-          logLinksArray[logLinksArray.length] ='{{stderr}}'
-          logLinksArray[logLinksArray.length] ='{{stdlog}}'
-          logLinksArray[logLinksArray.length] ='{{stdjdl}}'
-        </script>
         {% endif %}
         {% if prmon_logs %}
             <a href="{{ prmon_logs.prmon_summary }}">Job system process summary</a>
@@ -232,22 +225,9 @@
         {% endif %}
         {% if job.jobstatus == 'closed' %}
           <td><a href='{{stdout}}'>Pilot ID</a></td>
-          <script nonce={{request.csp_nonce}}>
-            logLinksArray[logLinksArray.length] ='{{stdout}}'
-          </script>
         {% endif %}
         {% if viewParams.MON_VO == 'ATLAS' %}
           <a target="_blank" href="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover#?_a=(discover:(columns:!(_source),isDirty:!f,sort:!()),metadata:(indexPattern:'620eaaf0-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))&_q=(filters:!(),query:(language:lucene,query:'{{ job.pandaid|safe }}'))">PanDA logs (Kibana)</a>
-          <script nonce={{request.csp_nonce}}>
-              logLinksArray[logLinksArray.length] ="{% url 'pandaLogger' %}?category=panda.mon.prod&type=pilotLog&pandaid={{ pandaid }}"
-              logLinksArray[logLinksArray.length] ="https://os-atlas.cern.ch/dashboards/app/data-explorer/discover/#?_a=(discover:(columns:!(fields.type,logLevel,message,_source),interval:auto,sort:!(!('@timestamp',desc))),metadata:(indexPattern:'6bf79810-bfac-11ea-b7f2-27bdf2c0b5dc',view:discover))&_q=(filters:!(),query:(language:lucene,query:'jediTaskID:{{ job.jeditaskid|safe }}'))&_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-60d,to:now))"
-
-              function openAllLogs() {
-                  for (var i = 0; i < logLinksArray.length; i++) {
-                      window.open(logLinksArray[i], '_blank');
-                  }
-              }
-          </script>
           <a href="#" id="button-open-all-logs">Open all logs</a>
         {% endif %}
     {% else %}
@@ -533,8 +513,7 @@ function openAllLogs() {
   var logLinksArray = [];
   if ('{{ viewParams.MON_VO|safe }}' === 'ATLAS') {
     if (['finished', 'failed', 'closed', 'transferring', 'merging', 'cancelled'].includes('{{ job.jobstatus }}') === true) {
-      logLinksArray.push("/filebrowser/?guid={{logfile.guid}}&lfn={{logfile.lfn}}&site={{logfile.site}}&scope={{logfile.scope}}");
-
+      logLinksArray.push("/filebrowser/?pandaid={{ pandaid }}");
       logLinksArray.push('{{stdout}}');
       logLinksArray.push('{{stderr}}');
       logLinksArray.push('{{stdlog}}');
