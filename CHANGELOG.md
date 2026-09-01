@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v1.1.10 (2026-09-01)
+
+### Bug Fixes
+
+- Cachecontroller for rated tasks report
+  ([`59f4c17`](https://github.com/PanDAWMS/panda-bigmon-core/commit/59f4c176ac8a2c31c5017ba59ed136e730fcf308))
+
+- Link to EOS for art tests
+  ([`054edbc`](https://github.com/PanDAWMS/panda-bigmon-core/commit/054edbc74460ab9af305b10f69d97e2163367af1))
+
+- Open all logs for a job
+  ([`8d54243`](https://github.com/PanDAWMS/panda-bigmon-core/commit/8d542436fcfda2602aa3927e12b22b623f0b53d9))
+
+- Release github action
+  ([`2ec50df`](https://github.com/PanDAWMS/panda-bigmon-core/commit/2ec50dffbbe96455b332cff74e175fa850c3371d))
+
+
 ## v1.1.9 (2026-08-25)
 
 ### Bug Fixes
