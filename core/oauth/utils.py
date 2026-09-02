@@ -17,9 +17,9 @@ def get_token_expiry_info(token, user=None):
     """
     if not token:
         return {
-            "is_expired": True,
             "created": None,
-            "expires_at": None,
+            "expires": None,
+            "is_expired": True,
         }
 
     # Use provided user object or fallback to the token's attached user
