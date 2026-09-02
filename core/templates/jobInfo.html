@@ -133,7 +133,13 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% if permissions and 'error_analysis' in permissions %}
+    <button class="bp-button" id="error_analysis_llm">Analyse error with LLM</button>
+  {% endif %}
+
 {% endif %}
+
 
 {% if job.metastruct and job.metastruct.exitCode and job.metastruct.exitCode > 0 %}
 <div class="card bp-container-simple alert">

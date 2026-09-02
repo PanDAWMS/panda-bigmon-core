@@ -20,6 +20,7 @@ try:
 except ImportError:
     from opensearchpy import Search
 
+from django.apps import apps
 from django.conf import settings
 from django.db import connection
 from django.db.models import Count, DateTimeField, F, FloatField, Q, Sum, Value
@@ -2305,10 +2306,17 @@ def jobInfo(request, pandaid=None, batchid=None):
         if job['jobstatus'] in ('failed', 'holding', 'subfinished'):
             error_summary = error_summary_for_job(job)
 
+        permissions = {}
+        if job['jobstatus'] == 'failed':
+            authz = apps.get_app_config("oauth").authz
+            if authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'error_analysis', 'read', {}, {}):
+                permissions['error_analysis'] = True
+
         data = {
             'request': request,
             'viewParams': request.session['viewParams'],
             'requestParams': request.session['requestParams'],
+            'permissions': permissions,
             'pandaid': pandaid,
             'job': job,
             'columns': columns,
