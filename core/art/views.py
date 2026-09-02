@@ -1581,13 +1581,13 @@ def registerARTTest(request):
                         log_lfn = [f['lfn'] for f in files if f['type'] == 'log']
                         if len(log_lfn) > 0:
                             try:
-                                tarindex = int(re.search('\.([0-9]{6})\.log\.', log_lfn[0]).group(1))
+                                tarindex = int(re.search(r'\.([0-9]{6})\.log\.', log_lfn[0]).group(1))
                             except Exception as e:
                                 _logger.info(f'Failed to extract tarindex from log lfn: {e}')
                                 tarindex = None
                 if 'jobname' in job:
                     try:
-                        gitlabid = int(re.search('\.([0-9]{6,8})\.', job['jobname']).group(1))
+                        gitlabid = int(re.search(r'\.([0-9]{6,8})\.', job['jobname']).group(1))
                     except Exception as e:
                         _logger.info(f'Failed to extract gitlab id from job name: {e}')
                         gitlabid = None
