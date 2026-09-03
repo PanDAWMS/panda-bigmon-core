@@ -1,3 +1,0 @@
-BigPanDAmon package ...
-Documentation: https://panda-wms.readthedocs.io/en/latest/client/monitoring.html
-
