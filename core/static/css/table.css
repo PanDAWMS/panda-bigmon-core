@@ -955,9 +955,15 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
         padding: 0.7rem;}
     .fresh-table thead th a {
         color: #49668d;
-        font-weight: bold;}
+        font-weight: bold;
+        border-bottom: 1px dotted;}
     .fresh-table thead th a:hover {
         color: #272727;}
+    .fresh-table thead th > div.with-right-button {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .fresh-table thead td {
         background-color: #f1f1f1;
         color: #272727;
@@ -987,6 +993,12 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
 .fresh-table.alert thead th {
     background-color: #f7c4c4;
     border: solid 1px #f7c4c4;
+}
+.fresh-table.alert thead th a {
+  color: #8e1b1b;
+}
+.fresh-table.alert thead th a:hover {
+  color: #272727;
 }
 .fresh-table.alert tbody a {
   color: firebrick;

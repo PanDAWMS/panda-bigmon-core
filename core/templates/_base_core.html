@@ -65,6 +65,7 @@
                     $compileProvider.debugInfoEnabled(true);
                 }]);
                 app.config(['$httpProvider', function ($httpProvider) {
+                    $httpProvider.defaults.headers.common['Accept'] = 'application/json';
                     $httpProvider.defaults.xsrfCookieName = 'csrftoken';
                     $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
                 }]);

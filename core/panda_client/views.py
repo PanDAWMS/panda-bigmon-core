@@ -1,9 +1,11 @@
 import json
 import logging
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 
 from core.oauth.decorators import login_required
 from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task, set_debug_mode, to_bool, get_user_groups
+from core.panda_client.ask_panda import AskPanda
+from core.utils import error_response
 from core.views import initRequest
 
 _logger = logging.getLogger('panda.client')
@@ -69,3 +71,28 @@ def client(request, task_id=None):
         info['text'] = f'Operation failed: {e}'
 
     return HttpResponse(json.dumps(info), content_type='text/html')
+
+
+
+@login_required
+def job_error_analysis(request):
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    pandaid = None
+    if 'pandaid' in request.session['requestParams']:
+        pandaid = request.session['requestParams']['pandaid']
+    if not pandaid:
+        return error_response(request, "No pandaid provided", 400)
+
+    ask_panda = AskPanda()
+    res = ask_panda.job_error_analysis(pandaid=pandaid)
+    status_code = 200 if res.get("success") else 502
+    data = {
+        'pandaid': pandaid,
+        'result': res
+    }
+
+    return JsonResponse(data, status=status_code)
+

@@ -1,4 +1,4 @@
 p, atlas-adc-dpa, user_contact, read, {}, {}, allow
 p, atlas-adc-dpa, report, read, {"type": "rated_tasks"}, {}, allow
 p, admin, report, read, {"type": "rated_tasks"}, {}, allow
-p, atlas-adc-panda-ai-users, error_analysis, write, {}, {}, allow
+p, atlas-adc-panda-ask-users, error_analysis, read, {}, {}, allow
