@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.11 (2026-09-02)
+
+### Bug Fixes
+
+- Token expires key missing
+  ([`40efa63`](https://github.com/PanDAWMS/panda-bigmon-core/commit/40efa63647750256cf72cbdbfaeccb12fd5d470a))
+
+
 ## v1.1.10 (2026-09-01)
 
 ### Bug Fixes
