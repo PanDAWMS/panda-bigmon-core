@@ -1,9 +1,9 @@
 import json
 import logging
+import markdown
 from django.apps import apps
 from django.http import HttpResponse, JsonResponse
 
-from core.libs.job import get_job_list
 from core.oauth.decorators import login_required
 from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task, set_debug_mode, to_bool, get_user_groups
 from core.panda_client.ask_panda import AskPanda
@@ -75,9 +75,8 @@ def client(request, task_id=None):
     return HttpResponse(json.dumps(info), content_type='text/html')
 
 
-
 @login_required
-def job_error_analysis(request):
+def job_error_analysis(request, analysis_id=-1):
     """Handles job error analysis done by AskPanda"""
     valid, response = initRequest(request)
     if not valid:
@@ -87,24 +86,52 @@ def job_error_analysis(request):
     if not authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'error_analysis', 'read', {}, {}):
         return error_response(request, "You are not authorized to access this resource", 403)
 
-    pandaid = None
-    if 'pandaid' in request.session['requestParams']:
-        pandaid = request.session['requestParams']['pandaid']
-    if not pandaid:
-        return error_response(request, "No pandaid provided", 400)
+    try:
+        ask_panda = AskPanda(request.user.username)
+    except ValueError as e:
+        _logger.error(f"AskPanda initialization failed: {e}")
+        return error_response(request, "AskPanda service is misconfigured on the server", 500)
 
-    job_list = get_job_list(query={'pandaid': pandaid})
-    if job_list and len(job_list) > 0:
-        job =job_list[0]
+    if analysis_id <= 0:
+        request_params = request.session.get('requestParams', {})
+        pandaid = request_params.get('pandaid')
+        if not pandaid:
+            return error_response(request, "No pandaid provided", 400)
+        res = ask_panda.start_job_error_analysis(pandaid)
     else:
-        return error_response(request, "provided pandaid does not exist", 404)
+        res = ask_panda.get_analysis_result(analysis_id)
 
-    ask_panda = AskPanda()
-    res = ask_panda.job_error_analysis(job)
-    status_code = 200 if res.get("success") else 502
-    data = {
-        'pandaid': pandaid,
-        'result': res
-    }
-    return JsonResponse(data, status=status_code)
+    # convert markdown to HTML
+    if res.get("success") and res.get("data"):
+        raw_markdown = res["data"].get("answer_markdown")
+        if raw_markdown:
+            # Enable extra extensions like tables, code blocks, etc.
+            res["data"]["answer_html"] = markdown.markdown(
+                raw_markdown,
+                extensions=['fenced_code', 'tables', 'nl2br']
+            )
 
+    status_code = res.get("status_code", 200) if res.get("success") else (res.get("status_code") or 502)
+    return JsonResponse({'result': res}, status=status_code)
+
+
+@login_required
+def submit_job_error_rating(request, analysis_id):
+    """Submits user rating for a completed analysis."""
+    if request.method != "POST":
+        return error_response(request, "Method not allowed", 405)
+
+    try:
+        data = json.loads(request.body)
+        rating = int(data.get('rating', 0))
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return error_response(request, "Invalid JSON payload", 400)
+
+    try:
+        ask_panda = AskPanda(username=request.user.username)
+        res = ask_panda.submit_rating(analysis_id=analysis_id, rating=rating)
+    except ValueError as e:
+        return error_response(request, str(e), 500)
+
+    status_code = res.get("status_code") if res.get("success") else 502
+    return JsonResponse({'result': res}, status=status_code)

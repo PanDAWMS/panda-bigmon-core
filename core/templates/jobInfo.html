@@ -140,8 +140,20 @@
         <div class="card-divider"><p>Error analysis summary:</p></div>
         <div class="card-section">
           <p ng-bind-html="error_analysis.panel.message"></p>
-          <p ng-bind-html="error_analysis.panel.result"></p>
-          <div id="div-ask_panda_frame"></div>
+          <div class="markdown-body" ng-bind-html="error_analysis.panel.result"></div>
+
+          <div ng-if="error_analysis.data.promptlog && error_analysis.panel.is_complete">
+            <hr>
+            <div ng-if="!error_analysis.panel.rating_submitted">
+              <label>Rate this analysis:</label>
+              <button ng-repeat="star in [1, 2, 3, 4, 5]" ng-click="submit_rating(star)">
+                {[ star ]} ★
+              </button>
+            </div>
+            <div ng-if="error_analysis.panel.rating_submitted">
+              <em>Thank you for your rating!</em>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -915,9 +927,6 @@ function operationjob_token(pandaID, action, params) {
     var message = '';
     var debug_mode = '{{ debugmode|safe }}';
 
-
-  {#'Accept': 'application/json',#}
-
     if (action == 'setdebugmode' & debug_mode == 'False' ) {
         message = 'Enable debug mode for this job? This will allow to see payload logs in real-time.';
     }
@@ -964,8 +973,12 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce) {
         message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
         is_hidden: true,
         result: '',
+        is_complete: false,
+        rating_submitted: false
       },
       data: [],
+      poll_promise: null,
+      baseUrl: '/api/panda_ask/job_error_analysis/'
    };
 
   $scope.error_analysis.init = function () {
@@ -973,40 +986,101 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce) {
           pandaid: {{pandaid}} || null
     };
 
-
-    $http.post('/api/panda_ask/job_error_analysis/', payload)
+    $http.post(`${$scope.error_analysis.baseUrl}`, payload)
       .then(function(response) {
           var result = response.data.result;
           if (result.success) {
-              $scope.error_analysis.panel.message = '';
-              $scope.error_analysis.data = result.data;
-              $scope.error_analysis.transform_data_to_html();
+              $scope.error_analysis.panel.message = $sce.trustAsHtml(
+                '<img src="{% static 'images/load.gif' %}"> Analysis started, fetching results...'
+              );
+              $scope.error_analysis.id = result.data.analysis_id;
 
           } else {
-              $scope.error_analysis.panel.message = $sce.trustAsHtml(
-                  '<span>Error: ' + result.error + '</span>'
-              );
+              var err = (result && result.error) ? result.error : 'Failed to start analysis';
+              $scope.error_analysis.panel.message = $sce.trustAsHtml('<span>Error: ' + err + '</span>');
           }
       })
       .catch(function(error) {
-          var errMessage = (error.data && error.data.result && error.data.result.error)
-              ? error.data.result.error
-              : 'Server error occurred.';
-          $scope.error_analysis.panel.message = $sce.trustAsHtml(
-              '<span>' + errMessage + '</span>'
-          );
+          $scope.error_analysis.handle_error(error);
       });
   }
 
-  $scope.error_analysis.transform_data_to_html = function () {
-    $scope.error_analysis.panel.result = $sce.trustAsHtml('<pre>${$scope.error_analysis.data}</pre>');
-  }
+  $scope.error_analysis.poll = function (analysisId) {
+    $http.get('${$scope.error_analysis.baseUrl}' + analysisId + '/')
+      .then(function (response) {
+        var result = response.data.result;
+        if (result && result.success) {
+          $scope.error_analysis.handle_response(result);
+        } else {
+          var err = (result && result.error) ? result.error : 'Polling failed';
+          $scope.error_analysis.panel.message = $sce.trustAsHtml('<span>Error: ' + err + '</span>');
+        }
+      })
+      .catch(function (error) {
+        $scope.error_analysis.handle_error(error);
+      });
+  };
 
+  $scope.error_analysis.handle_response = function (result) {
+    var data = result.data;
+    $scope.error_analysis.data = data;
+
+    // Display formatted HTML if answer_html is available
+    if (data.answer_html) {
+      $scope.error_analysis.panel.result = $sce.trustAsHtml(data.answer_html);
+    }
+
+    // Check if we need to poll again
+    // Stop when poll_after_s is null or state is terminal
+    if (data.poll_after_s !== null && data.poll_after_s !== undefined) {
+      $scope.error_analysis.panel.message = $sce.trustAsHtml(
+        '<img src="{% static 'images/load.gif' %}"> Analysis in progress (State: ' + (data.state || 'running') + ')...'
+      );
+
+      // Schedule next poll in 10 seconds (10000 ms)
+      $scope.error_analysis.poll_promise = $timeout(function () {
+        $scope.error_analysis.poll(data.analysis_id);
+      }, 10000);
+
+    } else {
+      // Analysis finished or reached terminal state
+      $scope.error_analysis.panel.message = '';
+      $scope.error_analysis.panel.is_complete = true;
+    }
+  };
+
+  // Submit Rating (1..5)
+  $scope.submit_rating = function (ratingValue) {
+    if (!$scope.error_analysis.data || !$scope.error_analysis.data.analysis_id) return;
+
+    var analysisId = $scope.error_analysis.data.analysis_id;
+    $http.post('${$scope.error_analysis.baseUrl}' + analysisId + '/rating/', { rating: ratingValue })
+      .then(function () {
+        $scope.error_analysis.panel.rating_submitted = true;
+      })
+      .catch(function () {
+        alert('Failed to submit rating.');
+      });
+  };
+
+  $scope.error_analysis.handle_error = function (error) {
+    var errMessage = (error.data && error.data.result && error.data.result.error)
+      ? error.data.result.error
+      : 'Server error occurred.';
+    $scope.error_analysis.panel.message = $sce.trustAsHtml('<span>' + errMessage + '</span>');
+  };
 
   $scope.error_analysis.panel.toggle = function() {
       $scope.error_analysis.panel.is_hidden = false;
       $scope.error_analysis.init();
   };
+
+  $scope.$on('$destroy', function () {
+    if ($scope.error_analysis.poll_promise) {
+      $timeout.cancel($scope.error_analysis.poll_promise);
+    }
+  });
+
 });
 
 

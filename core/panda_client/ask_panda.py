@@ -1,4 +1,5 @@
 import logging
+import markdown
 import os
 import requests
 
@@ -6,58 +7,95 @@ _logger = logging.getLogger('panda_client')
 
 
 class AskPanda:
-    """Base class for communicating with AskPanda and processing the output for representation in web pages"""
-    def __init__(self):
+    """Base class for communicating with AskPanda REST API."""
+    def __init__(self, username:str):
+        self.username = username
         self.base_url = os.environ.get("BASE_URL_ASK_PANDA")
+        self.token = os.environ.get("TOKEN_ASK_PANDA")
+        if not self.base_url or not self.token:
+            _logger.error("[AskPanda] Base URL not set")
+            raise ValueError("[AskPanda] Init failed due to missing base URL or Token")
+        self.base_url = self.base_url.rstrip('/')
 
     def _prepare_headers(self):
         """Prepare request headers"""
-        return {
+        headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "Authorization": f"Bearer {self.token}",
         }
+        if self.username:
+            headers["X-Bamboo-User"] = self.username
+        return headers
 
-    def _prepare_request_params_str(self, get_params=None) -> str:
-        """Prepare request params string"""
-        if get_params is None:
-            get_params = {}
-        return "&".join(f"{k}={v}" for k, v in get_params.items())
 
-    def post(self, req_params=None, data=None):
-        """HTTP client for ask panda"""
-        if not self.base_url:
-            _logger.error("[AskPanda] Base URL for AskPanda not set")
-            return {"success": False, "error": "AskPanda service is misconfigured (missing Base URL)."}
-        if data is None:
-            data = {}
-        if req_params:
-            params_str = self._prepare_request_params_str(req_params)
-        else:
-            params_str = ''
-        full_url = f"{self.base_url}?{params_str}"
-
+    def _request(self, method: str, endpoint: str, data=None) -> dict:
+        """Internal HTTP runner supporting GET/POST and standardized response handling."""
+        url = f"{self.base_url}{endpoint}"
         headers = self._prepare_headers()
+
         try:
-            response = requests.post(full_url, headers=headers, timeout=600, json=data)
+            response = requests.request(
+                method=method,
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=600
+            )
             response.raise_for_status()
-            return {"success": True, "data": response.json()}
+
+            # Handle 204 No Content responses (e.g. rating submission)
+            if response.status_code == 204:
+                return {"success": True, "status_code": 204, "data": None}
+
+            return {
+                "success": True,
+                "status_code": response.status_code,
+                "data": response.json()
+            }
+
         except requests.RequestException as e:
-            _logger.error("[AskPanda] request failed: %s", str(e))
-            return {"success": False, "error": f"Failed to communicate with AskPanda: {str(e)}"}
+            _logger.error("[AskPanda] Request failed for %s %s: %s", method, endpoint, str(e))
+            error_details = str(e)
+            if e.response is not None:
+                try:
+                    error_details = e.response.json()
+                except ValueError:
+                    error_details = e.response.text or str(e)
 
-    def job_error_analysis(self, job:dict):
-        """Send request to AskPanda"""
-        out = {"success": False, "error": "", "data": {}}
-        data = {
-            'prompt': "Analyze job error",
-            'job_id': job['pandaid'],
-            'username': job['produsername'],
+            return {
+                "success": False,
+                "status_code": getattr(e.response, 'status_code', None),
+                "error": error_details
+            }
+
+    def start_job_error_analysis(self, job_id: int, mode: str = "failure") -> dict:
+        """
+        Start job error analysis.
+        Endpoint: POST /api/v1/analysis
+        """
+        payload = {
+            "job_id": int(job_id),
+            "mode": mode,
+            "user": self.username
         }
-        res = self.post(data=data)
+        return self._request("POST", "/analysis", data=payload)
 
-        # processing of response
-        if res['success']:
-            out["success"] = True
-            out["data"] = res['data']
+    def get_analysis_result(self, analysis_id: str) -> dict:
+        """
+        Poll or fetch analysis result.
+        Endpoint: GET /api/v1/analysis/{id}
+        """
+        return self._request("GET", f"/analysis/{analysis_id}")
 
-        return out
+
+    def submit_rating(self, analysis_id: str, rating: int) -> dict:
+        """
+        Submit user rating (1..5) for an analysis.
+        Endpoint: POST /api/v1/analysis/{id}/rating
+        """
+        if not (1 <= rating <= 5):
+            return {"success": False, "error": "Rating must be an integer between 1 and 5"}
+
+        payload = {"rating": rating}
+        return self._request("POST", f"/analysis/{analysis_id}/rating", data=payload)
