@@ -540,8 +540,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             param, request.session['requestParams'][param])
 
     # add min/max values to session
-    request.session['TFIRST'] = startdate
-    request.session['TLAST'] = enddate
+    request.session['TFIRST'] = startdate.replace(tzinfo=None)
+    request.session['TLAST'] = enddate.replace(tzinfo=None)
 
     request.session['PLOW'] = 1000000
     request.session['PHIGH'] = -1000000

@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.1.12 (2026-09-03)
+
+### Bug Fixes
+
+- Pass real task.prodsourcelabel in link path to job list
+  ([`407b1bf`](https://github.com/PanDAWMS/panda-bigmon-core/commit/407b1bf713e427a955bf0ee9be2ffa77d1551284))
+
+### Documentation
+
+- Update README.md
+  ([`81c1679`](https://github.com/PanDAWMS/panda-bigmon-core/commit/81c1679fe75ae4815fafe85ce07d0c9a14b7e49e))
+
+
 ## v1.1.11 (2026-09-02)
 
 ### Bug Fixes
