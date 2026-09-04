@@ -1,7 +1,9 @@
 import json
 import logging
+from django.apps import apps
 from django.http import HttpResponse, JsonResponse
 
+from core.libs.job import get_job_list
 from core.oauth.decorators import login_required
 from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task, set_debug_mode, to_bool, get_user_groups
 from core.panda_client.ask_panda import AskPanda
@@ -76,9 +78,14 @@ def client(request, task_id=None):
 
 @login_required
 def job_error_analysis(request):
+    """Handles job error analysis done by AskPanda"""
     valid, response = initRequest(request)
     if not valid:
         return response
+
+    authz = apps.get_app_config("oauth").authz
+    if not authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'error_analysis', 'read', {}, {}):
+        return error_response(request, "You are not authorized to access this resource", 403)
 
     pandaid = None
     if 'pandaid' in request.session['requestParams']:
@@ -86,13 +93,18 @@ def job_error_analysis(request):
     if not pandaid:
         return error_response(request, "No pandaid provided", 400)
 
+    job_list = get_job_list(query={'pandaid': pandaid})
+    if job_list and len(job_list) > 0:
+        job =job_list[0]
+    else:
+        return error_response(request, "provided pandaid does not exist", 404)
+
     ask_panda = AskPanda()
-    res = ask_panda.job_error_analysis(pandaid=pandaid)
+    res = ask_panda.job_error_analysis(job)
     status_code = 200 if res.get("success") else 502
     data = {
         'pandaid': pandaid,
         'result': res
     }
-
     return JsonResponse(data, status=status_code)
 
