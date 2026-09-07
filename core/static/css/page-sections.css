@@ -1982,3 +1982,109 @@ footer {
   padding: 0.3rem;
   height: 5rem;
 }
+
+
+
+/* Error analysis block transformed from markdown */
+.markdown-body {
+  font-size: 0.875rem;
+  line-height: 1.2;
+  padding: 0;
+  border: none;
+}
+.markdown-body h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.3rem 0;
+  padding: 0;
+  color: #439067;
+  background-color: transparent;
+}
+.markdown-body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.3rem 0 0 0;
+  color: #0a0a0a;
+}
+.markdown-body > p {
+  margin: .3rem 0 0 0 !important;
+  line-height: 1.2;
+}
+.markdown-body a {
+  color: #439067;
+  text-decoration: none;
+  border-bottom: 1px dashed;
+}
+.markdown-body a:hover {
+  border-bottom: 1px solid;
+}
+.markdown-body code {
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.875rem;
+  background-color: rgba(27, 31, 35, 0.05);
+  padding: 0 0.2rem;
+  border-radius: 2px;
+}
+.markdown-body pre {
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  padding: 0.3rem 0;
+  overflow: auto;
+  line-height: 1;
+  margin-left: 1rem;
+}
+.markdown-body pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: 100%;
+}
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: .3rem;
+  margin-top: 0;
+  margin-bottom: .1rem;
+  line-height: 1.2;
+  margin-left: 1rem;
+}
+.markdown-body li {
+  margin-bottom: .1rem;
+}
+.markdown-body hr {
+  height: 1px;
+  padding: 0;
+  margin: .5rem 0;
+  background-color: transparent;
+  border: 0;
+}
+.markdown-body blockquote {
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #dfe2e5;
+  margin: 0 0 10px 0;
+}
+
+
+.emoji-rating-group {
+    display: inline-block;
+}
+.emoji-rating-group .emoji-item {
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-right: .1rem;
+    opacity: 0.5;
+    filter: grayscale(80%);
+    transition: opacity 0.15s ease, filter 0.15s ease, transform 0.1s ease;
+    user-select: none;
+}
+.emoji-rating-group .emoji-item.active,
+.emoji-rating-group .emoji-item:hover {
+    opacity: 1.0;
+    filter: grayscale(0%);
+}
+.emoji-rating-group .emoji-item:hover {
+    transform: scale(1.25);
+}
+.emoji-rating-group .rating-thanks {
+    color: #439067;
+    font-weight: 500;
+}

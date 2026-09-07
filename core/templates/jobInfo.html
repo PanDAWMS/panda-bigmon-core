@@ -143,14 +143,20 @@
           <div class="markdown-body" ng-bind-html="error_analysis.panel.result"></div>
 
           <div ng-if="error_analysis.data.promptlog && error_analysis.panel.is_complete">
-            <hr>
             <div ng-if="!error_analysis.panel.rating_submitted">
               <label>Rate this analysis:</label>
-              <button ng-repeat="star in [1, 2, 3, 4, 5]" ng-click="submit_rating(star)">
-                {[ star ]} ★
-              </button>
+              <div class="emoji-rating-group" ng-mouseleave="error_analysis.rating.set_hover(0)">
+                <span ng-repeat="star in [1, 2, 3, 4, 5]"
+                      class="emoji-item"
+                      ng-class="{'active': star <= error_analysis.rating.hover_rating}"
+                      ng-mouseenter="error_analysis.rating.set_hover(star)"
+                      ng-click="error_analysis.rating.submit(star)"
+                      title="Rate {$ star $} of 5">
+                  {$ error_analysis.rating.emoji_desc[star] $}
+                </span>
+              </div>
             </div>
-            <div ng-if="error_analysis.panel.rating_submitted">
+            <div ng-if="error_analysis.rating.submitted">
               <em>Thank you for your rating!</em>
             </div>
           </div>
@@ -967,16 +973,27 @@ function toggleJobErrorAnalysis() {
     }
 }
 
-app.controller('JobErrorAnalysisController', function ($scope, $http, $sce) {
+app.controller('JobErrorAnalysisController', function ($scope, $http, $sce, $timeout) {
    $scope.error_analysis = {
       panel: {
         message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
         is_hidden: true,
         result: '',
-        is_complete: false,
-        rating_submitted: false
+        is_complete: false
       },
+      id: null,
       data: [],
+      rating: {
+        hover: 0,
+        submitted: false,
+        emoji_desc: {
+          1: '\u{1F621}',
+          2: '\u{1F620}',
+          3: '\u{1F610}',
+          4: '\u{1F600}',
+          5: '\u{1F60D}'
+        }
+      },
       poll_promise: null,
       baseUrl: '/api/panda_ask/job_error_analysis/'
    };
@@ -986,7 +1003,7 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce) {
           pandaid: {{pandaid}} || null
     };
 
-    $http.post(`${$scope.error_analysis.baseUrl}`, payload)
+    $http.post(`${$scope.error_analysis.baseUrl}-1/`, payload)
       .then(function(response) {
           var result = response.data.result;
           if (result.success) {
@@ -994,7 +1011,7 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce) {
                 '<img src="{% static 'images/load.gif' %}"> Analysis started, fetching results...'
               );
               $scope.error_analysis.id = result.data.analysis_id;
-
+              $scope.error_analysis.handle_response(result);
           } else {
               var err = (result && result.error) ? result.error : 'Failed to start analysis';
               $scope.error_analysis.panel.message = $sce.trustAsHtml('<span>Error: ' + err + '</span>');
@@ -1005,8 +1022,8 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce) {
       });
   }
 
-  $scope.error_analysis.poll = function (analysisId) {
-    $http.get('${$scope.error_analysis.baseUrl}' + analysisId + '/')
+  $scope.error_analysis.poll = function () {
+    $http.get(`${$scope.error_analysis.baseUrl}${$scope.error_analysis.id}/` )
       .then(function (response) {
         var result = response.data.result;
         if (result && result.success) {
@@ -1039,7 +1056,7 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce) {
 
       // Schedule next poll in 10 seconds (10000 ms)
       $scope.error_analysis.poll_promise = $timeout(function () {
-        $scope.error_analysis.poll(data.analysis_id);
+        $scope.error_analysis.poll();
       }, 10000);
 
     } else {
@@ -1050,24 +1067,28 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce) {
   };
 
   // Submit Rating (1..5)
-  $scope.submit_rating = function (ratingValue) {
-    if (!$scope.error_analysis.data || !$scope.error_analysis.data.analysis_id) return;
+  $scope.error_analysis.rating.submit = function (ratingValue) {
+    if (!$scope.error_analysis.id) return;
 
-    var analysisId = $scope.error_analysis.data.analysis_id;
-    $http.post('${$scope.error_analysis.baseUrl}' + analysisId + '/rating/', { rating: ratingValue })
+    $http.post(`${$scope.error_analysis.baseUrl}${$scope.error_analysis.id}/rating/`, { rating: ratingValue })
       .then(function () {
-        $scope.error_analysis.panel.rating_submitted = true;
+        $scope.error_analysis.rating.submitted = true;
       })
       .catch(function () {
         alert('Failed to submit rating.');
       });
   };
 
+  $scope.error_analysis.rating.set_hover = function(rating) {
+    $scope.error_analysis.rating.hover = rating;
+  };
+
   $scope.error_analysis.handle_error = function (error) {
-    var errMessage = (error.data && error.data.result && error.data.result.error)
-      ? error.data.result.error
-      : 'Server error occurred.';
-    $scope.error_analysis.panel.message = $sce.trustAsHtml('<span>' + errMessage + '</span>');
+    let err_base = 'Server error occurred.';
+    let err_message = (error.data && error.data.result && error.data.result.error)
+      ? `${err_base} ${error.data.result.error}`
+      : `${err_base}`;
+    $scope.error_analysis.panel.message = $sce.trustAsHtml(`<span class="alert">${err_message}</span>`);
   };
 
   $scope.error_analysis.panel.toggle = function() {

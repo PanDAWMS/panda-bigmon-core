@@ -47,7 +47,7 @@ class AskPanda:
             # Handle 204 No Content responses (e.g. rating submission)
             if response.status_code == 204:
                 return {"success": True, "status_code": 204, "data": None}
-
+            _logger.debug("[AskPanda] %s %s %s", method, endpoint, response.json())
             return {
                 "success": True,
                 "status_code": response.status_code,
@@ -61,12 +61,12 @@ class AskPanda:
                 try:
                     error_details = e.response.json()
                 except ValueError:
-                    error_details = e.response.text or str(e)
+                    error_details = {'error': e.response.text or str(e)}
 
             return {
                 "success": False,
                 "status_code": getattr(e.response, 'status_code', None),
-                "error": error_details
+                "error": error_details['error'] if 'error' in error_details else "No error details",
             }
 
     def start_job_error_analysis(self, job_id: int, mode: str = "failure") -> dict:

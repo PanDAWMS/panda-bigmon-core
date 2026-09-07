@@ -76,11 +76,14 @@ def client(request, task_id=None):
 
 
 @login_required
-def job_error_analysis(request, analysis_id=-1):
+def job_error_analysis(request, analysis_id:str|None=None):
     """Handles job error analysis done by AskPanda"""
     valid, response = initRequest(request)
     if not valid:
         return response
+
+    if not analysis_id:
+        return error_response(request, "No job id provided", 400)
 
     authz = apps.get_app_config("oauth").authz
     if not authz.enforce(list(request.user.groups.values_list('name', flat=True)), 'error_analysis', 'read', {}, {}):
@@ -92,7 +95,7 @@ def job_error_analysis(request, analysis_id=-1):
         _logger.error(f"AskPanda initialization failed: {e}")
         return error_response(request, "AskPanda service is misconfigured on the server", 500)
 
-    if analysis_id <= 0:
+    if analysis_id == '-1':
         request_params = request.session.get('requestParams', {})
         pandaid = request_params.get('pandaid')
         if not pandaid:
@@ -110,6 +113,7 @@ def job_error_analysis(request, analysis_id=-1):
                 raw_markdown,
                 extensions=['fenced_code', 'tables', 'nl2br']
             )
+            del res["data"]["answer_markdown"]
 
     status_code = res.get("status_code", 200) if res.get("success") else (res.get("status_code") or 502)
     return JsonResponse({'result': res}, status=status_code)
