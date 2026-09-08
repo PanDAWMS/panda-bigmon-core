@@ -120,17 +120,27 @@ def job_error_analysis(request, analysis_id:str|None=None):
 
 
 @login_required
-def submit_job_error_rating(request, analysis_id):
+def submit_job_error_rating(request, analysis_id:str):
     """Submits user rating for a completed analysis."""
+    valid, response = initRequest(request)
+    if not valid:
+        return response
     if request.method != "POST":
         return error_response(request, "Method not allowed", 405)
 
+    # validate rating
+    if 'rating' in request.session['requestParams']:
+        rating = request.session['requestParams']['rating']
+    else:
+        return error_response(request, "Rating is required", 400)
     try:
-        data = json.loads(request.body)
-        rating = int(data.get('rating', 0))
+        rating = int(rating)
     except (ValueError, TypeError, json.JSONDecodeError):
         return error_response(request, "Invalid JSON payload", 400)
+    if rating < 0 or rating > 5:
+        return error_response(request, "Invalid rating value, it must be between 1 and 5", 400)
 
+    # submit rating to AskPanda
     try:
         ask_panda = AskPanda(username=request.user.username)
         res = ask_panda.submit_rating(analysis_id=analysis_id, rating=rating)

@@ -1986,13 +1986,13 @@ footer {
 
 
 /* Error analysis block transformed from markdown */
-.markdown-body {
+.card.bp-container-simple .card-section .markdown-body {
   font-size: 0.875rem;
   line-height: 1.2;
   padding: 0;
   border: none;
 }
-.markdown-body h2 {
+.card.bp-container-simple .card-section .markdown-body h2 {
   font-size: 1rem;
   font-weight: 600;
   margin: 0.3rem 0;
@@ -2000,63 +2000,65 @@ footer {
   color: #439067;
   background-color: transparent;
 }
-.markdown-body h3 {
+.card.bp-container-simple .card-section .markdown-body h3 {
   font-size: 1rem;
   font-weight: 600;
   margin: 0.3rem 0 0 0;
   color: #0a0a0a;
 }
-.markdown-body > p {
-  margin: .3rem 0 0 0 !important;
+.card.bp-container-simple .card-section .markdown-body > p {
+  margin: .3rem 0 0 0;
   line-height: 1.2;
 }
-.markdown-body a {
+.card.bp-container-simple .card-section .markdown-body a {
   color: #439067;
   text-decoration: none;
   border-bottom: 1px dashed;
 }
-.markdown-body a:hover {
+.card.bp-container-simple .card-section .markdown-body a:hover {
   border-bottom: 1px solid;
 }
-.markdown-body code {
+.card.bp-container-simple .card-section .markdown-body code {
   font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 0.875rem;
-  background-color: rgba(27, 31, 35, 0.05);
+  font-size: 0.75rem;
+  background-color: #F4F5F6;
   padding: 0 0.2rem;
-  border-radius: 2px;
+  border-radius: .1rem;
 }
-.markdown-body pre {
-  background-color: #f6f8fa;
-  border-radius: 6px;
-  padding: 0.3rem 0;
+.card.bp-container-simple .card-section .markdown-body pre {
+  background-color: #F4F5F6;
+  border-radius: .1rem;
+  padding: 0.3rem;
   overflow: auto;
-  line-height: 1;
-  margin-left: 1rem;
+  line-height: 1.2;
+  margin: .1rem .1rem .1rem 1.3rem;
+  border: 1px solid #cacaca;
 }
-.markdown-body pre code {
+.card.bp-container-simple .card-section .markdown-body pre > code {
   background-color: transparent;
   padding: 0;
-  font-size: 100%;
+  font-size: 0.75rem;
+  border: none;
 }
-.markdown-body ul,
-.markdown-body ol {
+.card.bp-container-simple .card-section .markdown-body ul,
+.card.bp-container-simple .card-section .markdown-body ol {
   padding-left: .3rem;
   margin-top: 0;
   margin-bottom: .1rem;
   line-height: 1.2;
   margin-left: 1rem;
 }
-.markdown-body li {
+.card.bp-container-simple .card-section .markdown-body li {
   margin-bottom: .1rem;
 }
-.markdown-body hr {
+.card.bp-container-simple .card-section .markdown-body hr {
   height: 1px;
   padding: 0;
   margin: .5rem 0;
   background-color: transparent;
   border: 0;
 }
-.markdown-body blockquote {
+.card.bp-container-simple .card-section .markdown-body blockquote {
   padding: 0 1em;
   color: #6a737d;
   border-left: 0.25em solid #dfe2e5;

@@ -143,7 +143,7 @@
           <div class="markdown-body" ng-bind-html="error_analysis.panel.result"></div>
 
           <div ng-if="error_analysis.data.promptlog && error_analysis.panel.is_complete">
-            <div ng-if="!error_analysis.panel.rating_submitted">
+            <div ng-if="!error_analysis.panel.rating.submitted">
               <label>Rate this analysis:</label>
               <div class="emoji-rating-group" ng-mouseleave="error_analysis.rating.set_hover(0)">
                 <span ng-repeat="star in [1, 2, 3, 4, 5]"
@@ -1066,6 +1066,14 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce, $tim
     }
   };
 
+  $scope.error_analysis.handle_error = function (error) {
+    let err_base = 'Server error occurred.';
+    let err_message = (error.data && error.data.result && error.data.result.error)
+      ? `${err_base} ${error.data.result.error}`
+      : `${err_base}`;
+    $scope.error_analysis.panel.message = $sce.trustAsHtml(`<span class="alert">${err_message}</span>`);
+  };
+
   // Submit Rating (1..5)
   $scope.error_analysis.rating.submit = function (ratingValue) {
     if (!$scope.error_analysis.id) return;
@@ -1081,14 +1089,6 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce, $tim
 
   $scope.error_analysis.rating.set_hover = function(rating) {
     $scope.error_analysis.rating.hover = rating;
-  };
-
-  $scope.error_analysis.handle_error = function (error) {
-    let err_base = 'Server error occurred.';
-    let err_message = (error.data && error.data.result && error.data.result.error)
-      ? `${err_base} ${error.data.result.error}`
-      : `${err_base}`;
-    $scope.error_analysis.panel.message = $sce.trustAsHtml(`<span class="alert">${err_message}</span>`);
   };
 
   $scope.error_analysis.panel.toggle = function() {
