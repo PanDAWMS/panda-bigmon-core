@@ -3,6 +3,7 @@ import logging
 import markdown
 from django.apps import apps
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.cache import never_cache
 
 from core.oauth.decorators import login_required
 from core.panda_client.utils import get_auth_indigoiam, kill_task, finish_task, set_debug_mode, to_bool, get_user_groups
@@ -74,7 +75,7 @@ def client(request, task_id=None):
 
     return HttpResponse(json.dumps(info), content_type='text/html')
 
-
+@never_cache
 @login_required
 def job_error_analysis(request, analysis_id:str|None=None):
     """Handles job error analysis done by AskPanda"""
