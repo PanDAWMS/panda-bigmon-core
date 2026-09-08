@@ -994,15 +994,18 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce, $tim
           5: '\u{1F60D}'
         }
       },
+      start_time: null,
+      max_poll_seconds: 300,
       poll_promise: null,
       baseUrl: '/api/panda_ask/job_error_analysis/'
    };
 
   $scope.error_analysis.init = function () {
+    $scope.error_analysis.start_time = Date.now();
+
     var payload = {
           pandaid: {{pandaid}} || null
     };
-
     $http.post(`${$scope.error_analysis.baseUrl}-1/`, payload)
       .then(function(response) {
           var result = response.data.result;
@@ -1022,7 +1025,18 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce, $tim
       });
   }
 
+  $scope.error_analysis.is_timed_out = function () {
+    if (!$scope.error_analysis.start_time) return false;
+    var elapsed_seconds = (Date.now() - $scope.error_analysis.start_time) / 1000;
+    return elapsed_seconds >= $scope.error_analysis.max_poll_seconds;
+  };
+
   $scope.error_analysis.poll = function () {
+    if ($scope.error_analysis.is_timed_out()) {
+      $scope.error_analysis.stop_polling_with_timeout();
+      return;
+    }
+
     $http.get(`${$scope.error_analysis.baseUrl}${$scope.error_analysis.id}/` )
       .then(function (response) {
         var result = response.data.result;
@@ -1050,14 +1064,21 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce, $tim
     // Check if we need to poll again
     // Stop when poll_after_s is null or state is terminal
     if (data.poll_after_s !== null && data.poll_after_s !== undefined) {
+
+      if ($scope.error_analysis.is_timed_out()) {
+        $scope.error_analysis.stop_polling_with_timeout();
+        return;
+      }
+
       $scope.error_analysis.panel.message = $sce.trustAsHtml(
         '<img src="{% static 'images/load.gif' %}"> Analysis in progress (State: ' + (data.state || 'running') + ')...'
       );
 
-      // Schedule next poll in 10 seconds (10000 ms)
+      // Use poll_after_s from backend if available, or fallback to 10 seconds
+      var delay_ms = (data.poll_after_s ? data.poll_after_s : 10) * 1000;
       $scope.error_analysis.poll_promise = $timeout(function () {
         $scope.error_analysis.poll();
-      }, 10000);
+      }, delay_ms);
 
     } else {
       // Analysis finished or reached terminal state
@@ -1072,6 +1093,16 @@ app.controller('JobErrorAnalysisController', function ($scope, $http, $sce, $tim
       ? `${err_base} ${error.data.result.error}`
       : `${err_base}`;
     $scope.error_analysis.panel.message = $sce.trustAsHtml(`<span class="alert">${err_message}</span>`);
+  };
+
+  $scope.error_analysis.stop_polling_with_timeout = function () {
+    if ($scope.error_analysis.poll_promise) {
+      $timeout.cancel($scope.error_analysis.poll_promise);
+    }
+    $scope.error_analysis.panel.message = $sce.trustAsHtml(
+      '<span class="alert">Analysis timed out after ' + $scope.error_analysis.max_poll_seconds + ' seconds. Please try again later.</span>'
+    );
+    $scope.error_analysis.panel.is_complete = true;
   };
 
   // Submit Rating (1..5)
