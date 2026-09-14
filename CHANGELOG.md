@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.13 (2026-09-04)
+
+### Bug Fixes
+
+- Make tlast and tfirst timezone naive for comparisons
+  ([`47dacae`](https://github.com/PanDAWMS/panda-bigmon-core/commit/47dacae64796f839eb7222513605eb6e9adabef1))
+
+
 ## v1.1.12 (2026-09-03)
 
 ### Bug Fixes

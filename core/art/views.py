@@ -652,7 +652,7 @@ def artJobs(request):
                 except:
                     job['extrainfo'] = {}
 
-            jobdict['linktext'] = '{}/{}/{}/{}/'.format(job[ao[1]], job['nightly_tag'], job['package'], job['testname'][:-3])
+            jobdict['linktext'] = '{}/{}/{}/{}/'.format(job['branch'], job['nightly_tag'], job['package'], job['testname'][:-3])
             jobdict['eoslink'] = link_prefix + jobdict['linktext']
             if 'html' in job['extrainfo'] and job['extrainfo']['html']:
                 if job['extrainfo']['html'].startswith('http'):
