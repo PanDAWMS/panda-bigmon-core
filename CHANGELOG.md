@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.14 (2026-09-14)
+
+### Bug Fixes
+
+- Art link to eos
+  ([`0fb8dfb`](https://github.com/PanDAWMS/panda-bigmon-core/commit/0fb8dfb6efb2a0b582b8519a836d34a1890a9825))
+
+
 ## v1.1.13 (2026-09-04)
 
 ### Bug Fixes
