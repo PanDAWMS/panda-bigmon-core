@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.15 (2026-09-28)
+
+### Bug Fixes
+
+- Protection against np.float on frontend side
+  ([`6a99ee2`](https://github.com/PanDAWMS/panda-bigmon-core/commit/6a99ee2a9fefb4d9a9a5021f1b17e1d947a7fa6a))
+
+
 ## v1.1.14 (2026-09-14)
 
 ### Bug Fixes
