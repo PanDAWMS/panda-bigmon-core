@@ -2,7 +2,7 @@
 Created by Tatiana Korchuganova on 01.10.2019
 Utils for runningProdTasks module
 """
-
+import json
 import numpy as np
 import copy
 import logging
@@ -478,6 +478,7 @@ def prepare_plots(task_list, productiontype=''):
         for pname in pnames:
             if pname in plots_dict:
                 plots[plots_group][pname] = plots_dict[pname]
+    plots = json.loads(json.dumps(plots, default=lambda x: x.item() if isinstance(x, np.generic) else x))
 
     return plots
 
