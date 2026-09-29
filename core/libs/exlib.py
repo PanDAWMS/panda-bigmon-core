@@ -706,7 +706,7 @@ def get_maxrampercore_dict():
         for pq, pq_data in pqs.items():
             if rt['maxrampercore'] is not None:
                 maxrampercore_dict[rt['resource_name']][pq] = int(rt['maxrampercore'])
-            elif rt['maxrampercore'] is None and pq_data['maxrss'] is not None and pq_data['corecount'] is not None and pq_data['corecount'] != 0:
+            elif rt['maxrampercore'] is None and pq_data['maxrss'] is not None and pq_data['corecount'] is not None and pq_data['corecount'] > 0:
                 maxrampercore_dict[rt['resource_name']][pq] = int(pq_data['maxrss']/pq_data['corecount'])
 
     return maxrampercore_dict
