@@ -1,15 +1,20 @@
 import datetime
+import logging
+from queue import Empty
+
 import math
 import random
 import numpy as np
 import pandas as pd
 from datetime import timedelta
-from django.db import connection
+from django.db import connection, close_old_connections
 
 from core.pandajob.models import Filestable4, FilestableArch, Sitedata, JediDatasets, ResourceTypes
 from core.schedresource.utils import get_panda_queues
 from django.conf import settings
 
+
+_logger = logging.getLogger("bigpandamon")
 
 def drop_duplicates(object_list, **kwargs):
     """
@@ -719,3 +724,70 @@ def normalize_pandas_freq(freq):
             .replace('U', 'us')
             .replace('N', 'ns')
     )
+
+
+def fetch_total_count(queryset_list, result_queue):
+    """
+    Run count aggregation to fetch total count of records without a limit per table.
+    Args:
+        queryset_list: list of queryset objects
+        result_queue:
+    """
+    _logger.debug(f'Counting total started')
+    close_old_connections()
+    try:
+        counts = [qs.count() for qs in queryset_list]
+        result_queue.put(counts)
+    except Exception as e:
+        _logger.debug(f'Counting total failed with exception {e}')
+    finally:
+        close_old_connections()
+    _logger.debug(f'Counting total finished')
+
+
+def resolve_total_count(thread, total_count_queue, n_objects: int, timeout:int=5) -> int|None:
+    """
+    Waits for the total count background thread to complete within a timeout,
+    extracts the count from the queue, and applies rounding/threshold rules.
+
+    Args:
+        thread: thread object
+        total_count_queue: queue object
+        n_objects: number of jobs got in main thread to show
+        timeout: timeout in seconds
+
+    Returns:
+        int or None: The rounded total job count, or None if timed out, failed,
+                     or within the 1000-job threshold of njobs.
+    """
+    if thread is None:
+        return None
+    raw_total_count = -1
+
+    # join threads
+    thread.join(timeout=timeout)
+    if thread.is_alive():
+        _logger.warning(f"Total job count query timed out after {timeout}s. Continuing without count.")
+        return None
+
+    try:
+        counts = total_count_queue.get_nowait()
+        if counts is not None:
+            raw_total_count = sum(counts)
+            _logger.debug(f"Counts retrieved from thread: {counts}")
+            _logger.info(f"Total number of jobs in DB: {raw_total_count}")
+        else:
+            _logger.warning("Thread completed but returned None due to internal query failure.")
+    except Empty:
+        _logger.error("Thread completed without putting results into queue.")
+        return None
+    except Exception as e:
+        _logger.error(f"Error reading result from thread queue: {e}", exc_info=True)
+        return None
+
+    # in case diff is less than threshold -> do not show total count
+    if raw_total_count == -1 or math.fabs(n_objects - raw_total_count) < 1000:
+        return None
+
+    # Round up to nearest 10,000
+    return int(math.ceil((raw_total_count + 10000) / 10000) * 10000)
