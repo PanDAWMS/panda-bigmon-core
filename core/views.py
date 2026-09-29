@@ -6,6 +6,7 @@ import math
 import os
 import random
 import re
+import queue
 import subprocess
 import time
 from datetime import datetime, timedelta
@@ -54,7 +55,8 @@ from core.libs.elasticsearch import create_os_connection, get_payloadlog, get_sp
 from core.libs.error import error_category_summary_by_task, error_summary_for_job
 from core.libs.eventservice import add_event_summary_to_tasklist, event_summary_for_task, is_event_service
 from core.libs.exlib import (convert_bytes, convert_grams, convert_hs06, convert_to_si_prefix, create_temporary_table, dictfetchall,
-                             get_file_info, get_tmp_table_name, insert_to_temp_table, is_timestamp, round_to_n_digits)
+                             get_file_info, get_tmp_table_name, insert_to_temp_table, is_timestamp, round_to_n_digits, fetch_total_count,
+                             resolve_total_count)
 from core.libs.job import (add_files_info_to_jobs, calc_jobs_metrics, clean_job_list, get_files_for_job, get_job_list, get_job_queuetime,
                            get_job_walltime, getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode,
                            is_job_active, job_state_count, job_states_count_by_param)
@@ -1154,7 +1156,7 @@ def jobList(request, mode=None, param=None):
     if not valid:
         return response
 
-    dkey = digkey(request)
+    total_count_queue = queue.Queue()
     thread = None
 
     # Here we try to get data from cache
@@ -1300,7 +1302,6 @@ def jobList(request, mode=None, param=None):
         task_info = get_task_info(jeditaskid)
 
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, wildCardExt=True)
-
     _logger.debug('Setup view: {}'.format(time.time() - request.session['req_init_time']))
 
     if len(extraquery_files) > 1:
@@ -1310,31 +1311,36 @@ def jobList(request, mode=None, param=None):
         wildCardExtension += ' AND ' + extraquery_tasks
 
     if query == 'reqtoken' and wildCardExtension is None and LAST_N_HOURS_MAX is None:
-        return error_response(request, message='Request token is not found or data is outdated. Please reload the original page.', status=204)
+        return error_response(
+            request,
+            message='Request token is not found or data is outdated. Please reload the original page.',
+            status=204)
+
+    # limit per table
+    showTop = 1
+    if 'limit' in request.session['requestParams'] and request.session['requestParams']['limit']:
+        limit = int(request.session['requestParams']['limit'])
+    elif 'jeditaskid' in request.session['requestParams']:
+        limit = 200000
+        showTop = 0
+    else:
+        limit = 20000
 
     jobs = []
-
     if is_json_request(request):
         values = [f.name for f in Jobsactive4._meta.get_fields()]
     else:
         values = list(const.JOB_FIELDS)
         if not eventservice:
             values.extend(['avgvmem', 'maxvmem', 'maxrss'])
-
         if settings.DEPLOYMENT != "POSTGRES":
             values.append('nucleus')
             values.append('eventservice')
             values.append('gshare')
             values.append('resourcetype')
             values.append('container_name')
-
         values = list(set(values))  # deduplicate the list
 
-    showTop = 0
-    if 'limit' in request.session['requestParams']:
-        request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
-    JOB_LIMIT = request.session['JOB_LIMIT']
-    job_final_states = ['finished', 'failed', 'cancelled', 'closed', 'merging']
     harvesterjobstatus = ''
 
     from core.harvester.views import getCeHarvesterJobs, getHarvesterJobs
@@ -1372,64 +1378,63 @@ def jobList(request, mode=None, param=None):
     else:
         # apply order by to get recent jobs
         order_by = '-modificationtime'
-        # exclude time from query for DB tables with active jobs
-        etquery = copy.deepcopy(query)
-        if ('modificationtime__castdate__range' in etquery and (
-                len({'date_to', 'hours'}.intersection(request.session['requestParams'].keys())) == 0)) or (
-                'jobstatus' in request.session['requestParams'] and (
-                is_job_active(request.session['requestParams']['jobstatus']))):
-            del etquery['modificationtime__castdate__range']
+        order_by_partitioned = '-statechangetime'
+        f_time_range = 'modificationtime__castdate__range'
+        f_time_range_partitioned = 'statechangetime__castdate__range'
+        requested_job_statuses = [query.get('jobstatus', ''), *query.get('jobstatus__in', [])]
+        requested_job_statuses = [s for s in requested_job_statuses if s]
+
+        # exclude time range from query if jobs in active state is requested or no time limit in request params
+        query_time_unlimited = copy.deepcopy(query)
+        if is_job_active(request.session['requestParams'].get('jobstatus', '')) or (
+                f_time_range in query and not any(k in request.session['requestParams'] for k in const.TIME_LIMIT_OPTIONS)):
+            query_time_unlimited.pop(f_time_range, None)
             warning['notimelimit'] = "no time window limiting was applied for active jobs in this selection"
 
-        jobs.extend(Jobsdefined4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
-        jobs.extend(Jobsactive4.objects.filter(**etquery).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
-        jobs.extend(Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
-        _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
-        listJobs = [Jobsarchived4, Jobsactive4, Jobsdefined4]
+        qs_list = [
+            Jobsdefined4.objects.filter(**query_time_unlimited).extra(where=[wildCardExtension]),
+            Jobsactive4.objects.filter(**query_time_unlimited).extra(where=[wildCardExtension]),
+            Jobsarchived4.objects.filter(**query).extra(where=[wildCardExtension])
+        ]
 
-        if not noarchjobs:
-            queryFrozenStates = []
-            if 'jobstatus' in request.session['requestParams']:
-                queryFrozenStates = list(
-                    set(request.session['requestParams']['jobstatus'].split('|')).intersection(job_final_states))
-            # hard limit is set to 20K
-            if 'jobstatus' not in request.session['requestParams'] or len(queryFrozenStates) > 0:
-                if 'limit' not in request.session['requestParams']:
-                    if 'jeditaskid' not in request.session['requestParams']:
-                        request.session['JOB_LIMIT'] = 20000
-                        JOB_LIMIT = 20000
-                        showTop = 1
-                    else:
-                        request.session['JOB_LIMIT'] = 200000
-                        JOB_LIMIT = 200000
-                else:
-                    request.session['JOB_LIMIT'] = int(request.session['requestParams']['limit'])
-                    JOB_LIMIT = int(request.session['requestParams']['limit'])
+        # query archive table only for jobs in final state, or requested time range is more than 3 days, or for jeditaskid
+        if not noarchjobs and (
+            'jeditaskid' in request.session['requestParams'] or f_time_range in query and is_archived_jobs(query[f_time_range])) and (
+            len(requested_job_statuses) == 0 or bool(set(requested_job_statuses) & set(const.JOB_STATES_FINAL))
+        ):
+            query_arch = copy.deepcopy(query)
 
-                if 'modificationtime__castdate__range' in query and (
-                        (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][0],
-                                                            settings.DATETIME_FORMAT)).days > 2 or
-                        (datetime.now() - datetime.strptime(query['modificationtime__castdate__range'][1],
-                                                            settings.DATETIME_FORMAT)).days > 2):
-                    # add jobsarchived model to calculation of total jobs count in a separate thread
-                    listJobs.append(Jobsarchived)
-                    # remove timewindow if all jobs for a task or full list is requested
-                    if 'jeditaskid' in request.session['requestParams'] or (is_json_request(request) and (
-                            'fulllist' in request.session['requestParams'] and request.session['requestParams']['fulllist'] == 'true')):
-                        del query['modificationtime__castdate__range']
-                    # jobsarchived table has index by statechangetime, use it instead of modificationtime
-                    if 'modificationtime__castdate__range' in query:
-                        query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
-                        del query['modificationtime__castdate__range']
-                    # order by  statechangetime to get recent jobs as it is an index
-                    order_by = '-statechangetime'
-                    jobs.extend(Jobsarchived.objects.filter(**query).extra(where=[wildCardExtension]).order_by(order_by)[:JOB_LIMIT].values(*values))
-                    _logger.info('Got archived jobs: {}'.format(time.time() - request.session['req_init_time']))
+            # remove timewindow if all jobs for a task or full list is requested
+            if 'jeditaskid' in request.session['requestParams'] or (
+                    is_json_request(request) and request.session['requestParams'].get('fulllist', '') == 'true'):
+                query_arch.pop(f_time_range)
+
+            # jobsarchived table has index by statechangetime -> use it instead of modificationtime
+            if f_time_range in query_arch:
+                query_arch[f_time_range_partitioned] = query_arch[f_time_range]
+                query_arch.pop(f_time_range)
+
+            qs_list.append(Jobsarchived.objects.filter(**query_arch).extra(where=[wildCardExtension]))
+
+        # start counting of total number of jobs in a parallel thread
         if not is_json_request(request):
-            thread = Thread(target=totalCount, args=(listJobs, query, wildCardExtension, dkey))
+            thread = Thread(
+                target=fetch_total_count,
+                args=(qs_list, total_count_queue)
+            )
             thread.start()
         else:
             thread = None
+
+        # get jobs for view
+        for qs in qs_list:
+            if qs.model == Jobsarchived:
+                ob = order_by_partitioned
+            else:
+                ob = order_by
+            jobs.extend(qs.order_by(ob)[:limit].values(*values))
+        _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
+
 
     # If the list is for a particular JEDI task, filter out the jobs superseded by retries
     # if ES -> nodrop by default
@@ -1662,19 +1667,7 @@ def jobList(request, mode=None, param=None):
             _logger.debug('Checked logs existence via Rucio: {}'.format(time.time() - request.session['req_init_time']))
 
         # closing thread for counting total jobs in DB without limiting number of rows selection
-        if thread is not None:
-            try:
-                thread.join()
-                jobsTotalCount = sum(tcount[dkey])
-                _logger.debug(dkey)
-                _logger.debug(tcount[dkey])
-                del tcount[dkey]
-                _logger.debug(tcount)
-                _logger.info("Total number of jobs in DB: {}".format(jobsTotalCount))
-            except:
-                jobsTotalCount = -1
-        else:
-            jobsTotalCount = -1
+        jobs_count_total = resolve_total_count(thread, total_count_queue, n_objects=njobs, timeout=5)
 
         listPar = []
         for key, val in request.session['requestParams'].items():
@@ -1686,11 +1679,6 @@ def jobList(request, mode=None, param=None):
             urlParametrs = None
         _logger.info(listPar)
         del listPar
-        if math.fabs(njobs - jobsTotalCount) < 1000 or jobsTotalCount == -1:
-            jobsTotalCount = None
-        else:
-            jobsTotalCount = int(math.ceil((jobsTotalCount + 10000) / 10000) * 10000)
-        _logger.debug('Total jobs count thread finished: {}'.format(time.time() - request.session['req_init_time']))
 
         # datetime type -> str in order to avoid encoding errors on template
         datetime_job_param_names = ['creationtime', 'modificationtime', 'starttime', 'statechangetime', 'endtime']
@@ -1765,8 +1753,7 @@ def jobList(request, mode=None, param=None):
             'plow': request.session['PLOW'],
             'phigh': request.session['PHIGH'],
             'showwarn': showwarn,
-            'joblimit': request.session['JOB_LIMIT'],
-            'limit': JOB_LIMIT,
+            'limit': limit,
             'showTop': showTop,
             'url_nolimit': url_nolimit,
             'display_limit': display_limit,
@@ -1777,7 +1764,7 @@ def jobList(request, mode=None, param=None):
             'time_locked_url': time_locked_url,
             'taskname': task_info['taskname'] if task_info and 'taskname' in task_info else "",
             'eventservice': eventservice,
-            'jobsTotalCount': jobsTotalCount,
+            'jobsTotalCount': jobs_count_total,
             'requestString': urlParametrs,
             'built': datetime.now().strftime("%H:%M:%S"),
             'clist': clist,
@@ -3610,8 +3597,8 @@ def taskList(request):
         return response
 
     thread = None
+    total_count_queue = queue.Queue()
     transaction_key = None
-    dkey = digkey(request)
 
     if 'limit' in request.session['requestParams']:
         limit = int(request.session['requestParams']['limit'])
@@ -3664,15 +3651,14 @@ def taskList(request):
         )
         del query['jeditaskid__in']
 
-    listTasks = []
     if 'statenotupdated' in request.session['requestParams']:
         tasks = tasks_not_updated(request, query, extra_str)
     else:
         tasks = JediTasks.objects.filter(**query).extra(where=[extra_str]).order_by('-modificationtime')[:limit].values()
         # calculate total number of tasks suited for query without hard limit
-        listTasks.append(JediTasks)
         if not is_json_request(request):
-            thread = Thread(target=totalCount, args=(listTasks, query, extra_str, dkey))
+            qs_list = [JediTasks.objects.filter(**query).extra(where=[extra_str])]
+            thread = Thread(target=fetch_total_count, args=(qs_list, total_count_queue))
             thread.start()
         else:
             thread = None
@@ -3760,24 +3746,6 @@ def taskList(request):
         error_summary_table = json.dumps(error_summary_table, cls=DateEncoder)
         _logger.info('Prepared error summary: {}'.format(time.time() - request.session['req_init_time']))
 
-        # join the thread with counting tasks without hard limit
-        if thread:
-            try:
-                thread.join()
-                tasksTotalCount = sum(tcount[dkey])
-                _logger.info('Found {} tasks in total. dkey={}, tcount={}'.format(tasksTotalCount, dkey, tcount))
-                del tcount[dkey]
-            except:
-                tasksTotalCount = -1
-                _logger.exception('Failed to get total number of tasks: {}'.format(
-                    time.time() - request.session['req_init_time']
-                ))
-        else:
-            tasksTotalCount = -1
-        if math.fabs(ntasks - tasksTotalCount) < 1000 or tasksTotalCount == -1:
-            tasksTotalCount = None
-        else:
-            tasksTotalCount = int(math.ceil((tasksTotalCount + 10000) / 10000) * 10000)
         # for total tasks link
         excluded_params = ('display_limit', 'limit')
         request_params_str = '&'.join([f'{k}={v}' for k, v in request.session['requestParams'].items() if k not in excluded_params])
@@ -3800,6 +3768,9 @@ def taskList(request):
                 for t in tasks:
                     t['reference_link'] = reqs_dict[t['reqid']]['reference_link'] if t['tasktype'] == 'prod' and t['reqid'] in reqs_dict else None
 
+        # join the thread with counting tasks without hard limit
+        tasks_total_count = resolve_total_count(thread, total_count_queue, n_objects=ntasks, timeout=5)
+
         tasks = stringify_datetime_fields(tasks, JediTasks)
 
         del request.session['TFIRST']
@@ -3819,7 +3790,7 @@ def taskList(request):
             'nohashtagurl': nohashtagurl,
             'noerrordialogurl': noerrordialogurl,
             'eventservice': eventservice,
-            'tasksTotalCount': tasksTotalCount,
+            'tasksTotalCount': tasks_total_count,
             'built': datetime.now().strftime("%H:%M:%S"),
             'idtasks': transaction_key,
             'error_summary_table': error_summary_table
@@ -5125,33 +5096,6 @@ def taskFlowDiagram(request, jeditaskid=-1):
     return response
 
 
-def totalCount(panJobList, query, wildCardExtension, dkey):
-    _logger.debug('Thread started')
-    lock.acquire()
-    try:
-        tcount.setdefault(dkey, [])
-        for panJob in panJobList:
-            wildCardExtension = wildCardExtension.replace('%20', ' ')
-            wildCardExtension = wildCardExtension.replace('%2520', ' ')
-            wildCardExtension = wildCardExtension.replace('%252540', '@')
-            wildCardExtension = wildCardExtension.replace('%2540', '@')
-            wildCardExtension = wildCardExtension.replace('+', ' ')
-            wildCardExtension = wildCardExtension.replace('%', ' ')
-            tcount[dkey].append(panJob.objects.filter(**query).extra(where=[wildCardExtension]).count())
-    finally:
-        lock.release()
-    _logger.debug('Thread finished')
-
-
-def digkey(rq):
-    sk = rq.session.session_key
-    qt = rq.session['qtime']
-    if sk is None:
-        sk = random.randrange(1000000)
-    hashkey = hashlib.sha256((str(sk) + ' ' + qt).encode('utf-8'))
-    return hashkey.hexdigest()
-
-
 @login_customrequired
 def errorSummary(request):
     """
@@ -5185,7 +5129,7 @@ def errorSummary(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-    dkey = digkey(request)
+    total_count_queue = queue.Queue()
 
     testjobs = False
     if ('prodsourcelabel' in request.session['requestParams'] and
@@ -5301,32 +5245,33 @@ def errorSummary(request):
     if settings.OSG_POOL_USED:
         values += ('destinationsite', 'sourcesite',)
 
+    qs_list = []
     panda_job_models = [Jobsarchived4,]
     # we add tables with active jobs for test jobs summary
     if testjobs:
         panda_job_models.extend([Jobsactive4, Jobsdefined4])
 
-    # add big archived table if timewindow is more than 2 days
-    is_archived = False
-    if is_archived_jobs(query['modificationtime__castdate__range']):
-        is_archived = True
-
     for model in panda_job_models:
-        jobs.extend(model.objects.filter(**query).extra(where=[wildCardExtension])[:limit].values(*values))
+        qs_list.append(model.objects.filter(**query).extra(where=[wildCardExtension]))
 
+    # add big archived table if timewindow is more than 2 days
     # use indexed statechangetime field instead of default modificationtime
     query_arch = copy.deepcopy(query)
-    if is_archived:
+    if is_archived_jobs(query['modificationtime__castdate__range']):
         if 'modificationtime__castdate__range' in query_arch:
             query_arch['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
             del query_arch['modificationtime__castdate__range']
-        jobs.extend(Jobsarchived.objects.filter(**query_arch).extra(where=[wildCardExtension])[:limit].values(*values))
+        qs_list.append(Jobsarchived.objects.filter(**query_arch).extra(where=[wildCardExtension]))
 
     if not is_json_request(request):
-        thread = Thread(target=totalCount, args=(panda_job_models, query_arch, wildCardExtension, dkey))
+        thread = Thread(target=fetch_total_count, args=(qs_list, total_count_queue))
         thread.start()
     else:
         thread = None
+
+    # getting jobs
+    for qs in qs_list:
+        jobs.extend(qs[:limit].values(*values))
     _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     jobs = clean_job_list(request, jobs, do_add_metadata=False, do_add_errorinfo=True)
@@ -5344,24 +5289,6 @@ def errorSummary(request):
         category=-1 if 'errorcategory' not in request.session['requestParams'] else int(request.session['requestParams']['errorcategory']),
     )
     _logger.info('Error summary built: {}'.format(time.time() - request.session['req_init_time']))
-
-
-    if thread is not None:
-        try:
-            thread.join()
-            jobs_count_total = sum(tcount[dkey])
-            _logger.debug(f"{dkey}: total jobs found {tcount[dkey]})")
-            del tcount[dkey]
-        except:
-            jobs_count_total = -1
-    else:
-        jobs_count_total = -1
-
-    if math.fabs(njobs - jobs_count_total) < 1000:
-        jobs_count_total = -1
-    else:
-        jobs_count_total = int(math.ceil((jobs_count_total + 10000) / 10000) * 10000)
-    _logger.info('Finished thread counting total number of jobs: {}'.format(time.time() - request.session['req_init_time']))
 
     if not is_json_request(request):
         # Build the state summary by computingsite to give perspective
@@ -5412,6 +5339,9 @@ def errorSummary(request):
         else:
             task_name = ''
         _logger.info('Built errors by task summary: {}'.format(time.time() - request.session['req_init_time']))
+
+        jobs_count_total = resolve_total_count(thread, total_count_queue, n_objects=njobs, timeout=5)
+        _logger.info('Finished thread counting total number of jobs: {}'.format(time.time() - request.session['req_init_time']))
 
         xurl = extensibleURL(request)
         nosorturl = removeParam(xurl, 'sortby')

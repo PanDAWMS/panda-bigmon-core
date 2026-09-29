@@ -169,18 +169,19 @@ class PandaJob(models.Model):
     def __str__(self):
         return 'PanDA:' + str(self.pandaid)
 
-    # __setattr__
     def __setattr__(self, name, value):
         super(PandaJob, self).__setattr__(name, value)
 
-    # __getattr__
     def __getattr__(self, name):
         return super(PandaJob, self).__getattr__(name)
 
-    # __getitem__
     def __getitem__(self, name):
-#        return super(HTCondorJob, self).__getattr__(name)
-        return self.__dict__[name]
+        if isinstance(name, (slice, int)):
+            return super(PandaJob, self).__getitem__(name)
+        try:
+            return self.__dict__[name]
+        except KeyError:
+            raise KeyError(name)
 
     def get_all_fields(self):
         """Returns a list of all field names on the instance."""

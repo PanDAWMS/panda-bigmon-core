@@ -2,8 +2,8 @@
 {% load static %}{% load humanize %}
 {% block page_title %} {{ viewParams.MON_VO }} PanDA jobs{% endblock %}
 {% block subtitle %}PanDA jobs {{ viewParams.selection|safe }}
-{% if showwarn and njobs%}
-    <span style="color:#FF8040;"><b>Warning: limit {{joblimit}} per job table</b></span>
+{% if showwarn and njobs %}
+    <span style="color:#FF8040;"><b>Warning: limit {{ limit }} per job table</b></span>
 {% endif %}
 {% endblock %}
 {% block subtitle_params %}
@@ -82,49 +82,6 @@
 {% endfor %}
 </font>
 </div>
-</td></tr></table>
-<p>
-
-{% endif %}
-
-
-{% if newndrop_test > 0 %}
-<table width=900><tr><td class='highlightcell'>
-<b style="font-size: 24px">New drop algorithm</b><br/><br/>
-<b>{{ newndrop_test }} jobs were dropped from this listing because they were retried. Where there were retries, the latest retry job (only) is listed. </b>
-<a id="button-toggle-new-retries"><br>Click to show/hide dropped jobs</a>
-<br><a href="{{xurl}}mode=nodrop">Switch to nodrop mode</a>
-<div class="newretries" style="display:none">
-<font size=-1>
-<br>Dropped:<br>
-{% for pandaID in pandaIDList_test %}
-<a href="{% url 'jobInfo' pandaID %}"> {{ pandaID }} </a>
-{% endfor %}
-</font>
-</div>
-
-{% if ndropPmerge_test > 0 %}
- <br/><br/>
-<b>{{ ndropPmerge_test }} Dropped Pmerge jobs. Pmerge jobs:</b><br/>
-{% for pmergejob in droppedPmerge2_test %}
-<a href="{% url 'jobInfo' pmergejob %}">{{ pmergejob }}</a>
-{% endfor %}
-{% endif %}
-<br/>
-
-{% if difDropList_test %}
-    Difference between old and new drop algorithm.
-    <a id="button-toggle-retries-diff"><br>Click to show/hide difference dropped jobs</a>
-    <div class="difretries" style="display:none">
-<font size=-1>
-{% for pandaID in difDropList_test %}
-
-  <a href="{% url 'jobInfo' pandaID %}">{{ pandaID }}</a>
-{% endfor %}
-    </font>
-</div>
-
-{% endif %}
 </td></tr></table>
 <p>
 

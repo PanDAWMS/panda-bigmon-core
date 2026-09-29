@@ -52,14 +52,13 @@ def is_debug_mode(job):
     return is_debug
 
 
-def is_job_active(jobststus):
+def is_job_active(job_status):
     """
     Check if jobstatus is one of the active
-    :param jobststus: str
+    :param job_status: str
     :return: True or False
     """
-    end_status_list = ['finished', 'failed', 'cancelled', 'closed']
-    if jobststus in end_status_list:
+    if job_status in const.JOB_STATES_FINAL:
         return False
 
     return True
