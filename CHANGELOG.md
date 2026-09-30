@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.16 (2026-09-29)
+
+### Bug Fixes
+
+- Counting total number of jobs/tasks in parallel thread
+  ([`42a8dfc`](https://github.com/PanDAWMS/panda-bigmon-core/commit/42a8dfcf44eeafb096cf9ee099f2aa7348fac36b))
+
+
 ## v1.1.15 (2026-09-28)
 
 ### Bug Fixes
