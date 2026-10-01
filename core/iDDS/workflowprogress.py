@@ -39,9 +39,13 @@ def get_workflow_progress_data(request_params, **kwargs):
     workflows_items = getWorkFlowProgressItemized(request_params, **kwargs)
     workflows_items = pd.DataFrame(workflows_items)
     # get datasets for all tasks in workflows to calculate percentage of finished files from JEDI
-    workflows_datasets_all_list = get_datasets_for_tasklist(
-        [{'jeditaskid': int(task)} for task in workflows_items.WORKLOAD_ID.dropna().unique()]
-    )
+    # (workflows_items has no columns at all when the query returned zero rows, e.g. a brand-new
+    # iDDS instance with no requests yet, so WORKLOAD_ID can only be accessed once non-empty)
+    workflows_datasets_all_list = []
+    if not workflows_items.empty:
+        workflows_datasets_all_list = get_datasets_for_tasklist(
+            [{'jeditaskid': int(task)} for task in workflows_items.WORKLOAD_ID.dropna().unique()]
+        )
     workflows_datasets_all_dict = {task['jeditaskid']: task['datasets'] for task in workflows_datasets_all_list}
     workflows_semi_grouped = []
     if not workflows_items.empty:
