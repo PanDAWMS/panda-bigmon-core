@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.2.1 (2026-10-01)
+
+### Bug Fixes
+
+- Guard WORKLOAD_ID access against an empty workflow progress DataFrame.
+  ([#691](https://github.com/PanDAWMS/panda-bigmon-core/pull/691),
+  [`ae4ba73`](https://github.com/PanDAWMS/panda-bigmon-core/commit/ae4ba7358a9a5f5ca22a048db0a30c172dbbff51))
+
+
 ## v1.2.0 (2026-10-01)
 
 ### Bug Fixes
