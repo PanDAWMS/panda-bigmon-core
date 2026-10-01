@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
 from django.shortcuts import render, redirect
 
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.views import initRequest
 from core.utils import error_response
 from core.libs.datetimestrings import parse_datetime
@@ -21,7 +21,7 @@ from django.conf import settings
 _logger = logging.getLogger('bigpandamon-filebrowser')
 
 
-@login_customrequired
+@login_required
 def getPlots(request):
     valid, response = initRequest(request)
     if not valid:
@@ -39,7 +39,7 @@ def getPlots(request):
     return redirect('prMonPlots', pandaid=pandaid)
 
 
-@login_customrequired
+@login_required
 def prMonPlots(request, pandaid=-1):
     valid, response = initRequest(request)
     if not valid:

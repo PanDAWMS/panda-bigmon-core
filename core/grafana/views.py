@@ -3,7 +3,6 @@ import random
 import requests
 import base64
 import io
-import re
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
 from PIL import Image
@@ -13,7 +12,6 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.template import loader
 from django.utils import encoding
-from django.utils.cache import patch_response_headers
 from django.conf import settings
 
 from urllib.parse import urlparse
@@ -25,7 +23,7 @@ from core.grafana.data_tranformation import stacked_hist, pledges_merging
 from core.libs.cache import setCacheEntry, getCacheEntry
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.views import initRequest
 
 colours_codes = {
@@ -127,7 +125,7 @@ colours_codes = {
 }
 
 
-@login_customrequired
+@login_required
 def index(request):
     """The main page containing drop-down menus to select group by options etc.
     Data delivers asynchroniously by request to grafana_api view"""
@@ -148,7 +146,7 @@ def index(request):
     response = render(request, 'grafana-api-plots.html', data, content_type='text/html')
     return response
 
-@login_customrequired
+@login_required
 def chartjs(request):
     """The main page containing drop-down menus to select group by options etc.
     Data delivers asynchroniously by request to grafana_api view"""
@@ -170,7 +168,7 @@ def chartjs(request):
     return response
 
 
-@login_customrequired
+@login_required
 def grafana_api(request):
     valid, response = initRequest(request)
 
@@ -275,7 +273,7 @@ def grab_children(data, parent=None, child=None):
             child.append([parent, key, value])
     return child
 
-@login_customrequired
+@login_required
 def pledges(request):
     valid, response = initRequest(request)
 
@@ -445,7 +443,7 @@ def pledges(request):
                             content_type='text/html')
 
 
-@login_customrequired
+@login_required
 def grafana_api_es(request):
     valid, response = initRequest(request)
 
@@ -477,8 +475,7 @@ def add_no_cache_headers(response):
     response["Expires"] = "0"
     return response
 
-
-@login_customrequired
+# this is for main page, should be open
 def grafana_image(request):
     whitelist = ["triumf.ca", "cern.ch"]
 

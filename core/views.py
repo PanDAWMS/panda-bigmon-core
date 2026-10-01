@@ -1885,7 +1885,7 @@ def jobList(request, mode=None, param=None):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def descendentjoberrsinfo(request):
     valid, response = initRequest(request)
     if not valid:
@@ -2359,7 +2359,7 @@ def jobInfo(request, pandaid=None, batchid=None):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def get_job_relationships(request, pandaid=-1):
     """
     Getting job relationships in both directions: downstream (further retries); upstream (past retries).
@@ -2426,7 +2426,7 @@ def get_job_relationships(request, pandaid=-1):
     return response
 
 
-@login_customrequired
+@login_required
 def userList(request):
     valid, response = initRequest(request)
     if not valid:
@@ -2564,7 +2564,7 @@ def userList(request):
         return HttpResponse(json.dumps(sumd), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def userInfo(request, user=''):
     valid, response = initRequest(request)
     if not valid:
@@ -2853,7 +2853,7 @@ def userInfo(request, user=''):
             return response
 
 
-@login_customrequired
+@login_required
 def userDashApi(request, agg=None):
     """
 
@@ -3030,7 +3030,7 @@ def userDashApi(request, agg=None):
     return HttpResponse(json.dumps(data, default=datetime_handler), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def wnInfo(request, site=None, wnname='all'):
     """ Give worker node level breakdown of site activity. Spot hot nodes, error prone nodes. """
     valid, response = initRequest(request)
@@ -3543,7 +3543,7 @@ def dashProduction(request):
     return dashboard(request, view='production')
 
 
-@login_customrequired
+@login_required
 def taskESExtendedInfo(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
@@ -3563,7 +3563,7 @@ def taskESExtendedInfo(request):
     return HttpResponse(estaskstr, content_type='text/html')
 
 
-@login_customrequired
+@login_required
 def getCSRFToken(request):
     c = {}
     user = request.user
@@ -3877,7 +3877,7 @@ def killtasks(request):
     return response
 
 
-@login_customrequired
+@login_required
 def getErrorSummaryForEvents(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -4011,7 +4011,7 @@ def getErrorSummaryForEvents(request):
     return response
 
 
-@login_customrequired
+@login_required
 def taskProfile(request, jeditaskid=None):
     """A wrapper page for task profile plot"""
     valid, response = initRequest(request)
@@ -4054,7 +4054,7 @@ def taskProfile(request, jeditaskid=None):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def taskProfileData(request, jeditaskid=0):
     """A view that returns data for task profile plot"""
     valid, response = initRequest(request)
@@ -4098,7 +4098,7 @@ def taskProfileData(request, jeditaskid=0):
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def userProfile(request, username=""):
     """A wrapper page for task profile plot"""
     valid, response = initRequest(request)
@@ -4147,7 +4147,7 @@ def userProfile(request, username=""):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def userProfileData(request):
     """A view that returns data for task profile plot"""
     valid, response = initRequest(request)
@@ -4821,7 +4821,7 @@ def taskInfo(request, jeditaskid=0):
         return response
 
 
-@login_customrequired
+@login_required
 def rating_func(request):
     valid, response = initRequest(request)
     if not valid:
@@ -4862,7 +4862,7 @@ def rating_func(request):
     return JsonResponse({'data': {'rating_average': rating_average, 'rating_data': rating_data}}, status=200)
 
 
-@login_customrequired
+@login_required
 def getEventsDetails(request, mode='drop', jeditaskid=0):
     """
     A view for ES task Info page to get events details in different states
@@ -4913,7 +4913,7 @@ def getEventsDetails(request, mode='drop', jeditaskid=0):
     return HttpResponse(json.dumps(objectStoreDict, cls=DateEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def taskchain(request):
     """
     Task chain plot based on ATLAS_DEFT tables
@@ -4948,7 +4948,7 @@ def taskchain(request):
     return response
 
 
-@login_customrequired
+@login_required
 def ganttTaskChain(request):
     """"
      Task chain Gantt diagram based on ATLAS_DEFT tables
@@ -4977,7 +4977,7 @@ def ganttTaskChain(request):
     return response
 
 
-@login_customrequired
+@login_required
 def getJobSummaryForTask(request, jeditaskid=-1):
     valid, response = initRequest(request)
     if not valid:
@@ -5070,7 +5070,7 @@ def getJobSummaryForTask(request, jeditaskid=-1):
     return response
 
 
-@login_customrequired
+@login_required
 def taskFlowDiagram(request, jeditaskid=-1):
     """
     Prepare data for task flow chart
@@ -5096,7 +5096,7 @@ def taskFlowDiagram(request, jeditaskid=-1):
     return response
 
 
-@login_customrequired
+@login_required
 def errorSummary(request):
     """
     Error summary view
@@ -5450,7 +5450,7 @@ def decommissioned(request, **kwargs):
 
 
 
-@login_customrequired
+@login_required
 def esatlasPandaLoggerJson(request):
     valid, response = initRequest(request)
     if not valid or settings is None:
@@ -5490,7 +5490,7 @@ def esatlasPandaLoggerJson(request):
     return HttpResponse(json.dumps(jdListFinal), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def esatlasPandaLogger(request):
     valid, response = initRequest(request)
     if not valid:
@@ -5728,7 +5728,7 @@ def datasetInfo(request):
         return HttpResponse(json.dumps(dsrec, cls=DateEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def datasetList(request):
     valid, response = initRequest(request)
     if not valid:
@@ -5971,7 +5971,7 @@ def fileInfo(request):
         return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def fileList(request):
     valid, response = initRequest(request)
     if not valid:
@@ -6042,7 +6042,7 @@ def fileList(request):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def loadFileList(request):
     valid, response = initRequest(request)
     if not valid:
@@ -6108,7 +6108,7 @@ def loadFileList(request):
     return HttpResponse(dump, content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def workQueues(request):
     valid, response = initRequest(request)
     data = getCacheEntry(request, "workQueues")
@@ -6282,7 +6282,7 @@ def handler500(request):
     return response
 
 
-@login_customrequired
+@login_required
 def getBadEventsForTask(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
@@ -6339,7 +6339,7 @@ def getBadEventsForTask(request):
     return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def getEventsChunks(request):
     if 'jeditaskid' in request.GET:
         jeditaskid = int(request.GET['jeditaskid'])
@@ -6389,7 +6389,7 @@ def getEventsChunks(request):
     return HttpResponse(json.dumps(eventsChunks, cls=DateTimeEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def getTaskDataMovementData(request, jeditaskid=None):
     """
     Getting information of volume of input data has been moved initiated by PanDA
@@ -6435,7 +6435,7 @@ def getTaskDataMovementData(request, jeditaskid=None):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def getJobStatusLog(request, pandaid=None):
     """
     A view to asynchronously load job states changes history
@@ -6487,7 +6487,7 @@ def getJobStatusLog(request, pandaid=None):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def getTaskStatusLog(request, jeditaskid=None):
     """
     A view to asynchronously load task states changes history
@@ -6534,7 +6534,7 @@ def getTaskStatusLog(request, jeditaskid=None):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def getTaskLogs(request, jeditaskid=None):
     """
     A view to asynchronously load task logs from OpenSearch storage
@@ -6563,7 +6563,7 @@ def getTaskLogs(request, jeditaskid=None):
     return response
 
 
-@login_customrequired
+@login_required
 def getSites(request):
     """
     List of sites for auto-complete options in the search by site in top bar
@@ -6589,7 +6589,7 @@ def getSites(request):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def get_hc_tests(request):
     """
     API for getting list of HammerCloud Tests
@@ -6757,7 +6757,7 @@ def get_hc_tests(request):
     return response
 
 
-@login_customrequired
+@login_required
 def getPayloadLog(request):
     """
     A view to asynchronously load pilot logs from OpenSearch storage by pandaid or taskid
@@ -6819,7 +6819,7 @@ def getPayloadLog(request):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def resourceTypeList(request):
     """
     List resource types
@@ -6853,7 +6853,7 @@ def resourceTypeList(request):
     return response
 
 
-@login_customrequired
+@login_required
 def error_descriptions(request):
     """
     Get error descriptions from the database

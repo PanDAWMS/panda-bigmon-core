@@ -13,13 +13,14 @@ import pickle
 from django.http import JsonResponse
 import numpy as np
 import humanize
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 
 taskFinalStates = ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done']
 stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge', 'Rec TAG', 'Atlfast', 'Atlf Merge']
 
 
 @never_cache
+@login_required
 def campaignPredictionInfo(request):
     initRequest(request)
 
@@ -163,7 +164,7 @@ def convertTypes(object):
     return object
 
 
-@login_customrequired
+@login_required
 def campaignPredictionDash(request):
     query, wildCardExtension, LAST_N_HOURS_MAX = setupView(request, hours=4, limit=9999999, querytype='task', wildCardExt=True)
     request.session['viewParams']['selection'] = ''
