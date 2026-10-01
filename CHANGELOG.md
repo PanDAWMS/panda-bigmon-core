@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.1.17 (2026-09-30)
+
+### Bug Fixes
+
+- Protect against CRIC queues with corecount=0
+  ([#689](https://github.com/PanDAWMS/panda-bigmon-core/pull/689),
+  [`e2b971c`](https://github.com/PanDAWMS/panda-bigmon-core/commit/e2b971c0339748e3351d427b68557169d3161979))
+
+
 ## v1.1.16 (2026-09-29)
 
 ### Bug Fixes

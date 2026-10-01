@@ -11,7 +11,7 @@ from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.site import get_pq_metrics
 from core.libs.sqlcustom import escape_input
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.schedresource.models import SchedconfigJson
 from core.schedresource.utils import get_panda_queues, filter_pq_json, get_panda_resource, site_summary_dict
 from core.utils import extensibleURL, removeParam, is_json_request
@@ -20,7 +20,7 @@ from core.views import initRequest
 _logger = logging.getLogger('bigpandamon')
 
 
-@login_customrequired
+@login_required
 def siteList(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -104,7 +104,7 @@ def siteList(request):
         return HttpResponse(json.dumps(pqs, cls=DateEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def siteInfo(request, site=''):
     valid, response = initRequest(request)
     if not valid:

@@ -15,7 +15,7 @@ from django.views.decorators.cache import never_cache
 
 from core.filebrowser.utils import (get_rucio_file, remove_folder, get_job_log_file_properties, get_job_computingsite, get_s3_file,
                                     get_log_provider, extract_rucio_errors)
-from core.oauth.decorators import login_customrequired, login_required
+from core.oauth.decorators import login_required
 from core.views import initRequest
 from core.libs.exlib import convert_bytes
 from core.libs.DateTimeEncoder import DateTimeEncoder
@@ -25,7 +25,7 @@ import core.filebrowser.constants as const
 _logger = logging.getLogger('bigpandamon-filebrowser')
 filebrowserDateTimeFormat = "%Y %b %d %H:%M:%S"
 
-@login_customrequired
+@login_required
 def index(request):
     """
         index -- filebrowser front page, it will check if logs exist and trigger download if needed.
@@ -224,7 +224,7 @@ def index(request):
         return response
 
 
-@login_customrequired
+@login_required
 @never_cache
 def load_log_file_list(request, provider="rucio", guid=None, scope=None, lfn=None, pandaid=None, computingsite=None):
     """

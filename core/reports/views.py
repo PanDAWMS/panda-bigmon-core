@@ -11,7 +11,7 @@ from django.shortcuts import render
 from django.core.cache import cache
 from core.views import initRequest, setupView
 from core.utils import error_response
-from core.oauth.decorators import login_customrequired, login_required
+from core.oauth.decorators import login_required
 from core.reports.models import ReportEmails
 from core.reports.sendMail import send_mail_bp
 from core.reports import ObsoletedTasksReport, LargeScaleAthenaTestsReport, ErrorClassificationReport, TasksRatedReport
@@ -20,7 +20,7 @@ from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
-@login_customrequired
+@login_required
 def reports(request):
     """
     Reports wizard -> a form to select one of available reports and proceed with it
@@ -77,7 +77,7 @@ def reports(request):
 
 
 @never_cache
-@login_customrequired
+@login_required
 def report(request):
     valid, response = initRequest(request)
     if not valid:

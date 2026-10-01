@@ -12,7 +12,7 @@ from django.shortcuts import render
 
 from django.utils.cache import patch_response_headers
 
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.libs.cache import getCacheEntry
 from core.libs.DateEncoder import DateEncoder
 from core.views import initRequest, extensibleURL
@@ -21,7 +21,7 @@ from core.utils import error_response
 from core.compare.modelsCompare import ObjectsComparison
 from core.compare.utils import add_to_comparison, clear_comparison_list, delete_from_comparison, job_info_getter
 
-@login_customrequired
+@login_required
 def addToComparison(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -43,7 +43,7 @@ def addToComparison(request):
     dump = json.dumps(data, cls=DateEncoder)
     return HttpResponse(dump, content_type='application/json')
 
-@login_customrequired
+@login_required
 def deleteFromComparison(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -66,7 +66,7 @@ def deleteFromComparison(request):
     return HttpResponse(dump, content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def clearComparison(request):
     valid, response = initRequest(request)
     if not valid: return response
@@ -85,7 +85,7 @@ def clearComparison(request):
     return HttpResponse(dump, content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def compareJobs(request):
     valid, response = initRequest(request)
     if not valid: return response

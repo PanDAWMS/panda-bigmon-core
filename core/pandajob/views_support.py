@@ -7,7 +7,7 @@ import re
 from django.http import HttpResponse, JsonResponse
 
 from .models import Jobsarchived4, Jobsactive4, Jobsdefined4
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.libs.DateEncoder import DateEncoder
 
 from django.conf import settings
@@ -21,7 +21,7 @@ LAST_N_HOURS = settings.FILTER_UI_ENV['HOURS']
 LAST_N_DAYS_MAX = settings.FILTER_UI_ENV['MAXDAYS']
 
 
-@login_customrequired
+@login_required
 def maxpandaid(request):
     """
         maxpandaid:
@@ -36,7 +36,7 @@ def maxpandaid(request):
     return JsonResponse({'maxpandaid': pandaid}, safe=False)
 
 
-@login_customrequired
+@login_required
 def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
     """
         jobInfoOrig:
@@ -104,7 +104,7 @@ def jobInfoOrig(request, prodUserName, nhours=LAST_N_HOURS):
     return JsonResponse(data, encoder=DateEncoder, safe=False)
 
 
-@login_customrequired
+@login_required
 def jobInfoHoursOrig(request, prodUserName, nhours=LAST_N_HOURS):
     """
         jobInfoHoursOrig:
@@ -117,7 +117,7 @@ def jobInfoHoursOrig(request, prodUserName, nhours=LAST_N_HOURS):
     return jobInfoOrig(request, prodUserName, nhours)
 
 
-@login_customrequired
+@login_required
 def jobInfoDaysOrig(request, prodUserName, nhours=LAST_N_DAYS * 24):
     """
         jobInfoDaysOrig:
@@ -130,7 +130,7 @@ def jobInfoDaysOrig(request, prodUserName, nhours=LAST_N_DAYS * 24):
     return jobInfoOrig(request, prodUserName, nhours * 24)
 
 
-@login_customrequired
+@login_required
 def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
     """
         jobUserOrig:
@@ -205,7 +205,7 @@ def jobUserOrig(request, vo='core', nhours=LAST_N_HOURS):
     return JsonResponse(data, encoder=DateEncoder, safe=False)
 
 
-@login_customrequired
+@login_required
 def jobUserDaysOrig(request, vo, ndays=LAST_N_DAYS):
     """
         jobUserDaysOrig:

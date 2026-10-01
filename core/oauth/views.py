@@ -18,7 +18,7 @@ from core.utils import extensibleURL, error_response, is_json_request
 from core.views import initRequest
 from core.libs.DateTimeEncoder import DateTimeEncoder
 from core.oauth.utils import grant_rights, deny_rights, user_email_sort, get_token_expiry_info
-from core.oauth.decorators import login_customrequired,  login_required
+from core.oauth.decorators import login_required
 from core.oauth.models import BPUser, BPUserSettings, Visits, BPToken
 
 _logger = logging.getLogger('social')
@@ -83,7 +83,7 @@ def logout(request):
     return redirect('/')
 
 @never_cache
-@login_customrequired
+@login_required
 def profile(request):
     valid, response = initRequest(request)
     if not valid:
@@ -117,7 +117,7 @@ def profile(request):
     return render(request, 'profile.html', data, content_type='text/html')
 
 
-@login_customrequired
+@login_required
 def grantRights(request):
     valid, response = initRequest(request)
     if not valid:
@@ -130,7 +130,7 @@ def grantRights(request):
     return HttpResponse(status=204)
 
 
-@login_customrequired
+@login_required
 def denyRights(request):
     valid, response = initRequest(request)
     if not valid:
@@ -215,7 +215,7 @@ def saveSettings(request):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def get_user_contact(request):
     valid, response = initRequest(request)
     if not valid:

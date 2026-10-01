@@ -13,7 +13,7 @@ from django.utils.cache import patch_response_headers
 from core.libs.cache import getCacheEntry, setCacheEntry, setCacheData
 from core.libs.exlib import dictfetchall, get_tmp_table_name, insert_to_temp_table
 from core.libs.DateEncoder import DateEncoder
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.views import initRequest, setupView
 from core.pandajob.models import JediTasks
 from core.schedresource.utils import get_pq_clouds
@@ -22,7 +22,7 @@ from django.conf import settings
 
 _logger = logging.getLogger('bigpandamon')
 
-@login_customrequired
+@login_required
 def errorsScattering(request):
     initRequest(request)
 
@@ -248,7 +248,7 @@ def errorsScattering(request):
     return response
 
 
-@login_customrequired
+@login_required
 def errorsScatteringDetailed(request, cloud, reqid):
     valid, response = initRequest(request)
     if not valid: return response

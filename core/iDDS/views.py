@@ -7,7 +7,7 @@ from django.utils.cache import patch_response_headers
 from django.http import JsonResponse
 from django.template.defaulttags import register
 from django.db.models import Q
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.views import initRequest, setupView
 from core.utils import is_json_request
 from core.iDDS.models import Transforms, Collections, Processings, Contents
@@ -33,7 +33,7 @@ def to_float(value):
     return float(value)
 
 
-@login_customrequired
+@login_required
 def main(request):
     valid, response = initRequest(request)
     if not valid:
@@ -84,7 +84,7 @@ def main(request):
     return response
 
 
-@login_customrequired
+@login_required
 def collections(request):
     valid, response = initRequest(request)
     if not valid:
@@ -108,7 +108,7 @@ def collections(request):
     return JsonResponse({'data': iDDScollections}, encoder=DateEncoder, safe=False)
 
 
-@login_customrequired
+@login_required
 def iddscontents(request):
     valid, response = initRequest(request)
     if not valid:
@@ -129,7 +129,7 @@ def iddscontents(request):
     return JsonResponse({'data': iDDSсontents}, encoder=DateEncoder, safe=False)
 
 
-@login_customrequired
+@login_required
 def processings(request):
     valid, response = initRequest(request)
     if not valid:
@@ -149,7 +149,7 @@ def processings(request):
     return JsonResponse({'data': iDDSprocessings}, encoder=DateEncoder, safe=False)
 
 
-@login_customrequired
+@login_required
 def transforms(request):
     valid, response = initRequest(request)
     if not valid:
@@ -176,7 +176,7 @@ def transforms(request):
     return JsonResponse({'data': iDDStransforms}, encoder=DateEncoder, safe=False)
 
 
-@login_customrequired
+@login_required
 def getiDDSInfoForTaskRequest(request):
     valid, response = initRequest(request)
     if not valid:
@@ -188,7 +188,7 @@ def getiDDSInfoForTaskRequest(request):
     return JsonResponse({'data': transformationWithNested}, encoder=DateEncoder, safe=False)
 
 
-@login_customrequired
+@login_required
 def wfprogress(request):
     valid, response = initRequest(request)
     if not valid:
