@@ -475,8 +475,7 @@ def add_no_cache_headers(response):
     response["Expires"] = "0"
     return response
 
-
-@login_required
+# this is for main page, should be open
 def grafana_image(request):
     whitelist = ["triumf.ca", "cern.ch"]
 
