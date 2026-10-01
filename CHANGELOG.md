@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-10-01)
+
+### Bug Fixes
+
+- Allow grafana img open as it is for main page
+  ([`0a11c6d`](https://github.com/PanDAWMS/panda-bigmon-core/commit/0a11c6d1f0c61e5720e9050860ddd8673eeb6108))
+
+- Typo
+  ([`ea56368`](https://github.com/PanDAWMS/panda-bigmon-core/commit/ea5636855afc899a7bbdb65477631115b1e1e5b8))
+
+### Features
+
+- Replace auth decorators for not popular api endpoints
+  ([`a92e220`](https://github.com/PanDAWMS/panda-bigmon-core/commit/a92e2204a87850304a0f59666c30fa3d2602b7cd))
+
+
 ## v1.1.17 (2026-09-30)
 
 ### Bug Fixes
