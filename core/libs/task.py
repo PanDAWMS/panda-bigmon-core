@@ -218,7 +218,7 @@ def task_summary_dict(request, tasks, fieldlist=None):
                 if flist in ('reqid', 'stream', 'tag'):
                     continue
 
-            if 'taskname' in task and len(task['taskname'].split('.')) == 5:
+            if 'taskname' in task and isinstance(task['taskname'], str) and len(task['taskname'].split('.')) == 5:
                 if f == 'project':
                     try:
                         if not f in sumd:
