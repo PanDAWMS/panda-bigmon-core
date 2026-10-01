@@ -117,7 +117,7 @@ def profile(request):
     return render(request, 'profile.html', data, content_type='text/html')
 
 
-@login_requiredd
+@login_required
 def grantRights(request):
     valid, response = initRequest(request)
     if not valid:
