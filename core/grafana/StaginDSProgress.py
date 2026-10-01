@@ -8,7 +8,7 @@ from django.db import connection
 from django.utils import timezone
 from django.shortcuts import render
 
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.libs.exlib import dictfetchall
 from core.views import initRequest, setupView
 
@@ -84,7 +84,7 @@ def __getRucioRulesBySourceSEAndTimeWindow(source, hours):
     return None
 
 
-@login_customrequired
+@login_required
 def getStageProfileData(request):
     valid, response = initRequest(request)
     status = 200
@@ -127,7 +127,7 @@ def getStageProfileData(request):
     return JsonResponse(result, safe=False, status=status)
 
 
-@login_customrequired
+@login_required
 @never_cache
 def getDATASetsProgressPlot(request):
     initRequest(request)

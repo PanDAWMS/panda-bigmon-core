@@ -13,7 +13,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.utils.cache import patch_response_headers
 
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.utils import is_json_request, extensibleURL
 from core.libs.DateEncoder import DateEncoder
 from core.libs.cache import setCacheEntry, getCacheEntry
@@ -32,7 +32,7 @@ import core.constants as const
 _logger = logging.getLogger('bigpandamon')
 
 
-@login_customrequired
+@login_required
 def taskProblemExplorer(request):
     valid, response = initRequest(request)
     if not valid:

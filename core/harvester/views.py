@@ -19,7 +19,7 @@ from core.libs.sqlcustom import escape_input
 from core.libs.sqlsyntax import interval_last
 from core.libs.DateEncoder import DateEncoder
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.utils import is_json_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.harvester.models import HarvesterWorkers, HarvesterDialogs, HarvesterWorkerStats, HarvesterSlots, \
@@ -32,7 +32,7 @@ import core.constants as const
 _logger = logging.getLogger('bigpandamon')
 
 
-@login_customrequired
+@login_required
 def harvesters(request):
     """
     It is a view to redirect requests to specific views depending on request params
@@ -52,7 +52,7 @@ def harvesters(request):
         return redirect('/harvester/workers/?{}'.format('&'.join(['{}={}'.format(p, v) for p, v in request.session['requestParams'].items()])))
 
 
-@login_customrequired
+@login_required
 def harvesterWorkerInfoLegacy(request):
     """
     Redirecting to  /harvester/worker/ view.
@@ -67,7 +67,7 @@ def harvesterWorkerInfoLegacy(request):
     return redirect('/harvester/worker/?{}'.format('&'.join(['{}={}'.format(p, v) for p, v in request.session['requestParams'].items()])))
 
 
-@login_customrequired
+@login_required
 def harvesterInstances(request):
     valid, response = initRequest(request)
     if not valid:
@@ -104,7 +104,7 @@ def harvesterInstances(request):
         return JsonResponse({'instances': instances}, encoder=DateTimeEncoder, safe=False)
 
 
-@login_customrequired
+@login_required
 def harvesterWorkers(request):
     valid, response = initRequest(request)
     if not valid:
@@ -256,7 +256,7 @@ def harvesterWorkers(request):
     return response
 
 
-@login_customrequired
+@login_required
 def harvesterWorkerInfo(request, workerid=None):
     valid, response = initRequest(request)
     if not valid:
@@ -331,7 +331,7 @@ def harvesterWorkerInfo(request, workerid=None):
 
 
 # API views for dataTables in harvesterWorkerList page
-@login_customrequired
+@login_required
 def get_harvester_workers(request):
     valid, response = initRequest(request)
     if not valid:
@@ -365,7 +365,7 @@ def get_harvester_workers(request):
         return HttpResponse(status=400)
 
 
-@login_customrequired
+@login_required
 def get_harvester_diagnostics(request):
     valid, response = initRequest(request)
     if not valid:
@@ -384,7 +384,7 @@ def get_harvester_diagnostics(request):
     return HttpResponse(json.dumps(dialogs_list, cls=DateTimeEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def get_harvester_worker_stats(request):
     valid, response = initRequest(request)
     if not valid:
@@ -410,7 +410,7 @@ def get_harvester_worker_stats(request):
     )
 
 
-@login_customrequired
+@login_required
 def get_harvester_jobs(request):
     valid, response = initRequest(request)
     if not valid:
@@ -432,7 +432,7 @@ def get_harvester_jobs(request):
     return HttpResponse(json.dumps(harvsterpandaids, cls=DateTimeEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def harvesterSlots(request):
     valid, response = initRequest(request)
 
@@ -463,7 +463,7 @@ def harvesterSlots(request):
     return render(request, 'harvesterSlots.html', data, content_type='text/html')
 
 
-@login_customrequired
+@login_required
 def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='', **kwargs):
     """
     Get jobs list for the particular harvester instance and worker
@@ -560,7 +560,7 @@ def getHarvesterJobs(request, instance='', workerid='', jobstatus='', fields='',
     return jobsList
 
 
-@login_customrequired
+@login_required
 def getCeHarvesterJobs(request, computingelement, fields=''):
     """
     Get jobs for the particular CE
@@ -664,7 +664,7 @@ def getCeHarvesterJobs(request, computingelement, fields=''):
     return job_list
 
 
-@login_customrequired
+@login_required
 def getHarversterWorkersForTask(request):
     valid, response = initRequest(request)
     if not valid: return response

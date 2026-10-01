@@ -3,7 +3,7 @@ import json
 from django.shortcuts import render
 from core.views import initRequest
 from core.libs.sqlcustom import escape_input
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 
 from django.conf import settings
 
@@ -11,13 +11,7 @@ taskFinalStates = ['cancelled', 'failed', 'broken', 'aborted', 'finished', 'done
 stepsOrder = ['Evgen', 'Evgen Merge', 'Simul', 'Merge', 'Digi', 'Reco', 'Rec Merge', 'Deriv', 'Deriv Merge', 'Rec TAG', 'Atlfast', 'Atlf Merge']
 
 
-# @never_cache
-# def campaignPredictionInfo(request):
-#     initRequest(request)
-#     return JsonResponse('', safe=False)
-
-
-@login_customrequired
+@login_required
 def campaignProgressDash(request):
     initRequest(request)
     if 'hashtag' in request.GET:

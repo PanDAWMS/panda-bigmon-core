@@ -15,7 +15,7 @@ from core.libs.cache import getCacheEntry, setCacheEntry
 from core.libs.exlib import round_to_n_digits, convert_grams
 from core.libs.task import task_summary_dict
 from core.libs.elasticsearch import get_gco2_sum_for_tasklist
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.libs.DateEncoder import DateEncoder
 from core.views import initRequest, setupView
 from core.utils import is_json_request, removeParam
@@ -33,7 +33,7 @@ def split(input_str, key='|'):
     return input_str.split(key)
 
 
-@login_customrequired
+@login_required
 def runningProdTasks(request):
     valid, response = initRequest(request)
     if not valid:
@@ -199,7 +199,7 @@ def runningProdTasks(request):
         return response
 
 
-@login_customrequired
+@login_required
 def prodNeventsTrend(request):
     """
     The view presents historical trend of nevents in different states for various processing types
@@ -296,7 +296,7 @@ def prodNeventsTrend(request):
         return response
 
 
-@login_customrequired
+@login_required
 def runningProdRequests(request):
     valid, response = initRequest(request)
     if not valid:
@@ -305,13 +305,13 @@ def runningProdRequests(request):
     return response
 
 
-@login_customrequired
+@login_required
 def runningDPDProdTasks(request):
     # redirect to united runningProdTasks page
     return redirect('/runningprodtasks/?preset=DPD')
 
 
-@login_customrequired
+@login_required
 def runningMCProdTasks(request):
     # redirect to united runningProdTasks page
     return redirect('/runningprodtasks/?preset=MC')
