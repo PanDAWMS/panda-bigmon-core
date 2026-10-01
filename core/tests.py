@@ -4,6 +4,7 @@ import random
 import time
 import numpy as np
 import pandas as pd
+import requests
 from django.test import Client
 from core.oauth.models import BPUser
 
@@ -371,8 +372,8 @@ class BPPerfTest(unittest.TestCase):
         except:
             path = '/tmp/'
 
-        # view_path = 'jobs'
-        view_path = "errors"
+        view_path = 'jobs'
+        # view_path = "errors"
 
         results = [[
             'limit',
@@ -422,3 +423,57 @@ class BPPerfTest(unittest.TestCase):
 
             # write results into csv file
             pd.DataFrame(results[1:]).to_csv(path + "perf_results.csv", index=False, header=results[0])
+
+    @unittest.skip('skipping performance test, comment out this decorator if you need to run it ')
+    def test_comparison_with_prod(self):
+        try:
+            from core.settings.local import LOG_ROOT
+            path = LOG_ROOT
+            from core.settings.local import SERVICE_TOKEN
+            token = SERVICE_TOKEN
+            from core.settings.local import BP_PROD_ALIAS
+            prod_host = BP_PROD_ALIAS
+        except:
+            path = '/tmp/'
+            token = ""
+            prod_host = ""
+
+        prod_headers = {
+            "Authorization": "Token {}".format(token)
+        }
+
+        self.assertTrue(
+            all(isinstance(v, str) and v.strip() for v in [token, prod_host, path]),
+            "No host or token to test against production instance",
+        )
+
+        days = 4
+        # view_path = 'jobs'
+        # view_path = "errors"
+        view_path = "tasks"
+
+        results = [[
+            'limit',
+            'dev',
+            'prod'
+        ]]
+        # doing requests with incremental limits
+        for limit in (1,10,100,1000,10000,100000):
+            tmp_results = [limit, ]
+            self.since_last_time = time.time()
+            dev_response = self.client.get(f'/{view_path}/?days={days}&limit={int(limit)}&{self.generate_random_timestamp()}'.format(view_path, self.generate_random_timestamp(), int(limit)))
+            self.assertEqual(dev_response.status_code, 200)
+            tmp_results.append((time.time() - self.since_last_time))
+            print('dev {}: {}s'.format(limit, (time.time() - self.since_last_time)))
+
+            self.since_last_time = time.time()
+            # request to prod service
+            prod_response = requests.get(f'{prod_host}/{view_path}/?days={days}&limit={int(limit)}&{self.generate_random_timestamp()}', headers=prod_headers)
+            self.assertEqual(prod_response.status_code, 200)
+            tmp_results.append((time.time() - self.since_last_time))
+            print('prod {}: {}s'.format(limit, (time.time() - self.since_last_time)))
+
+            results.append(tmp_results)
+
+        # write results into csv file
+        pd.DataFrame(results[1:]).to_csv(path + "perf_results.csv", index=False, header=results[0])
