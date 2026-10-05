@@ -6,9 +6,35 @@ from datetime import timedelta
 from django.conf import settings as django_settings
 from django.utils import timezone
 
-from core.oauth.models import BPUser
+from core.oauth.models import BPUser, BPToken
 
 _logger = logging.getLogger('social')
+
+
+def get_token(user=None):
+    """
+    Get or create token for user
+    Args:
+        user: a Django user instance
+
+    Returns:
+        token: token model object;
+        created: boolean - if the token was created or not;
+    """
+    if user:
+        try:
+            token, created = BPToken.objects.get_or_create(user=user)
+            if created:
+                _logger.info(f"Created new token for user {user.username}")
+            else:
+                _logger.info(f"Using existing token for user {user.username}")
+        except Exception as ex:
+            _logger.error(f"Failed to create or retrieve token for user {user.username}: {ex}")
+            token, created = None, False
+    else:
+        _logger.error(f"No user provided")
+        token, created = None, False
+    return token, created
 
 
 def get_token_expiry_info(token, user=None):

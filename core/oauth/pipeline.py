@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from social_django.models import UserSocialAuth
 from core.oauth.models import Group, BPToken
+from core.oauth.utils import get_token
 
 _logger = logging.getLogger('social')
 
@@ -130,14 +131,8 @@ def issue_user_token(strategy, backend, user=None, *args, **kwargs):
         None - the pipeline will continue.
     """
     if user:
-        try:
-            token, created = BPToken.objects.get_or_create(user=user)
-            if created:
-                _logger.info(f"Created new token for user {user.username}")
-            else:
-                _logger.info(f"Using existing token for user {user.username}")
+        token, created = get_token(user)
+        if token is not None:
             strategy.session_set("bp_token", token.key)
-        except Exception as ex:
-            _logger.error(f"Failed to create or retrieve token for user {user.username}: {ex}")
         strategy.session_set("auth_social_backend", backend.name)
     return None
