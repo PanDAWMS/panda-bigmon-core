@@ -17,7 +17,7 @@ import core.constants as const
 from core.utils import extensibleURL, error_response, is_json_request
 from core.views import initRequest
 from core.libs.DateTimeEncoder import DateTimeEncoder
-from core.oauth.utils import grant_rights, deny_rights, user_email_sort, get_token_expiry_info
+from core.oauth.utils import grant_rights, deny_rights, user_email_sort, get_token_expiry_info, get_token
 from core.oauth.decorators import login_required
 from core.oauth.models import BPUser, BPUserSettings, Visits, BPToken
 
@@ -91,7 +91,7 @@ def profile(request):
 
     user_info = {}
     if request.user.is_authenticated:
-        token = BPToken.objects.filter(user=request.user).first()
+        token, created = get_token(user=request.user)
         token_expiry_info = get_token_expiry_info(token, user=request.user)
 
         user_info = {
@@ -102,7 +102,7 @@ def profile(request):
             'last_login': request.user.last_login,
             'auth_provider': request.session.get('auth_social_backend', '-'),
             'groups': ', '.join(list(request.user.groups.values_list('name', flat=True))),
-            'token': request.session.get('bp_token', '-'),
+            'token': token.key,
             'token_created': token_expiry_info['created'] if token_expiry_info else '-',
             'token_expires': token_expiry_info['expires'] if token_expiry_info else '-',
         }

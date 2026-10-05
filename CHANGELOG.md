@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.2 (2026-10-01)
+
+### Bug Fixes
+
+- Protect task_summary_dict against empty task name
+  ([`3cc017d`](https://github.com/PanDAWMS/panda-bigmon-core/commit/3cc017d64e201b9c97b7c72cc5d2b99453d0019f))
+
+
 ## v1.2.1 (2026-10-01)
 
 ### Bug Fixes
