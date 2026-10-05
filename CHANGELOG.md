@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.3 (2026-10-05)
+
+### Bug Fixes
+
+- Generate new token if user is authenticated with session cookie
+  ([`739ec89`](https://github.com/PanDAWMS/panda-bigmon-core/commit/739ec8977585e53f4f00dd6222dbbc960d2e8d7b))
+
+
 ## v1.2.2 (2026-10-01)
 
 ### Bug Fixes
