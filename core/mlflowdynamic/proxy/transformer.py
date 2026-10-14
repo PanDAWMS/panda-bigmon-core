@@ -117,12 +117,12 @@ class DiazoTransformer(object):
     def transform(self, rules, theme_template, is_html5, context_data=None):
         """Method used to make a transformation on the content of
         the http response based on the rules and theme_templates
-        passed as paremters
+        passed as parameters
 
         :param  rules: A file with a set of diazo rules to make a
                        transformation over the original response content
         :param  theme_template: A file containing the template used to format
-                                the the original response content
+                                the original response content
         :param    is_html5: A boolean parameter to identify a html5 doctype
         :returns: A response with a content transformed based on the rules and
                   theme_template

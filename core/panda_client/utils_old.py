@@ -139,7 +139,7 @@ def set_debug_mode(auth, **kwargs):
     except Exception as ex:
         resp = "ERROR to set debug mode: %s %s" % (ex, resp.status_code)
 
-    _logger.debug('SetDebugMode. URL: {0} Response: {1}. Parameters. userid: {2} Autorization: {3} Origin: {4} PandaID: {5} ModeOn: {6} Groups: {7}'.
+    _logger.debug('SetDebugMode. URL: {0} Response: {1}. Parameters. userid: {2} Authorization: {3} Origin: {4} PandaID: {5} ModeOn: {6} Groups: {7}'.
                       format(url, resp, kwargs['user_id'], auth['Authorization'], auth['Origin'], data['pandaID'],
                              data['modeOn'], groups
                              ))

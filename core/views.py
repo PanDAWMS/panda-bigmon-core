@@ -1466,7 +1466,7 @@ def jobList(request, mode=None, param=None):
             is_return_dropped_jobs=isReturnDroppedPMerge,
             task_status=task_info['status'] if 'status' in task_info else None,
         )
-        _logger.debug('Done droppping if was requested: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Done dropping if was requested: {}'.format(time.time() - request.session['req_init_time']))
 
     # get attempts of file if fileid in request params
     files_attempts_dict = {}
@@ -1730,7 +1730,7 @@ def jobList(request, mode=None, param=None):
             Some of jobs in this listing are outside of the default 'last {} hours' time window, 
             because this limit was applied to jobs in final state only. Please explicitly add &hours=N to URL, 
             if you want to force applying the time window limit on active jobs also.""".format(LAST_N_HOURS_MAX)
-        _logger.debug('Extra data preporation done: {}'.format(time.time() - request.session['req_init_time']))
+        _logger.debug('Extra data preparation done: {}'.format(time.time() - request.session['req_init_time']))
 
         data = {
             'errsByCount': errsByCount,
@@ -3868,7 +3868,7 @@ def killtasks(request):
             elif resp['result'] == "OK":
                 resp['detail'] = 'Action performed successfully, details: ' + resp['details']
         except Exception as e:
-            resp = {"detail": "prodsys response could not be parced"}
+            resp = {"detail": "prodsys response could not be parsed"}
             _logger.exception(f"{resp['detail']} with error: {str(e)}")
     else:
         resp = {"detail": "Error with sending request to prodsys"}
