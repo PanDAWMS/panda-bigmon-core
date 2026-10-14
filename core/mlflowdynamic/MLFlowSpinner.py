@@ -102,7 +102,7 @@ class MLFlowProxyView(ProxyView):
                                                       "status": "error"}, content_type='text/html')
         if entry.status == "spinning":
             response = render(request, 'banner.html',
-                                      {"message": "Spinning up an MLFlow containter. Please refresh in 30 seconds. After MLFlow container spins up it might take additional time while input data becomes available. If case of slow data transer, refresh page additionally in few minutes.", "status": "spinning"},
+                                      {"message": "Spinning up an MLFlow container. Please refresh in 30 seconds. After MLFlow container spins up it might take additional time while input data becomes available. If case of slow data transfer, refresh page additionally in few minutes.", "status": "spinning"},
                                       content_type='text/html')
         if entry.status in "active":
             response = self.process_proxy(request, path, taskid, entry.instanceurl)

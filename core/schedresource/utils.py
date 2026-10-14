@@ -193,7 +193,7 @@ def get_pq_fairshare_policy():
 
 
 def get_panda_resource(pq_name):
-    """Rerurns dict for a particular PanDA queue"""
+    """Returns dict for a particular PanDA queue"""
     pq_dict = get_panda_queues()
 
     if pq_dict and pq_name in pq_dict:

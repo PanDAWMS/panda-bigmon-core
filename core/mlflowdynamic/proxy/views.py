@@ -38,7 +38,7 @@ HTTP_POOLS = urllib3.PoolManager()
 
 
 class ProxyView(View):
-    """View responsable by excute proxy requests, process and return
+    """View responsible for executing proxy requests, processing and returning
     their responses.
 
     """
@@ -47,7 +47,7 @@ class ProxyView(View):
     add_remote_user = False
     default_content_type = 'application/octet-stream'
     retries = None
-    rewrite = tuple()  # It will be overrided by a tuple inside tuple.
+    rewrite = tuple()  # It will be overridden by a tuple inside tuple.
     strict_cookies = False
 
     def __init__(self, *args, **kwargs):
