@@ -12,6 +12,7 @@ EOS_LINK_BASE = 'https://atlas-art-data.web.cern.ch/atlas-art-data/'
 EOS_POSTFIX_GRID = 'grid-output/'
 EOS_POSTFIX_LOCAL = 'local-output/'
 INITIAL_LOCAL_ID = 1
+TIMEOUT_THREAD_WAIT = 5
 
 # dicts
 DATETIME_FORMAT = MappingProxyType({
@@ -54,10 +55,10 @@ TEST_STATUS = (
     'succeeded'
 )
 
-GITLAB_PATH_PER_PACKAGE =  MappingProxyType({
+GITLAB_PATH_PER_PACKAGE = MappingProxyType({
     "AthenaMonitoring": "Control/AthenaMonitoring/test",
     "CaloRecGPU": "Calorimeter/CaloRecGPU/test",
-    "CampaignsARTTests":"Tools/CampaignsARTTests/test",
+    "CampaignsARTTests": "Tools/CampaignsARTTests/test",
     "DerivationFrameworkAnalysisTests": "PhysicsAnalysis/DerivationFramework/DerivationFrameworkAnalysisTests/test",
     "DerivationFrameworkBPhysART": "PhysicsAnalysis/DerivationFramework/DerivationFrameworkART/DerivationFrameworkBPhysART/test",
     "DerivationFrameworkEgammaART": "PhysicsAnalysis/DerivationFramework/DerivationFrameworkART/DerivationFrameworkEgammaART/test",

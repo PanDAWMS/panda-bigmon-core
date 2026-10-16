@@ -249,6 +249,10 @@ fieldset.artmenu li.input-group button.hollow.alert {
   max-width: 200px;
 }
 
+.unregistered > a {
+  font-size: 0.725rem;
+}
+
 /* test sub results traffic lights */
 /* --------------------------------------------------------------------------------------------------- */
 
@@ -371,4 +375,46 @@ a.away {
 
 div.bp-tooltip {
   border-bottom: none;
+}
+
+
+
+.panda-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.panda-callout__content {
+  min-width: 0;
+}
+
+.panda-callout__content strong {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.panda-callout__content p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.panda-callout__action {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+@media screen and (max-width: 639px) {
+  .panda-callout {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .panda-callout__action {
+    margin-left: 0;
+  }
 }

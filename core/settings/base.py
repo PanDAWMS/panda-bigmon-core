@@ -167,6 +167,7 @@ if DEBUG and ENABLE_DEBUG_TOOLBAR:
     DEBUG_TOOLBAR_CONFIG = {
         'INTERCEPT_REDIRECTS': False,
         'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+        'IS_RUNNING_TESTS': False,
     }
     DEBUG_TOOLBAR_PANELS = (
         'debug_toolbar.panels.versions.VersionsPanel',
