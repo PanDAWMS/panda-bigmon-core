@@ -16,6 +16,7 @@ from django.conf import settings
 
 _logger = logging.getLogger("bigpandamon")
 
+
 def drop_duplicates(object_list, **kwargs):
     """
     Dropping duplicates base on ID. By default id = pandaid.
@@ -710,6 +711,7 @@ def get_maxrampercore_dict():
                 maxrampercore_dict[rt['resource_name']][pq] = int(pq_data['maxrss']/pq_data['corecount'])
 
     return maxrampercore_dict
+
 
 def normalize_pandas_freq(freq):
     if not isinstance(freq, str):

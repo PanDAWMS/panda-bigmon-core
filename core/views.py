@@ -1,5 +1,4 @@
 import copy
-import hashlib
 import json
 import logging
 import math
@@ -10,7 +9,7 @@ import queue
 import subprocess
 import time
 from datetime import datetime, timedelta
-from threading import Lock, Thread
+from threading import Thread
 from urllib.parse import parse_qs, unquote_plus, urlencode, urlparse, urlunparse
 
 import pandas as pd
@@ -91,8 +90,6 @@ from core.schedresource.utils import (filter_pq_json, get_basic_info_for_pqs, ge
                                       get_pq_object_store_path)
 from core.utils import complete_request, error_response, extensibleURL, is_json_request, is_wildcards, is_xss, removeParam
 
-tcount = {}
-lock = Lock()
 DateTimeField.register_lookup(CastDate)
 
 try:
@@ -231,13 +228,12 @@ def initRequest(request, callselfmon=True):
         if len(userrec) > 0:
             request.session['username'] = userrec[0]['name']
 
-    # add permissions to request session if user is authenticated
+    # add permissions to request session if the user is authenticated
     if 'user_permissions' not in request.session or len(request.session['user_permissions']) == 0:
         if request.user.is_authenticated and 'ATLAS' in settings.DEPLOYMENT:
             request.session['user_permissions'] = list(request.user.get_all_permissions())
         else:
             request.session['user_permissions'] = []
-
 
     request.session['viewParams']['MON_VO'] = settings.MON_VO if hasattr(settings, 'MON_VO') else ''
 
@@ -273,7 +269,8 @@ def initRequest(request, callselfmon=True):
 
         if len(request.POST) > 0:
             for p in request.POST:
-                if p in ('csrfmiddlewaretoken',): continue
+                if p in ('csrfmiddlewaretoken',):
+                    continue
                 pval = request.POST[p]
                 pval = pval.replace('+', ' ')
                 request.session['requestParams'][p.lower()] = pval
@@ -345,7 +342,7 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     :return:
     """
     viewParams = {}
-    if not 'viewParams' in request.session:
+    if 'viewParams' not in request.session:
         request.session['viewParams'] = viewParams
 
     extraQueryString = '(1=1) '
@@ -370,8 +367,8 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             extraQueryString += " AND (jobmetrics like '%%nGPU=%%')"
 
     if 'site' in request.session['requestParams'] and (
-            request.session['requestParams']['site'] == 'hpc' or not is_wildcards(
-        request.session['requestParams']['site'])):
+            request.session['requestParams']['site'] == 'hpc' or not is_wildcards(request.session['requestParams']['site'])
+    ):
         extraQueryFields.append('site')
 
     wildSearchFields = []
@@ -412,11 +409,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                 'user' in request.session['requestParams']):
             if 'jobsetid' not in fields:
                 fields.append('jobsetid')
-            if ('hours' not in request.session['requestParams']) and (
-                    'days' not in request.session['requestParams']) and (
-                    'jobsetid' in request.session['requestParams'] or 'taskid' in request.session[
-                'requestParams'] or 'jeditaskid' in request.session['requestParams']):
-                # Cases where deep query is safe. Unless the time depth is specified in URL.
+            if 'hours' not in request.session['requestParams'] and 'days' not in request.session['requestParams'] and (
+                    'jobsetid' in request.session['requestParams'] or 'jeditaskid' in request.session['requestParams']
+            ):
+                # Cases where the deep query is safe. Unless the time depth is specified in URL.
                 if 'hours' not in request.session['requestParams'] and 'days' not in request.session['requestParams']:
                     deepquery = True
         else:
@@ -428,19 +424,19 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
     if hours > 0:
         # Call param overrides default hours, but not a param on the URL
         LAST_N_HOURS_MAX = hours
-    # For site-specific queries, allow longer time window
+    # For site-specific queries, allow a longer time window
     if 'batchid' in request.session['requestParams'] and (hours is None or hours == 0):
         LAST_N_HOURS_MAX = 4*24
     if 'computingsite' in request.session['requestParams'] and hours is None:
         LAST_N_HOURS_MAX = 12
     if 'jobtype' in request.session['requestParams'] and request.session['requestParams']['jobtype'] == 'eventservice':
         LAST_N_HOURS_MAX = 2 * 24
-    # hours specified in the URL takes priority over the above
+    # hours specified in the URL take priority over the above
     if 'hours' in request.session['requestParams']:
         LAST_N_HOURS_MAX = int(request.session['requestParams']['hours'])
     if 'days' in request.session['requestParams']:
         LAST_N_HOURS_MAX = int(request.session['requestParams']['days']) * 24
-    # Exempt single-job, single-task etc queries from time constraint
+    # Exempt single-job, single-task etc., queries from time constraint
     if 'hours' not in request.session['requestParams'] and 'days' not in request.session['requestParams']:
         if ('jeditaskid' in request.session['requestParams'] or
                 'taskid' in request.session['requestParams'] or
@@ -537,6 +533,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
         if param == 'limit' and request.session['JOB_LIMIT'] > 0:
             continue
         if param.endswith('range'):
+            continue
+        if param == 'jeditaskid' and ',' in request.session['requestParams'][param]:
+            tids = request.session['requestParams'][param].split(',')
+            request.session['viewParams']['selection'] += f" <b>{param}=</b>[list of {len(tids)} IDs] "
             continue
         request.session['viewParams']['selection'] += " <b>%s=</b>%s " % (
             param, request.session['requestParams'][param])
@@ -1435,7 +1435,6 @@ def jobList(request, mode=None, param=None):
             jobs.extend(qs.order_by(ob)[:limit].values(*values))
         _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
 
-
     # If the list is for a particular JEDI task, filter out the jobs superseded by retries
     # if ES -> nodrop by default
     dropmode = False
@@ -1447,8 +1446,7 @@ def jobList(request, mode=None, param=None):
         dropmode = False
 
     isReturnDroppedPMerge = False
-    if 'processingtype' in request.session['requestParams'] and request.session['requestParams'][
-        'processingtype'] == 'pmerge':
+    if 'processingtype' in request.session['requestParams'] and request.session['requestParams']['processingtype'] == 'pmerge':
         isReturnDroppedPMerge = True
 
     for job in jobs:
@@ -1522,7 +1520,7 @@ def jobList(request, mode=None, param=None):
     njobsmax = display_limit
 
     sortby_options = {
-        'pandaid' : 'pandaid',
+        'pandaid': 'pandaid',
         'time': 'mod time',
         'create': 'creation time',
         'statetime': 'time since last state change',
@@ -1595,7 +1593,7 @@ def jobList(request, mode=None, param=None):
         produsername=user,
         sortby=sortby
     )
-    # Sort in order to see the most important tasks
+    # Sort to see the most important tasks
     if sumd:
         for item in sumd:
             if item['field'] == 'jeditaskid':
@@ -4602,8 +4600,7 @@ def taskInfo(request, jeditaskid=0):
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
                 warning['memoryleaksuspicion'] = {}
                 warning['memoryleaksuspicion']['message'] = 'Some jobs in this task consumed a lot of memory. '
-                warning['memoryleaksuspicion'][
-                    'message'] += 'We suspect there might be memory leaks or some misconfiguration.'
+                warning['memoryleaksuspicion']['message'] += 'We suspect there might be memory leaks or some misconfiguration.'
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
 
         if check_idds_task is not None and idds_info is not None:

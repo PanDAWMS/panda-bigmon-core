@@ -4,7 +4,9 @@
 import logging
 import json
 import re
+import queue
 import time
+from threading import Thread
 import socket
 from datetime import datetime, timedelta
 
@@ -36,16 +38,19 @@ from core.libs.exlib import convert_sec, convert_bytes, round_to_n_digits
 from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived, Filestable4
 
 from core.art.utils import setupView, get_test_diff, get_result_for_multijob_test, concat_branch, \
-    find_last_successful_test, build_gitlab_link, clean_tests_list, get_client_ip
+    find_last_successful_test, build_gitlab_link, clean_tests_list, get_client_ip, fetch_unregistered_tests, \
+    resolve_unregistered_tests, add_unregistered_tests, build_detected_tasks_summary
 
 from django.conf import settings
 import core.art.constants as art_const
 
 _logger = logging.getLogger('bigpandamon-art')
 
+
 @register.filter(takes_context=True)
 def remove_dot(value):
-    return value.replace(".", "").replace('/','')
+    return value.replace(".", "").replace('/', '')
+
 
 @register.filter(takes_context=True)
 def get_time(value):
@@ -108,8 +113,12 @@ def art(request):
     tquery['created__castdate__range'] = [timezone.now() - timedelta(days=n_days_limit), timezone.now()]
 
     packages = ARTTests.objects.filter(**tquery).values('package').distinct().order_by('package')
-    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform','project').annotate(branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')).values('branch').distinct().order_by('-branch')
-    ntags = ARTTests.objects.values('nightly_tag_display').annotate(nightly_tag_date=Substr('nightly_tag_display', 1, 10)).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
+    branches = ARTTests.objects.filter(**tquery).values('nightly_release_short', 'platform', 'project').annotate(
+        branch=Concat('nightly_release_short', V('/'), 'project', V('/'), 'platform')
+    ).values('branch').distinct().order_by('-branch')
+    ntags = ARTTests.objects.values('nightly_tag_display').annotate(
+        nightly_tag_date=Substr('nightly_tag_display', 1, 10)
+    ).values('nightly_tag_date').distinct().order_by('-nightly_tag_date')[:5]
     _logger.debug(f"{len(packages)} packages and {len(branches)} branches")
 
     if not is_json_request(request):
@@ -176,9 +185,9 @@ def artOverview(request):
     valid, response = initRequest(request)
     if not valid:
         return response
-    
+
     # getting aggregation order
-    if not 'view' in request.session['requestParams'] or (
+    if 'view' not in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
         ao = ['package', 'branch']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
@@ -202,13 +211,34 @@ def artOverview(request):
     
     # process URL params to query params
     query, extra_str = setupView(request)
+    # start fetching unregistered tests in a separate thread
+    art_tasks_queue = queue.Queue()
+    thread = Thread(
+        target=fetch_unregistered_tests,
+        args=(query, extra_str, art_tasks_queue)
+    )
+    thread.start()
+
     # getting tests
-    values = ('package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
-              'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date', 'test_type')
+    values = (
+        'package',
+        'branch',
+        'nightly_release_short',
+        'platform',
+        'project',
+        'nightly_tag',
+        'attemptnr',
+        'status',
+        'pandaid',
+        'jeditaskid',
+        'testname',
+        'inputfileid',
+        'nightly_tag_date',
+        'test_type'
+    )
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values))
     # filter out previous attempts, concat branch etc
     jobs = clean_tests_list(tests)
-
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
     testtypelist = ['grid', 'local']
     _logger.info("Got ART tests: {}".format(time.time() - request.session['req_init_time']))
@@ -216,7 +246,7 @@ def artOverview(request):
     # temporary art_jobs_dict for agg by both package and branch.
     # This is needed for multi job test cases when we need to count them as one, choosing the worst result across them.
     art_jobs_dict = {}
-    # dict for final overview result
+    # dict for the final overview result
     art_summary_dict = {}
     for j in jobs:
         if j[ao[0]] not in art_summary_dict:
@@ -247,15 +277,27 @@ def artOverview(request):
             finalresult, _ = get_final_result(j)
         art_jobs_dict[j[ao[0]]][j[ao[1]]][j['ntag']][j['testname']][j['test_type']].append(finalresult)
 
-    # for multi job test, choose the worst result across them
+    # for a multi-job test, choose the worst result across them
     for ao0, ao0_dict in art_jobs_dict.items():
         for ao1, ao1_dict in ao0_dict.items():
             for ntag, tests in ao1_dict.items():
                 for test, test_types in tests.items():
                     for test_type, job_states in test_types.items():
                         if len(job_states) > 0:
-                            art_summary_dict[ao0][ntag.strftime(art_const.DATETIME_FORMAT['default'])][test_type][get_result_for_multijob_test(job_states)] += 1
+                            art_summary_dict[ao0][ntag.strftime(art_const.DATETIME_FORMAT['default'])][test_type][
+                                get_result_for_multijob_test(job_states)
+                            ] += 1
     _logger.info("Prepared summary data dict: {}".format(time.time() - request.session['req_init_time']))
+
+    tests_unregistered = resolve_unregistered_tests(thread, art_tasks_queue, timeout=art_const.TIMEOUT_THREAD_WAIT)
+    art_summary_dict = add_unregistered_tests(
+        art_summary_dict,
+        tests_unregistered,
+        level='overview',
+        ao=ao,
+        ntag_list=[n.strftime(art_const.DATETIME_FORMAT['default']) for n in ntagslist]
+    )
+    _logger.info("Got {} unregistered tests: {}".format(len(tests_unregistered), time.time() - request.session['req_init_time']))
 
     if is_json_request(request):
         data = {
@@ -270,7 +312,7 @@ def artOverview(request):
                 if j[ao[0]] not in art_overview_per_nightly_tag[j['nightly_tag']]:
                     art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]] = {}
                     for test_type in ['grid', 'local']:
-                        art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]][test_type]={}
+                        art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]][test_type] = {}
                         for state in art_const.TEST_STATUS:
                             art_overview_per_nightly_tag[j['nightly_tag']][j[ao[0]]][test_type][state] = 0
                 if 'status' in j and isinstance(j['status'], int):
@@ -284,7 +326,7 @@ def artOverview(request):
         return HttpResponse(dump, content_type='application/json')
     else:
         # dict -> list for datatable
-        art_overview = [[ao[0]] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist] ]
+        art_overview = [[ao[0]] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist]]
         art_overview.extend([[key] + list(value.values()) for key, value in art_summary_dict.items()])
         xurl = extensibleURL(request)
         noviewurl = removeParam(xurl, 'view', mode='extensible')
@@ -294,6 +336,7 @@ def artOverview(request):
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
+            'timerange': None,
             'artpackages': art_summary_dict,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(art_const.DATETIME_FORMAT['default']) for ntag in ntagslist],
@@ -340,7 +383,7 @@ def artTasks(request):
         return response
 
     # getting aggregation order
-    if not 'view' in request.session['requestParams'] or (
+    if 'view' not in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
         ao = ['package', 'branch']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
@@ -361,17 +404,24 @@ def artTasks(request):
         patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
         return response
 
-
     tests = []
     # process URL params to query params
     query, extra_str = setupView(request)
+
+    # start fetching unregistered tests in a separate thread
+    art_tasks_queue = queue.Queue()
+    thread = Thread(
+        target=fetch_unregistered_tests,
+        args=(query, extra_str, art_tasks_queue)
+    )
+    thread.start()
+
     # getting tests
     values = ('package', 'branch', 'nightly_release_short', 'platform', 'project', 'nightly_tag', 'attemptnr', 'status',
               'pandaid', 'jeditaskid', 'testname', 'inputfileid', 'nightly_tag_date', 'test_type')
     tests.extend(ARTTests.objects.filter(**query).extra(where=[extra_str]).values(*values))
     # filter out previous attempts, add branch etc
     jobs = clean_tests_list(tests)
-
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
     _logger.info("Got ART tests: {}".format(time.time() - request.session['req_init_time']))
 
@@ -423,6 +473,13 @@ def artTasks(request):
                             arttasksdict[ao0][ao1][ntag[:-5]][test_type][ntag][get_result_for_multijob_test(job_states)] += 1
     _logger.info("Prepared summary: {}".format(time.time() - request.session['req_init_time']))
 
+    tests_unregistered = resolve_unregistered_tests(thread, art_tasks_queue, timeout=art_const.TIMEOUT_THREAD_WAIT)
+    arttasksdict = add_unregistered_tests(
+        arttasksdict, tests_unregistered,
+        level='task', ao=ao, ntag_list=[n.strftime(art_const.DATETIME_FORMAT['default']) for n in ntagslist]
+    )
+    _logger.info("Got {} unregistered tests: {}".format(len(tests_unregistered), time.time() - request.session['req_init_time']))
+
     if is_json_request(request):
         data = {
             'arttasks': arttasksdict,
@@ -432,8 +489,8 @@ def artTasks(request):
     else:
         xurl = extensibleURL(request)
         noviewurl = removeParam(xurl, 'view', mode='extensible')
-        # convert dict to list for datatable
-        art_tasks = [[ao[0], ao[1]] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist] ]
+        # dict -> list for datatable
+        art_tasks = [[ao[0], ao[1]] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist]]
         for ao0, ao0_dict in arttasksdict.items():
             for ao1, ao1_dict in ao0_dict.items():
                 tmp_nightlies = []
@@ -445,7 +502,7 @@ def artTasks(request):
                                 res_dict = results
                                 res_dict['ntag_time'] = s[-5:]
                                 res_dict['ntag_full'] = s
-                                tmp[type]=res_dict
+                                tmp[type] = res_dict
                     tmp_nightlies.append(tmp)
                 art_tasks.append([ao0, ao1] + tmp_nightlies)
 
@@ -454,6 +511,7 @@ def artTasks(request):
             'requestParams': request.session['requestParams'],
             'viewParams': request.session['viewParams'],
             'built': datetime.now().strftime("%H:%M:%S"),
+            'timerange': None,
             'arttasks': art_tasks,
             'noviewurl': noviewurl,
             'ntaglist': [ntag.strftime(art_const.DATETIME_FORMAT['default']) for ntag in ntagslist],
@@ -520,7 +578,7 @@ def artJobs(request):
 
     # getting aggregation order and view
     art_view = 'package'
-    if not 'view' in request.session['requestParams'] or (
+    if 'view' not in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
         ao = ['package', 'branch']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
@@ -561,6 +619,14 @@ def artJobs(request):
     query, extra_str = setupView(request)
     _logger.info('Set up view: {}s'.format(time.time() - request.session['req_init_time']))
 
+    # start fetching unregistered tests in a separate thread
+    art_tasks_queue = queue.Queue()
+    thread = Thread(
+        target=fetch_unregistered_tests,
+        args=(query, extra_str, art_tasks_queue)
+    )
+    thread.start()
+
     # getting tests
     tests = []
     values = [f.name for f in ARTTests._meta.get_fields() if not f.is_relation]
@@ -586,7 +652,7 @@ def artJobs(request):
     reportTo = {'mail': [], 'jira': {}}
     gitlabids = list(sorted(set([x['gitlabid'] for x in art_jobs if 'gitlabid' in x and x['gitlabid'] is not None])))
     linktoplots = []
-    artjobsdict={}
+    artjobsdict = {}
 
     for job in art_jobs:
         if job['test_type'] == 'local':
@@ -680,9 +746,11 @@ def artJobs(request):
 
             if 'linktoplots' in extraparams and extraparams['linktoplots'] is not None:
                 linktoplots.append(extraparams['linktoplots'])
-
-
     _logger.info('Prepared data: {}s'.format(time.time() - request.session['req_init_time']))
+
+    tests_unregistered = resolve_unregistered_tests(thread, art_tasks_queue, timeout=art_const.TIMEOUT_THREAD_WAIT)
+    tasks_detected_summary = build_detected_tasks_summary(tests_unregistered)
+    _logger.info("Got {} unregistered tests: {}".format(len(tests_unregistered), time.time() - request.session['req_init_time']))
 
     if is_json_request(request):
 
@@ -703,7 +771,7 @@ def artJobs(request):
         }
         art_jobs = [[ao[0], ao[1], 'test name'] + [n.strftime(art_const.DATETIME_FORMAT['humanized']) for n in ntagslist]]
         if len(ntagslist) == 1:
-            art_jobs[0] += [m_title for  m, m_title in extra_metrics_columns.items()]
+            art_jobs[0] += [m_title for m, m_title in extra_metrics_columns.items()]
         for ao0, ao0_dict in artjobsdict.items():
             for ao1, ao1_dict in ao0_dict.items():
                 for t, t_dict in ao1_dict.items():
@@ -739,6 +807,7 @@ def artJobs(request):
             'reportto': reportTo,
             'linktoplots': linktoplots,
             'art_jobs': art_jobs,
+            'detected_tasks': tasks_detected_summary,
         }
         setCacheEntry(request, "artJobs", json.dumps(data, cls=DateEncoder), art_const.CACHE_TIMEOUT_MINUTES)
         response = render(request, 'artJobs.html', data, content_type='text/html')
@@ -834,7 +903,7 @@ def artTest(request, package=None, testname=None):
                     art_const.EOS_LINK_BASE, art_const.EOS_POSTFIX_GRID, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
                 if job['test_type'] == 'local':
                     job['eos'] = '{}{}{}/{}/{}/{}/'.format(
-                    art_const.EOS_LINK_BASE, art_const.EOS_POSTFIX_LOCAL, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
+                        art_const.EOS_LINK_BASE, art_const.EOS_POSTFIX_LOCAL, concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
                 if len(job['extrainfo']) > 0:
                     try:
                         extrainfo_json = json.loads(job['extrainfo'])
@@ -846,7 +915,7 @@ def artTest(request, package=None, testname=None):
                         job['htmllink'] = '{}{}/{}/{}/{}'.format(
                             job['html'], concat_branch(job), job['nightly_tag'], job['package'], job['testname'][:-3])
                     else:
-                        job['htmllink'] = '{}/{}/'.format('eos',job['html'])
+                        job['htmllink'] = '{}/{}/'.format('eos', job['html'])
 
                 if pid in panda_jobs:
                     job['jobstatus'] = panda_jobs[pid]['jobstatus']
@@ -870,7 +939,7 @@ def artTest(request, package=None, testname=None):
                 job.update(extraparams)
 
             # prepare data for template
-            art_test['testname'] =  testname
+            art_test['testname'] = testname
             art_test['package'] = package
             descriptions = list(set([j['description'] for j in art_jobs if 'description' in j and j['description']]))
             art_test['description'] = descriptions[0] if len(descriptions) > 0 else ''
@@ -948,13 +1017,12 @@ def artStability(request):
       '400':
         description: Bad request
     """
-    starttime = datetime.now()
     valid, response = initRequest(request)
     if not valid:
         return response
 
     # getting aggregation order
-    if not 'view' in request.session['requestParams'] or (
+    if 'view' not in request.session['requestParams'] or (
             'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'packages'):
         ao = ['package', 'branch']
     elif 'view' in request.session['requestParams'] and request.session['requestParams']['view'] == 'branches':
@@ -1336,7 +1404,7 @@ def loadSubResults(request):
 
             # updating test status
             for pandaid, subresults in subResultsDict.items():
-                update_test_status({'pandaid':pandaid, 'result':subresults})
+                update_test_status({'pandaid': pandaid, 'result': subresults})
 
             # deleting processed jobs from queue
             delete_queuedjobs(cur, lock_time)
@@ -1360,6 +1428,7 @@ def loadSubResults(request):
     _logger.info('ART sub-step results queue: {} rows done, rest: {}'.format(n_rows_so_far, count))
 
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
+
 
 @login_customrequired
 @csrf_exempt
@@ -1620,6 +1689,7 @@ def registerARTTest(request):
         return JsonResponse(data, status=500)
 
     return JsonResponse(data, status=200)
+
 
 @login_customrequired
 @csrf_exempt
