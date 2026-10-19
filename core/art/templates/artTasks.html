@@ -21,13 +21,13 @@
 {% endif %}
 
 <div class="bp-selected-params">
-  <p>Test type: <b>{% if requestParams.test_type %}{{ requestParams.test_type }}{% else %} grid and local{% endif %}</b></p>
-  {% if requestParams.package %}<p>Package: <b><a href="{% url 'artOverview' %}?package={{ requestParams.package }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.package }}</a></b></p>{% endif %}
-  {% if requestParams.branch %}<p>Branch: <b><a href="{% url 'artOverview' %}?branch={{ requestParams.branch }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.branch }}</a></b></p>{% endif %}
-  {% if viewParams.ntag %}<p>Listed tests are for builds done on <b>{{ viewParams.ntag }}</b> </p>{% endif %}
-  {% if viewParams.ntag_full %}<p>Listed tests are for the following build: <b>{{ viewParams.ntag_full }}</b> </p>{% endif %}
-  {% if viewParams.ntag_from %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
-  {% if viewParams.ntag_to %}to <b>{{ viewParams.ntag_to }}</b></p>{% endif %}
+<p>Test type: <b>{% if 'test_type' in requestParams %}{{ requestParams.test_type }}{% else %}grid and local{% endif %}</b></p>
+  {% if 'package' in requestParams %}<p>Package: <b><a href="{% url 'artOverview' %}?package={{ requestParams.package }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.package }}</a></b></p>{% endif %}
+  {% if 'branch' in requestParams %}<p>Branch: <b><a href="{% url 'artOverview' %}?branch={{ requestParams.branch }}{% for k, v in requestParams.items %}{% if k != 'package' and k != 'branch' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">{{ requestParams.branch }}</a></b></p>{% endif %}
+  {% if 'ntag' in viewParams %}<p>Listed tests are for builds done on <b>{{ viewParams.ntag }}</b></p>{% endif %}
+  {% if 'ntag_full' in viewParams %}<p>Listed tests are for the following build: <b>{{ viewParams.ntag_full }}</b></p>{% endif %}
+  {% if 'ntag_from' in viewParams %}<p>Listed tests are for builds done from <b>{{ viewParams.ntag_from }}</b>{% endif %}
+  {% if 'ntag_to' in viewParams %}to <b>{{ viewParams.ntag_to }}</b></p>{% endif %}
 </div>
 
 {% if arttasks|length > 0 %}
@@ -112,8 +112,13 @@ for (let i=0; i<table_data[0].length; i++) {
         }
         else {
           let result = '';
-          if ((!data.grid || (data.grid.active + data.grid.succeeded + data.grid.finished + data.grid.failed === 0)) &&
-              (!data.local || (data.local.active + data.local.succeeded + data.local.finished + data.local.failed === 0))) {
+          const grid = data.grid || {};
+          const local = data.local || {};
+          const gridJobs = (grid.active || 0) + (grid.succeeded || 0) + (grid.finished || 0) + (grid.failed || 0);
+          const localJobs = (local.active || 0) + (local.succeeded || 0) + (local.finished || 0) + (local.failed || 0);
+          const detectedTasksCount = grid.tasks?.n_tasks || 0;
+
+          if (gridJobs === 0 && localJobs === 0 && detectedTasksCount === 0) {
             result += '---';
           }
           else {
@@ -121,23 +126,29 @@ for (let i=0; i<table_data[0].length; i++) {
                   if (test_type !== '' && test_type !== testType) {
                     return;
                   }
+                  let unregisteredHtml = '';
+                  let n_tasks_detected = 0;
+                  if (testType === 'grid' && testType in data && 'tasks' in data[testType] && data[testType].tasks.n_tasks > 0) {
+                    unregisteredHtml = `<div class="unregistered"><a target="_blank" href="/tasks/?jeditaskid=${data[testType].tasks.id_list.join(',')}">+ ${data[testType].tasks.n_tasks} task${data[testType].tasks.n_tasks > 1 ? 's': ''} detected</a></div>`;
+                    n_tasks_detected = data[testType].tasks.n_tasks;
+                  }
 
-                  if (!data[testType] || (data[testType].active + data[testType].succeeded + data[testType].finished + data[testType].failed === 0)) {
+                  if (!data[testType] || (data[testType].active + data[testType].succeeded + data[testType].finished + data[testType].failed + n_tasks_detected === 0)) {
                     result += '---<br>';
                   } else {
                     let ntag_time = is_show_ntag_time[i] ? data[testType].ntag_time : '';
                     const baseClass = (testType === 'local') ? 'local-' : '';
                     result += `
                       <div class="with-ntagfull">
-                          <div class="clickable traffic-lights">
-                            <div class="${baseClass}active ${(data[testType].active>0) ? 'bold': ''}">${data[testType].active}</div>
-                            <div class="${baseClass}succeeded ${(data[testType].succeeded>0) ? 'bold': ''}">${data[testType].succeeded}</div>
-                            <div class="${baseClass}finished ${(data[testType].finished>0) ? 'bold': ''}">${data[testType].finished}</div>
-                            <div class="${baseClass}failed ${(data[testType].failed>0) ? 'bold': ''}">${data[testType].failed}</div>
-                            <a target="_blank" href="{% url 'artJobs' %}?${table_title[0]}=${row[0]}&${table_title[1]}=${row[1]}&ntag_full=${data[testType].ntag_full}&test_type=${testType}"></a>
-                          </div>
-                          ${ntag_time}
-                      </div><br>`;
+                        <div class="clickable traffic-lights">
+                          <div class="${baseClass}active ${(data[testType].active>0) ? 'bold': ''}">${data[testType].active}</div>
+                          <div class="${baseClass}succeeded ${(data[testType].succeeded>0) ? 'bold': ''}">${data[testType].succeeded}</div>
+                          <div class="${baseClass}finished ${(data[testType].finished>0) ? 'bold': ''}">${data[testType].finished}</div>
+                          <div class="${baseClass}failed ${(data[testType].failed>0) ? 'bold': ''}">${data[testType].failed}</div>
+                          <a target="_blank" href="{% url 'artJobs' %}?${table_title[0]}=${row[0]}&${table_title[1]}=${row[1]}&ntag_full=${data[testType].ntag_full}&test_type=${testType}"></a>
+                        </div>
+                        ${ntag_time}
+                      </div>${unregisteredHtml}<br>`;
                   }
               })
           }

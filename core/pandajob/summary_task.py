@@ -253,14 +253,21 @@ def get_top_memory_consumers(taskrec):
     tmcquerystr = """
     select jeditaskid, pandaid, computingsite, jobmaxpss, jobmaxpss_percore, sitemaxrss, sitemaxrss_percore, maxpssratio 
     from (
-        select j.jeditaskid, j.pandaid, j.computingsite, j.jobmaxpss, j.jobmaxpss_percore, s.maxrss as sitemaxrss, 
-            s.maxrss/s.corecount as sitemaxrss_percore, j.jobmaxpss_percore/(s.maxrss/s.corecount) as maxpssratio, 
-            row_number() over (partition by jeditaskid order by j.jobmaxpss_percore/(s.maxrss/s.corecount) desc) as jobrank
+        select j.jeditaskid, j.pandaid, j.computingsite, j.jobmaxpss, j.jobmaxpss_percore, 
+            case  when s.catchall like '%%per_core_attr%%' then s.maxrss*s.corecount  else s.maxrss  end as sitemaxrss,
+            case  when s.catchall like '%%per_core_attr%%' then s.maxrss  else s.maxrss / nullif(s.corecount, 0)  end as sitemaxrss_percore, 
+            j.jobmaxpss_percore / nullif(
+                case when s.catchall like '%%per_core_attr%%' then s.maxrss else s.maxrss / nullif(s.corecount, 0) end, 0
+            ) as maxpssratio, 
+            row_number() over (partition by jeditaskid order by j.jobmaxpss_percore / nullif(
+                case when s.catchall like '%per_core_attr%' then s.maxrss  else s.maxrss / nullif(s.corecount, 0)  end, 0) desc
+            ) as jobrank
         from {DB_SCHEMA_PANDA}.schedconfig_json sj,
             json_table(sj.data,'$' columns(
                 nickname  varchar2(100) path '$.nickname', 
                 maxrss number(10, 0) path '$.maxrss',
-                corecount number(10, 0) path '$.corecount')) s,
+                corecount number(10, 0) path '$.corecount',
+            catchall varchar2(100) path '$.catchall')) s,
         (select pandaid, jeditaskid, computingsite, maxpss/1000 as jobmaxpss, maxpss/1000/actualcorecount as jobmaxpss_percore 
         from {DB_SCHEMA_PANDA}.jobsarchived4 
             where jeditaskid = :jdtsid and maxrss is not null

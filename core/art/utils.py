@@ -5,17 +5,25 @@ import copy
 import logging
 import time
 import json
+import re
+from collections import Counter
 from datetime import datetime, timedelta
+from queue import Empty
 
+from django.core.cache import cache
+from django.db import close_old_connections
 from django.db.models.functions import Substr
 
+from core.libs.job import get_job_list
 from core.libs.sqlcustom import preprocess_wild_card_string
 from core.art.models import ARTTests
 from core.art.jobSubResults import analize_test_subresults, get_final_result
+from core.pandajob.models import JediTasks
 
-from core.libs.job import get_job_list
-
+from django.conf import settings
 import core.art.constants as art_const
+import core.constants as const
+
 artdateformat = '%Y-%m-%d'
 _logger = logging.getLogger('bigpandamon-art')
 
@@ -28,7 +36,7 @@ def setupView(request):
     :return: query: dict
     :return: query_str: str - for where clause which is not supported by Django ORM
     """
-    if not 'view' in request.session['requestParams']:
+    if 'view' not in request.session['requestParams']:
         request.session['requestParams']['view'] = 'packages'
 
     query = {}
@@ -40,7 +48,7 @@ def setupView(request):
     days_max = art_const.N_DAYS_MAX[art_view] if art_view in art_const.N_DAYS_MAX else art_const.N_DAYS_MAX['other']
     days_default = art_const.N_DAYS_DEFAULT[art_view] if art_view in art_const.N_DAYS_DEFAULT else art_const.N_DAYS_DEFAULT['other']
 
-    # Process time range related params
+    # Process time range-related params
     if 'ntag_from' in request.session['requestParams']:
         startdatestr = request.session['requestParams']['ntag_from']
         try:
@@ -76,9 +84,9 @@ def setupView(request):
         except:
             del request.session['requestParams']['ntag_full']
 
-    if 'ntag_from' in request.session['requestParams'] and not 'ntag_to' in request.session['requestParams']:
+    if 'ntag_from' in request.session['requestParams'] and 'ntag_to' not in request.session['requestParams']:
         enddate = startdate + timedelta(days=days_default)
-    elif not 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
+    elif 'ntag_from' not in request.session['requestParams'] and 'ntag_to' in request.session['requestParams']:
         startdate = enddate - timedelta(days=days_default)
     elif 'ntag_from' in request.session['requestParams'] and 'ntag_to' in request.session['requestParams'] and (enddate-startdate).days > days_max:
         enddate = startdate + timedelta(days=days_max)
@@ -109,10 +117,10 @@ def setupView(request):
 
     # Process and prepare a query as a string
     query_str = '(1=1) '
+    if 'pandaid' in request.session['requestParams'] and request.session['requestParams']['pandaid'].isdigit():
+        query['pandaid'] = int(request.session['requestParams']['pandaid'])
     if 'ntag_full' in request.session['requestParams']:
         query['nightly_tag'] = request.session['requestParams']['ntag_full']
-    elif 'pandaid' in request.session['requestParams'] and request.session['requestParams']['pandaid'].isdigit():
-        query['pandaid'] = int(request.session['requestParams']['pandaid'])
     elif 'ntag' in request.session['requestParams']:
         query['nightly_tag__startswith'] = request.session['requestParams']['ntag']
     elif startdate is not None and enddate is not None:
@@ -225,7 +233,7 @@ def getjflag(job):
 
 def build_gitlab_link(package, nightly_release_short,  testname):
     """
-    Compose link to test code in GitLab
+    Compose a link to test code in GitLab
     :param package: str
     :param nightly_release_short: str
     :param testname: str
@@ -237,6 +245,7 @@ def build_gitlab_link(package, nightly_release_short,  testname):
         return f'https://gitlab.cern.ch/atlas/athena/blob/{nightly_release_short}/{gitlab_path}/{testname}'
     else:
         return None
+
 
 def get_result_for_multijob_test(states):
     """Return worst final result for a test that has several PanDA jobs"""
@@ -256,7 +265,7 @@ def get_result_for_multijob_test(states):
 
 def concat_branch(job):
     """
-    Concat branch from 3 params from ART_TESTS table
+    Concat branch from 3 params from the ART_TESTS table
     :param job:
     :return:
     """
@@ -395,3 +404,302 @@ def get_test_results(n_days, test_type='grid', agg_by='branch'):
         results_aggregated[test[agg_by]][test['nightly_tag']][test['test_type']][result] += 1
 
     return results_aggregated
+
+
+def get_unregistered_tests(query_test=None, query_test_str=None):
+    """Return a list of ART tasks which stuck or does not have started jobs yet"""
+    tests_unregistered = []
+    tasks = []
+    cache_key = "art:unregistered_tests"
+    cached_tasks = cache.get(cache_key)
+    if cached_tasks is not None:
+        tasks = cached_tasks
+        _logger.debug(f"{len(tasks)} tasks found in cache")
+    else:
+        n_days = 7
+        query_task = {'username': 'artprod', 'creationdate__gte': datetime.now() - timedelta(days=n_days)}
+        where_str = f'jeditaskid not in (select jeditaskid from {settings.DB_SCHEMA}.art_tests where nightly_tag_date > sysdate - {n_days})'
+        tasks.extend(JediTasks.objects.filter(**query_task).extra(where=[where_str]).values('jeditaskid', 'creationdate', 'taskname', 'status'))
+
+        # put tasks in cache
+        cache.set(cache_key, tasks, 60 * 10)
+        _logger.debug(f'Found {len(tasks)} tasks in PanDA DB and cached')
+
+    # translate the query for art_tests into regex for taskname
+    taskname_start_sub = r"^group\.art\.atlas"
+    branch_sub = r".*?"
+    ntag_sub = r"\d{4}-\d{2}-\d{2}T\d{4}"
+    package_sub = r"[^.]+"
+    if query_test is not None:
+        # handle branch or branch__in
+        if 'branch' in query_test:
+            branch_val = str(query_test['branch']).replace('/', '.')
+            branch_sub = re.escape(branch_val)
+        elif 'branch__in' in query_test:
+            branches = [re.escape(str(b).replace('/', '.')) for b in query_test['branch__in']]
+            branch_sub = f"({'|'.join(branches)})"
+
+        # handle nightly tag or prefix
+        if 'nightly_tag' in query_test:
+            ntag_sub = re.escape(str(query_test['nightly_tag']))
+        elif 'nightly_tag__startswith' in query_test:
+            ntag_sub = re.escape(str(query_test['nightly_tag__startswith'])) + r"T\d{4}"
+
+        # handle package or package__in
+        if 'package' in query_test:
+            package_sub = re.escape(str(query_test['package']))
+        elif 'package__in' in query_test:
+            packages = [re.escape(str(p)) for p in query_test['package__in']]
+            package_sub = f"({'|'.join(packages)})"
+
+    # handle wildcards from query_test_str
+    if query_test_str is not None:
+        match = re.search(r"package\s+like\s+'([^']+)'", query_test_str, re.IGNORECASE)
+        if match:
+            wildcard_val = match.group(1).replace('%', '.*')
+            package_sub = wildcard_val
+
+    # translate back the taskname to branch, ntag, package
+    task_parser_regex = re.compile(
+        rf'{taskname_start_sub}\.'
+        rf'(?P<branch>{branch_sub})\.'
+        rf'(?P<ntag>{ntag_sub})\.'
+        r'\d+\.'
+        rf'(?P<package>{package_sub})\.'
+        r'\d+/$'
+    )
+
+    for t in tasks:
+        match = task_parser_regex.match(t['taskname'])
+        if match:
+            gd = match.groupdict()
+            branch_parts = gd['branch'].split('.')
+            if len(branch_parts) == 3:
+                branch = '/'.join(branch_parts)
+            elif len(branch_parts) == 4:
+                branch = f"{branch_parts[0]}.{branch_parts[1]}/{branch_parts[2]}/{branch_parts[3]}"
+            else:
+                branch = gd['branch'].replace('.', '/')
+            tests_unregistered.append({
+                'jeditaskid': t['jeditaskid'],
+                'creationdate': t['creationdate'],
+                'package': gd['package'],
+                'branch': branch,
+                'ntag': gd['ntag'][:10],
+                'nigthly_tag_date': gd['ntag'],
+                'status': t['status']
+            })
+
+    return tests_unregistered
+
+
+def fetch_unregistered_tests(query, extra_str, result_queue):
+    """
+    Fetch unregistered tests from PanDA and put them into the result queue.
+    Args:
+        query: query dict
+        extra_str: extra string to add to the query
+        result_queue: queue to put the results in
+    """
+    _logger.debug(f'Getting unregistered tests started')
+    close_old_connections()
+    try:
+        tests = get_unregistered_tests(query, extra_str)
+        result_queue.put(tests)
+    except Exception as e:
+        _logger.debug(f'Getting unregistered tests failed with exception {e}')
+    finally:
+        close_old_connections()
+    _logger.debug(f'Getting unregistered tests finished')
+
+
+def resolve_unregistered_tests(thread, result_queue, timeout: int = 5) -> list:
+    """
+    Waits for the getting unregistered tests background thread to complete within a timeout,
+    extracts them from the queue.
+
+    Args:
+        thread: thread object
+        result_queue: queue object
+        timeout: timeout in seconds
+
+    Returns:
+        unregistered_tests: list of unregistered tests or empty list if the thread timed out
+    """
+    if thread is None:
+        return []
+
+    # join threads
+    thread.join(timeout=timeout)
+    if thread.is_alive():
+        _logger.warning(f"Total job count query timed out after {timeout}s. Continuing without count.")
+        return []
+
+    try:
+        unregistered_tests = result_queue.get_nowait()
+        if unregistered_tests is not None and isinstance(unregistered_tests, list):
+            _logger.info(f"Found {len(unregistered_tests)} tasks containing unregistered tests in PanDA DB")
+            return unregistered_tests
+        else:
+            _logger.warning("Thread completed but returned None due to internal query failure.")
+    except Empty:
+        _logger.error("Thread completed without putting results into queue.")
+    except Exception as e:
+        _logger.error(f"Error reading result from thread queue: {e}", exc_info=True)
+
+    return []
+
+
+def add_unregistered_tests(test_summary, unregistered_tests, level='overview', ao=None, ntag_list=None):
+    """
+    Adds unregistered tests to the test summary, including injecting
+    packages/branches that have 0 regular jobs and only unregistered tasks.
+    :param test_summary: dict
+    :param unregistered_tests: list of dicts
+    :param level: str - summary level, default is 'overview', can be 'task' or 'overview'
+    :param ao: list of str - order of summary fields, default is ['package', 'branch']
+    :return: test_summary: dict - updated test summary
+    """
+    if ao is None:
+        ao = ['package', 'branch']
+
+    ntag_label = 'ntag' if level == 'overview' else 'nigthly_tag_date'
+
+    # group unregistered tasks into a nested dictionary structure
+    unregistered_tests_dict = {}
+    for t in unregistered_tests:
+        key_a = t.get(ao[0])
+        key_b = t.get(ao[1])
+        ntag_val = t.get(ntag_label) or t.get('ntag')
+
+        if not key_a or not key_b or not ntag_val:
+            continue
+
+        if key_a not in unregistered_tests_dict:
+            unregistered_tests_dict[key_a] = {}
+        if key_b not in unregistered_tests_dict[key_a]:
+            unregistered_tests_dict[key_a][key_b] = {}
+        if ntag_val not in unregistered_tests_dict[key_a][key_b]:
+            unregistered_tests_dict[key_a][key_b][ntag_val] = {
+                'n_tasks': 0, 'id_list': [], 'status_list': [], 'ntag': t['ntag']
+            }
+
+        unregistered_tests_dict[key_a][key_b][ntag_val]['n_tasks'] += 1
+        unregistered_tests_dict[key_a][key_b][ntag_val]['id_list'].append(t['jeditaskid'])
+        unregistered_tests_dict[key_a][key_b][ntag_val]['status_list'].append(t['status'])
+
+    # update existing entries in test_summary
+    if level == 'overview':
+        for a, a_dict in test_summary.items():
+            for ntag, ntag_dict in a_dict.items():
+                for test_type, counts in ntag_dict.items():
+                    if test_type == 'grid' and a in unregistered_tests_dict:
+                        tasks_summary = {'n_tasks': 0, 'id_list': [], 'status_counts': {}}
+                        status_list = []
+                        for c, c_dict in unregistered_tests_dict[a].items():
+                            if ntag in c_dict:
+                                tasks_summary['n_tasks'] += c_dict[ntag]['n_tasks']
+                                tasks_summary['id_list'].extend(c_dict[ntag]['id_list'])
+                                status_list.extend(c_dict[ntag]['status_list'])
+                        if tasks_summary['n_tasks'] > 0:
+                            tasks_summary['status_counts'] = dict(Counter(status_list))
+                            test_summary[a][ntag][test_type]['tasks'] = tasks_summary
+                            _logger.debug(f"Added {tasks_summary['n_tasks']} tasks containing unregistered tests to {a}/{ntag}")
+
+        # inject entirely missing package or branch that only have unregistered tasks
+        for a, a_dict in unregistered_tests_dict.items():
+            if a not in test_summary:
+                ntag_map = {}
+                if ntag_list is None:
+                    ntag_list = list(test_summary[test_summary.keys()[0]].keys())
+                for ntag in ntag_list:
+                    ntag_map[ntag] = {'grid': {
+                        'tasks': {'n_tasks': 0, 'id_list': [], 'status_counts': {}, 'status_list': []},
+                        'active': 0,
+                        'finished': 0,
+                        'failed': 0,
+                        'succeeded': 0,
+                        'ntag': ntag,
+                        'test_type': 'grid'
+                    }}
+
+                for b, ntag_data in a_dict.items():
+                    for ntag, info in ntag_data.items():
+                        if ntag in ntag_map:
+                            ntag_map[ntag]['grid']['tasks']['n_tasks'] += info['n_tasks']
+                            ntag_map[ntag]['grid']['tasks']['id_list'].extend(info['id_list'])
+                            ntag_map[ntag]['grid']['tasks']['status_list'].extend(info['status_list'])
+                for ntag, ntag_data in ntag_map.items():
+                    if ntag_data['grid']['tasks']['n_tasks'] > 0:
+                        ntag_data['grid']['tasks']['status_counts'] = dict(Counter(ntag_data['grid']['tasks']['status_list']))
+                        del ntag_data['grid']['tasks']['status_list']
+                test_summary[a] = ntag_map
+                _logger.debug(f"Injected completely missing summary entry for package/branch: {a}")
+
+    elif level == 'task':
+        for a, a_dict in test_summary.items():
+            for b, b_dict in a_dict.items():
+                for ntag, ntag_dict in b_dict.items():
+                    for test_type, counts in ntag_dict.items():
+                        for ntag_full, ntag_full_dict in counts.items():
+                            if (ntag_full != 'ntag_hf' and test_type == 'grid' and a in unregistered_tests_dict
+                                    and b in unregistered_tests_dict[a] and ntag_full in unregistered_tests_dict[a][b]):
+                                test_summary[a][b][ntag][test_type][ntag_full]['tasks'] = {
+                                    'n_tasks': unregistered_tests_dict[a][b][ntag_full]['n_tasks'],
+                                    'id_list': unregistered_tests_dict[a][b][ntag_full]['id_list'],
+                                    'status_counts': dict(Counter(unregistered_tests_dict[a][b][ntag_full]['status_list']))
+                                }
+                                _logger.debug(f"Added {unregistered_tests_dict[a][b][ntag_full]['n_tasks']} tasks to {a}/{b}/{ntag_full}")
+
+        # inject missing combinations for 'task' level
+        for a, a_dict in unregistered_tests_dict.items():
+            if a not in test_summary:
+                test_summary[a] = {}
+            for b, ntag_data in a_dict.items():
+                if b not in test_summary[a]:
+                    test_summary[a][b] = {}
+                    if ntag_list is None:
+                        ntag_list = list(test_summary[test_summary.keys()[0]][test_summary[test_summary.keys()[0]].keys()[0]].keys())
+                    for ntag in ntag_list:
+                        test_summary[a][b][ntag] = {'grid': {
+                            'ntag_hf': datetime.strftime(
+                                datetime.strptime(ntag, art_const.DATETIME_FORMAT['default']), art_const.DATETIME_FORMAT['humanized']
+                            )
+                        }}
+
+                    for ntag_full, info in ntag_data.items():
+                        if info['ntag'] in test_summary[a][b]:
+                            test_summary[a][b][info['ntag']]['grid'][ntag_full] = {
+                                'active': 0,
+                                'failed': 0,
+                                'finished': 0,
+                                'succeeded': 0,
+                                'tasks': {
+                                    'n_tasks': info['n_tasks'],
+                                    'id_list': info['id_list'],
+                                    'status_counts': dict(Counter(info['status_list']))
+                                }
+                            }
+                            _logger.debug(f"Injected completely missing task-level entry for {a}/{b}/{ntag_full}")
+
+    return test_summary
+
+
+def build_detected_tasks_summary(unregistered_tests):
+    """
+    Build summary of detected tasks for art jobs view
+    :param unregistered_tests: a list of dicts
+    :return: tasks_detected_summary - dict
+    """
+    tasks_detected_summary = {'n_tasks': 0, 'id_list': [], 'status_summary': {}}
+    n_tasks = len(unregistered_tests)
+    for t in unregistered_tests:
+        tasks_detected_summary['n_tasks'] += 1
+        if n_tasks < 100:
+            tasks_detected_summary['id_list'].append(t['jeditaskid'])
+        elif t['status'] not in ('done', 'finished') and len(tasks_detected_summary['id_list']) < 100:
+            tasks_detected_summary['id_list'].append(t['jeditaskid'])
+        if t['status'] not in tasks_detected_summary['status_summary']:
+            tasks_detected_summary['status_summary'][t['status']] = 0
+        tasks_detected_summary['status_summary'][t['status']] = tasks_detected_summary['status_summary'].get(t['status'], 0) + 1
+    return tasks_detected_summary
