@@ -10,6 +10,7 @@ from collections import Counter
 from datetime import datetime, timedelta
 from queue import Empty
 
+from django.core.cache import cache
 from django.db import close_old_connections
 from django.db.models.functions import Substr
 
@@ -21,6 +22,7 @@ from core.pandajob.models import JediTasks
 
 from django.conf import settings
 import core.art.constants as art_const
+import core.constants as const
 
 artdateformat = '%Y-%m-%d'
 _logger = logging.getLogger('bigpandamon-art')
@@ -408,9 +410,20 @@ def get_unregistered_tests(query_test=None, query_test_str=None):
     """Return a list of ART tasks which stuck or does not have started jobs yet"""
     tests_unregistered = []
     tasks = []
-    n_days = 3
-    query_task = {'username': 'artprod', 'creationdate__gte': datetime.now() - timedelta(days=n_days)}
-    where_str = f'jeditaskid not in (select jeditaskid from {settings.DB_SCHEMA}.art_tests where nightly_tag_date > sysdate - {n_days+3})'
+    cache_key = "art:unregistered_tests"
+    cached_tasks = cache.get(cache_key)
+    if cached_tasks is not None:
+        tasks = cached_tasks
+        _logger.debug(f"{len(tasks)} tasks found in cache")
+    else:
+        n_days = 7
+        query_task = {'username': 'artprod', 'creationdate__gte': datetime.now() - timedelta(days=n_days)}
+        where_str = f'jeditaskid not in (select jeditaskid from {settings.DB_SCHEMA}.art_tests where nightly_tag_date > sysdate - {n_days})'
+        tasks.extend(JediTasks.objects.filter(**query_task).extra(where=[where_str]).values('jeditaskid', 'creationdate', 'taskname', 'status'))
+
+        # put tasks in cache
+        cache.set(cache_key, tasks, 60 * 10)
+        _logger.debug(f'Found {len(tasks)} tasks in PanDA DB and cached')
 
     # translate the query for art_tests into regex for taskname
     taskname_start_sub = r"^group\.art\.atlas"
@@ -445,9 +458,6 @@ def get_unregistered_tests(query_test=None, query_test_str=None):
         if match:
             wildcard_val = match.group(1).replace('%', '.*')
             package_sub = wildcard_val
-
-    tasks.extend(JediTasks.objects.filter(**query_task).extra(where=[where_str]).values('jeditaskid', 'creationdate', 'taskname', 'status'))
-    _logger.debug(f'Found {len(tasks)} tasks in PanDA DB')
 
     # translate back the taskname to branch, ntag, package
     task_parser_regex = re.compile(
@@ -682,9 +692,13 @@ def build_detected_tasks_summary(unregistered_tests):
     :return: tasks_detected_summary - dict
     """
     tasks_detected_summary = {'n_tasks': 0, 'id_list': [], 'status_summary': {}}
+    n_tasks = len(unregistered_tests)
     for t in unregistered_tests:
         tasks_detected_summary['n_tasks'] += 1
-        tasks_detected_summary['id_list'].append(t['jeditaskid'])
+        if n_tasks < 100:
+            tasks_detected_summary['id_list'].append(t['jeditaskid'])
+        elif t['status'] not in ('done', 'finished') and len(tasks_detected_summary['id_list']) < 100:
+            tasks_detected_summary['id_list'].append(t['jeditaskid'])
         if t['status'] not in tasks_detected_summary['status_summary']:
             tasks_detected_summary['status_summary'][t['status']] = 0
         tasks_detected_summary['status_summary'][t['status']] = tasks_detected_summary['status_summary'].get(t['status'], 0) + 1

@@ -534,6 +534,10 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
             continue
         if param.endswith('range'):
             continue
+        if param == 'jeditaskid' and ',' in request.session['requestParams'][param]:
+            tids = request.session['requestParams'][param].split(',')
+            request.session['viewParams']['selection'] += f" <b>{param}=</b>[list of {len(tids)} IDs] "
+            continue
         request.session['viewParams']['selection'] += " <b>%s=</b>%s " % (
             param, request.session['requestParams'][param])
 

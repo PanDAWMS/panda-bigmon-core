@@ -57,15 +57,15 @@
 
 <div class="callout warning panda-callout">
   <div class="panda-callout__content">
-    <strong>{{ detected_tasks.n_tasks }} PanDA task{% if detected_tasks.n_tasks > 1 %}s{% endif %} detected without registered tests</strong>
+    <strong>+{{ detected_tasks.n_tasks }} PanDA task{% if detected_tasks.n_tasks > 1 %}s{% endif %} ({% for status, n in detected_tasks.status_summary.items %}{% if detected_tasks.status_summary|length > 1 %}{% endif %}<span class="{{ status }}">{{ n }} {{ status }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}) detected without registered tests</strong>
     <p>
       These tasks have not started or completed any jobs yet, so they are not included in the list of tests below.
-      Follow the link to the PanDA task list to see the status of the tasks and to investigate any issues.
+      Follow the link to the PanDA task list {% if detected_tasks.n_tasks > 100 %}(limited to first 100){% endif %} to see the status of the tasks and to investigate any issues.
     </p>
   </div>
 
   <div class="panda-callout__action">
-    <a href="/tasks/?jeditaskid={% for id in detected_tasks.id_list %}{{ id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+    <a {% if detected_tasks.id_list|length > 1 %}href="/tasks/?jeditaskid={% for id in detected_tasks.id_list %}{{ id }}{% if not forloop.last %},{% endif %}{% endfor %}"{% else %}href="/task/{{ detected_tasks.id_list.0 }}/"{% endif %}>
       View detected tasks &rarr;
     </a>
   </div>
