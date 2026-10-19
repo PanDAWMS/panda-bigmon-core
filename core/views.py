@@ -4600,8 +4600,7 @@ def taskInfo(request, jeditaskid=0):
             if len(tmcj_list) > 0 and len([True for job in tmcj_list if job['maxrssratio'] >= 1]) > 0:
                 warning['memoryleaksuspicion'] = {}
                 warning['memoryleaksuspicion']['message'] = 'Some jobs in this task consumed a lot of memory. '
-                warning['memoryleaksuspicion'][
-                    'message'] += 'We suspect there might be memory leaks or some misconfiguration.'
+                warning['memoryleaksuspicion']['message'] += 'We suspect there might be memory leaks or some misconfiguration.'
                 warning['memoryleaksuspicion']['jobs'] = tmcj_list
 
         if check_idds_task is not None and idds_info is not None:
