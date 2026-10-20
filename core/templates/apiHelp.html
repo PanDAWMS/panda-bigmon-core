@@ -37,5 +37,30 @@ It is possible to retrieve data in json format via curl so that it can be used p
 </code>
 </p>
 
+
+ <p><b>Examples with Python requests</b></p>
+  <pre><code class="language-python">import requests
+
+url = "https://bigpanda.cern.ch/api/auth_test/"  # Replace with endpoint of interest
+
+# --- 1: Custom API Token Authentication ---
+api_token = "a1b2c3d4e5f6a8b9c1"  # Replace with your actual token
+headers_token = {
+    "Authorization": f"Token {api_token}",
+    "Accept": "application/json"
+}
+response = requests.get(url, headers=headers_token)
+print("Status:", response.status_code)
+print("Response:", response.json())
+
+# --- 2: IAM Issued Tokens (Bearer) ---
+bearer_token = "a1b2c3d4e5f6a8b9c1"  # Replace with your actual OIDC/Bearer token
+headers_bearer = {
+    "Authorization": f"Bearer {bearer_token}",
+    "Accept": "application/json"
+}
+response = requests.get(url, headers=headers_bearer)
+print("Status:", response.status_code)
+print("Response:", response.json())</code></pre>
 </div>
 </div>
