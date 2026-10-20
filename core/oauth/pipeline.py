@@ -4,7 +4,7 @@ import logging
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from social_django.models import UserSocialAuth
-from core.oauth.models import Group, BPToken
+from core.oauth.models import Group
 from core.oauth.utils import get_token
 
 _logger = logging.getLogger('social')
