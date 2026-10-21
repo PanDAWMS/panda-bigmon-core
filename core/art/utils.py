@@ -454,10 +454,15 @@ def get_unregistered_tests(query_test=None, query_test_str=None):
 
     # handle wildcards from query_test_str
     if query_test_str is not None:
-        match = re.search(r"package\s+like\s+'([^']+)'", query_test_str, re.IGNORECASE)
-        if match:
+        match_p = re.search(r"package\s+like\s+'([^']+)'", query_test_str, re.IGNORECASE)
+        if match_p:
             wildcard_val = match.group(1).replace('%', '.*')
             package_sub = wildcard_val
+        if 'nightly_tag like' in query_test_str:
+            ntag_values = re.findall(r"nightly_tag like '([^']+)'", query_test_str)
+            if len(ntag_values) > 0:
+                ntag_values = [re.escape(v[:-2]) + '.*' if v.endswith('%%') else re.escape(v) for v in ntag_values]
+                ntag_sub = f"(?:{'|'.join(ntag_values)})"
 
     # translate back the taskname to branch, ntag, package
     task_parser_regex = re.compile(

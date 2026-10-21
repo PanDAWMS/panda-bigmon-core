@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.2.4 (2026-10-19)
+
+### Bug Fixes
+
+- [ATLASPANDA-1609] memory consumption warning to support per core from CRIC PQ
+  ([`2b30567`](https://github.com/PanDAWMS/panda-bigmon-core/commit/2b305675cc1c4ea88023a48aa8cc047cbfe4dd6e))
+
+- Add tasks with unregistered tests
+  ([`cabb826`](https://github.com/PanDAWMS/panda-bigmon-core/commit/cabb8266fa1f4c692ea1d62a9202fce391f91f86))
+
+- Art unregistered tests polished
+  ([`f0269aa`](https://github.com/PanDAWMS/panda-bigmon-core/commit/f0269aab014e29679d83c3352c77ba30e0426975))
+
+### Documentation
+
+- Added perf test
+  ([`84e6d48`](https://github.com/PanDAWMS/panda-bigmon-core/commit/84e6d48a6a522974b618b0f706d1c52c3ac20ef9))
+
+
 ## v1.2.3 (2026-10-05)
 
 ### Bug Fixes

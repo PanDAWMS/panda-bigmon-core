@@ -11,29 +11,43 @@ from core.oauth.models import BPUser, BPToken
 _logger = logging.getLogger('social')
 
 
-def get_token(user=None):
+def get_token(user=None, do_regenerate: bool=False) -> (str, bool):
     """
     Get or create token for user
     Args:
         user: a Django user instance
+        do_regenerate: boolean - optional, if the token should be regenerated if it is expired
 
     Returns:
         token: token model object;
         created: boolean - if the token was created or not;
     """
-    if user:
-        try:
-            token, created = BPToken.objects.get_or_create(user=user)
-            if created:
-                _logger.info(f"Created new token for user {user.username}")
-            else:
-                _logger.info(f"Using existing token for user {user.username}")
-        except Exception as ex:
-            _logger.error(f"Failed to create or retrieve token for user {user.username}: {ex}")
-            token, created = None, False
-    else:
-        _logger.error(f"No user provided")
-        token, created = None, False
+    if not user:
+        _logger.error("No user provided")
+        return None, False
+
+    try:
+        token, created = BPToken.objects.get_or_create(user=user)
+        if created:
+            _logger.info(f"Created new token for user {user.username}")
+            return token, created
+    except Exception as ex:
+        _logger.error(f"Failed to create or retrieve token for user {user.username}: {ex}")
+        return None, False
+
+    # Check expiration for existing tokens and regenerate if needed
+    if do_regenerate and token and not created:
+        token_expiry_info = get_token_expiry_info(token)
+        if token_expiry_info and token_expiry_info.get('is_expired'):
+            try:
+                BPToken.objects.filter(user=user).delete()
+                token = BPToken.objects.create(user=user)
+                created = True
+                _logger.info(f"Regenerated expired token for user {user.username}")
+            except Exception as ex:
+                _logger.error(f"Failed to regenerate token for user {user.username}: {ex}")
+                return None, False
+
     return token, created
 
 
