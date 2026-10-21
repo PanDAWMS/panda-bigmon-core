@@ -91,7 +91,7 @@ def profile(request):
 
     user_info = {}
     if request.user.is_authenticated:
-        token, created = get_token(user=request.user)
+        token, created = get_token(user=request.user, do_regenerate=True)
         token_expiry_info = get_token_expiry_info(token, user=request.user)
 
         user_info = {

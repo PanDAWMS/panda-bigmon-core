@@ -8,6 +8,7 @@ import os
 
 from django.http import JsonResponse
 from django.shortcuts import render
+from pyparsing import enable_all_warnings
 
 _logger = logging.getLogger('bigpandamon')
 
@@ -49,6 +50,48 @@ def extensibleURL(request, xurl=''):
         xurl += '?'
 
     return xurl
+
+
+def parse_param_value(value: str, should_be_int: bool=False) -> Union[List[str], List[int]]:
+    """
+    Splits a parameter string by pipe ('|') or comma (',').  If neither separator is present, returns the original value as-is.
+    Optionally transforms the resulting items to integers.
+
+    Args:
+        value (str): The parameter string to split.
+        should_be_int (bool, optional): If True, attempts to convert each split item to an integer. Defaults to False.
+
+    Returns:
+        Union[List[str], List[int]]: The original string if no separator
+        is found, or a list of strings/integers after splitting and stripping whitespace.
+
+    Raises:
+        ValueError: If `should_be_int` is True and any item cannot be converted to an integer.
+    """
+    if not isinstance(value, str):
+        return value
+
+    if '|' in value:
+        separator = '|'
+    elif ',' in value:
+        separator = ','
+    else:
+        return [value, ]
+
+    # Strip whitespace from each split item to avoid stray spaces
+    values_list = [v.strip() for v in value.split(separator)]
+
+    if should_be_int:
+        out_values_list = []
+        for v in values_list:
+            try:
+                out_values_list.append(int(v))
+            except ValueError:
+                _logger.warning(f"Could not convert '{v}' to int")
+                raise
+        return out_values_list
+
+    return values_list
 
 
 def removeParam(urlquery, parname, mode='complete'):

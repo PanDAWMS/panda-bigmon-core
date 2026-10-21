@@ -88,7 +88,8 @@ from core.pandajob.utils import (get_errors_per_category, get_job_error_descript
                                  summary_by_site_overall)
 from core.schedresource.utils import (filter_pq_json, get_basic_info_for_pqs, get_osg_pool_pqs, get_panda_queues, get_pq_clouds,
                                       get_pq_object_store_path)
-from core.utils import complete_request, error_response, extensibleURL, is_json_request, is_wildcards, is_xss, removeParam
+from core.utils import complete_request, error_response, extensibleURL, is_json_request, is_wildcards, is_xss, removeParam, \
+    parse_param_value
 
 DateTimeField.register_lookup(CastDate)
 
@@ -742,12 +743,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         query['superstatus__in'] = values
                     elif param == 'reqid':
                         val = escape_input(request.session['requestParams'][param])
-                        if '|' in val or ',' in val:
-                            values = val.split('|') if '|' in val else val.split(',')
-                            values = [int(val) for val in values]
-                            query['reqid__in'] = values
+                        if is_wildcards(val):
+                            try:
+                                query[param + '__in'] = parse_param_value(val, should_be_int=True)
+                            except ValueError:
+                                return error_response(request, f"One of {param} in the list is not integer", 400)
                         else:
-                            query['reqid'] = int(val)
+                            query[param] = int(val)
                     elif param == 'site':
                         if request.session['requestParams'][param] != 'hpc' and param in extraQueryFields:
                             query['site__contains'] = request.session['requestParams'][param]
@@ -816,12 +818,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         query['prodsourcelabel'] = request.session['requestParams'][param]
                     elif param == 'reqid':
                         val = escape_input(request.session['requestParams'][param])
-                        if val.find('|') >= 0:
-                            values = val.split('|')
-                            values = [int(val) for val in values]
-                            query['reqid__in'] = values
+                        if is_wildcards(val):
+                            try:
+                                query[param + '__in'] = parse_param_value(val, should_be_int=True)
+                            except ValueError:
+                                return error_response(request, f"One of {param} in the list is not integer", 400)
                         else:
-                            query['reqid'] = int(val)
+                            query[param] = int(val)
                     elif param == 'batchid' and not is_wildcards(request.session['requestParams'][param]):
                         query['batchid'] = request.session['requestParams'][param]
                     elif param == 'transformation' or param == 'transpath':
@@ -834,22 +837,22 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         query['%s__contains' % param] = paramQuery
                     elif param == 'jeditaskid' or param == 'taskid':
                         val = escape_input(request.session['requestParams'][param])
-                        if '|' in val:
-                            values = val.split('|')
-                            values = [int(val) for val in values]
-                            query[param + '__in'] = values
+                        if is_wildcards(val):
+                            try:
+                                query[param + '__in'] = parse_param_value(val, should_be_int=True)
+                            except ValueError:
+                                return error_response(request, f"One of {param} in the list is not integer", 400)
                         else:
                             query[param] = int(val)
                     elif param == 'pandaid':
-                        try:
-                            pid = request.session['requestParams']['pandaid']
-                            if pid.find(',') >= 0:
-                                pidl = pid.split(',')
-                                query['pandaid__in'] = pidl
-                            else:
-                                query['pandaid'] = int(pid)
-                        except:
-                            query['jobname'] = request.session['requestParams']['pandaid']
+                        val = escape_input(request.session['requestParams'][param])
+                        if is_wildcards(val):
+                            try:
+                                query[param + '__in'] = parse_param_value(val, should_be_int=True)
+                            except ValueError:
+                                return error_response(request, f"One of {param} in the list is not integer", 400)
+                        else:
+                            query[param] = int(val)
                     elif param == 'jobstatus' and request.session['requestParams'][param] == 'finished' \
                             and (('mode' in request.session['requestParams'] and request.session['requestParams'][
                         'mode'] == 'eventservice') or (
@@ -902,11 +905,14 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
                         extraQueryString += ' AND (corecount = 1 or corecount is NULL) '
 
                     elif param == 'resourcetype' and request.session['requestParams'][param]:
-                        if '|' in request.session['requestParams'][param]:
-                            rtypes = request.session['requestParams'][param].split('|')
-                            query['resourcetype__in'] = rtypes
+                        val = escape_input(request.session['requestParams'][param])
+                        if is_wildcards(val):
+                            try:
+                                query[param + '__in'] = parse_param_value(val, should_be_int=False)
+                            except ValueError:
+                                return error_response(request, f"One of {param} in the list is not integer", 400)
                         else:
-                            query['resourcetype'] = request.session['requestParams'][param]
+                            query[param] = int(val)
                     else:
                         if param not in wildSearchFields:
                             query[param] = request.session['requestParams'][param]

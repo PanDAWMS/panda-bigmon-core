@@ -1463,6 +1463,9 @@ canvas.full_screen_size {
   .card.bp-container-simple.help .card-section code {
     font-size: 0.75rem;
   }
+  .card.bp-container-simple.help .card-section pre code {
+    font-size: 0.875rem;
+  }
   .card.bp-container-simple.help .card-section h1 {
     font-size: 1rem;
     font-weight: bold;
