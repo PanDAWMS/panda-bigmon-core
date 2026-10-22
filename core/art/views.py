@@ -39,7 +39,7 @@ from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived, Filestab
 
 from core.art.utils import setupView, get_test_diff, get_result_for_multijob_test, concat_branch, \
     find_last_successful_test, build_gitlab_link, clean_tests_list, get_client_ip, fetch_unregistered_tests, \
-    resolve_unregistered_tests, add_unregistered_tests, build_detected_tasks_summary
+    resolve_unregistered_tests, add_unregistered_tests, build_detected_tasks_summary, get_gitlab_path_per_package
 
 from django.conf import settings
 import core.art.constants as art_const
@@ -653,7 +653,7 @@ def artJobs(request):
     gitlabids = list(sorted(set([x['gitlabid'] for x in art_jobs if 'gitlabid' in x and x['gitlabid'] is not None])))
     linktoplots = []
     artjobsdict = {}
-
+    gitlab_path_per_package_map = get_gitlab_path_per_package()
     for job in art_jobs:
         if job['test_type'] == 'local':
             link_prefix = art_const.EOS_LINK_BASE + art_const.EOS_POSTFIX_LOCAL
@@ -684,7 +684,7 @@ def artJobs(request):
                 'inputfileid': job['inputfileid'],
                 'tarindex': job['tarindex'],
                 'finalresult': final_result_dict[job['status']] if job['status'] in final_result_dict else '---',
-                'gitlab': build_gitlab_link(job['package'], job['nightly_release_short'], job['testname']),
+                'gitlab': build_gitlab_link(job['package'], job['nightly_release_short'], job['testname'], gitlab_path_per_package_map),
                 'linktopreviousattemptlogs': job['linktopreviousattemptlogs'] if 'linktopreviousattemptlogs' in job else ''
             }
             # enrich with PanDA job metrics
