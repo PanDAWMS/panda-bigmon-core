@@ -11,18 +11,19 @@ from datetime import datetime, timedelta
 from queue import Empty
 
 from django.core.cache import cache
+from django.utils import timezone
 from django.db import close_old_connections
+from django.db.models import F, Q, Max
 from django.db.models.functions import Substr
 
 from core.libs.job import get_job_list
 from core.libs.sqlcustom import preprocess_wild_card_string
 from core.art.models import ARTTests
-from core.art.jobSubResults import analize_test_subresults, get_final_result
+from core.art.jobSubResults import analize_test_subresults
 from core.pandajob.models import JediTasks
 
 from django.conf import settings
 import core.art.constants as art_const
-import core.constants as const
 
 artdateformat = '%Y-%m-%d'
 _logger = logging.getLogger('bigpandamon-art')
@@ -231,20 +232,56 @@ def getjflag(job):
     return 1 if job['jobstatus'] in ('finished', 'failed', 'cancelled', 'closed') else 0
 
 
-def build_gitlab_link(package, nightly_release_short,  testname):
+def get_gitlab_path_per_package() -> dict:
+    """
+    Build map of gitlab path per package based on test_directory from results and cache.
+    Returns:
+        gitlab_path_per_package: dict - mapping of package to path to test code in gitlab
+
+    """
+    gitlab_path_per_package = cache.get(art_const.CACHE_KEY_GITLAB_PATH)
+    if gitlab_path_per_package:
+        return gitlab_path_per_package
+
+    gitlab_path_per_package = {}
+    tests = ARTTests.objects.filter(nightly_tag_date__gte=timezone.now() - timedelta(days=7)).exclude(
+        Q(artsubresult__subresult__isnull=True) | Q(artsubresult__subresult='') | Q(artsubresult__subresult='{}')
+    ).values('package').annotate(result=Max('artsubresult__subresult'))
+    for t in tests:
+        if 'package' not in gitlab_path_per_package:
+            try:
+                result = json.loads(t['result'])
+            except:
+                continue
+            if result and 'test_directory' in result and result['test_directory'] and 'src/' in result['test_directory']:
+                gitlab_path = result['test_directory'].split('src/')[1]
+                gitlab_path_per_package[t['package']] = gitlab_path
+
+    cache.set(art_const.CACHE_KEY_GITLAB_PATH, gitlab_path_per_package, 60*60*24)
+    return gitlab_path_per_package
+
+
+def build_gitlab_link(package:str, nightly_release_short:str,  testname:str, gitlab_path_per_package_map=None) -> str:
     """
     Compose a link to test code in GitLab
-    :param package: str
-    :param nightly_release_short: str
-    :param testname: str
-    :return: https_link: str
+
+    Args:
+        package: str
+        nightly_release_short: str
+        testname: str
+        gitlab_path_per_package_map: dict
+
+    Returns:
+        str - link to test code in GitLab
     """
+    if gitlab_path_per_package_map is None:
+        gitlab_path_per_package_map = get_gitlab_path_per_package()
     if (package and len(package) > 0 and testname and len(testname) > 0 and nightly_release_short and len(nightly_release_short) > 0
-            and package in art_const.GITLAB_PATH_PER_PACKAGE):
-        gitlab_path = art_const.GITLAB_PATH_PER_PACKAGE[package]
-        return f'https://gitlab.cern.ch/atlas/athena/blob/{nightly_release_short}/{gitlab_path}/{testname}'
+            and package in gitlab_path_per_package_map):
+        gitlab_path = gitlab_path_per_package_map[package]
+        return f'https://gitlab.cern.ch/atlas/athena/blob/{nightly_release_short.split('-')[0]}/{gitlab_path}/{testname}'
     else:
-        return None
+        return ''
 
 
 def get_result_for_multijob_test(states):

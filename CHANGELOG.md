@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.2.5 (2026-10-21)
+
+### Bug Fixes
+
+- Art detecting tasks by list of nightly tags
+  ([`20a1a03`](https://github.com/PanDAWMS/panda-bigmon-core/commit/20a1a0385d0fea8b835d024e969b76495c7662f9))
+
+- Regenerate expired token in user profile view
+  ([`08c2054`](https://github.com/PanDAWMS/panda-bigmon-core/commit/08c2054dc6d51c9e56d523b963ec1ac613135659))
+
+- Support of both | and , in request params
+  ([`ee5c3a4`](https://github.com/PanDAWMS/panda-bigmon-core/commit/ee5c3a46249aee01ca7e3f543b96c42c6370018a))
+
+### Documentation
+
+- Add examples of API use in python
+  ([`10ca1f4`](https://github.com/PanDAWMS/panda-bigmon-core/commit/10ca1f4edc50db64e403f52d1ee65f4db54e4988))
+
+
 ## v1.2.4 (2026-10-19)
 
 ### Bug Fixes

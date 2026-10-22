@@ -200,7 +200,7 @@ for (let i=0; i<table_data[0].length; i++) {
                 if (item.finalresult !== 'active' && item.htmllink) {
                   link_html = '<a  class="to-logs blacklink" target="_blank" href="' + item.htmllink + '"><i class="fi-graph-bar bp-tooltip left"><span class="tooltip-text">Link to result HTML</span></i></a>'
                 }
-                if (item.gitlab) {
+                if (item.gitlab && item.gitlab.length > 0) {
                   link_gitlab = '<a  class="to-logs blacklink" target="_blank" href="' + item.gitlab + '"><span class="bp-tooltip left"><img src="{% static 'images/gitlab-logo-black.png' %}" width=12 height=12><span class="tooltip-text">Link to test code</span></span></a>'
                 }
                 result += '<div class="with-link-to-logs">' + subresults +
