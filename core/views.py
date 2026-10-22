@@ -906,13 +906,13 @@ def setupView(request, opmode='', hours=0, limit=-99, querytype='job', wildCardE
 
                     elif param == 'resourcetype' and request.session['requestParams'][param]:
                         val = escape_input(request.session['requestParams'][param])
-                        if is_wildcards(val):
+                        if ',' in val or '|' in val:
                             try:
                                 query[param + '__in'] = parse_param_value(val, should_be_int=False)
                             except ValueError:
-                                return error_response(request, f"One of {param} in the list is not integer", 400)
+                                return error_response(request, f"Illegal value for {param}", 400)
                         else:
-                            query[param] = int(val)
+                            query[param] = val
                     else:
                         if param not in wildSearchFields:
                             query[param] = request.session['requestParams'][param]
