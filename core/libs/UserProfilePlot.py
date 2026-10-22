@@ -30,7 +30,7 @@ class UserProfilePlot:
         jobs.extend(Jobsactive4.objects.filter(**query).values(*jvalues))
         jobs.extend(Jobsdefined4.objects.filter(**query).values(*jvalues))
         _logger.info('Got info from Jobs*4')
-        # change timewindow param to statechangetime asa it indexed
+        # change timewindow param to statechangetime as it is indexed
         if 'modificationtime__castdate__range' in query:
             query['statechangetime__castdate__range'] = query['modificationtime__castdate__range']
             del query['modificationtime__castdate__range']

@@ -160,7 +160,7 @@ def SITEtoJOB(TASK):
 
 
 def frec(M):
-    """frec function: calculate the frcuencies in a proper way for sankey plot"""
+    """frec function: calculate the frequencies in a proper way for sankey plot"""
     A = np.array(M)
     df = pd.DataFrame(A, columns=['X', 'Y', 'frec'])
     df['frec'] = df['frec'].apply(int)
