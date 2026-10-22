@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.2.6 (2026-10-22)
+
+### Bug Fixes
+
+- [ATLINFR-6239] link to gitlab for art tests
+  ([`06ae6d5`](https://github.com/PanDAWMS/panda-bigmon-core/commit/06ae6d5ada31f75e37c3f6fb2e43e65f2a8c8269))
+
+- Filtering by resourcetype param
+  ([`10a922a`](https://github.com/PanDAWMS/panda-bigmon-core/commit/10a922afc08a5f0cba3de5276a55b85bad8a055d))
+
+
 ## v1.2.5 (2026-10-21)
 
 ### Bug Fixes
