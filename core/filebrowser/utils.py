@@ -238,7 +238,7 @@ def list_file_directory(logdir, limit=1000, log_provider='rucio'):
             if len(filtered_filelist) == 0:
                 err += ' Tried to look for files in top dir, but found nothing'
                 _logger.error('{} (got {}).'.format(err, logdir))
-                _logger.debug('Contents of untared log file: \n {}'.format(filelist))
+                _logger.debug('Contents of untarred log file: \n {}'.format(filelist))
                 return files, err, tardir
             else:
                 err += "However, a few files has been found in a topdir, so showing them."

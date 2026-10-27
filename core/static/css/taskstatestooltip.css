@@ -116,7 +116,7 @@
     content: 'the task is paused and does not do anything until it is resumed';
   }
   .bp_tooltip.task_throttled:after {
-    content: 'the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minites';
+    content: 'the task is throttled to generate jobs since the largest attemptNr in the task is a multiple of 5. The throttled period is 120 x int(max(attemptNr)/5)**2 minutes';
   }
   .bp_tooltip.task_exhausted:after {
     content: 'all reattempts were made, but some inputs failed, or cpuTime of scouts jobs > 2x cpuTime of task definition. The task is set to wait for manual intervention or a 10-day timeout';
