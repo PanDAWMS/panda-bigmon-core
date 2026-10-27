@@ -3,12 +3,9 @@
 """
 import logging
 import re
-import subprocess
-import os
 
 from django.http import JsonResponse
 from django.shortcuts import render
-from pyparsing import enable_all_warnings
 
 _logger = logging.getLogger('bigpandamon')
 
