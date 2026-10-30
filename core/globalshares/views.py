@@ -217,7 +217,7 @@ def sharesDistributionJSON(request):
         END) as jobstatus, HS06
         from
         {0}.JOBSDEFINED4
-        ) group by gshare,COMPUTINGSITE, corecount, jobstatus
+        ) subq group by gshare,COMPUTINGSITE, corecount, jobstatus
         order by gshare,COMPUTINGSITE, corecount, jobstatus
     '''.format(settings.DB_SCHEMA_PANDA)
     #if isJobsss:
@@ -273,7 +273,7 @@ def siteWorkQueuesJSON(request):
         END) as jobstatus
         from
         {0}.JOBSDEFINED4
-        ) group by COMPUTINGSITE,gshare, corecount, jobstatus
+        ) subq group by COMPUTINGSITE,gshare, corecount, jobstatus
         order by COMPUTINGSITE,gshare, corecount, jobstatus
     '''.format(settings.DB_SCHEMA_PANDA)
     #if isJobsss:
