@@ -824,7 +824,7 @@ def get_dataset_locality(jeditaskid):
         if len(jeditaskid) > N_IN_MAX:
             trans_key = insert_to_temp_table(jeditaskid)
             tmp_table = get_tmp_table_name()
-            extra_str += ' AND jeditaskid IN (SELEECT id FROM {} WHERE transactionkey = {} )'.format(tmp_table, trans_key)
+            extra_str += ' AND jeditaskid IN (SELECT id FROM {} WHERE transactionkey = {} )'.format(tmp_table, trans_key)
         else:
             query['jeditaskid__in'] = jeditaskid
     elif isinstance(jeditaskid, int):
