@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.2.7 (2026-10-27)
+
+### Bug Fixes
+
+- Correct typos in comments, docstrings, log messages, and UI text
+  ([`44c7814`](https://github.com/PanDAWMS/panda-bigmon-core/commit/44c7814e2ea7a411133487cc6aee892c812b2bc3))
+
+- Remove unused imports
+  ([`769147b`](https://github.com/PanDAWMS/panda-bigmon-core/commit/769147bbc55483bf12ea6bc38cc0fe001d69d939))
+
+
 ## v1.2.6 (2026-10-22)
 
 ### Bug Fixes
