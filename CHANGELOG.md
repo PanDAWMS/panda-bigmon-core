@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.2.9 (2026-11-03)
+
+### Bug Fixes
+
+- Add alias to raw SQL query
+  ([`2d4e15c`](https://github.com/PanDAWMS/panda-bigmon-core/commit/2d4e15c8c2996c30f85e37d1efaeba3083b04d04))
+
+- Add missing alias to FROM-subqueries in globalshares views
+  ([`3ff1d6d`](https://github.com/PanDAWMS/panda-bigmon-core/commit/3ff1d6d6d6117617454d35379037c9960243cd5a))
+
+
 ## v1.2.8 (2026-11-02)
 
 ### Bug Fixes
