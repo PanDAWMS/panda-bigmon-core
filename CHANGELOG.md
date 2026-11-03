@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.8 (2026-11-02)
+
+### Bug Fixes
+
+- Correct SELEECT typo in get_dataset_locality's raw SQL
+  ([`43a8f42`](https://github.com/PanDAWMS/panda-bigmon-core/commit/43a8f428718c40c21c4935ee34842b4fabb77bb0))
+
+
 ## v1.2.7 (2026-10-27)
 
 ### Bug Fixes
