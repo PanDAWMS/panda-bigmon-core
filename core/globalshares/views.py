@@ -169,7 +169,7 @@ def detailedInformationJSON(request):
          WHEN jobstatus in ('finished','failed','cancelled','closed') THEN 'did run'
         END) as jobstatus,HS06
         from
-        {0}.JOBSDEFINED4) 
+        {0}.JOBSDEFINED4) subq 
         group by gshare, corecount, jobstatus
         order by gshare, corecount, jobstatus
     """.format(settings.DB_SCHEMA_PANDA)
