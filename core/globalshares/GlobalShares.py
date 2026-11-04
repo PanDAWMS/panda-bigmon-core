@@ -15,7 +15,10 @@ class Node(object):
     def add_child(self, node):
         self.children.append(node)
 
-    def get_leaves(self, leaves=[]):
+    def get_leaves(self, leaves=None):
+
+        if leaves is None:
+            leaves = []
 
         # If the node has no leaves, return the node in a list
         if not self.children:
@@ -53,10 +56,11 @@ class Share(Node):
         return self.value
 
     def __rmul__(self, other):
-        return self.__mul__
+        return self.__mul__(other)
 
     def __imul__(self, other):
-        return self.__mul__
+        self.__mul__(other)
+        return self
 
     def __init__(self, name, value, parent, prodsourcelabel, workinggroup, campaign, processingtype):
         Node.__init__(self)
