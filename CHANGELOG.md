@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.10 (2026-11-04)
+
+### Bug Fixes
+
+- Correct FROm casing typo in ObsoletedTasksReport SQL
+  ([`779cd0e`](https://github.com/PanDAWMS/panda-bigmon-core/commit/779cd0e34239e008517f2d75809cb93dabff9b05))
+
+
 ## v1.2.9 (2026-11-03)
 
 ### Bug Fixes
