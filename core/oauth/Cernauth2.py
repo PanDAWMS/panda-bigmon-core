@@ -39,7 +39,7 @@ class CernAuthOIDC(BaseOAuth2):
         _logger.debug([f"{k}: {v}" for k, v in response.items()])
         user_details = {
             'username': response.get('cern_upn'),
-            'email': response.get('email'),
+            'email': response.get('email', '').lower(),
             'first_name': response.get('given_name'),
             'last_name': response.get('family_name'),
         }
