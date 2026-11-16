@@ -39,7 +39,7 @@ from core.pandajob.models import CombinedWaitActDefArch4, Jobsarchived, Filestab
 
 from core.art.utils import setupView, get_test_diff, get_result_for_multijob_test, concat_branch, \
     find_last_successful_test, build_gitlab_link, clean_tests_list, get_client_ip, fetch_unregistered_tests, \
-    resolve_unregistered_tests, add_unregistered_tests, build_detected_tasks_summary, get_gitlab_path_per_package
+    resolve_unregistered_tests, add_unregistered_tests, build_detected_tasks_summary, get_gitlab_path_per_package, log_request_headers
 
 from django.conf import settings
 import core.art.constants as art_const
@@ -1480,6 +1480,7 @@ def registerARTTest(request):
     if not valid:
         return response
 
+    log_request_headers(request)
     pandaid = -1
     jeditaskid = -1
     extra_info = {}
@@ -1727,10 +1728,10 @@ def upload_test_result(request):
         description: Internal server error
     """
     _logger.debug('[ART] uploadtestresults: GET=' + str(request.GET) + ' POST=' + str(request.GET) + ' body:' + str(request.body))
-
     valid, response = initRequest(request)
     if not valid:
         return JsonResponse({'error': "Bad request"}, status=400)
+    log_request_headers(request)
 
     # log all the req params
     _logger.info('[ART] uploadtestresults requestParams: ' + str(request.session['requestParams']))
