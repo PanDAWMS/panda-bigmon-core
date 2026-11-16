@@ -31,7 +31,7 @@ class IndigoIamOIDC(BaseOAuth2):
             _logger.info('{}: {}'.format(k, v))
         return {
             'username': response.get('preferred_username'),
-            'email': response.get('email', ''),
+            'email': response.get('email', '').lower(),
             'first_name': response.get('given_name', '').title(),
             'last_name': response.get('family_name', '').title(),
         }
