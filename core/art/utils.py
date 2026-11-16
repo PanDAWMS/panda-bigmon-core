@@ -745,3 +745,25 @@ def build_detected_tasks_summary(unregistered_tests):
             tasks_detected_summary['status_summary'][t['status']] = 0
         tasks_detected_summary['status_summary'][t['status']] = tasks_detected_summary['status_summary'].get(t['status'], 0) + 1
     return tasks_detected_summary
+
+
+def log_request_headers(request):
+    """
+    Log request headers for debugging purposes
+    Args:
+        request:
+
+    Returns:
+        None
+    """
+    headers = {
+        k: v
+        for k, v in request.META.items()
+        if k.startswith("HTTP_") or k in ("CONTENT_TYPE", "CONTENT_LENGTH")
+    }
+    _logger.info(f"--- Headers for {request.path} ---")
+    for key, value in headers.items():
+        _logger.info(f"{key}: {value}")
+    _logger.info(f"--- End of headers for {request.path} ---")
+
+    return None
