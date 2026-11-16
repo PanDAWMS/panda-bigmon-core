@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.2.11 (2026-11-16)
+
+### Bug Fixes
+
+- Add logging of request headers for art register and upload views
+  ([`c1b56a6`](https://github.com/PanDAWMS/panda-bigmon-core/commit/c1b56a60ccf7a6efb22a4926cd690cea1a1be7b2))
+
+- Lowercase email got from auth backends
+  ([`273b90a`](https://github.com/PanDAWMS/panda-bigmon-core/commit/273b90a13cf3ee4d97976c8297c1685693e4b572))
+
+
 ## v1.2.10 (2026-11-04)
 
 ### Bug Fixes
