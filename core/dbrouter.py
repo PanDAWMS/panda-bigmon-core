@@ -14,8 +14,6 @@ class ProdMonDBRouter(object):
             return 'default'
         if model._meta.app_label == "deft":
             return "default"
-        if model._meta.app_label == 'int8r':
-            return 'int8r'
         return None
 
     def db_for_write(self, model, **hints):
