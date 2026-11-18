@@ -7,8 +7,11 @@ We target long analysis tasks that are or were in exhausted or throttled states.
 import logging
 import json
 import re
+from collections import defaultdict, Counter
 from datetime import datetime, timedelta
 
+from django.db.models import Case, When, F, Value, CharField
+from django.db.models.functions import Substr
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.utils.cache import patch_response_headers
@@ -31,6 +34,22 @@ import core.constants as const
 
 _logger = logging.getLogger('bigpandamon')
 
+TASK_AGE_THRESHOLD = 7
+PROBLEM_STATES = ('exhausted', 'throttled', 'broken', 'failed')
+N_TASKS_CHUNK_SIZE = 200
+TASK_STATUS_AGG = {
+    'queued': ['defined', 'ready'],
+    'running': ['scouting', 'running'],
+    'troubling': ['pending', 'exhausted', 'throttled'],
+    'final': ['finished', 'failed', 'broken', 'aborted'],
+}
+STATE_TO_AGG = {s: agg for agg, states in TASK_STATUS_AGG.items() for s in states}
+PROBLEM_REASON = Case(
+    When(status__in=PROBLEM_STATES, then=Substr(F('reason'), 1, 4000)),
+    default=Value(None),
+    output_field=CharField(),
+)
+
 
 @login_required
 def taskProblemExplorer(request):
@@ -50,7 +69,7 @@ def taskProblemExplorer(request):
 
     query, extra_str, _ = setupView(request, querytype='task', wildCardExt=True)
 
-    age = 3
+    age = TASK_AGE_THRESHOLD
     if 'age' in request.session['requestParams']:
         age = int(request.session['requestParams']['age'])
     request.session['viewParams']['selection'] = ', active analysis tasks older than {} days'.format(age)
@@ -82,10 +101,10 @@ def taskProblemExplorer(request):
         'jeditaskid', 'tasktype', 'creationdate', 'starttime', 'statechangetime', 'modificationtime',
         'superstatus', 'status', 'corecount', 'taskpriority', 'currentpriority', 'username',
         'transuses', 'transpath', 'workinggroup', 'processingtype', 'campaign',
-        'reqid', 'nucleus', 'eventservice', 'gshare', 'container_name', 'attemptnr',)
+        'reqid', 'nucleus', 'eventservice', 'gshare', 'container_name', 'attemptnr', 'errordialog',)
 
     tasks = []
-    tasks.extend(JediTasks.objects.filter(**query).exclude(**exquery).extra(where=[extra_str]).values())
+    tasks.extend(JediTasks.objects.filter(**query).exclude(**exquery).extra(where=[extra_str]).values(*values))
     _logger.debug('Got {} tasks'.format(len(tasks)))
 
     # clean  task list
@@ -101,81 +120,60 @@ def taskProblemExplorer(request):
     tasks = [task for task in tasks if task['jeditaskid'] not in taskids_to_remove]
     _logger.debug('{} tasks left after extra filtering'.format(len(tasks)))
 
-    # put taskids to tmp table for the following queries
-    taskids = [t['jeditaskid'] for t in tasks]
-    tk = insert_to_temp_table(taskids)
-    where_in_tids_str = 'jeditaskid in (select id from {} where transactionkey={})'.format(get_tmp_table_name(), tk)
+    # aggregate durations when task was in problematic/rinning states + reasons
+    taskids = sorted([t['jeditaskid'] for t in tasks])
+    problem_states = {}
+    duration_summary = defaultdict(float)
+    duration_lists = defaultdict(list)
+    agg_duration = {}
+    reasons = Counter()
+    for i in range(0, len(taskids), N_TASKS_CHUNK_SIZE):
+        rows_by_task = defaultdict(list)
+        chunk = taskids[i:i + N_TASKS_CHUNK_SIZE]
+        chunk += [chunk[-1]] * (N_TASKS_CHUNK_SIZE - len(chunk))
+        qs = (TasksStatusLog.objects
+              .filter(jeditaskid__in=chunk)
+              .values_list('jeditaskid', 'status', 'modificationtime', 'reason')
+              .iterator())
+        for tid, status, mtime, reason in qs:
+            rows_by_task[tid].append((mtime, status, reason if status in PROBLEM_STATES else None))
 
-    # check if a task were in exhausted|throttled states
-    task_error_messages = []
-    task_transient_states = []
-    ts_query = {}
-    # ts_query = {'status__in': ['exhausted', 'throttled', 'broken', 'failed']}
-    task_transient_states.extend(
-        TasksStatusLog.objects.filter(**ts_query).extra(where=[where_in_tids_str]).values('jeditaskid', 'status', 'modificationtime', 'reason'))
-    task_transient_states_dict = {}
-    for row in task_transient_states:
-        if row['status'] in ('exhausted', 'throttled', 'broken', 'failed'):
-            if row['jeditaskid'] not in task_transient_states_dict:
-                task_transient_states_dict[row['jeditaskid']] = {}
-                task_transient_states_dict[row['jeditaskid']]['status'] = {}
-                task_transient_states_dict[row['jeditaskid']]['reasons'] = []
-            if row['status'] not in task_transient_states_dict[row['jeditaskid']]['status']:
-                task_transient_states_dict[row['jeditaskid']]['status'][row['status']] = 0
-            task_transient_states_dict[row['jeditaskid']]['status'][row['status']] += 1
-            task_transient_states_dict[row['jeditaskid']]['reasons'].append(row['reason'])
-            # put reasons for error messages analyser
-            task_error_messages.append({'jeditaskid': row['jeditaskid'], 'errordialog': re.sub('<[^>]*>', '', row['reason'])})
+        for tid, rows in rows_by_task.items():
+            rows.sort(key=lambda r: r[0])
+            per_state = defaultdict(float)
+            for j, (mtime, status, reason) in enumerate(rows):
+                if status in PROBLEM_STATES:
+                    st = problem_states.setdefault(tid, {'status': {}})['status']
+                    st[status] = st.get(status, 0) + 1
+                    reasons[(tid, re.sub('<[^>]*>', '', reason or ''))] += 1
+                if j + 1 < len(rows):
+                    per_state[status] += (rows[j + 1][0] - mtime).total_seconds() / 86400
 
-    # calculate duration of each task state
-    task_status_agg = {
-        'queued': ['defined', 'ready'],
-        'running': ['scouting', 'running'],
-        'troubling': ['pending', 'exhausted', 'throttled'],
-        'final': ['finished', 'failed', 'broken', 'aborted']
-    }
-    task_transient_states_duration = duration_df(task_transient_states, id_name='jeditaskid', timestamp_name='modificationtime')
-    states_duration_summary = {}
-    states_duration_lists = {}
-    states_agg_duration_dict = {}
-    for task, states_duration in task_transient_states_duration.items():
-        if task not in states_agg_duration_dict:
-            states_agg_duration_dict[task] = {k: 0 for k in task_status_agg}
-        for state, duration in states_duration.items():
-            if duration > 0.0001:
-                if state not in states_duration_summary:
-                    states_duration_summary[state] = 0
-                states_duration_summary[state] += duration
-                if state not in const.TASK_STATES_FINAL:
-                    if state not in states_duration_lists:
-                        states_duration_lists[state] = []
-                    states_duration_lists[state].append(duration*24)
+            agg = {k: 0 for k in TASK_STATUS_AGG}
+            for status, dur in per_state.items():
+                if dur > 0.0001:
+                    duration_summary[status] += dur
+                    if status not in const.TASK_STATES_FINAL:
+                        duration_lists[status].append(dur * 24)
+                    if status in STATE_TO_AGG:
+                        agg[STATE_TO_AGG[status]] += dur * 24
+            agg_duration[tid] = agg
 
-                for agg_state, task_states_list in task_status_agg.items():
-                    if state in task_states_list:
-                        states_agg_duration_dict[task][agg_state] += duration*24
+    error_messages = [{'jeditaskid': tid, 'errordialog': msg} for (tid, msg) in reasons]
+    agg_duration_dict = dict(agg_duration)
+    states_duration_lists = dict(duration_lists)
 
     for task in tasks:
         task['problematic_transient_states'] = '-'
-        if task['jeditaskid'] in task_transient_states_dict:
-            task['problematic_transient_states'] = ','.join([' {} times {}'.format(c, ts) for ts, c in task_transient_states_dict[task['jeditaskid']]['status'].items()])
+        if task['jeditaskid'] in problem_states:
+            task['problematic_transient_states'] = ','.join([' {} times {}'.format(c, ts) for ts, c in problem_states[task['jeditaskid']]['status'].items()])
 
-        if task['jeditaskid'] in states_agg_duration_dict:
-            task.update(states_agg_duration_dict[task['jeditaskid']])
-
+        if task['jeditaskid'] in agg_duration_dict:
+            task.update(agg_duration_dict[task['jeditaskid']])
     _logger.debug('Got and processed tasks transient states')
 
     error_codes_analyser = TasksErrorCodesAnalyser()
-    error_codes_analyser.schedule_preprocessing(task_error_messages)
-
-    # check for memory leaks
-
-    # check for scouting problems
-
-    # check for brokerage problems
-
-    # plot queuetime, walltime, etc for task and jobs   
-
+    error_codes_analyser.schedule_preprocessing(error_messages)
     error_summary_table = error_codes_analyser.get_errors_table()
     error_summary_table = json.dumps(error_summary_table, cls=DateEncoder)
 
@@ -211,7 +209,7 @@ def taskProblemExplorer(request):
                         'labels': ['State', 'Duration, days'],
                         'size_mp': 0.3,
                     },
-                    'data': [[state, round(dur, 3)] for state, dur in states_duration_summary.items() if dur > 0.0001],
+                    'data': [[state, round(dur, 3)] for state, dur in duration_summary.items() if dur > 0.0001],
                 },
                 'state_duration_hist': {
                     'name': 'state_duration_hist',
