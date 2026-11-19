@@ -14,6 +14,7 @@ class BPSchedResourceTest(unittest.TestCase):
         }
         # get a job
         client = Client()
+        client.force_login(BPUser.objects.get_or_create(username='testuser')[0])
         response = client.get('/jobs/?days=1&limit=1&json')
         data = json.loads(response.content)
         if data is not None and 'jobs' in data and len(data['jobs']) > 0:

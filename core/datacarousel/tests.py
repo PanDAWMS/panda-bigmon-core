@@ -16,6 +16,7 @@ class BPDataCarouselTest(unittest.TestCase):
         }
         # get last finished job
         client = Client()
+        client.force_login(BPUser.objects.get_or_create(username='testuser')[0])
         response = client.get('/api/dc/dash/?days=1&json')
         data = json.loads(response.content)
         if data is not None and 'detailstable' in data and len(data['detailstable']) > 0:

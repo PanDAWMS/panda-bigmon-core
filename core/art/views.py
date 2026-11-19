@@ -21,7 +21,7 @@ from django.template.defaulttags import register
 from django.db.models.functions import Concat, Substr
 from django.db.models import Value as V, F, Max
 
-from core.oauth.decorators import login_customrequired, login_required
+from core.oauth.decorators import login_required, login_required
 from core.utils import is_json_request, complete_request, removeParam, error_response
 from core.views import initRequest, extensibleURL
 from core.reports.sendMail import send_mail_bp
@@ -57,7 +57,7 @@ def get_time(value):
     return value[-5:]
 
 
-@login_customrequired
+@login_required
 def art(request):
     """
     Main ART page.
@@ -147,7 +147,7 @@ def art(request):
     return response
 
 
-@login_customrequired
+@login_required
 def artOverview(request):
     """
     ART Overview page.
@@ -350,7 +350,7 @@ def artOverview(request):
         return response
 
 
-@login_customrequired
+@login_required
 def artTasks(request):
     """
     ART Tasks page.
@@ -524,7 +524,7 @@ def artTasks(request):
         return response
 
 
-@login_customrequired
+@login_required
 def artJobs(request):
     """
     ART Jobs page.
@@ -817,7 +817,7 @@ def artJobs(request):
         return response
 
 
-@login_customrequired
+@login_required
 def artTest(request, package=None, testname=None):
     """
     Single test page.
@@ -989,7 +989,7 @@ def artTest(request, package=None, testname=None):
         return response
 
 
-@login_customrequired
+@login_required
 def artStability(request):
     """
     ART Stability page.
@@ -1150,7 +1150,7 @@ def artStability(request):
         return response
 
 
-@login_customrequired
+@login_required
 def artErrors(request):
     """
     ART Errors page.
@@ -1430,7 +1430,7 @@ def loadSubResults(request):
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 @csrf_exempt
 def registerARTTest(request):
     """
@@ -1692,7 +1692,7 @@ def registerARTTest(request):
     return JsonResponse(data, status=200)
 
 
-@login_customrequired
+@login_required
 @csrf_exempt
 def upload_test_result(request):
     """
