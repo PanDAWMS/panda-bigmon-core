@@ -72,7 +72,7 @@ from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
 from core.libs.user import get_panda_user_stats, humanize_metrics, prepare_user_dash_plots
 from core.libs.UserProfilePlot import UserProfilePlot
-from core.oauth.decorators import login_customrequired, login_required
+from core.oauth.decorators import login_required
 from core.oauth.models import Rating
 from core.oauth.utils import get_full_name, get_username, is_expert
 from core.pandajob.models import (Datasets, ErrorDescription, Filestable4, FilestableArch, JediDatasetContents, JediDatasets, JediEvents,
@@ -1156,7 +1156,7 @@ def jobParamList(request):
         return error_response(request, message='not supported', status=204)
 
 
-@login_customrequired
+@login_required
 def jobList(request, mode=None, param=None):
     valid, response = initRequest(request)
     if not valid:
@@ -1940,7 +1940,7 @@ def descendentjoberrsinfo(request):
     return response
 
 
-@login_customrequired
+@login_required
 def jobInfo(request, pandaid=None, batchid=None):
     valid, response = initRequest(request)
     if not valid:
@@ -3175,7 +3175,7 @@ def wnInfo(request, site=None, wnname='all'):
         return HttpResponse(json.dumps(data, cls=DateTimeEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def dashboard(request, view='all'):
     """
     This is a legacy. We keep it to redirect to the region dashboard with filters depending on the view.
@@ -3204,7 +3204,7 @@ def dashboard(request, view='all'):
 
 
 
-@login_customrequired
+@login_required
 def dashRegion(request):
     """
     A new job summary dashboard for regions that allows to split jobs in Grand Unified Queue
@@ -3349,7 +3349,7 @@ def dashRegion(request):
         return response
 
 
-@login_customrequired
+@login_required
 def dashNucleus(request):
     valid, response = initRequest(request)
     if not valid:
@@ -3430,7 +3430,7 @@ def dashNucleus(request):
         return response
 
 
-@login_customrequired
+@login_required
 def dashES(request):
     """
     A new ES job summary dashboard
@@ -3537,12 +3537,12 @@ def dashES(request):
         return response
 
 
-@login_customrequired
+@login_required
 def dashAnalysis(request):
     return dashboard(request, view='analysis')
 
 
-@login_customrequired
+@login_required
 def dashProduction(request):
     return dashboard(request, view='production')
 
@@ -3581,7 +3581,7 @@ def getCSRFToken(request):
         return response
 
 
-@login_customrequired
+@login_required
 def taskList(request):
     valid, response = initRequest(request)
     if not valid:
@@ -4286,7 +4286,7 @@ def userProfileData(request):
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
-@login_customrequired
+@login_required
 def taskInfo(request, jeditaskid=0):
     try:
         jeditaskid = int(jeditaskid)
@@ -5646,7 +5646,7 @@ def esatlasPandaLogger(request):
         return JsonResponse({'panda': panda, 'pandadesc': pandaDesc, 'jedi': jedi, 'jedidesc': jediDesc})
 
 
-@login_customrequired
+@login_required
 def datasetInfo(request):
     valid, response = initRequest(request)
     if not valid:
@@ -5804,7 +5804,7 @@ def datasetList(request):
         return HttpResponse(json.dumps(dsets, cls=DateEncoder), content_type='application/json', status=status)
 
 
-@login_customrequired
+@login_required
 def fileInfo(request):
     valid, response = initRequest(request)
     if not valid:

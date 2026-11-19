@@ -18,6 +18,7 @@ class BPHarvesterTest(unittest.TestCase):
         }
         # get harvester worker
         client = Client()
+        client.force_login(BPUser.objects.get_or_create(username='testuser')[0])
         response = client.get('/harvester/workers/?status=finished&json=1')
         data = json.loads(response.content)
         if data is not None and 'workers' in data and len(data['workers']) > 0:

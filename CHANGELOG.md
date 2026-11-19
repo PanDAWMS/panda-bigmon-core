@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.12 (2026-11-18)
+
+### Bug Fixes
+
+- Memory issues in slowtasks view
+  ([`c3e10f3`](https://github.com/PanDAWMS/panda-bigmon-core/commit/c3e10f380e41297215f40ea07db24ac75f710cf4))
+
+
 ## v1.2.11 (2026-11-16)
 
 ### Bug Fixes

@@ -17,6 +17,7 @@ class BPIddsTest(unittest.TestCase):
         }
         # get last finished iDDS workflow
         client = Client()
+        client.force_login(BPUser.objects.get_or_create(username='testuser')[0])
         response = client.get('/idds/?json=1')
         data = json.loads(response.content)
         if data is not None and len(data) > 0:
