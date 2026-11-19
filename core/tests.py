@@ -25,6 +25,7 @@ class BPCoreTest(unittest.TestCase):
         }
         # get last finished job
         client = Client()
+        client.force_login(BPUser.objects.get_or_create(username='testuser')[0])
         response = client.get(
             '/jobs/?json&datasets=true&limit=1&jobstatus=finished&days=7&produsername=!gangarbt&sortby=time-descending'
         )
