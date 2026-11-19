@@ -16,7 +16,7 @@ from .utils import build_query, summarize_data
 from core.pandajob.models import Jobsactive4, Jobsdefined4, Jobsarchived4
 
 from core.views import initRequest
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 
 collectorDatetimeFormat = "%Y-%m-%dT%H:%M:%S"
 collectorTimeFormat = "%Y-%m-%d %H:%M:%S"
@@ -24,7 +24,7 @@ collectorTimeFormat = "%Y-%m-%d %H:%M:%S"
 _logger = logging.getLogger('bigpandamon')
 
 
-@login_customrequired
+@login_required
 def index_data(request):
     """
         index -- status_summary's default page
@@ -155,7 +155,7 @@ def index_data(request):
     return data, errors, warnings, query_merge, GET_parameters
 
 
-@login_customrequired
+@login_required
 def api_status_summary(request):
     """
         api_status_summary -- api for status_summary's default page
@@ -186,7 +186,7 @@ def api_status_summary(request):
         return  HttpResponse(json.dumps(data), content_type='application/json', status=400)
 
 
-@login_customrequired
+@login_required
 def index(request):
     """
         per_computingsite -- status_summary's default page

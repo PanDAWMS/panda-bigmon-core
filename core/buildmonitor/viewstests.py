@@ -2,7 +2,7 @@ import json
 import re
 
 from core.libs.DateEncoder import DateEncoder
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.utils import is_json_request
 from core.views import initRequest
 from django.db import connection
@@ -10,7 +10,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 
 
-@login_customrequired
+@login_required
 def testviewDemo(request):
     """
     Test View.

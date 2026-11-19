@@ -3,7 +3,7 @@ import os
 import re
 
 from core.libs.DateEncoder import DateEncoder
-from core.oauth.decorators import login_customrequired
+from core.oauth.decorators import login_required
 from core.utils import is_json_request
 from core.views import initRequest
 from django.db import connection
@@ -12,7 +12,7 @@ from django.shortcuts import render
 from django.urls import reverse
 
 
-@login_customrequired
+@login_required
 def civiewDemo(request):
     """
     CI Builds Summary
