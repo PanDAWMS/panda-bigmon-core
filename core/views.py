@@ -1,6 +1,8 @@
 import copy
 import json
 import logging
+from collections import Counter
+
 import math
 import os
 import random
@@ -14,6 +16,8 @@ from urllib.parse import parse_qs, unquote_plus, urlencode, urlparse, urlunparse
 
 import pandas as pd
 import urllib3
+
+from core.libs.job_metrics import JobsMetricsAccumulator
 
 try:
     from opensearch_dsl import Search
@@ -58,7 +62,7 @@ from core.libs.exlib import (convert_bytes, convert_grams, convert_hs06, convert
                              resolve_total_count)
 from core.libs.job import (add_files_info_to_jobs, calc_jobs_metrics, clean_job_list, get_files_for_job, get_job_list, get_job_queuetime,
                            get_job_walltime, getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode,
-                           is_job_active, job_state_count, job_states_count_by_param)
+                           is_job_active, job_state_count, job_states_count_by_param, iter_job_batches)
 from core.libs.jobconsumers import reconstruct_job_consumers
 from core.libs.jobmetadata import addJobMetadata
 from core.libs.sqlcustom import escape_input, preprocess_wild_card_string
@@ -70,7 +74,7 @@ from core.libs.task import (checkIfDCTask, checkIfIddsTask, cleanTaskList, datas
 from core.libs.taskparams import analyse_task_submission_options
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
-from core.libs.user import get_panda_user_stats, humanize_metrics, prepare_user_dash_plots
+from core.libs.user import get_panda_user_stats, humanize_metrics, prepare_user_dash_plots, merge_error_summaries, finalize_error_summaries
 from core.libs.UserProfilePlot import UserProfilePlot
 from core.oauth.decorators import login_required
 from core.oauth.models import Rating
@@ -2856,7 +2860,6 @@ def userInfo(request, user=''):
             patch_response_headers(response, cache_timeout=request.session['max_age_minutes'] * 60)
             return response
 
-
 @login_required
 def userDashApi(request, agg=None):
     """
@@ -2896,7 +2899,7 @@ def userDashApi(request, agg=None):
         if len(tasks) > n_tasks and tasks[0]['tasktype'] == 'prod':
             tasks = filter_task_list_by_relevance(tasks, n_tasks=n_tasks)
 
-        # jobs summary
+        # jobs summary, streamed in batches to keep memory bounded
         jquery = {
             'jeditaskid__in': [t['jeditaskid'] for t in tasks if 'jeditaskid' in t]
         }
@@ -2904,10 +2907,25 @@ def userDashApi(request, agg=None):
             'produsername', 'computingsite', 'jobstatus', 'specialhandling', 'attemptnr', 'nevents', 'maxpss',
             'actualcorecount', 'cpuconsumptiontime', 'cpuconsumptionunit',  'hs06sec', 'gco2_global', 'diskio',
             'creationtime', 'starttime', 'endtime', 'modificationtime', 'statechangetime', 'jobmetrics', 'jobsubstatus']
-        jobs = get_job_list(jquery, values=values, error_info=True)
-        _logger.info('Got jobs: {}'.format(time.time() - request.session['req_init_time']))
+        errs_acc = {}
+        job_state_summary_total = Counter()
+        error_descriptions = get_job_error_descriptions()
+        metrics_acc = JobsMetricsAccumulator(group_by='jeditaskid')
+        n_jobs = 0
+        for batch in iter_job_batches(jquery, values=values, do_add_error_info=True, error_descriptions=error_descriptions):
+            n_jobs += len(batch)
+            merge_error_summaries(errs_acc, error_category_summary_by_task(batch, error_descriptions=error_descriptions))
+            metrics_acc.add(batch)
+            for cat in job_states_count_by_param(batch, param='category'):
+                for js in cat['job_state_counts']:
+                    job_state_summary_total[js['name']] += js['count']
+            del batch
+        errs_by_task_dict = finalize_error_summaries(errs_acc)
+        metrics = metrics_acc.result()
+        del errs_acc, metrics_acc
+        _logger.info('Got {} jobs for {} tasks, errors and metrics calculated: {}'.format(
+            n_jobs, len(tasks), time.time() - request.session['req_init_time']))
 
-        errs_by_task_dict = error_category_summary_by_task(jobs)
         error_summary = {}
         for tid, errs in errs_by_task_dict.items():
             for cat in errs:
@@ -2949,16 +2967,6 @@ def userDashApi(request, agg=None):
         data['data']['error_summary'] = sorted(error_summary_list, key=lambda x: -x['count'])[:3]
         _logger.info('Got error summaries: {}'.format(time.time() - request.session['req_init_time']))
 
-        metrics = calc_jobs_metrics(jobs, group_by='jeditaskid')
-        _logger.info('Calculated jobs metrics: {}'.format(time.time() - request.session['req_init_time']))
-
-        job_state_summary = job_states_count_by_param(jobs, param='category')
-        job_state_summary_total = {}
-        for cat in job_state_summary:
-            for js in cat['job_state_counts']:
-                if js['name'] not in job_state_summary_total:
-                    job_state_summary_total[js['name']] = 0
-                job_state_summary_total[js['name']] += js['count']
         data['data']['plots'] = [{
             'name': 'n_jobs_by_status',
             'type': 'pie',
@@ -3032,7 +3040,6 @@ def userDashApi(request, agg=None):
         data['data']['tasks_metrics'] = tasks_to_show
 
     return HttpResponse(json.dumps(data, default=datetime_handler), content_type='application/json')
-
 
 @login_required
 def wnInfo(request, site=None, wnname='all'):
