@@ -2,6 +2,7 @@
 Created by Tatiana Korchuganova on 18.11.2020
 """
 import logging
+from collections import Counter
 
 from core.libs.exlib import build_stack_histogram, convert_grams, round_to_n_digits
 from core.pandajob.models import Users
@@ -226,3 +227,31 @@ def humanize_metrics(metrics):
             metrics_list.append(metric_defs[md])
 
     return metrics_list
+
+
+def merge_error_summaries(acc, batch_errs):
+    """Accumulate results of error_category_summary_by_task over batches of jobs."""
+    for tid, cats in batch_errs.items():
+        task_acc = acc.setdefault(tid, {})
+        for cat in cats:
+            a = task_acc.setdefault(cat['name'], {**cat, 'count': 0, 'codes': {}, 'sites': Counter()})
+            a['count'] += cat['count']
+            for code in cat['codes']:
+                c = a['codes'].setdefault(code['comp_code'], {**code, 'count': 0, 'examples': []})
+                c['count'] += code['count']
+                c['examples'].extend(code['examples'][:3 - len(c['examples'])])
+            for site in cat['sites']:
+                a['sites'][site['name']] += site['count']
+
+
+def finalize_error_summaries(acc):
+    """Convert accumulated summaries back to the structure of error_category_summary_by_task."""
+    out = {}
+    for tid, cats in acc.items():
+        lst = []
+        for a in cats.values():
+            a['codes'] = sorted(a['codes'].values(), key=lambda x: -x['count'])
+            a['sites'] = [{'name': n, 'count': c} for n, c in a['sites'].most_common()]
+            lst.append(a)
+        out[tid] = sorted(lst, key=lambda x: -x['count'])
+    return out
