@@ -194,17 +194,18 @@ def add_job_category(jobs):
     return jobs
 
 
-def add_error_info(jobs):
+def add_error_info(jobs, error_descriptions=None):
     """
     Transform error-related fields to errorinfo str
     :param jobs: list of dicts
+    :param error_descriptions: list of error descriptions
     :return: jobs: list of dicts
     """
-
-    error_desc = get_job_error_descriptions()
+    if error_descriptions is None:
+        error_descriptions = get_job_error_descriptions()
     jobs_new = []
     for job in jobs:
-        jobs_new.append(add_error_info_to_job(job, mode='str', do_add_desc=True, error_desc=error_desc))
+        jobs_new.append(add_error_info_to_job(job, mode='str', do_add_desc=True, error_desc=error_descriptions))
 
     return jobs
 
@@ -377,6 +378,62 @@ def get_job_list(query, **kwargs):
     if 'error_info' in kwargs and kwargs['error_info']:
         jobs = add_error_info(jobs)
 
+    return jobs
+
+
+def iter_job_batches(query, values=(), do_add_error_info=False, batch_size=5000, error_descriptions=None):
+    """
+    Streaming version of get_job_list for queries by jeditaskid.
+    Yields de-duplicated jobs with category (and error info) in batches, so the full job list is never kept in memory.
+    :param query: dict - Django ORM filter, e.g. {'jeditaskid__in': [...]}
+    :param values: list - extra fields to query
+    :param do_add_error_info: bool - add error-related fields
+    :param batch_size: int - number of jobs per yielded batch
+    :param error_descriptions: list
+    """
+    query = dict(query)  # do not modify the caller's dict
+    fields = {
+        'pandaid', 'jobstatus', 'jeditaskid', 'processingtype', 'transformation', 'eventservice', 'computingsite', 'produsername',
+        *values
+    }
+    if do_add_error_info and error_descriptions is None:
+        error_descriptions = get_job_error_descriptions()
+    if do_add_error_info:
+        for c in const.JOB_ERROR_COMPONENTS:
+            fields.add(c['error'])
+            if c['diag'] is not None:
+                fields.add(c['diag'])
+
+    extra_str = '(1=1)'
+    for idp in ('pandaid', 'jeditaskid'):
+        key = idp + '__in'
+        if key in query and len(query[key]) > settings.DB_N_MAX_IN_QUERY:
+            tk = insert_to_temp_table(query[key])
+            extra_str += f" AND {idp} in (select ID from {get_tmp_table_name()} where TRANSACTIONKEY={tk})"
+            del query[key]
+
+    seen = set()  # pandaids already yielded, replaces drop_duplicates
+    batch = []
+    for table in (Jobsdefined4, Jobsactive4, Jobsarchived4, Jobsarchived):
+        qs = table.objects.filter(**query).extra(where=[extra_str]).values(*fields).iterator()
+        for job in qs:
+            if job['pandaid'] in seen:
+                continue
+            seen.add(job['pandaid'])
+            batch.append(job)
+            if len(batch) >= batch_size:
+                yield _enrich_jobs(batch, do_add_error_info, error_descriptions=error_descriptions)
+                batch = []
+    if batch:
+        yield _enrich_jobs(batch, do_add_error_info)
+
+
+def _enrich_jobs(jobs, do_add_error_info, error_descriptions=None):
+    jobs = add_job_category(jobs)
+    if do_add_error_info:
+        if error_descriptions is None:
+            error_descriptions = get_job_error_descriptions()
+        jobs = add_error_info(jobs, error_descriptions)
     return jobs
 
 

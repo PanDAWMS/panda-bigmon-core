@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.3.0 (2026-11-19)
+
+### Bug Fixes
+
+- Fix tests set up class
+  ([`a445a9f`](https://github.com/PanDAWMS/panda-bigmon-core/commit/a445a9fc5b4e7d74e58c411635e307088219ddd5))
+
+### Features
+
+- Finish closing unauthenticated access to all API endpoints
+  ([`17dba48`](https://github.com/PanDAWMS/panda-bigmon-core/commit/17dba486d2fc74b0ce33a58d7990d8cfa75f18bc))
+
+
 ## v1.2.12 (2026-11-18)
 
 ### Bug Fixes
