@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.3.1 (2026-11-20)
+
+### Bug Fixes
+
+- Get jobs in batches for mybigpanda page to decrease memory usage
+  ([`31ee87a`](https://github.com/PanDAWMS/panda-bigmon-core/commit/31ee87aa8bec6ca178a47ac171fcdeb8c33360c2))
+
+
 ## v1.3.0 (2026-11-19)
 
 ### Bug Fixes
