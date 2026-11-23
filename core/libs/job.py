@@ -210,22 +210,30 @@ def add_error_info(jobs, error_descriptions=None):
     return jobs
 
 
-def parse_job_pilottiming(pilottiming_str):
+def parse_job_pilottiming(pilottiming_str: str):
     """
     Parsing pilot timing str into dict
     :param pilottiming_str: dict
     :return: dict of separate pilot timings
     """
-    pilot_timings_names = ['timegetjob', 'timestagein', 'timepayload', 'timestageout', 'timetotal_setup']
-
     try:
-        pilot_timings = [int(pti) for pti in pilottiming_str.split('|')]
-    except:
-        pilot_timings = [None] * 5
+        pilot_timings = [int(float(pti)) for pti in pilottiming_str.split('|')]
+    except (ValueError, AttributeError, TypeError):
+        return {}
 
-    pilot_timings_dict = dict(zip(pilot_timings_names, pilot_timings))
+    names = ['timegetjob', 'timestagein', 'timepayload', 'timestageout']
+    if len(pilot_timings) == 5:
+        names += ['timetotal_setup']
+    elif len(pilot_timings) >= 6:
+        pilot_timings = pilot_timings[:6]  # ignore any fields added later
+        names += ['timesetupinitial', 'timesetuppayload']
+    else:
+        return {}
 
-    return pilot_timings_dict
+    result = dict(zip(names, pilot_timings))
+    if 'timetotal_setup' not in result:
+        result['timetotal_setup'] = result['timesetupinitial'] + result['timesetuppayload']
+    return result
 
 
 def job_states_count_by_param(jobs, **kwargs):
