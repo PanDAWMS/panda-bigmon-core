@@ -142,7 +142,23 @@ def job_consumption_plots(jobs):
             'jobstatus': ['finished', 'failed'],
             'type': 'stack_bar',
             'group_by': 'computingsite',
-            'title': 'Setup time',
+            'title': 'Total setup time',
+            'xlabel': 'Time, s',
+        },
+        'timesetupinitial': {
+            'per': [''],
+            'jobstatus': ['finished', 'failed'],
+            'type': 'stack_bar',
+            'group_by': 'computingsite',
+            'title': 'Initial pilot setup time',
+            'xlabel': 'Time, s',
+        },
+        'timesetuppayload': {
+            'per': [''],
+            'jobstatus': ['finished', 'failed'],
+            'type': 'stack_bar',
+            'group_by': 'computingsite',
+            'title': 'Payload environment setup time',
             'xlabel': 'Time, s',
         },
         'dbdata': {
@@ -328,6 +344,14 @@ def job_consumption_plots(jobs):
         if 'timetotal_setup' in job and job['timetotal_setup'] is not None and job['timetotal_setup'] > 0:
             plots_data['stack_bar']['timetotal_setup' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
                 job['timetotal_setup']
+            )
+        if 'timesetupinitial' in job and job['timesetupinitial'] is not None and job['timesetupinitial'] > 0:
+            plots_data['stack_bar']['timesetupinitial' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                job['timesetupinitial']
+            )
+        if 'timesetuppayload' in job and job['timesetuppayload'] is not None and job['timesetuppayload'] > 0:
+            plots_data['stack_bar']['timesetuppayload' + '_' + job['jobstatus']][job['category']][job['computingsite']].append(
+                job['timesetuppayload']
             )
 
         if 'resimevents' in job and job['resimevents'] and job['jobstatus'] == 'finished':
