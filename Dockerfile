@@ -1,6 +1,6 @@
 ARG PYTHON_VERSION=3.14.7
 
-FROM docker.io/almalinux:9
+FROM gitlab-registry.cern.ch/linuxsupport/alma9-base:latest
 ARG PYTHON_VERSION
 LABEL maintainer="PanDA team"
 
