@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.3.2 (2026-11-24)
+
+### Bug Fixes
+
+- Mutable default argument and broken __rmul__/__imul__ in GlobalShares
+  ([`ef7720b`](https://github.com/PanDAWMS/panda-bigmon-core/commit/ef7720b5d6fab44c8770d299797aa82d279c66ac))
+
+- Remove unused get_hc_tests view
+  ([`cb75e91`](https://github.com/PanDAWMS/panda-bigmon-core/commit/cb75e91f0ac758ee4b8a5cad89805880570e0f1d))
+
+- Support new pilottimings with 6 numbers
+  ([`d9da5de`](https://github.com/PanDAWMS/panda-bigmon-core/commit/d9da5dedf532c3f9a7443f809f3da7f335db8486))
+
+
 ## v1.3.1 (2026-11-20)
 
 ### Bug Fixes

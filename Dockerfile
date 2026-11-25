@@ -1,104 +1,89 @@
-ARG PYTHON_VERSION=3.14.3
+ARG PYTHON_VERSION=3.14.7
+
 FROM gitlab-registry.cern.ch/linuxsupport/alma9-base:latest
-LABEL maintainer="PanDA team"
 ARG PYTHON_VERSION
+LABEL maintainer="PanDA team"
 
-# system repos and basic tools
-COPY docker/yum.repos.d/almalinux-appstream_1.repo /etc/yum.repos.d/
-COPY docker/yum.repos.d/almalinux-baseos_1.repo /etc/yum.repos.d/
-RUN echo -e '[epel]\n\
-name=Extra Packages for Enterprise Linux 9 [HEAD]\n\
-baseurl=http://linuxsoft.cern.ch/epel/9/Everything/x86_64\n\
-enabled=1\n\
-gpgcheck=0\n\
-gpgkey=http://linuxsoft.cern.ch/epel/RPM-GPG-KEY-EPEL-9\n\
-exclude=collectd*,libcollectd*,mcollective,perl-Authen-Krb5,perl-Collectd,puppet,python*collectd_systemd*,koji*,python*koji*\n\
-priority=20' >> /etc/yum.repos.d/epel.repo
-RUN echo -e '[carepo]\n\
-name=IGTF CA Repository\n\
-baseurl=https://linuxsoft.cern.ch/mirror/repository.egi.eu/sw/production/cas/1/current/\n\
-enabled=1\n\
-gpgcheck=0\n\
-gpgkey=https://linuxsoft.cern.ch/mirror/repository.egi.eu/GPG-KEY-EUGridPMA-RPM-3\' >> /etc/yum.repos.d/carepo.repo
-RUN yum update -y && \
-    yum install -y epel-release && \
-    yum install -y httpd httpd-devel gcc gridsite git psmisc less wget logrotate procps which \
-        openssl-devel readline-devel bzip2-devel libffi-devel zlib-devel systemd-udev \
-        nano mod_ssl.x86_64 supervisor.noarch fetch-crl.noarch net-tools sudo conda ca-policy-egi-core \
+# IGTF CA repository (grid CA certificates)
+RUN printf '%s\n' \
+      '[carepo]' \
+      'name=IGTF CA Repository' \
+      'baseurl=https://linuxsoft.cern.ch/mirror/repository.egi.eu/sw/production/cas/1/current/' \
+      'enabled=1' \
+      'gpgcheck=1' \
+      'gpgkey=https://dl.igtf.net/distribution/current/GPG-KEY-EUGridPMA-RPM-4' \
+      > /etc/yum.repos.d/carepo.repo
+
+# System packages
+RUN yum install -y epel-release dnf-plugins-core && \
+    dnf config-manager --set-enabled crb && \
+    yum install -y httpd httpd-devel mod_ssl gridsite gcc git psmisc procps less which wget logrotate \
+        fetch-crl ca-policy-egi-core net-tools nano libaio \
+        openssl-devel readline-devel bzip2-devel libffi-devel zlib-devel \
         https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
-    yum install -y postgresql14 postgresql14-devel
+    yum install -y postgresql14 postgresql14-devel && \
+    yum clean all && rm -rf /var/cache/yum
 
-# python compilation and installation from source
+# Oracle Instant Client (pinned version)
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/2380000/oracle-instantclient-basic-23.8.0.25.04-1.el9.x86_64.rpm -P /tmp/ && \
+    yum install -y /tmp/oracle-instantclient-basic-23.8.0.25.04-1.el9.x86_64.rpm && \
+    wget https://download.oracle.com/otn_software/linux/instantclient/2380000/oracle-instantclient-sqlplus-23.8.0.25.04-1.el9.x86_64.rpm -P /tmp/ && \
+    yum install -y /tmp/oracle-instantclient-sqlplus-23.8.0.25.04-1.el9.x86_64.rpm && \
+    rm -f /tmp/oracle-instantclient-*.rpm && \
+    yum clean all && rm -rf /var/cache/yum
+
+# Python from source
 RUN mkdir /tmp/python && cd /tmp/python && \
     wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-    tar -xzf Python-*.tgz && rm -f Python-*.tgz && \
-    cd Python-* && \
+    tar -xzf Python-${PYTHON_VERSION}.tgz && \
+    cd Python-${PYTHON_VERSION} && \
     ./configure --enable-shared --enable-optimizations --with-lto && \
     make altinstall && \
     echo /usr/local/lib > /etc/ld.so.conf.d/local.conf && ldconfig && \
-    cd / && rm -rf /tmp/python
-RUN ln -s /usr/local/bin/python3.14 /usr/bin/python && \
+    cd / && rm -rf /tmp/python && \
+    ln -s /usr/local/bin/python3.14 /usr/bin/python && \
     ln -s /usr/local/bin/pip3.14 /usr/bin/pip
-
-# install Oracle Instant Client and grab the latest version of the Oracle tnsnames.ora file
-RUN wget https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -P /tmp/ && \
-    yum install /tmp/oracle-instantclient-basic-linuxx64.rpm -y && \
-    wget https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -P /tmp/ && \
-    yum install /tmp/oracle-instantclient-sqlplus-linuxx64.rpm -y
-RUN ln -fs /data/bigmon/config/tnsnames.ora /etc/tnsnames.ora
-
-RUN yum clean all && rm -rf /var/cache/yum
 
 ENV BIGMON_VIRTUALENV_PATH=/opt/bigmon \
     BIGMON_WSGI_PATH=/data/bigmon \
     DJANGO_SETTINGS_MODULE=core.settings
 
-# setup venv with python and install dependencies
-RUN python$(echo ${PYTHON_VERSION} | sed -E 's/\.[0-9]+$//') -m venv ${BIGMON_VIRTUALENV_PATH}
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U pip setuptools gnureadline
-RUN adduser atlpan
-RUN groupadd zp
-RUN usermod -a -G zp atlpan
-RUN mkdir /tmp/src
-WORKDIR /tmp/src
-COPY requirements.txt .
-RUN ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -r requirements.txt
+RUN adduser atlpan && groupadd zp && usermod -a -G zp atlpan
 
-COPY . .
+# venv and Python dependencies (only requirements.txt, not the whole repo)
+COPY requirements.txt /tmp/requirements.txt
+RUN python -m venv ${BIGMON_VIRTUALENV_PATH} && \
+    ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -U pip setuptools gnureadline && \
+    ${BIGMON_VIRTUALENV_PATH}/bin/pip install --no-cache-dir -r /tmp/requirements.txt && \
+    rm -f /tmp/requirements.txt
 
-RUN mkdir -p ${BIGMON_WSGI_PATH} ${BIGMON_WSGI_PATH}/config ${BIGMON_WSGI_PATH}/logs
-RUN rm -rf /etc/httpd/conf.d/*
+# load mod_wsgi built for the venv Python (avoids hardcoding the version-specific .so path)
+RUN ${BIGMON_VIRTUALENV_PATH}/bin/mod_wsgi-express module-config | grep LoadModule > /etc/httpd/conf.modules.d/20-wsgi.conf
 
-# copy tagged version or branch/fork snapshot from repository
+# Application code and Apache config
+RUN mkdir -p ${BIGMON_WSGI_PATH}/config ${BIGMON_WSGI_PATH}/logs \
+             ${BIGMON_VIRTUALENV_PATH}/etc/cert ${BIGMON_VIRTUALENV_PATH}/etc/idds && \
+    rm -rf /etc/httpd/conf.d/*
 COPY core ${BIGMON_WSGI_PATH}/core
-COPY docker/activate_this.py ${BIGMON_VIRTUALENV_PATH}/bin/activate_this.py
 COPY docker/start-daemon.sh /usr/local/bin/
 COPY docker/conf.d/*.conf /etc/httpd/conf.d/
-COPY docker/systemd/daphne.service /etc/systemd/system/daphne.service
 
-# symlinks to allow late customization
-RUN ln -fs ${BIGMON_WSGI_PATH}/config/local.py ${BIGMON_WSGI_PATH}/core/settings/local.py
+# late customization via config volume
+RUN ln -fs ${BIGMON_WSGI_PATH}/config/local.py ${BIGMON_WSGI_PATH}/core/settings/local.py && \
+    ln -fs ${BIGMON_WSGI_PATH}/config/tnsnames.ora /etc/tnsnames.ora
 
-# to work with non-root
-RUN grep -v Listen /etc/httpd/conf/httpd.conf > /etc/httpd/conf/tmp; \
-    echo Listen 8080 > /etc/httpd/conf/httpd.conf; \
-    cat /etc/httpd/conf/tmp >> /etc/httpd/conf/httpd.conf; \
-    rm /etc/httpd/conf/tmp
+# Apache listens only on 8443
+RUN sed -i '/^\s*Listen/d' /etc/httpd/conf/httpd.conf
 
-RUN chmod 777 ${BIGMON_WSGI_PATH}/logs
-RUN chmod 777 /var/log/httpd
-RUN chmod 777 /etc/grid-security
-RUN chmod 777 /run/httpd
-
-RUN chmod -R 777 /var/cache
-RUN chmod -R 777 ${BIGMON_WSGI_PATH}/config
-RUN chmod -R 777 /etc/httpd/conf.d
-RUN chown -R apache.apache /data/bigmon/logs/
-
-# to be removed for prodiction
-RUN chmod -R 777 ${BIGMON_WSGI_PATH} && chmod -R 777 ${BIGMON_VIRTUALENV_PATH}
+# permissions: group 0 owns what the app writes at runtime
+RUN mkdir -p /var/cache/mod_ssl /run/httpd && \
+    chgrp -R 0 ${BIGMON_WSGI_PATH} ${BIGMON_VIRTUALENV_PATH}/etc /etc/httpd/conf.d /etc/grid-security \
+                 /var/log/httpd /var/cache/mod_ssl && \
+    chmod -R g=u ${BIGMON_WSGI_PATH} ${BIGMON_VIRTUALENV_PATH}/etc /etc/httpd/conf.d /etc/grid-security \
+                 /run/httpd /var/log/httpd /var/cache/mod_ssl && \
+    chmod +x /usr/local/bin/start-daemon.sh
 
 ENTRYPOINT ["start-daemon.sh"]
-STOPSIGNAL SIGINT
-EXPOSE 8443 8080 8000
+STOPSIGNAL SIGWINCH
+EXPOSE 8443
 CMD ["all"]

@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db.models import Func, F, TextField
 
 from core.schedresource.models import SchedconfigJson
 import core.constants as const
@@ -126,20 +127,26 @@ def get_panda_queues():
         _logger.exception("cannot get json from CRIC, trying get them from schedconfig_json table")
 
     if not panda_queues_dict:
-        # get data from new SCHEDCONFIGJSON table
-        panda_queues_list = []
+        # get data from SCHEDCONFIG_JSON table
+        if settings.DEPLOYMENT == 'POSTGRES':
+            rows = SchedconfigJson.objects.values('pandaqueue', 'data')
+        else:
+            # Oracle: TO_CLOB strips the IS JSON metadata, so python-oracledb returns text, not a dict
+            rows = SchedconfigJson.objects.annotate(
+                data_txt=Func(F('data'), function='TO_CLOB', output_field=TextField())
+            ).values('pandaqueue', 'data_txt')
+
         panda_queues_dict = {}
-        panda_queues_list.extend(SchedconfigJson.objects.values())
-        if len(panda_queues_list) > 0:
-            for pq in panda_queues_list:
-                if isinstance(pq['data'], dict):
-                    panda_queues_dict[pq['pandaqueue']] = pq['data']
-                else:
-                    try:
-                        panda_queues_dict[pq['pandaqueue']] = json.loads(pq['data'])
-                    except:
-                        panda_queues_dict[pq['pandaqueue']] = None
-                        _logger.error("cannot load json from SCHEDCONFIGJSON table for {} PanDA queue".format(pq['pandaqueue']))
+        for pq in rows:
+            data = pq.get('data', pq.get('data_txt'))
+            if isinstance(data, dict):
+                panda_queues_dict[pq['pandaqueue']] = data
+                continue
+            try:
+                panda_queues_dict[pq['pandaqueue']] = json.loads(data)
+            except (TypeError, ValueError):
+                panda_queues_dict[pq['pandaqueue']] = None
+                _logger.error(f"cannot load json from SCHEDCONFIG_JSON table for {pq['pandaqueue']} PanDA queue")
 
     return panda_queues_dict
 

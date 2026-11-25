@@ -1,12 +1,13 @@
 import logging
 import ipaddress
-import psutil
-import subprocess
+import socket
 from datetime import timedelta
 
 from django.utils import timezone
 from django.db.models import Count
 from django.db import connection, DatabaseError
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import AuthenticationFailed
 
 from core.oauth.models import AllRequests
 from core.utils import error_response
@@ -32,7 +33,6 @@ class TrafficControlMiddleware(object):
     EXCEPTED_VIEWS = [
         '/grafana/img/',
         '/payloadlog/',
-        '/statpixel/',
         '/idds/getiddsfortask/',
         '/api/dc/staginginfofortask/',
         '/art/',
@@ -45,11 +45,12 @@ class TrafficControlMiddleware(object):
     MAX_ALLOWED_PARALLEL_REQUESTS = 2
 
     def __init__(self, get_response):
+        self.hostname = socket.gethostname()
         self.get_response = get_response
 
     def __call__(self, request):
 
-        hostname = subprocess.getoutput('hostname') or request.META.get('HTTP_HOST', '')
+        hostname = self.hostname or request.META.get('HTTP_HOST', '')
         x_referer = request.META.get('HTTP_REFERER', '')
         useragent = request.META.get('HTTP_USER_AGENT', '')
 
@@ -88,10 +89,6 @@ class TrafficControlMiddleware(object):
             referrer=x_referer[:3900] if x_referer and len(x_referer) > 3900 else x_referer,
             useragent=request.META.get('HTTP_USER_AGENT'),
             is_rejected=0,
-            load=psutil.cpu_percent(interval=1),
-            mem=psutil.virtual_memory().percent,
-            dbtotalsess=0,
-            dbactivesess=0
         )
         try:
             reqs.save()
@@ -110,10 +107,8 @@ class TrafficControlMiddleware(object):
 
             # reject requests from blacklisted IPs
             if x_forwarded_for is not None and x_forwarded_for in settings.TRAFFIC_CONTROL_BLACK_LIST:
-                reqs.is_rejected = 1
-                reqs.save()
                 _logger.info(f'Reject request {request_token} from {x_forwarded_for} with 403')
-                return error_response(request, message='You are blacklisted, access denied', status=403)
+                return self._reject(request, reqs, message='You are blacklisted, access denied', status=403)
 
             # restrict number of parallel requests for some user agents
             if useragent is not None and useragent in self.USERAGENT_PARALLEL_LIMIT_APPLIED:
@@ -129,10 +124,8 @@ class TrafficControlMiddleware(object):
                 count_parallel_requests = rows[0]['count'] if len(rows) > 0 and 'count' in rows[0] else 0
                 _logger.info(f'Found {count_parallel_requests} non rejected request for last 20 minutes')
                 if count_parallel_requests > self.MAX_ALLOWED_PARALLEL_REQUESTS:
-                    reqs.is_rejected = 1
-                    reqs.save()
                     _logger.info(f'Reject request {request_token} from agent {useragent} with 429')
-                    return error_response(request, message='you produce too many parallel requests', status=429)
+                    return self._reject(request, reqs, message='Too many parallel requests, please try again later', status=429)
 
             # We restrict number of requests per hour
             if x_forwarded_for is not None and x_forwarded_for not in settings.TRAFFIC_CONTROL_WHITE_LIST:
@@ -145,16 +138,43 @@ class TrafficControlMiddleware(object):
                 rows.extend(AllRequests.objects.filter(**query).values('remote').annotate(Count('remote')))
                 count_requests = rows[0]['remote__count'] if len(rows) > 0 and 'remote__count' in rows[0] else 0
                 if count_requests > settings.TRAFFIC_CONTROL_MAX_REQUESTS_PER_HOUR:
-                    reqs.is_rejected = 1
-                    reqs.save()
                     _logger.info(f'Reject request {request_token} from {x_forwarded_for} with 429')
-                    return error_response(request, message='too many requests per hour, please try later', status=429)
+                    return self._reject(request, reqs, message='Too many requests per hour, please try later', status=429)
 
         response = self.get_response(request)
+        user = getattr(request, 'user', None)
+        if user is not None and user.is_authenticated:
+            reqs.user_id = user.id
+            response['X-BP-User-Id'] = str(user.id)
         reqs.rtime = timezone.now()
+        reqs.status = response.status_code
         reqs.save()
         return response
 
+    @staticmethod
+    def _resolve_user_id(request):
+        """
+        Resolve the user id for to-be-rejected requests, as this middleware runs before session and authentication
+        """
+        try:  # API token, not yet processed by DRF
+            res = TokenAuthentication().authenticate(request)
+        except AuthenticationFailed:
+            return None
+        except DatabaseError as ex:
+            _logger.warning(f'Failed to resolve user from token: {ex}')
+            return None
+        return res[0].id if res else None
+
+    def _reject(self, request, reqs, message, status):
+        """Helper method to reject a request"""
+        reqs.is_rejected = 1
+        reqs.user_id = self._resolve_user_id(request)
+        reqs.status = status
+        reqs.save()
+        response = error_response(request, message=message, status=status)
+        if reqs.user_id:
+            response['X-BP-User-Id'] = str(reqs.user_id)
+        return response
 
 
 class RequestLoggingMiddleware(object):
