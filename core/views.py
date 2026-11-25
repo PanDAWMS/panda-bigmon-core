@@ -58,10 +58,10 @@ from core.libs.elasticsearch import create_os_connection, get_payloadlog, get_sp
 from core.libs.error import error_category_summary_by_task, error_summary_for_job
 from core.libs.eventservice import add_event_summary_to_tasklist, event_summary_for_task, is_event_service
 from core.libs.exlib import (convert_bytes, convert_grams, convert_hs06, convert_to_si_prefix, create_temporary_table, dictfetchall,
-                             get_file_info, get_tmp_table_name, insert_to_temp_table, is_timestamp, round_to_n_digits, fetch_total_count,
+                            get_tmp_table_name, insert_to_temp_table, is_timestamp, round_to_n_digits, fetch_total_count,
                              resolve_total_count)
-from core.libs.job import (add_files_info_to_jobs, calc_jobs_metrics, clean_job_list, get_files_for_job, get_job_list, get_job_queuetime,
-                           get_job_walltime, getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode,
+from core.libs.job import (add_files_info_to_jobs, clean_job_list, get_files_for_job, get_job_list,
+                        getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode,
                            is_job_active, job_state_count, job_states_count_by_param, iter_job_batches)
 from core.libs.jobconsumers import reconstruct_job_consumers
 from core.libs.jobmetadata import addJobMetadata
@@ -162,7 +162,7 @@ def get_item(input_dict, key):
     return input_dict.get(key)
 
 
-def initRequest(request, callselfmon=True):
+def initRequest(request):
     global VOMODE, ENV, hostname, full_hostname
     VOMODE = settings.MON_VO.lower() if hasattr(settings, 'MON_VO') else 'atlas'
     ENV = {}
@@ -215,10 +215,6 @@ def initRequest(request, callselfmon=True):
     if len(hostname) > 0:
         request.session['hostname'] = hostname
         request.session['full_hostname'] = full_hostname
-
-    # self monitor
-    if callselfmon:
-        initSelfMonitor(request)
 
     # Set default page lifetime in the http header, for the use of the front end cache
     set_cache_timeout(request)
@@ -6225,65 +6221,6 @@ def stateNotUpdated(
     else:
         jobs = get_job_list(query, extra_str=wildCardExtension, values=values)
         return jobs
-
-
-def initSelfMonitor(request):
-    import psutil
-    if 'hostname' in request.session:
-        server = request.session['hostname']
-    else:
-        server = '-'
-
-    if 'HTTP_X_FORWARDED_FOR' in request.META:
-        remote = request.META['HTTP_X_FORWARDED_FOR']
-    else:
-        remote = request.META['REMOTE_ADDR']
-
-    if 'wsgi.url_scheme' in request.META:
-        urlProto = request.META['wsgi.url_scheme']
-    else:
-        urlProto = 'http'
-
-    if 'HTTP_X_FORWARDED_PROTO' in request.META:
-        urlProto = request.META['HTTP_X_FORWARDED_PROTO']
-    urlProto = str(urlProto) + "://"
-
-    try:
-        urls = urlProto + request.META['SERVER_NAME'] + request.META['REQUEST_URI']
-    except:
-        if 'SERVER_PORT' in request.META:
-            port = ':' + request.META['SERVER_PORT']
-        else:
-            port = ''
-        if 'PATH_INFO' in request.META:
-            path = request.META['PATH_INFO']
-        else:
-            path = ''
-        if 'QUERY_STRING' in request.META and request.META['QUERY_STRING'] != "":
-            qstring = '?' + request.META['QUERY_STRING']
-        else:
-            qstring = ''
-        urls = urlProto + request.META['SERVER_NAME'] + port + path + qstring
-    _logger.debug(urls)
-
-    qtime = str(timezone.now())
-    load = psutil.cpu_percent(interval=1)
-    mem = psutil.virtual_memory().percent
-    if 'HTTP_REFERER' in request.META:
-        refferer = request.META['HTTP_REFERER']
-    else:
-        refferer = '-'
-    if 'HTTP_USER_AGENT' in request.META:
-        useragent = request.META['HTTP_USER_AGENT']
-    else:
-        useragent = '-'
-    request.session["qtime"] = qtime
-    request.session["load"] = load
-    request.session["remote"] = remote
-    request.session["mem"] = mem
-    request.session["urls"] = urls
-    request.session["refferer"] = refferer
-    request.session["useragent"] = useragent
 
 
 def handler500(request):

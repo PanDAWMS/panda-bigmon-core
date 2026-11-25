@@ -143,30 +143,7 @@ def denyRights(request):
     return HttpResponse(status=204)
 
 
-@never_cache
-def statpixel(request):
-    valid, response = initRequest(request, callselfmon=False)
-
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    if 'HTTP_REFERER' in request.META:
-        url = request.META['HTTP_REFERER']
-        service = 0
-        userid = -1
-        if request.user.is_authenticated:
-            userids = BPUser.objects.filter(email=request.user.email).values('id')
-            userid = userids[0]['id']
-        Visits.objects.create(url=url, service=service, remote=ip, time=str(timezone.now()), userid=userid)
-
-    # this is a transparent gif pixel
-    pixel_ = "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
-    response = HttpResponse(pixel_, content_type='image/gif')
-    return response
-
-
+@login_required
 def saveSettings(request):
     valid, response = initRequest(request)
     if not valid:

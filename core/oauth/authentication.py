@@ -1,11 +1,15 @@
+import logging
 import requests
 import jwt
+from django.db.models import F
 from jwt import PyJWKClient
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.conf import settings
 from core.oauth.models import BPToken, BPUser
 from core.oauth.utils import get_token_expiry_info
+
+_logger = logging.getLogger('social')
 
 
 class BPTokenAuthentication(TokenAuthentication):
@@ -93,14 +97,17 @@ class BPTokenAuthentication(TokenAuthentication):
                 raise AuthenticationFailed(_(f"Network error connecting to IAM userinfo service: {str(e)}"))
 
         # Get user for the authenticated token
-        try:
-            user = BPUser.objects.get(username=username)
-        except BPUser.DoesNotExist:
+        users = BPUser.objects.filter(username=username)
+        if not users.exists():
             raise AuthenticationFailed(_(f"Unknown user '{username}', need to log in at least once to web interface."))
+        # prefer an active account, then the most recently used one
+        user = users.order_by('-is_active', F('last_login').desc(nulls_last=True), '-id').first()
+        if users.count() > 1:
+            _logger.warning(f"Multiple BPUser rows ({users.count()}) for username '{username}', using id={user.id}")
         if not user.is_active:
             raise AuthenticationFailed(_('User associated with this IAM token is deactivated.'))
 
-        return (user, token_info)
+        return user, token_info
 
 
     def authenticate_credentials(self, key):
@@ -118,4 +125,4 @@ class BPTokenAuthentication(TokenAuthentication):
         if token_expiry_info['is_expired']:
             raise AuthenticationFailed(_('Token has expired.'))
 
-        return (token.user, token)
+        return token.user, token
