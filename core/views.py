@@ -58,10 +58,10 @@ from core.libs.elasticsearch import create_os_connection, get_payloadlog, get_sp
 from core.libs.error import error_category_summary_by_task, error_summary_for_job
 from core.libs.eventservice import add_event_summary_to_tasklist, event_summary_for_task, is_event_service
 from core.libs.exlib import (convert_bytes, convert_grams, convert_hs06, convert_to_si_prefix, create_temporary_table, dictfetchall,
-                             get_file_info, get_tmp_table_name, insert_to_temp_table, is_timestamp, round_to_n_digits, fetch_total_count,
+                            get_tmp_table_name, insert_to_temp_table, is_timestamp, round_to_n_digits, fetch_total_count,
                              resolve_total_count)
-from core.libs.job import (add_files_info_to_jobs, calc_jobs_metrics, clean_job_list, get_files_for_job, get_job_list, get_job_queuetime,
-                           get_job_walltime, getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode,
+from core.libs.job import (add_files_info_to_jobs, clean_job_list, get_files_for_job, get_job_list,
+                        getSequentialRetries, getSequentialRetries_ES, getSequentialRetries_ESupstream, is_debug_mode,
                            is_job_active, job_state_count, job_states_count_by_param, iter_job_batches)
 from core.libs.jobconsumers import reconstruct_job_consumers
 from core.libs.jobmetadata import addJobMetadata
