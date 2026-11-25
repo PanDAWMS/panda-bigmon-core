@@ -177,7 +177,6 @@ class TrafficControlMiddleware(object):
         return response
 
 
-
 class RequestLoggingMiddleware(object):
     """ Middleware that logs any unhandled exceptions raised during request processing."""
 
