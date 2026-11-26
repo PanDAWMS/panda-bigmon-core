@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.5.0 (2026-11-26)
+
+### Bug Fixes
+
+- Reject static/media on django level
+  ([`8d8bd16`](https://github.com/PanDAWMS/panda-bigmon-core/commit/8d8bd1664b821f4f543289faad6171acfc4a2ada))
+
+### Features
+
+- Add task command log to task page
+  ([`d0bda58`](https://github.com/PanDAWMS/panda-bigmon-core/commit/d0bda581ab605ca5ccb23a53b6e523892a6e596a))
+
+
 ## v1.4.0 (2026-11-25)
 
 ### Bug Fixes
