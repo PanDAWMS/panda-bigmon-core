@@ -70,7 +70,7 @@ from core.libs.task import (checkIfDCTask, checkIfIddsTask, cleanTaskList, datas
                             get_dataset_locality, get_datasets_for_tasklist, get_job_metrics_summary_for_task, get_logs_by_taskid,
                             get_task_diagnostics, get_task_flow_data, get_task_info, get_task_params, get_task_rating,
                             get_task_time_archive_flag, get_task_timewindow, humanize_task_params, input_summary_for_task,
-                            is_event_service_task, task_summary_dict, tasks_not_updated)
+                            is_event_service_task, task_summary_dict, tasks_not_updated, get_task_command_log)
 from core.libs.taskparams import analyse_task_submission_options
 from core.libs.TaskProgressPlot import TaskProgressPlot
 from core.libs.TasksErrorCodesAnalyser import TasksErrorCodesAnalyser
@@ -81,7 +81,7 @@ from core.oauth.models import Rating
 from core.oauth.utils import get_full_name, get_username, is_expert
 from core.pandajob.models import (Datasets, ErrorDescription, Filestable4, FilestableArch, JediDatasetContents, JediDatasets, JediEvents,
                                   JediJobRetryHistory, JediTasks, JediWorkQueue, Jobparamstable, Jobsactive4, Jobsarchived, Jobsarchived4,
-                                  Jobsdebug, Jobsdefined4, JobsStatuslog, PandaJob, ResourceTypes, TasksStatusLog, Users)
+                                  Jobsdebug, Jobsdefined4, JobsStatuslog, PandaJob, ResourceTypes, TasksStatusLog, Users, TaskCommandLog)
 from core.pandajob.SQLLookups import CastDate
 from core.pandajob.summary_error import errorSummaryDict
 from core.pandajob.summary_task import (get_job_state_summary_for_tasklist, get_top_memory_consumers, job_summary_for_task,
@@ -4105,6 +4105,30 @@ def taskProfileData(request, jeditaskid=0):
     return HttpResponse(json.dumps(data, cls=DateEncoder), content_type='application/json')
 
 
+@never_cache
+@login_required
+def task_command_log(request):
+    """
+    List task commands as JSON
+    Optional filters: jeditaskid, command, status, requester;
+    :param request:
+    :return:
+    """
+    valid, response = initRequest(request)
+    if not valid:
+        return response
+
+    query = {}
+    if 'jeditaskid' not in request.session['requestParams']:
+        return error_response(request, message='jeditaskid is missing', status=400)
+    for p in ('jeditaskid', 'command', 'status', 'requester'):
+        if p in request.session['requestParams']:
+            query[p] = request.session['requestParams'][p]
+
+    commands = get_task_command_log(query)
+    return JsonResponse({'commands': commands})
+
+
 @login_required
 def userProfile(request, username=""):
     """A wrapper page for task profile plot"""
@@ -4715,6 +4739,9 @@ def taskInfo(request, jeditaskid=0):
                         'gco2_global_' + k: int(v) for k, v in job_metrics_sum['gco2_global'].items()
                     })
 
+        # get commands
+        commands = get_task_command_log({'jeditaskid': jeditaskid})
+
         # prepare data for template
         taskparams, jobparams = humanize_task_params(taskparams)
 
@@ -4753,7 +4780,8 @@ def taskInfo(request, jeditaskid=0):
             'info': info,
             'authtype': auth,
             'userexpert': user_expert,
-            'finegrained': fine_grained
+            'finegrained': fine_grained,
+            'commands': commands,
         }
 
         if eventservice:

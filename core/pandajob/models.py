@@ -990,3 +990,25 @@ class ResourceTypes(models.Model):
     class Meta:
         db_table = f'"{settings.DB_SCHEMA_PANDA}"."resource_types"'
         app_label = 'panda'
+
+
+class TaskCommandLog(models.Model):
+    pk = models.CompositePrimaryKey('command_id', 'jeditaskid', 'command_time')
+    command_id = models.BigIntegerField(db_column='command_id')
+    jeditaskid = models.BigIntegerField(db_column='jeditaskid')
+    command = models.CharField(max_length=64, db_column='command')
+    parameters = models.TextField(db_column='parameters', null=True, blank=True)
+    requester = models.CharField(max_length=256, db_column='requester', null=True, blank=True)
+    prod_role = models.SmallIntegerField(db_column='prod_role', null=True, blank=True)
+    client_addr = models.CharField(max_length=64, db_column='client_addr', null=True, blank=True)
+    server_host = models.CharField(max_length=128, db_column='server_host', null=True, blank=True)
+    command_time = models.DateTimeField(db_column='command_time')
+    status = models.CharField(max_length=16, db_column='status')
+    status_time = models.DateTimeField(db_column='status_time')
+    status_reason = models.CharField(max_length=256, db_column='status_reason', null=True, blank=True)
+    response = models.TextField(db_column='response', null=True, blank=True)
+    response_time = models.DateTimeField(db_column='response_time', null=True, blank=True)
+
+    class Meta:
+        db_table = f'"{settings.DB_SCHEMA_PANDA}"."tasks_commandlog"'
+        app_label = 'panda'

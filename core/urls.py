@@ -60,6 +60,7 @@ urlpatterns = [
     re_path(r'^taskesprofileplot/$', coremon_views.taskProfile, name='taskesprofileplot'), # legacy
     re_path(r'^taskprofile/(?P<jeditaskid>.*)/$', coremon_views.taskProfile, name='taskProfileMonitor'),
     re_path(r'^taskprofiledata/(?P<jeditaskid>.*)/$', coremon_views.taskProfileData, name='getTaskProfilePlotData'),
+    re_path(r'^taskcommands/$', coremon_views.task_command_log, name='taskCommandLog'),
     re_path(r'^eventserrorsummaury/$', coremon_views.getErrorSummaryForEvents, name='eventsErrorSummary'),
     re_path(r'^eventschunks/$', coremon_views.getEventsChunks, name='eventschunks'),
     re_path(r'^taskflow/(?P<jeditaskid>.*)/$', coremon_views.taskFlowDiagram, name='taskFlowDiagram'),
