@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.5.1 (2026-11-26)
+
+### Bug Fixes
+
+- [art] show tasks with unregistered tests even if 0 tests registered
+  ([`e38ab9a`](https://github.com/PanDAWMS/panda-bigmon-core/commit/e38ab9a989e789b7c306afb75011dff2e4c105af))
+
+
 ## v1.5.0 (2026-11-26)
 
 ### Bug Fixes

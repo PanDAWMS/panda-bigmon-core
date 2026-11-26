@@ -423,6 +423,8 @@ def artTasks(request):
     # filter out previous attempts, add branch etc
     jobs = clean_tests_list(tests)
     ntagslist = list(sorted(set([x['ntag'] for x in jobs])))
+    if len(ntagslist) == 0:
+        ntagslist = list(getattr(request, 'art_ntags', []))
     _logger.info("Got ART tests: {}".format(time.time() - request.session['req_init_time']))
 
     testtypelist = ['grid', 'local']
