@@ -723,6 +723,11 @@ table.minimalistic-table > thead, table.minimalistic-table > thead tr, table.min
     overflow: inherit;
     z-index: 1;
   }
+  .data-table tbody td.code-plain {
+    font-family: monospace;
+    font-size: 0.675rem;
+    line-height: 1.2;
+  }
   .data-table.nowrap tbody td {
     white-space: nowrap;
   }

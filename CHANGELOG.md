@@ -2,6 +2,34 @@
 
 <!-- version list -->
 
+## v1.4.0 (2026-11-25)
+
+### Bug Fixes
+
+- Back to alma from cern registry in dockerfile
+  ([`5040656`](https://github.com/PanDAWMS/panda-bigmon-core/commit/50406565e827ce44d3a76f9eb740d72212a27ddd))
+
+- Fix reading schedresource json table
+  ([`ffa7cf6`](https://github.com/PanDAWMS/panda-bigmon-core/commit/ffa7cf64418ee9cf1aa873d3f731f4dcddfdada8))
+
+- Handle two accounts with the same username
+  ([`d7986bb`](https://github.com/PanDAWMS/panda-bigmon-core/commit/d7986bb38fd18255978df011b15901ee6f11c2fe))
+
+- Handle two accounts with the same username
+  ([`34b8e35`](https://github.com/PanDAWMS/panda-bigmon-core/commit/34b8e359561acb16e3f93b08c9126514faef9aca))
+
+- Remove userid header from response before return to the client browser
+  ([`3c8cc6d`](https://github.com/PanDAWMS/panda-bigmon-core/commit/3c8cc6dba9d2a637edb0955680be968393faec8d))
+
+- Update dockerfile and close port 80 in apache conf
+  ([`e4c2515`](https://github.com/PanDAWMS/panda-bigmon-core/commit/e4c251536f0c45e5d18a8904bfd338beee27adb3))
+
+### Features
+
+- Replace statpixel with saving user_id and response status to all requests table
+  ([`d0b675c`](https://github.com/PanDAWMS/panda-bigmon-core/commit/d0b675c1fb0414da14f7b39aae2707d272d8eb01))
+
+
 ## v1.3.2 (2026-11-24)
 
 ### Bug Fixes

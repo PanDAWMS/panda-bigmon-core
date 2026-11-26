@@ -356,8 +356,9 @@
   <div class="bp-dropdown-button">
       <button class="dropdown">Task parameters and help</button>
       <div class="dropdown-items">
-          <a href="#taskflow" id="button-taskflow">Show taskflow</a>
-          <a href="#statuslog" id="button-task-status-log">Show task status log</a>
+          <a href="#taskflow" id="button-taskflow">Show flow diagram</a>
+          <a href="#statuslog" id="button-task-status-log">Show status log</a>
+          <a href="#commandlog" id="button-task-command-log">Show commands log</a>
           {% if viewParams.MON_VO == 'ATLAS' %}
             <a href="#tasklogs" id="button-task-logs">Show task logs from OpenSearch</a>
             <a href="#datamovement" id="button-task-data-movement">Show task data movement summary</a>
@@ -540,6 +541,20 @@
     </div>
     </div>
   </div>
+
+  <div id="commandlog" ng-app="taskInfoAppSL" ng-controller="TaskCommandLogController">
+    <div class="card bp-container-simple secondary ng-hide" ng-hide="command_log.is_hidden">
+    <div class="card-divider"><p>Commands sent to the task via PanDA API</p></div>
+    <div class="card-section">
+      <p ng-bind-html="command_log.message"></p>
+      <table class="data-table left-aligned" id="taskcommandlogtable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    </div>
+  </div>
+
    {% if viewParams.MON_VO == 'ATLAS' %}
   <div id="tasklogs" ng-app="taskInfoAppSL" ng-controller="TaskLogsController">
     <div class="card bp-container-simple secondary ng-hide" ng-hide="task_logs.is_hidden">
@@ -832,6 +847,7 @@ document.getElementById("button-taskflow").addEventListener("click", toggletaskf
 document.getElementById("button-task-status-log").addEventListener("click", toggleStatusLog);
 if (document.getElementById("button-task-data-movement")) {document.getElementById("button-task-data-movement").addEventListener("click", toggleTaskDataMovement);}
 if (document.getElementById("button-task-logs")) {document.getElementById("button-task-logs").addEventListener("click", toggleTaskLogs);}
+document.getElementById("button-task-command-log").addEventListener("click", toggleCommandLog);
 document.getElementById("button-task-plots").addEventListener("click", togglePlots);
 
 if (document.getElementById("button-task-action-finish-panda")) {document.getElementById("button-task-action-finish-panda").addEventListener("click", operationtask_token.bind(null, jeditaskid, 'finishtask'));}
@@ -1270,6 +1286,102 @@ app.controller('TaskStatusLogController', function ($scope, $http, $sce) {
     };
 });
 
+app.controller('TaskCommandLogController', function ($scope, $http, $sce) {
+    $scope.command_log = {
+      message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
+      data: [],
+      is_hidden: true,
+      data_table: "",
+    };
+
+    function escapeText(str) {
+      return $('<div>').text(str).html();
+    }
+    function renderTime(data, type) {
+      if (!data) return '-';
+      if (type !== 'display') return data;  // ISO string sorts correctly
+      return data.replace('T', ' ').split('.')[0];
+    }
+    function renderParameters(data, type) {
+      if (data === null || data === undefined || data === '') return '-';
+      let str = (typeof data === 'string') ? data : JSON.stringify(data);
+      if (type !== 'display') return str;
+      return escapeText(str).replace(/,/g, ',<wbr>');
+    }
+    function renderResponse(data, type) {
+      if (data === null || data === undefined || data === '') return '-';
+      if (typeof data !== 'object' || !('success' in data)) {
+        // not parsed as JSON, show it as is
+        return (type === 'display') ? escapeText(String(data)) : String(data);
+      }
+      let success = (data.success === true) ? 'succeeded' : 'failed';
+      if (type !== 'display') return String(success);
+      let label = '<span class="' + (success ? 'finished' : 'broken') + '">' + success + '</span>';
+      if (!data.message) return label;
+      let msg = escapeText(data.message);
+      return '<span class="bp-tooltip left long" title="' + msg + '">' + label +
+             ' <i class="fi-info"></i><span class="tooltip-text">' + msg + '</span></span>';
+    }
+    function renderText(data, type) {
+      if (data === null || data === undefined || data === '') return '-';
+      return (type === 'display') ? escapeText(data) : data;
+    }
+
+    $scope.command_log.get = function () {
+        $http({
+              url: "{% url 'taskCommandLog' %}",
+              method: "GET",
+              params: {'jeditaskid': jeditaskid, 'json': 1}
+            }
+        ).then(function success(response) {
+            $scope.command_log.message = "";
+            let res = angular.fromJson(response.data);
+            $scope.command_log.data = ('commands' in res) ? res.commands : [];
+            if ($scope.command_log.data.length > 0) {
+              $scope.command_log.buildDataTable();
+            }
+            else {
+              $scope.command_log.message = $sce.trustAsHtml("No commands were sent to this task");
+            }
+          },
+          function error(response) {
+            console.log(response);
+            $scope.command_log.message = $sce.trustAsHtml('Failed to load data :( ');
+          }
+        );
+    };
+
+    $scope.command_log.buildDataTable = function () {
+        $scope.command_log.data_table = $('#taskcommandlogtable').dataTable({
+            "lengthMenu": [[10, 20, 50, 100, 200, -1], [10, 20, 50, 100, 200, "All"]],
+            "paging": true,
+            "scrollX": true,
+            "aaSorting": [[0, 'desc']],
+            "data": $scope.command_log.data,
+            "aoColumns": [
+                {title: "Received", data: "command_time", sDefaultContent: "-", render: renderTime},
+                {title: "Command", data: "command", sDefaultContent: "-", render: renderText},
+                {title: "Requester", data: "requester", sDefaultContent: "-", render: renderText},
+                {title: "Prod role", data: "prod_role", sDefaultContent: "-",
+                  render: function (data) { return (data === 1) ? 'yes' : (data === 0) ? 'no' : '-'; }},
+                {title: "Status", data: "status", sDefaultContent: "-", className: 'state', render: renderText},
+                {title: "Status change reason", data: "status_reason", sDefaultContent: "-", render: renderText},
+                {title: "Response", data: "response", sDefaultContent: "-", className: 'nowrap', render: renderResponse},
+                {title: "Server host", data: "server_host", sDefaultContent: "-", render: renderText},
+                {title: "Parameters", data: "parameters", sDefaultContent: "-", className: 'code-plain', render: renderParameters},
+            ],
+            "createdRow": function (row, data, index) {
+                $('td', row).eq(4).addClass(data['status'] + '_fill');
+            }
+        });
+    };
+
+    $scope.command_log.toggle = function() {
+        $scope.command_log.is_hidden = false;
+        $scope.command_log.get();
+    };
+});
+
 app.controller('TaskLogsController', function ($scope, $http, $sce) {
    $scope.task_logs = {
       message: $sce.trustAsHtml('<img src="{% static 'images/load.gif' %}"> Loading... '),
@@ -1418,6 +1530,9 @@ $(document).ready(function () {
     if (url.indexOf("#statuslog") > -1) {
         toggleStatusLog();
     }
+    if (url.indexOf("#commandlog") > -1) {
+        toggleCommandLog();
+    }
     if (url.indexOf("#tasklogs") > -1) {
         toggleTaskLogs();
     }
@@ -1495,6 +1610,15 @@ function toggleStatusLog() {
     if (scope.status_log.is_hidden) {
       scope.$apply(function () {
         scope.status_log.toggle();
+      });
+    }
+}
+
+function toggleCommandLog() {
+    let scope = angular.element(document.getElementById('commandlog')).scope();
+    if (scope.command_log.is_hidden) {
+      scope.$apply(function () {
+        scope.command_log.toggle();
       });
     }
 }
