@@ -25,7 +25,6 @@ from core.pandajob.models import JediTasks
 from django.conf import settings
 import core.art.constants as art_const
 
-artdateformat = '%Y-%m-%d'
 _logger = logging.getLogger('bigpandamon-art')
 
 
@@ -60,28 +59,28 @@ def setupView(request):
     if 'ntag_to' in request.session['requestParams']:
         enddatestr = request.session['requestParams']['ntag_to']
         try:
-            enddate = datetime.strptime(enddatestr, artdateformat)
+            enddate = datetime.strptime(enddatestr, art_const.DATETIME_FORMAT['default'])
         except:
             del request.session['requestParams']['ntag_to']
 
     if 'ntag' in request.session['requestParams']:
         startdatestr = request.session['requestParams']['ntag']
         try:
-            startdate = datetime.strptime(startdatestr, artdateformat)
+            startdate = datetime.strptime(startdatestr, art_const.DATETIME_FORMAT['default'])
         except:
             del request.session['requestParams']['ntag']
     if 'ntags' in request.session['requestParams']:
         dateliststr = request.session['requestParams']['ntags']
         for datestr in dateliststr.split(','):
             try:
-                datei = datetime.strptime(datestr, artdateformat)
+                datei = datetime.strptime(datestr, art_const.DATETIME_FORMAT['default'])
                 datelist.append(datei)
             except:
                 pass
     if 'ntag_full' in request.session['requestParams']:
         startdatestr = request.session['requestParams']['ntag_full'][:10]
         try:
-            startdate = datetime.strptime(startdatestr, artdateformat)
+            startdate = datetime.strptime(startdatestr, art_const.DATETIME_FORMAT['default'])
         except:
             del request.session['requestParams']['ntag_full']
 
@@ -130,7 +129,7 @@ def setupView(request):
         query['nightly_tag_date__range'] = [datelist[0], datelist[0] + timedelta(days=1) - timedelta(seconds=1)]
     elif len(datelist) > 1:
         query_str += ' and ('
-        query_str += ' or '.join([f"nightly_tag like '{date_i.strftime(artdateformat)}%%'" for date_i in datelist])
+        query_str += ' or '.join([f"nightly_tag like '{date_i.strftime(art_const.DATETIME_FORMAT['default'])}%%'" for date_i in datelist])
         query_str += ') '
 
     art_tests_str_fields = copy.deepcopy(
@@ -148,6 +147,17 @@ def setupView(request):
         for f in art_tests_str_fields:
             if p == f:
                 query[f] = v
+
+    # nightly tags covered by this request, used when no tests are found
+    if len(datelist) > 0:
+        ntags = datelist
+    elif startdate is not None and enddate is not None:
+        ntags = [startdate + timedelta(days=i) for i in range((enddate - startdate).days + 1)]
+    elif startdate is not None:          # single ntag / ntag_full
+        ntags = [startdate]
+    else:
+        ntags = []
+    request.art_ntags = sorted(set(d.replace(hour=0, minute=0, second=0, microsecond=0) for d in ntags))
 
     return query, query_str
 
@@ -182,7 +192,7 @@ def find_last_n_nightlies(request, limit=7):
     datelist = []
     for datestr in ndates:
         try:
-            datei = datetime.strptime(datestr['ndate'], artdateformat)
+            datei = datetime.strptime(datestr['ndate'], art_const.DATETIME_FORMAT['default'])
             datelist.append(datei)
         except:
             pass
