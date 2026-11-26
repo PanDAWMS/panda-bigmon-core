@@ -108,9 +108,10 @@ for (let i=1; i<table_data[0].length; i++) {
     title: table_title[i].charAt(0).toUpperCase() + table_title[i].slice(1),
     render: function (data, type, row, meta) {
       let gridData = (data.grid) ? data.grid : { active: 0, succeeded: 0, finished: 0, failed: 0, ntag: '' };
+      let gridUnregisteredTests = (data.grid.tasks) ? data.grid.tasks.n_tasks : 0;
       let localData = (data.local) ? data.local : { active: 0, succeeded: 0, finished: 0, failed: 0, ntag: '' };
 
-      const gridJobs = gridData.active + gridData.succeeded + gridData.finished + gridData.failed;
+      const gridJobs = gridData.active + gridData.succeeded + gridData.finished + gridData.failed + gridUnregisteredTests;
       const localJobs = localData.active + localData.succeeded + localData.finished + localData.failed;
 
       if (type === 'sort') {
@@ -166,12 +167,6 @@ function formatTrafficLightsData(data, row, testType) {
   const ao1 = (table_title[0] === 'package') ? 'branch' : 'package';
   const requestParams = {{ requestParams | safe }};
   const url = `{% url 'artTasks' %}?${table_title[0]}=${row[0]}&ntag=${data.ntag}&test_type=${testType}${(ao1 in requestParams) ? '&' + ao1 + '=' + requestParams[ao1] : ''}`;
-
-  njobs = data.active + data.succeeded + data.finished + data.failed
-  if (!data || njobs == 0) {
-    return '<div class="nodata-center">---</div>';
-  }
-
   const baseClass = (testType === "local") ? "local-" : "";
 
   return `
