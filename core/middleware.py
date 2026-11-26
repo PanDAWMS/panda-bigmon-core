@@ -49,6 +49,8 @@ class TrafficControlMiddleware(object):
         self.get_response = get_response
 
     def __call__(self, request):
+        if request.path.startswith((settings.STATIC_URL, settings.MEDIA_URL)):
+            return error_response(request, message='Not found', status=404)
 
         hostname = self.hostname or request.META.get('HTTP_HOST', '')
         x_referer = request.META.get('HTTP_REFERER', '')
