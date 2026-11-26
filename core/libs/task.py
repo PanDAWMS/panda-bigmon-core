@@ -10,7 +10,7 @@ from opensearchpy import Search
 from django.db import connection
 from django.db.models import Count, Sum
 from core.pandajob.models import Jobsactive4, Jobsarchived, Jobsdefined4, Jobsarchived4, JediDatasetContents, JediDatasets, \
-    JediDatasetLocality, JediJobRetryHistory, JediTaskparams, JediTasks
+    JediDatasetLocality, JediJobRetryHistory, JediTaskparams, JediTasks, TaskCommandLog
 from core.oauth.models import BPUser, Rating
 
 from core.libs.exlib import insert_to_temp_table, get_tmp_table_name, round_to_n_digits, convert_sec
@@ -1076,6 +1076,23 @@ def get_task_rating(jeditaskid_list):
             'feedback': r['feedback']} for r in task_rating_list]
 
     return task_rating_list
+
+
+def get_task_command_log(query):
+    """Return list of commands run against a task"""
+    # values = ('jeditaskid', 'command_time', 'command', 'parameters', 'status', 'requester')
+    commands = list(TaskCommandLog.objects.filter(**query).values())
+
+    # decode JSON stored in CLOB columns
+    for c in commands:
+        for k in ('parameters', 'response'):
+            if c[k]:
+                try:
+                    c[k] = json.loads(c[k])
+                except (ValueError, TypeError):
+                    pass
+
+    return commands
 
 def filter_task_list_by_relevance(tasks, n_tasks=1000):
     """

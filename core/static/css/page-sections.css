@@ -293,6 +293,12 @@ a.rucio-link-new img {
   border-radius: 2px;
 }
 
+.code-plain {
+  font-family: monospace;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
 div.normal {
   font-size: 0.875rem;
 }
